@@ -921,7 +921,6 @@
         "description": "Quản lý thành viên đội và quyền hạn",
         "permissions": "Quyền",
         "member": "Thành viên",
-        "activeMembers": "Thành viên đang hoạt động",
         "noActiveMembers": "Không tìm thấy thành viên đang hoạt động.",
         "addNewMember": "Thêm thành viên",
         "addManually": "Thêm thủ công",
@@ -945,6 +944,7 @@
             "readyDescription": "Gửi cho người bạn muốn thêm. Họ sẽ kết nối ví và yêu cầu tham gia.",
             "onceTitle": "Liên kết này dùng một lần, cho một người",
             "onceDescription": "Tạo liên kết mới cho mỗi thành viên.",
+            "linkTitle": "Liên kết mời",
             "yourLink": "Liên kết mời của bạn",
             "copyLink": "Sao chép liên kết",
             "linkCopied": "Đã sao chép liên kết mời",
@@ -971,7 +971,7 @@
             "askDescription": "Nhóm xem xét yêu cầu của bạn trước khi bạn có thể xem hoặc phê duyệt bất kỳ điều gì.",
             "walletConnected": "Đã kết nối ví",
             "nameLabel": "Tên của bạn (tuỳ chọn)",
-            "namePlaceholder": "Để nhóm nhận ra bạn",
+            "namePlaceholder": "Nhập tên để nhóm nhận ra bạn",
             "askJoin": "Yêu cầu tham gia",
             "submitting": "Đang gửi...",
             "successTitle": "Bạn sắp được vào",
@@ -982,8 +982,8 @@
             "goToTreasury": "Đến Treasury",
             "invalidTitle": "Không tìm thấy lời mời",
             "invalidDescription": "Liên kết mời này không hợp lệ hoặc không còn khả dụng.",
-            "usedTitle": "Lời mời đã được dùng",
-            "usedDescription": "Liên kết mời này đã được sử dụng.",
+            "usedTitle": "Liên kết mời này đã được sử dụng",
+            "usedDescription": "Liên kết mời chỉ dùng một lần. Hãy nhờ {treasury} gửi liên kết mới.",
             "expiredTitle": "Lời mời đã hết hạn",
             "expiredDescription": "Liên kết mời này đã hết hạn. Hãy xin nhóm một liên kết mới.",
             "goHome": "Về trang chủ",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "Đã chọn {count, plural, =0 {không có thành viên nào} other {# thành viên}}",
         "remove": "Xóa",
+        "send": "Gửi",
         "edit": "Chỉnh sửa",
         "requestorOnlyTooltip": "Bạn chỉ có thể thêm vai trò Người yêu cầu cho thành viên này, vì họ chịu trách nhiệm tạo các yêu cầu thanh toán từ NEARN.",
         "memberModal": {
-            "editRoles": "Chỉnh sửa vai trò",
+            "editRoles": "Chỉnh sửa thành viên",
             "addNewMember": "Thêm thành viên",
             "validatingAddresses": "Đang xác thực địa chỉ...",
             "reviewRequest": "Xem lại yêu cầu",
             "noChanges": "Không có thay đổi nào đối với vai trò thành viên"
         },
         "previewModal": {
-            "title": "Xem lại yêu cầu của bạn",
+            "title": "Xem lại thành viên",
             "youAreEditing": "Bạn đang chỉnh sửa",
             "youAreAdding": "Bạn đang thêm",
             "membersCount": "{count, plural, other {# thành viên}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Thành viên đã cập nhật",
             "newMembers": "Thành viên mới",
             "creatingProposal": "Đang tạo đề xuất...",
-            "confirmSubmit": "Xác nhận và gửi yêu cầu"
+            "confirmSubmit": "Tạo yêu cầu"
         },
         "removeDialog": {
-            "title": "Xóa yêu cầu",
+            "title": "Xóa {count, plural, one {thành viên} other {thành viên}}?",
             "nearnBody": "Sau khi được phê duyệt, {account} sẽ bị xóa vĩnh viễn khỏi ngân quỹ và mọi quyền liên quan sẽ bị thu hồi. Sau khi xóa, tài khoản này sẽ không thể tạo yêu cầu từ NEARN nữa.",
             "genericBody": "Sau khi phê duyệt, hành động này sẽ xóa vĩnh viễn <bold>{accounts}</bold> khỏi ngân quỹ và thu hồi tất cả quyền đã gán.",
             "creatingProposal": "Đang tạo đề xuất..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Đã tạo yêu cầu xóa thành viên",
             "createProposalFailed": "Không thể tạo yêu cầu thành viên. Vui lòng thử lại."
         },
-        "infoSection": {
-            "title": "Vì sao nên thêm thành viên?",
-            "description": "Thêm thành viên giúp tiền của bạn an toàn và đảm bảo mất ví sẽ không khiến bạn bị khóa quyền truy cập.",
-            "readGuide": "Đọc hướng dẫn đầy đủ",
-            "dismiss": "Đóng",
-            "strongerProtectionTitle": "Bảo vệ mạnh hơn",
-            "strongerProtectionDescription": "Yêu cầu cần nhiều hơn một phê duyệt trước khi tiền có thể được chuyển.",
-            "rolesForEveryoneTitle": "Vai trò cho mọi người",
-            "rolesForEveryoneDescription": "Mỗi thành viên có một vai trò: tạo yêu cầu thanh toán, phê duyệt hoặc quản lý cài đặt.",
-            "neverLoseAccessTitle": "Không bao giờ mất quyền truy cập",
-            "neverLoseAccessDescription": "Nếu bạn mất ví, bạn có thể khôi phục quyền truy cập từ bản sao lưu đã thêm trước đó."
-        }
+        "activeMembersCount": "{count, plural, other {# thành viên đang hoạt động}}"
     },
     "settings": {
         "tabs": {
@@ -1711,16 +1701,18 @@
                 "title": "Tài chính",
                 "description": "Tài chính có thể bỏ phiếu cho các yêu cầu giao dịch liên quan đến thanh toán nhưng không thể tạo chúng."
             }
-        }
+        },
+        "title": "Chọn vai trò"
     },
     "memberInput": {
-        "creatorYou": "Người tạo (bạn)",
-        "memberAddress": "Địa chỉ thành viên",
-        "addNewMember": "Thêm thành viên",
+        "addNewMember": "Thêm thành viên khác",
         "validation": {
             "rolesRequired": "Cần ít nhất một vai trò",
             "duplicateAddress": "Địa chỉ đã là một thành viên"
-        }
+        },
+        "enterAddress": "Nhập địa chỉ",
+        "selectRole": "Chọn vai trò",
+        "memberNumber": "Thành viên {number}"
     },
     "recipientInput": {
         "title": "Đến",
@@ -2115,6 +2107,7 @@
         "paymentsPending": "Kiểm tra các khoản thanh toán đang chờ phê duyệt",
         "exchangeSettings": "Đặt mức thay đổi giá tối đa (slippage) bạn chấp nhận khi hoán đổi.",
         "membersPending": "Xem các yêu cầu liên quan đến thành viên đang chờ phê duyệt",
+        "membersWantsToJoin": "Xem thành viên muốn tham gia nhóm của bạn",
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
         "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",

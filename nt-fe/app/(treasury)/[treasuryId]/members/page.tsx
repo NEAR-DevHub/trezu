@@ -1,52 +1,29 @@
 "use client";
 
-import { type IconSvgElement } from "@hugeicons/react";
-import { Icon } from "@/components/icon";
 import {
     Add01Icon,
-    Cancel01Icon,
+    ArrowRight01Icon,
     Delete01Icon,
     Edit03Icon,
     InformationCircleIcon,
-    Key02Icon,
-    LockIcon,
     SentIcon,
-    ShieldUserIcon,
     UserAdd01Icon,
     Wallet03Icon,
 } from "@hugeicons/core-free-icons";
-import { useTranslations } from "next-intl";
-import { PageComponentLayout } from "@/components/page-component-layout";
-import Link from "next/link";
-import { APP_DOCS_URL } from "@/constants/config";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useNear } from "@/stores/near-store";
-import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { reportError } from "@/lib/report-error";
-import { encodeToMarkdown } from "@/lib/utils";
-import { DeleteConfirmationModal } from "./components/modals/delete-confirmation-modal";
-import { User } from "@/components/user";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { PageCard } from "@/components/card";
+import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
+import { Icon } from "@/components/icon";
+import { NumberBadge } from "@/components/number-badge";
+import { PageComponentLayout } from "@/components/page-component-layout";
 import { RoleBadge } from "@/components/role-badge";
-import { Tooltip } from "@/components/tooltip";
-import { PendingButton } from "@/components/pending-button";
-import { useMemberJoinRequests } from "@/hooks/use-member-invites";
-import { removeMembersFromPolicy } from "./utils/policy-helpers";
-import {
-    usePageTour,
-    PAGE_TOUR_NAMES,
-    PAGE_TOUR_STORAGE_KEYS,
-} from "@/features/onboarding/steps/page-tours";
+import { useFormatRoleName } from "@/components/role-name";
 import {
     Table,
     TableBody,
@@ -55,31 +32,85 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/table";
-import { useMemberPolicyGate } from "./hooks/use-member-policy-gate";
-import { useMemberValidation } from "./hooks/use-member-validation";
-import { AuthButton } from "@/components/auth-button";
-import type { RolePermission } from "@/types/policy";
+import { sheetCellClassName, TableSheet } from "@/components/table-sheet";
+import { Tooltip } from "@/components/tooltip";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { User } from "@/components/user";
+import {
+    PAGE_TOUR_NAMES,
+    PAGE_TOUR_STORAGE_KEYS,
+    usePageTour,
+} from "@/features/onboarding/steps/page-tours";
+import { HEAD_CLASS } from "@/features/proposals/components/proposals-table-layout";
+import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMemberJoinRequests } from "@/hooks/use-member-invites";
+import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
+import { reportError } from "@/lib/report-error";
 import { sortRolesByOrder } from "@/lib/role-utils";
 import { useRoleDescription } from "@/lib/use-role-description";
-import { useFormatRoleName } from "@/components/role-name";
-import { StepperHeader } from "@/components/step-wizard";
-import { NumberBadge } from "@/components/number-badge";
-import { useSearchParams, useRouter } from "next/navigation";
-import { trackEvent } from "@/lib/analytics";
-import { useMediaQuery } from "@/hooks/use-media-query";
+import { cn, encodeToMarkdown } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
+import type { RolePermission } from "@/types/policy";
+import { MemberActionSheet } from "./components/member-action-sheet";
+import {
+    MembersMenuSheet,
+    MembersMenuSheetItem,
+} from "./components/members-menu-sheet";
+import { DeleteConfirmationModal } from "./components/modals/delete-confirmation-modal";
+import { useMemberPolicyGate } from "./hooks/use-member-policy-gate";
+import { useMemberValidation } from "./hooks/use-member-validation";
+import { removeMembersFromPolicy } from "./utils/policy-helpers";
 
 interface Member {
     accountId: string;
     roles: string[];
 }
 
-const MEMBERS_INFO_DISMISSED_STORAGE_KEY = "members-info-dismissed";
+const MEMBER_COLUMN_IDS = [
+    "select",
+    "member",
+    "permissions",
+    "actions",
+] as const;
 
-type MembersInfoItem = {
-    icon: IconSvgElement;
-    title: string;
-    description: string;
-};
+const MEMBER_COLUMN_CLASS: Record<(typeof MEMBER_COLUMN_IDS)[number], string> =
+    {
+        select: "w-10 px-3",
+        member: "px-3",
+        permissions: "px-3",
+        actions: "w-[88px] px-3",
+    };
+
+function memberSheetCellClass({
+    rowIndex,
+    rowCount,
+    columnIndex,
+}: {
+    rowIndex: number;
+    rowCount: number;
+    columnIndex: number;
+}) {
+    return cn(
+        "h-[66px] group-data-[state=selected]:bg-general-tertiary",
+        sheetCellClassName({
+            isFirstRow: rowIndex === 0,
+            isLastRow: rowIndex === rowCount - 1,
+            isFirstColumn: columnIndex === 0,
+            isLastColumn: columnIndex === MEMBER_COLUMN_IDS.length - 1,
+        }),
+        MEMBER_COLUMN_CLASS[MEMBER_COLUMN_IDS[columnIndex]],
+    );
+}
 
 function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
     const tMembers = useTranslations("members");
@@ -98,9 +129,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 
     return (
         <div className="flex items-center gap-1.5">
-            <span className="text-xs font-medium uppercase text-muted-foreground">
-                {tMembers("permissions")}
-            </span>
+            <span>{tMembers("permissions")}</span>
             {sortedDescriptions.length > 0 && (
                 <Tooltip
                     content={
@@ -131,8 +160,11 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
 
 export default function MembersPage() {
     const t = useTranslations("pages.members");
+    const tRequests = useTranslations("pages.requests");
+    const tPending = useTranslations("proposals.status");
     const tMembers = useTranslations("members");
     const tMemberValidation = useTranslations("memberValidation");
+    const tCommon = useTranslations("common");
     const { treasuryId } = useTreasury();
     const { createProposal } = useNear();
     const {
@@ -140,6 +172,7 @@ export default function MembersPage() {
         isLoading,
         accountId,
         existingMembers,
+        pendingMemberRequestCount,
         hasPendingMemberRequest,
         isMemberDataReady,
         isMemberActionsDisabled,
@@ -151,14 +184,30 @@ export default function MembersPage() {
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
+    const { data: joinRequests = [] } = useMemberJoinRequests(
+        canAddMember ? treasuryId : undefined,
+    );
+    const joinRequestCount = joinRequests.length;
+
     usePageTour(
         PAGE_TOUR_NAMES.MEMBERS_PENDING,
         PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
+        { enabled: hasPendingMemberRequest },
+    );
+    usePageTour(
+        PAGE_TOUR_NAMES.MEMBERS_WANTS_TO_JOIN,
+        PAGE_TOUR_STORAGE_KEYS.MEMBERS_WANTS_TO_JOIN_SHOWN,
+        {
+            enabled: joinRequestCount > 0 && pendingMemberRequestCount === 0,
+        },
     );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-    const [isInfoSectionDismissed, setIsInfoSectionDismissed] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+    const [sheetMember, setSheetMember] = useState<Member | null>(null);
+    const [addMenuOpen, setAddMenuOpen] = useState(false);
+    const [requestsMenuOpen, setRequestsMenuOpen] = useState(false);
     const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+    const [isMobileSelectMode, setIsMobileSelectMode] = useState(false);
 
     // Track if we've already processed URL params to avoid re-navigating
     const hasProcessedUrlParams = useRef(false);
@@ -167,74 +216,22 @@ export default function MembersPage() {
         ? tMemberValidation("pendingRequest")
         : undefined;
 
-    const { data: joinRequests = [] } = useMemberJoinRequests(
-        canAddMember ? treasuryId : undefined,
-    );
-    const joinRequestCount = joinRequests.length;
-
-    const membersInfoItems = useMemo<MembersInfoItem[]>(
-        () => [
-            {
-                icon: LockIcon,
-                title: tMembers("infoSection.strongerProtectionTitle"),
-                description: tMembers(
-                    "infoSection.strongerProtectionDescription",
-                ),
-            },
-            {
-                icon: ShieldUserIcon,
-                title: tMembers("infoSection.rolesForEveryoneTitle"),
-                description: tMembers(
-                    "infoSection.rolesForEveryoneDescription",
-                ),
-            },
-            {
-                icon: Key02Icon,
-                title: tMembers("infoSection.neverLoseAccessTitle"),
-                description: tMembers("infoSection.neverLoseAccessDescription"),
-            },
-        ],
-        [tMembers],
-    );
-
-    useEffect(() => {
-        if (typeof window === "undefined") return;
-        const value = window.localStorage.getItem(
-            MEMBERS_INFO_DISMISSED_STORAGE_KEY,
-        );
-        setIsInfoSectionDismissed(value === "true");
-    }, []);
-
-    const dismissMembersInfoSection = useCallback(() => {
-        setIsInfoSectionDismissed(true);
-        if (typeof window === "undefined") return;
-        window.localStorage.setItem(MEMBERS_INFO_DISMISSED_STORAGE_KEY, "true");
-    }, []);
-
     // Deep-link: /members?member=...&roles=... → /members/add
+    // Do not wait on isMemberActionsDisabled — that flag stays true until the
+    // pending-proposal query settles (or forever if it errors), which would
+    // leave ?member= on this page. Add handles a pending ChangePolicy itself.
     useEffect(() => {
         const memberParam = searchParams.get("member");
         const rolesParam = searchParams.get("roles");
 
-        if (
-            memberParam &&
-            canAddMember &&
-            !isMemberActionsDisabled &&
-            !hasProcessedUrlParams.current
-        ) {
+        if (memberParam && canAddMember && !hasProcessedUrlParams.current) {
             hasProcessedUrlParams.current = true;
             const params = new URLSearchParams();
             params.set("member", memberParam);
             if (rolesParam) params.set("roles", rolesParam);
             router.replace(`/${treasuryId}/members/add?${params.toString()}`);
         }
-    }, [
-        searchParams,
-        canAddMember,
-        isMemberActionsDisabled,
-        router,
-        treasuryId,
-    ]);
+    }, [searchParams, canAddMember, router, treasuryId]);
 
     const { canModifyMember, canDeleteBulk } = useMemberValidation(
         existingMembers,
@@ -351,6 +348,32 @@ export default function MembersPage() {
         [isMemberActionsDisabled, router, treasuryId],
     );
 
+    const handleOpenMemberSheet = useCallback((member: Member) => {
+        setSheetMember(member);
+    }, []);
+
+    const handleSheetSend = useCallback(() => {
+        if (!sheetMember || !treasuryId) return;
+        trackEvent("nav-click", {
+            destination: "payments",
+            source: "members-action-sheet",
+            treasury_id: treasuryId,
+        });
+        setSheetMember(null);
+        router.push(
+            buildPaymentsDeepLink(treasuryId, {
+                address: sheetMember.accountId,
+            }),
+        );
+    }, [router, sheetMember, treasuryId]);
+
+    const handleSheetRemove = useCallback(() => {
+        if (!sheetMember || isMemberActionsDisabled) return;
+        setMemberToDelete(sheetMember);
+        setSheetMember(null);
+        setIsDeleteModalOpen(true);
+    }, [isMemberActionsDisabled, sheetMember]);
+
     const handleBulkEdit = useCallback(() => {
         if (
             isMemberActionsDisabled ||
@@ -379,6 +402,17 @@ export default function MembersPage() {
         );
     }, []);
 
+    useEffect(() => {
+        if (!isMobile) {
+            setIsMobileSelectMode(false);
+        }
+    }, [isMobile]);
+
+    const exitMobileSelectMode = useCallback(() => {
+        setIsMobileSelectMode(false);
+        setSelectedMembers([]);
+    }, []);
+
     // Handle select all
     const handleToggleAll = useCallback(() => {
         if (selectedMembers.length === existingMembers.length) {
@@ -399,130 +433,194 @@ export default function MembersPage() {
         return canDeleteBulk(membersToDelete);
     }, [selectedMembers, existingMembers, canDeleteBulk]);
 
-    // Render members table
+    const tableHeader = (
+        <TableHeader className="border-0 bg-transparent">
+            <TableRow className="border-0 hover:bg-transparent">
+                <TableHead
+                    className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.select)}
+                >
+                    {isLoading ? (
+                        <Skeleton className="size-4 rounded-sm bg-general-bg-secondary" />
+                    ) : (
+                        <Checkbox
+                            checked={
+                                selectedMembers.length ===
+                                    existingMembers.length &&
+                                existingMembers.length > 0
+                                    ? true
+                                    : selectedMembers.length > 0
+                                      ? "indeterminate"
+                                      : false
+                            }
+                            onCheckedChange={handleToggleAll}
+                        />
+                    )}
+                </TableHead>
+                <TableHead
+                    className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.member)}
+                >
+                    {tMembers("member")}
+                </TableHead>
+                <TableHead
+                    className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.permissions)}
+                >
+                    <PermissionsHeader policyRoles={availableRoles} />
+                </TableHead>
+                <TableHead
+                    className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.actions)}
+                />
+            </TableRow>
+        </TableHeader>
+    );
+
     const renderMembersTable = (members: Member[]) => {
         if (isLoading) {
+            const skeletonRows = ["a", "b", "c", "d", "e"] as const;
             return (
-                <Table>
-                    <TableHeader className="bg-general-tertiary">
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-12"></TableHead>
-                            <TableHead className="w-1/2">
-                                <span className="text-xs font-medium uppercase text-muted-foreground">
-                                    {tMembers("member")}
-                                </span>
-                            </TableHead>
-                            <TableHead>
-                                <PermissionsHeader
-                                    policyRoles={availableRoles}
-                                />
-                            </TableHead>
-                            <TableHead className="w-24 pr-6 hidden md:table-cell"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {[...Array(5)].map((_, i) => (
-                            <TableRow key={i}>
-                                <TableCell className="pl-6">
-                                    <div className="w-4 h-4 bg-general-unofficial-accent-0 rounded animate-pulse" />
-                                </TableCell>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-general-unofficial-accent-0 animate-pulse" />
-                                        <div className="space-y-2 flex-1">
-                                            <div className="h-4 bg-general-unofficial-accent-0 rounded w-48 animate-pulse" />
-                                            <div className="h-3 bg-general-unofficial-accent-0 rounded w-32 animate-pulse" />
+                <>
+                    <div className="flex flex-col gap-2 md:hidden">
+                        {skeletonRows.map((rowId) => (
+                            <div
+                                key={rowId}
+                                className="rounded-xl border border-general-border bg-card p-4"
+                            >
+                                <div className="flex items-start gap-3">
+                                    <Skeleton className="size-8 shrink-0 rounded-lg bg-general-bg-secondary" />
+                                    <div className="flex min-w-0 flex-1 flex-col gap-2">
+                                        <Skeleton className="h-4 w-28 bg-general-bg-secondary" />
+                                        <Skeleton className="h-3 w-36 bg-general-bg-secondary" />
+                                        <div className="flex gap-2">
+                                            <Skeleton className="h-7 w-20 rounded-full bg-general-bg-secondary" />
+                                            <Skeleton className="h-7 w-24 rounded-full bg-general-bg-secondary" />
                                         </div>
                                     </div>
-                                </TableCell>
-                                <TableCell className="pr-6 md:pr-0">
-                                    <div className="flex gap-2">
-                                        <div className="h-7 bg-general-unofficial-accent-0 rounded w-20 animate-pulse" />
-                                        <div className="h-7 bg-general-unofficial-accent-0 rounded w-24 animate-pulse" />
-                                    </div>
-                                </TableCell>
-                                <TableCell className="pr-6 hidden md:table-cell">
-                                    <div className="flex justify-end gap-2">
-                                        <div className="w-8 h-8 bg-general-unofficial-accent-0 rounded animate-pulse" />
-                                        <div className="w-8 h-8 bg-general-unofficial-accent-0 rounded animate-pulse" />
-                                    </div>
-                                </TableCell>
-                            </TableRow>
+                                </div>
+                            </div>
                         ))}
-                    </TableBody>
-                </Table>
+                    </div>
+                    <TableSheet className="hidden md:block">
+                        <ScrollArea className="grid">
+                            <Table className="border-separate border-spacing-0 md:table-fixed">
+                                {tableHeader}
+                                <TableBody>
+                                    {skeletonRows.map((rowId, rowIndex) => (
+                                        <TableRow
+                                            key={rowId}
+                                            className="border-0 hover:bg-transparent"
+                                        >
+                                            {MEMBER_COLUMN_IDS.map(
+                                                (columnId, columnIndex) => (
+                                                    <TableCell
+                                                        key={columnId}
+                                                        className={memberSheetCellClass(
+                                                            {
+                                                                rowIndex,
+                                                                rowCount:
+                                                                    skeletonRows.length,
+                                                                columnIndex,
+                                                            },
+                                                        )}
+                                                    >
+                                                        {columnId ===
+                                                        "select" ? (
+                                                            <Skeleton className="size-4 rounded-sm bg-general-bg-secondary" />
+                                                        ) : columnId ===
+                                                          "member" ? (
+                                                            <div className="flex items-center gap-3">
+                                                                <Skeleton className="size-8 shrink-0 rounded-lg bg-general-bg-secondary" />
+                                                                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                                                    <Skeleton className="h-4 w-40 max-w-full bg-general-bg-secondary" />
+                                                                    <Skeleton className="h-3 w-28 max-w-full bg-general-bg-secondary" />
+                                                                </div>
+                                                            </div>
+                                                        ) : columnId ===
+                                                          "permissions" ? (
+                                                            <div className="flex gap-2">
+                                                                <Skeleton className="h-7 w-20 rounded-full bg-general-bg-secondary" />
+                                                                <Skeleton className="h-7 w-24 rounded-full bg-general-bg-secondary" />
+                                                            </div>
+                                                        ) : null}
+                                                    </TableCell>
+                                                ),
+                                            )}
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </TableSheet>
+                </>
             );
         }
 
         if (members.length === 0) {
             return (
-                <div className="flex items-center justify-center py-8">
-                    <p className="text-muted-foreground">
-                        {tMembers("noActiveMembers")}
-                    </p>
-                </div>
+                <EmptyState
+                    icon={UserAdd01Icon}
+                    description={tMembers("noActiveMembers")}
+                    className="py-16"
+                />
             );
         }
 
-        return (
-            <Table>
-                <TableHeader className="bg-general-tertiary">
-                    <TableRow className="hover:bg-transparent">
-                        <TableHead className="w-12 pl-6">
-                            <Checkbox
-                                checked={
-                                    selectedMembers.length ===
-                                        existingMembers.length &&
-                                    existingMembers.length > 0
-                                        ? true
-                                        : selectedMembers.length > 0
-                                          ? "indeterminate"
-                                          : false
+        const mobileCards = (
+            <div className="flex flex-col gap-2 md:hidden">
+                {members.map((member) => {
+                    const selected = selectedMembers.includes(member.accountId);
+                    return (
+                        <button
+                            key={member.accountId}
+                            type="button"
+                            onClick={() => {
+                                if (isMobileSelectMode) {
+                                    handleToggleMember(member.accountId);
+                                    return;
                                 }
-                                onCheckedChange={handleToggleAll}
-                            />
-                        </TableHead>
-                        <TableHead className="w-1/2">
-                            <span className="text-xs font-medium uppercase text-muted-foreground">
-                                {tMembers("member")}
-                            </span>
-                        </TableHead>
-                        <TableHead>
-                            <PermissionsHeader policyRoles={availableRoles} />
-                        </TableHead>
-                        <TableHead className="w-24 pr-6 hidden md:table-cell"></TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {members.map((member) => {
-                        const deleteValidation = canModifyMember(member);
-                        const editValidation = canModifyMember(
-                            member,
-                            member.roles,
-                        ); // Pass roles to trigger edit check
-
-                        return (
-                            <TableRow key={member.accountId} className="group">
-                                <TableCell className="pl-6">
+                                handleOpenMemberSheet(member);
+                            }}
+                            className={cn(
+                                "w-full rounded-xl border border-general-border bg-card p-4 text-left",
+                                selected && "bg-general-tertiary",
+                            )}
+                        >
+                            <div className="flex items-start gap-3">
+                                {isMobileSelectMode ? (
                                     <Checkbox
-                                        checked={selectedMembers.includes(
-                                            member.accountId,
-                                        )}
+                                        checked={selected}
+                                        className="mt-2"
+                                        onClick={(event) =>
+                                            event.stopPropagation()
+                                        }
                                         onCheckedChange={() =>
                                             handleToggleMember(member.accountId)
                                         }
                                     />
-                                </TableCell>
-                                <TableCell>
-                                    <User
-                                        accountId={member.accountId}
-                                        size="md"
-                                        withLink={false}
-                                        withHoverCard={true}
-                                    />
-                                </TableCell>
-                                <TableCell className="pr-6 md:pr-0">
-                                    <div className="flex gap-2">
+                                ) : null}
+                                <User
+                                    accountId={member.accountId}
+                                    size="md"
+                                    variant="avatar"
+                                    withLink={false}
+                                    avatarClassName="rounded-lg"
+                                />
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <User
+                                            accountId={member.accountId}
+                                            size="md"
+                                            variant="details"
+                                            withLink={false}
+                                            withHoverCard={false}
+                                        />
+                                        {isMobileSelectMode ? null : (
+                                            <Icon
+                                                icon={ArrowRight01Icon}
+                                                className="size-5 shrink-0 text-general-secondary-foreground"
+                                            />
+                                        )}
+                                    </div>
+                                    <div className="mt-2 flex flex-wrap gap-2">
                                         {sortRolesByOrder(member.roles).map(
                                             (role) => (
                                                 <RoleBadge
@@ -534,335 +632,575 @@ export default function MembersPage() {
                                             ),
                                         )}
                                     </div>
-                                </TableCell>
-                                <TableCell className="pr-6 hidden md:table-cell">
-                                    <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <AuthButton
-                                            permissionKind="policy"
-                                            permissionAction="AddProposal"
-                                            balanceCheck={{
-                                                withProposalBond: true,
-                                            }}
-                                            variant="ghost"
-                                            size="icon"
+                                </div>
+                            </div>
+                        </button>
+                    );
+                })}
+            </div>
+        );
+
+        return (
+            <>
+                {mobileCards}
+                <TableSheet className="hidden md:block">
+                    <ScrollArea className="grid">
+                        <Table className="border-separate border-spacing-0 md:table-fixed">
+                            {tableHeader}
+                            <TableBody>
+                                {members.map((member, rowIndex) => {
+                                    const deleteValidation =
+                                        canModifyMember(member);
+                                    const editValidation = canModifyMember(
+                                        member,
+                                        member.roles,
+                                    );
+                                    const selected = selectedMembers.includes(
+                                        member.accountId,
+                                    );
+
+                                    return (
+                                        <TableRow
+                                            key={member.accountId}
+                                            data-state={
+                                                selected
+                                                    ? "selected"
+                                                    : undefined
+                                            }
+                                            className="group cursor-pointer border-0 hover:bg-transparent"
                                             onClick={() =>
-                                                handleEditMember(member)
+                                                handleOpenMemberSheet(member)
                                             }
-                                            disabled={
-                                                isMemberActionsDisabled ||
-                                                !editValidation.canModify
-                                            }
-                                            className="h-8 w-8"
-                                            tooltip={
-                                                memberActionsDisabledReason ||
-                                                editValidation.reason
-                                            }
-                                            tooltipProps={{
-                                                disabled:
-                                                    (!isMemberActionsDisabled &&
-                                                        editValidation.canModify) ||
-                                                    !(
-                                                        memberActionsDisabledReason ||
-                                                        editValidation.reason
-                                                    ) ||
-                                                    !canAddMember,
-                                                contentProps: {
-                                                    className: "max-w-[280px]",
-                                                },
-                                            }}
                                         >
-                                            <Icon icon={Edit03Icon} />
-                                        </AuthButton>
-                                        <AuthButton
-                                            permissionKind="policy"
-                                            permissionAction="AddProposal"
-                                            balanceCheck={{
-                                                withProposalBond: true,
-                                            }}
-                                            variant="ghost"
-                                            size="icon"
-                                            onClick={() => {
-                                                if (isMemberActionsDisabled)
-                                                    return;
-                                                setMemberToDelete(member);
-                                                setIsDeleteModalOpen(true);
-                                            }}
-                                            disabled={
-                                                isMemberActionsDisabled ||
-                                                !deleteValidation.canModify
-                                            }
-                                            className="h-8 w-8"
-                                            tooltip={
-                                                memberActionsDisabledReason ||
-                                                deleteValidation.reason
-                                            }
-                                            tooltipProps={{
-                                                disabled:
-                                                    (!isMemberActionsDisabled &&
-                                                        deleteValidation.canModify) ||
-                                                    !(
-                                                        memberActionsDisabledReason ||
-                                                        deleteValidation.reason
-                                                    ) ||
-                                                    !canAddMember,
-                                                contentProps: {
-                                                    className: "max-w-[280px]",
-                                                },
-                                            }}
-                                        >
-                                            <Icon
-                                                icon={Delete01Icon}
-                                                className="text-destructive"
-                                            />
-                                        </AuthButton>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                        );
-                    })}
-                </TableBody>
-            </Table>
+                                            <TableCell
+                                                className={memberSheetCellClass(
+                                                    {
+                                                        rowIndex,
+                                                        rowCount:
+                                                            members.length,
+                                                        columnIndex: 0,
+                                                    },
+                                                )}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                            >
+                                                <Checkbox
+                                                    checked={selected}
+                                                    onCheckedChange={() =>
+                                                        handleToggleMember(
+                                                            member.accountId,
+                                                        )
+                                                    }
+                                                />
+                                            </TableCell>
+                                            <TableCell
+                                                className={memberSheetCellClass(
+                                                    {
+                                                        rowIndex,
+                                                        rowCount:
+                                                            members.length,
+                                                        columnIndex: 1,
+                                                    },
+                                                )}
+                                            >
+                                                <User
+                                                    accountId={member.accountId}
+                                                    size="md"
+                                                    withLink={false}
+                                                    withHoverCard={true}
+                                                    avatarClassName="rounded-lg"
+                                                />
+                                            </TableCell>
+                                            <TableCell
+                                                className={memberSheetCellClass(
+                                                    {
+                                                        rowIndex,
+                                                        rowCount:
+                                                            members.length,
+                                                        columnIndex: 2,
+                                                    },
+                                                )}
+                                            >
+                                                <div className="flex flex-wrap gap-2">
+                                                    {sortRolesByOrder(
+                                                        member.roles,
+                                                    ).map((role) => (
+                                                        <RoleBadge
+                                                            key={role}
+                                                            role={role}
+                                                            variant="pill"
+                                                            showTooltip={false}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell
+                                                className={memberSheetCellClass(
+                                                    {
+                                                        rowIndex,
+                                                        rowCount:
+                                                            members.length,
+                                                        columnIndex: 3,
+                                                    },
+                                                )}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                            >
+                                                <div className="flex justify-end gap-1 sm:opacity-0 sm:transition-opacity sm:group-hover:opacity-100">
+                                                    <AuthButton
+                                                        permissionKind="policy"
+                                                        permissionAction="AddProposal"
+                                                        balanceCheck={{
+                                                            withProposalBond: true,
+                                                        }}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() =>
+                                                            handleEditMember(
+                                                                member,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            isMemberActionsDisabled ||
+                                                            !editValidation.canModify
+                                                        }
+                                                        className="h-8 w-8 text-general-unofficial-ghost-foreground"
+                                                        tooltip={
+                                                            memberActionsDisabledReason ||
+                                                            editValidation.reason
+                                                        }
+                                                        tooltipProps={{
+                                                            disabled:
+                                                                (!isMemberActionsDisabled &&
+                                                                    editValidation.canModify) ||
+                                                                !(
+                                                                    memberActionsDisabledReason ||
+                                                                    editValidation.reason
+                                                                ) ||
+                                                                !canAddMember,
+                                                            contentProps: {
+                                                                className:
+                                                                    "max-w-[280px]",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Icon
+                                                            icon={Edit03Icon}
+                                                        />
+                                                    </AuthButton>
+                                                    <AuthButton
+                                                        permissionKind="policy"
+                                                        permissionAction="AddProposal"
+                                                        balanceCheck={{
+                                                            withProposalBond: true,
+                                                        }}
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => {
+                                                            if (
+                                                                isMemberActionsDisabled
+                                                            )
+                                                                return;
+                                                            setMemberToDelete(
+                                                                member,
+                                                            );
+                                                            setIsDeleteModalOpen(
+                                                                true,
+                                                            );
+                                                        }}
+                                                        disabled={
+                                                            isMemberActionsDisabled ||
+                                                            !deleteValidation.canModify
+                                                        }
+                                                        className="h-8 w-8 text-general-unofficial-ghost-foreground"
+                                                        tooltip={
+                                                            memberActionsDisabledReason ||
+                                                            deleteValidation.reason
+                                                        }
+                                                        tooltipProps={{
+                                                            disabled:
+                                                                (!isMemberActionsDisabled &&
+                                                                    deleteValidation.canModify) ||
+                                                                !(
+                                                                    memberActionsDisabledReason ||
+                                                                    deleteValidation.reason
+                                                                ) ||
+                                                                !canAddMember,
+                                                            contentProps: {
+                                                                className:
+                                                                    "max-w-[280px]",
+                                                            },
+                                                        }}
+                                                    >
+                                                        <Icon
+                                                            icon={Delete01Icon}
+                                                        />
+                                                    </AuthButton>
+                                                </div>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                            </TableBody>
+                        </Table>
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </TableSheet>
+            </>
         );
     };
+
+    const showPendingButton =
+        pendingMemberRequestCount > 0 && joinRequestCount === 0;
+    const showJoinRequestsButton =
+        joinRequestCount > 0 && pendingMemberRequestCount === 0;
+    const showRequestsMenu =
+        pendingMemberRequestCount > 0 && joinRequestCount > 0;
+    const requestsMenuClassName =
+        "min-w-55 rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]";
+    const requestsMenuItemClassName =
+        "cursor-pointer justify-between gap-3 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background";
+
+    const pageActions = (
+        <div className="flex items-center gap-2 sm:gap-3">
+            {showPendingButton ? (
+                <Button
+                    id="members-pending-btn"
+                    type="button"
+                    variant="pill"
+                    className="gap-2 rounded-lg"
+                    onClick={() =>
+                        router.push(`/${treasuryId}/requests?tab=InProgress`)
+                    }
+                >
+                    {tPending("pending")}
+                    <NumberBadge
+                        shape="pill"
+                        number={pendingMemberRequestCount}
+                    />
+                </Button>
+            ) : null}
+
+            {showJoinRequestsButton ? (
+                <Button
+                    id="members-wants-to-join-btn"
+                    type="button"
+                    variant="pill"
+                    className="gap-2"
+                    onClick={() =>
+                        router.push(`/${treasuryId}/members/join-requests`)
+                    }
+                >
+                    {tMembers("wantsToJoin")}
+                    <NumberBadge number={joinRequestCount} />
+                </Button>
+            ) : null}
+
+            {showRequestsMenu ? (
+                isMobile ? (
+                    <>
+                        <Button
+                            id="members-pending-btn"
+                            type="button"
+                            variant="pill"
+                            className="gap-2 rounded-lg"
+                            onClick={() => setRequestsMenuOpen(true)}
+                        >
+                            {tRequests("title")}
+                            <NumberBadge
+                                shape="pill"
+                                number={
+                                    pendingMemberRequestCount + joinRequestCount
+                                }
+                            />
+                        </Button>
+                        <MembersMenuSheet
+                            open={requestsMenuOpen}
+                            onOpenChange={setRequestsMenuOpen}
+                            title={tRequests("title")}
+                        >
+                            <MembersMenuSheetItem
+                                className="justify-between"
+                                onClick={() => {
+                                    setRequestsMenuOpen(false);
+                                    router.push(
+                                        `/${treasuryId}/requests?tab=InProgress`,
+                                    );
+                                }}
+                            >
+                                {tPending("pending")}
+                                <NumberBadge
+                                    shape="pill"
+                                    number={pendingMemberRequestCount}
+                                />
+                            </MembersMenuSheetItem>
+                            <MembersMenuSheetItem
+                                className="justify-between"
+                                onClick={() => {
+                                    setRequestsMenuOpen(false);
+                                    router.push(
+                                        `/${treasuryId}/members/join-requests`,
+                                    );
+                                }}
+                            >
+                                {tMembers("wantsToJoin")}
+                                <NumberBadge
+                                    shape="pill"
+                                    number={joinRequestCount}
+                                />
+                            </MembersMenuSheetItem>
+                        </MembersMenuSheet>
+                    </>
+                ) : (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                id="members-pending-btn"
+                                type="button"
+                                variant="pill"
+                                className="gap-2 rounded-lg"
+                            >
+                                {tRequests("title")}
+                                <NumberBadge
+                                    shape="pill"
+                                    number={
+                                        pendingMemberRequestCount +
+                                        joinRequestCount
+                                    }
+                                />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className={requestsMenuClassName}
+                        >
+                            <DropdownMenuItem
+                                className={requestsMenuItemClassName}
+                                onClick={() =>
+                                    router.push(
+                                        `/${treasuryId}/requests?tab=InProgress`,
+                                    )
+                                }
+                            >
+                                {tPending("pending")}
+                                <NumberBadge
+                                    shape="pill"
+                                    number={pendingMemberRequestCount}
+                                />
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className={requestsMenuItemClassName}
+                                onClick={() =>
+                                    router.push(
+                                        `/${treasuryId}/members/join-requests`,
+                                    )
+                                }
+                            >
+                                {tMembers("wantsToJoin")}
+                                <NumberBadge
+                                    shape="pill"
+                                    number={joinRequestCount}
+                                />
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )
+            ) : null}
+
+            {!canAddMember || !isMemberDataReady ? (
+                <AuthButton
+                    permissionKind="policy"
+                    permissionAction="AddProposal"
+                    balanceCheck={{ withProposalBond: true }}
+                    disabled={!isMemberDataReady}
+                    size={isMobile ? "icon" : "default"}
+                    className="size-9 sm:w-auto"
+                >
+                    <Icon icon={Add01Icon} />
+                    <span className="hidden sm:inline">
+                        {tMembers("addNewMember")}
+                    </span>
+                </AuthButton>
+            ) : isMobile ? (
+                <>
+                    <Button
+                        size="icon"
+                        className="size-9"
+                        onClick={() => {
+                            if (treasuryId) {
+                                router.prefetch(`/${treasuryId}/members/add`);
+                                router.prefetch(
+                                    `/${treasuryId}/members/invite`,
+                                );
+                            }
+                            setAddMenuOpen(true);
+                        }}
+                    >
+                        <Icon icon={Add01Icon} />
+                        <span className="sr-only">
+                            {tMembers("addNewMember")}
+                        </span>
+                    </Button>
+                    <MembersMenuSheet
+                        open={addMenuOpen}
+                        onOpenChange={setAddMenuOpen}
+                        title={tMembers("addNewMember")}
+                    >
+                        {hasPendingMemberRequest ? (
+                            <Tooltip
+                                content={memberActionsDisabledReason}
+                                contentProps={{
+                                    className: "max-w-[280px]",
+                                }}
+                            >
+                                <span className="flex w-full cursor-not-allowed">
+                                    <MembersMenuSheetItem
+                                        disabled
+                                        className="w-full"
+                                    >
+                                        <Icon icon={Wallet03Icon} />
+                                        {tMembers("addManually")}
+                                    </MembersMenuSheetItem>
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <MembersMenuSheetItem
+                                asChild
+                                onClick={() => {
+                                    trackEvent("member-add-modal-opened", {
+                                        treasury_id: treasuryId,
+                                    });
+                                    setAddMenuOpen(false);
+                                }}
+                            >
+                                <Link href={`/${treasuryId}/members/add`}>
+                                    <Icon icon={Wallet03Icon} />
+                                    {tMembers("addManually")}
+                                </Link>
+                            </MembersMenuSheetItem>
+                        )}
+                        <MembersMenuSheetItem
+                            asChild
+                            onClick={() => setAddMenuOpen(false)}
+                        >
+                            <Link href={`/${treasuryId}/members/invite`}>
+                                <Icon icon={SentIcon} />
+                                {tMembers("inviteMember")}
+                            </Link>
+                        </MembersMenuSheetItem>
+                    </MembersMenuSheet>
+                </>
+            ) : (
+                <DropdownMenu
+                    onOpenChange={(open) => {
+                        if (!open || !treasuryId) return;
+                        router.prefetch(`/${treasuryId}/members/add`);
+                        router.prefetch(`/${treasuryId}/members/invite`);
+                    }}
+                >
+                    <DropdownMenuTrigger asChild>
+                        <Button>
+                            <Icon icon={Add01Icon} />
+                            {tMembers("addNewMember")}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                        align="end"
+                        className="w-max min-w-0 overflow-visible rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]"
+                    >
+                        {hasPendingMemberRequest ? (
+                            <Tooltip
+                                content={memberActionsDisabledReason}
+                                contentProps={{
+                                    align: "end",
+                                    className: "max-w-[280px]",
+                                }}
+                            >
+                                <span className="flex w-full cursor-not-allowed">
+                                    <DropdownMenuItem
+                                        disabled
+                                        className="w-full gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                                    >
+                                        <Icon icon={Wallet03Icon} />
+                                        {tMembers("addManually")}
+                                    </DropdownMenuItem>
+                                </span>
+                            </Tooltip>
+                        ) : (
+                            <DropdownMenuItem
+                                asChild
+                                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                            >
+                                <Link
+                                    href={`/${treasuryId}/members/add`}
+                                    onClick={() =>
+                                        trackEvent("member-add-modal-opened", {
+                                            treasury_id: treasuryId,
+                                        })
+                                    }
+                                >
+                                    <Icon icon={Wallet03Icon} />
+                                    {tMembers("addManually")}
+                                </Link>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                            asChild
+                            className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                        >
+                            <Link href={`/${treasuryId}/members/invite`}>
+                                <Icon icon={SentIcon} />
+                                {tMembers("inviteMember")}
+                            </Link>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+        </div>
+    );
 
     return (
         <PageComponentLayout
             title={t("title")}
-            description={t("description")}
             backButton={treasuryId ? `/${treasuryId}` : true}
             backKind="section"
             hideMobileShellControls
+            reserveHeaderSpace
         >
-            {!isInfoSectionDismissed && canAddMember && (
-                <PageCard className="py-4 px-6 gap-3 bg-general-tertiary mb-4">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="space-y-1">
-                            <h2 className="text-base font-semibold">
-                                {tMembers("infoSection.title")}
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                {tMembers("infoSection.description")}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <Link
-                                href={`${APP_DOCS_URL}/governance/members-and-roles`}
-                                target="_blank"
-                                className="hidden md:inline-flex text-sm font-medium underline-offset-2"
-                            >
-                                {tMembers("infoSection.readGuide")}
-                            </Link>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="size-8 text-muted-foreground hover:text-foreground"
-                                aria-label={tMembers("infoSection.dismiss")}
-                                onClick={dismissMembersInfoSection}
-                            >
-                                <Icon icon={Cancel01Icon} />
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-                        {membersInfoItems.map((item) => {
-                            const { icon, title, description } = item;
-                            return (
-                                <div
-                                    key={title}
-                                    className="rounded-lg border border-general-border p-3 bg-card"
-                                >
-                                    <div className="flex items-start gap-3">
-                                        <div className="mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-                                            <Icon
-                                                icon={icon}
-                                                className="text-muted-foreground"
-                                            />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-sm font-medium">
-                                                {title}
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {description}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    <Link
-                        href={`${APP_DOCS_URL}/governance/members-and-roles`}
-                        target="_blank"
-                        className="md:hidden inline-flex text-sm font-medium underline-offset-2 mt-2"
-                    >
-                        {tMembers("infoSection.readGuide")}
-                    </Link>
-                </PageCard>
-            )}
-
-            <PageCard className="gap-0 p-0">
-                {/* Hide header when members are selected */}
-                {!(selectedMembers.length > 0) && (
-                    <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-6 border-b">
-                        <div className="flex items-center gap-2 w-fit">
-                            <StepperHeader title={tMembers("activeMembers")} />
-                            <NumberBadge
-                                number={existingMembers.length}
-                                variant="secondary"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <PendingButton
-                                id="members-pending-btn"
-                                types={["Change Policy"]}
-                            />
-
-                            {joinRequestCount > 0 && (
-                                <AuthButton
-                                    permissionKind="policy"
-                                    permissionAction="AddProposal"
-                                    balanceCheck={{ withProposalBond: true }}
-                                    variant="ghost"
-                                    disabled={!isMemberDataReady}
-                                    onClick={() =>
-                                        router.push(
-                                            `/${treasuryId}/members/join-requests`,
-                                        )
-                                    }
-                                    className="flex items-center gap-2 border-2"
-                                >
-                                    <span className="hidden sm:inline">
-                                        {tMembers("wantsToJoin")}
-                                    </span>
-                                    <Icon
-                                        icon={UserAdd01Icon}
-                                        className="sm:hidden"
-                                    />
-                                    <NumberBadge
-                                        shape="pill"
-                                        number={joinRequestCount}
-                                    />
-                                </AuthButton>
-                            )}
-
-                            {!canAddMember || !isMemberDataReady ? (
-                                <AuthButton
-                                    permissionKind="policy"
-                                    permissionAction="AddProposal"
-                                    balanceCheck={{ withProposalBond: true }}
-                                    disabled={!isMemberDataReady}
-                                    size={isMobile ? "icon" : "default"}
-                                    className="size-9 sm:w-auto"
-                                >
-                                    <Icon icon={Add01Icon} />
-                                    <span className="hidden sm:inline">
-                                        {tMembers("addNewMember")}
-                                    </span>
-                                </AuthButton>
-                            ) : (
-                                <DropdownMenu
-                                    onOpenChange={(open) => {
-                                        if (!open || !treasuryId) return;
-                                        // Prefetch destinations so menu clicks feel instant.
-                                        router.prefetch(
-                                            `/${treasuryId}/members/add`,
-                                        );
-                                        router.prefetch(
-                                            `/${treasuryId}/members/invite`,
-                                        );
-                                    }}
-                                >
-                                    <DropdownMenuTrigger asChild>
-                                        <Button
-                                            size={isMobile ? "icon" : "default"}
-                                            className="size-9 sm:w-auto"
-                                        >
-                                            <Icon icon={Add01Icon} />
-                                            <span className="hidden sm:inline">
-                                                {tMembers("addNewMember")}
-                                            </span>
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent
-                                        align="end"
-                                        className="w-max min-w-(--radix-popper-anchor-width) p-2"
-                                    >
-                                        {hasPendingMemberRequest ? (
-                                            <Tooltip
-                                                content={
-                                                    memberActionsDisabledReason
-                                                }
-                                                contentProps={{
-                                                    className: "max-w-[280px]",
-                                                }}
-                                            >
-                                                <span className="flex w-full cursor-not-allowed">
-                                                    <DropdownMenuItem
-                                                        disabled
-                                                        className="w-full gap-2.5 px-3 py-2.5"
-                                                    >
-                                                        <Icon
-                                                            icon={Wallet03Icon}
-                                                        />
-                                                        {tMembers(
-                                                            "addManually",
-                                                        )}
-                                                    </DropdownMenuItem>
-                                                </span>
-                                            </Tooltip>
-                                        ) : (
-                                            <DropdownMenuItem
-                                                asChild
-                                                className="gap-2.5 px-3 py-2.5 cursor-pointer"
-                                            >
-                                                <Link
-                                                    href={`/${treasuryId}/members/add`}
-                                                    onClick={() =>
-                                                        trackEvent(
-                                                            "member-add-modal-opened",
-                                                            {
-                                                                treasury_id:
-                                                                    treasuryId,
-                                                            },
-                                                        )
-                                                    }
-                                                >
-                                                    <Icon icon={Wallet03Icon} />
-                                                    {tMembers("addManually")}
-                                                </Link>
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuItem
-                                            asChild
-                                            className="gap-2.5 px-3 py-2.5 cursor-pointer"
-                                        >
-                                            <Link
-                                                href={`/${treasuryId}/members/invite`}
-                                            >
-                                                <Icon icon={SentIcon} />
-                                                {tMembers("inviteMember")}
-                                            </Link>
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Bulk Actions Bar */}
-                {selectedMembers.length > 0 && (
-                    <div className="flex items-center justify-between gap-4 py-3.5 px-8 border-b">
-                        <span className="font-semibold text-base sm:text-lg">
+            <div className="flex flex-col gap-5">
+                {selectedMembers.length > 0 ? (
+                    <div className="flex items-center justify-between gap-4">
+                        <span className="hidden text-xl font-semibold leading-[1.2] tracking-[-0.025rem] text-general-secondary-foreground md:block">
                             {tMembers("membersSelected", {
                                 count: selectedMembers.length,
                             })}
                         </span>
-                        <div className="flex items-center gap-2 w-fit">
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="rounded-lg font-semibold text-foreground md:hidden"
+                            onClick={exitMobileSelectMode}
+                        >
+                            {tCommon("cancel")}
+                        </Button>
+                        <div className="flex w-fit items-center gap-2">
+                            <AuthButton
+                                permissionKind="policy"
+                                permissionAction="AddProposal"
+                                balanceCheck={{
+                                    withProposalBond: true,
+                                }}
+                                variant="neutral"
+                                onClick={handleBulkEdit}
+                                disabled={isMemberActionsDisabled}
+                                tooltip={memberActionsDisabledReason}
+                                className="rounded-lg"
+                            >
+                                <Icon icon={Edit03Icon} />
+                                {tMembers("edit")}
+                            </AuthButton>
                             <Tooltip
                                 content={
                                     memberActionsDisabledReason ||
@@ -875,61 +1213,80 @@ export default function MembersPage() {
                                         memberActionsDisabledReason ||
                                         bulkDeleteValidation.reason
                                     ) ||
-                                    !canAddMember // Only show validation tooltip if user has permission
+                                    !canAddMember
                                 }
                                 contentProps={{ className: "max-w-[280px]" }}
                             >
-                                <span className="flex-1 sm:flex-none">
+                                <span>
                                     <AuthButton
                                         permissionKind="policy"
                                         permissionAction="AddProposal"
                                         balanceCheck={{
                                             withProposalBond: true,
                                         }}
-                                        variant="outline-destructive"
-                                        size={isMobile ? "icon" : "sm"}
+                                        variant="destructive"
                                         onClick={handleBulkDelete}
                                         disabled={
                                             isMemberActionsDisabled ||
                                             !bulkDeleteValidation.canModify
                                         }
-                                        className="size-9 sm:w-auto"
+                                        className="rounded-lg bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
                                     >
-                                        <Icon
-                                            icon={Delete01Icon}
-                                            className="mr-1"
-                                        />
-                                        <span className="hidden sm:inline">
-                                            {tMembers("remove")}
-                                        </span>
+                                        <Icon icon={Delete01Icon} />
+                                        {tMembers("remove")}
                                     </AuthButton>
                                 </span>
                             </Tooltip>
-                            <span className="flex-1 sm:flex-none">
-                                <AuthButton
-                                    permissionKind="policy"
-                                    permissionAction="AddProposal"
-                                    balanceCheck={{ withProposalBond: true }}
-                                    variant="outline"
-                                    size={isMobile ? "icon" : "sm"}
-                                    onClick={handleBulkEdit}
-                                    disabled={isMemberActionsDisabled}
-                                    tooltip={memberActionsDisabledReason}
-                                    className="size-9 sm:w-auto"
-                                >
-                                    <Icon icon={Edit03Icon} className="mr-1" />
-                                    <span className="hidden sm:inline">
-                                        {tMembers("edit")}
-                                    </span>
-                                </AuthButton>
-                            </span>
                         </div>
+                    </div>
+                ) : (
+                    <div className="flex items-center justify-between gap-4">
+                        <p className="hidden text-xl font-semibold leading-[1.2] tracking-[-0.025rem] text-general-secondary-foreground md:block">
+                            {tMembers("activeMembersCount", {
+                                count: existingMembers.length,
+                            })}
+                        </p>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="rounded-lg font-semibold text-foreground md:hidden"
+                            onClick={() =>
+                                isMobileSelectMode
+                                    ? exitMobileSelectMode()
+                                    : setIsMobileSelectMode(true)
+                            }
+                        >
+                            {isMobileSelectMode
+                                ? tCommon("cancel")
+                                : tCommon("select")}
+                        </Button>
+                        {pageActions}
                     </div>
                 )}
 
-                {/* Members Table */}
                 {renderMembersTable(existingMembers)}
-            </PageCard>
+            </div>
+
+            <MemberActionSheet
+                member={sheetMember}
+                open={!!sheetMember}
+                onOpenChange={(open) => {
+                    if (!open) setSheetMember(null);
+                }}
+                onSend={handleSheetSend}
+                onRemove={handleSheetRemove}
+                removeDisabled={
+                    !sheetMember ||
+                    isMemberActionsDisabled ||
+                    !canModifyMember(sheetMember).canModify
+                }
+                removeTooltip={
+                    sheetMember
+                        ? memberActionsDisabledReason ||
+                          canModifyMember(sheetMember).reason
+                        : undefined
+                }
+            />
 
             {/* Delete Confirmation Modal */}
             <DeleteConfirmationModal

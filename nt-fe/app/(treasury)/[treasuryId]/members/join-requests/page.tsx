@@ -18,15 +18,10 @@ import * as z from "zod";
 import { Button } from "@/components/button";
 import { ButtonWithTooltip } from "@/components/button-with-tooltip";
 import { PageCard } from "@/components/card";
-import { InputBlock } from "@/components/input-block";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { useFormatRoleName } from "@/components/role-name";
 import { RoleSelector } from "@/components/role-selector";
-import {
-    StepperHeader,
-    StepWizard,
-    type StepProps,
-} from "@/components/step-wizard";
+import { StepWizard, type StepProps } from "@/components/step-wizard";
 import { FormField, FormMessage } from "@/components/ui/form";
 import { User } from "@/components/user";
 import {
@@ -61,7 +56,6 @@ function requestIdsKey(
 }
 
 type AssignStepProps = StepProps & {
-    onExit: () => void;
     availableRoles: Array<{
         id: string;
         title: string;
@@ -78,7 +72,6 @@ type AssignStepProps = StepProps & {
 
 function JoinRequestsAssignStep({
     handleNext,
-    onExit,
     availableRoles,
     onRemove,
     isRemoving,
@@ -87,6 +80,8 @@ function JoinRequestsAssignStep({
 }: AssignStepProps) {
     const t = useTranslations("members.joinRequests");
     const tModal = useTranslations("members.memberModal");
+    const tInput = useTranslations("memberInput");
+    const tCommon = useTranslations("common");
     const form = useFormContext<JoinRequestFormData>();
     const members = form.watch("members") ?? [];
     const allHaveRoles =
@@ -94,79 +89,66 @@ function JoinRequestsAssignStep({
     const canReview = allHaveRoles && !reviewDisabledReason;
 
     return (
-        <PageCard className="gap-4">
-            <StepperHeader title={t("title")} handleBack={onExit} />
-            <InputBlock invalid={false} className="p-0">
-                <div className="flex flex-col">
-                    {members.map((member, index) => (
-                        <div
-                            key={member.requestId}
-                            className="flex px-3.5 first:rounded-t-xl first:pt-3 not-first:pt-2 last:pb-3 flex-col gap-0 border-b border-muted-foreground/10 last:border-b-0"
-                        >
-                            <div className="flex justify-between items-center">
-                                <p className="text-xs text-muted-foreground">
-                                    {t("memberAddress")}
-                                </p>
-                                <Button
-                                    variant="ghost"
-                                    className="size-6 p-0! group hover:text-destructive"
-                                    disabled={isRemoving}
-                                    onClick={() => onRemove(member.requestId)}
-                                >
-                                    <Icon
-                                        icon={Delete01Icon}
-                                        className="text-foreground group-hover:text-destructive"
-                                    />
-                                </Button>
-                            </div>
-                            <div className="flex md:flex-row flex-col items-start justify-between md:items-center gap-3">
-                                <div className="flex-1 min-w-0">
-                                    <User
-                                        accountId={member.accountId}
-                                        size="md"
-                                        variant="details"
-                                        withLink={false}
-                                        truncateAddress={false}
-                                    />
-                                </div>
-                                <FormField
-                                    control={form.control}
-                                    name={`members.${index}.roles`}
-                                    render={({ field }) => (
-                                        <RoleSelector
-                                            selectedRoles={field.value ?? []}
-                                            onRolesChange={field.onChange}
-                                            availableRoles={availableRoles}
-                                            disabledRoles={
-                                                getDisabledRoles
-                                                    ? getDisabledRoles(
-                                                          member.accountId,
-                                                          field.value ?? [],
-                                                      )
-                                                    : []
-                                            }
-                                        />
-                                    )}
-                                />
-                            </div>
-                            <FormField
-                                control={form.control}
-                                name={`members.${index}.roles`}
-                                render={({ fieldState }) =>
-                                    fieldState.error ? (
-                                        <FormMessage className="text-sm mb-2" />
-                                    ) : (
-                                        <p className="text-xs invisible">.</p>
-                                    )
-                                }
-                            />
+        <div className="flex flex-col gap-6">
+            <div className="flex flex-col">
+                {members.map((member, index) => (
+                    <div key={member.requestId} className="flex flex-col gap-2">
+                        <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                {tInput("memberNumber", {
+                                    number: index + 1,
+                                })}
+                            </p>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                className="text-general-unofficial-ghost-foreground"
+                                disabled={isRemoving}
+                                aria-label={tCommon("remove")}
+                                onClick={() => onRemove(member.requestId)}
+                            >
+                                <Icon icon={Delete01Icon} />
+                            </Button>
                         </div>
-                    ))}
-                </div>
-            </InputBlock>
+                        <User
+                            accountId={member.accountId}
+                            variant="details"
+                            withLink={false}
+                            truncateAddress={false}
+                        />
+                        <FormField
+                            control={form.control}
+                            name={`members.${index}.roles`}
+                            render={({ field, fieldState }) => (
+                                <div className="flex flex-col gap-1">
+                                    <RoleSelector
+                                        triggerVariant="field"
+                                        selectedRoles={field.value ?? []}
+                                        onRolesChange={field.onChange}
+                                        availableRoles={availableRoles}
+                                        disabledRoles={
+                                            getDisabledRoles
+                                                ? getDisabledRoles(
+                                                      member.accountId,
+                                                      field.value ?? [],
+                                                  )
+                                                : []
+                                        }
+                                        invalid={!!fieldState.error}
+                                    />
+                                    {fieldState.error ? (
+                                        <FormMessage className="mt-1 text-sm text-destructive" />
+                                    ) : null}
+                                </div>
+                            )}
+                        />
+                    </div>
+                ))}
+            </div>
             <ButtonWithTooltip
                 type="button"
-                className="w-full"
+                className="h-11 w-full rounded-2xl"
                 disabled={!canReview}
                 tooltipMessage={
                     reviewDisabledReason ||
@@ -184,12 +166,11 @@ function JoinRequestsAssignStep({
             >
                 {tModal("reviewRequest")}
             </ButtonWithTooltip>
-        </PageCard>
+        </div>
     );
 }
 
 export default function JoinRequestsPage() {
-    const t = useTranslations("pages.members");
     const tMembers = useTranslations("members");
     const tJoin = useTranslations("members.joinRequests");
     const { treasuryId } = useTreasury();
@@ -287,10 +268,6 @@ export default function JoinRequestsPage() {
         const sortedNames = sortRolesByOrder(mapped.map((r) => r.id));
         return sortedNames.map((name) => mapped.find((r) => r.id === name)!);
     }, [availableRoles, formatRoleName, getRoleDescription]);
-
-    const exitToMembers = useCallback(() => {
-        router.push(`/${treasuryId}/members`);
-    }, [router, treasuryId]);
 
     const membersInForm = form.watch("members") || [];
     const getDisabledRoles = useDisabledMemberRoles(
@@ -418,7 +395,6 @@ export default function JoinRequestsPage() {
             {
                 component: JoinRequestsAssignStep,
                 props: {
-                    onExit: exitToMembers,
                     availableRoles: mappedRoles,
                     onRemove: handleRemove,
                     isRemoving: cancelRequest.isPending,
@@ -437,7 +413,6 @@ export default function JoinRequestsPage() {
             },
         ],
         [
-            exitToMembers,
             mappedRoles,
             handleRemove,
             cancelRequest.isPending,
@@ -447,28 +422,32 @@ export default function JoinRequestsPage() {
         ],
     );
 
+    const isReview = step === 1;
+
     return (
         <PageComponentLayout
-            title={t("title")}
-            description={t("description")}
-            hideHeaderOnMobile
+            title={tJoin("title")}
+            backButton={
+                isReview
+                    ? undefined
+                    : treasuryId
+                      ? `/${treasuryId}/members`
+                      : true
+            }
+            hideMobileShellControls
+            hideTitle={isReview}
+            reserveHeaderSpace
         >
-            <div className="max-w-xl mx-auto w-full">
+            <div className="mx-auto w-full max-w-lg">
                 <FormProvider {...form}>
                     {isLoading || isLoadingRequests ? (
                         <PageCard>
                             <div className="h-40 animate-pulse bg-general-unofficial-accent-0 rounded-lg" />
                         </PageCard>
                     ) : joinRequests.length === 0 && step === 0 ? (
-                        <PageCard className="gap-4">
-                            <StepperHeader
-                                title={tJoin("title")}
-                                handleBack={exitToMembers}
-                            />
-                            <p className="text-sm text-muted-foreground">
-                                {tJoin("empty")}
-                            </p>
-                        </PageCard>
+                        <p className="text-sm text-muted-foreground">
+                            {tJoin("empty")}
+                        </p>
                     ) : (
                         <StepWizard
                             step={step}

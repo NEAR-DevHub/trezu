@@ -921,7 +921,6 @@
         "description": "נהל חברי צוות והרשאות",
         "permissions": "הרשאות",
         "member": "חבר",
-        "activeMembers": "חברים פעילים",
         "noActiveMembers": "לא נמצאו חברים פעילים.",
         "addNewMember": "הוסף חבר",
         "addManually": "הוספה ידנית",
@@ -945,6 +944,7 @@
             "readyDescription": "שלחו אותו לאדם שתרצו להוסיף. הוא יחבר ארנק ויבקש להצטרף.",
             "onceTitle": "הקישור עובד פעם אחת, לאדם אחד",
             "onceDescription": "צרו קישור חדש לכל חבר.",
+            "linkTitle": "קישור הזמנה",
             "yourLink": "קישור ההזמנה שלכם",
             "copyLink": "העתקת קישור",
             "linkCopied": "קישור ההזמנה הועתק",
@@ -971,7 +971,7 @@
             "askDescription": "הצוות בודק את הבקשה לפני שתוכלו לראות או לאשר משהו.",
             "walletConnected": "הארנק מחובר",
             "nameLabel": "השם שלכם (אופציונלי)",
-            "namePlaceholder": "כדי שהצוות יזהה אתכם",
+            "namePlaceholder": "הזינו שם כדי שהצוות יזהה אתכם",
             "askJoin": "בקשת הצטרפות",
             "submitting": "שולח...",
             "successTitle": "כמעט בפנים",
@@ -982,8 +982,8 @@
             "goToTreasury": "עבור לאוצר",
             "invalidTitle": "ההזמנה לא נמצאה",
             "invalidDescription": "קישור ההזמנה אינו תקף או שאינו זמין יותר.",
-            "usedTitle": "ההזמנה כבר נוצלה",
-            "usedDescription": "קישור ההזמנה כבר נוצל.",
+            "usedTitle": "קישור ההזמנה כבר נוצל",
+            "usedDescription": "קישורי הזמנה עובדים פעם אחת. בקשו מ-{treasury} קישור חדש.",
             "expiredTitle": "ההזמנה פגה",
             "expiredDescription": "קישור ההזמנה פג תוקף. בקשו מהצוות קישור חדש.",
             "goHome": "לדף הבית",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {אין חברים} one {# חבר} two {# חברים} many {# חברים} other {# חברים}} נבחרו",
         "remove": "הסרה",
+        "send": "שליחה",
         "edit": "עריכה",
         "requestorOnlyTooltip": "ניתן להוסיף רק את התפקיד מבקש עבור חבר זה, מכיוון שהוא אחראי ליצירת בקשות תשלום מ-NEARN.",
         "memberModal": {
-            "editRoles": "ערוך תפקידים",
+            "editRoles": "ערוך חברים",
             "addNewMember": "הוסף חבר",
             "validatingAddresses": "מאמת כתובות...",
             "reviewRequest": "סקור בקשה",
             "noChanges": "לא בוצעו שינויים בתפקידי החברים"
         },
         "previewModal": {
-            "title": "סקור את הבקשה שלך",
+            "title": "סקירת חברים",
             "youAreEditing": "אתה עורך",
             "youAreAdding": "אתה מוסיף",
             "membersCount": "{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "חברים מעודכנים",
             "newMembers": "חברים חדשים",
             "creatingProposal": "יוצר הצעה...",
-            "confirmSubmit": "אשר ושלח בקשה"
+            "confirmSubmit": "צור בקשה"
         },
         "removeDialog": {
-            "title": "הסר בקשה",
+            "title": "להסיר {count, plural, one {חבר} other {חברים}}?",
             "nearnBody": "לאחר האישור, {account} יוסר לצמיתות מהאוצר וכל ההרשאות הקשורות יבוטלו. לאחר ההסרה, חשבון זה לא יוכל עוד ליצור בקשות מ-NEARN.",
             "genericBody": "לאחר האישור, פעולה זו תסיר לצמיתות את <bold>{accounts}</bold> מהאוצר ותבטל את כל ההרשאות שהוקצו.",
             "creatingProposal": "יוצר הצעה..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "בקשת הסרת חבר נוצרה",
             "createProposalFailed": "יצירת בקשת החבר נכשלה. נסה שוב."
         },
-        "infoSection": {
-            "title": "למה להוסיף עוד חברים?",
-            "description": "הוספת חברים שומרת על הכספים שלך בטוחים ומבטיחה שארנק שאבד לא ינעל אותך מחוץ לחשבון.",
-            "readGuide": "קרא את המדריך המלא",
-            "dismiss": "סגור",
-            "strongerProtectionTitle": "הגנה חזקה יותר",
-            "strongerProtectionDescription": "בקשות דורשות יותר מאישור אחד לפני שניתן להזיז כספים.",
-            "rolesForEveryoneTitle": "תפקידים לכולם",
-            "rolesForEveryoneDescription": "כל חבר מקבל תפקיד - לבקש תשלומים, לאשר אותם או לנהל הגדרות.",
-            "neverLoseAccessTitle": "לעולם אל תאבד גישה",
-            "neverLoseAccessDescription": "אם איבדת ארנק, אפשר לשחזר גישה מגיבוי שכבר הוספת."
-        }
+        "activeMembersCount": "{count, plural, one {חבר פעיל אחד} other {# חברים פעילים}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "פיננסי",
                 "description": "פיננסי יכול להצביע על בקשות עסקה הקשורות לתשלום אך לא יכול ליצור אותן."
             }
-        }
+        },
+        "title": "בחר תפקידים"
     },
     "memberInput": {
-        "creatorYou": "יוצר (אתה)",
-        "memberAddress": "כתובת החבר",
-        "addNewMember": "הוסף חבר",
+        "addNewMember": "הוסף חבר נוסף",
         "validation": {
             "rolesRequired": "לפחות תפקיד אחד נדרש",
             "duplicateAddress": "הכתובת כבר חברה"
-        }
+        },
+        "enterAddress": "הזן כתובת",
+        "selectRole": "בחר תפקיד",
+        "memberNumber": "חבר {number}"
     },
     "recipientInput": {
         "title": "אל",
@@ -2132,6 +2124,7 @@
         "paymentsPending": "בדקו תשלומים הממתינים לאישור",
         "exchangeSettings": "הגדרו את שינוי המחיר המרבי (החלקה) שתקבלו בהחלפה.",
         "membersPending": "ראו בקשות הקשורות לחברים הממתינות לאישור",
+        "membersWantsToJoin": "ראו את החבר שרוצה להצטרף לצוות",
         "guestSaveIntro": "אתה אורח של אוצר זה. אתה יכול לראות רק את הנתונים.",
         "guestSaveAction": "ניתן לשמור את האוצר האורח הזה לרשימת האוצרות שלך.",
         "newFeatureRich": "חדש! 🎉 שמור כתובות בשימוש תדיר לתשלומים מהירים יותר וללא שגיאות. אנשי הקשר שלך נשארים פרטיים וגלויים רק לצוות שלך.",

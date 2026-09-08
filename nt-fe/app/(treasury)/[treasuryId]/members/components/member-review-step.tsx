@@ -3,11 +3,13 @@
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { useFormContext } from "react-hook-form";
-import { ButtonWithTooltip } from "@/components/button-with-tooltip";
 import { PageCard } from "@/components/card";
+import { CreateRequestButton } from "@/components/create-request-button";
 import { RoleBadge } from "@/components/role-badge";
-import { StepperHeader, type StepProps } from "@/components/step-wizard";
+import { ReviewStep, type StepProps } from "@/components/step-wizard";
 import { User } from "@/components/user";
+import { formatShortAddress } from "@/lib/format-short-address";
+import { isCompleteMember } from "@/lib/member-draft";
 import { sortRolesByOrder } from "@/lib/role-utils";
 import type { MemberFormData } from "./member-form-step";
 
@@ -21,6 +23,8 @@ interface MemberReviewStepProps extends StepProps {
         accountId: string;
         roles: string[];
     }>;
+    /** Title and back live in the page header instead of an in-page stepper. */
+    hideInnerHeader?: boolean;
 }
 
 export function MemberReviewStep({
@@ -30,31 +34,35 @@ export function MemberReviewStep({
     mode = "add",
     showJoinProfiles = false,
     existingMembers = [],
+    hideInnerHeader = false,
 }: MemberReviewStepProps) {
     const t = useTranslations("members.previewModal");
+    const tInput = useTranslations("memberInput");
     const form = useFormContext<MemberFormData>();
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const members = form.watch("members") ?? [];
     const isEditMode = mode === "edit";
 
-    const membersToShow = isEditMode
-        ? members.filter((member) => {
-              const existingMember = existingMembers.find(
-                  (m) => m.accountId === member.accountId,
-              );
-              if (!existingMember) return false;
+    const membersToShow = (
+        isEditMode
+            ? members.filter((member) => {
+                  const existingMember = existingMembers.find(
+                      (m) => m.accountId === member.accountId,
+                  );
+                  if (!existingMember) return false;
 
-              const currentRolesSorted = sortRolesByOrder([
-                  ...(member.roles ?? []),
-              ]).join(",");
-              const existingRolesSorted = sortRolesByOrder([
-                  ...existingMember.roles,
-              ]).join(",");
+                  const currentRolesSorted = sortRolesByOrder([
+                      ...(member.roles ?? []),
+                  ]).join(",");
+                  const existingRolesSorted = sortRolesByOrder([
+                      ...existingMember.roles,
+                  ]).join(",");
 
-              return currentRolesSorted !== existingRolesSorted;
-          })
-        : members;
+                  return currentRolesSorted !== existingRolesSorted;
+              })
+            : members
+    ).filter(isCompleteMember);
 
     const handleSubmit = async () => {
         setIsSubmitting(true);
@@ -66,92 +74,74 @@ export function MemberReviewStep({
     };
 
     return (
-        <PageCard className="gap-4">
-            <StepperHeader
-                title={t("title")}
-                handleBack={handleBack}
-                backDisabled={isSubmitting}
-            />
-            <div className="space-y-4">
-                <div className="text-center py-8 bg-muted/50 rounded-lg">
-                    {isEditMode ? (
-                        <>
-                            <p className="text-sm text-muted-foreground mb-2">
-                                {t("youAreEditing")}
-                            </p>
-                            <h3 className="text-3xl font-bold">
-                                {t("membersCount", {
-                                    count: membersToShow.length,
-                                })}
-                            </h3>
-                        </>
-                    ) : (
-                        <>
-                            <p className="text-sm text-muted-foreground mb-2">
-                                {t("youAreAdding")}
-                            </p>
-                            <h3 className="text-3xl font-bold">
-                                {t("newMembersCount", {
-                                    count: membersToShow.length,
-                                })}
-                            </h3>
-                        </>
-                    )}
-                </div>
+        <ReviewStep
+            reviewingTitle={t("title")}
+            handleBack={handleBack}
+            backDisabled={isSubmitting}
+            hideHeader={hideInnerHeader}
+        >
+            <PageCard className="items-center gap-1 py-8 text-center">
+                <p className="text-sm text-muted-foreground">
+                    {isEditMode ? t("youAreEditing") : t("youAreAdding")}
+                </p>
+                <h3 className="text-3xl font-bold">
+                    {isEditMode
+                        ? t("membersCount", { count: membersToShow.length })
+                        : t("newMembersCount", {
+                              count: membersToShow.length,
+                          })}
+                </h3>
+            </PageCard>
 
-                <div>
-                    <h4 className="font-semibold pb-3">
-                        {isEditMode ? t("updatedMembers") : t("newMembers")}
-                    </h4>
-                    <div className="space-y-0 rounded-lg overflow-hidden">
-                        {membersToShow.map((member, index) => (
-                            <div
-                                key={isEditMode ? member.accountId : index}
-                                className="flex items-center justify-between p-4 px-0 gap-4 border-b-2"
-                            >
-                                <div className="flex items-center gap-3 min-w-0 flex-1">
-                                    <span className="flex items-center justify-center w-8 h-8 bg-muted rounded-full text-muted-foreground text-sm font-medium shrink-0">
-                                        {index + 1}
-                                    </span>
-                                    {showJoinProfiles ? (
-                                        <User
-                                            accountId={member.accountId}
-                                            variant="details"
-                                            withLink={false}
-                                            truncateAddress={false}
+            <div className="flex flex-col">
+                {membersToShow.map((member, index) => (
+                    <div
+                        key={isEditMode ? member.accountId : index}
+                        className="flex flex-col gap-2 border-b border-general-border py-4 last:border-b-0"
+                    >
+                        <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                            {tInput("memberNumber", { number: index + 1 })}
+                        </p>
+                        <div className="flex items-center justify-between gap-4">
+                            {showJoinProfiles ? (
+                                <User
+                                    accountId={member.accountId}
+                                    variant="details"
+                                    withLink={false}
+                                    truncateAddress={false}
+                                />
+                            ) : (
+                                <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-foreground">
+                                    {formatShortAddress(member.accountId)}
+                                </span>
+                            )}
+                            <div className="flex flex-wrap justify-end gap-2">
+                                {sortRolesByOrder(member.roles ?? []).map(
+                                    (role) => (
+                                        <RoleBadge
+                                            key={role}
+                                            role={role}
+                                            variant="pill"
+                                            showTooltip={false}
                                         />
-                                    ) : (
-                                        <span className="font-medium break-all">
-                                            {member.accountId}
-                                        </span>
-                                    )}
-                                </div>
-                                <div className="flex gap-2 flex-wrap shrink-0">
-                                    {sortRolesByOrder(member.roles ?? []).map(
-                                        (role) => (
-                                            <RoleBadge
-                                                key={role}
-                                                role={role}
-                                                variant="rounded"
-                                            />
-                                        ),
-                                    )}
-                                </div>
+                                    ),
+                                )}
                             </div>
-                        ))}
+                        </div>
                     </div>
-                </div>
+                ))}
             </div>
 
-            <ButtonWithTooltip
+            <CreateRequestButton
                 type="button"
                 onClick={handleSubmit}
-                className="w-full"
+                className="h-11 w-full rounded-2xl"
                 disabled={isSubmitting || !!validationError}
-                tooltipMessage={validationError}
-            >
-                {isSubmitting ? t("creatingProposal") : t("confirmSubmit")}
-            </ButtonWithTooltip>
-        </PageCard>
+                isSubmitting={isSubmitting}
+                idleMessage={t("confirmSubmit")}
+                loadingMessage={t("creatingProposal")}
+                permissions={{ kind: "policy", action: "AddProposal" }}
+            />
+        </ReviewStep>
     );
 }

@@ -34,11 +34,13 @@ export function SelectorOptionLabels({
     secondary,
     highlightQuery,
     primaryClassName: primaryClassNameOverride,
+    secondaryClassName: secondaryClassNameOverride,
 }: {
     primary: ReactNode;
     secondary?: ReactNode | null;
     highlightQuery?: string;
     primaryClassName?: string;
+    secondaryClassName?: string;
 }) {
     return (
         <div className="min-w-0 flex-1 text-left">
@@ -46,7 +48,12 @@ export function SelectorOptionLabels({
                 <OptionLine value={primary} query={highlightQuery} />
             </div>
             {secondary ? (
-                <div className={secondaryClassName}>
+                <div
+                    className={cn(
+                        secondaryClassName,
+                        secondaryClassNameOverride,
+                    )}
+                >
                     <OptionLine value={secondary} query={highlightQuery} />
                 </div>
             ) : null}
@@ -83,6 +90,7 @@ export function SelectorOptionRow({
     secondary,
     highlightQuery,
     primaryClassName,
+    secondaryClassName,
     trailing,
     children,
     className,
@@ -96,6 +104,7 @@ export function SelectorOptionRow({
     secondary?: ReactNode | null;
     highlightQuery?: string;
     primaryClassName?: string;
+    secondaryClassName?: string;
     trailing?: ReactNode;
     children?: ReactNode;
 } & Omit<ComponentProps<typeof Button>, "variant" | "children">) {
@@ -124,6 +133,7 @@ export function SelectorOptionRow({
                     secondary={secondary}
                     highlightQuery={highlightQuery}
                     primaryClassName={primaryClassName}
+                    secondaryClassName={secondaryClassName}
                 />
             )}
             {trailing}

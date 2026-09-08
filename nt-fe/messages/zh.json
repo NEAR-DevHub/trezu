@@ -921,7 +921,6 @@
         "description": "管理团队成员与权限",
         "permissions": "权限",
         "member": "成员",
-        "activeMembers": "活跃成员",
         "noActiveMembers": "未找到活跃成员。",
         "addNewMember": "添加成员",
         "addManually": "手动添加",
@@ -945,6 +944,7 @@
             "readyDescription": "发给你想添加的人。对方会连接钱包并申请加入。",
             "onceTitle": "此链接仅限一人、一次使用",
             "onceDescription": "每位成员请重新生成。",
+            "linkTitle": "邀请链接",
             "yourLink": "你的邀请链接",
             "copyLink": "复制链接",
             "linkCopied": "已复制邀请链接",
@@ -971,7 +971,7 @@
             "askDescription": "在你能查看或批准任何内容之前，团队会先审核你的请求。",
             "walletConnected": "钱包已连接",
             "nameLabel": "你的姓名（可选）",
-            "namePlaceholder": "方便团队认出你",
+            "namePlaceholder": "输入姓名，方便团队认出你",
             "askJoin": "申请加入",
             "submitting": "提交中...",
             "successTitle": "快要加入了",
@@ -982,8 +982,8 @@
             "goToTreasury": "前往金库",
             "invalidTitle": "未找到邀请",
             "invalidDescription": "此邀请链接无效或已不可用。",
-            "usedTitle": "邀请已使用",
-            "usedDescription": "此邀请链接已被使用。",
+            "usedTitle": "此邀请链接已被使用",
+            "usedDescription": "邀请链接只能使用一次。请向 {treasury} 索取新链接。",
             "expiredTitle": "邀请已过期",
             "expiredDescription": "此邀请链接已过期。请向团队索取新链接。",
             "goHome": "返回首页",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "已选择 {count, plural, =0 {无成员} other {# 名成员}}",
         "remove": "移除",
+        "send": "发送",
         "edit": "编辑",
         "requestorOnlyTooltip": "您只能为此成员添加 Requestor 角色,因为他们负责从 NEARN 创建付款请求。",
         "memberModal": {
-            "editRoles": "编辑角色",
+            "editRoles": "编辑成员",
             "addNewMember": "添加成员",
             "validatingAddresses": "正在验证地址...",
             "reviewRequest": "审核请求",
             "noChanges": "未对成员角色进行任何更改"
         },
         "previewModal": {
-            "title": "审核您的请求",
+            "title": "审核成员",
             "youAreEditing": "您正在编辑",
             "youAreAdding": "您正在添加",
             "membersCount": "{count, plural, other {# 名成员}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "已更新成员",
             "newMembers": "新成员",
             "creatingProposal": "正在创建提案...",
-            "confirmSubmit": "确认并提交请求"
+            "confirmSubmit": "创建请求"
         },
         "removeDialog": {
-            "title": "移除请求",
+            "title": "移除{count, plural, one {成员} other {成员}}？",
             "nearnBody": "一旦获批,{account} 将从金库中被永久移除,所有相关权限也将被撤销。移除后,此账户将无法再从 NEARN 创建请求。",
             "genericBody": "一旦获批,此操作将从金库中永久移除 <bold>{accounts}</bold>,并撤销所有已分配的权限。",
             "creatingProposal": "正在创建提案..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "已创建移除成员请求",
             "createProposalFailed": "创建成员请求失败。请重试。"
         },
-        "infoSection": {
-            "title": "为什么要添加更多成员？",
-            "description": "添加更多成员可以让您的资金更安全，并确保丢失钱包时不会被锁定在账户之外。",
-            "readGuide": "阅读完整指南",
-            "dismiss": "关闭",
-            "strongerProtectionTitle": "更强保护",
-            "strongerProtectionDescription": "资金转移前，请求需要多个成员批准。",
-            "rolesForEveryoneTitle": "人人都有角色",
-            "rolesForEveryoneDescription": "每位成员都有角色 - 发起付款请求、批准请求或管理设置。",
-            "neverLoseAccessTitle": "永不失去访问权限",
-            "neverLoseAccessDescription": "如果您丢失钱包，也可以通过已添加的备份恢复访问权限。"
-        }
+        "activeMembersCount": "{count, plural, other {# 名活跃成员}}"
     },
     "settings": {
         "tabs": {
@@ -1711,16 +1701,18 @@
                 "title": "财务",
                 "description": "财务可以对付款相关的交易请求投票,但不能创建请求。"
             }
-        }
+        },
+        "title": "选择角色"
     },
     "memberInput": {
-        "creatorYou": "创建者(您)",
-        "memberAddress": "成员地址",
-        "addNewMember": "添加成员",
+        "addNewMember": "添加另一位成员",
         "validation": {
             "rolesRequired": "至少需要一个角色",
             "duplicateAddress": "地址已是成员"
-        }
+        },
+        "enterAddress": "输入地址",
+        "selectRole": "选择角色",
+        "memberNumber": "成员 {number}"
     },
     "recipientInput": {
         "title": "至",
@@ -2115,6 +2107,7 @@
         "paymentsPending": "查看等待批准的付款",
         "exchangeSettings": "设置您在交换时可接受的最大价格变动（滑点）。",
         "membersPending": "查看等待批准的成员相关请求",
+        "membersWantsToJoin": "查看想要加入团队的成员",
         "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
         "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
         "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。 您的联系人保持私密,仅对您的团队可见。",

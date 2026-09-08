@@ -1,9 +1,9 @@
 "use client";
 
+import { cva } from "class-variance-authority";
+import { useFormatRoleName } from "@/components/role-name";
 import { Tooltip } from "@/components/tooltip";
 import { useRoleDescription } from "@/lib/use-role-description";
-import { useFormatRoleName } from "@/components/role-name";
-import { cva } from "class-variance-authority";
 
 interface RoleBadgeProps {
     role: string;
@@ -12,22 +12,25 @@ interface RoleBadgeProps {
     showTooltip?: boolean;
 }
 
-const styles = cva("px-3 py-1 text-sm font-medium capitalize", {
-    variants: {
-        variant: {
-            pill: "rounded-full",
-            rounded: "rounded-md",
+const styles = cva(
+    "inline-flex items-center justify-center px-2 py-1.5 text-center text-xs font-semibold leading-[0.875rem] capitalize text-general-secondary-foreground",
+    {
+        variants: {
+            variant: {
+                pill: "rounded-md",
+                rounded: "rounded-lg",
+            },
+            style: {
+                default: "border border-general-border bg-general-bg-secondary",
+                secondary: "border border-general-border bg-card",
+            },
         },
-        style: {
-            default: "bg-muted text-foreground",
-            secondary: "bg-card text-card-foreground",
+        defaultVariants: {
+            variant: "pill",
+            style: "default",
         },
     },
-    defaultVariants: {
-        variant: "pill",
-        style: "default",
-    },
-});
+);
 
 export function RoleBadge({
     role,
