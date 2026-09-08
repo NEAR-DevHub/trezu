@@ -18,7 +18,14 @@ export default async function CreatePage() {
         : undefined;
 
     if (!inviteCodeAccepted(gate, inviteCode)) {
-        return <InviteRequired landingUrl={gate.earlyAccessUrl} />;
+        return (
+            <>
+                <NearInitializer />
+                <AuthProvider>
+                    <InviteRequired landingUrl={gate.earlyAccessUrl} />
+                </AuthProvider>
+            </>
+        );
     }
 
     return (

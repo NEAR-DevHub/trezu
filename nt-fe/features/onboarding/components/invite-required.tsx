@@ -1,8 +1,11 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { NearBusinessLogo } from "@/components/icons/near-business-logo";
 import { Button } from "@/components/button";
+import { NearBusinessLogo } from "@/components/icons/near-business-logo";
+import { useNear } from "@/stores/near-store";
+import { ConnectedAccountCard } from "./connected-account-card";
 
 /**
  * Shown on `/create` when the deployment is invite-only and the visitor holds
@@ -10,6 +13,8 @@ import { Button } from "@/components/button";
  */
 export function InviteRequired({ landingUrl }: { landingUrl: string }) {
     const t = useTranslations("inviteRequired");
+    const { accountId } = useNear();
+    const router = useRouter();
 
     return (
         <main className="flex min-h-screen flex-col items-center px-4 py-12 sm:px-8">
@@ -31,6 +36,14 @@ export function InviteRequired({ landingUrl }: { landingUrl: string }) {
                     <a href={landingUrl}>{t("cta")}</a>
                 </Button>
             </div>
+            {accountId && (
+                <div className="w-full max-w-[448px]">
+                    <ConnectedAccountCard
+                        accountId={accountId}
+                        onDisconnected={() => router.replace("/login")}
+                    />
+                </div>
+            )}
         </main>
     );
 }

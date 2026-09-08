@@ -5,7 +5,6 @@ import {
     Cancel01Icon,
     Coins01Icon,
     LoaderCircleIcon,
-    LogoutSquare01Icon,
     CheckIcon,
 } from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -28,11 +27,9 @@ import { LargeInput } from "@/components/large-input";
 import { LoadingScreen } from "@/components/loading-screen";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
 import Logo from "@/components/icons/logo";
 import { NearBusinessLogo } from "@/components/icons/near-business-logo";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
-import { useProfile } from "@/hooks/use-treasury-queries";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useWarnings } from "@/hooks/use-warnings";
 import {
@@ -45,10 +42,10 @@ import {
 } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
 import { sanitizeReturnTo } from "@/lib/auth-redirect";
-import { resolveProfileImageUrl } from "@/lib/profile-image";
 import { resolvePreferredMemberTreasuryId } from "@/lib/treasury-home";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
+import { ConnectedAccountCard } from "./connected-account-card";
 import { InviteRequired } from "./invite-required";
 
 const ACCOUNT_SUFFIX = ".sputnik-dao.near";
@@ -87,55 +84,6 @@ function toAccountHandle(treasuryName: string): string {
         .replace(/-+/g, "-")
         .replace(/^-|-$/g, "")
         .slice(0, 64);
-}
-
-const ACCOUNT_ID_MAX_DISPLAY_LENGTH = 24;
-
-/** Long account ids collapse to `abcdef...uvwxyz` so they never wrap or truncate mid-word. */
-function shortenAccountId(accountId: string) {
-    if (accountId.length < ACCOUNT_ID_MAX_DISPLAY_LENGTH) return accountId;
-
-    return `${accountId.slice(0, 6)}...${accountId.slice(-6)}`;
-}
-
-/** The connected wallet, pinned to the bottom of the onboarding column. */
-function ConnectedAccountCard({ accountId }: { accountId: string }) {
-    const t = useTranslations("signIn");
-    const { data: profile } = useProfile(accountId);
-    const { disconnect } = useNear();
-    const displayName = profile?.name;
-    const shortAccountId = shortenAccountId(accountId);
-
-    return (
-        <div className="flex items-center gap-2 rounded-2xl border border-general-border bg-card px-4 py-3">
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-                <ProfileAvatarChip
-                    imageUrl={resolveProfileImageUrl(profile?.image)}
-                    name={displayName ?? shortAccountId}
-                />
-                <div className="flex min-w-0 flex-col text-sm leading-normal">
-                    <span className="truncate font-semibold text-general-foreground">
-                        {displayName ?? shortAccountId}
-                    </span>
-                    {displayName && (
-                        <span className="truncate text-general-muted-foreground">
-                            {shortAccountId}
-                        </span>
-                    )}
-                </div>
-            </div>
-            <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="rounded-md text-general-unofficial-ghost-foreground"
-                aria-label={t("disconnect")}
-                onClick={() => disconnect()}
-            >
-                <Icon icon={LogoutSquare01Icon} />
-            </Button>
-        </div>
-    );
 }
 
 function WaitlistInner({
