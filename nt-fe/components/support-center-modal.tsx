@@ -15,7 +15,7 @@ import {
 } from "@/components/modal";
 import { LANDING_PAGE } from "@/constants/config";
 import { cn } from "@/lib/utils";
-import { NearBusinessMark } from "./icons/near-business-logo";
+import { NearBusinessLogo } from "./icons/near-business-logo";
 
 interface SupportItemProps {
     icon: ReactNode;
@@ -102,7 +102,11 @@ export function SupportCenterModal({
     const items = useMemo<SupportItemProps[]>(
         () => [
             {
-                icon: <NearBusinessMark className="size-6" />,
+                icon: (
+                    <div className="size-6 shrink-0 overflow-hidden">
+                        <NearBusinessLogo className="h-6 w-auto max-w-none" />
+                    </div>
+                ),
                 title: t("websiteTitle"),
                 description: t("websiteDescription"),
                 href: LANDING_PAGE,
