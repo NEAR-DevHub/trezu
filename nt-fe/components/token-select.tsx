@@ -17,7 +17,9 @@ import {
     type MergedToken,
     useMergedTokens,
 } from "@/hooks/use-merged-tokens";
+import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
 import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
+import { decimalFromBaseUnitsOrNull } from "@/lib/amount-format";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
 import {
@@ -36,7 +38,10 @@ import {
 import { Button } from "./button";
 import { Input } from "./input";
 import { Dialog, DialogHeader, DialogTitle, DialogTrigger } from "./modal";
-import { PaymentSelectModalContent } from "./payment-select-modal-content";
+import {
+    PaymentSelectModalContent,
+    PaymentSelectSearchRail,
+} from "./payment-select-modal-content";
 import { PopularTokenTiles } from "./popular-token-tiles";
 import { SelectListIcon } from "./select-list";
 import {
@@ -190,6 +195,7 @@ export default function TokenSelect({
         null,
     );
     const [step, setStep] = useState<"token" | "network">("token");
+    const { viewportRef, hasContentAbove } = useScrollOverflow();
     const { data: popularAssets = [] } = usePopularAssetsByActivity(
         showPopularAssets && open && step === "token",
     );
@@ -641,16 +647,18 @@ export default function TokenSelect({
                     </div>
                 </DialogHeader>
                 {step === "token" && (
-                    <div className="mt-4 flex min-h-0 flex-1 flex-col space-y-4 sm:mt-0">
-                        <Input
-                            placeholder={t("searchByName")}
-                            search
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            inputClassName={
-                                paymentSelectModalSearchInputClassName
-                            }
-                        />
+                    <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
+                        <PaymentSelectSearchRail scrolled={hasContentAbove}>
+                            <Input
+                                placeholder={t("searchByName")}
+                                search
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                inputClassName={
+                                    paymentSelectModalSearchInputClassName
+                                }
+                            />
+                        </PaymentSelectSearchRail>
                         {isLoading ? (
                             <div className="space-y-1 animate-pulse">
                                 {TOKEN_SKELETON_IDS.map((skeletonId) => (
@@ -668,6 +676,7 @@ export default function TokenSelect({
                             </div>
                         ) : (
                             <ScrollArea
+                                viewportRef={viewportRef}
                                 className={paymentSelectModalListClassName}
                             >
                                 {showPopularAssets &&
@@ -726,7 +735,11 @@ export default function TokenSelect({
                 )}
                 {step === "network" && selectedAsset && (
                     <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
-                        <ScrollArea className={paymentSelectModalListClassName}>
+                        <PaymentSelectSearchRail scrolled={hasContentAbove} />
+                        <ScrollArea
+                            viewportRef={viewportRef}
+                            className={paymentSelectModalListClassName}
+                        >
                             {(() => {
                                 const hasBalance = (item: MergedNetwork) => {
                                     if (
@@ -737,16 +750,12 @@ export default function TokenSelect({
                                         return false;
                                     }
 
-                                    try {
-                                        return !Big(
-                                            formatBalance(
-                                                item.balance,
-                                                item.decimals,
-                                            ),
-                                        ).eq(0);
-                                    } catch {
-                                        return false;
-                                    }
+                                    return (
+                                        decimalFromBaseUnitsOrNull(
+                                            item.balance,
+                                            item.decimals,
+                                        )?.gt(0) ?? false
+                                    );
                                 };
 
                                 const isComingSoon = (item: MergedNetwork) =>
@@ -832,13 +841,9 @@ export default function TokenSelect({
                                             trailing={
                                                 hasBalance(item) ? (
                                                     <SelectorOptionBalance
-                                                        primary={formatSmartAmount(
-                                                            formatBalance(
-                                                                item.balance ??
-                                                                    "0",
-                                                                item.decimals ??
-                                                                    0,
-                                                            ),
+                                                        primary={formatBalance(
+                                                            item.balance ?? "0",
+                                                            item.decimals ?? 0,
                                                         )}
                                                         secondary={`≈${formatCurrencyWithSubCent(
                                                             item.balanceUSD ||

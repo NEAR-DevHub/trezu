@@ -55,7 +55,11 @@ import {
     useBridgeScopedWarning,
     useScopedSlotWarning,
 } from "@/hooks/use-warnings";
-import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
+import {
+    decimalFromBaseUnitsOrNull,
+    decimalOrNull,
+    groupedDecimalOrNull,
+} from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent, getIntentsQuote } from "@/lib/api";
@@ -340,10 +344,10 @@ function Step2({
                         liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
                         token.decimals,
                     ) ??
-                    decimalOrNull(liveQuote.quote.amountInFormatted) ??
+                    groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
                     Big(0);
                 const quotedRecipient =
-                    decimalOrNull(liveQuote.quote.amountOutFormatted) ??
+                    groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
                     decimalFromBaseUnitsOrNull(
                         liveQuote.quote.amountOut ||
                             liveQuote.quote.minAmountOut,
@@ -1472,7 +1476,7 @@ export default function PaymentsPage() {
             <Button
                 variant="secondary"
                 size="icon"
-                className="size-10 rounded-xl bg-muted text-muted-foreground hover:bg-muted hover:text-foreground lg:h-9 lg:w-auto lg:rounded-md lg:bg-muted-foreground/10 lg:px-3 lg:text-sm lg:font-bold lg:leading-3.5 lg:text-general-secondary-foreground lg:hover:bg-muted-foreground/20"
+                className="size-10 rounded-md bg-general-bg-secondary text-muted-foreground hover:bg-general-bg-secondary/80 lg:h-9 lg:w-auto lg:px-3 lg:text-sm lg:font-bold lg:leading-3.5 lg:text-general-secondary-foreground"
                 id="payments-bulk-btn"
                 aria-label={tPay("bulkPayments")}
                 onClick={() => {

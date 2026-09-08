@@ -7,6 +7,8 @@ type OnboardingStore = {
     setLockSelectOutside: (lock: boolean) => void;
     treasurySelectorOpen: boolean;
     setTreasurySelectorOpen: (open: boolean) => void;
+    profileMenuOpen: boolean;
+    setProfileMenuOpen: (open: boolean) => void;
 };
 
 export const useOnboardingStore = create<OnboardingStore>()((set) => ({
@@ -14,4 +16,6 @@ export const useOnboardingStore = create<OnboardingStore>()((set) => ({
     setLockSelectOutside: (lock) => set({ lockSelectOutside: lock }),
     treasurySelectorOpen: false,
     setTreasurySelectorOpen: (open) => set({ treasurySelectorOpen: open }),
+    profileMenuOpen: false,
+    setProfileMenuOpen: (open) => set({ profileMenuOpen: open }),
 }));

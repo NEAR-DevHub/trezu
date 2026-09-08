@@ -58,7 +58,7 @@ Throwing (use only when input is known-valid; invalid input is a programmer erro
 Tolerant (use for **anything from chain data, decoded proposal args, quotes, or user input** — return `null` instead of throwing so a bad value degrades one field, not the whole render):
 - `decimalOrNull(value)`
 - `decimalFromBaseUnitsOrNull(raw, decimals)`
-- `legacyGroupedDecimalOrNull(value)` — read-compat for values persisted by the old en-US formatter (accepts `"1,234.56"`); use ONLY for legacy on-chain/description data, never for user or localized input.
+- `groupedDecimalOrNull(value)` — exact decimal or en-US grouped (`"1,234.56"`); use for quote `*Formatted` fields and persisted description amounts, never for user or localized input.
 
 Serializing base units for transactions/APIs: always `big.toFixed(0)`, **never** `big.toString()` — `toString()` emits `"2e+27"` exponent notation above 1e21 (Big.PE), which breaks payloads. Also guard that user input doesn't have more decimals than the token (`baseUnitsFromDecimal` does not truncate; fractional base units are invalid on-chain).
 

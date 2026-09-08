@@ -36,12 +36,12 @@ import {
     type Vote as ProposalVote,
 } from "@/lib/proposals-api";
 import { reportError } from "@/lib/report-error";
+import { clearSessionHint, markSessionHint } from "@/lib/session-hint";
 import { clearSessionQueries } from "@/lib/session-query-cleanup";
 import {
     estimateProposalStorage,
     estimateVoteStorage,
 } from "@/lib/sputnik-storage";
-import { cn } from "@/lib/utils";
 import { isUserRejection } from "@/lib/wallet-errors";
 import {
     DIRECT_TRIGGER_WALLET_IDS,
@@ -353,6 +353,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         // Handle wallet sign out - reset all auth state
         newConnector.on("wallet:signOut", () => {
+            clearSessionHint();
             set({
                 walletAccountId: null,
                 isAuthenticated: false,
@@ -439,6 +440,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             // 4. Backend verifies the authorization and opens a session.
             const loginResponse = await authLogin({ accountId, authorization });
 
+            markSessionHint();
             set({
                 walletAccountId: accountId,
                 isAuthenticated: true,
@@ -493,6 +495,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         }
 
         // Reset auth state
+        clearSessionHint();
         set({
             walletAccountId: null,
             isAuthenticated: false,
@@ -562,6 +565,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     } catch {
                         // ignore logout errors
                     }
+                    clearSessionHint();
                     set({
                         isAuthenticated: false,
                         hasAcceptedTerms: false,
@@ -571,6 +575,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     return;
                 }
 
+                markSessionHint();
                 set({
                     isAuthenticated: true,
                     hasAcceptedTerms: user.termsAccepted,
@@ -584,6 +589,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     account_id: user.accountId,
                 });
             } else {
+                clearSessionHint();
                 set({
                     isAuthenticated: false,
                     hasAcceptedTerms: false,
@@ -592,6 +598,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 });
             }
         } catch (error) {
+            clearSessionHint();
             set({
                 isAuthenticated: false,
                 hasAcceptedTerms: false,
@@ -899,12 +906,6 @@ export const useNear = () => {
                             `/${params.treasuryId}/requests?tab=InProgress`,
                         ),
                 },
-                classNames: {
-                    toast: "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4",
-                    actionButton:
-                        "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                    title: "!border-0 !p-0 !pr-0 !text-white",
-                },
             });
         }
     };
@@ -941,16 +942,6 @@ export const useNear = () => {
         toast.success(text, {
             duration: 10000,
             action: toastAction,
-            classNames: {
-                toast: toastAction
-                    ? "!grid !grid-cols-[auto_1fr] !items-start !gap-x-3 !gap-y-1 !p-4"
-                    : "!p-4",
-                actionButton: cn(
-                    !toastAction ? "!hidden" : "",
-                    "!col-start-2 !row-start-2 !m-0 !h-auto !justify-start !bg-transparent !p-0 !text-sm !font-normal !text-white hover:!bg-transparent !border-0 !shadow-none",
-                ),
-                title: "!border-0 !p-0 !pr-0 !text-white",
-            },
         });
 
         // Trigger invalidations (UI updates happen as queries refetch)

@@ -8,6 +8,7 @@ import {
     type AmountValue,
     decimalFromBaseUnitsOrNull,
     decimalOrNull,
+    groupedDecimalOrNull,
 } from "@/lib/amount-format";
 
 interface RateProps {
@@ -35,12 +36,12 @@ export function Rate({
     const amount1 = amountIn
         ? decimalFromBaseUnitsOrNull(amountIn, tokenInData?.decimals || 24)
         : amountInWithDecimals
-          ? decimalOrNull(amountInWithDecimals)
+          ? groupedDecimalOrNull(amountInWithDecimals)
           : null;
     const amount2 = amountOut
         ? decimalFromBaseUnitsOrNull(amountOut, tokenOutData?.decimals || 24)
         : amountOutWithDecimals
-          ? decimalOrNull(amountOutWithDecimals)
+          ? groupedDecimalOrNull(amountOutWithDecimals)
           : null;
 
     const cost = useMemo(() => {

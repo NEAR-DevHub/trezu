@@ -490,11 +490,13 @@ export default function PaySharePage() {
                                     }
                                 >
                                     {isConfidentialShare ? (
-                                        <img
-                                            src="/icons/near.svg"
-                                            alt=""
-                                            className="size-5 rounded-full invert"
-                                        />
+                                        <span className="size-5 shrink-0 overflow-hidden rounded-[5px]">
+                                            <img
+                                                src="/icons/near-square.svg"
+                                                alt=""
+                                                className="size-full invert"
+                                            />
+                                        </span>
                                     ) : null}
                                     {t("transfer.payWithTrezu")}
                                 </Button>
@@ -505,11 +507,13 @@ export default function PaySharePage() {
                                         className="h-11 w-full gap-2 rounded-2xl text-base font-bold leading-4 normal-case text-primary-foreground"
                                         data-testid="deposit-pay-with-nearcom"
                                     >
-                                        <img
-                                            src="/near.com.svg"
-                                            alt=""
-                                            className="size-5 rounded-full"
-                                        />
+                                        <span className="size-5 shrink-0 overflow-hidden rounded-[5px]">
+                                            <img
+                                                src="/near.com-square.svg"
+                                                alt=""
+                                                className="size-full"
+                                            />
+                                        </span>
                                         {t("transfer.payWithNearcom")}
                                     </Button>
                                 ) : null}

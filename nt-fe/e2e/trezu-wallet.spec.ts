@@ -53,7 +53,7 @@ test.describe("connect step (sign_in)", () => {
         await page.goto("/wallet?action=sign_in&network=mainnet");
 
         await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
+            page.getByRole("button", { name: "Connect wallet" }),
         ).toBeVisible({ timeout: 10_000 });
         await expect(
             page.getByRole("button", { name: "Cancel" }),
@@ -84,7 +84,7 @@ test.describe("connect step (sign_in)", () => {
         await page.goto(url);
 
         await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
+            page.getByRole("button", { name: "Connect wallet" }),
         ).toBeVisible({ timeout: 10_000 });
     });
 });
@@ -117,7 +117,7 @@ test.describe("error step", () => {
         await page.getByRole("button", { name: "Try again" }).click();
 
         await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
+            page.getByRole("button", { name: "Connect wallet" }),
         ).toBeVisible({ timeout: 5_000 });
     });
 });
@@ -134,7 +134,7 @@ test.describe("waiting-approval step", () => {
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
         );
 
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
         // Link to the proposal should be visible
@@ -143,7 +143,7 @@ test.describe("waiting-approval step", () => {
         ).toBeVisible();
         await expect(
             page.getByRole("button", {
-                name: "The Proposal is Approved. Proceed",
+                name: "The proposal is approved. Proceed",
             }),
         ).toBeVisible();
         await expect(
@@ -158,7 +158,7 @@ test.describe("waiting-approval step", () => {
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalIds.join(",")}`,
         );
 
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
         for (const id of proposalIds) {
@@ -208,12 +208,12 @@ test.describe("waiting-approval step", () => {
         await page.goto(
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
         );
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
 
         await page
-            .getByRole("button", { name: "The Proposal is Approved. Proceed" })
+            .getByRole("button", { name: "The proposal is approved. Proceed" })
             .click();
 
         await expect(page.getByText(/still pending approval/)).toBeVisible({
@@ -290,12 +290,12 @@ test.describe("waiting-approval step", () => {
         await page.goto(
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
         );
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
 
         await page
-            .getByRole("button", { name: "The Proposal is Approved. Proceed" })
+            .getByRole("button", { name: "The proposal is approved. Proceed" })
             .click();
 
         // Should transition to done step
@@ -363,12 +363,12 @@ test.describe("waiting-approval step", () => {
         await page.goto(
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
         );
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
 
         await page
-            .getByRole("button", { name: "The Proposal is Approved. Proceed" })
+            .getByRole("button", { name: "The proposal is approved. Proceed" })
             .click();
 
         // Should show "not yet indexed" message
@@ -440,7 +440,7 @@ test.describe("cancel button", () => {
         await page.goto(
             `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=1`,
         );
-        await expect(page.getByText("Proposal Submitted")).toBeVisible({
+        await expect(page.getByText("Proposal submitted")).toBeVisible({
             timeout: 10_000,
         });
 

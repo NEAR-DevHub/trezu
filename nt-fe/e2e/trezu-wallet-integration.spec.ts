@@ -343,7 +343,7 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
         const popup = await popupPromise;
 
         // Should be at the waiting-approval step immediately
-        await popup.waitForSelector("text=Proposal Submitted", {
+        await popup.waitForSelector("text=Proposal submitted", {
             timeout: 10_000,
         });
 
@@ -354,7 +354,7 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
 
         // Click "Proceed" — proposal API is mocked as Approved
         await popup.click(
-            "button:has-text('The Proposal is Approved. Proceed')",
+            "button:has-text('The proposal is approved. Proceed')",
         );
 
         // Popup shows "done" step
@@ -424,12 +424,12 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
         );
         const popup = await popupPromise;
 
-        await popup.waitForSelector("text=Proposal Submitted", {
+        await popup.waitForSelector("text=Proposal submitted", {
             timeout: 10_000,
         });
 
         await popup.click(
-            "button:has-text('The Proposal is Approved. Proceed')",
+            "button:has-text('The proposal is approved. Proceed')",
         );
 
         // Shows pending message instead of closing

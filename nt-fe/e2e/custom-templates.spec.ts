@@ -307,10 +307,10 @@ test.describe("Custom Templates — authoring", () => {
         await page.goto(`/${TREASURY_ID}/custom-templates/create`);
 
         await expect(
-            page.getByRole("heading", { name: "New Template" }),
+            page.getByRole("heading", { name: "New template" }),
         ).toBeVisible({ timeout: 15000 });
 
-        const submit = page.getByRole("button", { name: "Create Template" });
+        const submit = page.getByRole("button", { name: "Create template" });
         // Empty draft is an invalid manifest → disabled out of the gate.
         await expect(submit).toBeDisabled();
 
@@ -360,7 +360,7 @@ test.describe("Custom Templates — authoring", () => {
         // Malformed JSON — only shows once the textarea is touched (typing sets that).
         await code.fill('{ "version": 1, ');
 
-        const submit = page.getByRole("button", { name: "Create Template" });
+        const submit = page.getByRole("button", { name: "Create template" });
         await expect(submit).toBeDisabled();
         // The error list under the editor renders at least one item.
         await expect(
@@ -389,7 +389,7 @@ test.describe("Custom Templates — authoring", () => {
             .getByRole("textbox", { name: "Name", exact: true })
             .fill("Set Greeting");
 
-        await page.getByRole("button", { name: "Create Template" }).click();
+        await page.getByRole("button", { name: "Create template" }).click();
 
         await page.waitForURL(/custom-templates\/set-greeting$/, {
             timeout: 15000,
@@ -468,7 +468,7 @@ test.describe("Custom Templates — fill", () => {
         // Exact — "Greeting" (the field label) is a substring of the "Set Greeting" heading.
         await expect(page.getByText("Greeting", { exact: true })).toBeVisible();
         await expect(
-            page.getByRole("button", { name: "File Proposal" }),
+            page.getByRole("button", { name: "File proposal" }),
         ).toBeVisible();
     });
 
@@ -485,7 +485,7 @@ test.describe("Custom Templates — fill", () => {
         });
 
         await page.goto(`/${TREASURY_ID}/custom-templates/set-greeting`);
-        const submit = page.getByRole("button", { name: "File Proposal" });
+        const submit = page.getByRole("button", { name: "File proposal" });
         await expect(submit).toBeVisible({ timeout: 15000 });
 
         await submit.click();
@@ -537,7 +537,7 @@ test.describe("Custom Templates — access gates", () => {
         await page.goto(`/${TREASURY_ID}/custom-templates/create`);
         // Not bounced: the create form loads and stays on /create.
         await expect(
-            page.getByRole("heading", { name: "New Template" }),
+            page.getByRole("heading", { name: "New template" }),
         ).toBeVisible({ timeout: 15000 });
         await expect(page).toHaveURL(/custom-templates\/create$/);
     });
@@ -553,11 +553,11 @@ test.describe("Custom Templates — access gates", () => {
         });
         // Can file a request...
         await expect(
-            page.getByRole("button", { name: "Create Request" }),
+            page.getByRole("button", { name: "Create request" }),
         ).toBeEnabled();
         // ...and author: "Add New" is now enabled for a Requestor (#1046)...
         await expect(
-            page.getByRole("button", { name: "Add New" }),
+            page.getByRole("button", { name: "Add new" }),
         ).toBeEnabled();
         // ...the per-row ⋮ overflow is shown, with Edit + Pin enabled and Delete visible but
         // disabled (admin-only) — discoverable, not hidden.
@@ -588,13 +588,13 @@ test.describe("Custom Templates — access gates", () => {
         });
         // Can author (Add New enabled)...
         await expect(
-            page.getByRole("button", { name: "Add New" }),
+            page.getByRole("button", { name: "Add new" }),
         ).toBeEnabled();
         // ...but can't file a FunctionCall template → Create Request shown disabled, not hidden.
         // Assert this BEFORE opening the ⋮ menu — an open Radix menu makes the row content
         // aria-hidden, which would hide the button from the role query.
         await expect(
-            page.getByRole("button", { name: "Create Request" }),
+            page.getByRole("button", { name: "Create request" }),
         ).toBeDisabled();
         // ...and the ⋮ menu exposes the admin-only Delete, enabled.
         await page.getByRole("button", { name: "Template actions" }).click();
@@ -615,10 +615,10 @@ test.describe("Custom Templates — access gates", () => {
             timeout: 15000,
         });
         await expect(
-            page.getByRole("button", { name: "Add New" }),
+            page.getByRole("button", { name: "Add new" }),
         ).toBeEnabled();
         await expect(
-            page.getByRole("button", { name: "Create Request" }),
+            page.getByRole("button", { name: "Create request" }),
         ).toBeDisabled();
     });
 
@@ -634,10 +634,10 @@ test.describe("Custom Templates — access gates", () => {
             timeout: 15000,
         });
         await expect(
-            page.getByRole("button", { name: "Add New" }),
+            page.getByRole("button", { name: "Add new" }),
         ).toBeEnabled();
         await expect(
-            page.getByRole("button", { name: "Create Request" }),
+            page.getByRole("button", { name: "Create request" }),
         ).toBeEnabled();
         // Admin → the ⋮ Delete is live, not the disabled/tooltip variant.
         await page.getByRole("button", { name: "Template actions" }).click();

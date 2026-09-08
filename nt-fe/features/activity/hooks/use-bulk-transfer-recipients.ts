@@ -6,6 +6,7 @@ import { extractBatchPaymentRequestData } from "@/features/proposals/utils/propo
 import { useProposal } from "@/hooks/use-proposals";
 import { useBatchPayment } from "@/hooks/use-treasury-queries";
 import type { PaymentStatus, RecentActivity } from "@/lib/api";
+import { groupedDecimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import { BULK_PAYMENT_CONTRACT_ID } from "@/lib/bulk-payment-api";
 import type { Proposal } from "@/lib/proposals-api";
@@ -113,12 +114,7 @@ export function useBulkTransferRecipients(
                     // fee is the difference. Same choice as the expanded view.
                     const { recipient, amountOutFormatted } =
                         mapConfidentialBulkRecipientPayment(leg.quote_metadata);
-                    let units: Big | null = null;
-                    try {
-                        units = Big(amountOutFormatted || "0");
-                    } catch {
-                        units = null;
-                    }
+                    const units = groupedDecimalOrNull(amountOutFormatted);
                     return {
                         accountId: recipient,
                         amount: formatTokenDisplayAmount(units ?? "0"),

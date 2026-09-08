@@ -26,9 +26,12 @@ function TourSession({ children }: { children: React.ReactNode }) {
             noInViewScroll
             onStart={(tourName) => {
                 setActiveOnboardingTour(tourName);
-                // Only the dashboard tour steps into the treasury selector, so
-                // only it needs the selector held open against outside clicks.
-                setLockSelectOutside(tourName === TOUR_NAMES.DASHBOARD);
+                // Re-affirm the lock (prepareHelpSupportTour already sets it
+                // before settle, so an outside-click cannot close the menu).
+                setLockSelectOutside(
+                    tourName === TOUR_NAMES.DASHBOARD ||
+                        tourName === TOUR_NAMES.INFO_BOX_DISMISSED,
+                );
                 pushOverlay();
             }}
             onComplete={cleanup}

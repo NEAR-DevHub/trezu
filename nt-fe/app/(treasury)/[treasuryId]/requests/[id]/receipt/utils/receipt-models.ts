@@ -4,6 +4,7 @@ import {
     formatRate,
     formatTokenQuantity,
     formatUnitPrice,
+    groupedDecimalOrNull,
 } from "@/lib/amount-format";
 import type { ChainIcons, TokenMetadata } from "@/lib/api";
 import type Big from "@/lib/big";
@@ -66,11 +67,11 @@ export function buildReceiptAmountModel({
     locale?: string;
 }) {
     const sourceAmountValue =
-        decimalOrNull(quote?.amountInFormatted) ??
+        groupedDecimalOrNull(quote?.amountInFormatted) ??
         decimalOrNull(sourceToken.amountDecimal);
     const destinationAmountValue =
-        decimalOrNull(quote?.amountOutFormatted) ??
-        decimalOrNull(destinationToken.amountDecimal);
+        groupedDecimalOrNull(quote?.amountOutFormatted) ??
+        groupedDecimalOrNull(destinationToken.amountDecimal);
     const quoteSourceAmountUsd = decimalOrNull(quote?.amountInUsd);
     const quoteDestinationAmountUsd = decimalOrNull(quote?.amountOutUsd);
     // A recorded amountUsd is authoritative and suppresses the quote/historical

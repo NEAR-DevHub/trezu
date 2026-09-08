@@ -38,6 +38,11 @@ function isRequestDetailPath(pathname: string | null): boolean {
     return /\/requests\/[^/]+\/?$/.test(pathname ?? "");
 }
 
+/** Nested Bulk send flow (upload + review): back in the header, no tab bar. */
+function isBulkPaymentPath(pathname: string | null): boolean {
+    return /\/payments\/bulk-payment(?:\/|$)/.test(pathname ?? "");
+}
+
 export function TreasuryLayoutClient({
     children,
     treasuryId,
@@ -94,9 +99,9 @@ export function TreasuryLayoutClient({
                         <div className="min-h-0 flex-1 overflow-y-auto bg-general-bg-tertiary lg:rounded-3xl lg:border lg:border-gray-300 dark:lg:border-gray-700">
                             {children}
                         </div>
-                        {!isRequestDetailPath(pathname) && !isSideSheetOpen && (
-                            <MobileBottomNav />
-                        )}
+                        {!isRequestDetailPath(pathname) &&
+                            !isBulkPaymentPath(pathname) &&
+                            !isSideSheetOpen && <MobileBottomNav />}
                         <MobileMenuSheet />
                         <MobileUserSheet />
                         <MobileLanguageSheet />
