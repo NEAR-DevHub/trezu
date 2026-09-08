@@ -202,12 +202,15 @@ pub async fn get_member_invite(
         .parse()
         .map_err(|e| internal_error("Invalid dao_id on invite link", e))?;
 
-    let treasury_name = if status == InviteLinkStatus::Valid {
-        let config = fetch_treasury_config(&state, &dao_id, None).await?;
-        config.name
-    } else {
-        None
-    };
+    let treasury_name = fetch_treasury_config(&state, &dao_id, None)
+        .await
+        .ok()
+        .and_then(|config| {
+            config
+                .name
+                .map(|name| name.trim().to_string())
+                .filter(|name| !name.is_empty())
+        });
 
     let viewer_status = if let Some(user) = auth.0.as_ref() {
         Some(resolve_viewer_join_status(&state.db_pool, &dao_id, user.account_id.as_str()).await?)

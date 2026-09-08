@@ -919,7 +919,7 @@
         "description": "Manage team members and permissions",
         "permissions": "Permissions",
         "member": "Member",
-        "activeMembers": "Active Members",
+        "activeMembersCount": "{count, plural, one {# active member} other {# active members}}",
         "noActiveMembers": "No active members found.",
         "addNewMember": "Add member",
         "addManually": "Add manually",
@@ -927,6 +927,7 @@
         "wantsToJoin": "Wants to join",
         "membersSelected": "{count, plural, =0 {no members} one {# member} other {# members}} selected",
         "remove": "Remove",
+        "send": "Send",
         "edit": "Edit",
         "requestorOnlyTooltip": "You can only add the Requestor role for this member, as they are responsible for creating payment requests from NEARN.",
         "invite": {
@@ -947,6 +948,7 @@
             "readyDescription": "Send it to the person you want to add. They'll connect a wallet and ask to join.",
             "onceTitle": "This link works once, for one person",
             "onceDescription": "Generate a new one for each member.",
+            "linkTitle": "Invite link",
             "yourLink": "Your invite link",
             "copyLink": "Copy link",
             "linkCopied": "Invite link copied",
@@ -973,7 +975,7 @@
             "askDescription": "The team reviews your request before you can see or approve anything.",
             "walletConnected": "Wallet connected",
             "nameLabel": "Your name (optional)",
-            "namePlaceholder": "So the team recognize you",
+            "namePlaceholder": "Enter name, the team recognize you",
             "askJoin": "Ask to join",
             "submitting": "Submitting...",
             "successTitle": "You're almost in",
@@ -984,22 +986,22 @@
             "goToTreasury": "Go to treasury",
             "invalidTitle": "Invite not found",
             "invalidDescription": "This invite link is invalid or no longer available.",
-            "usedTitle": "Invite already used",
-            "usedDescription": "This invite link has already been used.",
+            "usedTitle": "This invite link was already used",
+            "usedDescription": "Invite links work once. Ask {treasury} to send you a new one.",
             "expiredTitle": "Invite expired",
             "expiredDescription": "This invite link has expired. Ask the team for a new one.",
             "goHome": "Go home",
             "joinFailed": "Failed to submit join request. Please try again."
         },
         "memberModal": {
-            "editRoles": "Edit roles",
+            "editRoles": "Edit members",
             "addNewMember": "Add member",
             "validatingAddresses": "Validating addresses...",
             "reviewRequest": "Review request",
             "noChanges": "No changes have been made to member roles"
         },
         "previewModal": {
-            "title": "Review your request",
+            "title": "Review members",
             "youAreEditing": "You are editing",
             "youAreAdding": "You are adding",
             "membersCount": "{count, plural, one {# member} other {# members}}",
@@ -1007,10 +1009,10 @@
             "updatedMembers": "Updated members",
             "newMembers": "New members",
             "creatingProposal": "Creating proposal...",
-            "confirmSubmit": "Confirm and submit request"
+            "confirmSubmit": "Create request"
         },
         "removeDialog": {
-            "title": "Remove request",
+            "title": "Remove {count, plural, one {member} other {members}}?",
             "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
             "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
             "creatingProposal": "Creating proposal..."
@@ -1037,18 +1039,6 @@
             "removeMembers": "Update Policy - Remove Members",
             "removeMemberSuccess": "Member removal request created successfully",
             "createProposalFailed": "Failed to create member request. Please try again."
-        },
-        "infoSection": {
-            "title": "Why add more members?",
-            "description": "Adding more members keeps your funds safe and ensures a lost wallet can't lock you out.",
-            "readGuide": "Read the full guide",
-            "dismiss": "Dismiss",
-            "strongerProtectionTitle": "Stronger protection",
-            "strongerProtectionDescription": "Requests need more than one approval before funds can move.",
-            "rolesForEveryoneTitle": "Roles for everyone",
-            "rolesForEveryoneDescription": "Each member gets a role - request payments, approve them, or manage settings.",
-            "neverLoseAccessTitle": "Never lose access",
-            "neverLoseAccessDescription": "If you lose a wallet, you can recover access from a backup you've already added."
         }
     },
     "settings": {
@@ -1711,6 +1701,7 @@
         "cannotBulkRemoveGov": "Cannot remove these members. This would leave the {roles} {count, plural, one {role, which is} other {roles, which are}} empty, required to manage team members and configure voting."
     },
     "roleSelector": {
+        "title": "Select roles",
         "setRole": "Set Role",
         "allRoles": "All Roles",
         "roles": {
@@ -1729,9 +1720,10 @@
         }
     },
     "memberInput": {
-        "creatorYou": "Creator (you)",
-        "memberAddress": "Member Address",
-        "addNewMember": "Add member",
+        "enterAddress": "Enter address",
+        "selectRole": "Select role",
+        "memberNumber": "Member {number}",
+        "addNewMember": "Add another member",
         "validation": {
             "rolesRequired": "At least one role is required",
             "duplicateAddress": "Address is already a member"

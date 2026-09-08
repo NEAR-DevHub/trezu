@@ -17,8 +17,8 @@ import { reportError } from "@/lib/report-error";
 import { encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import {
-    MemberFormStep,
     type MemberFormData,
+    MemberFormStep,
 } from "../components/member-form-step";
 import { MemberReviewStep } from "../components/member-review-step";
 import { useDisabledMemberRoles } from "../hooks/use-disabled-member-roles";
@@ -26,7 +26,6 @@ import { useMemberPolicyGate } from "../hooks/use-member-policy-gate";
 import { applyMemberRolesToPolicy } from "../utils/policy-helpers";
 
 export default function EditMemberPage() {
-    const t = useTranslations("pages.members");
     const tMembers = useTranslations("members");
     const tMemberValidation = useTranslations("memberValidation");
     const { treasuryId } = useTreasury();
@@ -145,10 +144,6 @@ export default function EditMemberPage() {
         });
     }, [originalMembers, form]);
 
-    const exitToMembers = useCallback(() => {
-        router.push(`/${treasuryId}/members`);
-    }, [router, treasuryId]);
-
     const membersInForm = form.watch("members") || [];
     const getDisabledRoles = useDisabledMemberRoles(
         membersInForm,
@@ -249,7 +244,7 @@ export default function EditMemberPage() {
                         ? tMemberValidation("pendingRequest")
                         : undefined,
                     onReviewRequest: handleReviewRequest,
-                    onExit: exitToMembers,
+                    hideInnerHeader: true,
                 },
             },
             {
@@ -268,19 +263,28 @@ export default function EditMemberPage() {
             hasPendingMemberRequest,
             tMemberValidation,
             handleReviewRequest,
-            exitToMembers,
             handleSubmit,
             existingMembers,
         ],
     );
 
+    const isReview = step === 1;
+
     return (
         <PageComponentLayout
-            title={t("title")}
-            description={t("description")}
-            hideHeaderOnMobile
+            title={tMembers("memberModal.editRoles")}
+            backButton={
+                isReview
+                    ? undefined
+                    : treasuryId
+                      ? `/${treasuryId}/members`
+                      : true
+            }
+            hideMobileShellControls
+            hideTitle={isReview}
+            reserveHeaderSpace
         >
-            <div className="max-w-xl mx-auto w-full">
+            <div className="mx-auto w-full max-w-lg">
                 <FormProvider {...form}>
                     {!membersReady ? (
                         <PageCard>

@@ -3,10 +3,10 @@
 import { useTranslations } from "next-intl";
 import { useFormContext } from "react-hook-form";
 import { ButtonWithTooltip } from "@/components/button-with-tooltip";
-import { PageCard } from "@/components/card";
 import { MemberInput } from "@/components/member-input";
 import { useFormatRoleName } from "@/components/role-name";
 import { type StepProps, StepperHeader } from "@/components/step-wizard";
+import { canReviewMembers } from "@/lib/member-draft";
 import { sortRolesByOrder } from "@/lib/role-utils";
 import { useRoleDescription } from "@/lib/use-role-description";
 import type { RolePermission } from "@/types/policy";
@@ -34,6 +34,8 @@ interface MemberFormStepProps extends StepProps {
     onReviewRequest: () => void | Promise<void>;
     /** When set, back leaves the page flow instead of previous wizard step */
     onExit?: () => void;
+    /** Title and back live in the page header instead of an in-page stepper. */
+    hideInnerHeader?: boolean;
 }
 
 export function MemberFormStep({
@@ -46,6 +48,7 @@ export function MemberFormStep({
     getDisabledRoles,
     onReviewRequest,
     onExit,
+    hideInnerHeader = false,
 }: MemberFormStepProps) {
     const t = useTranslations("members.memberModal");
     const form = useFormContext<MemberFormData>();
@@ -57,12 +60,12 @@ export function MemberFormStep({
         ? t("validatingAddresses")
         : t("reviewRequest");
 
+    const members = form.watch("members") ?? [];
+
     const hasChanges = (() => {
         if (!isEditMode || !originalMembers) return true;
 
-        const currentMembers = form.watch("members");
-
-        return currentMembers.some((currentMember) => {
+        return members.some((currentMember) => {
             const originalMember = originalMembers.find(
                 (m) => m.accountId === currentMember.accountId,
             );
@@ -91,9 +94,18 @@ export function MemberFormStep({
         return sortedNames.map((name) => mapped.find((r) => r.id === name)!);
     })();
 
+    const canReview = isEditMode
+        ? form.formState.isValid && hasChanges
+        : canReviewMembers(members) && form.formState.isValid;
+
     return (
-        <PageCard className="gap-4">
-            <StepperHeader title={title} handleBack={onExit ?? handleBack} />
+        <div className="flex flex-col gap-6">
+            {hideInnerHeader ? null : (
+                <StepperHeader
+                    title={title}
+                    handleBack={onExit ?? handleBack}
+                />
+            )}
             <MemberInput
                 control={form.control}
                 name="members"
@@ -107,12 +119,9 @@ export function MemberFormStep({
                     void onReviewRequest();
                 }}
                 disabled={
-                    !form.formState.isValid ||
-                    isValidatingAddresses ||
-                    !!validationError ||
-                    (isEditMode && !hasChanges)
+                    !canReview || isValidatingAddresses || !!validationError
                 }
-                className="w-full"
+                className="h-11 w-full rounded-2xl"
                 tooltipMessage={
                     validationError ||
                     (isEditMode && !hasChanges ? t("noChanges") : undefined)
@@ -120,6 +129,6 @@ export function MemberFormStep({
             >
                 {buttonText}
             </ButtonWithTooltip>
-        </PageCard>
+        </div>
     );
 }

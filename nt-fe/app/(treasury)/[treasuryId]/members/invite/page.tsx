@@ -2,31 +2,79 @@
 
 import { Icon } from "@/components/icon";
 import {
-    CheckmarkSquare01Icon,
     InformationCircleIcon,
-    Link01Icon,
-    LoaderCircleIcon,
-    Refresh01Icon,
+    LinkIcon,
+    ReloadIcon,
+    VoteIcon,
     CheckIcon,
     UserAdd01Icon,
 } from "@hugeicons/core-free-icons";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { useCallback, useEffect, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CopyButton } from "@/components/copy-button";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import { StepperHeader } from "@/components/step-wizard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCreateMemberInvite } from "@/hooks/use-member-invites";
 import { useTreasury } from "@/hooks/use-treasury";
 import { reportError } from "@/lib/report-error";
+import { cn } from "@/lib/utils";
 import { useMemberPolicyGate } from "../hooks/use-member-policy-gate";
 
+function displayInviteUrl(url: string): string {
+    return url.replace(/^https?:\/\//, "");
+}
+
+function InviteTimeline({
+    items,
+}: {
+    items: Array<{
+        title: string;
+        description: string;
+        icon: ReactNode;
+        iconClassName: string;
+    }>;
+}) {
+    return (
+        <div className="flex flex-col">
+            {items.map((item, index) => {
+                const isLast = index === items.length - 1;
+                return (
+                    <div key={item.title} className="flex items-start gap-4">
+                        <div className="flex w-10 shrink-0 flex-col items-center self-stretch">
+                            <div
+                                className={cn(
+                                    "flex size-10 shrink-0 items-center justify-center rounded-full",
+                                    item.iconClassName,
+                                )}
+                            >
+                                {item.icon}
+                            </div>
+                            {isLast ? null : (
+                                <div className="my-1 w-px flex-1 bg-general-border" />
+                            )}
+                        </div>
+                        <div
+                            className={cn("min-w-0 flex-1", !isLast && "pb-6")}
+                        >
+                            <p className="text-base font-semibold leading-[1.2] text-general-foreground">
+                                {item.title}
+                            </p>
+                            <p className="mt-1 text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                {item.description}
+                            </p>
+                        </div>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
 export default function InviteMemberPage() {
-    const t = useTranslations("pages.members");
     const tInvite = useTranslations("members.invite");
     const { treasuryId } = useTreasury();
     const router = useRouter();
@@ -44,11 +92,13 @@ export default function InviteMemberPage() {
         }
     }, [isLoadingPolicy, canAddMember, router, treasuryId]);
 
-    const exitToMembers = useCallback(() => {
-        router.push(`/${treasuryId}/members`);
-    }, [router, treasuryId]);
+    const isGenerating = createInvite.isPending;
+    const showLinkStep = step === 1 || isGenerating;
 
     const handleGenerate = useCallback(async () => {
+        const isFirstGenerate = !inviteUrl;
+        if (isFirstGenerate) setStep(1);
+
         try {
             const result = await createInvite.mutateAsync();
             setInviteUrl(result.url);
@@ -56,172 +106,128 @@ export default function InviteMemberPage() {
         } catch (error) {
             reportError(error, "Failed to create invite");
             toast.error(tInvite("generateFailed"));
+            if (isFirstGenerate) setStep(0);
         }
-    }, [createInvite, tInvite]);
+    }, [createInvite, inviteUrl, tInvite]);
 
     const howItWorks = [
         {
-            icon: <Icon icon={Link01Icon} className="text-base" />,
+            icon: <Icon icon={LinkIcon} className="size-5 rotate-130" />,
+            iconClassName: "bg-muted text-general-secondary-foreground",
             title: tInvite("howItWorks.generateTitle"),
             description: tInvite("howItWorks.generateDescription"),
         },
         {
-            icon: <Icon icon={UserAdd01Icon} className="text-base" />,
+            icon: <Icon icon={UserAdd01Icon} className="size-5" />,
+            iconClassName: "bg-muted text-general-secondary-foreground",
             title: tInvite("howItWorks.joinTitle"),
             description: tInvite("howItWorks.joinDescription"),
         },
         {
-            icon: <Icon icon={CheckmarkSquare01Icon} className="text-base" />,
+            icon: <Icon icon={VoteIcon} className="size-5" />,
+            iconClassName: "bg-muted text-general-secondary-foreground",
             title: tInvite("howItWorks.voteTitle"),
             description: tInvite("howItWorks.voteDescription"),
         },
     ];
 
-    const isGenerating = createInvite.isPending;
+    const readyItems = [
+        {
+            icon: <Icon icon={CheckIcon} className="size-5 text-emerald-600" />,
+            iconClassName: "bg-emerald-500/15",
+            title: tInvite("readyTitle"),
+            description: tInvite("readyDescription"),
+        },
+        {
+            icon: (
+                <Icon
+                    icon={InformationCircleIcon}
+                    className="size-5 text-general-info-foreground"
+                />
+            ),
+            iconClassName:
+                "border border-general-info-border bg-general-info-background-faded",
+            title: tInvite("onceTitle"),
+            description: tInvite("onceDescription"),
+        },
+    ];
 
     return (
         <PageComponentLayout
-            title={t("title")}
-            description={t("description")}
-            hideHeaderOnMobile
+            title={tInvite("title")}
+            backButton={treasuryId ? `/${treasuryId}/members` : true}
+            hideMobileShellControls
+            reserveHeaderSpace
         >
-            <div className="max-w-xl mx-auto w-full">
-                <PageCard>
-                    <StepperHeader
-                        title={tInvite("title")}
-                        handleBack={
-                            step === 0 ? exitToMembers : () => setStep(0)
-                        }
-                    />
-                    {step === 0 ? (
-                        <>
-                            <div className="space-y-4">
-                                <p className="text-sm text-muted-foreground">
-                                    {tInvite("howItWorks.title")}
-                                </p>
-                                <div className="space-y-6">
-                                    {howItWorks.map((item) => {
-                                        return (
-                                            <div
-                                                key={item.title}
-                                                className="flex items-start gap-4"
-                                            >
-                                                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted">
-                                                    {item.icon}
-                                                </div>
-                                                <div className="space-y-0.5">
-                                                    <p className="text-sm font-medium">
-                                                        {item.title}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {item.description}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                className="w-full mt-3"
-                                onClick={() => void handleGenerate()}
-                                disabled={isGenerating}
-                            >
-                                {isGenerating
-                                    ? tInvite("generating")
-                                    : tInvite("generateLink")}
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <div className="space-y-6">
-                                <div className="flex items-start gap-3">
-                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-emerald-500/15">
-                                        <Icon
-                                            icon={CheckIcon}
-                                            className="text-emerald-600"
-                                        />
-                                    </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-sm font-medium">
-                                            {tInvite("readyTitle")}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {tInvite("readyDescription")}
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-sky-500/15">
-                                        <Icon
-                                            icon={InformationCircleIcon}
-                                            className="text-sky-600"
-                                        />
-                                    </div>
-                                    <div className="space-y-0.5">
-                                        <p className="text-sm font-medium">
-                                            {tInvite("onceTitle")}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {tInvite("onceDescription")}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+            <div className="mx-auto flex w-full max-w-lg flex-col gap-4">
+                <h2 className="text-base font-semibold">
+                    {showLinkStep
+                        ? tInvite("linkTitle")
+                        : tInvite("howItWorks.title")}
+                </h2>
 
-                            <div className="space-y-2">
-                                <p className="text-sm text-muted-foreground">
-                                    {tInvite("yourLink")}
-                                </p>
-                                {isGenerating ? (
-                                    <Skeleton className="h-11 w-full rounded-lg" />
+                {isLoadingPolicy ? (
+                    <PageCard>
+                        <div className="h-40 animate-pulse rounded-lg bg-general-unofficial-accent-0" />
+                    </PageCard>
+                ) : showLinkStep ? (
+                    <>
+                        <PageCard className="gap-6 p-5">
+                            <InviteTimeline items={readyItems} />
+                            <div className="flex min-w-0 items-center gap-3 rounded-2xl border border-general-border bg-general-bg-tertiary px-3 py-2">
+                                <Icon
+                                    icon={LinkIcon}
+                                    className="size-5 shrink-0 rotate-130 text-general-secondary-foreground"
+                                />
+                                {isGenerating || !inviteUrl ? (
+                                    <Skeleton className="h-5 min-w-0 flex-1 rounded-md" />
                                 ) : (
-                                    <div className="flex min-w-0 items-center gap-2 overflow-hidden rounded-lg bg-secondary p-2 pl-3">
-                                        <Icon
-                                            icon={Link01Icon}
-                                            className="shrink-0 text-base"
-                                        />
+                                    <>
                                         <input
                                             type="text"
                                             readOnly
-                                            value={inviteUrl ?? ""}
-                                            aria-label={tInvite("yourLink")}
+                                            value={displayInviteUrl(inviteUrl)}
+                                            aria-label={tInvite("linkTitle")}
                                             className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-sm font-medium text-foreground outline-none select-all"
                                         />
                                         <CopyButton
-                                            text={inviteUrl || ""}
-                                            size="default"
-                                            disabled={!inviteUrl}
-                                        >
-                                            {tInvite("copyLink")}
-                                        </CopyButton>
-                                    </div>
+                                            text={inviteUrl}
+                                            size="icon"
+                                            aria-label={tInvite("copyLink")}
+                                            className="size-9 shrink-0 rounded-lg"
+                                        />
+                                    </>
                                 )}
                             </div>
-
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full"
-                                onClick={() => void handleGenerate()}
-                                disabled={isGenerating}
-                            >
-                                {isGenerating ? (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                ) : (
-                                    <Icon icon={Refresh01Icon} />
-                                )}
-                                {isGenerating
-                                    ? tInvite("generatingNewLink")
-                                    : tInvite("generateNewLink")}
-                            </Button>
-                        </>
-                    )}
-                </PageCard>
+                        </PageCard>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="self-center font-semibold text-foreground"
+                            onClick={() => void handleGenerate()}
+                            disabled={isGenerating}
+                        >
+                            <Icon icon={ReloadIcon} />
+                            {isGenerating
+                                ? tInvite("generatingNewLink")
+                                : tInvite("generateNewLink")}
+                        </Button>
+                    </>
+                ) : (
+                    <>
+                        <PageCard className="gap-6 p-5">
+                            <InviteTimeline items={howItWorks} />
+                        </PageCard>
+                        <Button
+                            type="button"
+                            className="h-11 w-full rounded-2xl"
+                            onClick={() => void handleGenerate()}
+                            disabled={isGenerating}
+                        >
+                            {tInvite("generateLink")}
+                        </Button>
+                    </>
+                )}
             </div>
         </PageComponentLayout>
     );

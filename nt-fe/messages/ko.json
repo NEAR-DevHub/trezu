@@ -921,7 +921,6 @@
         "description": "팀 멤버 및 권한 관리",
         "permissions": "권한",
         "member": "멤버",
-        "activeMembers": "활성 멤버",
         "noActiveMembers": "활성 멤버를 찾을 수 없습니다.",
         "addNewMember": "멤버 추가",
         "addManually": "수동으로 추가",
@@ -945,6 +944,7 @@
             "readyDescription": "추가하려는 사람에게 보내세요. 지갑을 연결하고 가입을 요청합니다.",
             "onceTitle": "이 링크는 한 사람, 한 번만 사용할 수 있습니다",
             "onceDescription": "멤버마다 새 링크를 만드세요.",
+            "linkTitle": "초대 링크",
             "yourLink": "초대 링크",
             "copyLink": "링크 복사",
             "linkCopied": "초대 링크가 복사되었습니다",
@@ -971,7 +971,7 @@
             "askDescription": "무엇을 보거나 승인하기 전에 팀이 요청을 검토합니다.",
             "walletConnected": "지갑 연결됨",
             "nameLabel": "이름 (선택)",
-            "namePlaceholder": "팀이 당신을 알아볼 수 있도록",
+            "namePlaceholder": "팀이 알아볼 수 있도록 이름을 입력하세요",
             "askJoin": "가입 요청",
             "submitting": "제출 중...",
             "successTitle": "거의 다 왔습니다",
@@ -982,8 +982,8 @@
             "goToTreasury": "트레저리로 이동",
             "invalidTitle": "초대를 찾을 수 없음",
             "invalidDescription": "이 초대 링크는 유효하지 않거나 더 이상 사용할 수 없습니다.",
-            "usedTitle": "이미 사용된 초대",
-            "usedDescription": "이 초대 링크는 이미 사용되었습니다.",
+            "usedTitle": "이 초대 링크는 이미 사용되었습니다",
+            "usedDescription": "초대 링크는 한 번만 사용할 수 있습니다. {treasury}에 새 링크를 요청하세요.",
             "expiredTitle": "만료된 초대",
             "expiredDescription": "이 초대 링크가 만료되었습니다. 팀에 새 링크를 요청하세요.",
             "goHome": "홈으로",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {멤버 없음} other {멤버 #명}} 선택됨",
         "remove": "제거",
+        "send": "보내기",
         "edit": "편집",
         "requestorOnlyTooltip": "이 멤버는 NEARN에서 결제 요청을 생성하는 역할을 담당하므로 Requestor 역할만 추가할 수 있습니다.",
         "memberModal": {
-            "editRoles": "역할 편집",
+            "editRoles": "멤버 편집",
             "addNewMember": "멤버 추가",
             "validatingAddresses": "주소 검증 중...",
             "reviewRequest": "요청 검토",
             "noChanges": "멤버 역할에 변경 사항이 없습니다"
         },
         "previewModal": {
-            "title": "요청 검토",
+            "title": "멤버 검토",
             "youAreEditing": "편집 중",
             "youAreAdding": "추가 중",
             "membersCount": "{count, plural, other {멤버 #명}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "업데이트된 멤버",
             "newMembers": "신규 멤버",
             "creatingProposal": "제안 생성 중...",
-            "confirmSubmit": "확인 및 요청 제출"
+            "confirmSubmit": "요청 만들기"
         },
         "removeDialog": {
-            "title": "요청 제거",
+            "title": "{count, plural, one {멤버} other {멤버}}를 제거할까요?",
             "nearnBody": "승인되면 {account}이(가) 트레저리에서 영구적으로 제거되고 모든 관련 권한이 취소됩니다. 제거 후에는 이 계정이 더 이상 NEARN에서 요청을 생성할 수 없습니다.",
             "genericBody": "승인되면 이 작업은 트레저리에서 <bold>{accounts}</bold>을(를) 영구적으로 제거하고 할당된 모든 권한을 취소합니다.",
             "creatingProposal": "제안 생성 중..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "멤버 제거 요청이 성공적으로 생성되었습니다",
             "createProposalFailed": "멤버 요청 생성에 실패했습니다. 다시 시도해 주세요."
         },
-        "infoSection": {
-            "title": "왜 멤버를 더 추가해야 하나요?",
-            "description": "멤버를 더 추가하면 자금을 안전하게 보호하고 지갑을 잃어도 접근이 막히지 않습니다.",
-            "readGuide": "전체 가이드 읽기",
-            "dismiss": "닫기",
-            "strongerProtectionTitle": "더 강력한 보호",
-            "strongerProtectionDescription": "자금 이동 전 요청에는 두 명 이상 승인이 필요합니다.",
-            "rolesForEveryoneTitle": "모두를 위한 역할",
-            "rolesForEveryoneDescription": "각 멤버는 역할을 가집니다 - 결제 요청, 승인 또는 설정 관리.",
-            "neverLoseAccessTitle": "접근 권한을 잃지 마세요",
-            "neverLoseAccessDescription": "지갑을 잃어도 미리 추가한 백업으로 접근 권한을 복구할 수 있습니다."
-        }
+        "activeMembersCount": "{count, plural, other {활성 멤버 #명}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Financial",
                 "description": "Financial은 결제 관련 트랜잭션 요청에 투표할 수 있지만 생성할 수는 없습니다."
             }
-        }
+        },
+        "title": "역할 선택"
     },
     "memberInput": {
-        "creatorYou": "생성자 (본인)",
-        "memberAddress": "멤버 주소",
-        "addNewMember": "멤버 추가",
+        "addNewMember": "다른 멤버 추가",
         "validation": {
             "rolesRequired": "최소 하나의 역할이 필요합니다",
             "duplicateAddress": "주소가 이미 멤버입니다"
-        }
+        },
+        "enterAddress": "주소 입력",
+        "selectRole": "역할 선택",
+        "memberNumber": "멤버 {number}"
     },
     "recipientInput": {
         "title": "받는 사람",

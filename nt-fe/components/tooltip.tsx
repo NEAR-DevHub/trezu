@@ -69,6 +69,7 @@ function Tooltip({
                 <PopoverTrigger asChild>{children}</PopoverTrigger>
                 <PopoverContent
                     side={side}
+                    collisionPadding={16}
                     className={cn(
                         "w-auto max-w-56 p-2 text-xs",
                         tooltipSurfaceClass,

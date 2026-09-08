@@ -210,8 +210,7 @@ export function PageComponentLayout({
                 "flex h-full flex-col sm:gap-0",
                 !hasSidebarRail && !fitViewport && "min-h-dvh",
                 hasSidebarRail && !fitViewport && "min-h-0 overflow-hidden",
-                hideMobileShellControls &&
-                    (hideTitle ? "gap-3 px-2 lg:gap-6" : "gap-6 px-2"),
+                hideMobileShellControls && "gap-6",
                 fitViewport && "h-dvh overflow-y-auto",
                 // A see-through header would otherwise expose the body colour
                 // as a band above the page surface.
@@ -222,7 +221,8 @@ export function PageComponentLayout({
             {!hideHeader && (
                 <header
                     className={cn(
-                        "flex shrink-0 px-3 md:px-6",
+                        "flex shrink-0",
+                        stackedInnerHeader ? "px-4 md:px-6" : "px-3 md:px-6",
                         stackedInnerHeader
                             ? "flex-col items-stretch gap-3 pt-[max(0.5rem,env(safe-area-inset-top))] lg:flex-row lg:items-center lg:justify-between lg:min-h-16 lg:gap-4 lg:pt-0"
                             : "items-center min-h-16 justify-between",

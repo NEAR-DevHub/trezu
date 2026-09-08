@@ -921,7 +921,6 @@
         "description": "Ekip üyelerini ve izinleri yönetin",
         "permissions": "İzinler",
         "member": "Üye",
-        "activeMembers": "Aktif Üyeler",
         "noActiveMembers": "Aktif üye bulunamadı.",
         "addNewMember": "Üye Ekle",
         "addManually": "Manuel ekle",
@@ -945,6 +944,7 @@
             "readyDescription": "Eklemek istediğiniz kişiye gönderin. Cüzdan bağlayıp katılmak isteyecekler.",
             "onceTitle": "Bu bağlantı bir kez, bir kişi için geçerlidir",
             "onceDescription": "Her üye için yeni bir tane oluşturun.",
+            "linkTitle": "Davet bağlantısı",
             "yourLink": "Davet bağlantınız",
             "copyLink": "Bağlantıyı kopyala",
             "linkCopied": "Davet bağlantısı kopyalandı",
@@ -971,7 +971,7 @@
             "askDescription": "Bir şey görebilmeniz veya onaylayabilmenizden önce ekip talebinizi inceler.",
             "walletConnected": "Cüzdan bağlandı",
             "nameLabel": "Adınız (isteğe bağlı)",
-            "namePlaceholder": "Ekibin sizi tanıması için",
+            "namePlaceholder": "Ekibin sizi tanıması için ad girin",
             "askJoin": "Katılma isteği",
             "submitting": "Gönderiliyor...",
             "successTitle": "Neredeyse katıldınız",
@@ -982,8 +982,8 @@
             "goToTreasury": "Treasury’ye git",
             "invalidTitle": "Davet bulunamadı",
             "invalidDescription": "Bu davet bağlantısı geçersiz veya artık kullanılamıyor.",
-            "usedTitle": "Davet zaten kullanıldı",
-            "usedDescription": "Bu davet bağlantısı zaten kullanıldı.",
+            "usedTitle": "Bu davet bağlantısı zaten kullanıldı",
+            "usedDescription": "Davet bağlantıları bir kez kullanılır. {treasury} adresinden yeni bir tane isteyin.",
             "expiredTitle": "Davetin süresi doldu",
             "expiredDescription": "Bu davet bağlantısının süresi doldu. Ekipten yeni bir tane isteyin.",
             "goHome": "Ana sayfaya git",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {üye yok} one {# üye} other {# üye}} seçildi",
         "remove": "Kaldır",
+        "send": "Gönder",
         "edit": "Düzenle",
         "requestorOnlyTooltip": "Bu üye için yalnızca Talep Eden rolünü ekleyebilirsiniz, çünkü NEARN'den ödeme talepleri oluşturmaktan sorumludurlar.",
         "memberModal": {
-            "editRoles": "Rolleri Düzenle",
+            "editRoles": "Üyeleri Düzenle",
             "addNewMember": "Üye Ekle",
             "validatingAddresses": "Adresler doğrulanıyor...",
             "reviewRequest": "Talebi İncele",
             "noChanges": "Üye rollerinde herhangi bir değişiklik yapılmadı"
         },
         "previewModal": {
-            "title": "Talebinizi İnceleyin",
+            "title": "Üyeleri incele",
             "youAreEditing": "Düzenliyorsunuz",
             "youAreAdding": "Ekliyorsunuz",
             "membersCount": "{count, plural, one {# üye} other {# üye}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Güncellenmiş Üyeler",
             "newMembers": "Yeni Üyeler",
             "creatingProposal": "Öneri Oluşturuluyor...",
-            "confirmSubmit": "Onayla ve Talebi Gönder"
+            "confirmSubmit": "Talep oluştur"
         },
         "removeDialog": {
-            "title": "Talebi Kaldır",
+            "title": "{count, plural, one {Üye} other {Üyeler}} kaldırılsın mı?",
             "nearnBody": "Onaylandıktan sonra, {account} hazineden kalıcı olarak kaldırılacak ve ilgili tüm izinler iptal edilecek. Kaldırıldıktan sonra, bu hesap NEARN'den artık talep oluşturamayacak.",
             "genericBody": "Onaylandıktan sonra, bu işlem <bold>{accounts}</bold> üyesini hazineden kalıcı olarak kaldıracak ve atanan tüm izinleri iptal edecek.",
             "creatingProposal": "Öneri Oluşturuluyor..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu",
             "createProposalFailed": "Üye talebi oluşturulamadı. Lütfen tekrar deneyin."
         },
-        "infoSection": {
-            "title": "Neden daha fazla üye eklemelisiniz?",
-            "description": "Daha fazla üye eklemek fonlarınızı güvende tutar ve kaybolan bir cüzdanın erişiminizi kilitlemesini önler.",
-            "readGuide": "Tam rehberi oku",
-            "dismiss": "Kapat",
-            "strongerProtectionTitle": "Daha güçlü koruma",
-            "strongerProtectionDescription": "Fonlar hareket etmeden önce isteklerin birden fazla onay alması gerekir.",
-            "rolesForEveryoneTitle": "Herkes için roller",
-            "rolesForEveryoneDescription": "Her üyeye bir rol verilir - ödeme talep etme, onaylama veya ayarları yönetme.",
-            "neverLoseAccessTitle": "Erişimi asla kaybetmeyin",
-            "neverLoseAccessDescription": "Bir cüzdanı kaybederseniz, daha önce eklediğiniz yedekten erişimi geri alabilirsiniz."
-        }
+        "activeMembersCount": "{count, plural, one {# aktif üye} other {# aktif üye}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Finansal",
                 "description": "Finansal, ödemeyle ilgili işlem talepleri üzerinde oy kullanabilir ancak bunları oluşturamaz."
             }
-        }
+        },
+        "title": "Rolleri seçin"
     },
     "memberInput": {
-        "creatorYou": "Oluşturan (siz)",
-        "memberAddress": "Üye Adresi",
-        "addNewMember": "Üye Ekle",
+        "addNewMember": "Başka üye ekle",
         "validation": {
             "rolesRequired": "En az bir rol gereklidir",
             "duplicateAddress": "Adres zaten bir üye"
-        }
+        },
+        "enterAddress": "Adres girin",
+        "selectRole": "Rol seçin",
+        "memberNumber": "Üye {number}"
     },
     "recipientInput": {
         "title": "Kime",

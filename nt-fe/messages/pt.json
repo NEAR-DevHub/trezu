@@ -921,7 +921,6 @@
         "description": "Gerencie membros da equipe e permissões",
         "permissions": "Permissões",
         "member": "Membro",
-        "activeMembers": "Membros ativos",
         "noActiveMembers": "Nenhum membro ativo encontrado.",
         "addNewMember": "Adicionar membro",
         "addManually": "Adicionar manualmente",
@@ -945,6 +944,7 @@
             "readyDescription": "Envie para a pessoa que deseja adicionar. Ela conectará uma carteira e pedirá para entrar.",
             "onceTitle": "Este link funciona uma vez, para uma pessoa",
             "onceDescription": "Gere um novo para cada membro.",
+            "linkTitle": "Link de convite",
             "yourLink": "Seu link de convite",
             "copyLink": "Copiar link",
             "linkCopied": "Link de convite copiado",
@@ -971,7 +971,7 @@
             "askDescription": "A equipe analisa sua solicitação antes que você possa ver ou aprovar qualquer coisa.",
             "walletConnected": "Carteira conectada",
             "nameLabel": "Seu nome (opcional)",
-            "namePlaceholder": "Para a equipe reconhecer você",
+            "namePlaceholder": "Digite um nome para a equipe reconhecer você",
             "askJoin": "Pedir entrada",
             "submitting": "Enviando...",
             "successTitle": "Você quase entrou",
@@ -982,8 +982,8 @@
             "goToTreasury": "Ir para o treasury",
             "invalidTitle": "Convite não encontrado",
             "invalidDescription": "Este link de convite é inválido ou não está mais disponível.",
-            "usedTitle": "Convite já usado",
-            "usedDescription": "Este link de convite já foi usado.",
+            "usedTitle": "Este link de convite já foi usado",
+            "usedDescription": "Os links de convite funcionam uma vez. Peça a {treasury} um novo.",
             "expiredTitle": "Convite expirado",
             "expiredDescription": "Este link de convite expirou. Peça um novo à equipe.",
             "goHome": "Ir para o início",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {nenhum membro} one {# membro} other {# membros}} selecionado",
         "remove": "Remover",
+        "send": "Enviar",
         "edit": "Editar",
         "requestorOnlyTooltip": "Você só pode adicionar a função de Solicitante para este membro, pois ele é responsável por criar solicitações de pagamento a partir do NEARN.",
         "memberModal": {
-            "editRoles": "Editar funções",
+            "editRoles": "Editar membros",
             "addNewMember": "Adicionar membro",
             "validatingAddresses": "Validando endereços...",
             "reviewRequest": "Revisar solicitação",
             "noChanges": "Nenhuma alteração foi feita nas funções dos membros"
         },
         "previewModal": {
-            "title": "Revise sua solicitação",
+            "title": "Revisar membros",
             "youAreEditing": "Você está editando",
             "youAreAdding": "Você está adicionando",
             "membersCount": "{count, plural, one {# membro} other {# membros}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Membros atualizados",
             "newMembers": "Novos membros",
             "creatingProposal": "Criando proposta...",
-            "confirmSubmit": "Confirmar e enviar solicitação"
+            "confirmSubmit": "Criar solicitação"
         },
         "removeDialog": {
-            "title": "Remover solicitação",
+            "title": "Remover {count, plural, one {membro} other {membros}}?",
             "nearnBody": "Após aprovado, {account} será removido permanentemente da tesouraria e todas as permissões associadas serão revogadas. Após a remoção, esta conta não poderá mais criar solicitações a partir do NEARN.",
             "genericBody": "Após aprovada, esta ação removerá permanentemente <bold>{accounts}</bold> da tesouraria e revogará todas as permissões atribuídas.",
             "creatingProposal": "Criando proposta..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Solicitação de remoção de membro criada com sucesso",
             "createProposalFailed": "Falha ao criar a solicitação de membro. Tente novamente."
         },
-        "infoSection": {
-            "title": "Por que adicionar mais membros?",
-            "description": "Adicionar mais membros mantém seus fundos seguros e evita que uma carteira perdida bloqueie seu acesso.",
-            "readGuide": "Ler o guia completo",
-            "dismiss": "Fechar",
-            "strongerProtectionTitle": "Proteção mais forte",
-            "strongerProtectionDescription": "As solicitações precisam de mais de uma aprovação antes de mover fundos.",
-            "rolesForEveryoneTitle": "Papéis para todos",
-            "rolesForEveryoneDescription": "Cada membro recebe um papel: solicitar pagamentos, aprová-los ou gerenciar configurações.",
-            "neverLoseAccessTitle": "Nunca perca o acesso",
-            "neverLoseAccessDescription": "Se você perder uma carteira, poderá recuperar o acesso por meio de um backup já adicionado."
-        }
+        "activeMembersCount": "{count, plural, one {# membro ativo} other {# membros ativos}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Financeiro",
                 "description": "O Financeiro pode votar em solicitações de transação relacionadas a pagamentos, mas não pode criá-las."
             }
-        }
+        },
+        "title": "Selecionar funções"
     },
     "memberInput": {
-        "creatorYou": "Criador (você)",
-        "memberAddress": "Endereço do membro",
-        "addNewMember": "Adicionar membro",
+        "addNewMember": "Adicionar outro membro",
         "validation": {
             "rolesRequired": "Pelo menos uma função é obrigatória",
             "duplicateAddress": "O endereço já é membro"
-        }
+        },
+        "enterAddress": "Inserir endereço",
+        "selectRole": "Selecionar função",
+        "memberNumber": "Membro {number}"
     },
     "recipientInput": {
         "title": "Para",

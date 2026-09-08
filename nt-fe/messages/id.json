@@ -921,7 +921,6 @@
         "description": "Kelola anggota tim dan izin",
         "permissions": "Izin",
         "member": "Anggota",
-        "activeMembers": "Anggota Aktif",
         "noActiveMembers": "Tidak ada anggota aktif ditemukan.",
         "addNewMember": "Tambah Anggota",
         "addManually": "Tambah secara manual",
@@ -945,6 +944,7 @@
             "readyDescription": "Kirim ke orang yang ingin Anda tambahkan. Mereka akan menghubungkan dompet dan meminta bergabung.",
             "onceTitle": "Tautan ini berlaku sekali, untuk satu orang",
             "onceDescription": "Buat yang baru untuk setiap anggota.",
+            "linkTitle": "Tautan undangan",
             "yourLink": "Tautan undangan Anda",
             "copyLink": "Salin tautan",
             "linkCopied": "Tautan undangan disalin",
@@ -971,7 +971,7 @@
             "askDescription": "Tim meninjau permintaan Anda sebelum Anda dapat melihat atau menyetujui apa pun.",
             "walletConnected": "Dompet terhubung",
             "nameLabel": "Nama Anda (opsional)",
-            "namePlaceholder": "Agar tim mengenali Anda",
+            "namePlaceholder": "Masukkan nama agar tim mengenali Anda",
             "askJoin": "Minta bergabung",
             "submitting": "Mengirim...",
             "successTitle": "Hampir bergabung",
@@ -982,8 +982,8 @@
             "goToTreasury": "Buka Treasury",
             "invalidTitle": "Undangan tidak ditemukan",
             "invalidDescription": "Tautan undangan ini tidak valid atau tidak lagi tersedia.",
-            "usedTitle": "Undangan sudah digunakan",
-            "usedDescription": "Tautan undangan ini sudah digunakan.",
+            "usedTitle": "Tautan undangan ini sudah digunakan",
+            "usedDescription": "Tautan undangan hanya berlaku sekali. Minta {treasury} mengirim yang baru.",
             "expiredTitle": "Undangan kedaluwarsa",
             "expiredDescription": "Tautan undangan ini sudah kedaluwarsa. Minta yang baru ke tim.",
             "goHome": "Ke beranda",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {tidak ada anggota} other {# anggota}} dipilih",
         "remove": "Hapus",
+        "send": "Kirim",
         "edit": "Ubah",
         "requestorOnlyTooltip": "Anda hanya dapat menambahkan peran Requestor untuk anggota ini, karena mereka bertanggung jawab membuat permintaan pembayaran dari NEARN.",
         "memberModal": {
-            "editRoles": "Ubah Peran",
+            "editRoles": "Ubah Anggota",
             "addNewMember": "Tambah Anggota",
             "validatingAddresses": "Memvalidasi alamat...",
             "reviewRequest": "Tinjau Permintaan",
             "noChanges": "Tidak ada perubahan yang dilakukan pada peran anggota"
         },
         "previewModal": {
-            "title": "Tinjau Permintaan Anda",
+            "title": "Tinjau anggota",
             "youAreEditing": "Anda sedang mengubah",
             "youAreAdding": "Anda sedang menambahkan",
             "membersCount": "{count, plural, other {# anggota}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Anggota yang Diperbarui",
             "newMembers": "Anggota Baru",
             "creatingProposal": "Membuat Usulan...",
-            "confirmSubmit": "Konfirmasi dan Kirim Permintaan"
+            "confirmSubmit": "Buat permintaan"
         },
         "removeDialog": {
-            "title": "Hapus Permintaan",
+            "title": "Hapus {count, plural, one {anggota} other {anggota}}?",
             "nearnBody": "Setelah disetujui, {account} akan dihapus secara permanen dari treasury dan semua izin terkait akan dicabut. Setelah dihapus, akun ini tidak akan dapat lagi membuat permintaan dari NEARN.",
             "genericBody": "Setelah disetujui, tindakan ini akan menghapus secara permanen <bold>{accounts}</bold> dari treasury dan mencabut semua izin yang ditetapkan.",
             "creatingProposal": "Membuat Usulan..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat",
             "createProposalFailed": "Gagal membuat permintaan anggota. Silakan coba lagi."
         },
-        "infoSection": {
-            "title": "Mengapa menambahkan lebih banyak anggota?",
-            "description": "Menambahkan lebih banyak anggota menjaga dana Anda tetap aman dan memastikan dompet yang hilang tidak mengunci akses Anda.",
-            "readGuide": "Baca panduan lengkap",
-            "dismiss": "Tutup",
-            "strongerProtectionTitle": "Perlindungan lebih kuat",
-            "strongerProtectionDescription": "Permintaan membutuhkan lebih dari satu persetujuan sebelum dana dapat dipindahkan.",
-            "rolesForEveryoneTitle": "Peran untuk semua orang",
-            "rolesForEveryoneDescription": "Setiap anggota mendapat peran - meminta pembayaran, menyetujui, atau mengelola pengaturan.",
-            "neverLoseAccessTitle": "Jangan pernah kehilangan akses",
-            "neverLoseAccessDescription": "Jika Anda kehilangan dompet, Anda dapat memulihkan akses dari cadangan yang sudah ditambahkan."
-        }
+        "activeMembersCount": "{count, plural, other {# anggota aktif}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Financial",
                 "description": "Financial dapat memilih pada permintaan transaksi terkait pembayaran tetapi tidak dapat membuatnya."
             }
-        }
+        },
+        "title": "Pilih peran"
     },
     "memberInput": {
-        "creatorYou": "Pembuat (Anda)",
-        "memberAddress": "Alamat Anggota",
-        "addNewMember": "Tambah Anggota",
+        "addNewMember": "Tambah anggota lain",
         "validation": {
             "rolesRequired": "Setidaknya satu peran diperlukan",
             "duplicateAddress": "Alamat sudah menjadi anggota"
-        }
+        },
+        "enterAddress": "Masukkan alamat",
+        "selectRole": "Pilih peran",
+        "memberNumber": "Anggota {number}"
     },
     "recipientInput": {
         "title": "Ke",

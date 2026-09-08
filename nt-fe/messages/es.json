@@ -921,7 +921,6 @@
         "description": "Gestiona los miembros del equipo y los permisos",
         "permissions": "Permisos",
         "member": "Miembro",
-        "activeMembers": "Miembros activos",
         "noActiveMembers": "No se encontraron miembros activos.",
         "addNewMember": "Añadir miembro",
         "addManually": "Añadir manualmente",
@@ -945,6 +944,7 @@
             "readyDescription": "Envíalo a la persona que quieres añadir. Conectará una billetera y pedirá unirse.",
             "onceTitle": "Este enlace sirve una vez, para una persona",
             "onceDescription": "Genera uno nuevo para cada miembro.",
+            "linkTitle": "Enlace de invitación",
             "yourLink": "Tu enlace de invitación",
             "copyLink": "Copiar enlace",
             "linkCopied": "Enlace de invitación copiado",
@@ -971,7 +971,7 @@
             "askDescription": "El equipo revisa tu solicitud antes de que puedas ver o aprobar nada.",
             "walletConnected": "Billetera conectada",
             "nameLabel": "Tu nombre (opcional)",
-            "namePlaceholder": "Para que el equipo te reconozca",
+            "namePlaceholder": "Introduce un nombre para que el equipo te reconozca",
             "askJoin": "Pedir unirme",
             "submitting": "Enviando...",
             "successTitle": "Casi estás dentro",
@@ -982,8 +982,8 @@
             "goToTreasury": "Ir al treasury",
             "invalidTitle": "Invitación no encontrada",
             "invalidDescription": "Este enlace de invitación no es válido o ya no está disponible.",
-            "usedTitle": "Invitación ya usada",
-            "usedDescription": "Este enlace de invitación ya se ha usado.",
+            "usedTitle": "Este enlace de invitación ya se usó",
+            "usedDescription": "Los enlaces de invitación sirven una vez. Pide a {treasury} uno nuevo.",
             "expiredTitle": "Invitación caducada",
             "expiredDescription": "Este enlace de invitación ha caducado. Pide uno nuevo al equipo.",
             "goHome": "Ir al inicio",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {ningún miembro} one {# miembro} other {# miembros}} seleccionado(s)",
         "remove": "Eliminar",
+        "send": "Enviar",
         "edit": "Editar",
         "requestorOnlyTooltip": "Solo puedes añadir el rol de Solicitante para este miembro, ya que es responsable de crear solicitudes de pago desde NEARN.",
         "memberModal": {
-            "editRoles": "Editar roles",
+            "editRoles": "Editar miembros",
             "addNewMember": "Añadir miembro",
             "validatingAddresses": "Validando direcciones...",
             "reviewRequest": "Revisar solicitud",
             "noChanges": "No se han realizado cambios en los roles de los miembros"
         },
         "previewModal": {
-            "title": "Revisa tu solicitud",
+            "title": "Revisar miembros",
             "youAreEditing": "Estás editando",
             "youAreAdding": "Estás añadiendo",
             "membersCount": "{count, plural, one {# miembro} other {# miembros}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Miembros actualizados",
             "newMembers": "Nuevos miembros",
             "creatingProposal": "Creando propuesta...",
-            "confirmSubmit": "Confirmar y enviar solicitud"
+            "confirmSubmit": "Crear solicitud"
         },
         "removeDialog": {
-            "title": "Eliminar solicitud",
+            "title": "¿Eliminar {count, plural, one {miembro} other {miembros}}?",
             "nearnBody": "Una vez aprobado, {account} se eliminará permanentemente de la tesorería y se revocarán todos los permisos asociados. Tras la eliminación, esta cuenta ya no podrá crear solicitudes desde NEARN.",
             "genericBody": "Una vez aprobado, esta acción eliminará permanentemente a <bold>{accounts}</bold> de la tesorería y revocará todos los permisos asignados.",
             "creatingProposal": "Creando propuesta..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Solicitud de eliminación de miembro creada correctamente",
             "createProposalFailed": "No se pudo crear la solicitud de miembro. Inténtalo de nuevo."
         },
-        "infoSection": {
-            "title": "¿Por qué agregar más miembros?",
-            "description": "Agregar más miembros mantiene tus fondos seguros y evita que una cartera perdida te deje sin acceso.",
-            "readGuide": "Leer la guía completa",
-            "dismiss": "Cerrar",
-            "strongerProtectionTitle": "Protección más sólida",
-            "strongerProtectionDescription": "Las solicitudes necesitan más de una aprobación antes de mover fondos.",
-            "rolesForEveryoneTitle": "Roles para todos",
-            "rolesForEveryoneDescription": "Cada miembro recibe un rol: solicitar pagos, aprobarlos o gestionar ajustes.",
-            "neverLoseAccessTitle": "Nunca pierdas el acceso",
-            "neverLoseAccessDescription": "Si pierdes una cartera, puedes recuperar el acceso desde una copia de respaldo que ya agregaste."
-        }
+        "activeMembersCount": "{count, plural, one {# miembro activo} other {# miembros activos}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Financiero",
                 "description": "Financiero puede votar solicitudes de transacciones de pago pero no puede crearlas."
             }
-        }
+        },
+        "title": "Seleccionar roles"
     },
     "memberInput": {
-        "creatorYou": "Creador (tú)",
-        "memberAddress": "Dirección del miembro",
-        "addNewMember": "Añadir miembro",
+        "addNewMember": "Añadir otro miembro",
         "validation": {
             "rolesRequired": "Se requiere al menos un rol",
             "duplicateAddress": "La dirección ya es miembro"
-        }
+        },
+        "enterAddress": "Introducir dirección",
+        "selectRole": "Seleccionar rol",
+        "memberNumber": "Miembro {number}"
     },
     "recipientInput": {
         "title": "Para",

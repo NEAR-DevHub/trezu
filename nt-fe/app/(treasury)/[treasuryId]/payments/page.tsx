@@ -769,7 +769,7 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: "",
+            address: defaultAddress,
             amount: "",
             memo: "",
             // Null until TokenSelect auto-selects or a URL override seeds.
@@ -1179,8 +1179,12 @@ export default function PaymentsPage() {
             ? `${watchedToken.address}:${watchedToken.residency ?? ""}:${watchedToken.network ?? ""}`
             : "";
 
+        if (!tokenKey) return;
+
         const previous = prevTokenKeyRef.current;
         prevTokenKeyRef.current = tokenKey;
+        // First resolved token is auto-select / URL seed, not a user change.
+        // Wiping here dropped `?address=` from Members / address book.
         if (previous === null || previous === tokenKey) return;
 
         form.setValue("address", "", { shouldDirty: true });

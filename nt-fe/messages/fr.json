@@ -921,7 +921,6 @@
         "description": "Gérez les membres de l'équipe et les autorisations",
         "permissions": "Autorisations",
         "member": "Membre",
-        "activeMembers": "Membres actifs",
         "noActiveMembers": "Aucun membre actif trouvé.",
         "addNewMember": "Ajouter un membre",
         "addManually": "Ajouter manuellement",
@@ -945,6 +944,7 @@
             "readyDescription": "Envoyez-le à la personne à ajouter. Elle connectera un portefeuille et demandera à rejoindre.",
             "onceTitle": "Ce lien ne fonctionne qu’une fois, pour une personne",
             "onceDescription": "Générez-en un nouveau pour chaque membre.",
+            "linkTitle": "Lien d’invitation",
             "yourLink": "Votre lien d’invitation",
             "copyLink": "Copier le lien",
             "linkCopied": "Lien d’invitation copié",
@@ -971,7 +971,7 @@
             "askDescription": "L’équipe examine votre demande avant que vous puissiez voir ou approuver quoi que ce soit.",
             "walletConnected": "Portefeuille connecté",
             "nameLabel": "Votre nom (facultatif)",
-            "namePlaceholder": "Pour que l’équipe vous reconnaisse",
+            "namePlaceholder": "Entrez un nom pour que l’équipe vous reconnaisse",
             "askJoin": "Demander à rejoindre",
             "submitting": "Envoi…",
             "successTitle": "Vous y êtes presque",
@@ -982,8 +982,8 @@
             "goToTreasury": "Aller au treasury",
             "invalidTitle": "Invitation introuvable",
             "invalidDescription": "Ce lien d’invitation est invalide ou n’est plus disponible.",
-            "usedTitle": "Invitation déjà utilisée",
-            "usedDescription": "Ce lien d’invitation a déjà été utilisé.",
+            "usedTitle": "Ce lien d’invitation a déjà été utilisé",
+            "usedDescription": "Les liens d’invitation ne servent qu’une fois. Demandez-en un nouveau à {treasury}.",
             "expiredTitle": "Invitation expirée",
             "expiredDescription": "Ce lien d’invitation a expiré. Demandez-en un nouveau à l’équipe.",
             "goHome": "Retour à l’accueil",
@@ -991,17 +991,18 @@
         },
         "membersSelected": "{count, plural, =0 {aucun membre} one {# membre} other {# membres}} sélectionné{count, plural, =0 {} one {} other {s}}",
         "remove": "Supprimer",
+        "send": "Envoyer",
         "edit": "Modifier",
         "requestorOnlyTooltip": "Vous ne pouvez ajouter que le rôle de Demandeur pour ce membre, car il est responsable de la création des demandes de paiement depuis NEARN.",
         "memberModal": {
-            "editRoles": "Modifier les rôles",
+            "editRoles": "Modifier les membres",
             "addNewMember": "Ajouter un membre",
             "validatingAddresses": "Validation des adresses...",
             "reviewRequest": "Vérifier la demande",
             "noChanges": "Aucun changement n'a été apporté aux rôles des membres"
         },
         "previewModal": {
-            "title": "Vérifiez votre demande",
+            "title": "Vérifier les membres",
             "youAreEditing": "Vous modifiez",
             "youAreAdding": "Vous ajoutez",
             "membersCount": "{count, plural, one {# membre} other {# membres}}",
@@ -1009,10 +1010,10 @@
             "updatedMembers": "Membres mis à jour",
             "newMembers": "Nouveaux membres",
             "creatingProposal": "Création de la proposition...",
-            "confirmSubmit": "Confirmer et soumettre la demande"
+            "confirmSubmit": "Créer une demande"
         },
         "removeDialog": {
-            "title": "Supprimer la demande",
+            "title": "Supprimer {count, plural, one {le membre} other {les membres}} ?",
             "nearnBody": "Une fois approuvé, {account} sera définitivement supprimé de la trésorerie et toutes les autorisations associées seront révoquées. Après la suppression, ce compte ne pourra plus créer de demandes depuis NEARN.",
             "genericBody": "Une fois approuvée, cette action supprimera définitivement <bold>{accounts}</bold> de la trésorerie et révoquera toutes les autorisations attribuées.",
             "creatingProposal": "Création de la proposition..."
@@ -1040,18 +1041,7 @@
             "removeMemberSuccess": "Demande de suppression de membre créée avec succès",
             "createProposalFailed": "Échec de la création de la demande de membre. Veuillez réessayer."
         },
-        "infoSection": {
-            "title": "Pourquoi ajouter plus de membres ?",
-            "description": "Ajouter plus de membres protège vos fonds et évite qu'un wallet perdu vous bloque l'accès.",
-            "readGuide": "Lire le guide complet",
-            "dismiss": "Fermer",
-            "strongerProtectionTitle": "Protection renforcée",
-            "strongerProtectionDescription": "Les demandes nécessitent plus d'une approbation avant que les fonds puissent être déplacés.",
-            "rolesForEveryoneTitle": "Des rôles pour chacun",
-            "rolesForEveryoneDescription": "Chaque membre reçoit un rôle : demander des paiements, les approuver ou gérer les paramètres.",
-            "neverLoseAccessTitle": "Ne perdez jamais l'accès",
-            "neverLoseAccessDescription": "Si vous perdez un wallet, vous pouvez récupérer l'accès grâce à une sauvegarde déjà ajoutée."
-        }
+        "activeMembersCount": "{count, plural, one {# membre actif} other {# membres actifs}}"
     },
     "settings": {
         "tabs": {
@@ -1728,16 +1718,18 @@
                 "title": "Financier",
                 "description": "Le financier peut voter sur les demandes de transaction liées aux paiements mais ne peut pas les créer."
             }
-        }
+        },
+        "title": "Sélectionner des rôles"
     },
     "memberInput": {
-        "creatorYou": "Créateur (vous)",
-        "memberAddress": "Adresse du membre",
-        "addNewMember": "Ajouter un membre",
+        "addNewMember": "Ajouter un autre membre",
         "validation": {
             "rolesRequired": "Au moins un rôle est requis",
             "duplicateAddress": "L'adresse est déjà membre"
-        }
+        },
+        "enterAddress": "Saisir l'adresse",
+        "selectRole": "Sélectionner un rôle",
+        "memberNumber": "Membre {number}"
     },
     "recipientInput": {
         "title": "À",

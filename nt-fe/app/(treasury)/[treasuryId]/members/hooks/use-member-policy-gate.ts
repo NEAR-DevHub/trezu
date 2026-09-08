@@ -39,10 +39,8 @@ export function useMemberPolicyGate(treasuryId: string | null | undefined) {
         sort_by: "CreationTime",
     });
 
-    const hasPendingMemberRequest = useMemo(() => {
-        if (!pendingProposals?.proposals) return false;
-        return pendingProposals.proposals.length > 0;
-    }, [pendingProposals]);
+    const pendingMemberRequestCount = pendingProposals?.proposals?.length ?? 0;
+    const hasPendingMemberRequest = pendingMemberRequestCount > 0;
 
     const isLoading = isLoadingPolicy || isLoadingMembers;
     const isMemberDataReady = !isLoading && pendingProposals !== undefined;
@@ -63,6 +61,7 @@ export function useMemberPolicyGate(treasuryId: string | null | undefined) {
         isLoadingMembers,
         isLoading,
         existingMembers,
+        pendingMemberRequestCount,
         hasPendingMemberRequest,
         isMemberDataReady,
         isMemberActionsDisabled,
