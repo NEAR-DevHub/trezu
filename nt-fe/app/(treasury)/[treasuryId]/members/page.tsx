@@ -217,29 +217,21 @@ export default function MembersPage() {
         : undefined;
 
     // Deep-link: /members?member=...&roles=... → /members/add
+    // Do not wait on isMemberActionsDisabled — that flag stays true until the
+    // pending-proposal query settles (or forever if it errors), which would
+    // leave ?member= on this page. Add handles a pending ChangePolicy itself.
     useEffect(() => {
         const memberParam = searchParams.get("member");
         const rolesParam = searchParams.get("roles");
 
-        if (
-            memberParam &&
-            canAddMember &&
-            !isMemberActionsDisabled &&
-            !hasProcessedUrlParams.current
-        ) {
+        if (memberParam && canAddMember && !hasProcessedUrlParams.current) {
             hasProcessedUrlParams.current = true;
             const params = new URLSearchParams();
             params.set("member", memberParam);
             if (rolesParam) params.set("roles", rolesParam);
             router.replace(`/${treasuryId}/members/add?${params.toString()}`);
         }
-    }, [
-        searchParams,
-        canAddMember,
-        isMemberActionsDisabled,
-        router,
-        treasuryId,
-    ]);
+    }, [searchParams, canAddMember, router, treasuryId]);
 
     const { canModifyMember, canDeleteBulk } = useMemberValidation(
         existingMembers,
