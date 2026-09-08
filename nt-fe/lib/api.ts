@@ -6,26 +6,6 @@ import { type Balance, type BalanceRaw, transformBalance } from "./balance";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
-export interface Timezone {
-    utc: string;
-    value: string;
-    name: string;
-}
-
-/**
- * Get list of available timezones
- */
-export async function getTimezones(): Promise<Timezone[]> {
-    try {
-        const response = await axios.get<Timezone[]>(
-            `${BACKEND_API_BASE}/proxy/timezones`,
-        );
-        return response.data || [];
-    } catch (error) {
-        console.error("Error getting timezones:", error);
-        return [];
-    }
-}
 export interface TreasuryMetadata {
     primaryColor?: string;
     flagLogo?: string;

@@ -1114,23 +1114,6 @@
                 "generic": "Ces membres approuvent les demandes de ce rôle."
             },
             "pendingAlert": "{count, plural, one {# demande de réglages nécessite votre attention} other {# demandes de réglages nécessitent votre attention}}"
-        },
-        "preferences": {
-            "timeZone": "Fuseau horaire",
-            "timeZoneDescription": "Définissez votre fuseau horaire local pour un affichage précis de la date et de l'heure.",
-            "timeFormat": "Format horaire",
-            "hour12": "12 heures (1:00 PM)",
-            "hour24": "24 heures (13:00)",
-            "autoTimezone": "Définir le fuseau horaire automatiquement à partir de votre position",
-            "timezone": "Fuseau horaire",
-            "loadingTimezones": "Chargement des fuseaux horaires...",
-            "selectTimezone": "Sélectionner le fuseau horaire",
-            "searchTimezones": "Rechercher des fuseaux horaires...",
-            "noTimezones": "Aucun fuseau horaire trouvé",
-            "save": "Enregistrer",
-            "savedToast": "Préférences enregistrées avec succès",
-            "saveFailed": "Échec de l'enregistrement des préférences",
-            "loadFailed": "Échec du chargement des fuseaux horaires"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "Aucun modèle trouvé pour « {slug} ».",
             "invalidManifest": "Le manifeste de ce modèle est invalide :",
             "proposalFiled": "Demande déposée"
-        },
-        "developer": {
-            "title": "Demandes personnalisées",
-            "description": "Créez vos propres types de demande lorsque vous avez besoin de plus que des paiements et des échanges. Ajoutez les champs dont vous avez besoin et vos membres peuvent les soumettre comme n'importe quelle autre demande.",
-            "enable": "Activer",
-            "disable": "Désactiver",
-            "errUpdate": "Impossible de mettre à jour le paramètre"
         },
         "visual": {
             "detailsTitle": "Détails",

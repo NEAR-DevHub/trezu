@@ -1114,23 +1114,6 @@
                 "generic": "这些成员审批此角色的请求。"
             },
             "pendingAlert": "{count, plural, other {# 条设置请求需要处理}}"
-        },
-        "preferences": {
-            "timeZone": "时区",
-            "timeZoneDescription": "设置您所在的时区,以便准确显示日期和时间。",
-            "timeFormat": "时间格式",
-            "hour12": "12 小时制(下午 1:00)",
-            "hour24": "24 小时制(13:00)",
-            "autoTimezone": "根据您的位置自动设置时区",
-            "timezone": "时区",
-            "loadingTimezones": "正在加载时区...",
-            "selectTimezone": "选择时区",
-            "searchTimezones": "搜索时区...",
-            "noTimezones": "未找到时区",
-            "save": "保存",
-            "savedToast": "偏好设置保存成功",
-            "saveFailed": "保存偏好设置失败",
-            "loadFailed": "加载时区失败"
         }
     },
     "addressBook": {
@@ -2557,13 +2540,6 @@
             "noTemplate": "未找到与“{slug}”对应的模板。",
             "invalidManifest": "此模板的清单无效：",
             "proposalFiled": "请求已提交"
-        },
-        "developer": {
-            "title": "自定义请求",
-            "description": "当你需要的不只是付款和兑换时，可构建你自己的请求类型。添加你需要的字段，你的成员便能像提交其他请求一样提交它们。",
-            "enable": "启用",
-            "disable": "停用",
-            "errUpdate": "无法更新此设置"
         },
         "visual": {
             "detailsTitle": "详情",

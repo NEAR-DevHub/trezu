@@ -1114,23 +1114,6 @@
                 "generic": "Estos miembros aprueban las solicitudes de este rol."
             },
             "pendingAlert": "{count, plural, one {# solicitud de configuración necesita atención} other {# solicitudes de configuración necesitan atención}}"
-        },
-        "preferences": {
-            "timeZone": "Zona horaria",
-            "timeZoneDescription": "Configura tu zona horaria local para que la fecha y la hora se muestren correctamente.",
-            "timeFormat": "Formato de hora",
-            "hour12": "12 horas (1:00 PM)",
-            "hour24": "24 horas (13:00)",
-            "autoTimezone": "Configurar la zona horaria automáticamente usando tu ubicación",
-            "timezone": "Zona horaria",
-            "loadingTimezones": "Cargando zonas horarias...",
-            "selectTimezone": "Seleccionar zona horaria",
-            "searchTimezones": "Buscar zonas horarias...",
-            "noTimezones": "No se encontraron zonas horarias",
-            "save": "Guardar",
-            "savedToast": "Preferencias guardadas correctamente",
-            "saveFailed": "Error al guardar las preferencias",
-            "loadFailed": "Error al cargar las zonas horarias"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "No se encontró ninguna plantilla para “{slug}”.",
             "invalidManifest": "El manifiesto de esta plantilla no es válido:",
             "proposalFiled": "Solicitud presentada"
-        },
-        "developer": {
-            "title": "Solicitudes personalizadas",
-            "description": "Crea tus propios tipos de solicitud cuando necesites algo más que pagos e intercambios. Añade los campos que necesites y tus miembros podrán enviarlas como cualquier otra solicitud.",
-            "enable": "Activar",
-            "disable": "Desactivar",
-            "errUpdate": "No se pudo actualizar la configuración"
         },
         "visual": {
             "detailsTitle": "Detalles",

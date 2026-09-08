@@ -1114,23 +1114,6 @@
                 "generic": "Những thành viên này phê duyệt yêu cầu của vai trò này."
             },
             "pendingAlert": "{count, plural, other {# yêu cầu cài đặt cần được xử lý}}"
-        },
-        "preferences": {
-            "timeZone": "Múi giờ",
-            "timeZoneDescription": "Đặt múi giờ địa phương để hiển thị ngày giờ chính xác.",
-            "timeFormat": "Định dạng giờ",
-            "hour12": "12 giờ (1:00 PM)",
-            "hour24": "24 giờ (13:00)",
-            "autoTimezone": "Tự động đặt múi giờ theo vị trí của bạn",
-            "timezone": "Múi giờ",
-            "loadingTimezones": "Đang tải múi giờ...",
-            "selectTimezone": "Chọn múi giờ",
-            "searchTimezones": "Tìm múi giờ...",
-            "noTimezones": "Không tìm thấy múi giờ",
-            "save": "Lưu",
-            "savedToast": "Đã lưu tùy chọn thành công",
-            "saveFailed": "Không thể lưu tùy chọn",
-            "loadFailed": "Không thể tải múi giờ"
         }
     },
     "addressBook": {
@@ -2557,13 +2540,6 @@
             "noTemplate": "Không tìm thấy mẫu cho “{slug}”.",
             "invalidManifest": "Manifest của mẫu này không hợp lệ:",
             "proposalFiled": "Đã nộp yêu cầu"
-        },
-        "developer": {
-            "title": "Yêu cầu tùy chỉnh",
-            "description": "Tạo các loại yêu cầu của riêng bạn khi bạn cần nhiều hơn thanh toán và trao đổi. Thêm các trường bạn cần và các thành viên của bạn có thể gửi chúng như bất kỳ yêu cầu nào khác.",
-            "enable": "Bật",
-            "disable": "Tắt",
-            "errUpdate": "Không thể cập nhật cài đặt"
         },
         "visual": {
             "detailsTitle": "Chi tiết",

@@ -1114,23 +1114,6 @@
                 "generic": "Estes membros aprovam solicitações desta função."
             },
             "pendingAlert": "{count, plural, one {# solicitação de configurações precisa de atenção} other {# solicitações de configurações precisam de atenção}}"
-        },
-        "preferences": {
-            "timeZone": "Fuso horário",
-            "timeZoneDescription": "Defina seu fuso horário local para exibição precisa de data e hora.",
-            "timeFormat": "Formato de hora",
-            "hour12": "12 horas (1:00 PM)",
-            "hour24": "24 horas (13:00)",
-            "autoTimezone": "Definir fuso horário automaticamente usando sua localização",
-            "timezone": "Fuso horário",
-            "loadingTimezones": "Carregando fusos horários...",
-            "selectTimezone": "Selecionar fuso horário",
-            "searchTimezones": "Buscar fusos horários...",
-            "noTimezones": "Nenhum fuso horário encontrado",
-            "save": "Salvar",
-            "savedToast": "Preferências salvas com sucesso",
-            "saveFailed": "Falha ao salvar preferências",
-            "loadFailed": "Falha ao carregar fusos horários"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "Nenhum modelo encontrado para “{slug}”.",
             "invalidManifest": "O manifesto deste modelo é inválido:",
             "proposalFiled": "Solicitação registrada"
-        },
-        "developer": {
-            "title": "Solicitações personalizadas",
-            "description": "Crie seus próprios tipos de solicitação quando precisar de mais do que pagamentos e trocas. Adicione os campos de que você precisa e seus membros poderão enviá-los como qualquer outra solicitação.",
-            "enable": "Ativar",
-            "disable": "Desativar",
-            "errUpdate": "Não foi possível atualizar a configuração"
         },
         "visual": {
             "detailsTitle": "Detalhes",

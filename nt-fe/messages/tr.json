@@ -1114,23 +1114,6 @@
                 "generic": "Bu üyeler bu role ait talepleri onaylar."
             },
             "pendingAlert": "{count, plural, one {# ayar talebi ilgilenilmeyi bekliyor} other {# ayar talebi ilgilenilmeyi bekliyor}}"
-        },
-        "preferences": {
-            "timeZone": "Saat Dilimi",
-            "timeZoneDescription": "Doğru tarih ve saat görüntüleme için yerel saat diliminizi ayarlayın.",
-            "timeFormat": "Saat Formatı",
-            "hour12": "12 saat (1:00 ÖS)",
-            "hour24": "24 saat (13:00)",
-            "autoTimezone": "Saat dilimini konumunuzu kullanarak otomatik ayarla",
-            "timezone": "Saat Dilimi",
-            "loadingTimezones": "Saat dilimleri yükleniyor...",
-            "selectTimezone": "Saat Dilimi Seç",
-            "searchTimezones": "Saat dilimlerini ara...",
-            "noTimezones": "Saat dilimi bulunamadı",
-            "save": "Kaydet",
-            "savedToast": "Tercihler başarıyla kaydedildi",
-            "saveFailed": "Tercihler kaydedilemedi",
-            "loadFailed": "Saat dilimleri yüklenemedi"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "“{slug}” için şablon bulunamadı.",
             "invalidManifest": "Bu şablonun manifesti geçersiz:",
             "proposalFiled": "İstek oluşturuldu"
-        },
-        "developer": {
-            "title": "Özel İstekler",
-            "description": "Ödemeler ve takastan fazlasına ihtiyaç duyduğunuzda kendi istek türlerinizi oluşturun. İhtiyacınız olan alanları ekleyin; üyeleriniz onları diğer istekler gibi gönderebilir.",
-            "enable": "Etkinleştir",
-            "disable": "Devre Dışı Bırak",
-            "errUpdate": "Ayar güncellenemedi"
         },
         "visual": {
             "detailsTitle": "Ayrıntılar",

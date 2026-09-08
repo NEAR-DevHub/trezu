@@ -1114,23 +1114,6 @@
                 "generic": "이 멤버들이 이 역할의 요청을 승인합니다."
             },
             "pendingAlert": "{count, plural, other {설정 요청 #건을 확인해야 합니다}}"
-        },
-        "preferences": {
-            "timeZone": "시간대",
-            "timeZoneDescription": "정확한 날짜 및 시간 표시를 위해 현지 시간대를 설정하세요.",
-            "timeFormat": "시간 형식",
-            "hour12": "12시간 (오후 1:00)",
-            "hour24": "24시간 (13:00)",
-            "autoTimezone": "위치를 사용하여 시간대를 자동으로 설정",
-            "timezone": "시간대",
-            "loadingTimezones": "시간대 로딩 중...",
-            "selectTimezone": "시간대 선택",
-            "searchTimezones": "시간대 검색...",
-            "noTimezones": "시간대를 찾을 수 없습니다",
-            "save": "저장",
-            "savedToast": "환경설정이 성공적으로 저장되었습니다",
-            "saveFailed": "환경설정 저장에 실패했습니다",
-            "loadFailed": "시간대를 불러오지 못했습니다"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "“{slug}”에 해당하는 템플릿을 찾을 수 없습니다.",
             "invalidManifest": "이 템플릿의 매니페스트가 유효하지 않습니다:",
             "proposalFiled": "요청이 제출되었습니다"
-        },
-        "developer": {
-            "title": "맞춤 요청",
-            "description": "결제와 교환만으로는 부족할 때 직접 요청 유형을 만드세요. 필요한 필드를 추가하면 멤버가 다른 요청과 똑같이 제출할 수 있습니다.",
-            "enable": "사용",
-            "disable": "사용 안 함",
-            "errUpdate": "설정을 업데이트할 수 없습니다"
         },
         "visual": {
             "detailsTitle": "세부 정보",

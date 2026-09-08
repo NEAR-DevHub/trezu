@@ -1114,23 +1114,6 @@
                 "generic": "Diese Mitglieder genehmigen Anfragen für diese Rolle."
             },
             "pendingAlert": "{count, plural, one {# Einstellungsanfrage benötigt Aufmerksamkeit} other {# Einstellungsanfragen benötigen Aufmerksamkeit}}"
-        },
-        "preferences": {
-            "timeZone": "Zeitzone",
-            "timeZoneDescription": "Stellen Sie Ihre lokale Zeitzone für die korrekte Datums- und Zeitanzeige ein.",
-            "timeFormat": "Zeitformat",
-            "hour12": "12-Stunden (1:00 PM)",
-            "hour24": "24-Stunden (13:00)",
-            "autoTimezone": "Zeitzone automatisch anhand Ihres Standorts festlegen",
-            "timezone": "Zeitzone",
-            "loadingTimezones": "Zeitzonen werden geladen...",
-            "selectTimezone": "Zeitzone auswählen",
-            "searchTimezones": "Zeitzonen suchen...",
-            "noTimezones": "Keine Zeitzonen gefunden",
-            "save": "Speichern",
-            "savedToast": "Präferenzen erfolgreich gespeichert",
-            "saveFailed": "Speichern der Präferenzen fehlgeschlagen",
-            "loadFailed": "Laden der Zeitzonen fehlgeschlagen"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "Keine Vorlage für „{slug}“ gefunden.",
             "invalidManifest": "Das Manifest dieser Vorlage ist ungültig:",
             "proposalFiled": "Antrag eingereicht"
-        },
-        "developer": {
-            "title": "Benutzerdefinierte Anträge",
-            "description": "Erstellen Sie Ihre eigenen Antragstypen, wenn Sie mehr als Zahlungen und Tausch benötigen. Fügen Sie die benötigten Felder hinzu, und Ihre Mitglieder können sie wie jeden anderen Antrag einreichen.",
-            "enable": "Aktivieren",
-            "disable": "Deaktivieren",
-            "errUpdate": "Die Einstellung konnte nicht aktualisiert werden"
         },
         "visual": {
             "detailsTitle": "Details",

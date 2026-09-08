@@ -1114,23 +1114,6 @@
                 "generic": "Anggota ini menyetujui permintaan untuk peran ini."
             },
             "pendingAlert": "{count, plural, other {# permintaan pengaturan perlu perhatian}}"
-        },
-        "preferences": {
-            "timeZone": "Zona Waktu",
-            "timeZoneDescription": "Tetapkan zona waktu lokal Anda untuk tampilan tanggal dan waktu yang akurat.",
-            "timeFormat": "Format Waktu",
-            "hour12": "12 jam (1:00 PM)",
-            "hour24": "24 jam (13:00)",
-            "autoTimezone": "Atur zona waktu otomatis menggunakan lokasi Anda",
-            "timezone": "Zona Waktu",
-            "loadingTimezones": "Memuat zona waktu...",
-            "selectTimezone": "Pilih Zona Waktu",
-            "searchTimezones": "Cari zona waktu...",
-            "noTimezones": "Tidak ada zona waktu ditemukan",
-            "save": "Simpan",
-            "savedToast": "Preferensi berhasil disimpan",
-            "saveFailed": "Gagal menyimpan preferensi",
-            "loadFailed": "Gagal memuat zona waktu"
         }
     },
     "addressBook": {
@@ -2574,13 +2557,6 @@
             "noTemplate": "Tidak ada templat yang ditemukan untuk “{slug}”.",
             "invalidManifest": "Manifest templat ini tidak valid:",
             "proposalFiled": "Permintaan diajukan"
-        },
-        "developer": {
-            "title": "Permintaan Khusus",
-            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
-            "enable": "Aktifkan",
-            "disable": "Nonaktifkan",
-            "errUpdate": "Tidak dapat memperbarui pengaturan"
         },
         "visual": {
             "detailsTitle": "Detail",

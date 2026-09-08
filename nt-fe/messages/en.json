@@ -1112,23 +1112,6 @@
                 "generic": "These members approve requests for this role."
             },
             "pendingAlert": "{count, plural, =1 {# settings request needs attention} other {# settings requests need attention}}"
-        },
-        "preferences": {
-            "timeZone": "Time Zone",
-            "timeZoneDescription": "Set your local time zone for accurate date and time display.",
-            "timeFormat": "Time Format",
-            "hour12": "12-hour (1:00 PM)",
-            "hour24": "24-hour (13:00)",
-            "autoTimezone": "Set timezone automatically using your location",
-            "timezone": "Timezone",
-            "loadingTimezones": "Loading timezones...",
-            "selectTimezone": "Select timezone",
-            "searchTimezones": "Search timezones...",
-            "noTimezones": "No timezones found",
-            "save": "Save",
-            "savedToast": "Preferences saved successfully",
-            "saveFailed": "Failed to save preferences",
-            "loadFailed": "Failed to load timezones"
         }
     },
     "addressBook": {
@@ -2572,13 +2555,6 @@
             "noTemplate": "No template found for “{slug}”.",
             "invalidManifest": "This template’s manifest is invalid:",
             "proposalFiled": "Request filed"
-        },
-        "developer": {
-            "title": "Custom requests",
-            "description": "Build your own request types when you need more than payments and exchange. Add the fields you need and your members can submit them like any other request.",
-            "enable": "Enable",
-            "disable": "Disable",
-            "errUpdate": "Could not update the setting"
         },
         "visual": {
             "detailsTitle": "Details",
