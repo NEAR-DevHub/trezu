@@ -1031,14 +1031,14 @@
         },
         "policy": {
             "addMembers": "Politikayı Güncelle - Yeni Üyeler Ekle",
-            "addMembersSuccess": "Yeni üye talebi başarıyla oluşturuldu",
+            "addMembersSuccess": "Üye ekleme talebi oluşturuldu",
             "editMember": "Politikayı Güncelle - Üye İzinlerini Düzenle",
             "editMembers": "Politikayı Güncelle - Birden Çok Üyeyi Düzenle",
-            "editMemberSuccess": "Üye rolleri güncelleme talebi başarıyla oluşturuldu",
-            "editMembersSuccess": "Toplu üye rolleri güncelleme talebi başarıyla oluşturuldu",
+            "editMemberSuccess": "Üye düzenleme talebi oluşturuldu",
+            "editMembersSuccess": "Üyeleri düzenleme talebi oluşturuldu",
             "removeMember": "Politikayı Güncelle - Üye Kaldır",
             "removeMembers": "Politikayı Güncelle - Üyeleri Kaldır",
-            "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu",
+            "removeMemberSuccess": "Üye kaldırma talebi oluşturuldu",
             "createProposalFailed": "Üye talebi oluşturulamadı. Lütfen tekrar deneyin."
         },
         "activeMembersCount": "{count, plural, one {# aktif üye} other {# aktif üye}}"
@@ -1087,11 +1087,11 @@
             "missingData": "Gerekli veri eksik",
             "thresholdProposalTitle": "Politikayı Güncelle - Oylama Eşikleri",
             "thresholdProposalSummary": "{account} oylama eşiğini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
-            "thresholdSubmitted": "Oylama eşiğini güncelleme talebi gönderildi",
+            "thresholdSubmitted": "Oylama eşiği talebi oluşturuldu",
             "createProposalFailed": "Öneri oluşturulamadı",
             "durationProposalTitle": "Politikayı Güncelle - Oylama Süresi",
             "durationProposalSummary": "{account} oylama süresini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
-            "durationSubmitted": "Talep başarıyla oluşturuldu",
+            "durationSubmitted": "Oylama süresi talebi oluşturuldu",
             "viewRequest": "Talebi görüntüle",
             "membersWhoCanVote": "Oy kullanabilen üyeler",
             "durationHeading": "Oylama Süresi",
@@ -1206,7 +1206,7 @@
         "confirmSubmit": "Onayla ve Talebi Gönder",
         "useDifferentAddress": "Farklı bir adres kullan",
         "failed1ClickQuote": "1Click transfer teklifi oluşturulamadı",
-        "paymentSubmitted": "Ödeme gönderme talebi gönderildi",
+        "paymentSubmitted": "Gönderme talebi oluşturuldu",
         "confidentialTooltip": "Alici bilgileri ve talep edilen tutar tamamen gizlidir.",
         "destinationNetwork": "Hedef ağ",
         "selectRecipientPlaceholder": "Alıcı seç",
@@ -1218,7 +1218,7 @@
         "comingSoonToast": "Toplu gönderim yakında geliyor!",
         "submittingList": "Toplu gönderim listesi gönderiliyor",
         "submittingProposal": "Öneri gönderiliyor",
-        "proposalSubmitted": "Toplu gönderim teklifi gönderildi",
+        "proposalSubmitted": "Toplu gönderme talebi oluşturuldu",
         "submitListFailed": "Ödeme listesi gönderilemedi",
         "submitFailed": "Toplu gönderim gönderilemedi",
         "quoteFetchFailed": "Transfer ücretleri alınamadı. Lütfen tekrar deneyin.",
@@ -1307,7 +1307,7 @@
         "awaitingTitle": "Onaylar bekleniyor",
         "awaitingDescription": "Etkinleştirme isteği oluşturuldu. Yeterince hazine üyesi onayladığında gizli toplu erişim anahtarı kaydedilir ve toplu gönderim otomatik olarak açılır.",
         "awaitingHint": "Onaydan sonra başka bir işlem gerekmez — bu sayfa otomatik olarak güncellenir.",
-        "proposalCreated": "Etkinleştirme talebi oluşturuldu — onaylar bekleniyor",
+        "proposalCreated": "Etkinleştirme talebi oluşturuldu",
         "activationFailed": "Toplu gönderim etkinleştirmesi başlatılamadı",
         "errorTitle": "Etkinleştirme durumu yüklenemedi",
         "noPermissionNote": "Etkinleştirmeyi başlatma izniniz yok. Teklif izinleri olan bir hazine üyesinden toplu gönderimi etkinleştirmesini isteyin.",
@@ -1326,7 +1326,7 @@
         "validation": {
             "amountPositive": "Miktar 0'dan büyük olmalıdır"
         },
-        "requestSubmitted": "Takas talebi gönderildi",
+        "requestSubmitted": "Swap talebi oluşturuldu",
         "heading": "Takas",
         "sell": "Sat",
         "receive": "Al",
@@ -1373,7 +1373,7 @@
             "review": "İnceleme"
         },
         "proposalTitle": "{address} için vesting planı oluştur",
-        "scheduleSubmitted": "Vesting planı oluşturma talebi gönderildi",
+        "scheduleSubmitted": "Vesting talebi oluşturuldu",
         "heading": "Yeni Vesting Planı",
         "amount": "Miktar",
         "startDate": "Başlangıç Tarihi",
@@ -2549,7 +2549,7 @@
         "fill": {
             "noTemplate": "“{slug}” için şablon bulunamadı.",
             "invalidManifest": "Bu şablonun manifesti geçersiz:",
-            "proposalFiled": "İstek oluşturuldu"
+            "proposalFiled": "Özel talep oluşturuldu"
         },
         "visual": {
             "detailsTitle": "Ayrıntılar",
@@ -2661,7 +2661,7 @@
     "moveAssets": {
         "title": "Varlıkları Taşı",
         "description": "Varlıkları herkese açık zincirden Gizli hazinenize taşıyın.",
-        "submitted": "Taşıma isteği gönderildi",
+        "submitted": "Taşıma talebi oluşturuldu",
         "banner": {
             "title": "<amount></amount> herkese açık bakiyenize ulaştı",
             "description": "Birisi yanlış ağ üzerinden gönderdi. Gizli hale getirmek için buraya taşıyın.",

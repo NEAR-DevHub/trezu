@@ -1031,14 +1031,14 @@
         },
         "policy": {
             "addMembers": "Atualizar política - Adicionar novos membros",
-            "addMembersSuccess": "Solicitação de novo membro criada com sucesso",
+            "addMembersSuccess": "Solicitação de adicionar membros criada",
             "editMember": "Atualizar política - Editar permissões de membro",
             "editMembers": "Atualizar política - Editar vários membros",
-            "editMemberSuccess": "Solicitação de atualização de funções do membro criada com sucesso",
-            "editMembersSuccess": "Solicitação de atualização em massa de funções de membros criada com sucesso",
+            "editMemberSuccess": "Solicitação de editar membro criada",
+            "editMembersSuccess": "Solicitação de editar membros criada",
             "removeMember": "Atualizar política - Remover membro",
             "removeMembers": "Atualizar política - Remover membros",
-            "removeMemberSuccess": "Solicitação de remoção de membro criada com sucesso",
+            "removeMemberSuccess": "Solicitação de remover membro criada",
             "createProposalFailed": "Falha ao criar a solicitação de membro. Tente novamente."
         },
         "activeMembersCount": "{count, plural, one {# membro ativo} other {# membros ativos}}"
@@ -1087,11 +1087,11 @@
             "missingData": "Dados obrigatórios ausentes",
             "thresholdProposalTitle": "Atualizar política - Limites de votação",
             "thresholdProposalSummary": "{account} solicitou alterar o limite de votação de {oldValue} para {newValue}.",
-            "thresholdSubmitted": "Solicitação para atualizar o limite de votação enviada",
+            "thresholdSubmitted": "Solicitação de limite de votação criada",
             "createProposalFailed": "Falha ao criar proposta",
             "durationProposalTitle": "Atualizar política - Duração da votação",
             "durationProposalSummary": "{account} solicitou alterar a duração da votação de {oldValue} para {newValue}.",
-            "durationSubmitted": "Solicitação criada com sucesso",
+            "durationSubmitted": "Solicitação de duração da votação criada",
             "viewRequest": "Ver solicitação",
             "membersWhoCanVote": "Membros que podem votar",
             "durationHeading": "Duração da votação",
@@ -1206,7 +1206,7 @@
         "confirmSubmit": "Confirmar e enviar solicitação",
         "useDifferentAddress": "Usar um endereço diferente",
         "failed1ClickQuote": "Falha ao criar cotação de transferência 1Click",
-        "paymentSubmitted": "Solicitação de envio de pagamento enviada",
+        "paymentSubmitted": "Solicitação de envio criada",
         "confidentialTooltip": "Os dados do destinatário e o valor solicitado são totalmente confidenciais.",
         "destinationNetwork": "Rede de destino",
         "selectRecipientPlaceholder": "Selecionar destinatário",
@@ -1218,7 +1218,7 @@
         "comingSoonToast": "O envio em massa está chegando em breve!",
         "submittingList": "Enviando lista de envio em massa",
         "submittingProposal": "Enviando proposta",
-        "proposalSubmitted": "Proposta de envio em massa enviada",
+        "proposalSubmitted": "Solicitação de envio em massa criada",
         "submitListFailed": "Falha ao enviar lista de pagamentos",
         "submitFailed": "Falha ao enviar o envio em massa",
         "quoteFetchFailed": "Não foi possível obter as taxas de transferência. Tente novamente.",
@@ -1307,7 +1307,7 @@
         "awaitingTitle": "Aguardando aprovações",
         "awaitingDescription": "A solicitação de ativação foi criada. Quando membros suficientes da tesouraria aprovarem, a chave de acesso em massa confidencial é registrada e o envio em massa é desbloqueado automaticamente.",
         "awaitingHint": "Nenhuma ação necessária após a aprovação — esta página é atualizada automaticamente.",
-        "proposalCreated": "Solicitação de ativação criada — aguardando aprovações",
+        "proposalCreated": "Solicitação de ativação criada",
         "activationFailed": "Falha ao iniciar a ativação do envio em massa",
         "errorTitle": "Não foi possível carregar o status de ativação",
         "noPermissionNote": "Você não tem permissão para iniciar a ativação. Peça a um membro da tesouraria com permissões de proposta para ativar o envio em massa.",
@@ -1326,7 +1326,7 @@
         "validation": {
             "amountPositive": "O valor deve ser maior que 0"
         },
-        "requestSubmitted": "Solicitação de troca enviada",
+        "requestSubmitted": "Solicitação de swap criada",
         "heading": "Troca",
         "sell": "Vender",
         "receive": "Receber",
@@ -1373,7 +1373,7 @@
             "review": "Revisar"
         },
         "proposalTitle": "Criar cronograma de vesting para {address}",
-        "scheduleSubmitted": "Solicitação para criar cronograma de vesting enviada",
+        "scheduleSubmitted": "Solicitação de vesting criada",
         "heading": "Novo cronograma de vesting",
         "amount": "Valor",
         "startDate": "Data de início",
@@ -2549,7 +2549,7 @@
         "fill": {
             "noTemplate": "Nenhum modelo encontrado para “{slug}”.",
             "invalidManifest": "O manifesto deste modelo é inválido:",
-            "proposalFiled": "Solicitação registrada"
+            "proposalFiled": "Solicitação personalizada criada"
         },
         "visual": {
             "detailsTitle": "Detalhes",
@@ -2661,7 +2661,7 @@
     "moveAssets": {
         "title": "Mover ativos",
         "description": "Mova ativos da cadeia pública para a sua tesouraria confidencial.",
-        "submitted": "Pedido de movimentação enviado",
+        "submitted": "Solicitação de movimentação criada",
         "banner": {
             "title": "<amount></amount> chegaram ao seu saldo público",
             "description": "Alguém enviou pela rede errada. Mova para cá para torná-los confidenciais.",
