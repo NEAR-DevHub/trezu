@@ -2124,6 +2124,7 @@
         "paymentsPending": "승인 대기 중인 결제를 확인하세요",
         "exchangeSettings": "스왑에서 허용할 최대 가격 변동(슬리피지)을 설정하세요.",
         "membersPending": "승인 대기 중인 멤버 관련 요청을 확인하세요",
+        "membersWantsToJoin": "팀에 가입하려는 멤버를 확인하세요",
         "guestSaveIntro": "이 트레저리의 게스트입니다. 데이터 보기만 가능합니다.",
         "guestSaveAction": "이 게스트 트레저리를 트레저리 목록에 저장할 수 있습니다.",
         "newFeatureRich": "신규! 🎉 자주 사용하는 주소를 저장하여 더 빠르고 오류 없는 지급을 하세요. 연락처는 비공개로 유지되며 팀에게만 표시됩니다.",

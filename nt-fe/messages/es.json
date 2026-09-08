@@ -2124,6 +2124,7 @@
         "paymentsPending": "Consulta los pagos en espera de aprobación",
         "exchangeSettings": "Establece el cambio de precio máximo (slippage) que aceptarás en un intercambio.",
         "membersPending": "Consulta las solicitudes relacionadas con miembros en espera de aprobación",
+        "membersWantsToJoin": "Mira al miembro que quiere unirse a tu equipo",
         "guestSaveIntro": "Eres invitado de esta tesorería. Solo puedes ver los datos.",
         "guestSaveAction": "Puedes guardar esta tesorería de invitado en tu lista de tesorerías.",
         "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores. Tus contactos quedan privados y visibles solo para tu equipo.",

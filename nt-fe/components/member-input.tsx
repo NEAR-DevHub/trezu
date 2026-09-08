@@ -123,8 +123,8 @@ export function MemberInput<
 }: MemberInputProps<TFieldValues, TMemberPath>) {
     const t = useTranslations("memberInput");
     const tCommon = useTranslations("common");
-    const { watch, setValue, trigger } = useFormContext<TFieldValues>();
-    const { fields, append, remove } = useFieldArray({
+    const { watch, trigger } = useFormContext<TFieldValues>();
+    const { fields, append, remove, replace } = useFieldArray({
         control,
         name: name,
     });
@@ -178,10 +178,8 @@ export function MemberInput<
         } else {
             next.push(selected);
         }
-        setValue(name, next as PathValue<TFieldValues, TMemberPath>, {
-            shouldValidate: true,
-            shouldDirty: true,
-        });
+        replace(next as (typeof emptyMember)[]);
+        void trigger(name);
     };
 
     return (

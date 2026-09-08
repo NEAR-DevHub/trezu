@@ -204,6 +204,9 @@ pub async fn get_member_invite(
 
     let treasury_name = fetch_treasury_config(&state, &dao_id, None)
         .await
+        .inspect_err(|e| {
+            tracing::warn!("fetch_treasury_config for invite {token} failed: {}", e.1);
+        })
         .ok()
         .and_then(|config| {
             config

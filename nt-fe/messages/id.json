@@ -2124,6 +2124,7 @@
         "paymentsPending": "Periksa pembayaran yang menunggu persetujuan",
         "exchangeSettings": "Atur perubahan harga maksimum (slippage) yang Anda terima pada swap.",
         "membersPending": "Lihat permintaan terkait anggota yang menunggu persetujuan",
+        "membersWantsToJoin": "Lihat anggota yang ingin bergabung dengan tim Anda",
         "guestSaveIntro": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data.",
         "guestSaveAction": "Anda dapat menyimpan treasury tamu ini ke daftar treasury Anda.",
         "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan. Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",

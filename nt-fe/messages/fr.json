@@ -2124,6 +2124,7 @@
         "paymentsPending": "Consultez les paiements en attente d'approbation",
         "exchangeSettings": "Définissez la variation de prix maximale (slippage) que vous acceptez lors d'un échange.",
         "membersPending": "Consultez les demandes liées aux membres en attente d'approbation",
+        "membersWantsToJoin": "Voir le membre qui souhaite rejoindre votre équipe",
         "guestSaveIntro": "Vous êtes un invité de cette trésorerie. Vous ne pouvez consulter que les données.",
         "guestSaveAction": "Vous pouvez enregistrer cette trésorerie invitée dans votre liste de trésoreries.",
         "newFeatureRich": "Nouveau ! 🎉 Enregistrez les adresses fréquemment utilisées pour des paiements plus rapides et sans erreur. Vos contacts restent privés et visibles uniquement par votre équipe.",

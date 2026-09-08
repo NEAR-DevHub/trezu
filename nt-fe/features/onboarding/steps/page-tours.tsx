@@ -14,7 +14,11 @@ import {
 } from "@/features/onboarding/feature-announcement-queue";
 import { useTreasury } from "@/hooks/use-treasury";
 
-type PageTourKey = "membersPending" | "requestTemplates" | "paymentsBulk";
+type PageTourKey =
+    | "membersPending"
+    | "membersWantsToJoin"
+    | "requestTemplates"
+    | "paymentsBulk";
 
 function PageTourContent({ k }: { k: PageTourKey }) {
     const t = useTranslations("pageTours");
@@ -29,6 +33,7 @@ function PageTourContentRich({ k }: { k: "newFeature" }) {
 // Tour names
 export const PAGE_TOUR_NAMES = {
     MEMBERS_PENDING: "members-pending",
+    MEMBERS_WANTS_TO_JOIN: "members-wants-to-join",
     EARN_ANNOUNCEMENT: EARN_ANNOUNCEMENT_TOUR_NAME,
     REQUEST_TEMPLATES: "request-templates",
     PAYMENTS_BULK: "payments-bulk",
@@ -41,6 +46,7 @@ export const REQUEST_TEMPLATES_TOUR_NAME = PAGE_TOUR_NAMES.REQUEST_TEMPLATES;
 // Local storage keys
 export const PAGE_TOUR_STORAGE_KEYS = {
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
+    MEMBERS_WANTS_TO_JOIN_SHOWN: "members-wants-to-join-tour-shown",
     REQUEST_TEMPLATES_SHOWN: "request-templates-tour-shown",
     PAYMENTS_BULK_SHOWN: "payments-bulk-tour-shown",
 } as const;
@@ -48,6 +54,7 @@ export const PAGE_TOUR_STORAGE_KEYS = {
 // Selector IDs
 export const PAGE_TOUR_SELECTORS = {
     MEMBERS_PENDING_BTN: "#members-pending-btn",
+    MEMBERS_WANTS_TO_JOIN_BTN: "#members-wants-to-join-btn",
     REQUEST_TEMPLATES_NAV: "#request-templates-nav",
     PAYMENTS_BULK_BTN: "#payments-bulk-btn",
 } as const;
@@ -79,6 +86,18 @@ export const MEMBERS_PENDING_TOUR: Tour = {
             content: <PageTourContent k="membersPending" />,
             selector: PAGE_TOUR_SELECTORS.MEMBERS_PENDING_BTN,
             side: "bottom-right",
+        },
+    ],
+};
+
+export const MEMBERS_WANTS_TO_JOIN_TOUR: Tour = {
+    tour: PAGE_TOUR_NAMES.MEMBERS_WANTS_TO_JOIN,
+    steps: [
+        {
+            ...defaultStepProps,
+            content: <PageTourContent k="membersWantsToJoin" />,
+            selector: PAGE_TOUR_SELECTORS.MEMBERS_WANTS_TO_JOIN_BTN,
+            side: "bottom",
         },
     ],
 };

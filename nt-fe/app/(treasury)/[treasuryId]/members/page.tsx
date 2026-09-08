@@ -184,10 +184,22 @@ export default function MembersPage() {
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
+    const { data: joinRequests = [] } = useMemberJoinRequests(
+        canAddMember ? treasuryId : undefined,
+    );
+    const joinRequestCount = joinRequests.length;
+
     usePageTour(
         PAGE_TOUR_NAMES.MEMBERS_PENDING,
         PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
         { enabled: hasPendingMemberRequest },
+    );
+    usePageTour(
+        PAGE_TOUR_NAMES.MEMBERS_WANTS_TO_JOIN,
+        PAGE_TOUR_STORAGE_KEYS.MEMBERS_WANTS_TO_JOIN_SHOWN,
+        {
+            enabled: joinRequestCount > 0 && pendingMemberRequestCount === 0,
+        },
     );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
@@ -203,11 +215,6 @@ export default function MembersPage() {
     const memberActionsDisabledReason = hasPendingMemberRequest
         ? tMemberValidation("pendingRequest")
         : undefined;
-
-    const { data: joinRequests = [] } = useMemberJoinRequests(
-        canAddMember ? treasuryId : undefined,
-    );
-    const joinRequestCount = joinRequests.length;
 
     // Deep-link: /members?member=...&roles=... → /members/add
     useEffect(() => {
@@ -357,7 +364,7 @@ export default function MembersPage() {
         if (!sheetMember || !treasuryId) return;
         trackEvent("nav-click", {
             destination: "payments",
-            source: "members-row",
+            source: "members-action-sheet",
             treasury_id: treasuryId,
         });
         setSheetMember(null);
@@ -886,16 +893,16 @@ export default function MembersPage() {
 
             {showJoinRequestsButton ? (
                 <Button
-                    id="members-pending-btn"
+                    id="members-wants-to-join-btn"
                     type="button"
                     variant="pill"
-                    className="gap-2 rounded-lg"
+                    className="gap-2"
                     onClick={() =>
                         router.push(`/${treasuryId}/members/join-requests`)
                     }
                 >
-                    {tRequests("title")}
-                    <NumberBadge shape="pill" number={joinRequestCount} />
+                    {tMembers("wantsToJoin")}
+                    <NumberBadge number={joinRequestCount} />
                 </Button>
             ) : null}
 

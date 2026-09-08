@@ -2122,6 +2122,7 @@
         "paymentsPending": "Check payments waiting for approval",
         "exchangeSettings": "Set the maximum price change (slippage) you'll accept on a swap.",
         "membersPending": "See member-related requests waiting for approval",
+        "membersWantsToJoin": "See the member who wants to join your team",
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
         "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",

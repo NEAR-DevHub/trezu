@@ -138,9 +138,7 @@ export default function JoinInvitePage() {
     };
 
     const treasuryName =
-        invite?.treasuryName?.trim() ||
-        invite?.daoId ||
-        t("treasuryFallback");
+        invite?.treasuryName?.trim() || invite?.daoId || t("treasuryFallback");
     const showLogin =
         !accountId &&
         invite?.status === "valid" &&

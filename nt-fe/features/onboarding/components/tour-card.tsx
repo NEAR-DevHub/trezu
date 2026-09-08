@@ -47,7 +47,8 @@ export function TourCard({
     const tourName = currentTour;
     const hidePrimaryButton =
         tourName === TOUR_NAMES.INFO_BOX_DISMISSED ||
-        tourName === PAGE_TOUR_NAMES.PAYMENTS_BULK;
+        tourName === PAGE_TOUR_NAMES.PAYMENTS_BULK ||
+        tourName === PAGE_TOUR_NAMES.MEMBERS_WANTS_TO_JOIN;
     const isHelpSupportTour = tourName === TOUR_NAMES.INFO_BOX_DISMISSED;
     const isDashboardTour = tourName === TOUR_NAMES.DASHBOARD;
     const tourAction = TOUR_ACTIONS[tourName as keyof typeof TOUR_ACTIONS];

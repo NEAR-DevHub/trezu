@@ -2124,6 +2124,7 @@
         "paymentsPending": "Onay bekleyen ödemeleri kontrol edin",
         "exchangeSettings": "Bir takasta kabul edeceğiniz maksimum fiyat değişimini (slippage) ayarlayın.",
         "membersPending": "Onay bekleyen üye ile ilgili talepleri görün",
+        "membersWantsToJoin": "Ekibinize katılmak isteyen üyeyi görün",
         "guestSaveIntro": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz.",
         "guestSaveAction": "Bu misafir hazineyi hazinelerinize kaydedebilirsiniz.",
         "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin. Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",

@@ -279,6 +279,11 @@ export function RoleSelector({
                             type="button"
                             className="h-11 w-full rounded-2xl"
                             disabled={draftRoles.length === 0}
+                            tooltipContent={
+                                draftRoles.length === 0
+                                    ? tInput("validation.rolesRequired")
+                                    : undefined
+                            }
                             onClick={handleDone}
                         >
                             {tCommon("done")}

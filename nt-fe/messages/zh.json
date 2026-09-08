@@ -2107,6 +2107,7 @@
         "paymentsPending": "查看等待批准的付款",
         "exchangeSettings": "设置您在交换时可接受的最大价格变动（滑点）。",
         "membersPending": "查看等待批准的成员相关请求",
+        "membersWantsToJoin": "查看想要加入团队的成员",
         "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
         "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
         "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。 您的联系人保持私密,仅对您的团队可见。",

@@ -2107,6 +2107,7 @@
         "paymentsPending": "Kiểm tra các khoản thanh toán đang chờ phê duyệt",
         "exchangeSettings": "Đặt mức thay đổi giá tối đa (slippage) bạn chấp nhận khi hoán đổi.",
         "membersPending": "Xem các yêu cầu liên quan đến thành viên đang chờ phê duyệt",
+        "membersWantsToJoin": "Xem thành viên muốn tham gia nhóm của bạn",
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
         "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
