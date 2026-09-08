@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "yyyy/mm/dd"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "1/{memberCount}のしきい値では、メンバーの誰か一人でもトランザクションを実行できます。これはセキュリティを低下させます。",
-        "infoBalanced": "{currentThreshold}/{memberCount}のしきい値は、セキュリティと運用上の柔軟性のバランスが取れています。"
-    },
     "metadata": {
         "treasuryTitle": "ダッシュボード | Near Business",
         "landingTitle": "Near Business | クロスチェーン・トレジャリー管理",
@@ -189,8 +185,7 @@
             "description": "チームメンバーと権限を管理"
         },
         "settings": {
-            "title": "設定",
-            "description": "アプリケーションの設定を調整"
+            "title": "設定"
         },
         "addressBook": {
             "title": "アドレス帳",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "一般",
-            "voting": "投票",
-            "preferences": "環境設定",
-            "integrations": "連携",
-            "developer": "開発者"
+            "voting": "投票"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "トレジャリーが見つかりません",
             "treasuryName": "トレジャリー名",
             "treasuryNameDescription": "トレジャリーの名前です。アプリ全体で表示されます。",
-            "displayName": "表示名",
             "displayNamePlaceholder": "表示名を入力",
-            "accountName": "アカウント名",
             "logo": "ロゴ",
             "logoDescription": "トレジャリーのロゴをアップロードしてください。SVG、PNG、またはJPG(256x256ピクセル)を推奨します。",
-            "treasuryLogoAlt": "トレジャリーロゴ",
             "uploading": "アップロード中...",
-            "uploadLogo": "ロゴをアップロード",
-            "removeLogo": "ロゴを削除",
+            "removeLogo": "削除",
             "logoUploaded": "ロゴが正常にアップロードされました",
             "uploadError": "画像のアップロード中にエラーが発生しました。もう一度お試しください。",
             "invalidLogo": "無効なロゴです。256x256ピクセルのPNG、JPG、またはSVGファイルをアップロードしてください",
             "invalidImage": "無効な画像ファイルです。有効な画像をアップロードしてください。",
             "fileReadError": "ファイルの読み込みエラーです。もう一度お試しください。",
             "primaryColor": "メインカラー",
-            "primaryColorDescription": "トレジャリーのインターフェース要素のメインカラーを設定します。この色はライトモードとダークモードの両方で使われるため、ニュートラルな色を選ぶ際はコントラストに注意してください。",
+            "primaryColorDescription": "トレジャリーのインターフェース要素のプライマリカラーを設定します。",
             "selectColorLabel": "色 {color} を選択",
-            "saveChanges": "変更を保存",
-            "saving": "保存中...",
             "savedToast": "変更を保存しました。",
-            "saveFailed": "変更を保存できませんでした。もう一度お試しください。"
+            "saveFailed": "変更を保存できませんでした。もう一度お試しください。",
+            "save": "保存",
+            "edit": "編集"
         },
         "voting": {
             "validation": {
@@ -1114,36 +1102,18 @@
             "durationProposalTitle": "ポリシー更新 - 投票期間",
             "durationProposalSummary": "{account}が投票期間を{oldValue}から{newValue}に変更するよう要求しました。",
             "durationSubmitted": "リクエストが正常に作成されました",
-            "pendingTitle": "アクティブな投票しきい値リクエスト",
-            "pendingBody": "競合を避けるため、続行する前に既存の保留中リクエストを完了または解決する必要があります。これらのリクエストは現在アクティブで、まず承認または却下する必要があります。",
             "viewRequest": "リクエストを表示",
-            "thresholdHeading": "投票しきい値",
-            "thresholdDescriptionApprovers": "支払いやチーム関連のリクエストの承認に必要な票数を定義します。Approver(承認者)とGovernance(ガバナンス)で別々にしきい値を設定してください。",
-            "thresholdDescriptionGeneric": "リクエスト承認に必要な票数を定義します。各ロールの責任に応じてしきい値を設定してください。",
             "membersWhoCanVote": "投票できるメンバー",
-            "votesRequired": "リクエスト承認に必要な票数",
             "durationHeading": "投票期間",
-            "durationDescription": "提案が投票可能なまま残る期間(日数)です。この期間内に投票が完了しないと、決定は失効します。",
-            "durationApprovers": " この期間はGovernanceとApproverの両ロールに等しく適用されます。",
-            "durationGeneric": " この期間はすべてのトレジャリーロールに一貫して適用されます。",
-            "days": "日"
-        },
-        "preferences": {
-            "timeZone": "タイムゾーン",
-            "timeZoneDescription": "正確な日時表示のためにローカルタイムゾーンを設定してください。",
-            "timeFormat": "時刻形式",
-            "hour12": "12時間制 (1:00 PM)",
-            "hour24": "24時間制 (13:00)",
-            "autoTimezone": "現在地に基づいてタイムゾーンを自動設定",
-            "timezone": "タイムゾーン",
-            "loadingTimezones": "タイムゾーンを読み込み中...",
-            "selectTimezone": "タイムゾーンを選択",
-            "searchTimezones": "タイムゾーンを検索...",
-            "noTimezones": "タイムゾーンが見つかりません",
-            "save": "保存",
-            "savedToast": "環境設定が正常に保存されました",
-            "saveFailed": "環境設定の保存に失敗しました",
-            "loadFailed": "タイムゾーンの読み込みに失敗しました"
+            "durationDescription": "リクエストが期限切れになるまで開いている期間です。期限を過ぎると失効します。",
+            "days": "日",
+            "roleThresholdTitle": "{role} のしきい値",
+            "roleDescription": {
+                "financial": "これらのメンバーが送金・スワップのリクエストを承認します。",
+                "governance": "これらのメンバーがメンバーとルールの変更を承認します。",
+                "generic": "これらのメンバーがこのロールのリクエストを承認します。"
+            },
+            "pendingAlert": "{count, plural, other {# 件の設定リクエストに対応が必要です}}"
         }
     },
     "addressBook": {
@@ -2588,13 +2558,6 @@
             "invalidManifest": "このテンプレートのマニフェストは無効です:",
             "proposalFiled": "リクエストを提出しました"
         },
-        "developer": {
-            "title": "カスタムリクエスト",
-            "description": "支払いや交換以上の機能が必要な場合は、独自のリクエストタイプを作成できます。必要なフィールドを追加すれば、メンバーは他のリクエストと同じように送信できます。",
-            "enable": "有効化",
-            "disable": "無効化",
-            "errUpdate": "設定を更新できませんでした"
-        },
         "visual": {
             "detailsTitle": "詳細",
             "idLabel": "ID（slug）",
@@ -2675,6 +2638,13 @@
             "pattern": "{label}が必要なパターンに一致しません",
             "min": "{label}は{min}以上である必要があります",
             "max": "{label}は{max}以下である必要があります"
+        },
+        "settingsCard": {
+            "title": "カスタムリクエスト",
+            "description": "支払いや交換以上の機能が必要な場合は、独自のリクエストタイプを作成できます。必要なフィールドを追加すれば、メンバーは他のリクエストと同じように送信できます。",
+            "enable": "有効化",
+            "disable": "無効化",
+            "errUpdate": "設定を更新できませんでした"
         }
     },
     "account": {
@@ -2729,5 +2699,9 @@
             "exceedsBalance": "金額がパブリック残高を超えています",
             "failed": "移動リクエストを準備できませんでした。もう一度お試しください。"
         }
+    },
+    "thresholdStepper": {
+        "decrease": "しきい値を下げる",
+        "increase": "しきい値を上げる"
     }
 }

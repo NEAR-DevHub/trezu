@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "dd/mm/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Ambang batas 1-dari-{memberCount} berarti satu anggota mana pun dapat mengeksekusi transaksi. Ini mengurangi keamanan.",
-        "infoBalanced": "Ambang batas {currentThreshold}-dari-{memberCount} memberikan keseimbangan yang baik antara keamanan dan fleksibilitas operasional."
-    },
     "metadata": {
         "treasuryTitle": "Dasbor | Near Business",
         "landingTitle": "Near Business | Manajemen Treasury Lintas-rantai",
@@ -189,8 +185,7 @@
             "description": "Kelola anggota tim dan izin"
         },
         "settings": {
-            "title": "Pengaturan",
-            "description": "Sesuaikan pengaturan aplikasi Anda"
+            "title": "Pengaturan"
         },
         "addressBook": {
             "title": "Buku Alamat",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "Umum",
-            "voting": "Pemungutan Suara",
-            "preferences": "Preferensi",
-            "integrations": "Integrasi",
-            "developer": "Pengembang"
+            "voting": "Pemungutan Suara"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Treasury tidak ditemukan",
             "treasuryName": "Nama Treasury",
             "treasuryNameDescription": "Nama treasury Anda. Ini akan ditampilkan di seluruh aplikasi.",
-            "displayName": "Nama Tampilan",
             "displayNamePlaceholder": "Masukkan nama tampilan",
-            "accountName": "Nama Akun",
             "logo": "Logo",
             "logoDescription": "Unggah logo untuk treasury Anda. Direkomendasikan SVG, PNG, atau JPG (256x256 px).",
-            "treasuryLogoAlt": "Logo treasury",
             "uploading": "Mengunggah...",
-            "uploadLogo": "Unggah Logo",
-            "removeLogo": "Hapus Logo",
+            "removeLogo": "Hapus",
             "logoUploaded": "Logo berhasil diunggah",
             "uploadError": "Terjadi kesalahan saat mengunggah gambar, silakan coba lagi.",
             "invalidLogo": "Logo tidak valid. Silakan unggah file PNG, JPG, atau SVG yang berukuran tepat 256x256 px",
             "invalidImage": "File gambar tidak valid. Silakan unggah gambar yang valid.",
             "fileReadError": "Kesalahan membaca file. Silakan coba lagi.",
             "primaryColor": "Warna Utama",
-            "primaryColorDescription": "Tetapkan warna utama untuk elemen antarmuka treasury Anda. Warna ini akan digunakan dalam mode terang dan gelap, jadi pertimbangkan kontras saat memilih corak netral.",
+            "primaryColorDescription": "Tetapkan warna utama untuk elemen antarmuka treasury Anda.",
             "selectColorLabel": "Pilih warna {color}",
-            "saveChanges": "Simpan perubahan",
-            "saving": "Menyimpan...",
             "savedToast": "Perubahan Anda telah disimpan.",
-            "saveFailed": "Tidak dapat menyimpan perubahan. Coba lagi."
+            "saveFailed": "Tidak dapat menyimpan perubahan. Coba lagi.",
+            "save": "Simpan",
+            "edit": "Ubah"
         },
         "voting": {
             "validation": {
@@ -1114,36 +1102,18 @@
             "durationProposalTitle": "Perbarui kebijakan - Durasi Pemungutan Suara",
             "durationProposalSummary": "{account} meminta untuk mengubah durasi pemungutan suara dari {oldValue} menjadi {newValue}.",
             "durationSubmitted": "Permintaan berhasil dibuat",
-            "pendingTitle": "Permintaan Ambang Pemungutan Suara Aktif",
-            "pendingBody": "Untuk menghindari konflik, Anda perlu menyelesaikan atau menyelesaikan permintaan tertunda yang ada sebelum melanjutkan. Permintaan ini saat ini aktif dan harus disetujui atau ditolak terlebih dahulu.",
-            "viewRequest": "Lihat Permintaan",
-            "thresholdHeading": "Ambang Pemungutan Suara",
-            "thresholdDescriptionApprovers": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan pembayaran dan terkait tim. Konfigurasikan ambang secara terpisah untuk Approver dan Governance.",
-            "thresholdDescriptionGeneric": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan. Konfigurasikan ambang untuk setiap peran berdasarkan tanggung jawab mereka.",
+            "viewRequest": "Lihat permintaan",
             "membersWhoCanVote": "Anggota yang dapat memilih",
-            "votesRequired": "Suara diperlukan untuk menyetujui permintaan",
-            "durationHeading": "Durasi Pemungutan Suara",
-            "durationDescription": "Lamanya waktu (dalam hari) sebuah usulan akan tetap terbuka untuk pemungutan suara. Jika pemungutan suara tidak selesai dalam periode ini, keputusan akan kedaluwarsa.",
-            "durationApprovers": " Durasi ini berlaku sama untuk peran Governance dan Approver.",
-            "durationGeneric": " Durasi ini konsisten di semua peran treasury.",
-            "days": "Hari"
-        },
-        "preferences": {
-            "timeZone": "Zona Waktu",
-            "timeZoneDescription": "Tetapkan zona waktu lokal Anda untuk tampilan tanggal dan waktu yang akurat.",
-            "timeFormat": "Format Waktu",
-            "hour12": "12 jam (1:00 PM)",
-            "hour24": "24 jam (13:00)",
-            "autoTimezone": "Atur zona waktu otomatis menggunakan lokasi Anda",
-            "timezone": "Zona Waktu",
-            "loadingTimezones": "Memuat zona waktu...",
-            "selectTimezone": "Pilih Zona Waktu",
-            "searchTimezones": "Cari zona waktu...",
-            "noTimezones": "Tidak ada zona waktu ditemukan",
-            "save": "Simpan",
-            "savedToast": "Preferensi berhasil disimpan",
-            "saveFailed": "Gagal menyimpan preferensi",
-            "loadFailed": "Gagal memuat zona waktu"
+            "durationHeading": "Durasi Voting",
+            "durationDescription": "Berapa lama permintaan tetap terbuka sebelum kedaluwarsa. Setelah itu, hilang.",
+            "days": "Hari",
+            "roleThresholdTitle": "Ambang {role}",
+            "roleDescription": {
+                "financial": "Anggota ini menyetujui permintaan kirim dan swap.",
+                "governance": "Anggota ini menyetujui perubahan anggota dan aturan.",
+                "generic": "Anggota ini menyetujui permintaan untuk peran ini."
+            },
+            "pendingAlert": "{count, plural, other {# permintaan pengaturan perlu perhatian}}"
         }
     },
     "addressBook": {
@@ -2588,13 +2558,6 @@
             "invalidManifest": "Manifest templat ini tidak valid:",
             "proposalFiled": "Permintaan diajukan"
         },
-        "developer": {
-            "title": "Permintaan Khusus",
-            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
-            "enable": "Aktifkan",
-            "disable": "Nonaktifkan",
-            "errUpdate": "Tidak dapat memperbarui pengaturan"
-        },
         "visual": {
             "detailsTitle": "Detail",
             "idLabel": "ID (slug)",
@@ -2675,6 +2638,13 @@
             "pattern": "{label} tidak sesuai dengan pola yang diperlukan",
             "min": "{label} minimal harus {min}",
             "max": "{label} maksimal harus {max}"
+        },
+        "settingsCard": {
+            "title": "Permintaan Khusus",
+            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
+            "enable": "Aktifkan",
+            "disable": "Nonaktifkan",
+            "errUpdate": "Tidak dapat memperbarui pengaturan"
         }
     },
     "account": {
@@ -2729,5 +2699,9 @@
             "exceedsBalance": "Jumlah melebihi saldo publik",
             "failed": "Tidak dapat menyiapkan permintaan pemindahan. Silakan coba lagi."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Kurangi ambang",
+        "increase": "Tambah ambang"
     }
 }

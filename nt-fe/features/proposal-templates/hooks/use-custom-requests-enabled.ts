@@ -12,8 +12,8 @@ function customRequestsKey(
 
 /**
  * Whether the Custom Requests feature is on for the current treasury. Gates the sidebar's Request
- * Templates section and the Developer settings card. Same enable-conditions as the templates query
- * (signed-in, non-guest treasury).
+ * Templates section and the Custom Requests card in Settings → General. Same enable-conditions as
+ * the templates query (signed-in, non-guest treasury).
  */
 export function useCustomRequestsEnabled() {
     const { accountId } = useNear();

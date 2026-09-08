@@ -34,7 +34,7 @@ export const PAGE_TOUR_NAMES = {
     PAYMENTS_BULK: "payments-bulk",
 } as const;
 
-// Fired right after a DAO enables Custom Requests in Settings → Developer, to point at the
+// Fired right after a DAO enables Custom Requests in Settings → General, to point at the
 // newly revealed sidebar section.
 export const REQUEST_TEMPLATES_TOUR_NAME = PAGE_TOUR_NAMES.REQUEST_TEMPLATES;
 

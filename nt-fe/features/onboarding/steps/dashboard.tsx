@@ -538,7 +538,9 @@ export function NotificationsTooltip() {
 
     const handleTryIt = () => {
         handleDismiss();
-        router.push(`/${treasuryId}/settings?tab=integrations`);
+        // Settings no longer carries an Integrations tab, so send people straight to
+        // the Telegram connect flow this announcement is actually about.
+        router.push("/telegram/connect");
     };
 
     if (!isVisible || hidden || isTourActive) {

@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "dd/mm/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "סף של 1 מתוך {memberCount} משמעו שכל חבר יחיד יכול לבצע עסקאות. זה מפחית את האבטחה.",
-        "infoBalanced": "סף של {currentThreshold} מתוך {memberCount} מספק איזון טוב בין אבטחה לגמישות תפעולית."
-    },
     "metadata": {
         "treasuryTitle": "לוח בקרה | Near Business",
         "landingTitle": "Near Business | ניהול אוצר חוצה-רשתות",
@@ -189,8 +185,7 @@
             "description": "נהל חברי צוות והרשאות"
         },
         "settings": {
-            "title": "הגדרות",
-            "description": "התאם את הגדרות היישום שלך"
+            "title": "הגדרות"
         },
         "addressBook": {
             "title": "ספר כתובות",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "כללי",
-            "voting": "הצבעה",
-            "preferences": "העדפות",
-            "integrations": "אינטגרציות",
-            "developer": "מפתח"
+            "voting": "הצבעה"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "האוצר לא נמצא",
             "treasuryName": "שם האוצר",
             "treasuryNameDescription": "שם האוצר שלך. זה יוצג בכל האפליקציה.",
-            "displayName": "שם תצוגה",
             "displayNamePlaceholder": "הזן שם תצוגה",
-            "accountName": "שם חשבון",
             "logo": "לוגו",
             "logoDescription": "העלה לוגו עבור האוצר שלך. מומלץ SVG, PNG או JPG (256x256 פיקסלים).",
-            "treasuryLogoAlt": "לוגו האוצר",
             "uploading": "מעלה...",
-            "uploadLogo": "העלה לוגו",
-            "removeLogo": "הסר לוגו",
+            "removeLogo": "הסרה",
             "logoUploaded": "הלוגו הועלה בהצלחה",
             "uploadError": "אירעה שגיאה בעת העלאת התמונה, אנא נסה שוב.",
             "invalidLogo": "לוגו לא תקין. אנא העלה קובץ PNG, JPG או SVG שהוא בדיוק 256x256 פיקסלים",
             "invalidImage": "קובץ תמונה לא תקין. אנא העלה תמונה תקינה.",
             "fileReadError": "שגיאה בקריאת הקובץ. אנא נסה שוב.",
             "primaryColor": "צבע ראשי",
-            "primaryColorDescription": "הגדר את הצבע הראשי עבור רכיבי הממשק של האוצר שלך. צבע זה ישמש במצבים בהירים וכהים כאחד, אז שמור על ניגודיות בחירה בגוונים ניטרליים.",
+            "primaryColorDescription": "הגדירו את צבע הבסיס לרכיבי הממשק של הקופה שלכם.",
             "selectColorLabel": "בחר צבע {color}",
-            "saveChanges": "שמור שינויים",
-            "saving": "שומר...",
             "savedToast": "השינויים שלך נשמרו.",
-            "saveFailed": "לא ניתן לשמור את השינויים. נסה שוב."
+            "saveFailed": "לא ניתן לשמור את השינויים. נסה שוב.",
+            "save": "שמירה",
+            "edit": "עריכה"
         },
         "voting": {
             "validation": {
@@ -1114,36 +1102,18 @@
             "durationProposalTitle": "עדכון מדיניות - משך הצבעה",
             "durationProposalSummary": "{account} ביקש לשנות את משך ההצבעה מ-{oldValue} ל-{newValue}.",
             "durationSubmitted": "הבקשה נוצרה בהצלחה",
-            "pendingTitle": "בקשת סף הצבעה פעילה",
-            "pendingBody": "כדי להימנע מהתנגשויות, עליך להשלים או לפתור את הבקשות הממתינות הקיימות לפני שתמשיך. בקשות אלו פעילות כעת ויש לאשר או לדחות אותן תחילה.",
-            "viewRequest": "הצג בקשה",
-            "thresholdHeading": "סף הצבעה",
-            "thresholdDescriptionApprovers": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות תשלום ובקשות הקשורות לצוות. הגדר ספים בנפרד עבור מאשרים וממשל.",
-            "thresholdDescriptionGeneric": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות. הגדר ספים עבור כל תפקיד בהתאם לאחריותם.",
+            "viewRequest": "הצגת הבקשה",
             "membersWhoCanVote": "חברים שיכולים להצביע",
-            "votesRequired": "הצבעות נדרשות כדי לאשר בקשות",
-            "durationHeading": "משך הצבעה",
-            "durationDescription": "פרק הזמן (בימים) שבו הצעה תישאר פתוחה להצבעה. אם ההצבעה לא תושלם בפרק זמן זה, ההחלטה תפוג.",
-            "durationApprovers": " משך זה חל באופן שווה על תפקידי ממשל ומאשרים כאחד.",
-            "durationGeneric": " משך זה אחיד בכל תפקידי האוצר.",
-            "days": "ימים"
-        },
-        "preferences": {
-            "timeZone": "אזור זמן",
-            "timeZoneDescription": "הגדר את אזור הזמן המקומי שלך לתצוגת תאריך וזמן מדויקים.",
-            "timeFormat": "פורמט זמן",
-            "hour12": "12 שעות (1:00 PM)",
-            "hour24": "24 שעות (13:00)",
-            "autoTimezone": "הגדר אזור זמן אוטומטית באמצעות מיקומך",
-            "timezone": "אזור זמן",
-            "loadingTimezones": "טוען אזורי זמן...",
-            "selectTimezone": "בחר אזור זמן",
-            "searchTimezones": "חיפוש אזורי זמן...",
-            "noTimezones": "לא נמצאו אזורי זמן",
-            "save": "שמירה",
-            "savedToast": "ההעדפות נשמרו בהצלחה",
-            "saveFailed": "שמירת ההעדפות נכשלה",
-            "loadFailed": "טעינת אזורי הזמן נכשלה"
+            "durationHeading": "משך ההצבעה",
+            "durationDescription": "כמה זמן בקשה נשארת פתוחה עד לפקיעתה. אחר כך היא נעלמת.",
+            "days": "ימים",
+            "roleThresholdTitle": "סף עבור {role}",
+            "roleDescription": {
+                "financial": "חברים אלה מאשרים בקשות שליחה והחלפה.",
+                "governance": "חברים אלה מאשרים שינויים בחברים ובכללים.",
+                "generic": "חברים אלה מאשרים בקשות עבור תפקיד זה."
+            },
+            "pendingAlert": "{count, plural, one {בקשת הגדרות אחת דורשת טיפול} other {# בקשות הגדרות דורשות טיפול}}"
         }
     },
     "addressBook": {
@@ -2588,13 +2558,6 @@
             "invalidManifest": "המניפסט של תבנית זו אינו תקין:",
             "proposalFiled": "הבקשה הוגשה"
         },
-        "developer": {
-            "title": "בקשות מותאמות אישית",
-            "description": "בנו סוגי בקשות משלכם כשאתם זקוקים ליותר מתשלומים והחלפה. הוסיפו את השדות שאתם צריכים והחברים שלכם יוכלו להגיש אותם כמו כל בקשה אחרת.",
-            "enable": "הפעל",
-            "disable": "השבת",
-            "errUpdate": "לא ניתן היה לעדכן את ההגדרה"
-        },
         "visual": {
             "detailsTitle": "פרטים",
             "idLabel": "מזהה (slug)",
@@ -2675,6 +2638,13 @@
             "pattern": "{label} אינו תואם לתבנית הנדרשת",
             "min": "{label} חייב להיות לפחות {min}",
             "max": "{label} חייב להיות לכל היותר {max}"
+        },
+        "settingsCard": {
+            "title": "בקשות מותאמות אישית",
+            "description": "בנו סוגי בקשות משלכם כשאתם זקוקים ליותר מתשלומים והחלפה. הוסיפו את השדות שאתם צריכים והחברים שלכם יוכלו להגיש אותם כמו כל בקשה אחרת.",
+            "enable": "הפעל",
+            "disable": "השבת",
+            "errUpdate": "לא ניתן היה לעדכן את ההגדרה"
         }
     },
     "account": {
@@ -2729,5 +2699,9 @@
             "exceedsBalance": "הסכום עולה על היתרה הציבורית",
             "failed": "לא ניתן להכין את בקשת ההעברה. נסה שוב."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "הפחתת הסף",
+        "increase": "הגדלת הסף"
     }
 }

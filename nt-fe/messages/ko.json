@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "yyyy/mm/dd"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "{memberCount}명 중 1명 임계값은 단일 멤버가 트랜잭션을 실행할 수 있음을 의미합니다. 이는 보안을 약화시킵니다.",
-        "infoBalanced": "{memberCount}명 중 {currentThreshold}명 임계값은 보안과 운영 유연성 사이에 좋은 균형을 제공합니다."
-    },
     "metadata": {
         "treasuryTitle": "대시보드 | Near Business",
         "landingTitle": "Near Business | 크로스체인 트레저리 관리",
@@ -189,8 +185,7 @@
             "description": "팀 멤버 및 권한 관리"
         },
         "settings": {
-            "title": "설정",
-            "description": "애플리케이션 설정 조정"
+            "title": "설정"
         },
         "addressBook": {
             "title": "주소록",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "일반",
-            "voting": "투표",
-            "preferences": "환경설정",
-            "integrations": "통합",
-            "developer": "개발자"
+            "voting": "투표"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "트레저리를 찾을 수 없습니다",
             "treasuryName": "트레저리 이름",
             "treasuryNameDescription": "트레저리의 이름입니다. 이 이름은 앱 전체에 표시됩니다.",
-            "displayName": "표시 이름",
             "displayNamePlaceholder": "표시 이름 입력",
-            "accountName": "계정 이름",
             "logo": "로고",
             "logoDescription": "트레저리용 로고를 업로드하세요. SVG, PNG 또는 JPG (256x256 픽셀) 권장.",
-            "treasuryLogoAlt": "트레저리 로고",
             "uploading": "업로드 중...",
-            "uploadLogo": "로고 업로드",
-            "removeLogo": "로고 제거",
+            "removeLogo": "삭제",
             "logoUploaded": "로고가 성공적으로 업로드되었습니다",
             "uploadError": "이미지 업로드 중 오류가 발생했습니다. 다시 시도해 주세요.",
             "invalidLogo": "잘못된 로고입니다. 정확히 256x256 픽셀의 PNG, JPG 또는 SVG 파일을 업로드해 주세요",
             "invalidImage": "잘못된 이미지 파일입니다. 유효한 이미지를 업로드해 주세요.",
             "fileReadError": "파일 읽기 오류입니다. 다시 시도해 주세요.",
             "primaryColor": "기본 색상",
-            "primaryColorDescription": "트레저리의 인터페이스 요소에 대한 기본 색상을 설정하세요. 이 색상은 라이트 모드와 다크 모드 모두에서 사용되므로 중성 색조를 선택할 때 대비를 고려하세요.",
+            "primaryColorDescription": "트레저리 인터페이스 요소의 기본 색상을 설정하세요.",
             "selectColorLabel": "색상 {color} 선택",
-            "saveChanges": "변경 사항 저장",
-            "saving": "저장 중...",
             "savedToast": "변경 사항이 저장되었습니다.",
-            "saveFailed": "변경 사항을 저장하지 못했습니다. 다시 시도하세요."
+            "saveFailed": "변경 사항을 저장하지 못했습니다. 다시 시도하세요.",
+            "save": "저장",
+            "edit": "편집"
         },
         "voting": {
             "validation": {
@@ -1114,36 +1102,18 @@
             "durationProposalTitle": "정책 업데이트 - 투표 기간",
             "durationProposalSummary": "{account}이(가) 투표 기간을 {oldValue}에서 {newValue}(으)로 변경하도록 요청했습니다.",
             "durationSubmitted": "요청이 성공적으로 생성되었습니다",
-            "pendingTitle": "활성 투표 임계값 요청",
-            "pendingBody": "충돌을 피하기 위해, 진행하기 전에 기존 대기 중인 요청을 완료하거나 해결해야 합니다. 이러한 요청은 현재 활성 상태이며 먼저 승인하거나 거부해야 합니다.",
             "viewRequest": "요청 보기",
-            "thresholdHeading": "투표 임계값",
-            "thresholdDescriptionApprovers": "결제 및 팀 관련 요청을 승인하는 데 필요한 투표 수를 정의합니다. Approver와 Governance에 대해 임계값을 별도로 구성하세요.",
-            "thresholdDescriptionGeneric": "요청을 승인하는 데 필요한 투표 수를 정의합니다. 각 역할에 대해 책임에 따라 임계값을 구성하세요.",
             "membersWhoCanVote": "투표할 수 있는 멤버",
-            "votesRequired": "요청을 승인하는 데 필요한 투표",
             "durationHeading": "투표 기간",
-            "durationDescription": "제안이 투표를 위해 열려 있는 기간(일 단위)입니다. 이 기간 내에 투표가 완료되지 않으면 결정이 만료됩니다.",
-            "durationApprovers": " 이 기간은 Governance와 Approver 역할 모두에 동일하게 적용됩니다.",
-            "durationGeneric": " 이 기간은 모든 트레저리 역할에 일관되게 적용됩니다.",
-            "days": "일"
-        },
-        "preferences": {
-            "timeZone": "시간대",
-            "timeZoneDescription": "정확한 날짜 및 시간 표시를 위해 현지 시간대를 설정하세요.",
-            "timeFormat": "시간 형식",
-            "hour12": "12시간 (오후 1:00)",
-            "hour24": "24시간 (13:00)",
-            "autoTimezone": "위치를 사용하여 시간대를 자동으로 설정",
-            "timezone": "시간대",
-            "loadingTimezones": "시간대 로딩 중...",
-            "selectTimezone": "시간대 선택",
-            "searchTimezones": "시간대 검색...",
-            "noTimezones": "시간대를 찾을 수 없습니다",
-            "save": "저장",
-            "savedToast": "환경설정이 성공적으로 저장되었습니다",
-            "saveFailed": "환경설정 저장에 실패했습니다",
-            "loadFailed": "시간대를 불러오지 못했습니다"
+            "durationDescription": "요청이 만료되기 전까지 열려 있는 기간입니다. 이후에는 사라집니다.",
+            "days": "일",
+            "roleThresholdTitle": "{role} 임계값",
+            "roleDescription": {
+                "financial": "이 멤버들이 전송 및 스왑 요청을 승인합니다.",
+                "governance": "이 멤버들이 멤버와 규칙 변경을 승인합니다.",
+                "generic": "이 멤버들이 이 역할의 요청을 승인합니다."
+            },
+            "pendingAlert": "{count, plural, other {설정 요청 #건을 확인해야 합니다}}"
         }
     },
     "addressBook": {
@@ -2588,13 +2558,6 @@
             "invalidManifest": "이 템플릿의 매니페스트가 유효하지 않습니다:",
             "proposalFiled": "요청이 제출되었습니다"
         },
-        "developer": {
-            "title": "맞춤 요청",
-            "description": "결제와 교환만으로는 부족할 때 직접 요청 유형을 만드세요. 필요한 필드를 추가하면 멤버가 다른 요청과 똑같이 제출할 수 있습니다.",
-            "enable": "사용",
-            "disable": "사용 안 함",
-            "errUpdate": "설정을 업데이트할 수 없습니다"
-        },
         "visual": {
             "detailsTitle": "세부 정보",
             "idLabel": "ID (슬러그)",
@@ -2675,6 +2638,13 @@
             "pattern": "{label}이(가) 요구되는 형식과 일치하지 않습니다",
             "min": "{label}은(는) 최소 {min} 이상이어야 합니다",
             "max": "{label}은(는) 최대 {max} 이하여야 합니다"
+        },
+        "settingsCard": {
+            "title": "맞춤 요청",
+            "description": "결제와 교환만으로는 부족할 때 직접 요청 유형을 만드세요. 필요한 필드를 추가하면 멤버가 다른 요청과 똑같이 제출할 수 있습니다.",
+            "enable": "사용",
+            "disable": "사용 안 함",
+            "errUpdate": "설정을 업데이트할 수 없습니다"
         }
     },
     "account": {
@@ -2729,5 +2699,9 @@
             "exceedsBalance": "금액이 퍼블릭 잔액을 초과합니다",
             "failed": "이동 요청을 준비할 수 없습니다. 다시 시도하세요."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "임계값 낮추기",
+        "increase": "임계값 높이기"
     }
 }

@@ -152,10 +152,6 @@
     "dateInput": {
         "placeholder": "dd/mm/aaaa"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Un umbral de 1 de {memberCount} significa que cualquier miembro puede ejecutar transacciones. Esto reduce la seguridad.",
-        "infoBalanced": "Un umbral de {currentThreshold} de {memberCount} ofrece un buen equilibrio entre seguridad y flexibilidad operativa."
-    },
     "metadata": {
         "treasuryTitle": "Panel | Near Business",
         "landingTitle": "Near Business | Gestión de tesorería multicadena",
@@ -189,8 +185,7 @@
             "description": "Gestiona los miembros del equipo y los permisos"
         },
         "settings": {
-            "title": "Configuración",
-            "description": "Ajusta la configuración de tu aplicación"
+            "title": "Configuración"
         },
         "addressBook": {
             "title": "Libreta de direcciones",
@@ -1061,10 +1056,7 @@
     "settings": {
         "tabs": {
             "general": "General",
-            "voting": "Votación",
-            "preferences": "Preferencias",
-            "integrations": "Integraciones",
-            "developer": "Desarrollador"
+            "voting": "Votación"
         },
         "general": {
             "validation": {
@@ -1076,27 +1068,23 @@
             "treasuryNotFound": "Tesorería no encontrada",
             "treasuryName": "Nombre de la tesorería",
             "treasuryNameDescription": "El nombre de tu tesorería. Se mostrará en toda la aplicación.",
-            "displayName": "Nombre visible",
             "displayNamePlaceholder": "Introduce el nombre visible",
-            "accountName": "Nombre de cuenta",
             "logo": "Logotipo",
             "logoDescription": "Sube un logotipo para tu tesorería. Se recomienda SVG, PNG o JPG (256x256 px).",
-            "treasuryLogoAlt": "Logotipo de la tesorería",
             "uploading": "Subiendo...",
-            "uploadLogo": "Subir logotipo",
-            "removeLogo": "Eliminar logotipo",
+            "removeLogo": "Eliminar",
             "logoUploaded": "Logotipo subido correctamente",
             "uploadError": "Error al subir la imagen, inténtalo de nuevo.",
             "invalidLogo": "Logotipo no válido. Sube un archivo PNG, JPG o SVG de exactamente 256x256 px",
             "invalidImage": "Archivo de imagen no válido. Sube una imagen válida.",
             "fileReadError": "Error al leer el archivo. Inténtalo de nuevo.",
             "primaryColor": "Color principal",
-            "primaryColorDescription": "Define el color principal para los elementos de la interfaz de tu tesorería. Se usará tanto en modo claro como oscuro, así que ten en cuenta el contraste al elegir tonos neutros.",
+            "primaryColorDescription": "Define el color principal de los elementos de la interfaz de tu tesorería.",
             "selectColorLabel": "Seleccionar color {color}",
-            "saveChanges": "Guardar cambios",
-            "saving": "Guardando...",
             "savedToast": "Tus cambios se guardaron.",
-            "saveFailed": "No se pudieron guardar los cambios. Inténtalo de nuevo."
+            "saveFailed": "No se pudieron guardar los cambios. Inténtalo de nuevo.",
+            "save": "Guardar",
+            "edit": "Editar"
         },
         "voting": {
             "validation": {
@@ -1114,36 +1102,18 @@
             "durationProposalTitle": "Actualizar política - Duración de votación",
             "durationProposalSummary": "{account} solicitó cambiar la duración de votación de {oldValue} a {newValue}.",
             "durationSubmitted": "Solicitud creada correctamente",
-            "pendingTitle": "Solicitud activa de umbral de votación",
-            "pendingBody": "Para evitar conflictos, debes completar o resolver las solicitudes pendientes antes de continuar. Estas solicitudes están activas y deben aprobarse o rechazarse primero.",
             "viewRequest": "Ver solicitud",
-            "thresholdHeading": "Umbral de votación",
-            "thresholdDescriptionApprovers": "Define cuántos votos se requieren para aprobar solicitudes de pago y del equipo. Configura umbrales por separado para Aprobadores y Gobernanza.",
-            "thresholdDescriptionGeneric": "Define cuántos votos se requieren para aprobar solicitudes. Configura umbrales por rol según sus responsabilidades.",
             "membersWhoCanVote": "Miembros que pueden votar",
-            "votesRequired": "Votos requeridos para aprobar solicitudes",
             "durationHeading": "Duración de la votación",
-            "durationDescription": "El tiempo (en días) que una propuesta permanece abierta para votación. Si la votación no se completa en ese plazo, la decisión caduca.",
-            "durationApprovers": " Esta duración se aplica por igual a los roles de Gobernanza y Aprobadores.",
-            "durationGeneric": " Esta duración es la misma para todos los roles de la tesorería.",
-            "days": "Días"
-        },
-        "preferences": {
-            "timeZone": "Zona horaria",
-            "timeZoneDescription": "Configura tu zona horaria local para que la fecha y la hora se muestren correctamente.",
-            "timeFormat": "Formato de hora",
-            "hour12": "12 horas (1:00 PM)",
-            "hour24": "24 horas (13:00)",
-            "autoTimezone": "Configurar la zona horaria automáticamente usando tu ubicación",
-            "timezone": "Zona horaria",
-            "loadingTimezones": "Cargando zonas horarias...",
-            "selectTimezone": "Seleccionar zona horaria",
-            "searchTimezones": "Buscar zonas horarias...",
-            "noTimezones": "No se encontraron zonas horarias",
-            "save": "Guardar",
-            "savedToast": "Preferencias guardadas correctamente",
-            "saveFailed": "Error al guardar las preferencias",
-            "loadFailed": "Error al cargar las zonas horarias"
+            "durationDescription": "Cuánto tiempo permanece abierta una solicitud antes de expirar. Después, desaparece.",
+            "days": "Días",
+            "roleThresholdTitle": "Umbral de {role}",
+            "roleDescription": {
+                "financial": "Estos miembros aprueban las solicitudes de envío e intercambio.",
+                "governance": "Estos miembros aprueban los cambios de miembros y reglas.",
+                "generic": "Estos miembros aprueban las solicitudes de este rol."
+            },
+            "pendingAlert": "{count, plural, one {# solicitud de configuración necesita atención} other {# solicitudes de configuración necesitan atención}}"
         }
     },
     "addressBook": {
@@ -2588,13 +2558,6 @@
             "invalidManifest": "El manifiesto de esta plantilla no es válido:",
             "proposalFiled": "Solicitud presentada"
         },
-        "developer": {
-            "title": "Solicitudes personalizadas",
-            "description": "Crea tus propios tipos de solicitud cuando necesites algo más que pagos e intercambios. Añade los campos que necesites y tus miembros podrán enviarlas como cualquier otra solicitud.",
-            "enable": "Activar",
-            "disable": "Desactivar",
-            "errUpdate": "No se pudo actualizar la configuración"
-        },
         "visual": {
             "detailsTitle": "Detalles",
             "idLabel": "ID (slug)",
@@ -2675,6 +2638,13 @@
             "pattern": "{label} no coincide con el patrón requerido",
             "min": "{label} debe ser como mínimo {min}",
             "max": "{label} debe ser como máximo {max}"
+        },
+        "settingsCard": {
+            "title": "Solicitudes personalizadas",
+            "description": "Crea tus propios tipos de solicitud cuando necesites algo más que pagos e intercambios. Añade los campos que necesites y tus miembros podrán enviarlas como cualquier otra solicitud.",
+            "enable": "Activar",
+            "disable": "Desactivar",
+            "errUpdate": "No se pudo actualizar la configuración"
         }
     },
     "account": {
@@ -2729,5 +2699,9 @@
             "exceedsBalance": "El importe supera el saldo público",
             "failed": "No se pudo preparar la solicitud de traslado. Inténtalo de nuevo."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Reducir el umbral",
+        "increase": "Aumentar el umbral"
     }
 }
