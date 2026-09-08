@@ -19,6 +19,7 @@ export type TextEntryLike = {
     tagName?: string;
     type?: string;
     getAttribute?: (name: string) => string | null;
+    closest?: (selectors: string) => unknown;
 };
 
 export function isTextEntryElement(
@@ -57,13 +58,23 @@ export function isKeyboardOccluding(
     );
 }
 
+/** Recipient (and other) pickers are dialogs; hiding the tab bar there steals the first tap. */
+export function isInsideDialog(
+    el: EventTarget | TextEntryLike | null,
+): boolean {
+    if (!el || typeof el !== "object") return false;
+    const node = el as TextEntryLike;
+    if (typeof node.closest !== "function") return false;
+    return !!node.closest('[role="dialog"], [data-slot="dialog-content"]');
+}
+
 /**
- * Hide the tab bar only after the keyboard has actually resized the
- * viewport. Hiding on focus unmounts the bar during the first tap, which
- * reflows the page and makes iOS drop the keyboard.
+ * Hide for an on-page field (the Send amount) or once the keyboard has
+ * resized the viewport. Skip dialog fields so the address picker can type.
  */
 export function shouldHideBottomNavForKeyboard(args: {
+    pageTextEntryFocused: boolean;
     keyboardOccluding: boolean;
 }): boolean {
-    return args.keyboardOccluding;
+    return args.pageTextEntryFocused || args.keyboardOccluding;
 }

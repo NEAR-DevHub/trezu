@@ -73,17 +73,13 @@ export function MobileBottomNav() {
         pathname?.startsWith(`/${treasuryId}/settings`) === true;
     const isMenuActive = sheet === "menu" || isMenuRoute;
 
-    if (hideBottomNav) {
+    if (hideBottomNav || (onSendScreen && keyboardOpen)) {
         return null;
     }
 
     return (
         <nav
-            className={cn(
-                "lg:hidden sticky bottom-0 z-30 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-gray-900",
-                onSendScreen && keyboardOpen && "invisible pointer-events-none",
-            )}
-            aria-hidden={onSendScreen && keyboardOpen ? true : undefined}
+            className="lg:hidden sticky bottom-0 z-30 border-t border-gray-200 bg-white pb-[env(safe-area-inset-bottom)] dark:border-white/10 dark:bg-gray-900"
             data-testid="mobile-bottom-nav"
         >
             <div className="grid grid-cols-4">
