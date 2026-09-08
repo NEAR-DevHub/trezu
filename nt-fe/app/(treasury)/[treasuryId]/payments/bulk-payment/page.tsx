@@ -654,6 +654,7 @@ export default function BulkPaymentPage() {
             }
             hideMobileShellControls
             hideTitle={step === 1}
+            reserveHeaderSpace={step === 1}
         >
             <FormProvider {...form}>
                 <div
