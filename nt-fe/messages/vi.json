@@ -2621,6 +2621,13 @@
             "pattern": "{label} không khớp với định dạng yêu cầu",
             "min": "{label} phải lớn hơn hoặc bằng {min}",
             "max": "{label} phải nhỏ hơn hoặc bằng {max}"
+        },
+        "settingsCard": {
+            "title": "Yêu cầu tùy chỉnh",
+            "description": "Tạo các loại yêu cầu của riêng bạn khi bạn cần nhiều hơn thanh toán và trao đổi. Thêm các trường bạn cần và các thành viên của bạn có thể gửi chúng như bất kỳ yêu cầu nào khác.",
+            "enable": "Bật",
+            "disable": "Tắt",
+            "errUpdate": "Không thể cập nhật cài đặt"
         }
     },
     "bulkActivation": {

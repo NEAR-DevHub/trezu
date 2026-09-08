@@ -2638,6 +2638,13 @@
             "pattern": "{label} gerekli desenle eşleşmiyor",
             "min": "{label} en az {min} olmalıdır",
             "max": "{label} en fazla {max} olmalıdır"
+        },
+        "settingsCard": {
+            "title": "Özel İstekler",
+            "description": "Ödemeler ve takastan fazlasına ihtiyaç duyduğunuzda kendi istek türlerinizi oluşturun. İhtiyacınız olan alanları ekleyin; üyeleriniz onları diğer istekler gibi gönderebilir.",
+            "enable": "Etkinleştir",
+            "disable": "Devre Dışı Bırak",
+            "errUpdate": "Ayar güncellenemedi"
         }
     },
     "account": {

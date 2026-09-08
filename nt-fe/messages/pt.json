@@ -2638,6 +2638,13 @@
             "pattern": "{label} não corresponde ao padrão exigido",
             "min": "{label} deve ser no mínimo {min}",
             "max": "{label} deve ser no máximo {max}"
+        },
+        "settingsCard": {
+            "title": "Solicitações personalizadas",
+            "description": "Crie seus próprios tipos de solicitação quando precisar de mais do que pagamentos e trocas. Adicione os campos de que você precisa e seus membros poderão enviá-los como qualquer outra solicitação.",
+            "enable": "Ativar",
+            "disable": "Desativar",
+            "errUpdate": "Não foi possível atualizar a configuração"
         }
     },
     "account": {

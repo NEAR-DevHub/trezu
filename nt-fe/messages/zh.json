@@ -2621,6 +2621,13 @@
             "pattern": "{label}与要求的格式不匹配",
             "min": "{label}不得小于 {min}",
             "max": "{label}不得大于 {max}"
+        },
+        "settingsCard": {
+            "title": "自定义请求",
+            "description": "当你需要的不只是付款和兑换时，可构建你自己的请求类型。添加你需要的字段，你的成员便能像提交其他请求一样提交它们。",
+            "enable": "启用",
+            "disable": "停用",
+            "errUpdate": "无法更新此设置"
         }
     },
     "bulkActivation": {

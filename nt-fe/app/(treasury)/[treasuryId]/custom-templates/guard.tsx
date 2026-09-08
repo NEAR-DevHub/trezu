@@ -4,7 +4,7 @@
  * Route-level guard for the Request Templates subtree (index, create, [slug], edit).
  *
  * Closes the view-level gaps the sidebar-only check left open, mirroring the nt-be gates:
- *  - #1026: direct URL while Custom Requests is disabled in Settings → Developer.
+ *  - #1026: direct URL while Custom Requests is disabled in Settings → General.
  *  - #1027: guests / signed-out / non-member viewers reaching the create/authoring UI.
  *  - list/authoring visibility (#1046): anyone who can author (`AddProposal` — Requestors, incl.
  *    transfer-only, and admins) or file (`canPropose`) may see the list; only authors reach
@@ -55,14 +55,14 @@ export function CustomTemplatesGuard({
         }
         // Send each blocked persona somewhere it can actually act:
         //  - a viewer who somehow lacks authoring on create/edit → the list they *can* use;
-        //  - an admin who finds the feature disabled → the Developer toggle to re-enable it;
+        //  - an admin who finds the feature disabled → the General tab, which hosts the toggle;
         //  - anyone without access (guest / signed-out / non-member) → the treasury dashboard,
         //    not a Settings tab that is itself hidden from them.
         let target = `/${treasuryId}/dashboard`;
         if (canView && requireAuthor) {
             target = `/${treasuryId}/custom-templates`;
         } else if (isAdmin) {
-            target = `/${treasuryId}/settings?tab=developer`;
+            target = `/${treasuryId}/settings?tab=general`;
         }
         router.replace(target);
     }, [settled, allowed, canView, isAdmin, requireAuthor, treasuryId, router]);

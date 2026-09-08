@@ -2636,6 +2636,13 @@
             "pattern": "{label} does not match the required pattern",
             "min": "{label} must be at least {min}",
             "max": "{label} must be at most {max}"
+        },
+        "settingsCard": {
+            "title": "Custom requests",
+            "description": "Build your own request types when you need more than payments and exchange. Add the fields you need and your members can submit them like any other request.",
+            "enable": "Enable",
+            "disable": "Disable",
+            "errUpdate": "Could not update the setting"
         }
     },
     "account": {

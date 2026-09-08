@@ -2638,6 +2638,13 @@
             "pattern": "{label} ne correspond pas au format requis",
             "min": "{label} doit être au minimum {min}",
             "max": "{label} doit être au maximum {max}"
+        },
+        "settingsCard": {
+            "title": "Demandes personnalisées",
+            "description": "Créez vos propres types de demande lorsque vous avez besoin de plus que des paiements et des échanges. Ajoutez les champs dont vous avez besoin et vos membres peuvent les soumettre comme n'importe quelle autre demande.",
+            "enable": "Activer",
+            "disable": "Désactiver",
+            "errUpdate": "Impossible de mettre à jour le paramètre"
         }
     },
     "account": {

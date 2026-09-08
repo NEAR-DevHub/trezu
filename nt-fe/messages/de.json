@@ -2638,6 +2638,13 @@
             "pattern": "{label} entspricht nicht dem erforderlichen Muster",
             "min": "{label} muss mindestens {min} sein",
             "max": "{label} darf höchstens {max} sein"
+        },
+        "settingsCard": {
+            "title": "Benutzerdefinierte Anträge",
+            "description": "Erstellen Sie Ihre eigenen Antragstypen, wenn Sie mehr als Zahlungen und Tausch benötigen. Fügen Sie die benötigten Felder hinzu, und Ihre Mitglieder können sie wie jeden anderen Antrag einreichen.",
+            "enable": "Aktivieren",
+            "disable": "Deaktivieren",
+            "errUpdate": "Die Einstellung konnte nicht aktualisiert werden"
         }
     },
     "account": {

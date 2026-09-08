@@ -2638,6 +2638,13 @@
             "pattern": "{label} tidak sesuai dengan pola yang diperlukan",
             "min": "{label} minimal harus {min}",
             "max": "{label} maksimal harus {max}"
+        },
+        "settingsCard": {
+            "title": "Permintaan Khusus",
+            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
+            "enable": "Aktifkan",
+            "disable": "Nonaktifkan",
+            "errUpdate": "Tidak dapat memperbarui pengaturan"
         }
     },
     "account": {
