@@ -511,14 +511,14 @@ test.describe("Custom Templates — fill", () => {
  * routes reachable by direct URL.
  */
 test.describe("Custom Templates — access gates", () => {
-    test("feature disabled: /custom-templates redirects to Settings → Developer (#1026)", async ({
+    test("feature disabled: /custom-templates redirects to Settings → General (#1026)", async ({
         page,
     }) => {
         await setupMocks(page, [template()], {
             customRequestsEnabled: false,
         });
         await page.goto(`/${TREASURY_ID}/custom-templates`);
-        await page.waitForURL(/settings\?tab=developer/, { timeout: 15000 });
+        await page.waitForURL(/settings\?tab=general/, { timeout: 15000 });
     });
 
     test("bare member (neither propose nor manage) is redirected to the dashboard (#1027)", async ({
