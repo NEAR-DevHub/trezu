@@ -102,11 +102,7 @@ export function SupportCenterModal({
     const items = useMemo<SupportItemProps[]>(
         () => [
             {
-                icon: (
-                    <div className="size-6 shrink-0 overflow-hidden">
-                        <NearBusinessLogo className="h-6 w-auto max-w-none" />
-                    </div>
-                ),
+                icon: <NearBusinessLogo className="size-6" variant="mark" />,
                 title: t("websiteTitle"),
                 description: t("websiteDescription"),
                 href: LANDING_PAGE,

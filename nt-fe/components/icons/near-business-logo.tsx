@@ -1,16 +1,21 @@
 interface NearBusinessLogoProps {
     className?: string;
+    /** "mark" crops to the mint tile; default is the full lockup. */
+    variant?: "full" | "mark";
 }
 
 /**
  * NEAR Business lockup: the brand mark keeps its NEAR colours while the
  * "near business" wordmark follows the theme foreground.
  */
-export function NearBusinessLogo({ className }: NearBusinessLogoProps) {
+export function NearBusinessLogo({
+    className,
+    variant = "full",
+}: NearBusinessLogoProps) {
     return (
         <svg
             className={className}
-            viewBox="0 0 212 28"
+            viewBox={variant === "mark" ? "0 0 28 28" : "0 0 212 28"}
             fill="none"
             role="img"
             aria-label="NEAR Business"
