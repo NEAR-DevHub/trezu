@@ -649,7 +649,9 @@ export default function BulkPaymentPage() {
     return (
         <PageComponentLayout
             title={pageTitle}
-            backButton={`/${selectedTreasury}/payments`}
+            backButton={
+                step === 1 ? undefined : `/${selectedTreasury}/payments`
+            }
             hideMobileShellControls
             hideTitle={step === 1}
         >

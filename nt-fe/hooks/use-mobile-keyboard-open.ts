@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import {
     isKeyboardOccluding,
-    isTextEntryElement,
     shouldHideBottomNavForKeyboard,
 } from "@/lib/mobile-keyboard";
 
 /**
- * True while the virtual keyboard is up, or a text field is focused on a
- * phone (Android often resizes the layout instead of reporting overlap).
+ * True once the virtual keyboard has squeezed the visual viewport.
+ * Focus alone is not enough — hiding the tab bar on first tap reflows
+ * the page and iOS drops the keyboard.
  * Pass `enabled` so pages that never hide the tab bar skip the listeners.
  */
 export function useMobileKeyboardOpen(enabled = true): boolean {
@@ -27,9 +27,6 @@ export function useMobileKeyboardOpen(enabled = true): boolean {
             const viewport = window.visualViewport;
             setOpen(
                 shouldHideBottomNavForKeyboard({
-                    textEntryFocused: isTextEntryElement(
-                        document.activeElement,
-                    ),
                     keyboardOccluding: viewport
                         ? isKeyboardOccluding(
                               window.innerHeight,

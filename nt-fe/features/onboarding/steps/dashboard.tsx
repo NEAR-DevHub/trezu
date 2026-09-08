@@ -251,7 +251,7 @@ export function scheduleHelpSupportTour(
     if (step) {
         step.side = helpSupportTourStepSide(mobile);
         step.selector = helpSupportTourSelector(mobile);
-        step.cardOffset = helpSupportTourCardOffset(mobile);
+        step.cardOffset = helpSupportTourCardOffset();
         step.pointerPadding = helpSupportTourPointerPadding(mobile);
     }
 

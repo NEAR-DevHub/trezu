@@ -23,7 +23,7 @@ import {
     paymentSelectModalSearchInputClassName,
 } from "@/components/selector-field";
 import { SelectorOptionRow } from "@/components/selector-option-row";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollContainer } from "@/components/scroll-container";
 import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
 
 export interface SelectOption extends SelectListItem {}
@@ -227,8 +227,8 @@ export function SelectModal({
                     {isLoading ? (
                         <SelectListSkeleton />
                     ) : (
-                        <ScrollArea
-                            viewportRef={viewportRef}
+                        <ScrollContainer
+                            ref={viewportRef}
                             className={paymentSelectModalListClassName}
                         >
                             {sections?.length ? (
@@ -283,7 +283,7 @@ export function SelectModal({
                                     {t("noResults")}
                                 </div>
                             )}
-                        </ScrollArea>
+                        </ScrollContainer>
                     )}
                 </div>
             </PaymentSelectModalContent>

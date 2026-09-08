@@ -56,7 +56,7 @@ import {
 } from "./selector-option-row";
 import { TokenDisplay } from "./token-display-with-network";
 import { Tooltip } from "./tooltip";
-import { ScrollArea } from "./ui/scroll-area";
+import { ScrollContainer } from "./scroll-container";
 import { Skeleton } from "./ui/skeleton";
 
 const TOKEN_SKELETON_IDS = ["one", "two", "three", "four"] as const;
@@ -675,8 +675,8 @@ export default function TokenSelect({
                                 ))}
                             </div>
                         ) : (
-                            <ScrollArea
-                                viewportRef={viewportRef}
+                            <ScrollContainer
+                                ref={viewportRef}
                                 className={paymentSelectModalListClassName}
                             >
                                 {showPopularAssets &&
@@ -729,15 +729,15 @@ export default function TokenSelect({
                                             : t("noTokensFound")}
                                     </div>
                                 )}
-                            </ScrollArea>
+                            </ScrollContainer>
                         )}
                     </div>
                 )}
                 {step === "network" && selectedAsset && (
                     <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
                         <PaymentSelectSearchRail scrolled={hasContentAbove} />
-                        <ScrollArea
-                            viewportRef={viewportRef}
+                        <ScrollContainer
+                            ref={viewportRef}
                             className={paymentSelectModalListClassName}
                         >
                             {(() => {
@@ -910,7 +910,7 @@ export default function TokenSelect({
                                     </>
                                 );
                             })()}
-                        </ScrollArea>
+                        </ScrollContainer>
                     </div>
                 )}
             </PaymentSelectModalContent>

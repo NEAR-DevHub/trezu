@@ -494,7 +494,7 @@ export default function PaySharePage() {
                                             <img
                                                 src="/icons/near-square.svg"
                                                 alt=""
-                                                className="size-full invert"
+                                                className="size-full invert dark:invert-0"
                                             />
                                         </span>
                                     ) : null}

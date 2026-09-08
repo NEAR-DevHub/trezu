@@ -14,14 +14,16 @@ const NON_TEXT_INPUT_TYPES = new Set([
 /** Overlap that means a virtual keyboard, not a browser chrome tweak. */
 export const KEYBOARD_OVERLAP_PX = 120;
 
-type TextEntryLike = {
+export type TextEntryLike = {
     isContentEditable?: boolean;
     tagName?: string;
     type?: string;
     getAttribute?: (name: string) => string | null;
 };
 
-export function isTextEntryElement(el: EventTarget | null): boolean {
+export function isTextEntryElement(
+    el: EventTarget | TextEntryLike | null,
+): boolean {
     if (!el || typeof el !== "object") return false;
     const node = el as TextEntryLike;
     if (node.isContentEditable) return true;
@@ -55,10 +57,13 @@ export function isKeyboardOccluding(
     );
 }
 
-/** Hide the phone tab bar while a field is focused or the viewport is squeezed. */
+/**
+ * Hide the tab bar only after the keyboard has actually resized the
+ * viewport. Hiding on focus unmounts the bar during the first tap, which
+ * reflows the page and makes iOS drop the keyboard.
+ */
 export function shouldHideBottomNavForKeyboard(args: {
-    textEntryFocused: boolean;
     keyboardOccluding: boolean;
 }): boolean {
-    return args.textEntryFocused || args.keyboardOccluding;
+    return args.keyboardOccluding;
 }
