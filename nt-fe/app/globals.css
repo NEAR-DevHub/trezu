@@ -740,13 +740,20 @@ body[data-onboarding-tour="info-box-dismissed"] [data-slot="dialog-overlay"] {
 /* nextstepjs sets the card wrapper to max-width: 100% of the spotlight. */
 body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     max-width: none !important;
+    overflow: visible !important;
 }
 
-/* Caret matches the inverted card and stays behind the body so only the
-   tip that peeks off the edge is visible. */
-[data-onboarding-tour-card] [data-name="nextstep-arrow"] {
-    z-index: 0;
-    color: var(--popover-foreground);
+/* Library caret overlaps the copy; we draw one on the bubble instead. */
+body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-arrow"] {
+    display: none !important;
+}
+
+body[data-onboarding-tour="info-box-dismissed"]
+    [data-onboarding-tour-card]::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    border: 7px solid transparent;
 }
 
 @media (max-width: 1023px) {
@@ -767,9 +774,29 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
         max-width: none;
     }
 
+    body[data-onboarding-tour="info-box-dismissed"]
+        [data-onboarding-tour-card]::after {
+        top: 100%;
+        left: 50%;
+        margin-top: -1px;
+        border-top-color: var(--popover-foreground);
+        transform: translateX(-50%);
+    }
+
     /* Inset the Help & Support label from the highlight on the x-axis only. */
     body[data-onboarding-tour="info-box-dismissed"] #help-support-link {
         padding-inline: 0.75rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    body[data-onboarding-tour="info-box-dismissed"]
+        [data-onboarding-tour-card]::after {
+        top: 50%;
+        right: 100%;
+        margin-right: -1px;
+        border-right-color: var(--popover-foreground);
+        transform: translateY(-50%);
     }
 }
 

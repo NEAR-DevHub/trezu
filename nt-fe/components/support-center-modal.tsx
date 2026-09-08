@@ -13,7 +13,7 @@ import {
     DialogTitle,
     mobileInsetSheetClassName,
 } from "@/components/modal";
-import { LANDING_PAGE } from "@/constants/config";
+import { APP_DOCS_URL, LANDING_PAGE } from "@/constants/config";
 import { cn } from "@/lib/utils";
 import { NearBusinessLogo } from "./icons/near-business-logo";
 
@@ -50,10 +50,11 @@ function SupportItem({
         </>
     );
 
-    if (href) {
+    const link = href?.trim();
+    if (link) {
         return (
             <Link
-                href={href}
+                href={link}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={className}
@@ -78,7 +79,7 @@ function SupportItem({
         );
     }
 
-    return <div className={className}>{content}</div>;
+    return null;
 }
 
 function SupportGlyph({ children }: { children: ReactNode }) {
@@ -115,8 +116,7 @@ export function SupportCenterModal({
                 ),
                 title: t("docsTitle"),
                 description: t("docsDescription"),
-                // TODO: set the documentation URL when docs are ready
-                href: "",
+                href: APP_DOCS_URL,
             },
             {
                 icon: (

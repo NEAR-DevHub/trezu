@@ -1,18 +1,13 @@
 import { describe, expect, it } from "bun:test";
-import { walletAddressAutofillUnlock } from "./wallet-address-input-props";
+import { shouldPreventMobileDialogAutoFocus } from "./wallet-address-input-props";
 
-describe("walletAddressAutofillUnlock", () => {
-    it("unlocks and asks for a second focus on the first focus", () => {
-        expect(walletAddressAutofillUnlock(true)).toEqual({
-            readOnly: false,
-            refocus: true,
-        });
+describe("shouldPreventMobileDialogAutoFocus", () => {
+    it("blocks programmatic focus on phones so the first tap can raise the keyboard", () => {
+        expect(shouldPreventMobileDialogAutoFocus(375)).toBe(true);
+        expect(shouldPreventMobileDialogAutoFocus(1023)).toBe(true);
     });
 
-    it("does not steal focus again after the first focus", () => {
-        expect(walletAddressAutofillUnlock(false)).toEqual({
-            readOnly: false,
-            refocus: false,
-        });
+    it("lets desktop keep dialog auto-focus", () => {
+        expect(shouldPreventMobileDialogAutoFocus(1024)).toBe(false);
     });
 });

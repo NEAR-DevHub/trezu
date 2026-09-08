@@ -28,7 +28,10 @@ import {
     isRecognizedRecipientAddress,
 } from "@/lib/recipient-address-rules";
 import { cn } from "@/lib/utils";
-import { useWalletAddressAutofillGuard } from "@/lib/wallet-address-input-props";
+import {
+    shouldPreventMobileDialogAutoFocus,
+    useWalletAddressAutofillGuard,
+} from "@/lib/wallet-address-input-props";
 import { RecipientQrScanner } from "./recipient-qr-scanner";
 
 function ContactAvatar() {
@@ -183,7 +186,13 @@ export function RecipientSelectModal({
                 if (!open) onClose();
             }}
         >
-            <PaymentSelectModalContent>
+            <PaymentSelectModalContent
+                onOpenAutoFocus={(event) => {
+                    if (shouldPreventMobileDialogAutoFocus(window.innerWidth)) {
+                        event.preventDefault();
+                    }
+                }}
+            >
                 <DialogHeader
                     centerTitle={false}
                     className="sticky top-0 border-0 pb-0 text-left"
@@ -211,7 +220,6 @@ export function RecipientSelectModal({
                                     setDraft(e.target.value.replace(/\s/g, ""))
                                 }
                                 placeholder={t("searchByNameOrAddress")}
-                                autoFocus
                                 {...walletAutofillGuard}
                                 data-1p-ignore="true"
                                 data-lpignore="true"
