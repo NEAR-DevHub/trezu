@@ -1,5 +1,5 @@
 import {
-    useState,
+    useRef,
     type FocusEventHandler,
     type InputHTMLAttributes,
     type PointerEventHandler,
@@ -31,16 +31,17 @@ export function shouldPreventMobileDialogAutoFocus(
 export function useWalletAddressAutofillGuard(
     onFocus?: FocusEventHandler<HTMLInputElement>,
 ) {
-    const [readOnly, setReadOnly] = useState(true);
+    const unlockedRef = useRef(false);
 
     const unlock = (el: HTMLInputElement) => {
+        unlockedRef.current = true;
         el.readOnly = false;
-        setReadOnly(false);
     };
 
     return {
         ...WALLET_ADDRESS_INPUT_PROPS,
-        readOnly,
+        // Ref, not state: a parent re-render must not put readOnly back.
+        readOnly: !unlockedRef.current,
         onPointerDown: ((event) => {
             unlock(event.currentTarget);
         }) satisfies PointerEventHandler<HTMLInputElement>,
