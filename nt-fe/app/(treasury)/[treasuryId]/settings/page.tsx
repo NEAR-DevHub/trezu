@@ -3,9 +3,9 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
+import { MobilePageHeading } from "@/components/mobile-page-heading";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/underline-tabs";
-import { useTreasury } from "@/hooks/use-treasury";
 import { GeneralTab } from "./components/general-tab";
 import { VotingTab } from "./components/voting-tab";
 
@@ -25,7 +25,6 @@ function SettingsPageContent() {
     const pathname = usePathname();
     const router = useRouter();
     const tabParam = searchParams.get("tab");
-    const { treasuryId } = useTreasury();
     const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
         isSettingsTab(tabParam) ? tabParam : "general",
     );
@@ -43,13 +42,9 @@ function SettingsPageContent() {
     }, [tabParam, pathname, router]);
 
     return (
-        <PageComponentLayout
-            title={t("title")}
-            backButton={treasuryId ? `/${treasuryId}` : true}
-            backKind="section"
-            hideMobileShellControls
-        >
+        <PageComponentLayout title={t("title")}>
             <div className="mx-auto w-full max-w-[464px]">
+                <MobilePageHeading>{t("title")}</MobilePageHeading>
                 <Tabs
                     value={activeTab}
                     onValueChange={(value) => {
@@ -80,18 +75,14 @@ function SettingsPageContent() {
 
 export default function SettingsPage() {
     const t = useTranslations("pages.settings");
-    const { treasuryId } = useTreasury();
 
     return (
         <Suspense
             fallback={
-                <PageComponentLayout
-                    title={t("title")}
-                    backButton={treasuryId ? `/${treasuryId}` : true}
-                    backKind="section"
-                    hideMobileShellControls
-                >
-                    <div className="mx-auto min-h-48 w-full max-w-[464px]" />
+                <PageComponentLayout title={t("title")}>
+                    <div className="mx-auto min-h-48 w-full max-w-[464px]">
+                        <MobilePageHeading>{t("title")}</MobilePageHeading>
+                    </div>
                 </PageComponentLayout>
             }
         >

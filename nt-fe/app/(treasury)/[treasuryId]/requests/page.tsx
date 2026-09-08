@@ -13,18 +13,13 @@ import {
     useSearchParams,
 } from "next/navigation";
 import { useTranslations } from "next-intl";
-import {
-    type ReactNode,
-    useCallback,
-    useEffect,
-    useMemo,
-    useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { Icon } from "@/components/icon";
 import { ResponsiveInput } from "@/components/input";
+import { MobilePageHeading } from "@/components/mobile-page-heading";
 import { NumberBadge } from "@/components/number-badge";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ResponsiveTabs, type TabItem } from "@/components/responsive-tabs";
@@ -227,18 +222,6 @@ function ProposalsList({
                 />
             )}
         </div>
-    );
-}
-
-/**
- * The shell header shows the treasury on a phone, not the page, so the page
- * names itself above its content.
- */
-function MobilePageHeading({ children }: { children: ReactNode }) {
-    return (
-        <h1 className="mt-3 mb-5 text-xl font-semibold leading-[1.2] tracking-tight lg:hidden">
-            {children}
-        </h1>
     );
 }
 
