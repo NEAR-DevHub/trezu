@@ -96,7 +96,7 @@ export function TreasuryLayoutClient({
                         />
                     </div>
                     <main className="flex min-h-0 flex-1 flex-col overflow-hidden lg:py-2 lg:pr-2">
-                        <div className="min-h-0 flex-1 overflow-y-auto bg-general-bg-tertiary lg:rounded-3xl lg:border lg:border-gray-300 dark:lg:border-gray-700">
+                        <div className="min-h-0 flex-1 overflow-hidden bg-general-bg-tertiary lg:rounded-3xl lg:border lg:border-gray-300 dark:lg:border-gray-700">
                             {children}
                         </div>
                         {!isRequestDetailPath(pathname) &&

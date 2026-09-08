@@ -37,13 +37,13 @@ describe("isKeyboardOccluding", () => {
 });
 
 describe("shouldHideBottomNavForKeyboard", () => {
-    it("hides when a text field is focused or the viewport is squeezed", () => {
+    it("waits for the viewport to squeeze so the first tap can raise the keyboard", () => {
         expect(
             shouldHideBottomNavForKeyboard({
                 textEntryFocused: true,
                 keyboardOccluding: false,
             }),
-        ).toBe(true);
+        ).toBe(false);
         expect(
             shouldHideBottomNavForKeyboard({
                 textEntryFocused: false,

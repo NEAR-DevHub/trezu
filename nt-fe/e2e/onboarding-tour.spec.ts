@@ -1303,6 +1303,9 @@ test.describe("Onboarding – Info box Help & Support tooltip", () => {
             ).toBeGreaterThanOrEqual(0);
         }
 
+        const arrow = page.locator('[data-name="nextstep-arrow"]');
+        await expect(arrow).toBeVisible();
+
         await page.mouse.click(8, 8);
         await expect(target).toBeVisible();
         await expect(tooltip).toBeVisible();

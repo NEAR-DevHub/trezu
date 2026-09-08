@@ -120,13 +120,18 @@ export function TourCard({
     return (
         <div
             data-onboarding-tour-card=""
-            className="bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[250px] animate-in fade-in-0 zoom-in-95"
+            className="relative isolate min-w-[250px] animate-in fade-in-0 zoom-in-95"
         >
-            <div className="text-popover-foreground">{arrow}</div>
+            <div
+                aria-hidden
+                className="pointer-events-none text-popover-foreground"
+            >
+                {arrow}
+            </div>
 
             <div
                 className={cn(
-                    "flex flex-col",
+                    "relative z-10 flex flex-col rounded-md bg-popover-foreground px-2 py-3 text-popover shadow-md",
                     hidePrimaryButton ? "gap-0" : "gap-3",
                 )}
             >

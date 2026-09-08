@@ -703,7 +703,23 @@ input[type="number"] {
     /* Firefox */
 }
 
-@plugin "tailwind-scrollbar";
+@plugin "tailwind-scrollbar" {
+    /* Standard `scrollbar-color` on `*` makes Chrome interpolate the thumb
+       instead of moving it with the scroll. Pseudoelements keep Firefox
+       styled via `@supports` and leave Chromium on `::-webkit-scrollbar`. */
+    preferredstrategy: pseudoelements;
+}
+
+/* tailwind-scrollbar's reset puts `scrollbar-color` on `*`. Chrome then
+   interpolates the thumb instead of moving it with the scroll — content
+   moves immediately, the bar catches up a second or two later. That only
+   shows in the production CSS bundle (staging), not in `next dev`. */
+@layer base {
+    * {
+        scrollbar-color: unset;
+        scrollbar-width: unset;
+    }
+}
 
 @media print {
     .print-color-exact {
@@ -724,6 +740,13 @@ body[data-onboarding-tour="info-box-dismissed"] [data-slot="dialog-overlay"] {
 /* nextstepjs sets the card wrapper to max-width: 100% of the spotlight. */
 body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     max-width: none !important;
+}
+
+/* Caret matches the inverted card and stays behind the body so only the
+   tip that peeks off the edge is visible. */
+[data-onboarding-tour-card] [data-name="nextstep-arrow"] {
+    z-index: 0;
+    color: var(--popover-foreground);
 }
 
 @media (max-width: 1023px) {

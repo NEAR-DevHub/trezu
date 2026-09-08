@@ -41,11 +41,14 @@ export function helpSupportTourStepSide(
     return mobile ? "bottom" : "right";
 }
 
-/** Small gap under the row on phones; keep the default on desktop. */
+/**
+ * Same gap as Create Treasury. nextstepjs parks a 1.5rem caret
+ * `cardOffset - 2` px outside the card.
+ */
 export function helpSupportTourCardOffset(
-    mobile = isTourMobileViewport(),
+    _mobile = isTourMobileViewport(),
 ): number {
-    return mobile ? 6 : 25;
+    return 10;
 }
 
 /**
