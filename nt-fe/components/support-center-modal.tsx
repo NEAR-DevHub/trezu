@@ -1,45 +1,25 @@
 "use client";
 
+import { CustomerSupportIcon, File01Icon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { type ReactNode, useMemo } from "react";
 import { Icon } from "@/components/icon";
-import {
-    BarChartIcon,
-    File01Icon,
-    Globe02Icon,
-    HeadphonesIcon,
-    PlayIcon,
-    Shield01Icon,
-} from "@hugeicons/core-free-icons";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
+    mobileInsetSheetClassName,
 } from "@/components/modal";
-import {
-    APP_DEMO_URL,
-    APP_DOCS_URL,
-    APP_ACTIVE_TREASURY,
-    APP_TWITTER_URL,
-    LANDING_PAGE,
-    APP_ACTIVE_CONFIDENTIAL_TREASURY,
-} from "@/constants/config";
-import Link from "next/link";
-import { useTranslations } from "next-intl";
-import { useMemo } from "react";
-
-import Gleap from "gleap";
-import { LogoInlined } from "./icons/logo";
-
-function XIcon({ className }: { className?: string }) {
-    return (
-        <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-        </svg>
-    );
-}
+import { APP_DOCS_URL } from "@/constants/config";
+import { openSupportChat } from "@/lib/support-chat";
+import { LANDING_HREF } from "@/lib/welcome-entry";
+import { cn } from "@/lib/utils";
+import { NearBusinessLogo } from "./icons/near-business-logo";
 
 interface SupportItemProps {
-    icon: React.ReactNode;
+    icon: ReactNode;
     title: string;
     description: string;
     href?: string;
@@ -56,22 +36,41 @@ function SupportItem({
     closeModal,
 }: SupportItemProps) {
     const className =
-        "flex bg-secondary items-center gap-3 p-2 rounded-6 hover:bg-general-tertiary transition-colors";
+        "flex w-full cursor-pointer items-center rounded-2xl px-1 text-left transition-colors hover:bg-general-secondary";
     const content = (
         <>
-            <div className="shrink-0 text-foreground">{icon}</div>
-            <div className="flex flex-col min-w-0 items-start">
-                <span className="text-sm text-foreground">{title}</span>
-                <span className="text-sm text-muted-foreground">
+            <div className="flex h-16 items-center px-2">{icon}</div>
+            <div className="flex h-16 min-w-0 flex-1 flex-col justify-center px-2">
+                <span className="truncate text-base font-semibold leading-[1.2] text-general-foreground">
+                    {title}
+                </span>
+                <span className="truncate text-sm font-medium leading-[1.5] text-general-secondary-foreground">
                     {description}
                 </span>
             </div>
         </>
     );
 
+    const link = href?.trim();
+    if (link) {
+        const isExternal = /^https?:\/\//.test(link);
+        return (
+            <Link
+                href={link}
+                className={className}
+                {...(isExternal
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
+            >
+                {content}
+            </Link>
+        );
+    }
+
     if (onClick) {
         return (
             <button
+                type="button"
                 className={className}
                 onClick={() => {
                     onClick();
@@ -83,17 +82,17 @@ function SupportItem({
         );
     }
 
+    return null;
+}
+
+function SupportGlyph({ children }: { children: ReactNode }) {
     return (
-        <Link
-            href={href!}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={className}
-        >
-            {content}
-        </Link>
+        <div className="flex size-6 shrink-0 items-center justify-center text-general-foreground">
+            {children}
+        </div>
     );
 }
+
 interface SupportCenterModalProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -104,119 +103,62 @@ export function SupportCenterModal({
     onOpenChange,
 }: SupportCenterModalProps) {
     const t = useTranslations("supportCenter");
-    const resourceItems = useMemo<SupportItemProps[]>(
+    const items = useMemo<SupportItemProps[]>(
         () => [
             {
-                icon: <LogoInlined className="size-5" />,
+                icon: <NearBusinessLogo className="size-6" variant="mark" />,
                 title: t("websiteTitle"),
                 description: t("websiteDescription"),
-                href: LANDING_PAGE,
+                href: LANDING_HREF,
             },
             {
-                icon: <XIcon className="size-5" />,
-                title: t("xTitle"),
-                description: t("xDescription"),
-                href: APP_TWITTER_URL,
-            },
-            {
-                icon: <Icon icon={BarChartIcon} />,
-                title: t("statsTitle"),
-                description: t("statsDescription"),
-                href: "/stats",
-            },
-        ],
-        [t],
-    );
-
-    const demoSectionItems = useMemo<SupportItemProps[]>(
-        () => [
-            {
-                icon: <Icon icon={Globe02Icon} />,
-                title: t("demoTitle"),
-                description: t("demoDescription"),
-                href: APP_ACTIVE_TREASURY,
-            },
-            {
-                icon: <Icon icon={Shield01Icon} className="fill-foreground" />,
-                title: t("confidentialDemoTitle"),
-                description: t("confidentialDemoDescription"),
-                href: APP_ACTIVE_CONFIDENTIAL_TREASURY,
-            },
-            {
-                icon: <Icon icon={PlayIcon} />,
-                title: t("videoTitle"),
-                description: t("videoDescription"),
-                href: APP_DEMO_URL,
-            },
-        ],
-        [t],
-    );
-
-    const supportItems = useMemo<SupportItemProps[]>(
-        () => [
-            {
-                icon: <Icon icon={File01Icon} />,
+                icon: (
+                    <SupportGlyph>
+                        <Icon icon={File01Icon} className="size-6" />
+                    </SupportGlyph>
+                ),
                 title: t("docsTitle"),
                 description: t("docsDescription"),
                 href: APP_DOCS_URL,
             },
             {
-                icon: <Icon icon={HeadphonesIcon} />,
+                icon: (
+                    <SupportGlyph>
+                        <Icon icon={CustomerSupportIcon} className="size-6" />
+                    </SupportGlyph>
+                ),
                 title: t("productSupportTitle"),
                 description: t("productSupportDescription"),
                 onClick: () => {
-                    Gleap.open();
+                    void openSupportChat();
                 },
             },
         ],
         [t],
     );
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[448px] sm:max-h-[90vh]">
-                <DialogHeader>
-                    <DialogTitle className="text-left">
+            <DialogContent
+                className={cn(
+                    mobileInsetSheetClassName,
+                    "gap-3 bg-card sm:max-w-[448px]! sm:gap-3 sm:p-0",
+                )}
+            >
+                <DialogHeader className="mx-0 border-b-0 px-0 pb-0 sm:px-5 sm:pt-4">
+                    <DialogTitle className="text-left text-lg">
                         {t("title")}
                     </DialogTitle>
                 </DialogHeader>
 
-                <div className="flex flex-col gap-5">
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-muted-foreground">
-                            {t("resources")}
-                        </span>
-                        <div className="flex flex-col gap-3">
-                            {resourceItems.map((item) => (
-                                <SupportItem key={item.title} {...item} />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-muted-foreground">
-                            {t("demo")}
-                        </span>
-                        <div className="flex flex-col gap-3">
-                            {demoSectionItems.map((item) => (
-                                <SupportItem key={item.title} {...item} />
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                        <span className="text-sm font-semibold text-muted-foreground">
-                            {t("support")}
-                        </span>
-                        <div className="flex flex-col gap-3">
-                            {supportItems.map((item) => (
-                                <SupportItem
-                                    key={item.title}
-                                    {...item}
-                                    closeModal={() => onOpenChange(false)}
-                                />
-                            ))}
-                        </div>
-                    </div>
+                <div className="flex flex-col sm:px-3 sm:pb-4">
+                    {items.map((item) => (
+                        <SupportItem
+                            key={item.title}
+                            {...item}
+                            closeModal={() => onOpenChange(false)}
+                        />
+                    ))}
                 </div>
             </DialogContent>
         </Dialog>

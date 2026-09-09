@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "tt.mm.jjjj"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Ein Schwellenwert von 1 von {memberCount} bedeutet, dass jedes einzelne Mitglied Transaktionen ausführen kann. Dies verringert die Sicherheit.",
-        "infoBalanced": "Ein Schwellenwert von {currentThreshold} von {memberCount} bietet ein gutes Gleichgewicht zwischen Sicherheit und operativer Flexibilität."
-    },
     "metadata": {
         "treasuryTitle": "Dashboard | Near Business",
         "landingTitle": "Near Business | Cross-Chain Treasury Management",
@@ -194,8 +190,7 @@
             "description": "Teammitglieder und Berechtigungen verwalten"
         },
         "settings": {
-            "title": "Einstellungen",
-            "description": "Passen Sie Ihre App-Einstellungen an"
+            "title": "Einstellungen"
         },
         "addressBook": {
             "title": "Adressbuch",
@@ -930,8 +925,8 @@
         "title": "Mitglieder",
         "description": "Teammitglieder und Berechtigungen verwalten",
         "permissions": "Berechtigungen",
+        "added": "Hinzugefügt",
         "member": "Mitglied",
-        "activeMembers": "Aktive Mitglieder",
         "noActiveMembers": "Keine aktiven Mitglieder gefunden.",
         "addNewMember": "Mitglied hinzufügen",
         "addManually": "Manuell hinzufügen",
@@ -955,6 +950,7 @@
             "readyDescription": "Sende ihn an die Person, die du hinzufügen möchtest. Sie verbindet eine Wallet und bittet um Beitritt.",
             "onceTitle": "Dieser Link gilt einmal, für eine Person",
             "onceDescription": "Erstelle für jedes Mitglied einen neuen.",
+            "linkTitle": "Einladungslink",
             "yourLink": "Dein Einladungslink",
             "copyLink": "Link kopieren",
             "linkCopied": "Einladungslink kopiert",
@@ -981,7 +977,7 @@
             "askDescription": "Das Team prüft deine Anfrage, bevor du etwas sehen oder genehmigen kannst.",
             "walletConnected": "Wallet verbunden",
             "nameLabel": "Dein Name (optional)",
-            "namePlaceholder": "Damit das Team dich erkennt",
+            "namePlaceholder": "Namen eingeben, damit das Team dich erkennt",
             "askJoin": "Beitritt anfragen",
             "submitting": "Wird gesendet…",
             "successTitle": "Du bist fast dabei",
@@ -992,8 +988,8 @@
             "goToTreasury": "Zum Treasury",
             "invalidTitle": "Einladung nicht gefunden",
             "invalidDescription": "Dieser Einladungslink ist ungültig oder nicht mehr verfügbar.",
-            "usedTitle": "Einladung bereits verwendet",
-            "usedDescription": "Dieser Einladungslink wurde bereits verwendet.",
+            "usedTitle": "Dieser Einladungslink wurde bereits verwendet",
+            "usedDescription": "Einladungslinks gelten einmal. Bitte {treasury} um einen neuen.",
             "expiredTitle": "Einladung abgelaufen",
             "expiredDescription": "Dieser Einladungslink ist abgelaufen. Bitte das Team um einen neuen.",
             "goHome": "Zur Startseite",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {keine Mitglieder} one {# Mitglied} other {# Mitglieder}} ausgewählt",
         "remove": "Entfernen",
+        "send": "Senden",
         "edit": "Bearbeiten",
         "requestorOnlyTooltip": "Sie können diesem Mitglied nur die Antragsteller-Rolle zuweisen, da es für die Erstellung von Zahlungsanfragen aus NEARN verantwortlich ist.",
         "memberModal": {
-            "editRoles": "Rollen bearbeiten",
+            "editRoles": "Mitglieder bearbeiten",
             "addNewMember": "Mitglied hinzufügen",
             "validatingAddresses": "Adressen werden validiert...",
             "reviewRequest": "Anfrage prüfen",
             "noChanges": "An den Mitgliederrollen wurden keine Änderungen vorgenommen"
         },
         "previewModal": {
-            "title": "Überprüfen Sie Ihre Anfrage",
+            "title": "Mitglieder prüfen",
             "youAreEditing": "Sie bearbeiten",
             "youAreAdding": "Sie fügen hinzu",
             "membersCount": "{count, plural, one {# Mitglied} other {# Mitglieder}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "Aktualisierte Mitglieder",
             "newMembers": "Neue Mitglieder",
             "creatingProposal": "Vorschlag wird erstellt...",
-            "confirmSubmit": "Anfrage bestätigen und absenden"
+            "confirmSubmit": "Antrag erstellen"
         },
         "removeDialog": {
-            "title": "Anfrage entfernen",
+            "title": "{count, plural, one {Mitglied} other {Mitglieder}} entfernen?",
             "nearnBody": "Nach Genehmigung wird {account} dauerhaft aus der Treasury entfernt und alle zugehörigen Berechtigungen werden widerrufen. Nach der Entfernung kann dieses Konto keine Anfragen mehr aus NEARN erstellen.",
             "genericBody": "Nach Genehmigung wird durch diese Aktion <bold>{accounts}</bold> dauerhaft aus der Treasury entfernt und alle zugewiesenen Berechtigungen werden widerrufen.",
             "creatingProposal": "Vorschlag wird erstellt..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "Richtlinie aktualisieren - Neue Mitglieder hinzufügen",
-            "addMembersSuccess": "Anfrage für neues Mitglied erfolgreich erstellt",
+            "addMembersSuccess": "Mitglieder-Hinzufügen-Anfrage erstellt",
             "editMember": "Richtlinie aktualisieren - Mitgliederberechtigungen bearbeiten",
             "editMembers": "Richtlinie aktualisieren - Mehrere Mitglieder bearbeiten",
-            "editMemberSuccess": "Anfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
-            "editMembersSuccess": "Sammelanfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
+            "editMemberSuccess": "Mitglied-Bearbeiten-Anfrage erstellt",
+            "editMembersSuccess": "Mitglieder-Bearbeiten-Anfrage erstellt",
             "removeMember": "Richtlinie aktualisieren - Mitglied entfernen",
             "removeMembers": "Richtlinie aktualisieren - Mitglieder entfernen",
-            "removeMemberSuccess": "Anfrage zur Mitgliederentfernung erfolgreich erstellt",
+            "removeMemberSuccess": "Mitglied-Entfernen-Anfrage erstellt",
             "createProposalFailed": "Mitgliederanfrage konnte nicht erstellt werden. Bitte versuche es erneut."
         },
-        "infoSection": {
-            "title": "Warum mehr Mitglieder hinzufügen?",
-            "description": "Mehr Mitglieder halten Ihre Gelder sicher und verhindern, dass Sie durch eine verlorene Wallet ausgesperrt werden.",
-            "readGuide": "Vollständigen Leitfaden lesen",
-            "dismiss": "Schließen",
-            "strongerProtectionTitle": "Stärkerer Schutz",
-            "strongerProtectionDescription": "Anfragen benötigen mehr als eine Genehmigung, bevor Gelder bewegt werden können.",
-            "rolesForEveryoneTitle": "Rollen für alle",
-            "rolesForEveryoneDescription": "Jedes Mitglied erhält eine Rolle - Zahlungen anfragen, genehmigen oder Einstellungen verwalten.",
-            "neverLoseAccessTitle": "Niemals den Zugriff verlieren",
-            "neverLoseAccessDescription": "Wenn Sie eine Wallet verlieren, können Sie den Zugriff über eine bereits hinzugefügte Sicherung wiederherstellen."
-        }
+        "activeMembersCount": "{count, plural, one {# aktives Mitglied} other {# aktive Mitglieder}}"
     },
     "settings": {
         "tabs": {
             "general": "Allgemein",
-            "voting": "Abstimmung",
-            "preferences": "Präferenzen",
-            "integrations": "Integrationen",
-            "developer": "Entwickler"
+            "voting": "Abstimmung"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "Treasury nicht gefunden",
             "treasuryName": "Treasury-Name",
             "treasuryNameDescription": "Der Name Ihrer Treasury. Er wird in der gesamten App angezeigt.",
-            "displayName": "Anzeigename",
             "displayNamePlaceholder": "Anzeigenamen eingeben",
-            "accountName": "Kontoname",
             "logo": "Logo",
             "logoDescription": "Laden Sie ein Logo für Ihre Treasury hoch. Empfohlen sind SVG, PNG oder JPG (256x256 px).",
-            "treasuryLogoAlt": "Treasury-Logo",
             "uploading": "Wird hochgeladen...",
-            "uploadLogo": "Logo hochladen",
-            "removeLogo": "Logo entfernen",
+            "removeLogo": "Entfernen",
             "logoUploaded": "Logo erfolgreich hochgeladen",
             "uploadError": "Beim Hochladen des Bildes ist ein Fehler aufgetreten. Bitte erneut versuchen.",
             "invalidLogo": "Ungültiges Logo. Bitte laden Sie eine PNG-, JPG- oder SVG-Datei hoch, die genau 256x256 px groß ist",
             "invalidImage": "Ungültige Bilddatei. Bitte laden Sie ein gültiges Bild hoch.",
             "fileReadError": "Fehler beim Lesen der Datei. Bitte erneut versuchen.",
             "primaryColor": "Primärfarbe",
-            "primaryColorDescription": "Legen Sie die Primärfarbe für die Oberflächenelemente Ihrer Treasury fest. Diese Farbe wird sowohl im hellen als auch im dunklen Modus verwendet, achten Sie daher beim Wählen neutraler Töne auf den Kontrast.",
+            "primaryColorDescription": "Lege die Primärfarbe für die Oberflächenelemente deiner Treasury fest.",
             "selectColorLabel": "Farbe {color} auswählen",
-            "saveChanges": "Änderungen speichern",
-            "saving": "Speichern...",
             "savedToast": "Deine Änderungen wurden gespeichert.",
-            "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen."
+            "saveFailed": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
+            "save": "Speichern",
+            "edit": "Bearbeiten"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "Erforderliche Daten fehlen",
             "thresholdProposalTitle": "Richtlinie aktualisieren - Abstimmungsschwellenwerte",
             "thresholdProposalSummary": "{account} hat beantragt, den Abstimmungsschwellenwert von {oldValue} auf {newValue} zu ändern.",
-            "thresholdSubmitted": "Anfrage zur Aktualisierung des Abstimmungsschwellenwerts übermittelt",
+            "thresholdSubmitted": "Abstimmungsschwellen-Anfrage erstellt",
             "createProposalFailed": "Erstellung des Vorschlags fehlgeschlagen",
             "durationProposalTitle": "Richtlinie aktualisieren - Abstimmungsdauer",
             "durationProposalSummary": "{account} hat beantragt, die Abstimmungsdauer von {oldValue} auf {newValue} zu ändern.",
-            "durationSubmitted": "Anfrage erfolgreich erstellt",
-            "pendingTitle": "Aktive Anfrage zum Abstimmungsschwellenwert",
-            "pendingBody": "Um Konflikte zu vermeiden, müssen Sie die bestehenden ausstehenden Anfragen abschließen oder lösen, bevor Sie fortfahren. Diese Anfragen sind derzeit aktiv und müssen zuerst genehmigt oder abgelehnt werden.",
-            "viewRequest": "Anfrage anzeigen",
-            "thresholdHeading": "Abstimmungsschwellenwert",
-            "thresholdDescriptionApprovers": "Legen Sie fest, wie viele Stimmen zur Genehmigung von Zahlungs- und teambezogenen Anfragen erforderlich sind. Konfigurieren Sie die Schwellenwerte für Genehmiger und Governance separat.",
-            "thresholdDescriptionGeneric": "Legen Sie fest, wie viele Stimmen zur Genehmigung von Anfragen erforderlich sind. Konfigurieren Sie Schwellenwerte für jede Rolle basierend auf deren Verantwortlichkeiten.",
+            "durationSubmitted": "Abstimmungsdauer-Anfrage erstellt",
+            "viewRequest": "Anfrage ansehen",
             "membersWhoCanVote": "Mitglieder, die abstimmen können",
-            "votesRequired": "Stimmen sind zur Genehmigung von Anfragen erforderlich",
             "durationHeading": "Abstimmungsdauer",
-            "durationDescription": "Die Zeit (in Tagen), die ein Vorschlag zur Abstimmung offen bleibt. Wird die Abstimmung nicht innerhalb dieses Zeitraums abgeschlossen, läuft die Entscheidung ab.",
-            "durationApprovers": " Diese Dauer gilt gleichermaßen für Governance- und Genehmiger-Rollen.",
-            "durationGeneric": " Diese Dauer ist für alle Treasury-Rollen einheitlich.",
-            "days": "Tage"
-        },
-        "preferences": {
-            "timeZone": "Zeitzone",
-            "timeZoneDescription": "Stellen Sie Ihre lokale Zeitzone für die korrekte Datums- und Zeitanzeige ein.",
-            "timeFormat": "Zeitformat",
-            "hour12": "12-Stunden (1:00 PM)",
-            "hour24": "24-Stunden (13:00)",
-            "autoTimezone": "Zeitzone automatisch anhand Ihres Standorts festlegen",
-            "timezone": "Zeitzone",
-            "loadingTimezones": "Zeitzonen werden geladen...",
-            "selectTimezone": "Zeitzone auswählen",
-            "searchTimezones": "Zeitzonen suchen...",
-            "noTimezones": "Keine Zeitzonen gefunden",
-            "save": "Speichern",
-            "savedToast": "Präferenzen erfolgreich gespeichert",
-            "saveFailed": "Speichern der Präferenzen fehlgeschlagen",
-            "loadFailed": "Laden der Zeitzonen fehlgeschlagen"
+            "durationDescription": "Wie lange eine Anfrage offen bleibt, bevor sie abläuft. Danach ist sie weg.",
+            "days": "Tage",
+            "roleThresholdTitle": "Schwelle für {role}",
+            "roleDescription": {
+                "financial": "Diese Mitglieder genehmigen Sende- und Swap-Anfragen.",
+                "governance": "Diese Mitglieder genehmigen Änderungen an Mitgliedern und Regeln.",
+                "generic": "Diese Mitglieder genehmigen Anfragen für diese Rolle."
+            },
+            "pendingAlert": "{count, plural, one {# Einstellungsanfrage benötigt Aufmerksamkeit} other {# Einstellungsanfragen benötigen Aufmerksamkeit}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "Anfrage bestätigen und absenden",
         "useDifferentAddress": "Andere Adresse verwenden",
         "failed1ClickQuote": "Erstellung des 1Click-Transfer-Angebots fehlgeschlagen",
-        "paymentSubmitted": "Anfrage zum Senden der Zahlung übermittelt",
+        "paymentSubmitted": "Sendeanfrage erstellt",
         "confidentialTooltip": "Empfaengerdaten und der angeforderte Betrag sind vollstaendig vertraulich.",
         "destinationNetwork": "Zielnetzwerk",
         "selectRecipientPlaceholder": "Empfänger auswählen",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "Sammelsendungen kommen demnächst!",
         "submittingList": "Sammelsendungsliste wird übermittelt",
         "submittingProposal": "Vorschlag wird übermittelt",
-        "proposalSubmitted": "Sammelsendungsantrag übermittelt",
+        "proposalSubmitted": "Sammelsendeanfrage erstellt",
         "submitListFailed": "Übermittlung der Zahlungsliste fehlgeschlagen",
         "submitFailed": "Sammelsendung konnte nicht übermittelt werden",
         "quoteFetchFailed": "Überweisungsgebühren konnten nicht abgerufen werden. Bitte versuchen Sie es erneut.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "Warten auf Genehmigungen",
         "awaitingDescription": "Der Aktivierungsantrag wurde erstellt. Sobald genug Treasury-Mitglieder zustimmen, wird der vertrauliche Sammelzugriffsschlüssel registriert und Sammelsendungen werden automatisch freigeschaltet.",
         "awaitingHint": "Nach der Genehmigung ist nichts weiter nötig — diese Seite aktualisiert sich automatisch.",
-        "proposalCreated": "Aktivierungsanfrage erstellt — warten auf Genehmigungen",
+        "proposalCreated": "Aktivierungsanfrage erstellt",
         "activationFailed": "Aktivierung der Sammelsendung fehlgeschlagen",
         "errorTitle": "Aktivierungsstatus konnte nicht geladen werden",
         "noPermissionNote": "Sie haben keine Berechtigung, die Aktivierung zu starten. Bitten Sie ein Treasury-Mitglied mit Antragsrechten, Sammelsendungen zu aktivieren.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "Betrag muss größer als 0 sein"
         },
-        "requestSubmitted": "Tauschanfrage übermittelt",
+        "requestSubmitted": "Swap-Anfrage erstellt",
         "heading": "Tauschen",
         "sell": "Verkaufen",
         "receive": "Empfangen",
@@ -1418,7 +1379,7 @@
             "review": "Prüfung"
         },
         "proposalTitle": "Vesting-Plan für {address} erstellen",
-        "scheduleSubmitted": "Anfrage zur Erstellung des Vesting-Plans übermittelt",
+        "scheduleSubmitted": "Vesting-Anfrage erstellt",
         "heading": "Neuer Vesting-Plan",
         "amount": "Betrag",
         "startDate": "Startdatum",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "Support-Center",
-        "resources": "Ressourcen",
-        "support": "Support",
-        "websiteTitle": "Near Business Website",
-        "websiteDescription": "Lies über Near Business und was es Neues gibt.",
-        "demo": "Near Business Demo",
-        "demoTitle": "Öffentliche Version erkunden",
-        "demoDescription": "Eine echte Treasury, die alle einsehen können.",
-        "confidentialDemoTitle": "Vertrauliche Version erkunden",
-        "confidentialDemoDescription": "So sieht eine private Treasury im Einsatz aus.",
-        "videoTitle": "Demo ansehen",
-        "videoDescription": "Kurzes Video — Near Business von Anfang bis Ende.",
-        "xTitle": "Folgen Sie uns auf X",
-        "xDescription": "Sieh in Echtzeit, woran wir bauen.",
-        "statsTitle": "Statistiken",
-        "statsDescription": "Sieh das insgesamt verwaltete Vermögen über alle Treasuries.",
+        "websiteTitle": "near business website",
+        "websiteDescription": "Lies über near business und was es Neues gibt.",
         "docsTitle": "Dokumentation",
         "docsDescription": "Anleitungen für jede Funktion, Schritt für Schritt.",
         "productSupportTitle": "Produkt-Support",
@@ -1776,16 +1724,18 @@
                 "title": "Finanzen",
                 "description": "Finanzen kann über zahlungsbezogene Transaktionsanfragen abstimmen, kann diese aber nicht erstellen."
             }
-        }
+        },
+        "title": "Rollen auswählen"
     },
     "memberInput": {
-        "creatorYou": "Ersteller (Sie)",
-        "memberAddress": "Mitgliedsadresse",
-        "addNewMember": "Mitglied hinzufügen",
+        "addNewMember": "Weiteres Mitglied hinzufügen",
         "validation": {
             "rolesRequired": "Mindestens eine Rolle ist erforderlich",
             "duplicateAddress": "Adresse ist bereits Mitglied"
-        }
+        },
+        "enterAddress": "Adresse eingeben",
+        "selectRole": "Rolle wählen",
+        "memberNumber": "Mitglied {number}"
     },
     "recipientInput": {
         "title": "An",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "Überprüfen Sie Zahlungen, die auf Genehmigung warten",
         "exchangeSettings": "Legen Sie die maximale Preisänderung (Slippage) fest, die Sie bei einem Tausch akzeptieren.",
         "membersPending": "Sehen Sie mitgliederbezogene Anfragen, die auf Genehmigung warten",
+        "membersWantsToJoin": "Sehen Sie das Mitglied, das Ihrem Team beitreten möchte",
         "guestSaveIntro": "Sie sind Gast dieser Treasury. Sie können nur die Daten einsehen.",
         "guestSaveAction": "Sie können diese Gast-Treasury in Ihrer Treasury-Liste speichern.",
         "newFeatureRich": "Neu! 🎉 Staken Sie Ihre Assets mit Earn und verdienen Sie Belohnungen. Lassen Sie Ihr Kapital muehelos fuer sich arbeiten.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "Keine Vorlage für „{slug}“ gefunden.",
             "invalidManifest": "Das Manifest dieser Vorlage ist ungültig:",
-            "proposalFiled": "Antrag eingereicht"
-        },
-        "developer": {
-            "title": "Benutzerdefinierte Anträge",
-            "description": "Erstellen Sie Ihre eigenen Antragstypen, wenn Sie mehr als Zahlungen und Tausch benötigen. Fügen Sie die benötigten Felder hinzu, und Ihre Mitglieder können sie wie jeden anderen Antrag einreichen.",
-            "enable": "Aktivieren",
-            "disable": "Deaktivieren",
-            "errUpdate": "Die Einstellung konnte nicht aktualisiert werden"
+            "proposalFiled": "Benutzerdefinierte Anfrage erstellt"
         },
         "visual": {
             "detailsTitle": "Details",
@@ -2693,6 +2637,13 @@
             "pattern": "{label} entspricht nicht dem erforderlichen Muster",
             "min": "{label} muss mindestens {min} sein",
             "max": "{label} darf höchstens {max} sein"
+        },
+        "settingsCard": {
+            "title": "Benutzerdefinierte Anträge",
+            "description": "Erstellen Sie Ihre eigenen Antragstypen, wenn Sie mehr als Zahlungen und Tausch benötigen. Fügen Sie die benötigten Felder hinzu, und Ihre Mitglieder können sie wie jeden anderen Antrag einreichen.",
+            "enable": "Aktivieren",
+            "disable": "Deaktivieren",
+            "errUpdate": "Die Einstellung konnte nicht aktualisiert werden"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "Assets verschieben",
         "description": "Assets von der öffentlichen Chain in Ihre vertrauliche Treasury verschieben.",
-        "submitted": "Verschiebungsanfrage eingereicht",
+        "submitted": "Verschiebungsanfrage erstellt",
         "banner": {
             "title": "<amount></amount> ist auf Ihrem öffentlichen Guthaben eingegangen",
             "description": "Jemand hat es über das falsche Netzwerk gesendet. Verschieben Sie es hierher, um es vertraulich zu machen.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "Betrag übersteigt das öffentliche Guthaben",
             "failed": "Verschiebungsanfrage konnte nicht vorbereitet werden. Bitte erneut versuchen."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Schwelle verringern",
+        "increase": "Schwelle erhöhen"
     }
 }

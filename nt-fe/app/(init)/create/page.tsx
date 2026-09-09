@@ -9,8 +9,13 @@ import {
     inviteCodeAccepted,
     readInviteGateConfig,
 } from "@/lib/invite-gate";
+import { isWelcomeEntry, WELCOME_QUERY } from "@/lib/welcome-entry";
 
-export default async function CreatePage() {
+export default async function CreatePage({
+    searchParams,
+}: {
+    searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
     const gate = readInviteGateConfig();
     // The proxy validated `?ref=` and moved an accepted code into this cookie.
     const inviteCode = gate.enabled
@@ -28,16 +33,16 @@ export default async function CreatePage() {
         );
     }
 
+    const stayOnCreate = isWelcomeEntry((await searchParams)[WELCOME_QUERY]);
+    const page = (
+        <TreasuryOnboardingPage initialScreen="create" invited={gate.enabled} />
+    );
+
     return (
         <>
             <NearInitializer />
             <AuthProvider>
-                <RequireAuth>
-                    <TreasuryOnboardingPage
-                        initialScreen="create"
-                        invited={gate.enabled}
-                    />
-                </RequireAuth>
+                {stayOnCreate ? page : <RequireAuth>{page}</RequireAuth>}
             </AuthProvider>
         </>
     );

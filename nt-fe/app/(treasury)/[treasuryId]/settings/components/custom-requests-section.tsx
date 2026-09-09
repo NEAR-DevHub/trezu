@@ -1,12 +1,13 @@
 "use client";
-import { Icon } from "@/components/icon";
-import { CodeIcon } from "@hugeicons/core-free-icons";
+
+import { CodeIcon, LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useNextStep } from "nextstepjs";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
+import { Icon } from "@/components/icon";
 import {
     PAGE_TOUR_STORAGE_KEYS,
     REQUEST_TEMPLATES_TOUR_NAME,
@@ -17,9 +18,16 @@ import {
     useSetCustomRequestsEnabled,
 } from "@/features/proposal-templates/hooks/use-custom-requests-enabled";
 import { useTreasury } from "@/hooks/use-treasury";
+import { cn } from "@/lib/utils";
+import { disabledActionClasses } from "./button-styles";
+import { SectionIcon, SectionText } from "./section";
 
-export function DeveloperTab() {
-    const t = useTranslations("customTemplates");
+/**
+ * Enable/disable Custom Requests. Lives in General because it is the only surface that flips the
+ * flag — `custom-templates/guard.tsx` sends an admin here when they hit the subtree with it off.
+ */
+export function CustomRequestsSection({ canEdit }: { canEdit: boolean }) {
+    const t = useTranslations("customTemplates.settingsCard");
     const { treasuryId } = useTreasury();
     const { data: enabled, isLoading } = useCustomRequestsEnabled();
     const setEnabled = useSetCustomRequestsEnabled();
@@ -62,31 +70,43 @@ export function DeveloperTab() {
                 }
             },
             onError: (error) =>
-                toast.error(apiErrorMessage(error, t("developer.errUpdate"))),
+                toast.error(apiErrorMessage(error, t("errUpdate"))),
         });
     }
 
+    const pending = isLoading || setEnabled.isPending;
+
     return (
-        <PageCard>
-            <div className="flex items-start gap-4">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
-                    <Icon icon={CodeIcon} />
+        <PageCard className="flex-row gap-3">
+            <SectionIcon
+                icon={CodeIcon}
+                className="rounded-full bg-general-bg-primary text-green-500"
+            />
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+                <SectionText
+                    title={t("title")}
+                    description={t("description")}
+                />
+                <div className="flex items-center">
+                    <Button
+                        type="button"
+                        variant={enabled ? "neutral" : "default"}
+                        className={cn(
+                            "h-10 px-4 text-sm leading-none",
+                            disabledActionClasses,
+                        )}
+                        disabled={pending || !canEdit}
+                        onClick={() => toggle(!enabled)}
+                    >
+                        {pending && (
+                            <Icon
+                                icon={LoaderCircleIcon}
+                                className="animate-spin"
+                            />
+                        )}
+                        {enabled ? t("disable") : t("enable")}
+                    </Button>
                 </div>
-                <div className="flex flex-1 flex-col gap-1">
-                    <h3 className="font-semibold text-base">
-                        {t("developer.title")}
-                    </h3>
-                    <p className="text-muted-foreground text-sm">
-                        {t("developer.description")}
-                    </p>
-                </div>
-                <Button
-                    variant={enabled ? "outline" : "default"}
-                    disabled={isLoading || setEnabled.isPending}
-                    onClick={() => toggle(!enabled)}
-                >
-                    {enabled ? t("developer.disable") : t("developer.enable")}
-                </Button>
             </div>
         </PageCard>
     );

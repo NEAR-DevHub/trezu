@@ -14,14 +14,17 @@ const NON_TEXT_INPUT_TYPES = new Set([
 /** Overlap that means a virtual keyboard, not a browser chrome tweak. */
 export const KEYBOARD_OVERLAP_PX = 120;
 
-type TextEntryLike = {
+export type TextEntryLike = {
     isContentEditable?: boolean;
     tagName?: string;
     type?: string;
     getAttribute?: (name: string) => string | null;
+    closest?: (selectors: string) => unknown;
 };
 
-export function isTextEntryElement(el: EventTarget | null): boolean {
+export function isTextEntryElement(
+    el: EventTarget | TextEntryLike | null,
+): boolean {
     if (!el || typeof el !== "object") return false;
     const node = el as TextEntryLike;
     if (node.isContentEditable) return true;
@@ -55,10 +58,23 @@ export function isKeyboardOccluding(
     );
 }
 
-/** Hide the phone tab bar while a field is focused or the viewport is squeezed. */
+/** Recipient (and other) pickers are dialogs; hiding the tab bar there steals the first tap. */
+export function isInsideDialog(
+    el: EventTarget | TextEntryLike | null,
+): boolean {
+    if (!el || typeof el !== "object") return false;
+    const node = el as TextEntryLike;
+    if (typeof node.closest !== "function") return false;
+    return !!node.closest('[role="dialog"], [data-slot="dialog-content"]');
+}
+
+/**
+ * Hide for an on-page field (the Send amount) or once the keyboard has
+ * resized the viewport. Skip dialog fields so the address picker can type.
+ */
 export function shouldHideBottomNavForKeyboard(args: {
-    textEntryFocused: boolean;
+    pageTextEntryFocused: boolean;
     keyboardOccluding: boolean;
 }): boolean {
-    return args.textEntryFocused || args.keyboardOccluding;
+    return args.pageTextEntryFocused || args.keyboardOccluding;
 }

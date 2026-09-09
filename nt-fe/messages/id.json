@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "dd/mm/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Ambang batas 1-dari-{memberCount} berarti satu anggota mana pun dapat mengeksekusi transaksi. Ini mengurangi keamanan.",
-        "infoBalanced": "Ambang batas {currentThreshold}-dari-{memberCount} memberikan keseimbangan yang baik antara keamanan dan fleksibilitas operasional."
-    },
     "metadata": {
         "treasuryTitle": "Dasbor | Near Business",
         "landingTitle": "Near Business | Manajemen Treasury Lintas-rantai",
@@ -194,8 +190,7 @@
             "description": "Kelola anggota tim dan izin"
         },
         "settings": {
-            "title": "Pengaturan",
-            "description": "Sesuaikan pengaturan aplikasi Anda"
+            "title": "Pengaturan"
         },
         "addressBook": {
             "title": "Buku Alamat",
@@ -930,8 +925,8 @@
         "title": "Anggota",
         "description": "Kelola anggota tim dan izin",
         "permissions": "Izin",
+        "added": "Ditambahkan",
         "member": "Anggota",
-        "activeMembers": "Anggota Aktif",
         "noActiveMembers": "Tidak ada anggota aktif ditemukan.",
         "addNewMember": "Tambah Anggota",
         "addManually": "Tambah secara manual",
@@ -955,6 +950,7 @@
             "readyDescription": "Kirim ke orang yang ingin Anda tambahkan. Mereka akan menghubungkan dompet dan meminta bergabung.",
             "onceTitle": "Tautan ini berlaku sekali, untuk satu orang",
             "onceDescription": "Buat yang baru untuk setiap anggota.",
+            "linkTitle": "Tautan undangan",
             "yourLink": "Tautan undangan Anda",
             "copyLink": "Salin tautan",
             "linkCopied": "Tautan undangan disalin",
@@ -981,7 +977,7 @@
             "askDescription": "Tim meninjau permintaan Anda sebelum Anda dapat melihat atau menyetujui apa pun.",
             "walletConnected": "Dompet terhubung",
             "nameLabel": "Nama Anda (opsional)",
-            "namePlaceholder": "Agar tim mengenali Anda",
+            "namePlaceholder": "Masukkan nama agar tim mengenali Anda",
             "askJoin": "Minta bergabung",
             "submitting": "Mengirim...",
             "successTitle": "Hampir bergabung",
@@ -992,8 +988,8 @@
             "goToTreasury": "Buka Treasury",
             "invalidTitle": "Undangan tidak ditemukan",
             "invalidDescription": "Tautan undangan ini tidak valid atau tidak lagi tersedia.",
-            "usedTitle": "Undangan sudah digunakan",
-            "usedDescription": "Tautan undangan ini sudah digunakan.",
+            "usedTitle": "Tautan undangan ini sudah digunakan",
+            "usedDescription": "Tautan undangan hanya berlaku sekali. Minta {treasury} mengirim yang baru.",
             "expiredTitle": "Undangan kedaluwarsa",
             "expiredDescription": "Tautan undangan ini sudah kedaluwarsa. Minta yang baru ke tim.",
             "goHome": "Ke beranda",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {tidak ada anggota} other {# anggota}} dipilih",
         "remove": "Hapus",
+        "send": "Kirim",
         "edit": "Ubah",
         "requestorOnlyTooltip": "Anda hanya dapat menambahkan peran Requestor untuk anggota ini, karena mereka bertanggung jawab membuat permintaan pembayaran dari NEARN.",
         "memberModal": {
-            "editRoles": "Ubah Peran",
+            "editRoles": "Ubah Anggota",
             "addNewMember": "Tambah Anggota",
             "validatingAddresses": "Memvalidasi alamat...",
             "reviewRequest": "Tinjau Permintaan",
             "noChanges": "Tidak ada perubahan yang dilakukan pada peran anggota"
         },
         "previewModal": {
-            "title": "Tinjau Permintaan Anda",
+            "title": "Tinjau anggota",
             "youAreEditing": "Anda sedang mengubah",
             "youAreAdding": "Anda sedang menambahkan",
             "membersCount": "{count, plural, other {# anggota}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "Anggota yang Diperbarui",
             "newMembers": "Anggota Baru",
             "creatingProposal": "Membuat Usulan...",
-            "confirmSubmit": "Konfirmasi dan Kirim Permintaan"
+            "confirmSubmit": "Buat permintaan"
         },
         "removeDialog": {
-            "title": "Hapus Permintaan",
+            "title": "Hapus {count, plural, one {anggota} other {anggota}}?",
             "nearnBody": "Setelah disetujui, {account} akan dihapus secara permanen dari treasury dan semua izin terkait akan dicabut. Setelah dihapus, akun ini tidak akan dapat lagi membuat permintaan dari NEARN.",
             "genericBody": "Setelah disetujui, tindakan ini akan menghapus secara permanen <bold>{accounts}</bold> dari treasury dan mencabut semua izin yang ditetapkan.",
             "creatingProposal": "Membuat Usulan..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "Perbarui Kebijakan - Tambah Anggota Baru",
-            "addMembersSuccess": "Permintaan anggota baru berhasil dibuat",
+            "addMembersSuccess": "Permintaan tambah anggota dibuat",
             "editMember": "Perbarui Kebijakan - Ubah Izin Anggota",
             "editMembers": "Perbarui Kebijakan - Ubah Beberapa Anggota",
-            "editMemberSuccess": "Permintaan pembaruan peran anggota berhasil dibuat",
-            "editMembersSuccess": "Permintaan pembaruan peran anggota massal berhasil dibuat",
+            "editMemberSuccess": "Permintaan edit anggota dibuat",
+            "editMembersSuccess": "Permintaan edit beberapa anggota dibuat",
             "removeMember": "Perbarui Kebijakan - Hapus Anggota",
             "removeMembers": "Perbarui Kebijakan - Hapus Anggota",
-            "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat",
+            "removeMemberSuccess": "Permintaan hapus anggota dibuat",
             "createProposalFailed": "Gagal membuat permintaan anggota. Silakan coba lagi."
         },
-        "infoSection": {
-            "title": "Mengapa menambahkan lebih banyak anggota?",
-            "description": "Menambahkan lebih banyak anggota menjaga dana Anda tetap aman dan memastikan dompet yang hilang tidak mengunci akses Anda.",
-            "readGuide": "Baca panduan lengkap",
-            "dismiss": "Tutup",
-            "strongerProtectionTitle": "Perlindungan lebih kuat",
-            "strongerProtectionDescription": "Permintaan membutuhkan lebih dari satu persetujuan sebelum dana dapat dipindahkan.",
-            "rolesForEveryoneTitle": "Peran untuk semua orang",
-            "rolesForEveryoneDescription": "Setiap anggota mendapat peran - meminta pembayaran, menyetujui, atau mengelola pengaturan.",
-            "neverLoseAccessTitle": "Jangan pernah kehilangan akses",
-            "neverLoseAccessDescription": "Jika Anda kehilangan dompet, Anda dapat memulihkan akses dari cadangan yang sudah ditambahkan."
-        }
+        "activeMembersCount": "{count, plural, other {# anggota aktif}}"
     },
     "settings": {
         "tabs": {
             "general": "Umum",
-            "voting": "Pemungutan Suara",
-            "preferences": "Preferensi",
-            "integrations": "Integrasi",
-            "developer": "Pengembang"
+            "voting": "Pemungutan Suara"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "Treasury tidak ditemukan",
             "treasuryName": "Nama Treasury",
             "treasuryNameDescription": "Nama treasury Anda. Ini akan ditampilkan di seluruh aplikasi.",
-            "displayName": "Nama Tampilan",
             "displayNamePlaceholder": "Masukkan nama tampilan",
-            "accountName": "Nama Akun",
             "logo": "Logo",
             "logoDescription": "Unggah logo untuk treasury Anda. Direkomendasikan SVG, PNG, atau JPG (256x256 px).",
-            "treasuryLogoAlt": "Logo treasury",
             "uploading": "Mengunggah...",
-            "uploadLogo": "Unggah Logo",
-            "removeLogo": "Hapus Logo",
+            "removeLogo": "Hapus",
             "logoUploaded": "Logo berhasil diunggah",
             "uploadError": "Terjadi kesalahan saat mengunggah gambar, silakan coba lagi.",
             "invalidLogo": "Logo tidak valid. Silakan unggah file PNG, JPG, atau SVG yang berukuran tepat 256x256 px",
             "invalidImage": "File gambar tidak valid. Silakan unggah gambar yang valid.",
             "fileReadError": "Kesalahan membaca file. Silakan coba lagi.",
             "primaryColor": "Warna Utama",
-            "primaryColorDescription": "Tetapkan warna utama untuk elemen antarmuka treasury Anda. Warna ini akan digunakan dalam mode terang dan gelap, jadi pertimbangkan kontras saat memilih corak netral.",
+            "primaryColorDescription": "Tetapkan warna utama untuk elemen antarmuka treasury Anda.",
             "selectColorLabel": "Pilih warna {color}",
-            "saveChanges": "Simpan perubahan",
-            "saving": "Menyimpan...",
             "savedToast": "Perubahan Anda telah disimpan.",
-            "saveFailed": "Tidak dapat menyimpan perubahan. Coba lagi."
+            "saveFailed": "Tidak dapat menyimpan perubahan. Coba lagi.",
+            "save": "Simpan",
+            "edit": "Ubah"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "Data yang diperlukan hilang",
             "thresholdProposalTitle": "Perbarui kebijakan - Ambang Pemungutan Suara",
             "thresholdProposalSummary": "{account} meminta untuk mengubah ambang pemungutan suara dari {oldValue} menjadi {newValue}.",
-            "thresholdSubmitted": "Permintaan untuk memperbarui ambang pemungutan suara telah dikirim",
+            "thresholdSubmitted": "Permintaan ambang voting dibuat",
             "createProposalFailed": "Gagal membuat usulan",
             "durationProposalTitle": "Perbarui kebijakan - Durasi Pemungutan Suara",
             "durationProposalSummary": "{account} meminta untuk mengubah durasi pemungutan suara dari {oldValue} menjadi {newValue}.",
-            "durationSubmitted": "Permintaan berhasil dibuat",
-            "pendingTitle": "Permintaan Ambang Pemungutan Suara Aktif",
-            "pendingBody": "Untuk menghindari konflik, Anda perlu menyelesaikan atau menyelesaikan permintaan tertunda yang ada sebelum melanjutkan. Permintaan ini saat ini aktif dan harus disetujui atau ditolak terlebih dahulu.",
-            "viewRequest": "Lihat Permintaan",
-            "thresholdHeading": "Ambang Pemungutan Suara",
-            "thresholdDescriptionApprovers": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan pembayaran dan terkait tim. Konfigurasikan ambang secara terpisah untuk Approver dan Governance.",
-            "thresholdDescriptionGeneric": "Tentukan berapa banyak suara yang diperlukan untuk menyetujui permintaan. Konfigurasikan ambang untuk setiap peran berdasarkan tanggung jawab mereka.",
+            "durationSubmitted": "Permintaan durasi voting dibuat",
+            "viewRequest": "Lihat permintaan",
             "membersWhoCanVote": "Anggota yang dapat memilih",
-            "votesRequired": "Suara diperlukan untuk menyetujui permintaan",
-            "durationHeading": "Durasi Pemungutan Suara",
-            "durationDescription": "Lamanya waktu (dalam hari) sebuah usulan akan tetap terbuka untuk pemungutan suara. Jika pemungutan suara tidak selesai dalam periode ini, keputusan akan kedaluwarsa.",
-            "durationApprovers": " Durasi ini berlaku sama untuk peran Governance dan Approver.",
-            "durationGeneric": " Durasi ini konsisten di semua peran treasury.",
-            "days": "Hari"
-        },
-        "preferences": {
-            "timeZone": "Zona Waktu",
-            "timeZoneDescription": "Tetapkan zona waktu lokal Anda untuk tampilan tanggal dan waktu yang akurat.",
-            "timeFormat": "Format Waktu",
-            "hour12": "12 jam (1:00 PM)",
-            "hour24": "24 jam (13:00)",
-            "autoTimezone": "Atur zona waktu otomatis menggunakan lokasi Anda",
-            "timezone": "Zona Waktu",
-            "loadingTimezones": "Memuat zona waktu...",
-            "selectTimezone": "Pilih Zona Waktu",
-            "searchTimezones": "Cari zona waktu...",
-            "noTimezones": "Tidak ada zona waktu ditemukan",
-            "save": "Simpan",
-            "savedToast": "Preferensi berhasil disimpan",
-            "saveFailed": "Gagal menyimpan preferensi",
-            "loadFailed": "Gagal memuat zona waktu"
+            "durationHeading": "Durasi Voting",
+            "durationDescription": "Berapa lama permintaan tetap terbuka sebelum kedaluwarsa. Setelah itu, hilang.",
+            "days": "Hari",
+            "roleThresholdTitle": "Ambang {role}",
+            "roleDescription": {
+                "financial": "Anggota ini menyetujui permintaan kirim dan swap.",
+                "governance": "Anggota ini menyetujui perubahan anggota dan aturan.",
+                "generic": "Anggota ini menyetujui permintaan untuk peran ini."
+            },
+            "pendingAlert": "{count, plural, other {# permintaan pengaturan perlu perhatian}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "Konfirmasi dan Kirim Permintaan",
         "useDifferentAddress": "Gunakan alamat berbeda",
         "failed1ClickQuote": "Gagal membuat kuotasi transfer 1Click",
-        "paymentSubmitted": "Permintaan untuk mengirim pembayaran telah dikirim",
+        "paymentSubmitted": "Permintaan kirim dibuat",
         "confidentialTooltip": "Detail penerima dan jumlah yang diminta sepenuhnya rahasia.",
         "destinationNetwork": "Jaringan tujuan",
         "selectRecipientPlaceholder": "Pilih penerima",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "Kiriman massal akan segera hadir!",
         "submittingList": "Mengirim daftar kiriman massal",
         "submittingProposal": "Mengirim usulan",
-        "proposalSubmitted": "Proposal kiriman massal dikirim",
+        "proposalSubmitted": "Permintaan kirim massal dibuat",
         "submitListFailed": "Gagal mengirim daftar pembayaran",
         "submitFailed": "Gagal mengirim kiriman massal",
         "quoteFetchFailed": "Tidak dapat mengambil biaya transfer. Silakan coba lagi.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "Menunggu persetujuan",
         "awaitingDescription": "Permintaan aktivasi telah dibuat. Setelah cukup anggota treasuri menyetujuinya, kunci akses massal rahasia didaftarkan dan kiriman massal terbuka otomatis.",
         "awaitingHint": "Tidak ada tindakan lain setelah persetujuan — halaman ini diperbarui otomatis.",
-        "proposalCreated": "Permintaan aktivasi dibuat — menunggu persetujuan anggota",
+        "proposalCreated": "Permintaan aktivasi dibuat",
         "activationFailed": "Gagal memulai aktivasi kiriman massal",
         "errorTitle": "Tidak dapat memuat status aktivasi",
         "noPermissionNote": "Anda tidak memiliki izin untuk memulai aktivasi. Minta anggota treasuri dengan izin proposal untuk mengaktifkan kiriman massal.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "Jumlah harus lebih besar dari 0"
         },
-        "requestSubmitted": "Permintaan pertukaran telah dikirim",
+        "requestSubmitted": "Permintaan swap dibuat",
         "heading": "Tukar",
         "sell": "Jual",
         "receive": "Terima",
@@ -1418,7 +1379,7 @@
             "review": "Tinjau"
         },
         "proposalTitle": "Buat jadwal vesting untuk {address}",
-        "scheduleSubmitted": "Permintaan untuk membuat jadwal vesting telah dikirim",
+        "scheduleSubmitted": "Permintaan vesting dibuat",
         "heading": "Jadwal Vesting Baru",
         "amount": "Jumlah",
         "startDate": "Tanggal Mulai",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "Pusat Dukungan",
-        "resources": "Sumber Daya",
-        "support": "Dukungan",
-        "websiteTitle": "Situs Web Near Business",
-        "websiteDescription": "Baca tentang Near Business dan kabar terbarunya.",
-        "demo": "Demo Near Business",
-        "demoTitle": "Jelajahi Versi Publik",
-        "demoDescription": "Treasury nyata yang bisa dilihat siapa saja.",
-        "confidentialDemoTitle": "Jelajahi Versi Rahasia",
-        "confidentialDemoDescription": "Lihat seperti apa treasury privat digunakan.",
-        "videoTitle": "Tonton Demo",
-        "videoDescription": "Video singkat - lihat Near Business dari awal sampai akhir.",
-        "xTitle": "Ikuti Kami di X",
-        "xDescription": "Lihat apa yang sedang kami bangun, secara real time.",
-        "statsTitle": "Statistik",
-        "statsDescription": "Lihat total aset yang dikelola di semua treasury.",
+        "websiteTitle": "Situs Web near business",
+        "websiteDescription": "Baca tentang near business dan kabar terbarunya.",
         "docsTitle": "Dokumentasi",
         "docsDescription": "Panduan untuk setiap fitur, langkah demi langkah.",
         "productSupportTitle": "Dukungan Produk",
@@ -1776,16 +1724,18 @@
                 "title": "Financial",
                 "description": "Financial dapat memilih pada permintaan transaksi terkait pembayaran tetapi tidak dapat membuatnya."
             }
-        }
+        },
+        "title": "Pilih peran"
     },
     "memberInput": {
-        "creatorYou": "Pembuat (Anda)",
-        "memberAddress": "Alamat Anggota",
-        "addNewMember": "Tambah Anggota",
+        "addNewMember": "Tambah anggota lain",
         "validation": {
             "rolesRequired": "Setidaknya satu peran diperlukan",
             "duplicateAddress": "Alamat sudah menjadi anggota"
-        }
+        },
+        "enterAddress": "Masukkan alamat",
+        "selectRole": "Pilih peran",
+        "memberNumber": "Anggota {number}"
     },
     "recipientInput": {
         "title": "Ke",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "Periksa pembayaran yang menunggu persetujuan",
         "exchangeSettings": "Atur perubahan harga maksimum (slippage) yang Anda terima pada swap.",
         "membersPending": "Lihat permintaan terkait anggota yang menunggu persetujuan",
+        "membersWantsToJoin": "Lihat anggota yang ingin bergabung dengan tim Anda",
         "guestSaveIntro": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data.",
         "guestSaveAction": "Anda dapat menyimpan treasury tamu ini ke daftar treasury Anda.",
         "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan. Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "Tidak ada templat yang ditemukan untuk “{slug}”.",
             "invalidManifest": "Manifest templat ini tidak valid:",
-            "proposalFiled": "Permintaan diajukan"
-        },
-        "developer": {
-            "title": "Permintaan Khusus",
-            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
-            "enable": "Aktifkan",
-            "disable": "Nonaktifkan",
-            "errUpdate": "Tidak dapat memperbarui pengaturan"
+            "proposalFiled": "Permintaan kustom dibuat"
         },
         "visual": {
             "detailsTitle": "Detail",
@@ -2693,6 +2637,13 @@
             "pattern": "{label} tidak sesuai dengan pola yang diperlukan",
             "min": "{label} minimal harus {min}",
             "max": "{label} maksimal harus {max}"
+        },
+        "settingsCard": {
+            "title": "Permintaan Khusus",
+            "description": "Bangun jenis permintaan Anda sendiri saat Anda membutuhkan lebih dari pembayaran dan pertukaran. Tambahkan kolom yang Anda perlukan dan anggota Anda dapat mengirimkannya seperti permintaan lainnya.",
+            "enable": "Aktifkan",
+            "disable": "Nonaktifkan",
+            "errUpdate": "Tidak dapat memperbarui pengaturan"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "Pindahkan Aset",
         "description": "Pindahkan aset dari rantai publik ke treasury Rahasia Anda.",
-        "submitted": "Permintaan pemindahan dikirim",
+        "submitted": "Permintaan pemindahan dibuat",
         "banner": {
             "title": "<amount></amount> masuk ke saldo publik Anda",
             "description": "Seseorang mengirimnya lewat jaringan yang salah. Pindahkan ke sini agar menjadi rahasia.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "Jumlah melebihi saldo publik",
             "failed": "Tidak dapat menyiapkan permintaan pemindahan. Silakan coba lagi."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Kurangi ambang",
+        "increase": "Tambah ambang"
     }
 }

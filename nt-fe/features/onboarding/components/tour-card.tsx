@@ -47,7 +47,9 @@ export function TourCard({
     const tourName = currentTour;
     const hidePrimaryButton =
         tourName === TOUR_NAMES.INFO_BOX_DISMISSED ||
-        tourName === PAGE_TOUR_NAMES.PAYMENTS_BULK;
+        tourName === PAGE_TOUR_NAMES.PAYMENTS_BULK ||
+        tourName === PAGE_TOUR_NAMES.MEMBERS_WANTS_TO_JOIN;
+    const isHelpSupportTour = tourName === TOUR_NAMES.INFO_BOX_DISMISSED;
     const isDashboardTour = tourName === TOUR_NAMES.DASHBOARD;
     const tourAction = TOUR_ACTIONS[tourName as keyof typeof TOUR_ACTIONS];
     const showBack = isDashboardTour && totalSteps > 1 && !isFirstStep;
@@ -120,9 +122,14 @@ export function TourCard({
     return (
         <div
             data-onboarding-tour-card=""
-            className="bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[250px] animate-in fade-in-0 zoom-in-95"
+            data-tour-caret={isHelpSupportTour ? "" : undefined}
+            className="relative overflow-visible bg-popover-foreground text-popover rounded-md px-2 py-3 shadow-md min-w-[250px] animate-in fade-in-0 zoom-in-95"
         >
-            <div className="text-popover-foreground">{arrow}</div>
+            {isHelpSupportTour ? null : (
+                <div className="pointer-events-none text-popover-foreground">
+                    {arrow}
+                </div>
+            )}
 
             <div
                 className={cn(

@@ -1,10 +1,11 @@
 "use client";
 
-import { Button } from "@/components/button";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/button";
+import { NumberBadge } from "@/components/number-badge";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
-import { useRouter } from "next/navigation";
 
 interface PendingButtonProps {
     /** High-level category types from backend: "Payments", "Exchange", "Change Policy", etc. */
@@ -24,6 +25,9 @@ export function PendingButton({ types, id }: PendingButtonProps) {
         sort_by: "CreationTime",
     });
 
+    const count = pendingProposals?.proposals?.length ?? 0;
+    if (count === 0) return null;
+
     return (
         <Button
             id={id}
@@ -31,13 +35,11 @@ export function PendingButton({ types, id }: PendingButtonProps) {
             onClick={() =>
                 router.push(`/${treasuryId}/requests?tab=InProgress`)
             }
-            variant="ghost"
-            className="flex items-center gap-2 border-2"
+            variant="pill"
+            className="gap-2"
         >
             {t("pending")}
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
-                {pendingProposals?.proposals?.length || 0}
-            </span>
+            <NumberBadge number={count} shape="pill" />
         </Button>
     );
 }

@@ -1,15 +1,24 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
-import * as React from "react";
+import { CheckIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
-import { Checkbox } from "@/components/ui/checkbox";
+import * as React from "react";
+import { Icon } from "@/components/icon";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from "@/components/ui/popover";
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/modal";
+import { ScrollContainer } from "@/components/scroll-container";
+import {
+    EmptySelectorIcon,
+    selectorTriggerClassName,
+} from "@/components/selector-field";
+import { SelectorOptionRow } from "@/components/selector-option-row";
+import { cn } from "@/lib/utils";
+import { shouldPreventMobileDialogAutoFocus } from "@/lib/wallet-address-input-props";
 import { Button } from "./button";
 import { Tooltip } from "./tooltip";
 
@@ -73,128 +82,215 @@ function useTranslatedRoles(availableRoles: readonly Role[]): Role[] {
     });
 }
 
+export function formatSelectedRoleTitles(
+    selectedRoles: string[],
+    translatedRoles: readonly Role[],
+): string {
+    return selectedRoles
+        .map((id) => translatedRoles.find((r) => r.id === id)?.title)
+        .filter(Boolean)
+        .join(", ");
+}
+
 interface RoleSelectorProps {
     selectedRoles?: string[];
     onRolesChange?: (roles: string[]) => void;
     className?: string;
     availableRoles?: readonly Role[];
     disabledRoles?: { roleId: string; reason: string }[];
+    /** Payment-form field vs compact trigger used in lists. */
+    triggerVariant?: "field" | "compact";
+    /** Matches payment selector error: red border + faded fill. */
+    invalid?: boolean;
 }
 
 export function RoleSelector({
     selectedRoles = [],
     onRolesChange,
+    className,
     availableRoles = ROLES,
     disabledRoles = [],
+    triggerVariant = "compact",
+    invalid = false,
 }: RoleSelectorProps) {
     const t = useTranslations("roleSelector");
+    const tCommon = useTranslations("common");
+    const tInput = useTranslations("memberInput");
     const translatedRoles = useTranslatedRoles(availableRoles);
     const [open, setOpen] = React.useState(false);
+    const [draftRoles, setDraftRoles] = React.useState<string[]>(selectedRoles);
+
+    const selectedLabel = formatSelectedRoleTitles(
+        selectedRoles,
+        translatedRoles,
+    );
+
+    const handleOpenChange = (nextOpen: boolean) => {
+        if (nextOpen) {
+            setDraftRoles(selectedRoles);
+        }
+        setOpen(nextOpen);
+    };
 
     const handleRoleToggle = (roleId: string) => {
         const isDisabled = disabledRoles.some((d) => d.roleId === roleId);
         if (isDisabled) return;
 
-        const newRoles = selectedRoles.includes(roleId)
-            ? selectedRoles.filter((id) => id !== roleId)
-            : [...selectedRoles, roleId];
-        onRolesChange?.(newRoles);
+        setDraftRoles((current) =>
+            current.includes(roleId)
+                ? current.filter((id) => id !== roleId)
+                : [...current, roleId],
+        );
     };
 
-    const getButtonText = () => {
-        if (selectedRoles.length === 0) {
-            return t("setRole");
-        } else if (selectedRoles.length === translatedRoles.length) {
-            return t("allRoles");
-        }
-        const selectedRoleTitles = selectedRoles
-            .sort((a, b) => a.localeCompare(b))
-            .map((id) => translatedRoles.find((r) => r.id === id)?.title)
-            .filter(Boolean);
-        return selectedRoleTitles.join(", ");
+    const handleDone = () => {
+        if (draftRoles.length === 0) return;
+        onRolesChange?.(draftRoles);
+        setOpen(false);
     };
+
+    const triggerLabel =
+        selectedRoles.length === 0
+            ? triggerVariant === "field"
+                ? tInput("selectRole")
+                : t("setRole")
+            : selectedLabel;
 
     return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <Button
-                    variant="outline"
-                    className="flex gap-2 items-center bg-card rounded-full"
+        <>
+            {triggerVariant === "field" ? (
+                <button
+                    type="button"
+                    onClick={() => handleOpenChange(true)}
+                    className={cn(
+                        selectorTriggerClassName,
+                        invalid && "border-destructive bg-destructive/5",
+                        className,
+                    )}
                 >
-                    {getButtonText()}
-                    <Icon
-                        icon={ArrowDown01Icon}
-                        className="shrink-0 opacity-50"
-                    />
+                    <EmptySelectorIcon />
+                    <span
+                        className={cn(
+                            "min-w-0 flex-1 truncate text-base leading-[1.2]",
+                            selectedRoles.length === 0
+                                ? "font-medium text-muted-foreground"
+                                : "font-semibold text-general-foreground",
+                        )}
+                    >
+                        {triggerLabel}
+                    </span>
+                </button>
+            ) : (
+                <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                        "flex items-center gap-2 rounded-full bg-card",
+                        className,
+                    )}
+                    onClick={() => handleOpenChange(true)}
+                >
+                    {triggerLabel}
                 </Button>
-            </PopoverTrigger>
-            {/*
-              Align to the trailing edge so label width changes don't shift the
-              menu horizontally. Keep collision handling so the last row can
-              flip above when there's no room below.
-            */}
-            <PopoverContent
-                className="w-80 p-1 gap-1 flex flex-col"
-                align="end"
-                collisionPadding={16}
-            >
-                {translatedRoles.map((role) => {
-                    const disabledInfo = disabledRoles.find(
-                        (d) => d.roleId === role.id,
-                    );
-                    const isDisabled = !!disabledInfo;
-                    const isChecked = selectedRoles.includes(role.id);
+            )}
 
-                    const content = (
-                        <label
-                            key={role.id}
-                            className={`flex items-start space-x-3 rounded-md p-3 transition-colors ${
-                                isDisabled
-                                    ? "opacity-60 cursor-not-allowed"
-                                    : "cursor-pointer hover:bg-accent"
-                            }`}
-                            onClick={(e) => {
-                                if (isDisabled) {
-                                    e.preventDefault();
+            <Dialog open={open} onOpenChange={handleOpenChange}>
+                <DialogContent
+                    className="h-auto max-sm:h-auto max-sm:gap-4"
+                    onOpenAutoFocus={(event) => {
+                        if (
+                            shouldPreventMobileDialogAutoFocus(
+                                window.innerWidth,
+                            )
+                        ) {
+                            event.preventDefault();
+                        }
+                    }}
+                >
+                    <DialogHeader
+                        centerTitle={false}
+                        className="sticky top-0 border-0 pb-0 text-left"
+                    >
+                        <DialogTitle className="pr-8 text-left text-lg font-semibold">
+                            {t("title")}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col">
+                        <ScrollContainer className="touch-pan-y overscroll-contain pr-1">
+                            {translatedRoles.map((role) => {
+                                const disabledInfo = disabledRoles.find(
+                                    (d) => d.roleId === role.id,
+                                );
+                                const isDisabled = !!disabledInfo;
+                                const isChecked = draftRoles.includes(role.id);
+
+                                const content = (
+                                    <SelectorOptionRow
+                                        key={role.id}
+                                        aria-disabled={isDisabled}
+                                        onClick={() =>
+                                            handleRoleToggle(role.id)
+                                        }
+                                        primary={role.title}
+                                        secondary={role.description}
+                                        primaryClassName="text-sm font-semibold leading-[1.5] text-general-secondary-foreground"
+                                        secondaryClassName="text-sm font-normal leading-[1.5] tracking-[0.00438rem] text-general-muted-foreground"
+                                        trailing={
+                                            isChecked ? (
+                                                <Icon
+                                                    icon={CheckIcon}
+                                                    className="size-5 shrink-0 self-center text-primary"
+                                                />
+                                            ) : (
+                                                <span
+                                                    aria-hidden
+                                                    className="size-5 shrink-0"
+                                                />
+                                            )
+                                        }
+                                        className={cn(
+                                            "h-auto min-h-14 items-center whitespace-normal py-3",
+                                            isDisabled &&
+                                                "cursor-not-allowed opacity-50 hover:bg-muted",
+                                        )}
+                                    />
+                                );
+
+                                if (isDisabled && disabledInfo) {
+                                    return (
+                                        <Tooltip
+                                            key={role.id}
+                                            content={disabledInfo.reason}
+                                            contentProps={{
+                                                className: "max-w-[320px]",
+                                            }}
+                                        >
+                                            {content}
+                                        </Tooltip>
+                                    );
                                 }
-                            }}
+
+                                return content;
+                            })}
+                        </ScrollContainer>
+                    </div>
+                    <DialogFooter className="border-0">
+                        <Button
+                            type="button"
+                            className="h-11 w-full rounded-2xl"
+                            disabled={draftRoles.length === 0}
+                            tooltipContent={
+                                draftRoles.length === 0
+                                    ? tInput("validation.rolesRequired")
+                                    : undefined
+                            }
+                            onClick={handleDone}
                         >
-                            <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={() =>
-                                    handleRoleToggle(role.id)
-                                }
-                                className="mt-0.5"
-                                disabled={isDisabled}
-                            />
-                            <div className="flex-1 space-y-1">
-                                <p className="text-sm font-medium leading-none mt-0.5">
-                                    {role.title}
-                                </p>
-                                {role.description && (
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                        {role.description}
-                                    </p>
-                                )}
-                            </div>
-                        </label>
-                    );
-
-                    if (isDisabled && disabledInfo) {
-                        return (
-                            <Tooltip
-                                key={role.id}
-                                content={disabledInfo.reason}
-                                contentProps={{ className: "max-w-[320px]" }}
-                            >
-                                {content}
-                            </Tooltip>
-                        );
-                    }
-
-                    return content;
-                })}
-            </PopoverContent>
-        </Popover>
+                            {tCommon("done")}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

@@ -1,25 +1,37 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import { Add01Icon, Delete01Icon } from "@hugeicons/core-free-icons";
-import { Button } from "./button";
-import { InputBlock } from "./input-block";
-import { FormField, FormMessage } from "./ui/form";
 import {
-    ArrayPath,
-    Control,
-    FieldValues,
-    Path,
-    PathValue,
+    Delete01Icon,
+    Edit03Icon,
+    Wallet03Icon,
+} from "@hugeicons/core-free-icons";
+import { useRef } from "react";
+import { useTranslations } from "next-intl";
+import {
+    type ArrayPath,
+    type Control,
+    type FieldValues,
+    type Path,
+    type PathValue,
     useFieldArray,
     useFormContext,
 } from "react-hook-form";
 import z from "zod";
-import { useTranslations } from "next-intl";
-import { AccountIdInput, buildAccountIdSchema } from "./account-id-input";
-import { ROLES, RoleSelector } from "./role-selector";
+import { Icon } from "@/components/icon";
+import { selectorTriggerClassName } from "@/components/selector-field";
+import { formatShortAddress } from "@/lib/format-short-address";
+import {
+    getCommittedMembers,
+    isCompleteMember,
+    isEmptyMember,
+} from "@/lib/member-draft";
 import { cn } from "@/lib/utils";
+import { WALLET_ADDRESS_INPUT_PROPS } from "@/lib/wallet-address-input-props";
+import { buildAccountIdSchema } from "./account-id-input";
+import { Button } from "./button";
 import { RoleBadge } from "./role-badge";
+import { ROLES, RoleSelector } from "./role-selector";
+import { FormField, FormMessage } from "./ui/form";
 
 export function buildMemberSchema(messages: {
     rolesRequired: string;
@@ -110,193 +122,297 @@ export function MemberInput<
     getDisabledRoles,
 }: MemberInputProps<TFieldValues, TMemberPath>) {
     const t = useTranslations("memberInput");
-    const { fields, append, remove } = useFieldArray({
+    const tCommon = useTranslations("common");
+    const { watch, trigger } = useFormContext<TFieldValues>();
+    const { fields, append, remove, replace } = useFieldArray({
         control,
         name: name,
     });
 
-    // Derive behavior from mode
-    const isOnboarding = mode === "onboarding";
+    const members = (watch(name) ?? []) as MembersArray;
+    const addressInputRef = useRef<HTMLInputElement>(null);
     const isEditMode = mode === "edit";
-    const lockedFirstMember = isOnboarding;
-    const showCreatorLabel = isOnboarding;
-    const hideAddButton = isEditMode;
-    const disableAllInputs = isEditMode;
+    const draftIndex = fields.length - 1;
+    const committedMembers = isEditMode
+        ? members
+        : getCommittedMembers(members);
     const defaultRoles: string[] = [];
 
+    const emptyMember = {
+        accountId: "",
+        roles: defaultRoles,
+    } as TMemberPath extends ArrayPath<TFieldValues>
+        ? PathValue<TFieldValues, TMemberPath> extends Member
+            ? PathValue<TFieldValues, TMemberPath>[number]
+            : never
+        : never;
+
+    const handleAddAnother = async () => {
+        if (isEditMode || draftIndex < 0) return;
+        const draft = members[draftIndex];
+        if (!draft || isEmptyMember(draft)) {
+            addressInputRef.current?.focus();
+            return;
+        }
+        if (!isCompleteMember(draft)) {
+            await trigger(name);
+            return;
+        }
+        append(emptyMember);
+    };
+
+    const handleEditCommitted = (index: number) => {
+        if (isEditMode) return;
+        const draft = members[draftIndex];
+        if (draft && !isEmptyMember(draft) && !isCompleteMember(draft)) {
+            void trigger(name);
+            return;
+        }
+
+        const selected = members[index];
+        if (!selected) return;
+
+        const next = members.filter((_, itemIndex) => itemIndex !== index);
+        if (draft && isEmptyMember(draft)) {
+            next[next.length - 1] = selected;
+        } else {
+            next.push(selected);
+        }
+        replace(next as (typeof emptyMember)[]);
+        void trigger(name);
+    };
+
     return (
-        <InputBlock invalid={false} className="p-0">
-            <div className="flex flex-col">
-                {fields.map((field, index) => (
-                    <div
-                        key={field.id}
-                        className={cn(
-                            "flex px-3.5 first:rounded-t-xl first:pt-3 not-first:pt-2 last:pb-3 flex-col gap-0",
-                            !disableAllInputs &&
-                                (!lockedFirstMember || index !== 0) &&
-                                "focus-within:bg-general-tertiary hover:bg-general-tertiary transition-colors",
-                            (!hideAddButton || index < fields.length - 1) &&
-                                "border-b border-muted-foreground/10",
-                        )}
-                    >
-                        <div className="flex justify-between items-center">
-                            <p className="text-xs text-muted-foreground">
-                                {showCreatorLabel && index === 0
-                                    ? t("creatorYou")
-                                    : t("memberAddress")}
-                            </p>
-
-                            {index > 0 && !disableAllInputs && (
-                                <Button
-                                    variant={"ghost"}
-                                    className="size-6 p-0! group hover:text-destructive"
-                                    onClick={() => remove(index)}
-                                >
-                                    <Icon
-                                        icon={Delete01Icon}
-                                        className="text-foreground group-hover:text-destructive"
-                                    />
-                                </Button>
-                            )}
-                        </div>
-                        <div className="flex md:flex-row flex-col items-start justify-between md:items-center gap-3">
-                            <div className="flex-1 wrap-break-word overflow-wrap-anywhere min-w-0">
-                                <AccountIdInput
-                                    disabled={
-                                        disableAllInputs ||
-                                        (lockedFirstMember && index === 0)
-                                    }
-                                    control={control}
-                                    name={`${name}.${index}.accountId`! as any}
-                                />
-                            </div>
-                            <FormField
-                                control={control}
-                                name={
-                                    `${name}.${index}.roles` as Path<TFieldValues>
-                                }
-                                render={({ field }) => {
-                                    const form = useFormContext();
-                                    const accountId = form.watch(
-                                        `${name}.${index}.accountId`,
-                                    );
-                                    const disabledRoles =
-                                        getDisabledRoles && accountId
-                                            ? getDisabledRoles(
-                                                  accountId,
-                                                  field.value || [],
-                                              )
-                                            : [];
-
-                                    return (
-                                        <>
-                                            {disableAllInputs ? (
-                                                <RoleSelector
-                                                    selectedRoles={field.value}
-                                                    onRolesChange={(roles) => {
-                                                        field.onChange(roles);
-                                                    }}
-                                                    availableRoles={
-                                                        availableRoles
-                                                    }
-                                                    disabledRoles={
-                                                        disabledRoles
-                                                    }
-                                                />
-                                            ) : index > 0 ||
-                                              !lockedFirstMember ? (
-                                                <RoleSelector
-                                                    selectedRoles={field.value}
-                                                    onRolesChange={(roles) => {
-                                                        field.onChange(roles);
-                                                    }}
-                                                    availableRoles={
-                                                        availableRoles
-                                                    }
-                                                    disabledRoles={
-                                                        disabledRoles
-                                                    }
-                                                />
-                                            ) : (
-                                                <div className="flex flex-wrap items-center gap-2">
-                                                    {ROLES.map((role) => (
-                                                        <RoleBadge
-                                                            key={role.id}
-                                                            role={role.id}
-                                                            variant="pill"
-                                                            style="secondary"
-                                                        />
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </>
-                                    );
-                                }}
-                            />
-                        </div>
-                        <div className="flex justify-between gap-1">
-                            <FormField
-                                control={control}
-                                name={
-                                    `${name}.${index}.accountId` as Path<TFieldValues>
-                                }
-                                render={({ fieldState }) =>
-                                    fieldState.error ? (
-                                        <FormMessage className="text-sm mb-3" />
-                                    ) : (
-                                        <p className="text-muted-foreground text-xs invisible">
-                                            Invisible
-                                        </p>
-                                    )
-                                }
-                            />
-                            <FormField
-                                control={control}
-                                name={
-                                    `${name}.${index}.roles` as Path<TFieldValues>
-                                }
-                                render={({ fieldState }) =>
-                                    fieldState.error ? (
-                                        <FormMessage />
-                                    ) : (
-                                        <p className="text-muted-foreground text-xs invisible">
-                                            Invisible
-                                        </p>
-                                    )
-                                }
-                            />
-                        </div>
-                    </div>
-                ))}
-                {!hideAddButton && (
-                    <Button
-                        variant={"ghost"}
-                        type="button"
-                        className="w-full justify-start rounded-t-none rounded-b-xl pl-3.5!"
-                        onClick={() =>
-                            append({
-                                accountId: "",
-                                roles: defaultRoles,
-                            } as TMemberPath extends ArrayPath<TFieldValues>
-                                ? PathValue<
-                                      TFieldValues,
-                                      TMemberPath
-                                  > extends Member
-                                    ? PathValue<
-                                          TFieldValues,
-                                          TMemberPath
-                                      >[number]
-                                    : never
-                                : never)
+        <div className="flex flex-col gap-6">
+            {!isEditMode && draftIndex >= 0 && (
+                <div className="flex flex-col gap-2">
+                    <FormField
+                        control={control}
+                        name={
+                            `${name}.${draftIndex}.accountId` as Path<TFieldValues>
                         }
-                    >
-                        <Icon icon={Add01Icon} className="text-foreground" />
-                        <span className="text-foreground">
-                            {t("addNewMember")}
-                        </span>
-                    </Button>
-                )}
-            </div>
-        </InputBlock>
+                        render={({ field, fieldState }) => (
+                            <div className="flex flex-col gap-1">
+                                <label
+                                    className={cn(
+                                        selectorTriggerClassName,
+                                        "cursor-text",
+                                        fieldState.error &&
+                                            "border-destructive bg-destructive/5",
+                                    )}
+                                >
+                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-general-border bg-muted">
+                                        <Icon
+                                            icon={Wallet03Icon}
+                                            className="size-5 text-muted-foreground"
+                                        />
+                                    </span>
+                                    <input
+                                        {...WALLET_ADDRESS_INPUT_PROPS}
+                                        ref={addressInputRef}
+                                        value={field.value ?? ""}
+                                        onChange={(event) => {
+                                            const input = event.target.value
+                                                .toLowerCase()
+                                                .replace(/[^a-z0-9_.-]+/g, "")
+                                                .slice(0, 64);
+                                            field.onChange(input);
+                                        }}
+                                        onBlur={field.onBlur}
+                                        placeholder={t("enterAddress")}
+                                        aria-invalid={!!fieldState.error}
+                                        className="min-w-0 flex-1 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground"
+                                    />
+                                </label>
+                                {fieldState.error ? (
+                                    <FormMessage className="mt-1 text-sm text-destructive" />
+                                ) : null}
+                            </div>
+                        )}
+                    />
+                    <FormField
+                        control={control}
+                        name={
+                            `${name}.${draftIndex}.roles` as Path<TFieldValues>
+                        }
+                        render={({ field, fieldState }) => {
+                            const accountId = members[draftIndex]?.accountId;
+                            const disabledRoles =
+                                getDisabledRoles && accountId
+                                    ? getDisabledRoles(
+                                          accountId,
+                                          field.value || [],
+                                      )
+                                    : [];
+                            return (
+                                <div className="flex flex-col gap-1">
+                                    <RoleSelector
+                                        triggerVariant="field"
+                                        selectedRoles={field.value || []}
+                                        onRolesChange={field.onChange}
+                                        availableRoles={availableRoles}
+                                        disabledRoles={disabledRoles}
+                                        invalid={!!fieldState.error}
+                                    />
+                                    {fieldState.error ? (
+                                        <FormMessage className="mt-1 text-sm text-destructive" />
+                                    ) : null}
+                                </div>
+                            );
+                        }}
+                    />
+                </div>
+            )}
+
+            {committedMembers.length > 0 && (
+                <div
+                    className={cn(
+                        "flex flex-col",
+                        isEditMode ? "gap-6" : undefined,
+                    )}
+                >
+                    {committedMembers.map((member, index) => {
+                        const accountId = member.accountId;
+                        const roles = member.roles ?? [];
+                        return (
+                            <div
+                                key={
+                                    isEditMode
+                                        ? (fields[index]?.id ?? accountId)
+                                        : `${accountId}-${index}`
+                                }
+                                className={cn(
+                                    "flex flex-col gap-2",
+                                    !isEditMode &&
+                                        committedMembers.length > 1 &&
+                                        index < committedMembers.length - 1 &&
+                                        "py-2",
+                                )}
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                        {t("memberNumber", {
+                                            number: index + 1,
+                                        })}
+                                    </p>
+                                    <div className="flex items-center gap-1">
+                                        {!isEditMode && (
+                                            <>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="text-general-unofficial-ghost-foreground"
+                                                    aria-label={tCommon("edit")}
+                                                    onClick={() =>
+                                                        handleEditCommitted(
+                                                            index,
+                                                        )
+                                                    }
+                                                >
+                                                    <Icon icon={Edit03Icon} />
+                                                </Button>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="text-general-unofficial-ghost-foreground"
+                                                    aria-label={tCommon(
+                                                        "remove",
+                                                    )}
+                                                    onClick={() =>
+                                                        remove(index)
+                                                    }
+                                                >
+                                                    <Icon icon={Delete01Icon} />
+                                                </Button>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                {isEditMode ? (
+                                    <div className="flex flex-col gap-3">
+                                        <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                            {formatShortAddress(accountId)}
+                                        </span>
+                                        <FormField
+                                            control={control}
+                                            name={
+                                                `${name}.${index}.roles` as Path<TFieldValues>
+                                            }
+                                            render={({ field, fieldState }) => {
+                                                const disabledRoles =
+                                                    getDisabledRoles &&
+                                                    accountId
+                                                        ? getDisabledRoles(
+                                                              accountId,
+                                                              field.value || [],
+                                                          )
+                                                        : [];
+                                                return (
+                                                    <div className="flex flex-col gap-1">
+                                                        <RoleSelector
+                                                            triggerVariant="field"
+                                                            selectedRoles={
+                                                                field.value ||
+                                                                []
+                                                            }
+                                                            onRolesChange={
+                                                                field.onChange
+                                                            }
+                                                            availableRoles={
+                                                                availableRoles
+                                                            }
+                                                            disabledRoles={
+                                                                disabledRoles
+                                                            }
+                                                            invalid={
+                                                                !!fieldState.error
+                                                            }
+                                                        />
+                                                        {fieldState.error ? (
+                                                            <FormMessage className="mt-1 text-sm text-destructive" />
+                                                        ) : null}
+                                                    </div>
+                                                );
+                                            }}
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="flex items-center justify-between gap-3">
+                                        <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                            {formatShortAddress(accountId)}
+                                        </span>
+                                        <div className="flex flex-wrap justify-end gap-2">
+                                            {roles.map((role) => (
+                                                <RoleBadge
+                                                    key={role}
+                                                    role={role}
+                                                    variant="pill"
+                                                    showTooltip={false}
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {!isEditMode && (
+                <Button
+                    variant="link"
+                    type="button"
+                    className="h-auto self-center p-0 text-muted-foreground"
+                    onClick={() => {
+                        void handleAddAnother();
+                    }}
+                >
+                    {t("addNewMember")}
+                </Button>
+            )}
+        </div>
     );
 }

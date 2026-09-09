@@ -1,103 +1,59 @@
 "use client";
 
+import { MinusSignIcon, PlusSignIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
-import { Slider } from "@/components/slider";
-import { InputBlock } from "./input-block";
-import { WarningAlert } from "./warning-alert";
-import { InfoAlert } from "./info-alert";
+import { Button } from "@/components/button";
+import { Icon } from "@/components/icon";
+import { cn } from "@/lib/utils";
 
-interface ThresholdSliderProps {
+interface ThresholdStepperProps {
     currentThreshold: number;
-    originalThreshold?: number;
     memberCount: number;
     onValueChange: (value: number) => void;
     disabled?: boolean;
+    className?: string;
 }
 
-export function ThresholdSlider({
+/**
+ * `−  n/total  +` control for how many of a role's members must approve.
+ * The value is clamped to 1…memberCount, so the role can never end up with a
+ * threshold nobody can reach.
+ */
+export function ThresholdStepper({
     currentThreshold,
-    originalThreshold,
     memberCount,
     onValueChange,
     disabled = false,
-}: ThresholdSliderProps) {
-    const t = useTranslations("thresholdSlider");
-    // Show 0 in these cases to ensure visual fill:
-    // 1. When memberCount is 1 or 2
-    // 2. When originalThreshold (prevents labels from changing during drag)
-    let array: number[];
-    let sliderMin: number;
-
-    const shouldShowZero =
-        memberCount === 1 || memberCount === 2 || originalThreshold === 1;
-
-    if (memberCount === 1) {
-        array = [0, 1];
-        sliderMin = 0;
-    } else if (shouldShowZero) {
-        // Include 0 to show visual progress
-        array = Array.from({ length: memberCount + 1 }, (_, i) => i);
-        sliderMin = 0;
-    } else {
-        array = Array.from({ length: memberCount }, (_, i) => i + 1);
-        sliderMin = 1;
-    }
-
-    const sliderMax = memberCount;
+    className,
+}: ThresholdStepperProps) {
+    const t = useTranslations("thresholdStepper");
+    const value = Math.min(Math.max(currentThreshold, 1), memberCount);
 
     return (
-        <div className="space-y-2">
-            <InputBlock invalid={false} interactive>
-                <div className="flex items-center justify-between text-sm mb-2">
-                    {array.map((num) => (
-                        <span
-                            key={num}
-                            className={
-                                num === currentThreshold
-                                    ? "font-semibold text-foreground"
-                                    : "text-muted-foreground"
-                            }
-                        >
-                            {num}
-                        </span>
-                    ))}
-                </div>
-
-                <Slider
-                    value={[currentThreshold]}
-                    onValueChange={(value) => {
-                        // Only allow values >= 1 (prevent selecting 0)
-                        if (value[0] >= 1) {
-                            onValueChange(value[0]);
-                        }
-                    }}
-                    min={sliderMin}
-                    max={sliderMax}
-                    step={1}
-                    className="w-full"
-                    disabled={disabled || memberCount === 1}
-                    showFullTrack={true}
-                />
-            </InputBlock>
-
-            {/* Warning banner - show when threshold is 1 */}
-            {currentThreshold === 1 && (
-                <WarningAlert
-                    message={t("warningSingleMember", { memberCount })}
-                    className="mt-3"
-                />
-            )}
-
-            {/* Info banner - only show if threshold is between 1 and less than total */}
-            {currentThreshold > 1 && currentThreshold < memberCount && (
-                <InfoAlert
-                    message={t("infoBalanced", {
-                        currentThreshold,
-                        memberCount,
-                    })}
-                    className="mt-3"
-                />
-            )}
+        <div className={cn("flex items-center gap-4", className)}>
+            <Button
+                type="button"
+                variant="neutral"
+                size="icon-sm"
+                aria-label={t("decrease")}
+                disabled={disabled || value <= 1}
+                onClick={() => onValueChange(value - 1)}
+            >
+                <Icon icon={MinusSignIcon} />
+            </Button>
+            <span className="text-base font-medium tabular-nums text-foreground">
+                {value}/{memberCount}
+            </span>
+            <Button
+                type="button"
+                variant="neutral"
+                size="icon-sm"
+                aria-label={t("increase")}
+                disabled={disabled || value >= memberCount}
+                onClick={() => onValueChange(value + 1)}
+            >
+                <Icon icon={PlusSignIcon} />
+            </Button>
         </div>
     );
 }

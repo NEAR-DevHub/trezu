@@ -16,7 +16,7 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { APP_ACTIVE_TREASURY, LANDING_PAGE } from "@/constants/config";
+import { APP_ACTIVE_TREASURY } from "@/constants/config";
 import { Button } from "@/components/button";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import {
@@ -42,6 +42,11 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import { sanitizeReturnTo } from "@/lib/auth-redirect";
 import { resolvePreferredMemberTreasuryId } from "@/lib/treasury-home";
+import {
+    LANDING_HREF,
+    WELCOME_QUERY,
+    isWelcomeEntry,
+} from "@/lib/welcome-entry";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { ConnectedAccountCard } from "./connected-account-card";
@@ -196,10 +201,11 @@ export function TreasuryOnboardingPage({
         lastTreasuryId,
     );
     const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
+    const isWelcome = isWelcomeEntry(searchParams.get(WELCOME_QUERY));
     // An invited visit is an explicit request to create, even for someone who
     // already has a treasury they would otherwise be forwarded to.
     const shouldKeepUserOnCreatePage =
-        !!returnTo || forceStayOnCreatePage || invited;
+        !!returnTo || forceStayOnCreatePage || isWelcome || invited;
     // Reached from inside the app, the screen is a self-contained detour: it
     // drops the branding and account chrome and centres the form in the
     // viewport, with its own way back to the page that sent the user here.
@@ -517,7 +523,7 @@ export function TreasuryOnboardingPage({
     };
 
     const headerLogo = !isReturnToFlow ? (
-        <Link href={LANDING_PAGE} aria-label="Near Business home">
+        <Link href={LANDING_HREF} aria-label="Near Business home">
             <Logo size="md" />
         </Link>
     ) : undefined;

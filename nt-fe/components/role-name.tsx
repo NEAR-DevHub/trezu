@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
  * Maps internal role names (raw policy names) to canonical role IDs:
  * governance | financial | requestor. Legacy names get normalized.
  */
-function normalizeRoleId(roleName: string): string {
+export function normalizeRoleId(roleName: string): string {
     if (roleName === "Approver") return "financial";
     if (roleName === "Admin") return "governance";
     if (roleName === "Create Requests" || roleName === "Create requests")

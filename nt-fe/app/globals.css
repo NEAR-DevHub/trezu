@@ -703,7 +703,23 @@ input[type="number"] {
     /* Firefox */
 }
 
-@plugin "tailwind-scrollbar";
+@plugin "tailwind-scrollbar" {
+    /* Standard `scrollbar-color` on `*` makes Chrome interpolate the thumb
+       instead of moving it with the scroll. Pseudoelements keep Firefox
+       styled via `@supports` and leave Chromium on `::-webkit-scrollbar`. */
+    preferredstrategy: pseudoelements;
+}
+
+/* tailwind-scrollbar's reset puts `scrollbar-color` on `*`. Chrome then
+   interpolates the thumb instead of moving it with the scroll — content
+   moves immediately, the bar catches up a second or two later. That only
+   shows in the production CSS bundle (staging), not in `next dev`. */
+@layer base {
+    * {
+        scrollbar-color: unset;
+        scrollbar-width: unset;
+    }
+}
 
 @media print {
     .print-color-exact {
@@ -724,6 +740,20 @@ body[data-onboarding-tour="info-box-dismissed"] [data-slot="dialog-overlay"] {
 /* nextstepjs sets the card wrapper to max-width: 100% of the spotlight. */
 body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     max-width: none !important;
+    overflow: visible !important;
+}
+
+/* Library caret overlaps the copy; we draw one on the bubble instead. */
+body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-arrow"] {
+    display: none !important;
+}
+
+body[data-onboarding-tour="info-box-dismissed"]
+    [data-onboarding-tour-card]::after {
+    content: "";
+    position: absolute;
+    z-index: 1;
+    border: 7px solid transparent;
 }
 
 @media (max-width: 1023px) {
@@ -744,9 +774,29 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
         max-width: none;
     }
 
+    body[data-onboarding-tour="info-box-dismissed"]
+        [data-onboarding-tour-card]::after {
+        top: 100%;
+        left: 50%;
+        margin-top: -1px;
+        border-top-color: var(--popover-foreground);
+        transform: translateX(-50%);
+    }
+
     /* Inset the Help & Support label from the highlight on the x-axis only. */
     body[data-onboarding-tour="info-box-dismissed"] #help-support-link {
         padding-inline: 0.75rem;
+    }
+}
+
+@media (min-width: 1024px) {
+    body[data-onboarding-tour="info-box-dismissed"]
+        [data-onboarding-tour-card]::after {
+        top: 50%;
+        right: 100%;
+        margin-right: -1px;
+        border-right-color: var(--popover-foreground);
+        transform: translateY(-50%);
     }
 }
 
@@ -755,17 +805,28 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     --card-card: #171717;
     /* Toast chrome is always the dark card; title/action stay light. */
     --general-foreground: #fff;
+    --general-unofficial-ghost: rgba(255, 255, 255, 0);
+    --general-unofficial-ghost-foreground: rgba(229, 229, 229, 1);
+    --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1);
+    --general-success-foreground: rgba(0, 236, 151, 1);
     font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
 [data-sonner-toast].toaster-toast {
-    display: flex !important;
-    flex-wrap: wrap;
+    display: grid !important;
+    grid-template-columns: max-content max-content;
+    justify-content: start;
     align-items: center;
     column-gap: 0.75rem;
     row-gap: 0.25rem;
     box-sizing: border-box;
-    width: var(--width, 22.25rem);
+    width: max-content !important;
+    max-width: min(22.25rem, calc(100vw - 3rem));
+    height: auto !important;
+    min-height: 0 !important;
+    transition:
+        transform 400ms,
+        opacity 400ms !important;
     border: 0 !important;
     border-radius: 1rem !important;
     background: var(--card-card, #171717) !important;
@@ -776,17 +837,29 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
 
 [data-sonner-toast] [data-icon].toaster-icon {
     display: flex !important;
-    flex: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
     align-items: center;
     justify-content: center;
     margin: 0 !important;
-    width: 1.25rem !important;
-    height: 1.25rem !important;
+    width: 1.09375rem !important;
+    height: 1.09375rem !important;
+    color: var(--general-success-foreground);
+}
+
+[data-sonner-toast] [data-icon].toaster-icon svg {
+    width: 1.09375rem !important;
+    height: 1.09375rem !important;
+    background-color: var(--general-success-foreground) !important;
+    color: #171717 !important;
 }
 
 [data-sonner-toast] [data-content].toaster-content {
     display: block;
-    flex: 1 1 0;
+    grid-column: 2;
+    grid-row: 1;
+    flex: none !important;
+    width: max-content;
     min-width: 0;
     margin: 0 !important;
     padding: 0 !important;
@@ -797,9 +870,11 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
     border: 0 !important;
     padding: 0 !important;
     color: var(--general-foreground, #fff);
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
     font-size: 1rem;
+    font-style: normal;
     font-weight: 600;
-    line-height: 1.2;
+    line-height: 120%;
 }
 
 [data-sonner-toast] [data-description].toaster-description {
@@ -814,21 +889,49 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
 
 [data-sonner-toast] [data-button].toaster-action {
     box-sizing: border-box;
-    flex: 1 0 100%;
-    width: 100% !important;
-    height: auto !important;
-    min-height: 0 !important;
+    display: flex !important;
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    width: max-content !important;
+    min-width: 0 !important;
+    height: 1.5rem !important;
+    min-height: 1.5rem !important;
+    max-height: 1.5rem !important;
+    white-space: nowrap;
     margin: 0 !important;
     border: 0 !important;
-    background: transparent !important;
-    padding: 0 0 0 calc(1.25rem + 0.75rem) !important;
+    border-radius: 0.5rem !important;
+    background: var(--general-unofficial-ghost) !important;
+    padding: 0.1875rem 0.375rem !important;
     box-shadow: none !important;
-    color: var(--general-foreground, #fff) !important;
-    font-size: 1rem;
-    font-weight: 600;
-    line-height: 1.2;
-    text-align: left !important;
-    opacity: 0.72;
+    color: var(--general-unofficial-ghost-foreground) !important;
+    font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
+    font-size: 0.875rem;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 0.875rem;
+    text-align: center !important;
+}
+
+[data-sonner-toast] [data-button].toaster-action:hover,
+[data-sonner-toast] [data-button].toaster-action:focus,
+[data-sonner-toast] [data-button].toaster-action:active {
+    height: 1.5rem !important;
+    min-height: 1.5rem !important;
+    max-height: 1.5rem !important;
+    padding: 0.1875rem 0.375rem !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    outline: none !important;
+    transform: none !important;
+}
+
+[data-sonner-toast] [data-button].toaster-action:hover {
+    background: var(--general-unofficial-ghost-hover, rgba(255, 255, 255, 0.1)) !important;
 }
 
 @media (max-width: 1023px) {
@@ -840,16 +943,16 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
         bottom: calc(5rem + env(safe-area-inset-bottom, 0px)) !important;
     }
 
-    /* Toasts span the screen width and sit at the top center. */
+    /* Full width of the content column (same 1rem inset as `px-4`). */
     [data-sonner-toaster][data-x-position="center"] {
-        left: 0 !important;
-        right: 0 !important;
-        width: 100% !important;
+        left: 1rem !important;
+        right: 1rem !important;
+        width: auto !important;
         --width: 100%;
-        --offset-left: 0px;
-        --offset-right: 0px;
-        --mobile-offset-left: 0px;
-        --mobile-offset-right: 0px;
+        --offset-left: 1rem;
+        --offset-right: 1rem;
+        --mobile-offset-left: 1rem;
+        --mobile-offset-right: 1rem;
     }
 
     [data-sonner-toaster][data-x-position="center"] [data-sonner-toast] {
@@ -857,6 +960,8 @@ body[data-onboarding-tour="info-box-dismissed"] [data-name="nextstep-card"] {
         right: 0 !important;
         width: 100% !important;
         max-width: 100% !important;
+        justify-content: start;
+        justify-items: start;
     }
 }
 

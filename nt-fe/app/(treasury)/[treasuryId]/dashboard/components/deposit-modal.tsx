@@ -10,6 +10,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { NetworkSelectModal } from "@/components/network-select-modal";
@@ -43,6 +44,7 @@ import Big from "@/lib/big";
 import { fetchDepositAddress } from "@/lib/bridge-api";
 import { withNearComAddressPrefix } from "@/lib/nearcom-address";
 import { cn } from "@/lib/utils";
+import { CREATE_HREF } from "@/lib/welcome-entry";
 import { useNear } from "@/stores/near-store";
 import { DepositAckPanel } from "./deposit/deposit-ack-panel";
 import {
@@ -66,6 +68,7 @@ import {
     buildPublicWalletOneTimeNotices,
 } from "./deposit/deposit-notices";
 import { DepositSourceCards } from "./deposit/deposit-source-cards";
+import { resolvePayWithTrezuNextStep } from "./deposit/deposit-transfer-resolve";
 import {
     buildConfidentialDepositSharePath,
     buildPaySharePath,
@@ -183,7 +186,9 @@ export function DepositModal({
             }),
         [t],
     );
-    const { treasuryId, isConfidential, config } = useTreasury();
+    const router = useRouter();
+    const { treasuryId, isConfidential, config, memberTreasuries } =
+        useTreasury();
     const { accountId } = useNear();
     const locale = useLocale();
     const {
@@ -788,6 +793,15 @@ export function DepositModal({
 
         const isConfidentialShare =
             isConfidential && depositSource === "confidential_user";
+
+        const payStep = resolvePayWithTrezuNextStep(memberTreasuries, {
+            destinationTreasuryId: treasuryId,
+            confidentialOnly: isConfidentialShare,
+        });
+        if (payStep.kind === "create") {
+            router.push(CREATE_HREF);
+            return;
+        }
 
         if (isConfidentialShare) {
             window.open(

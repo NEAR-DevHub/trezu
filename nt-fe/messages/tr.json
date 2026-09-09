@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "gg.aa.yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "{memberCount} üyeden 1'lik bir eşik, herhangi bir üyenin tek başına işlem gerçekleştirebileceği anlamına gelir. Bu güvenliği azaltır.",
-        "infoBalanced": "{memberCount} üyeden {currentThreshold}'lik bir eşik, güvenlik ile operasyonel esneklik arasında iyi bir denge sağlar."
-    },
     "metadata": {
         "treasuryTitle": "Panel | Near Business",
         "landingTitle": "Near Business | Zincirler Arası Hazine Yönetimi",
@@ -194,8 +190,7 @@
             "description": "Ekip üyelerini ve izinleri yönetin"
         },
         "settings": {
-            "title": "Ayarlar",
-            "description": "Uygulama ayarlarınızı düzenleyin"
+            "title": "Ayarlar"
         },
         "addressBook": {
             "title": "Adres Defteri",
@@ -930,8 +925,8 @@
         "title": "Üyeler",
         "description": "Ekip üyelerini ve izinleri yönetin",
         "permissions": "İzinler",
+        "added": "Eklendi",
         "member": "Üye",
-        "activeMembers": "Aktif Üyeler",
         "noActiveMembers": "Aktif üye bulunamadı.",
         "addNewMember": "Üye Ekle",
         "addManually": "Manuel ekle",
@@ -955,6 +950,7 @@
             "readyDescription": "Eklemek istediğiniz kişiye gönderin. Cüzdan bağlayıp katılmak isteyecekler.",
             "onceTitle": "Bu bağlantı bir kez, bir kişi için geçerlidir",
             "onceDescription": "Her üye için yeni bir tane oluşturun.",
+            "linkTitle": "Davet bağlantısı",
             "yourLink": "Davet bağlantınız",
             "copyLink": "Bağlantıyı kopyala",
             "linkCopied": "Davet bağlantısı kopyalandı",
@@ -981,7 +977,7 @@
             "askDescription": "Bir şey görebilmeniz veya onaylayabilmenizden önce ekip talebinizi inceler.",
             "walletConnected": "Cüzdan bağlandı",
             "nameLabel": "Adınız (isteğe bağlı)",
-            "namePlaceholder": "Ekibin sizi tanıması için",
+            "namePlaceholder": "Ekibin sizi tanıması için ad girin",
             "askJoin": "Katılma isteği",
             "submitting": "Gönderiliyor...",
             "successTitle": "Neredeyse katıldınız",
@@ -992,8 +988,8 @@
             "goToTreasury": "Treasury’ye git",
             "invalidTitle": "Davet bulunamadı",
             "invalidDescription": "Bu davet bağlantısı geçersiz veya artık kullanılamıyor.",
-            "usedTitle": "Davet zaten kullanıldı",
-            "usedDescription": "Bu davet bağlantısı zaten kullanıldı.",
+            "usedTitle": "Bu davet bağlantısı zaten kullanıldı",
+            "usedDescription": "Davet bağlantıları bir kez kullanılır. {treasury} adresinden yeni bir tane isteyin.",
             "expiredTitle": "Davetin süresi doldu",
             "expiredDescription": "Bu davet bağlantısının süresi doldu. Ekipten yeni bir tane isteyin.",
             "goHome": "Ana sayfaya git",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {üye yok} one {# üye} other {# üye}} seçildi",
         "remove": "Kaldır",
+        "send": "Gönder",
         "edit": "Düzenle",
         "requestorOnlyTooltip": "Bu üye için yalnızca Talep Eden rolünü ekleyebilirsiniz, çünkü NEARN'den ödeme talepleri oluşturmaktan sorumludurlar.",
         "memberModal": {
-            "editRoles": "Rolleri Düzenle",
+            "editRoles": "Üyeleri Düzenle",
             "addNewMember": "Üye Ekle",
             "validatingAddresses": "Adresler doğrulanıyor...",
             "reviewRequest": "Talebi İncele",
             "noChanges": "Üye rollerinde herhangi bir değişiklik yapılmadı"
         },
         "previewModal": {
-            "title": "Talebinizi İnceleyin",
+            "title": "Üyeleri incele",
             "youAreEditing": "Düzenliyorsunuz",
             "youAreAdding": "Ekliyorsunuz",
             "membersCount": "{count, plural, one {# üye} other {# üye}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "Güncellenmiş Üyeler",
             "newMembers": "Yeni Üyeler",
             "creatingProposal": "Öneri Oluşturuluyor...",
-            "confirmSubmit": "Onayla ve Talebi Gönder"
+            "confirmSubmit": "Talep oluştur"
         },
         "removeDialog": {
-            "title": "Talebi Kaldır",
+            "title": "{count, plural, one {Üye} other {Üyeler}} kaldırılsın mı?",
             "nearnBody": "Onaylandıktan sonra, {account} hazineden kalıcı olarak kaldırılacak ve ilgili tüm izinler iptal edilecek. Kaldırıldıktan sonra, bu hesap NEARN'den artık talep oluşturamayacak.",
             "genericBody": "Onaylandıktan sonra, bu işlem <bold>{accounts}</bold> üyesini hazineden kalıcı olarak kaldıracak ve atanan tüm izinleri iptal edecek.",
             "creatingProposal": "Öneri Oluşturuluyor..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "Politikayı Güncelle - Yeni Üyeler Ekle",
-            "addMembersSuccess": "Yeni üye talebi başarıyla oluşturuldu",
+            "addMembersSuccess": "Üye ekleme talebi oluşturuldu",
             "editMember": "Politikayı Güncelle - Üye İzinlerini Düzenle",
             "editMembers": "Politikayı Güncelle - Birden Çok Üyeyi Düzenle",
-            "editMemberSuccess": "Üye rolleri güncelleme talebi başarıyla oluşturuldu",
-            "editMembersSuccess": "Toplu üye rolleri güncelleme talebi başarıyla oluşturuldu",
+            "editMemberSuccess": "Üye düzenleme talebi oluşturuldu",
+            "editMembersSuccess": "Üyeleri düzenleme talebi oluşturuldu",
             "removeMember": "Politikayı Güncelle - Üye Kaldır",
             "removeMembers": "Politikayı Güncelle - Üyeleri Kaldır",
-            "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu",
+            "removeMemberSuccess": "Üye kaldırma talebi oluşturuldu",
             "createProposalFailed": "Üye talebi oluşturulamadı. Lütfen tekrar deneyin."
         },
-        "infoSection": {
-            "title": "Neden daha fazla üye eklemelisiniz?",
-            "description": "Daha fazla üye eklemek fonlarınızı güvende tutar ve kaybolan bir cüzdanın erişiminizi kilitlemesini önler.",
-            "readGuide": "Tam rehberi oku",
-            "dismiss": "Kapat",
-            "strongerProtectionTitle": "Daha güçlü koruma",
-            "strongerProtectionDescription": "Fonlar hareket etmeden önce isteklerin birden fazla onay alması gerekir.",
-            "rolesForEveryoneTitle": "Herkes için roller",
-            "rolesForEveryoneDescription": "Her üyeye bir rol verilir - ödeme talep etme, onaylama veya ayarları yönetme.",
-            "neverLoseAccessTitle": "Erişimi asla kaybetmeyin",
-            "neverLoseAccessDescription": "Bir cüzdanı kaybederseniz, daha önce eklediğiniz yedekten erişimi geri alabilirsiniz."
-        }
+        "activeMembersCount": "{count, plural, one {# aktif üye} other {# aktif üye}}"
     },
     "settings": {
         "tabs": {
             "general": "Genel",
-            "voting": "Oylama",
-            "preferences": "Tercihler",
-            "integrations": "Entegrasyonlar",
-            "developer": "Geliştirici"
+            "voting": "Oylama"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "Hazine bulunamadı",
             "treasuryName": "Hazine Adı",
             "treasuryNameDescription": "Hazinenizin adı. Bu, uygulama genelinde görüntülenecek.",
-            "displayName": "Görünen Ad",
             "displayNamePlaceholder": "Görünen adı girin",
-            "accountName": "Hesap Adı",
             "logo": "Logo",
             "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
-            "treasuryLogoAlt": "Hazine logosu",
             "uploading": "Yükleniyor...",
-            "uploadLogo": "Logo Yükle",
-            "removeLogo": "Logoyu Kaldır",
+            "removeLogo": "Kaldır",
             "logoUploaded": "Logo başarıyla yüklendi",
             "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
             "invalidLogo": "Geçersiz logo. Lütfen tam olarak 256x256 px boyutunda bir PNG, JPG veya SVG dosyası yükleyin",
             "invalidImage": "Geçersiz resim dosyası. Lütfen geçerli bir resim yükleyin.",
             "fileReadError": "Dosya okunurken hata oluştu. Lütfen tekrar deneyin.",
             "primaryColor": "Birincil Renk",
-            "primaryColorDescription": "Hazinenizin arayüz öğeleri için birincil rengi ayarlayın. Bu renk hem açık hem de karanlık modlarda kullanılacak, bu nedenle nötr tonlar seçerken kontrastı göz önünde bulundurun.",
+            "primaryColorDescription": "Hazinenizin arayüz öğeleri için ana rengi belirleyin.",
             "selectColorLabel": "{color} rengini seç",
-            "saveChanges": "Değişiklikleri kaydet",
-            "saving": "Kaydediliyor...",
             "savedToast": "Değişiklikleriniz kaydedildi.",
-            "saveFailed": "Değişiklikler kaydedilemedi. Tekrar deneyin."
+            "saveFailed": "Değişiklikler kaydedilemedi. Tekrar deneyin.",
+            "save": "Kaydet",
+            "edit": "Düzenle"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "Gerekli veri eksik",
             "thresholdProposalTitle": "Politikayı Güncelle - Oylama Eşikleri",
             "thresholdProposalSummary": "{account} oylama eşiğini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
-            "thresholdSubmitted": "Oylama eşiğini güncelleme talebi gönderildi",
+            "thresholdSubmitted": "Oylama eşiği talebi oluşturuldu",
             "createProposalFailed": "Öneri oluşturulamadı",
             "durationProposalTitle": "Politikayı Güncelle - Oylama Süresi",
             "durationProposalSummary": "{account} oylama süresini {oldValue} yerine {newValue} olarak değiştirmeyi talep etti.",
-            "durationSubmitted": "Talep başarıyla oluşturuldu",
-            "pendingTitle": "Aktif Oylama Eşiği Talebi",
-            "pendingBody": "Çakışmaları önlemek için, devam etmeden önce mevcut bekleyen talepleri tamamlamanız veya çözmeniz gerekir. Bu talepler şu anda aktif ve önce onaylanmalı veya reddedilmelidir.",
-            "viewRequest": "Talebi Görüntüle",
-            "thresholdHeading": "Oylama Eşiği",
-            "thresholdDescriptionApprovers": "Ödeme ve ekiple ilgili taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Onaylayanlar ve Yönetişim için eşikleri ayrı yapılandırın.",
-            "thresholdDescriptionGeneric": "Taleplerin onaylanması için kaç oy gerektiğini tanımlayın. Sorumluluklarına göre her rol için eşikleri yapılandırın.",
+            "durationSubmitted": "Oylama süresi talebi oluşturuldu",
+            "viewRequest": "Talebi görüntüle",
             "membersWhoCanVote": "Oy kullanabilen üyeler",
-            "votesRequired": "Talepleri onaylamak için oy gereklidir",
             "durationHeading": "Oylama Süresi",
-            "durationDescription": "Bir önerinin oylama için açık kalacağı süre (gün cinsinden). Bu süre içinde oylama tamamlanmazsa karar süresi dolar.",
-            "durationApprovers": " Bu süre hem Yönetişim hem de Onaylayan rolleri için eşit olarak geçerlidir.",
-            "durationGeneric": " Bu süre tüm hazine rolleri arasında tutarlıdır.",
-            "days": "Gün"
-        },
-        "preferences": {
-            "timeZone": "Saat Dilimi",
-            "timeZoneDescription": "Doğru tarih ve saat görüntüleme için yerel saat diliminizi ayarlayın.",
-            "timeFormat": "Saat Formatı",
-            "hour12": "12 saat (1:00 ÖS)",
-            "hour24": "24 saat (13:00)",
-            "autoTimezone": "Saat dilimini konumunuzu kullanarak otomatik ayarla",
-            "timezone": "Saat Dilimi",
-            "loadingTimezones": "Saat dilimleri yükleniyor...",
-            "selectTimezone": "Saat Dilimi Seç",
-            "searchTimezones": "Saat dilimlerini ara...",
-            "noTimezones": "Saat dilimi bulunamadı",
-            "save": "Kaydet",
-            "savedToast": "Tercihler başarıyla kaydedildi",
-            "saveFailed": "Tercihler kaydedilemedi",
-            "loadFailed": "Saat dilimleri yüklenemedi"
+            "durationDescription": "Bir talebin süresi dolmadan önce ne kadar açık kalacağı. Sonrasında kaybolur.",
+            "days": "Gün",
+            "roleThresholdTitle": "{role} Eşiği",
+            "roleDescription": {
+                "financial": "Bu üyeler gönderme ve takas taleplerini onaylar.",
+                "governance": "Bu üyeler üye ve kural değişikliklerini onaylar.",
+                "generic": "Bu üyeler bu role ait talepleri onaylar."
+            },
+            "pendingAlert": "{count, plural, one {# ayar talebi ilgilenilmeyi bekliyor} other {# ayar talebi ilgilenilmeyi bekliyor}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "Onayla ve Talebi Gönder",
         "useDifferentAddress": "Farklı bir adres kullan",
         "failed1ClickQuote": "1Click transfer teklifi oluşturulamadı",
-        "paymentSubmitted": "Ödeme gönderme talebi gönderildi",
+        "paymentSubmitted": "Gönderme talebi oluşturuldu",
         "confidentialTooltip": "Alici bilgileri ve talep edilen tutar tamamen gizlidir.",
         "destinationNetwork": "Hedef ağ",
         "selectRecipientPlaceholder": "Alıcı seç",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "Toplu gönderim yakında geliyor!",
         "submittingList": "Toplu gönderim listesi gönderiliyor",
         "submittingProposal": "Öneri gönderiliyor",
-        "proposalSubmitted": "Toplu gönderim teklifi gönderildi",
+        "proposalSubmitted": "Toplu gönderme talebi oluşturuldu",
         "submitListFailed": "Ödeme listesi gönderilemedi",
         "submitFailed": "Toplu gönderim gönderilemedi",
         "quoteFetchFailed": "Transfer ücretleri alınamadı. Lütfen tekrar deneyin.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "Onaylar bekleniyor",
         "awaitingDescription": "Etkinleştirme isteği oluşturuldu. Yeterince hazine üyesi onayladığında gizli toplu erişim anahtarı kaydedilir ve toplu gönderim otomatik olarak açılır.",
         "awaitingHint": "Onaydan sonra başka bir işlem gerekmez — bu sayfa otomatik olarak güncellenir.",
-        "proposalCreated": "Etkinleştirme talebi oluşturuldu — onaylar bekleniyor",
+        "proposalCreated": "Etkinleştirme talebi oluşturuldu",
         "activationFailed": "Toplu gönderim etkinleştirmesi başlatılamadı",
         "errorTitle": "Etkinleştirme durumu yüklenemedi",
         "noPermissionNote": "Etkinleştirmeyi başlatma izniniz yok. Teklif izinleri olan bir hazine üyesinden toplu gönderimi etkinleştirmesini isteyin.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "Miktar 0'dan büyük olmalıdır"
         },
-        "requestSubmitted": "Takas talebi gönderildi",
+        "requestSubmitted": "Swap talebi oluşturuldu",
         "heading": "Takas",
         "sell": "Sat",
         "receive": "Al",
@@ -1418,7 +1379,7 @@
             "review": "İnceleme"
         },
         "proposalTitle": "{address} için vesting planı oluştur",
-        "scheduleSubmitted": "Vesting planı oluşturma talebi gönderildi",
+        "scheduleSubmitted": "Vesting talebi oluşturuldu",
         "heading": "Yeni Vesting Planı",
         "amount": "Miktar",
         "startDate": "Başlangıç Tarihi",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "Destek Merkezi",
-        "resources": "Kaynaklar",
-        "support": "Destek",
-        "websiteTitle": "Near Business Web Sitesi",
-        "websiteDescription": "Near Business ve yenilikler hakkında bilgi alın.",
-        "demo": "Near Business Demo",
-        "demoTitle": "Açık Sürümü Keşfedin",
-        "demoDescription": "Herkesin görebileceği gerçek bir hazine.",
-        "confidentialDemoTitle": "Gizli Sürümü Keşfedin",
-        "confidentialDemoDescription": "Özel bir hazinenin kullanımda nasıl göründüğü.",
-        "videoTitle": "Demoyu İzleyin",
-        "videoDescription": "Kısa video — Near Business'i uçtan uca görün.",
-        "xTitle": "Bizi X'te Takip Edin",
-        "xDescription": "Ne inşa ettiğimizi gerçek zamanlı görün.",
-        "statsTitle": "İstatistikler",
-        "statsDescription": "Tüm hazinelerde yönetilen toplam varlıkları görün.",
+        "websiteTitle": "near business Web Sitesi",
+        "websiteDescription": "near business ve yenilikler hakkında bilgi alın.",
         "docsTitle": "Belgeler",
         "docsDescription": "Her özellik için adım adım rehberler.",
         "productSupportTitle": "Ürün Desteği",
@@ -1776,16 +1724,18 @@
                 "title": "Finansal",
                 "description": "Finansal, ödemeyle ilgili işlem talepleri üzerinde oy kullanabilir ancak bunları oluşturamaz."
             }
-        }
+        },
+        "title": "Rolleri seçin"
     },
     "memberInput": {
-        "creatorYou": "Oluşturan (siz)",
-        "memberAddress": "Üye Adresi",
-        "addNewMember": "Üye Ekle",
+        "addNewMember": "Başka üye ekle",
         "validation": {
             "rolesRequired": "En az bir rol gereklidir",
             "duplicateAddress": "Adres zaten bir üye"
-        }
+        },
+        "enterAddress": "Adres girin",
+        "selectRole": "Rol seçin",
+        "memberNumber": "Üye {number}"
     },
     "recipientInput": {
         "title": "Kime",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "Onay bekleyen ödemeleri kontrol edin",
         "exchangeSettings": "Bir takasta kabul edeceğiniz maksimum fiyat değişimini (slippage) ayarlayın.",
         "membersPending": "Onay bekleyen üye ile ilgili talepleri görün",
+        "membersWantsToJoin": "Ekibinize katılmak isteyen üyeyi görün",
         "guestSaveIntro": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz.",
         "guestSaveAction": "Bu misafir hazineyi hazinelerinize kaydedebilirsiniz.",
         "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin. Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "“{slug}” için şablon bulunamadı.",
             "invalidManifest": "Bu şablonun manifesti geçersiz:",
-            "proposalFiled": "İstek oluşturuldu"
-        },
-        "developer": {
-            "title": "Özel İstekler",
-            "description": "Ödemeler ve takastan fazlasına ihtiyaç duyduğunuzda kendi istek türlerinizi oluşturun. İhtiyacınız olan alanları ekleyin; üyeleriniz onları diğer istekler gibi gönderebilir.",
-            "enable": "Etkinleştir",
-            "disable": "Devre Dışı Bırak",
-            "errUpdate": "Ayar güncellenemedi"
+            "proposalFiled": "Özel talep oluşturuldu"
         },
         "visual": {
             "detailsTitle": "Ayrıntılar",
@@ -2693,6 +2637,13 @@
             "pattern": "{label} gerekli desenle eşleşmiyor",
             "min": "{label} en az {min} olmalıdır",
             "max": "{label} en fazla {max} olmalıdır"
+        },
+        "settingsCard": {
+            "title": "Özel İstekler",
+            "description": "Ödemeler ve takastan fazlasına ihtiyaç duyduğunuzda kendi istek türlerinizi oluşturun. İhtiyacınız olan alanları ekleyin; üyeleriniz onları diğer istekler gibi gönderebilir.",
+            "enable": "Etkinleştir",
+            "disable": "Devre Dışı Bırak",
+            "errUpdate": "Ayar güncellenemedi"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "Varlıkları Taşı",
         "description": "Varlıkları herkese açık zincirden Gizli hazinenize taşıyın.",
-        "submitted": "Taşıma isteği gönderildi",
+        "submitted": "Taşıma talebi oluşturuldu",
         "banner": {
             "title": "<amount></amount> herkese açık bakiyenize ulaştı",
             "description": "Birisi yanlış ağ üzerinden gönderdi. Gizli hale getirmek için buraya taşıyın.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "Tutar herkese açık bakiyeyi aşıyor",
             "failed": "Taşıma isteği hazırlanamadı. Lütfen tekrar deneyin."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Eşiği azalt",
+        "increase": "Eşiği artır"
     }
 }

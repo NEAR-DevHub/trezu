@@ -20,6 +20,7 @@ import { PageComponentLayout } from "@/components/page-component-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import { buildLoginHref } from "@/lib/auth-redirect";
+import { CREATE_HREF } from "@/lib/welcome-entry";
 import {
     buildNearComSendHref,
     NEAR_COM_SEND_INTERNAL_NETWORK,
@@ -305,7 +306,7 @@ export default function PaySharePage() {
         );
         if (next.kind === "create") {
             stripChoosePayerParam();
-            router.push("/create");
+            router.push(CREATE_HREF);
             return;
         }
         if (next.kind === "pay") {
@@ -494,7 +495,7 @@ export default function PaySharePage() {
                                             <img
                                                 src="/icons/near-square.svg"
                                                 alt=""
-                                                className="size-full invert"
+                                                className="size-full invert dark:invert-0"
                                             />
                                         </span>
                                     ) : null}

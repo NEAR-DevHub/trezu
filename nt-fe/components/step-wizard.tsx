@@ -246,6 +246,8 @@ interface ReviewStepProps {
     children: React.ReactNode;
     handleBack?: () => void;
     backDisabled?: boolean;
+    /** Title and back live in the page header instead of an in-page stepper. */
+    hideHeader?: boolean;
 }
 
 export function ReviewStep({
@@ -253,16 +255,19 @@ export function ReviewStep({
     children,
     handleBack,
     backDisabled = false,
+    hideHeader = false,
 }: ReviewStepProps) {
     useHideMobileBottomNav();
 
     return (
         <div className="flex flex-col gap-2 sm:gap-4">
-            <StepperHeader
-                title={reviewingTitle}
-                handleBack={handleBack}
-                backDisabled={backDisabled}
-            />
+            {hideHeader ? null : (
+                <StepperHeader
+                    title={reviewingTitle}
+                    handleBack={handleBack}
+                    backDisabled={backDisabled}
+                />
+            )}
             {children}
         </div>
     );

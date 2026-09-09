@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "yyyy/mm/dd"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "1/{memberCount} 的阈值意味着任意单个成员均可执行交易。这会降低安全性。",
-        "infoBalanced": "{currentThreshold}/{memberCount} 的阈值在安全性与运营灵活性之间取得了良好平衡。"
-    },
     "metadata": {
         "treasuryTitle": "仪表板 | Near Business",
         "landingTitle": "Near Business | 跨链金库管理",
@@ -194,8 +190,7 @@
             "description": "管理团队成员与权限"
         },
         "settings": {
-            "title": "设置",
-            "description": "调整应用设置"
+            "title": "设置"
         },
         "addressBook": {
             "title": "地址簿",
@@ -930,8 +925,8 @@
         "title": "成员",
         "description": "管理团队成员与权限",
         "permissions": "权限",
+        "added": "添加时间",
         "member": "成员",
-        "activeMembers": "活跃成员",
         "noActiveMembers": "未找到活跃成员。",
         "addNewMember": "添加成员",
         "addManually": "手动添加",
@@ -955,6 +950,7 @@
             "readyDescription": "发给你想添加的人。对方会连接钱包并申请加入。",
             "onceTitle": "此链接仅限一人、一次使用",
             "onceDescription": "每位成员请重新生成。",
+            "linkTitle": "邀请链接",
             "yourLink": "你的邀请链接",
             "copyLink": "复制链接",
             "linkCopied": "已复制邀请链接",
@@ -981,7 +977,7 @@
             "askDescription": "在你能查看或批准任何内容之前，团队会先审核你的请求。",
             "walletConnected": "钱包已连接",
             "nameLabel": "你的姓名（可选）",
-            "namePlaceholder": "方便团队认出你",
+            "namePlaceholder": "输入姓名，方便团队认出你",
             "askJoin": "申请加入",
             "submitting": "提交中...",
             "successTitle": "快要加入了",
@@ -992,8 +988,8 @@
             "goToTreasury": "前往金库",
             "invalidTitle": "未找到邀请",
             "invalidDescription": "此邀请链接无效或已不可用。",
-            "usedTitle": "邀请已使用",
-            "usedDescription": "此邀请链接已被使用。",
+            "usedTitle": "此邀请链接已被使用",
+            "usedDescription": "邀请链接只能使用一次。请向 {treasury} 索取新链接。",
             "expiredTitle": "邀请已过期",
             "expiredDescription": "此邀请链接已过期。请向团队索取新链接。",
             "goHome": "返回首页",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "已选择 {count, plural, =0 {无成员} other {# 名成员}}",
         "remove": "移除",
+        "send": "发送",
         "edit": "编辑",
         "requestorOnlyTooltip": "您只能为此成员添加 Requestor 角色,因为他们负责从 NEARN 创建付款请求。",
         "memberModal": {
-            "editRoles": "编辑角色",
+            "editRoles": "编辑成员",
             "addNewMember": "添加成员",
             "validatingAddresses": "正在验证地址...",
             "reviewRequest": "审核请求",
             "noChanges": "未对成员角色进行任何更改"
         },
         "previewModal": {
-            "title": "审核您的请求",
+            "title": "审核成员",
             "youAreEditing": "您正在编辑",
             "youAreAdding": "您正在添加",
             "membersCount": "{count, plural, other {# 名成员}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "已更新成员",
             "newMembers": "新成员",
             "creatingProposal": "正在创建提案...",
-            "confirmSubmit": "确认并提交请求"
+            "confirmSubmit": "创建请求"
         },
         "removeDialog": {
-            "title": "移除请求",
+            "title": "移除{count, plural, one {成员} other {成员}}？",
             "nearnBody": "一旦获批,{account} 将从金库中被永久移除,所有相关权限也将被撤销。移除后,此账户将无法再从 NEARN 创建请求。",
             "genericBody": "一旦获批,此操作将从金库中永久移除 <bold>{accounts}</bold>,并撤销所有已分配的权限。",
             "creatingProposal": "正在创建提案..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "更新策略 - 添加新成员",
-            "addMembersSuccess": "新成员请求已成功创建",
+            "addMembersSuccess": "已创建添加成员请求",
             "editMember": "更新策略 - 编辑成员权限",
             "editMembers": "更新策略 - 编辑多个成员",
-            "editMemberSuccess": "成员角色更新请求已成功创建",
-            "editMembersSuccess": "批量成员角色更新请求已成功创建",
+            "editMemberSuccess": "已创建编辑成员请求",
+            "editMembersSuccess": "已创建批量编辑成员请求",
             "removeMember": "更新策略 - 移除成员",
             "removeMembers": "更新策略 - 移除成员",
-            "removeMemberSuccess": "成员移除请求已成功创建",
+            "removeMemberSuccess": "已创建移除成员请求",
             "createProposalFailed": "创建成员请求失败。请重试。"
         },
-        "infoSection": {
-            "title": "为什么要添加更多成员？",
-            "description": "添加更多成员可以让您的资金更安全，并确保丢失钱包时不会被锁定在账户之外。",
-            "readGuide": "阅读完整指南",
-            "dismiss": "关闭",
-            "strongerProtectionTitle": "更强保护",
-            "strongerProtectionDescription": "资金转移前，请求需要多个成员批准。",
-            "rolesForEveryoneTitle": "人人都有角色",
-            "rolesForEveryoneDescription": "每位成员都有角色 - 发起付款请求、批准请求或管理设置。",
-            "neverLoseAccessTitle": "永不失去访问权限",
-            "neverLoseAccessDescription": "如果您丢失钱包，也可以通过已添加的备份恢复访问权限。"
-        }
+        "activeMembersCount": "{count, plural, other {# 名活跃成员}}"
     },
     "settings": {
         "tabs": {
             "general": "常规",
-            "voting": "投票",
-            "preferences": "偏好设置",
-            "integrations": "集成",
-            "developer": "开发者"
+            "voting": "投票"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "未找到金库",
             "treasuryName": "金库名称",
             "treasuryNameDescription": "您金库的名称。该名称将在应用中显示。",
-            "displayName": "显示名称",
             "displayNamePlaceholder": "输入显示名称",
-            "accountName": "账户名称",
             "logo": "标志",
             "logoDescription": "为您的金库上传标志。建议使用 SVG、PNG 或 JPG 格式(256x256 像素)。",
-            "treasuryLogoAlt": "金库标志",
             "uploading": "上传中...",
-            "uploadLogo": "上传标志",
-            "removeLogo": "移除标志",
+            "removeLogo": "移除",
             "logoUploaded": "标志上传成功",
             "uploadError": "上传图片时出错,请再试一次。",
             "invalidLogo": "无效的标志。请上传恰好为 256x256 像素的 PNG、JPG 或 SVG 文件",
             "invalidImage": "无效的图片文件。请上传有效的图片。",
             "fileReadError": "读取文件时出错。请再试一次。",
             "primaryColor": "主色",
-            "primaryColorDescription": "为金库界面元素设置主色。该颜色将在浅色和深色模式中均会使用,因此选择中性色调时请注意对比度。",
+            "primaryColorDescription": "为你的资金库界面元素设置主色。",
             "selectColorLabel": "选择颜色 {color}",
-            "saveChanges": "保存更改",
-            "saving": "保存中...",
             "savedToast": "您的更改已保存。",
-            "saveFailed": "无法保存更改。请重试。"
+            "saveFailed": "无法保存更改。请重试。",
+            "save": "保存",
+            "edit": "编辑"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "缺少必要数据",
             "thresholdProposalTitle": "更新策略 - 投票阈值",
             "thresholdProposalSummary": "{account} 请求将投票阈值从 {oldValue} 更改为 {newValue}。",
-            "thresholdSubmitted": "更新投票阈值的请求已提交",
+            "thresholdSubmitted": "已创建投票阈值请求",
             "createProposalFailed": "创建提案失败",
             "durationProposalTitle": "更新策略 - 投票时长",
             "durationProposalSummary": "{account} 请求将投票时长从 {oldValue} 更改为 {newValue}。",
-            "durationSubmitted": "请求已成功创建",
-            "pendingTitle": "活动中的投票阈值请求",
-            "pendingBody": "为避免冲突,您需要先完成或解决现有的待处理请求,然后再继续。这些请求当前处于活动状态,必须先批准或拒绝。",
+            "durationSubmitted": "已创建投票时长请求",
             "viewRequest": "查看请求",
-            "thresholdHeading": "投票阈值",
-            "thresholdDescriptionApprovers": "定义批准付款及团队相关请求所需的投票数。可分别为批准者和治理角色配置阈值。",
-            "thresholdDescriptionGeneric": "定义批准请求所需的投票数。根据各角色的职责分别配置阈值。",
             "membersWhoCanVote": "可投票的成员",
-            "votesRequired": "批准请求所需的投票数",
             "durationHeading": "投票时长",
-            "durationDescription": "提案保持开放投票的时长(以天为单位)。如果未在该时段内完成投票,该决定将过期。",
-            "durationApprovers": " 此时长同样适用于治理与批准者角色。",
-            "durationGeneric": " 此时长在所有金库角色中保持一致。",
-            "days": "天"
-        },
-        "preferences": {
-            "timeZone": "时区",
-            "timeZoneDescription": "设置您所在的时区,以便准确显示日期和时间。",
-            "timeFormat": "时间格式",
-            "hour12": "12 小时制(下午 1:00)",
-            "hour24": "24 小时制(13:00)",
-            "autoTimezone": "根据您的位置自动设置时区",
-            "timezone": "时区",
-            "loadingTimezones": "正在加载时区...",
-            "selectTimezone": "选择时区",
-            "searchTimezones": "搜索时区...",
-            "noTimezones": "未找到时区",
-            "save": "保存",
-            "savedToast": "偏好设置保存成功",
-            "saveFailed": "保存偏好设置失败",
-            "loadFailed": "加载时区失败"
+            "durationDescription": "请求在过期前保持开放的时长。超时后请求将失效。",
+            "days": "天",
+            "roleThresholdTitle": "{role}阈值",
+            "roleDescription": {
+                "financial": "这些成员审批转账和兑换请求。",
+                "governance": "这些成员审批成员与规则的变更。",
+                "generic": "这些成员审批此角色的请求。"
+            },
+            "pendingAlert": "{count, plural, other {# 条设置请求需要处理}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "确认并提交请求",
         "useDifferentAddress": "使用其他地址",
         "failed1ClickQuote": "创建 1Click 转账报价失败",
-        "paymentSubmitted": "发送付款的请求已提交",
+        "paymentSubmitted": "已创建发送请求",
         "confidentialTooltip": "收款人信息和请求金额完全保密。",
         "destinationNetwork": "目标网络",
         "selectRecipientPlaceholder": "选择收款人",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "批量发送功能即将推出!",
         "submittingList": "正在提交批量发送列表",
         "submittingProposal": "正在提交提案",
-        "proposalSubmitted": "批量发送提案已提交",
+        "proposalSubmitted": "已创建批量发送请求",
         "submitListFailed": "提交付款列表失败",
         "submitFailed": "提交批量发送失败",
         "quoteFetchFailed": "无法获取转账费用，请重试。",
@@ -1354,7 +1315,7 @@
         "validation": {
             "amountPositive": "金额必须大于 0"
         },
-        "requestSubmitted": "兑换请求已提交",
+        "requestSubmitted": "已创建兑换请求",
         "heading": "兑换",
         "sell": "卖出",
         "receive": "接收",
@@ -1401,7 +1362,7 @@
             "review": "审核"
         },
         "proposalTitle": "为 {address} 创建归属计划",
-        "scheduleSubmitted": "创建归属计划的请求已提交",
+        "scheduleSubmitted": "已创建归属请求",
         "heading": "新建归属计划",
         "amount": "金额",
         "startDate": "开始日期",
@@ -1708,21 +1669,8 @@
     },
     "supportCenter": {
         "title": "支持中心",
-        "resources": "资源",
-        "support": "支持",
-        "websiteTitle": "Near Business 网站",
-        "websiteDescription": "了解 Near Business 及最新动态。",
-        "demo": "Near Business 演示",
-        "demoTitle": "探索公开版本",
-        "demoDescription": "任何人都可查看的真实金库。",
-        "confidentialDemoTitle": "探索机密版本",
-        "confidentialDemoDescription": "私密金库在实际使用中的样子。",
-        "videoTitle": "观看演示",
-        "videoDescription": "简短视频 — 端到端了解 Near Business。",
-        "xTitle": "在 X 上关注我们",
-        "xDescription": "实时查看我们正在构建的内容。",
-        "statsTitle": "统计",
-        "statsDescription": "查看所有金库的总管理资产。",
+        "websiteTitle": "near business 网站",
+        "websiteDescription": "了解 near business 及最新动态。",
         "docsTitle": "文档",
         "docsDescription": "每项功能都有分步指南。",
         "productSupportTitle": "产品支持",
@@ -1759,16 +1707,18 @@
                 "title": "财务",
                 "description": "财务可以对付款相关的交易请求投票,但不能创建请求。"
             }
-        }
+        },
+        "title": "选择角色"
     },
     "memberInput": {
-        "creatorYou": "创建者(您)",
-        "memberAddress": "成员地址",
-        "addNewMember": "添加成员",
+        "addNewMember": "添加另一位成员",
         "validation": {
             "rolesRequired": "至少需要一个角色",
             "duplicateAddress": "地址已是成员"
-        }
+        },
+        "enterAddress": "输入地址",
+        "selectRole": "选择角色",
+        "memberNumber": "成员 {number}"
     },
     "recipientInput": {
         "title": "至",
@@ -2163,6 +2113,7 @@
         "paymentsPending": "查看等待批准的付款",
         "exchangeSettings": "设置您在交换时可接受的最大价格变动（滑点）。",
         "membersPending": "查看等待批准的成员相关请求",
+        "membersWantsToJoin": "查看想要加入团队的成员",
         "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
         "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
         "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。 您的联系人保持私密,仅对您的团队可见。",
@@ -2587,14 +2538,7 @@
         "fill": {
             "noTemplate": "未找到与“{slug}”对应的模板。",
             "invalidManifest": "此模板的清单无效：",
-            "proposalFiled": "请求已提交"
-        },
-        "developer": {
-            "title": "自定义请求",
-            "description": "当你需要的不只是付款和兑换时，可构建你自己的请求类型。添加你需要的字段，你的成员便能像提交其他请求一样提交它们。",
-            "enable": "启用",
-            "disable": "停用",
-            "errUpdate": "无法更新此设置"
+            "proposalFiled": "已创建自定义请求"
         },
         "visual": {
             "detailsTitle": "详情",
@@ -2676,6 +2620,13 @@
             "pattern": "{label}与要求的格式不匹配",
             "min": "{label}不得小于 {min}",
             "max": "{label}不得大于 {max}"
+        },
+        "settingsCard": {
+            "title": "自定义请求",
+            "description": "当你需要的不只是付款和兑换时，可构建你自己的请求类型。添加你需要的字段，你的成员便能像提交其他请求一样提交它们。",
+            "enable": "启用",
+            "disable": "停用",
+            "errUpdate": "无法更新此设置"
         }
     },
     "bulkActivation": {
@@ -2689,7 +2640,7 @@
         "awaitingTitle": "等待批准",
         "awaitingDescription": "激活请求已创建。足够多的金库成员批准后，将注册保密批量访问密钥，批量发送将自动解锁。",
         "awaitingHint": "批准后无需进一步操作——此页面会自动更新。",
-        "proposalCreated": "已创建激活请求——等待成员批准",
+        "proposalCreated": "已创建激活请求",
         "activationFailed": "未能启动批量发送激活",
         "errorTitle": "无法加载激活状态",
         "noPermissionNote": "您没有权限开始激活。请让拥有提案权限的金库成员启用批量发送。",
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "转移资产",
         "description": "将资产从公开链转移到您的机密金库。",
-        "submitted": "转移请求已提交",
+        "submitted": "已创建转移请求",
         "banner": {
             "title": "<amount></amount> 已到达您的公开余额",
             "description": "有人通过错误的网络发送了资金。将其转移到此处以使其机密化。",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "金额超过公开余额",
             "failed": "无法准备转移请求。请重试。"
         }
+    },
+    "thresholdStepper": {
+        "decrease": "降低阈值",
+        "increase": "提高阈值"
     }
 }

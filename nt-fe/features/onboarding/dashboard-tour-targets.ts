@@ -41,11 +41,9 @@ export function helpSupportTourStepSide(
     return mobile ? "bottom" : "right";
 }
 
-/** Small gap under the row on phones; keep the default on desktop. */
-export function helpSupportTourCardOffset(
-    mobile = isTourMobileViewport(),
-): number {
-    return mobile ? 6 : 25;
+/** Same 10px gap as Create Treasury on every viewport. */
+export function helpSupportTourCardOffset(): number {
+    return 10;
 }
 
 /**

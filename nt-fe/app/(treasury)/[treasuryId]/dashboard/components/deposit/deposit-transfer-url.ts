@@ -1,3 +1,4 @@
+import { APP_ORIGIN } from "@/constants/config";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { normalizeNearAssetId } from "@/lib/utils";
 
@@ -63,14 +64,14 @@ export function parsePayShareKind(
 export const CHOOSE_PAYER_QUERY = "choosePayer";
 
 export function withChoosePayerParam(pathWithSearch: string): string {
-    const url = new URL(pathWithSearch, "https://trezu.app");
+    const url = new URL(pathWithSearch, APP_ORIGIN);
     url.searchParams.set(CHOOSE_PAYER_QUERY, "1");
     return `${url.pathname}${url.search}`;
 }
 
 /** Strip post-login resume flag so shared/copied links stay inert. */
 export function withoutChoosePayerParam(pathWithSearch: string): string {
-    const url = new URL(pathWithSearch, "https://trezu.app");
+    const url = new URL(pathWithSearch, APP_ORIGIN);
     url.searchParams.delete(CHOOSE_PAYER_QUERY);
     return `${url.pathname}${url.search}`;
 }
@@ -78,7 +79,7 @@ export function withoutChoosePayerParam(pathWithSearch: string): string {
 export function hasChoosePayerParam(pathWithSearch: string): boolean {
     try {
         return (
-            new URL(pathWithSearch, "https://trezu.app").searchParams.get(
+            new URL(pathWithSearch, APP_ORIGIN).searchParams.get(
                 CHOOSE_PAYER_QUERY,
             ) === "1"
         );

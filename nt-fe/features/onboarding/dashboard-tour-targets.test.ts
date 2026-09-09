@@ -84,12 +84,8 @@ describe("helpSupportTourStepSide", () => {
 });
 
 describe("helpSupportTourCardOffset", () => {
-    it("keeps the default gap beside the row on large screens", () => {
-        expect(helpSupportTourCardOffset(false)).toBe(25);
-    });
-
-    it("sits tight under the row on small screens", () => {
-        expect(helpSupportTourCardOffset(true)).toBe(6);
+    it("uses the same gap as Create Treasury", () => {
+        expect(helpSupportTourCardOffset()).toBe(10);
     });
 });
 

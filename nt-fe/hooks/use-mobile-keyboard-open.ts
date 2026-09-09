@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from "react";
 import {
+    isInsideDialog,
     isKeyboardOccluding,
     isTextEntryElement,
     shouldHideBottomNavForKeyboard,
 } from "@/lib/mobile-keyboard";
 
 /**
- * True while the virtual keyboard is up, or a text field is focused on a
- * phone (Android often resizes the layout instead of reporting overlap).
+ * True while an on-page field is focused (Send amount) or the keyboard
+ * has squeezed the viewport. Dialog fields are ignored so the address
+ * picker can raise the keyboard on the first tap.
  * Pass `enabled` so pages that never hide the tab bar skip the listeners.
  */
 export function useMobileKeyboardOpen(enabled = true): boolean {
@@ -24,12 +26,12 @@ export function useMobileKeyboardOpen(enabled = true): boolean {
         let blurTimer = 0;
 
         const update = () => {
+            const active = document.activeElement;
             const viewport = window.visualViewport;
             setOpen(
                 shouldHideBottomNavForKeyboard({
-                    textEntryFocused: isTextEntryElement(
-                        document.activeElement,
-                    ),
+                    pageTextEntryFocused:
+                        isTextEntryElement(active) && !isInsideDialog(active),
                     keyboardOccluding: viewport
                         ? isKeyboardOccluding(
                               window.innerHeight,

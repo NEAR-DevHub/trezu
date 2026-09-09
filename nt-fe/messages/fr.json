@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "jj/mm/aaaa"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Un seuil de 1 sur {memberCount} signifie qu'un seul membre peut exécuter des transactions. Cela réduit la sécurité.",
-        "infoBalanced": "Un seuil de {currentThreshold} sur {memberCount} offre un bon équilibre entre sécurité et flexibilité opérationnelle."
-    },
     "metadata": {
         "treasuryTitle": "Tableau de bord | Near Business",
         "landingTitle": "Near Business | Gestion de trésorerie multi-chaînes",
@@ -194,8 +190,7 @@
             "description": "Gérez les membres de l'équipe et les autorisations"
         },
         "settings": {
-            "title": "Paramètres",
-            "description": "Ajustez les paramètres de votre application"
+            "title": "Paramètres"
         },
         "addressBook": {
             "title": "Carnet d'adresses",
@@ -930,8 +925,8 @@
         "title": "Membres",
         "description": "Gérez les membres de l'équipe et les autorisations",
         "permissions": "Autorisations",
+        "added": "Ajouté",
         "member": "Membre",
-        "activeMembers": "Membres actifs",
         "noActiveMembers": "Aucun membre actif trouvé.",
         "addNewMember": "Ajouter un membre",
         "addManually": "Ajouter manuellement",
@@ -955,6 +950,7 @@
             "readyDescription": "Envoyez-le à la personne à ajouter. Elle connectera un portefeuille et demandera à rejoindre.",
             "onceTitle": "Ce lien ne fonctionne qu’une fois, pour une personne",
             "onceDescription": "Générez-en un nouveau pour chaque membre.",
+            "linkTitle": "Lien d’invitation",
             "yourLink": "Votre lien d’invitation",
             "copyLink": "Copier le lien",
             "linkCopied": "Lien d’invitation copié",
@@ -981,7 +977,7 @@
             "askDescription": "L’équipe examine votre demande avant que vous puissiez voir ou approuver quoi que ce soit.",
             "walletConnected": "Portefeuille connecté",
             "nameLabel": "Votre nom (facultatif)",
-            "namePlaceholder": "Pour que l’équipe vous reconnaisse",
+            "namePlaceholder": "Entrez un nom pour que l’équipe vous reconnaisse",
             "askJoin": "Demander à rejoindre",
             "submitting": "Envoi…",
             "successTitle": "Vous y êtes presque",
@@ -992,8 +988,8 @@
             "goToTreasury": "Aller au treasury",
             "invalidTitle": "Invitation introuvable",
             "invalidDescription": "Ce lien d’invitation est invalide ou n’est plus disponible.",
-            "usedTitle": "Invitation déjà utilisée",
-            "usedDescription": "Ce lien d’invitation a déjà été utilisé.",
+            "usedTitle": "Ce lien d’invitation a déjà été utilisé",
+            "usedDescription": "Les liens d’invitation ne servent qu’une fois. Demandez-en un nouveau à {treasury}.",
             "expiredTitle": "Invitation expirée",
             "expiredDescription": "Ce lien d’invitation a expiré. Demandez-en un nouveau à l’équipe.",
             "goHome": "Retour à l’accueil",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {aucun membre} one {# membre} other {# membres}} sélectionné{count, plural, =0 {} one {} other {s}}",
         "remove": "Supprimer",
+        "send": "Envoyer",
         "edit": "Modifier",
         "requestorOnlyTooltip": "Vous ne pouvez ajouter que le rôle de Demandeur pour ce membre, car il est responsable de la création des demandes de paiement depuis NEARN.",
         "memberModal": {
-            "editRoles": "Modifier les rôles",
+            "editRoles": "Modifier les membres",
             "addNewMember": "Ajouter un membre",
             "validatingAddresses": "Validation des adresses...",
             "reviewRequest": "Vérifier la demande",
             "noChanges": "Aucun changement n'a été apporté aux rôles des membres"
         },
         "previewModal": {
-            "title": "Vérifiez votre demande",
+            "title": "Vérifier les membres",
             "youAreEditing": "Vous modifiez",
             "youAreAdding": "Vous ajoutez",
             "membersCount": "{count, plural, one {# membre} other {# membres}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "Membres mis à jour",
             "newMembers": "Nouveaux membres",
             "creatingProposal": "Création de la proposition...",
-            "confirmSubmit": "Confirmer et soumettre la demande"
+            "confirmSubmit": "Créer une demande"
         },
         "removeDialog": {
-            "title": "Supprimer la demande",
+            "title": "Supprimer {count, plural, one {le membre} other {les membres}} ?",
             "nearnBody": "Une fois approuvé, {account} sera définitivement supprimé de la trésorerie et toutes les autorisations associées seront révoquées. Après la suppression, ce compte ne pourra plus créer de demandes depuis NEARN.",
             "genericBody": "Une fois approuvée, cette action supprimera définitivement <bold>{accounts}</bold> de la trésorerie et révoquera toutes les autorisations attribuées.",
             "creatingProposal": "Création de la proposition..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "Mettre à jour la politique - Ajouter de nouveaux membres",
-            "addMembersSuccess": "Demande de nouveau membre créée avec succès",
+            "addMembersSuccess": "Demande d'ajout de membres créée",
             "editMember": "Mettre à jour la politique - Modifier les autorisations d'un membre",
             "editMembers": "Mettre à jour la politique - Modifier plusieurs membres",
-            "editMemberSuccess": "Demande de mise à jour des rôles du membre créée avec succès",
-            "editMembersSuccess": "Demande de mise à jour groupée des rôles des membres créée avec succès",
+            "editMemberSuccess": "Demande de modification de membre créée",
+            "editMembersSuccess": "Demande de modification de membres créée",
             "removeMember": "Mettre à jour la politique - Supprimer un membre",
             "removeMembers": "Mettre à jour la politique - Supprimer des membres",
-            "removeMemberSuccess": "Demande de suppression de membre créée avec succès",
+            "removeMemberSuccess": "Demande de suppression de membre créée",
             "createProposalFailed": "Échec de la création de la demande de membre. Veuillez réessayer."
         },
-        "infoSection": {
-            "title": "Pourquoi ajouter plus de membres ?",
-            "description": "Ajouter plus de membres protège vos fonds et évite qu'un wallet perdu vous bloque l'accès.",
-            "readGuide": "Lire le guide complet",
-            "dismiss": "Fermer",
-            "strongerProtectionTitle": "Protection renforcée",
-            "strongerProtectionDescription": "Les demandes nécessitent plus d'une approbation avant que les fonds puissent être déplacés.",
-            "rolesForEveryoneTitle": "Des rôles pour chacun",
-            "rolesForEveryoneDescription": "Chaque membre reçoit un rôle : demander des paiements, les approuver ou gérer les paramètres.",
-            "neverLoseAccessTitle": "Ne perdez jamais l'accès",
-            "neverLoseAccessDescription": "Si vous perdez un wallet, vous pouvez récupérer l'accès grâce à une sauvegarde déjà ajoutée."
-        }
+        "activeMembersCount": "{count, plural, one {# membre actif} other {# membres actifs}}"
     },
     "settings": {
         "tabs": {
             "general": "Général",
-            "voting": "Vote",
-            "preferences": "Préférences",
-            "integrations": "Intégrations",
-            "developer": "Développeur"
+            "voting": "Vote"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "Trésorerie introuvable",
             "treasuryName": "Nom de la trésorerie",
             "treasuryNameDescription": "Le nom de votre trésorerie. Il sera affiché dans toute l'application.",
-            "displayName": "Nom d'affichage",
             "displayNamePlaceholder": "Saisir le nom d'affichage",
-            "accountName": "Nom du compte",
             "logo": "Logo",
             "logoDescription": "Téléchargez un logo pour votre trésorerie. SVG, PNG ou JPG recommandés (256x256 px).",
-            "treasuryLogoAlt": "Logo de la trésorerie",
             "uploading": "Téléchargement...",
-            "uploadLogo": "Télécharger le logo",
-            "removeLogo": "Supprimer le logo",
+            "removeLogo": "Supprimer",
             "logoUploaded": "Logo téléchargé avec succès",
             "uploadError": "Une erreur s'est produite lors du téléchargement de l'image, veuillez réessayer.",
             "invalidLogo": "Logo invalide. Veuillez télécharger un fichier PNG, JPG ou SVG d'exactement 256x256 px",
             "invalidImage": "Fichier image invalide. Veuillez télécharger une image valide.",
             "fileReadError": "Erreur de lecture du fichier. Veuillez réessayer.",
             "primaryColor": "Couleur principale",
-            "primaryColorDescription": "Définissez la couleur principale des éléments d'interface de votre trésorerie. Cette couleur sera utilisée en mode clair et sombre, gardez donc le contraste à l'esprit lors du choix de teintes neutres.",
+            "primaryColorDescription": "Définissez la couleur principale des éléments d'interface de votre trésorerie.",
             "selectColorLabel": "Sélectionner la couleur {color}",
-            "saveChanges": "Enregistrer les modifications",
-            "saving": "Enregistrement...",
             "savedToast": "Vos modifications ont été enregistrées.",
-            "saveFailed": "Impossible d'enregistrer vos modifications. Réessayez."
+            "saveFailed": "Impossible d'enregistrer vos modifications. Réessayez.",
+            "save": "Enregistrer",
+            "edit": "Modifier"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "Données requises manquantes",
             "thresholdProposalTitle": "Mettre à jour la politique - Seuils de vote",
             "thresholdProposalSummary": "{account} a demandé de modifier le seuil de vote de {oldValue} à {newValue}.",
-            "thresholdSubmitted": "Demande de mise à jour du seuil de vote soumise",
+            "thresholdSubmitted": "Demande de seuil de vote créée",
             "createProposalFailed": "Échec de la création de la proposition",
             "durationProposalTitle": "Mettre à jour la politique - Durée de vote",
             "durationProposalSummary": "{account} a demandé de modifier la durée de vote de {oldValue} à {newValue}.",
-            "durationSubmitted": "Demande créée avec succès",
-            "pendingTitle": "Demande active de seuil de vote",
-            "pendingBody": "Pour éviter les conflits, vous devez terminer ou résoudre les demandes en attente existantes avant de continuer. Ces demandes sont actuellement actives et doivent d'abord être approuvées ou rejetées.",
+            "durationSubmitted": "Demande de durée de vote créée",
             "viewRequest": "Voir la demande",
-            "thresholdHeading": "Seuil de vote",
-            "thresholdDescriptionApprovers": "Définissez combien de votes sont requis pour approuver les demandes liées aux paiements et à l'équipe. Configurez les seuils séparément pour les Approbateurs et la Gouvernance.",
-            "thresholdDescriptionGeneric": "Définissez combien de votes sont requis pour approuver les demandes. Configurez les seuils pour chaque rôle en fonction de leurs responsabilités.",
             "membersWhoCanVote": "Membres qui peuvent voter",
-            "votesRequired": "Votes requis pour approuver les demandes",
-            "durationHeading": "Durée de vote",
-            "durationDescription": "La durée (en jours) pendant laquelle une proposition restera ouverte au vote. Si le vote n'est pas terminé dans ce délai, la décision expire.",
-            "durationApprovers": " Cette durée s'applique également aux rôles Gouvernance et Approbateur.",
-            "durationGeneric": " Cette durée est cohérente pour tous les rôles de la trésorerie.",
-            "days": "Jours"
-        },
-        "preferences": {
-            "timeZone": "Fuseau horaire",
-            "timeZoneDescription": "Définissez votre fuseau horaire local pour un affichage précis de la date et de l'heure.",
-            "timeFormat": "Format horaire",
-            "hour12": "12 heures (1:00 PM)",
-            "hour24": "24 heures (13:00)",
-            "autoTimezone": "Définir le fuseau horaire automatiquement à partir de votre position",
-            "timezone": "Fuseau horaire",
-            "loadingTimezones": "Chargement des fuseaux horaires...",
-            "selectTimezone": "Sélectionner le fuseau horaire",
-            "searchTimezones": "Rechercher des fuseaux horaires...",
-            "noTimezones": "Aucun fuseau horaire trouvé",
-            "save": "Enregistrer",
-            "savedToast": "Préférences enregistrées avec succès",
-            "saveFailed": "Échec de l'enregistrement des préférences",
-            "loadFailed": "Échec du chargement des fuseaux horaires"
+            "durationHeading": "Durée du vote",
+            "durationDescription": "Combien de temps une demande reste ouverte avant d'expirer. Ensuite, elle disparaît.",
+            "days": "Jours",
+            "roleThresholdTitle": "Seuil {role}",
+            "roleDescription": {
+                "financial": "Ces membres approuvent les demandes d'envoi et d'échange.",
+                "governance": "Ces membres approuvent les modifications des membres et des règles.",
+                "generic": "Ces membres approuvent les demandes de ce rôle."
+            },
+            "pendingAlert": "{count, plural, one {# demande de réglages nécessite votre attention} other {# demandes de réglages nécessitent votre attention}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "Confirmer et soumettre la demande",
         "useDifferentAddress": "Utiliser une adresse différente",
         "failed1ClickQuote": "Échec de la création du devis de transfert 1Click",
-        "paymentSubmitted": "Demande d'envoi de paiement soumise",
+        "paymentSubmitted": "Demande d'envoi créée",
         "confidentialTooltip": "Les informations du destinataire et le montant demande sont entierement confidentiels.",
         "destinationNetwork": "Réseau de destination",
         "selectRecipientPlaceholder": "Sélectionner un destinataire",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "L'envoi groupé arrive bientôt !",
         "submittingList": "Envoi de la liste d'envoi groupé",
         "submittingProposal": "Soumission de la proposition",
-        "proposalSubmitted": "Proposition d'envoi groupé soumise",
+        "proposalSubmitted": "Demande d'envoi groupé créée",
         "submitListFailed": "Échec de la soumission de la liste de paiements",
         "submitFailed": "Échec de l'envoi groupé",
         "quoteFetchFailed": "Impossible de récupérer les frais de transfert. Veuillez réessayer.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "En attente d'approbations",
         "awaitingDescription": "La demande d'activation a été créée. Une fois assez de membres de la trésorerie l'ayant approuvée, la clé d'accès groupé confidentielle est enregistrée et l'envoi groupé se déverrouille automatiquement.",
         "awaitingHint": "Aucune action requise après approbation — cette page se met à jour automatiquement.",
-        "proposalCreated": "Demande d'activation créée — en attente d'approbations",
+        "proposalCreated": "Demande d'activation créée",
         "activationFailed": "Échec du démarrage de l'activation de l'envoi groupé",
         "errorTitle": "Impossible de charger le statut d'activation",
         "noPermissionNote": "Vous n'avez pas l'autorisation de lancer l'activation. Demandez à un membre de la trésorerie disposant des droits de proposition d'activer l'envoi groupé.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "Le montant doit être supérieur à 0"
         },
-        "requestSubmitted": "Demande d'échange soumise",
+        "requestSubmitted": "Demande de swap créée",
         "heading": "Échange",
         "sell": "Vendre",
         "receive": "Recevoir",
@@ -1418,7 +1379,7 @@
             "review": "Vérification"
         },
         "proposalTitle": "Créer un calendrier de vesting pour {address}",
-        "scheduleSubmitted": "Demande de création de calendrier de vesting soumise",
+        "scheduleSubmitted": "Demande de vesting créée",
         "heading": "Nouveau calendrier de vesting",
         "amount": "Montant",
         "startDate": "Date de début",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "Centre d'assistance",
-        "resources": "Ressources",
-        "support": "Support",
-        "websiteTitle": "Site web Near Business",
-        "websiteDescription": "Lisez à propos de Near Business et les nouveautés.",
-        "demo": "Démo Near Business",
-        "demoTitle": "Explorer la version publique",
-        "demoDescription": "Une trésorerie réelle que tout le monde peut consulter.",
-        "confidentialDemoTitle": "Explorer la version confidentielle",
-        "confidentialDemoDescription": "À quoi ressemble une trésorerie privée en usage.",
-        "videoTitle": "Regarder la démo",
-        "videoDescription": "Vidéo courte — découvrez Near Business de bout en bout.",
-        "xTitle": "Suivez-nous sur X",
-        "xDescription": "Voyez ce que nous construisons, en temps réel.",
-        "statsTitle": "Statistiques",
-        "statsDescription": "Voir le total des actifs gérés sur l'ensemble des trésoreries.",
+        "websiteTitle": "Site web near business",
+        "websiteDescription": "Lisez à propos de near business et les nouveautés.",
         "docsTitle": "Documentation",
         "docsDescription": "Guides pour chaque fonctionnalité, étape par étape.",
         "productSupportTitle": "Support produit",
@@ -1776,16 +1724,18 @@
                 "title": "Financier",
                 "description": "Le financier peut voter sur les demandes de transaction liées aux paiements mais ne peut pas les créer."
             }
-        }
+        },
+        "title": "Sélectionner des rôles"
     },
     "memberInput": {
-        "creatorYou": "Créateur (vous)",
-        "memberAddress": "Adresse du membre",
-        "addNewMember": "Ajouter un membre",
+        "addNewMember": "Ajouter un autre membre",
         "validation": {
             "rolesRequired": "Au moins un rôle est requis",
             "duplicateAddress": "L'adresse est déjà membre"
-        }
+        },
+        "enterAddress": "Saisir l'adresse",
+        "selectRole": "Sélectionner un rôle",
+        "memberNumber": "Membre {number}"
     },
     "recipientInput": {
         "title": "À",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "Consultez les paiements en attente d'approbation",
         "exchangeSettings": "Définissez la variation de prix maximale (slippage) que vous acceptez lors d'un échange.",
         "membersPending": "Consultez les demandes liées aux membres en attente d'approbation",
+        "membersWantsToJoin": "Voir le membre qui souhaite rejoindre votre équipe",
         "guestSaveIntro": "Vous êtes un invité de cette trésorerie. Vous ne pouvez consulter que les données.",
         "guestSaveAction": "Vous pouvez enregistrer cette trésorerie invitée dans votre liste de trésoreries.",
         "newFeatureRich": "Nouveau ! 🎉 Enregistrez les adresses fréquemment utilisées pour des paiements plus rapides et sans erreur. Vos contacts restent privés et visibles uniquement par votre équipe.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "Aucun modèle trouvé pour « {slug} ».",
             "invalidManifest": "Le manifeste de ce modèle est invalide :",
-            "proposalFiled": "Demande déposée"
-        },
-        "developer": {
-            "title": "Demandes personnalisées",
-            "description": "Créez vos propres types de demande lorsque vous avez besoin de plus que des paiements et des échanges. Ajoutez les champs dont vous avez besoin et vos membres peuvent les soumettre comme n'importe quelle autre demande.",
-            "enable": "Activer",
-            "disable": "Désactiver",
-            "errUpdate": "Impossible de mettre à jour le paramètre"
+            "proposalFiled": "Demande personnalisée créée"
         },
         "visual": {
             "detailsTitle": "Détails",
@@ -2693,6 +2637,13 @@
             "pattern": "{label} ne correspond pas au format requis",
             "min": "{label} doit être au minimum {min}",
             "max": "{label} doit être au maximum {max}"
+        },
+        "settingsCard": {
+            "title": "Demandes personnalisées",
+            "description": "Créez vos propres types de demande lorsque vous avez besoin de plus que des paiements et des échanges. Ajoutez les champs dont vous avez besoin et vos membres peuvent les soumettre comme n'importe quelle autre demande.",
+            "enable": "Activer",
+            "disable": "Désactiver",
+            "errUpdate": "Impossible de mettre à jour le paramètre"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "Déplacer les actifs",
         "description": "Déplacez des actifs de la chaîne publique vers votre trésorerie confidentielle.",
-        "submitted": "Demande de déplacement envoyée",
+        "submitted": "Demande de déplacement créée",
         "banner": {
             "title": "<amount></amount> sont arrivés sur votre solde public",
             "description": "Quelqu'un les a envoyés sur le mauvais réseau. Déplacez-les ici pour les rendre confidentiels.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "Le montant dépasse le solde public",
             "failed": "Impossible de préparer la demande de déplacement. Veuillez réessayer."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Diminuer le seuil",
+        "increase": "Augmenter le seuil"
     }
 }

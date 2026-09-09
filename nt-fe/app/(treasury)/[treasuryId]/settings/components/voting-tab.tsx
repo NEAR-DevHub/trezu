@@ -1,48 +1,43 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import { ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
-import { useTranslations } from "next-intl";
-import { Input } from "@/components/input";
-import { Label } from "@/components/ui/label";
-import { useEffect, useMemo, useState } from "react";
-import { PageCard } from "@/components/card";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent,
-} from "@/components/underline-tabs";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Alert02Icon, ArrowUpRight01Icon } from "@hugeicons/core-free-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 import { z } from "zod";
+import { Alert, AlertDescription } from "@/components/alert";
+import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
+import { CreateRequestButton } from "@/components/create-request-button";
+import { Icon } from "@/components/icon";
+import { Input } from "@/components/input";
+import { NumberBadge } from "@/components/number-badge";
+import { normalizeRoleId, useFormatRoleName } from "@/components/role-name";
+import { ThresholdStepper } from "@/components/threshold";
 import {
     Form,
-    FormField,
     FormControl,
+    FormField,
     FormItem,
     FormMessage,
 } from "@/components/ui/form";
-import { useNear } from "@/stores/near-store";
-import { hasPermission } from "@/lib/config-utils";
-import { MemberAvatarsWithOverflow } from "./member-avatars-with-overflow";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { encodeToMarkdown } from "@/lib/utils";
-import { ThresholdSlider } from "@/components/threshold";
-import { CreateRequestButton } from "@/components/create-request-button";
-import { useProposals } from "@/hooks/use-proposals";
-import { Button } from "@/components/button";
-import { useQueryClient } from "@tanstack/react-query";
-import { RoleName } from "@/components/role-name";
-import { WarningAlert } from "@/components/warning-alert";
-import { NumberBadge } from "@/components/number-badge";
+import { Label } from "@/components/ui/label";
 import {
     thresholdSetupKey,
     writeOnboardingFlag,
 } from "@/features/onboarding/onboarding-steps";
+import { useProposals } from "@/hooks/use-proposals";
+import { useTreasury } from "@/hooks/use-treasury";
+import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { hasPermission } from "@/lib/config-utils";
+import { cn, encodeToMarkdown } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
+import { disabledActionClasses } from "./button-styles";
+import { MemberAvatarsWithOverflow } from "./member-avatars-with-overflow";
 
 type VotingFormValues = {
     voteDuration: string;
@@ -64,34 +59,30 @@ const proposalKinds = [
     "set_vote_token",
 ];
 
-interface VotingRequestActionProps {
-    hasPendingRequest: boolean;
-    onCreateRequest: () => void;
-    isSubmitting: boolean;
-    disabled: boolean;
+/**
+ * Which "these members approve …" line a role's card gets. Roles are treasury
+ * data, so anything outside the two canonical ids falls back to a generic line.
+ */
+function roleDescriptionId(
+    roleName: string,
+): "financial" | "governance" | "generic" {
+    const id = normalizeRoleId(roleName).toLowerCase();
+    if (id === "financial") return "financial";
+    if (id === "governance") return "governance";
+    return "generic";
 }
 
-function VotingRequestAction({
-    hasPendingRequest,
-    onCreateRequest,
-    isSubmitting,
-    disabled,
-}: VotingRequestActionProps) {
-    return (
-        <div className="rounded-lg border bg-card p-0 overflow-hidden">
-            <CreateRequestButton
-                onClick={onCreateRequest}
-                isSubmitting={isSubmitting}
-                permissions={{ kind: "policy", action: "AddProposal" }}
-                disabled={disabled || hasPendingRequest}
-                className="w-full h-10 rounded-none"
-            />
-        </div>
-    );
+/** Design order: Financial first, then Governance, then anything custom. */
+function roleOrder(roleName: string): number {
+    const id = roleDescriptionId(roleName);
+    if (id === "financial") return 0;
+    if (id === "governance") return 1;
+    return 2;
 }
 
 export function VotingTab() {
     const t = useTranslations("settings.voting");
+    const formatRoleName = useFormatRoleName();
     const votingFormSchema = useMemo(
         () =>
             z.object({
@@ -126,16 +117,17 @@ export function VotingTab() {
         proposal_types: ["ChangePolicy", "ChangePolicyUpdateParameters"],
     });
 
-    // Check for specific pending proposal types
-    const hasPendingVotingRequest = useMemo(() => {
-        if (!pendingProposals?.proposals) return false;
-        return pendingProposals.proposals.some(
+    // Policy changes queue badly, so any in-flight one blocks creating another.
+    const pendingVotingRequestCount = useMemo(() => {
+        if (!pendingProposals?.proposals) return 0;
+        return pendingProposals.proposals.filter(
             (p) =>
                 p.kind &&
                 ("ChangePolicy" in p.kind ||
                     "ChangePolicyUpdateParameters" in p.kind),
-        );
+        ).length;
     }, [pendingProposals]);
+    const hasPendingVotingRequest = pendingVotingRequestCount > 0;
 
     const form = useForm<VotingFormValues>({
         resolver: zodResolver(votingFormSchema),
@@ -146,12 +138,11 @@ export function VotingTab() {
         },
     });
 
-    const [activeTab, setActiveTab] = useState<string>("");
     const [originalDuration, setOriginalDuration] = useState<string>("");
     const [originalThresholds, setOriginalThresholds] = useState<
         Record<string, number>
     >({});
-    const [isSubmittingThreshold, setIsSubmittingThreshold] = useState(false);
+    const [submittingRole, setSubmittingRole] = useState<string | null>(null);
     const [isSubmittingDuration, setIsSubmittingDuration] = useState(false);
 
     // Check if user is authorized to make policy changes
@@ -219,7 +210,8 @@ export function VotingTab() {
                     threshold,
                     memberCount,
                 };
-            });
+            })
+            .sort((a, b) => roleOrder(a.name) - roleOrder(b.name));
     }, [policy]);
 
     // Initialize form with policy data
@@ -243,40 +235,25 @@ export function VotingTab() {
 
             // Save original thresholds for comparison
             setOriginalThresholds(initialThresholds);
-
-            // Set initial active tab
-            setActiveTab(groupRoles[0].name);
         }
     }, [policy, groupRoles, form]);
 
-    // Check if we have specific roles for custom description
-    const hasApproversAndGovernance = useMemo(() => {
-        const roleNames = groupRoles.map((role) => role.name.toLowerCase());
-        return (
-            roleNames.includes("approvers") && roleNames.includes("governance")
-        );
-    }, [groupRoles]);
-
-    const thresholdDescription = hasApproversAndGovernance
-        ? t("thresholdDescriptionApprovers")
-        : t("thresholdDescriptionGeneric");
-
-    const handleThresholdChange = async () => {
-        if (!treasuryId || !policy || !activeTab) {
+    const handleThresholdChange = async (roleName: string) => {
+        if (!treasuryId || !policy) {
             toast.error(t("missingData"));
             return;
         }
 
-        setIsSubmittingThreshold(true);
+        setSubmittingRole(roleName);
         try {
             const thresholds = form.watch("thresholds");
-            const newThreshold = thresholds[activeTab];
+            const newThreshold = thresholds[roleName];
 
             const description = {
                 title: t("thresholdProposalTitle"),
                 summary: t("thresholdProposalSummary", {
                     account: accountId ?? "",
-                    oldValue: originalThresholds[activeTab],
+                    oldValue: originalThresholds[roleName],
                     newValue: newThreshold,
                 }),
             };
@@ -292,7 +269,7 @@ export function VotingTab() {
                             policy: {
                                 ...policy,
                                 roles: policy.roles?.map((role) => {
-                                    if (role.name === activeTab) {
+                                    if (role.name === roleName) {
                                         const vote_policy =
                                             proposalKinds.reduce(
                                                 (
@@ -339,13 +316,13 @@ export function VotingTab() {
             // Update original thresholds
             setOriginalThresholds((prev) => ({
                 ...prev,
-                [activeTab]: newThreshold,
+                [roleName]: newThreshold,
             }));
         } catch (error) {
             console.error("Error creating proposal:", error);
             toast.error(t("createProposalFailed"));
         } finally {
-            setIsSubmittingThreshold(false);
+            setSubmittingRole(null);
         }
     };
 
@@ -410,155 +387,130 @@ export function VotingTab() {
         }
     };
 
+    const thresholds = form.watch("thresholds");
+
     return (
         <Form {...form}>
-            <div className="space-y-6">
+            <div className="flex flex-col gap-5">
                 {hasPendingVotingRequest && (
-                    <PageCard className="space-y-2">
-                        <WarningAlert
-                            message={
-                                <>
-                                    <h4 className="font-semibold mb-1">
-                                        {t("pendingTitle")}
-                                    </h4>
-                                    <p className="text-sm">
-                                        {t("pendingBody")}
-                                    </p>
-                                </>
-                            }
+                    <Alert
+                        variant="warning"
+                        className="rounded-3xl border-[#FEF3C6] bg-[#FFFBEB] p-3 text-[#973C00] has-[>svg]:gap-x-3 [&>svg]:size-5 [&>svg]:translate-y-0 [&>svg]:text-white"
+                    >
+                        <Icon
+                            icon={Alert02Icon}
+                            className="size-5 shrink-0 fill-[#FE9A00] [&>path:first-child]:stroke-[#FE9A00]"
                         />
-
-                        <Button
-                            onClick={() =>
-                                router.push(
-                                    `/${treasuryId}/requests?tab=InProgress`,
-                                )
-                            }
-                            variant="default"
-                            className="w-full"
-                        >
-                            {t("viewRequest")}
-                            <Icon icon={ArrowUpRight01Icon} />
-                        </Button>
-                    </PageCard>
+                        <AlertDescription className="min-w-0 flex-1 gap-2.5 [&_p]:leading-[1.5]">
+                            <p className="text-sm font-medium">
+                                {t("pendingAlert", {
+                                    count: pendingVotingRequestCount,
+                                })}
+                            </p>
+                            <Button
+                                size="sm"
+                                className="h-7 gap-1.5 rounded-sm px-2 py-[3px] text-xs leading-none has-[>svg]:px-2"
+                                onClick={() =>
+                                    router.push(
+                                        `/${treasuryId}/requests?tab=InProgress`,
+                                    )
+                                }
+                            >
+                                {t("viewRequest")}
+                                <Icon
+                                    icon={ArrowUpRight01Icon}
+                                    className="size-3.5"
+                                />
+                            </Button>
+                        </AlertDescription>
+                    </Alert>
                 )}
 
-                <PageCard>
-                    <div>
-                        <h3 className="text-lg font-semibold">
-                            {t("thresholdHeading")}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                            {thresholdDescription}
-                        </p>
-                    </div>
+                {groupRoles.map((role) => {
+                    const currentThreshold =
+                        thresholds?.[role.name] ?? role.threshold;
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab}>
-                        <TabsList>
-                            {groupRoles.map((role) => (
-                                <TabsTrigger key={role.name} value={role.name}>
-                                    <RoleName name={role.name} />
-                                </TabsTrigger>
-                            ))}
-                        </TabsList>
+                    return (
+                        <PageCard key={role.name} className="gap-3">
+                            <div className="flex flex-col gap-1">
+                                <h3 className="text-base font-semibold leading-[1.2]">
+                                    {t("roleThresholdTitle", {
+                                        role: formatRoleName(role.name),
+                                    })}
+                                </h3>
+                                <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                    {t(
+                                        `roleDescription.${roleDescriptionId(role.name)}`,
+                                    )}
+                                </p>
+                            </div>
 
-                        {groupRoles.map((role) => (
-                            <TabsContent key={role.name} value={role.name}>
-                                <div className="space-y-4">
-                                    <div className="flex flex-col gap-1">
-                                        {/* Members who can vote */}
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-sm font-medium">
-                                                {t("membersWhoCanVote")}
-                                            </span>
-                                            <NumberBadge
-                                                number={role.memberCount}
-                                                variant="accent"
-                                                sizes="sm"
-                                            />
-                                        </div>
-
-                                        {/* Member avatars */}
-                                        <MemberAvatarsWithOverflow
-                                            members={role.members}
-                                            totalCount={role.memberCount}
-                                        />
-                                    </div>
-
-                                    {/* Threshold slider */}
-                                    {(() => {
-                                        const thresholds =
-                                            form.watch("thresholds");
-                                        const currentThreshold =
-                                            thresholds?.[role.name] ??
-                                            role.threshold;
-
-                                        return (
-                                            <div className="flex flex-col gap-1">
-                                                <p className="text-sm font-medium text-foreground">
-                                                    {t("votesRequired")}
-                                                </p>
-                                                <ThresholdSlider
-                                                    currentThreshold={
-                                                        currentThreshold
-                                                    }
-                                                    originalThreshold={
-                                                        originalThresholds[
-                                                            role.name
-                                                        ]
-                                                    }
-                                                    memberCount={
-                                                        role.memberCount
-                                                    }
-                                                    onValueChange={(value) => {
-                                                        form.setValue(
-                                                            "thresholds",
-                                                            {
-                                                                ...thresholds,
-                                                                [role.name]:
-                                                                    value,
-                                                            },
-                                                            {
-                                                                shouldDirty: true,
-                                                            },
-                                                        );
-                                                    }}
-                                                    disabled={
-                                                        !isAuthorized ||
-                                                        hasPendingVotingRequest
-                                                    }
-                                                />
-                                            </div>
-                                        );
-                                    })()}
+                            <div className="flex flex-col gap-2 pb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-sm text-general-secondary-foreground">
+                                        {t("membersWhoCanVote")}
+                                    </span>
+                                    <NumberBadge
+                                        number={role.memberCount}
+                                        variant="outline"
+                                    />
                                 </div>
-                            </TabsContent>
-                        ))}
-                    </Tabs>
 
-                    <VotingRequestAction
-                        hasPendingRequest={hasPendingVotingRequest}
-                        onCreateRequest={handleThresholdChange}
-                        isSubmitting={isSubmittingThreshold}
-                        disabled={
-                            !activeTab ||
-                            !form.watch("thresholds")?.[activeTab] ||
-                            form.watch("thresholds")[activeTab] ===
-                                originalThresholds[activeTab]
-                        }
-                    />
-                </PageCard>
+                                <div className="flex items-center justify-between gap-4">
+                                    <MemberAvatarsWithOverflow
+                                        members={role.members}
+                                        totalCount={role.memberCount}
+                                        className="w-auto min-w-0 flex-1"
+                                    />
+                                    <ThresholdStepper
+                                        currentThreshold={currentThreshold}
+                                        memberCount={role.memberCount}
+                                        onValueChange={(value) => {
+                                            form.setValue(
+                                                "thresholds",
+                                                {
+                                                    ...thresholds,
+                                                    [role.name]: value,
+                                                },
+                                                { shouldDirty: true },
+                                            );
+                                        }}
+                                        disabled={
+                                            !isAuthorized ||
+                                            hasPendingVotingRequest
+                                        }
+                                    />
+                                </div>
+                            </div>
 
-                <PageCard>
-                    <div>
-                        <h3 className="text-lg font-semibold">
+                            <CreateRequestButton
+                                onClick={() => handleThresholdChange(role.name)}
+                                isSubmitting={submittingRole === role.name}
+                                permissions={{
+                                    kind: "policy",
+                                    action: "AddProposal",
+                                }}
+                                disabled={
+                                    hasPendingVotingRequest ||
+                                    currentThreshold ===
+                                        originalThresholds[role.name]
+                                }
+                                className={cn(
+                                    "h-10 w-full",
+                                    disabledActionClasses,
+                                )}
+                            />
+                        </PageCard>
+                    );
+                })}
+
+                <PageCard className="gap-3">
+                    <div className="flex flex-col gap-1">
+                        <h3 className="text-base font-semibold leading-[1.2]">
                             {t("durationHeading")}
                         </h3>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
                             {t("durationDescription")}
-                            {hasApproversAndGovernance
-                                ? t("durationApprovers")
-                                : t("durationGeneric")}
                         </p>
                     </div>
 
@@ -566,8 +518,11 @@ export function VotingTab() {
                         control={form.control}
                         name="voteDuration"
                         render={({ field }) => (
-                            <FormItem>
-                                <Label htmlFor="vote-duration">
+                            <FormItem className="flex flex-col gap-1">
+                                <Label
+                                    htmlFor="vote-duration"
+                                    className="text-sm text-general-secondary-foreground"
+                                >
                                     {t("days")}
                                 </Label>
                                 <FormControl>
@@ -578,6 +533,7 @@ export function VotingTab() {
                                         max="999"
                                         clearable={false}
                                         step="1"
+                                        inputClassName="h-10 rounded-lg"
                                         disabled={
                                             !isAuthorized ||
                                             hasPendingVotingRequest
@@ -590,14 +546,16 @@ export function VotingTab() {
                         )}
                     />
 
-                    <VotingRequestAction
-                        hasPendingRequest={hasPendingVotingRequest}
-                        onCreateRequest={handleDurationChange}
+                    <CreateRequestButton
+                        onClick={handleDurationChange}
                         isSubmitting={isSubmittingDuration}
+                        permissions={{ kind: "policy", action: "AddProposal" }}
                         disabled={
+                            hasPendingVotingRequest ||
                             !form.formState.dirtyFields.voteDuration ||
                             !!form.formState.errors.voteDuration
                         }
+                        className={cn("h-10 w-full", disabledActionClasses)}
                     />
                 </PageCard>
             </div>

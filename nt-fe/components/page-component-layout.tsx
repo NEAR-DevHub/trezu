@@ -136,6 +136,14 @@ export function PageComponentLayout({
     const reserveBackSlot = Boolean(backButton) || reserveHeaderSpace;
     const showMobileChromeRow =
         stackedInnerHeader && (showBack || !!headerActions || reserveBackSlot);
+    const showShellUserControl = hasSidebarRail && !hideMobileShellControls;
+    const showPublicHeaderControls =
+        !hasSidebarRail && !hideHeaderContent && !hideHeaderControls;
+    // Avoid an empty trailing flex item: with `lg:gap-4` it insets headerActions.
+    const showTrailingHeaderControls =
+        (!stackedInnerHeader && !!headerActions) ||
+        showShellUserControl ||
+        showPublicHeaderControls;
 
     const handleBack = () => {
         if (typeof backButton === "function") {
@@ -201,8 +209,8 @@ export function PageComponentLayout({
             className={cn(
                 "flex h-full flex-col sm:gap-0",
                 !hasSidebarRail && !fitViewport && "min-h-dvh",
-                hideMobileShellControls &&
-                    (hideTitle ? "gap-3 px-2 lg:gap-6" : "gap-6 px-2"),
+                hasSidebarRail && !fitViewport && "min-h-0 overflow-hidden",
+                hideMobileShellControls && "gap-6",
                 fitViewport && "h-dvh overflow-y-auto",
                 // A see-through header would otherwise expose the body colour
                 // as a band above the page surface.
@@ -213,7 +221,8 @@ export function PageComponentLayout({
             {!hideHeader && (
                 <header
                     className={cn(
-                        "flex shrink-0 px-3 md:px-6",
+                        "flex shrink-0",
+                        stackedInnerHeader ? "px-4 md:px-6" : "px-3 md:px-6",
                         stackedInnerHeader
                             ? "flex-col items-stretch gap-3 pt-[max(0.5rem,env(safe-area-inset-top))] lg:flex-row lg:items-center lg:justify-between lg:min-h-16 lg:gap-4 lg:pt-0"
                             : "items-center min-h-16 justify-between",
@@ -290,22 +299,20 @@ export function PageComponentLayout({
                         </div>
                     ) : null}
 
-                    <div
-                        className={cn(
-                            "flex items-center gap-3",
-                            stackedInnerHeader && "hidden lg:flex",
-                        )}
-                    >
-                        {stackedInnerHeader ? null : headerActions}
-                        {hasSidebarRail && !hideMobileShellControls && (
-                            <div className="lg:hidden">
-                                <MobileUserHeaderButton />
-                            </div>
-                        )}
-                        {!hasSidebarRail &&
-                            !hideHeaderContent &&
-                            !hideHeaderControls &&
-                            isStaging && (
+                    {showTrailingHeaderControls ? (
+                        <div
+                            className={cn(
+                                "flex items-center gap-3",
+                                stackedInnerHeader && "hidden lg:flex",
+                            )}
+                        >
+                            {stackedInnerHeader ? null : headerActions}
+                            {showShellUserControl && (
+                                <div className="lg:hidden">
+                                    <MobileUserHeaderButton />
+                                </div>
+                            )}
+                            {showPublicHeaderControls && isStaging && (
                                 <>
                                     <span
                                         className="size-2 rounded-full bg-general-orange-foreground md:hidden"
@@ -321,9 +328,7 @@ export function PageComponentLayout({
                                     />
                                 </>
                             )}
-                        {!hasSidebarRail &&
-                            !hideHeaderContent &&
-                            !hideHeaderControls && (
+                            {showPublicHeaderControls && (
                                 <>
                                     <LanguageSwitcher />
                                     <Button
@@ -347,15 +352,18 @@ export function PageComponentLayout({
                                     {!hideLogin && <SignIn />}
                                 </>
                             )}
-                    </div>
+                        </div>
+                    ) : null}
                 </header>
             )}
 
             <main
                 className={cn(
-                    "flex-1 px-4 pb-6 md:px-6 md:pb-8",
+                    "min-h-0 flex-1 px-4 pb-6 md:px-6 md:pb-8",
                     // A pinned page scrolls as a whole, so the content area must
                     // keep its natural height instead of scrolling on its own.
+                    // The shell panel is overflow-hidden; this is the only
+                    // page scroller so the thumb stays tied to the content.
                     !fitViewport && "overflow-y-auto",
                     // Inside the shell the floating panel owns the surface, so
                     // the content area must not paint over it.

@@ -17,6 +17,10 @@ import { getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
 import {
+    isMemberAddedProposalKind,
+    memberAddedAtQueryKey,
+} from "@/lib/member-added-at";
+import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
     authLogin,
@@ -995,6 +999,17 @@ export const useNear = () => {
             });
             if (hasPolicyVote) {
                 await markDaoDirty(treasuryId);
+            }
+
+            const approvedMemberChange = votes.some(
+                (vote) =>
+                    vote.vote === "Approve" &&
+                    isMemberAddedProposalKind(vote.proposal.kind),
+            );
+            if (approvedMemberChange) {
+                await queryClient.invalidateQueries({
+                    queryKey: memberAddedAtQueryKey(treasuryId),
+                });
             }
         })();
     };

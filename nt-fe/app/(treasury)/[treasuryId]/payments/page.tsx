@@ -769,7 +769,7 @@ export default function PaymentsPage() {
     const form = useForm<PaymentFormValues>({
         resolver: zodResolver(paymentFormSchema),
         defaultValues: {
-            address: "",
+            address: defaultAddress,
             amount: "",
             memo: "",
             // Null until TokenSelect auto-selects or a URL override seeds.
@@ -1179,8 +1179,12 @@ export default function PaymentsPage() {
             ? `${watchedToken.address}:${watchedToken.residency ?? ""}:${watchedToken.network ?? ""}`
             : "";
 
+        if (!tokenKey) return;
+
         const previous = prevTokenKeyRef.current;
         prevTokenKeyRef.current = tokenKey;
+        // First resolved token is auto-select / URL seed, not a user change.
+        // Wiping here dropped `?address=` from Members / address book.
         if (previous === null || previous === tokenKey) return;
 
         form.setValue("address", "", { shouldDirty: true });
@@ -1476,7 +1480,7 @@ export default function PaymentsPage() {
             <Button
                 variant="secondary"
                 size="icon"
-                className="size-10 rounded-md bg-general-bg-secondary text-muted-foreground hover:bg-general-bg-secondary/80 lg:h-9 lg:w-auto lg:px-3 lg:text-sm lg:font-bold lg:leading-3.5 lg:text-general-secondary-foreground"
+                className="size-10 rounded-lg bg-general-bg-secondary text-muted-foreground hover:bg-general-bg-secondary/80 hover:text-general-foreground lg:h-10 lg:w-auto lg:gap-2 lg:px-4 lg:text-sm"
                 id="payments-bulk-btn"
                 aria-label={tPay("bulkPayments")}
                 onClick={() => {

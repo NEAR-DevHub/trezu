@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "dd/mm/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "Ngưỡng 1-trên-{memberCount} có nghĩa là bất kỳ thành viên nào cũng có thể thực thi giao dịch. Điều này làm giảm tính bảo mật.",
-        "infoBalanced": "Ngưỡng {currentThreshold}-trên-{memberCount} mang lại sự cân bằng tốt giữa bảo mật và linh hoạt vận hành."
-    },
     "metadata": {
         "treasuryTitle": "Bảng điều khiển | Near Business",
         "landingTitle": "Near Business | Quản lý ngân quỹ liên chuỗi",
@@ -194,8 +190,7 @@
             "description": "Quản lý thành viên đội và quyền hạn"
         },
         "settings": {
-            "title": "Cài đặt",
-            "description": "Điều chỉnh cài đặt ứng dụng của bạn"
+            "title": "Cài đặt"
         },
         "addressBook": {
             "title": "Sổ địa chỉ",
@@ -930,8 +925,8 @@
         "title": "Thành viên",
         "description": "Quản lý thành viên đội và quyền hạn",
         "permissions": "Quyền",
+        "added": "Đã thêm",
         "member": "Thành viên",
-        "activeMembers": "Thành viên đang hoạt động",
         "noActiveMembers": "Không tìm thấy thành viên đang hoạt động.",
         "addNewMember": "Thêm thành viên",
         "addManually": "Thêm thủ công",
@@ -955,6 +950,7 @@
             "readyDescription": "Gửi cho người bạn muốn thêm. Họ sẽ kết nối ví và yêu cầu tham gia.",
             "onceTitle": "Liên kết này dùng một lần, cho một người",
             "onceDescription": "Tạo liên kết mới cho mỗi thành viên.",
+            "linkTitle": "Liên kết mời",
             "yourLink": "Liên kết mời của bạn",
             "copyLink": "Sao chép liên kết",
             "linkCopied": "Đã sao chép liên kết mời",
@@ -981,7 +977,7 @@
             "askDescription": "Nhóm xem xét yêu cầu của bạn trước khi bạn có thể xem hoặc phê duyệt bất kỳ điều gì.",
             "walletConnected": "Đã kết nối ví",
             "nameLabel": "Tên của bạn (tuỳ chọn)",
-            "namePlaceholder": "Để nhóm nhận ra bạn",
+            "namePlaceholder": "Nhập tên để nhóm nhận ra bạn",
             "askJoin": "Yêu cầu tham gia",
             "submitting": "Đang gửi...",
             "successTitle": "Bạn sắp được vào",
@@ -992,8 +988,8 @@
             "goToTreasury": "Đến Treasury",
             "invalidTitle": "Không tìm thấy lời mời",
             "invalidDescription": "Liên kết mời này không hợp lệ hoặc không còn khả dụng.",
-            "usedTitle": "Lời mời đã được dùng",
-            "usedDescription": "Liên kết mời này đã được sử dụng.",
+            "usedTitle": "Liên kết mời này đã được sử dụng",
+            "usedDescription": "Liên kết mời chỉ dùng một lần. Hãy nhờ {treasury} gửi liên kết mới.",
             "expiredTitle": "Lời mời đã hết hạn",
             "expiredDescription": "Liên kết mời này đã hết hạn. Hãy xin nhóm một liên kết mới.",
             "goHome": "Về trang chủ",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "Đã chọn {count, plural, =0 {không có thành viên nào} other {# thành viên}}",
         "remove": "Xóa",
+        "send": "Gửi",
         "edit": "Chỉnh sửa",
         "requestorOnlyTooltip": "Bạn chỉ có thể thêm vai trò Người yêu cầu cho thành viên này, vì họ chịu trách nhiệm tạo các yêu cầu thanh toán từ NEARN.",
         "memberModal": {
-            "editRoles": "Chỉnh sửa vai trò",
+            "editRoles": "Chỉnh sửa thành viên",
             "addNewMember": "Thêm thành viên",
             "validatingAddresses": "Đang xác thực địa chỉ...",
             "reviewRequest": "Xem lại yêu cầu",
             "noChanges": "Không có thay đổi nào đối với vai trò thành viên"
         },
         "previewModal": {
-            "title": "Xem lại yêu cầu của bạn",
+            "title": "Xem lại thành viên",
             "youAreEditing": "Bạn đang chỉnh sửa",
             "youAreAdding": "Bạn đang thêm",
             "membersCount": "{count, plural, other {# thành viên}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "Thành viên đã cập nhật",
             "newMembers": "Thành viên mới",
             "creatingProposal": "Đang tạo đề xuất...",
-            "confirmSubmit": "Xác nhận và gửi yêu cầu"
+            "confirmSubmit": "Tạo yêu cầu"
         },
         "removeDialog": {
-            "title": "Xóa yêu cầu",
+            "title": "Xóa {count, plural, one {thành viên} other {thành viên}}?",
             "nearnBody": "Sau khi được phê duyệt, {account} sẽ bị xóa vĩnh viễn khỏi ngân quỹ và mọi quyền liên quan sẽ bị thu hồi. Sau khi xóa, tài khoản này sẽ không thể tạo yêu cầu từ NEARN nữa.",
             "genericBody": "Sau khi phê duyệt, hành động này sẽ xóa vĩnh viễn <bold>{accounts}</bold> khỏi ngân quỹ và thu hồi tất cả quyền đã gán.",
             "creatingProposal": "Đang tạo đề xuất..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "Cập nhật chính sách - Thêm thành viên mới",
-            "addMembersSuccess": "Đã tạo thành công yêu cầu thêm thành viên mới",
+            "addMembersSuccess": "Đã tạo yêu cầu thêm thành viên",
             "editMember": "Cập nhật chính sách - Chỉnh sửa quyền thành viên",
             "editMembers": "Cập nhật chính sách - Chỉnh sửa nhiều thành viên",
-            "editMemberSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò thành viên",
-            "editMembersSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò hàng loạt",
+            "editMemberSuccess": "Đã tạo yêu cầu sửa thành viên",
+            "editMembersSuccess": "Đã tạo yêu cầu sửa nhiều thành viên",
             "removeMember": "Cập nhật chính sách - Xóa thành viên",
             "removeMembers": "Cập nhật chính sách - Xóa các thành viên",
-            "removeMemberSuccess": "Đã tạo thành công yêu cầu xóa thành viên",
+            "removeMemberSuccess": "Đã tạo yêu cầu xóa thành viên",
             "createProposalFailed": "Không thể tạo yêu cầu thành viên. Vui lòng thử lại."
         },
-        "infoSection": {
-            "title": "Vì sao nên thêm thành viên?",
-            "description": "Thêm thành viên giúp tiền của bạn an toàn và đảm bảo mất ví sẽ không khiến bạn bị khóa quyền truy cập.",
-            "readGuide": "Đọc hướng dẫn đầy đủ",
-            "dismiss": "Đóng",
-            "strongerProtectionTitle": "Bảo vệ mạnh hơn",
-            "strongerProtectionDescription": "Yêu cầu cần nhiều hơn một phê duyệt trước khi tiền có thể được chuyển.",
-            "rolesForEveryoneTitle": "Vai trò cho mọi người",
-            "rolesForEveryoneDescription": "Mỗi thành viên có một vai trò: tạo yêu cầu thanh toán, phê duyệt hoặc quản lý cài đặt.",
-            "neverLoseAccessTitle": "Không bao giờ mất quyền truy cập",
-            "neverLoseAccessDescription": "Nếu bạn mất ví, bạn có thể khôi phục quyền truy cập từ bản sao lưu đã thêm trước đó."
-        }
+        "activeMembersCount": "{count, plural, other {# thành viên đang hoạt động}}"
     },
     "settings": {
         "tabs": {
             "general": "Chung",
-            "voting": "Bỏ phiếu",
-            "preferences": "Tùy chọn",
-            "integrations": "Tích hợp",
-            "developer": "Nhà phát triển"
+            "voting": "Bỏ phiếu"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "Không tìm thấy ngân quỹ",
             "treasuryName": "Tên ngân quỹ",
             "treasuryNameDescription": "Tên ngân quỹ của bạn. Tên này sẽ hiển thị trên toàn bộ ứng dụng.",
-            "displayName": "Tên hiển thị",
             "displayNamePlaceholder": "Nhập tên hiển thị",
-            "accountName": "Tên tài khoản",
             "logo": "Logo",
             "logoDescription": "Tải lên logo cho ngân quỹ của bạn. Khuyến nghị SVG, PNG hoặc JPG (256x256 px).",
-            "treasuryLogoAlt": "Logo ngân quỹ",
             "uploading": "Đang tải lên...",
-            "uploadLogo": "Tải lên logo",
-            "removeLogo": "Xóa logo",
+            "removeLogo": "Xóa",
             "logoUploaded": "Đã tải lên logo thành công",
             "uploadError": "Đã xảy ra lỗi khi tải lên hình ảnh, vui lòng thử lại.",
             "invalidLogo": "Logo không hợp lệ. Vui lòng tải lên tệp PNG, JPG hoặc SVG có kích thước chính xác 256x256 px",
             "invalidImage": "Tệp hình ảnh không hợp lệ. Vui lòng tải lên một hình ảnh hợp lệ.",
             "fileReadError": "Lỗi khi đọc tệp. Vui lòng thử lại.",
             "primaryColor": "Màu chính",
-            "primaryColorDescription": "Đặt màu chính cho các thành phần giao diện ngân quỹ. Màu này sẽ được dùng ở cả chế độ sáng và tối, nên hãy chú ý đến độ tương phản khi chọn các sắc trung tính.",
+            "primaryColorDescription": "Đặt màu chủ đạo cho các thành phần giao diện của kho quỹ.",
             "selectColorLabel": "Chọn màu {color}",
-            "saveChanges": "Lưu thay đổi",
-            "saving": "Đang lưu...",
             "savedToast": "Các thay đổi của bạn đã được lưu.",
-            "saveFailed": "Không thể lưu thay đổi. Vui lòng thử lại."
+            "saveFailed": "Không thể lưu thay đổi. Vui lòng thử lại.",
+            "save": "Lưu",
+            "edit": "Chỉnh sửa"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "Thiếu dữ liệu bắt buộc",
             "thresholdProposalTitle": "Cập nhật chính sách - Ngưỡng bỏ phiếu",
             "thresholdProposalSummary": "{account} đã yêu cầu thay đổi ngưỡng bỏ phiếu từ {oldValue} thành {newValue}.",
-            "thresholdSubmitted": "Đã gửi yêu cầu cập nhật ngưỡng bỏ phiếu",
+            "thresholdSubmitted": "Đã tạo yêu cầu ngưỡng bỏ phiếu",
             "createProposalFailed": "Không thể tạo đề xuất",
             "durationProposalTitle": "Cập nhật chính sách - Thời gian bỏ phiếu",
             "durationProposalSummary": "{account} đã yêu cầu thay đổi thời gian bỏ phiếu từ {oldValue} thành {newValue}.",
-            "durationSubmitted": "Đã tạo yêu cầu thành công",
-            "pendingTitle": "Yêu cầu ngưỡng bỏ phiếu đang hoạt động",
-            "pendingBody": "Để tránh xung đột, bạn cần hoàn tất hoặc giải quyết các yêu cầu đang chờ trước khi tiếp tục. Các yêu cầu này hiện đang hoạt động và phải được phê duyệt hoặc từ chối trước.",
+            "durationSubmitted": "Đã tạo yêu cầu thời hạn bỏ phiếu",
             "viewRequest": "Xem yêu cầu",
-            "thresholdHeading": "Ngưỡng bỏ phiếu",
-            "thresholdDescriptionApprovers": "Xác định số phiếu cần thiết để phê duyệt các yêu cầu liên quan đến thanh toán và đội. Cấu hình ngưỡng riêng cho Người phê duyệt và Quản trị.",
-            "thresholdDescriptionGeneric": "Xác định số phiếu cần thiết để phê duyệt yêu cầu. Cấu hình ngưỡng cho từng vai trò dựa trên trách nhiệm của họ.",
             "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
-            "votesRequired": "Số phiếu cần để phê duyệt yêu cầu",
-            "durationHeading": "Thời gian bỏ phiếu",
-            "durationDescription": "Khoảng thời gian (tính bằng ngày) một đề xuất sẽ vẫn mở để bỏ phiếu. Nếu việc bỏ phiếu không hoàn tất trong khoảng thời gian này, quyết định sẽ hết hạn.",
-            "durationApprovers": " Thời gian này áp dụng tương tự cho cả vai trò Quản trị và Người phê duyệt.",
-            "durationGeneric": " Thời gian này nhất quán trên tất cả các vai trò ngân quỹ.",
-            "days": "Ngày"
-        },
-        "preferences": {
-            "timeZone": "Múi giờ",
-            "timeZoneDescription": "Đặt múi giờ địa phương để hiển thị ngày giờ chính xác.",
-            "timeFormat": "Định dạng giờ",
-            "hour12": "12 giờ (1:00 PM)",
-            "hour24": "24 giờ (13:00)",
-            "autoTimezone": "Tự động đặt múi giờ theo vị trí của bạn",
-            "timezone": "Múi giờ",
-            "loadingTimezones": "Đang tải múi giờ...",
-            "selectTimezone": "Chọn múi giờ",
-            "searchTimezones": "Tìm múi giờ...",
-            "noTimezones": "Không tìm thấy múi giờ",
-            "save": "Lưu",
-            "savedToast": "Đã lưu tùy chọn thành công",
-            "saveFailed": "Không thể lưu tùy chọn",
-            "loadFailed": "Không thể tải múi giờ"
+            "durationHeading": "Thời hạn bỏ phiếu",
+            "durationDescription": "Yêu cầu mở trong bao lâu trước khi hết hạn. Sau đó, yêu cầu sẽ mất.",
+            "days": "Ngày",
+            "roleThresholdTitle": "Ngưỡng {role}",
+            "roleDescription": {
+                "financial": "Những thành viên này phê duyệt yêu cầu gửi và hoán đổi.",
+                "governance": "Những thành viên này phê duyệt thay đổi về thành viên và quy tắc.",
+                "generic": "Những thành viên này phê duyệt yêu cầu của vai trò này."
+            },
+            "pendingAlert": "{count, plural, other {# yêu cầu cài đặt cần được xử lý}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "Xác nhận và gửi yêu cầu",
         "useDifferentAddress": "Dùng một địa chỉ khác",
         "failed1ClickQuote": "Không thể tạo báo giá chuyển 1Click",
-        "paymentSubmitted": "Đã gửi yêu cầu thanh toán",
+        "paymentSubmitted": "Đã tạo yêu cầu gửi",
         "confidentialTooltip": "Thong tin nguoi nhan va so tien yeu cau duoc bao mat hoan toan.",
         "destinationNetwork": "Mạng đích",
         "selectRecipientPlaceholder": "Chọn người nhận",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "Gửi hàng loạt sắp ra mắt!",
         "submittingList": "Đang gửi danh sách gửi hàng loạt",
         "submittingProposal": "Đang gửi đề xuất",
-        "proposalSubmitted": "Đã gửi đề xuất gửi hàng loạt",
+        "proposalSubmitted": "Đã tạo yêu cầu gửi hàng loạt",
         "submitListFailed": "Không thể gửi danh sách thanh toán",
         "submitFailed": "Không gửi được gửi hàng loạt",
         "quoteFetchFailed": "Không thể lấy phí chuyển khoản. Vui lòng thử lại.",
@@ -1354,7 +1315,7 @@
         "validation": {
             "amountPositive": "Số tiền phải lớn hơn 0"
         },
-        "requestSubmitted": "Đã gửi yêu cầu trao đổi",
+        "requestSubmitted": "Đã tạo yêu cầu hoán đổi",
         "heading": "Trao đổi",
         "sell": "Bán",
         "receive": "Nhận",
@@ -1401,7 +1362,7 @@
             "review": "Xem lại"
         },
         "proposalTitle": "Tạo lịch vesting cho {address}",
-        "scheduleSubmitted": "Đã gửi yêu cầu tạo lịch vesting",
+        "scheduleSubmitted": "Đã tạo yêu cầu vesting",
         "heading": "Lịch vesting mới",
         "amount": "Số tiền",
         "startDate": "Ngày bắt đầu",
@@ -1708,21 +1669,8 @@
     },
     "supportCenter": {
         "title": "Trung tâm hỗ trợ",
-        "resources": "Tài nguyên",
-        "support": "Hỗ trợ",
-        "websiteTitle": "Trang web Near Business",
-        "websiteDescription": "Đọc về Near Business và những cập nhật mới nhất.",
-        "demo": "Demo Near Business",
-        "demoTitle": "Khám phá phiên bản công khai",
-        "demoDescription": "Một treasury thực mà ai cũng có thể xem.",
-        "confidentialDemoTitle": "Khám phá phiên bản bảo mật",
-        "confidentialDemoDescription": "Cách một treasury riêng tư được dùng trong thực tế.",
-        "videoTitle": "Xem demo",
-        "videoDescription": "Video ngắn - xem Near Business từ đầu đến cuối.",
-        "xTitle": "Theo dõi chúng tôi trên X",
-        "xDescription": "Xem chúng tôi đang xây dựng gì, theo thời gian thực.",
-        "statsTitle": "Thống kê",
-        "statsDescription": "Xem tổng tài sản được quản lý trên tất cả treasury.",
+        "websiteTitle": "Trang web near business",
+        "websiteDescription": "Đọc về near business và những cập nhật mới nhất.",
         "docsTitle": "Tài liệu",
         "docsDescription": "Hướng dẫn từng bước cho mọi tính năng.",
         "productSupportTitle": "Hỗ trợ sản phẩm",
@@ -1759,16 +1707,18 @@
                 "title": "Tài chính",
                 "description": "Tài chính có thể bỏ phiếu cho các yêu cầu giao dịch liên quan đến thanh toán nhưng không thể tạo chúng."
             }
-        }
+        },
+        "title": "Chọn vai trò"
     },
     "memberInput": {
-        "creatorYou": "Người tạo (bạn)",
-        "memberAddress": "Địa chỉ thành viên",
-        "addNewMember": "Thêm thành viên",
+        "addNewMember": "Thêm thành viên khác",
         "validation": {
             "rolesRequired": "Cần ít nhất một vai trò",
             "duplicateAddress": "Địa chỉ đã là một thành viên"
-        }
+        },
+        "enterAddress": "Nhập địa chỉ",
+        "selectRole": "Chọn vai trò",
+        "memberNumber": "Thành viên {number}"
     },
     "recipientInput": {
         "title": "Đến",
@@ -2163,6 +2113,7 @@
         "paymentsPending": "Kiểm tra các khoản thanh toán đang chờ phê duyệt",
         "exchangeSettings": "Đặt mức thay đổi giá tối đa (slippage) bạn chấp nhận khi hoán đổi.",
         "membersPending": "Xem các yêu cầu liên quan đến thành viên đang chờ phê duyệt",
+        "membersWantsToJoin": "Xem thành viên muốn tham gia nhóm của bạn",
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
         "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
@@ -2587,14 +2538,7 @@
         "fill": {
             "noTemplate": "Không tìm thấy mẫu cho “{slug}”.",
             "invalidManifest": "Manifest của mẫu này không hợp lệ:",
-            "proposalFiled": "Đã nộp yêu cầu"
-        },
-        "developer": {
-            "title": "Yêu cầu tùy chỉnh",
-            "description": "Tạo các loại yêu cầu của riêng bạn khi bạn cần nhiều hơn thanh toán và trao đổi. Thêm các trường bạn cần và các thành viên của bạn có thể gửi chúng như bất kỳ yêu cầu nào khác.",
-            "enable": "Bật",
-            "disable": "Tắt",
-            "errUpdate": "Không thể cập nhật cài đặt"
+            "proposalFiled": "Đã tạo yêu cầu tùy chỉnh"
         },
         "visual": {
             "detailsTitle": "Chi tiết",
@@ -2676,6 +2620,13 @@
             "pattern": "{label} không khớp với định dạng yêu cầu",
             "min": "{label} phải lớn hơn hoặc bằng {min}",
             "max": "{label} phải nhỏ hơn hoặc bằng {max}"
+        },
+        "settingsCard": {
+            "title": "Yêu cầu tùy chỉnh",
+            "description": "Tạo các loại yêu cầu của riêng bạn khi bạn cần nhiều hơn thanh toán và trao đổi. Thêm các trường bạn cần và các thành viên của bạn có thể gửi chúng như bất kỳ yêu cầu nào khác.",
+            "enable": "Bật",
+            "disable": "Tắt",
+            "errUpdate": "Không thể cập nhật cài đặt"
         }
     },
     "bulkActivation": {
@@ -2689,7 +2640,7 @@
         "awaitingTitle": "Đang chờ phê duyệt",
         "awaitingDescription": "Yêu cầu kích hoạt đã được tạo. Khi đủ thành viên kho bạc phê duyệt, khóa truy cập hàng loạt bảo mật sẽ được đăng ký và gửi hàng loạt sẽ tự động mở khóa.",
         "awaitingHint": "Không cần thao tác thêm sau khi phê duyệt — trang này tự động cập nhật.",
-        "proposalCreated": "Đã tạo yêu cầu kích hoạt — đang chờ thành viên phê duyệt",
+        "proposalCreated": "Đã tạo yêu cầu kích hoạt",
         "activationFailed": "Không bắt đầu được kích hoạt gửi hàng loạt",
         "errorTitle": "Không thể tải trạng thái kích hoạt",
         "noPermissionNote": "Bạn không có quyền bắt đầu kích hoạt. Hãy nhờ thành viên kho bạc có quyền đề xuất kích hoạt gửi hàng loạt.",
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "Chuyển tài sản",
         "description": "Chuyển tài sản từ chuỗi công khai sang kho bạc Bảo mật của bạn.",
-        "submitted": "Đã gửi yêu cầu chuyển",
+        "submitted": "Đã tạo yêu cầu chuyển",
         "banner": {
             "title": "<amount></amount> đã vào số dư công khai của bạn",
             "description": "Ai đó đã gửi qua nhầm mạng. Chuyển vào đây để bảo mật.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "Số tiền vượt quá số dư công khai",
             "failed": "Không thể chuẩn bị yêu cầu chuyển. Vui lòng thử lại."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "Giảm ngưỡng",
+        "increase": "Tăng ngưỡng"
     }
 }

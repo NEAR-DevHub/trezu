@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "dd/mm/yyyy"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "סף של 1 מתוך {memberCount} משמעו שכל חבר יחיד יכול לבצע עסקאות. זה מפחית את האבטחה.",
-        "infoBalanced": "סף של {currentThreshold} מתוך {memberCount} מספק איזון טוב בין אבטחה לגמישות תפעולית."
-    },
     "metadata": {
         "treasuryTitle": "לוח בקרה | Near Business",
         "landingTitle": "Near Business | ניהול אוצר חוצה-רשתות",
@@ -194,8 +190,7 @@
             "description": "נהל חברי צוות והרשאות"
         },
         "settings": {
-            "title": "הגדרות",
-            "description": "התאם את הגדרות היישום שלך"
+            "title": "הגדרות"
         },
         "addressBook": {
             "title": "ספר כתובות",
@@ -930,8 +925,8 @@
         "title": "חברים",
         "description": "נהל חברי צוות והרשאות",
         "permissions": "הרשאות",
+        "added": "נוסף",
         "member": "חבר",
-        "activeMembers": "חברים פעילים",
         "noActiveMembers": "לא נמצאו חברים פעילים.",
         "addNewMember": "הוסף חבר",
         "addManually": "הוספה ידנית",
@@ -955,6 +950,7 @@
             "readyDescription": "שלחו אותו לאדם שתרצו להוסיף. הוא יחבר ארנק ויבקש להצטרף.",
             "onceTitle": "הקישור עובד פעם אחת, לאדם אחד",
             "onceDescription": "צרו קישור חדש לכל חבר.",
+            "linkTitle": "קישור הזמנה",
             "yourLink": "קישור ההזמנה שלכם",
             "copyLink": "העתקת קישור",
             "linkCopied": "קישור ההזמנה הועתק",
@@ -981,7 +977,7 @@
             "askDescription": "הצוות בודק את הבקשה לפני שתוכלו לראות או לאשר משהו.",
             "walletConnected": "הארנק מחובר",
             "nameLabel": "השם שלכם (אופציונלי)",
-            "namePlaceholder": "כדי שהצוות יזהה אתכם",
+            "namePlaceholder": "הזינו שם כדי שהצוות יזהה אתכם",
             "askJoin": "בקשת הצטרפות",
             "submitting": "שולח...",
             "successTitle": "כמעט בפנים",
@@ -992,8 +988,8 @@
             "goToTreasury": "עבור לאוצר",
             "invalidTitle": "ההזמנה לא נמצאה",
             "invalidDescription": "קישור ההזמנה אינו תקף או שאינו זמין יותר.",
-            "usedTitle": "ההזמנה כבר נוצלה",
-            "usedDescription": "קישור ההזמנה כבר נוצל.",
+            "usedTitle": "קישור ההזמנה כבר נוצל",
+            "usedDescription": "קישורי הזמנה עובדים פעם אחת. בקשו מ-{treasury} קישור חדש.",
             "expiredTitle": "ההזמנה פגה",
             "expiredDescription": "קישור ההזמנה פג תוקף. בקשו מהצוות קישור חדש.",
             "goHome": "לדף הבית",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {אין חברים} one {# חבר} two {# חברים} many {# חברים} other {# חברים}} נבחרו",
         "remove": "הסרה",
+        "send": "שליחה",
         "edit": "עריכה",
         "requestorOnlyTooltip": "ניתן להוסיף רק את התפקיד מבקש עבור חבר זה, מכיוון שהוא אחראי ליצירת בקשות תשלום מ-NEARN.",
         "memberModal": {
-            "editRoles": "ערוך תפקידים",
+            "editRoles": "ערוך חברים",
             "addNewMember": "הוסף חבר",
             "validatingAddresses": "מאמת כתובות...",
             "reviewRequest": "סקור בקשה",
             "noChanges": "לא בוצעו שינויים בתפקידי החברים"
         },
         "previewModal": {
-            "title": "סקור את הבקשה שלך",
+            "title": "סקירת חברים",
             "youAreEditing": "אתה עורך",
             "youAreAdding": "אתה מוסיף",
             "membersCount": "{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "חברים מעודכנים",
             "newMembers": "חברים חדשים",
             "creatingProposal": "יוצר הצעה...",
-            "confirmSubmit": "אשר ושלח בקשה"
+            "confirmSubmit": "צור בקשה"
         },
         "removeDialog": {
-            "title": "הסר בקשה",
+            "title": "להסיר {count, plural, one {חבר} other {חברים}}?",
             "nearnBody": "לאחר האישור, {account} יוסר לצמיתות מהאוצר וכל ההרשאות הקשורות יבוטלו. לאחר ההסרה, חשבון זה לא יוכל עוד ליצור בקשות מ-NEARN.",
             "genericBody": "לאחר האישור, פעולה זו תסיר לצמיתות את <bold>{accounts}</bold> מהאוצר ותבטל את כל ההרשאות שהוקצו.",
             "creatingProposal": "יוצר הצעה..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "עדכון מדיניות - הוספת חברים חדשים",
-            "addMembersSuccess": "בקשת חבר חדש נוצרה בהצלחה",
+            "addMembersSuccess": "בקשת הוספת חברים נוצרה",
             "editMember": "עדכון מדיניות - עריכת הרשאות חבר",
             "editMembers": "עדכון מדיניות - עריכת חברים מרובים",
-            "editMemberSuccess": "בקשת עדכון תפקידי חבר נוצרה בהצלחה",
-            "editMembersSuccess": "בקשת עדכון תפקידי חברים בכמויות נוצרה בהצלחה",
+            "editMemberSuccess": "בקשת עריכת חבר נוצרה",
+            "editMembersSuccess": "בקשת עריכת חברים נוצרה",
             "removeMember": "עדכון מדיניות - הסרת חבר",
             "removeMembers": "עדכון מדיניות - הסרת חברים",
-            "removeMemberSuccess": "בקשת הסרת חבר נוצרה בהצלחה",
+            "removeMemberSuccess": "בקשת הסרת חבר נוצרה",
             "createProposalFailed": "יצירת בקשת החבר נכשלה. נסה שוב."
         },
-        "infoSection": {
-            "title": "למה להוסיף עוד חברים?",
-            "description": "הוספת חברים שומרת על הכספים שלך בטוחים ומבטיחה שארנק שאבד לא ינעל אותך מחוץ לחשבון.",
-            "readGuide": "קרא את המדריך המלא",
-            "dismiss": "סגור",
-            "strongerProtectionTitle": "הגנה חזקה יותר",
-            "strongerProtectionDescription": "בקשות דורשות יותר מאישור אחד לפני שניתן להזיז כספים.",
-            "rolesForEveryoneTitle": "תפקידים לכולם",
-            "rolesForEveryoneDescription": "כל חבר מקבל תפקיד - לבקש תשלומים, לאשר אותם או לנהל הגדרות.",
-            "neverLoseAccessTitle": "לעולם אל תאבד גישה",
-            "neverLoseAccessDescription": "אם איבדת ארנק, אפשר לשחזר גישה מגיבוי שכבר הוספת."
-        }
+        "activeMembersCount": "{count, plural, one {חבר פעיל אחד} other {# חברים פעילים}}"
     },
     "settings": {
         "tabs": {
             "general": "כללי",
-            "voting": "הצבעה",
-            "preferences": "העדפות",
-            "integrations": "אינטגרציות",
-            "developer": "מפתח"
+            "voting": "הצבעה"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "האוצר לא נמצא",
             "treasuryName": "שם האוצר",
             "treasuryNameDescription": "שם האוצר שלך. זה יוצג בכל האפליקציה.",
-            "displayName": "שם תצוגה",
             "displayNamePlaceholder": "הזן שם תצוגה",
-            "accountName": "שם חשבון",
             "logo": "לוגו",
             "logoDescription": "העלה לוגו עבור האוצר שלך. מומלץ SVG, PNG או JPG (256x256 פיקסלים).",
-            "treasuryLogoAlt": "לוגו האוצר",
             "uploading": "מעלה...",
-            "uploadLogo": "העלה לוגו",
-            "removeLogo": "הסר לוגו",
+            "removeLogo": "הסרה",
             "logoUploaded": "הלוגו הועלה בהצלחה",
             "uploadError": "אירעה שגיאה בעת העלאת התמונה, אנא נסה שוב.",
             "invalidLogo": "לוגו לא תקין. אנא העלה קובץ PNG, JPG או SVG שהוא בדיוק 256x256 פיקסלים",
             "invalidImage": "קובץ תמונה לא תקין. אנא העלה תמונה תקינה.",
             "fileReadError": "שגיאה בקריאת הקובץ. אנא נסה שוב.",
             "primaryColor": "צבע ראשי",
-            "primaryColorDescription": "הגדר את הצבע הראשי עבור רכיבי הממשק של האוצר שלך. צבע זה ישמש במצבים בהירים וכהים כאחד, אז שמור על ניגודיות בחירה בגוונים ניטרליים.",
+            "primaryColorDescription": "הגדירו את צבע הבסיס לרכיבי הממשק של הקופה שלכם.",
             "selectColorLabel": "בחר צבע {color}",
-            "saveChanges": "שמור שינויים",
-            "saving": "שומר...",
             "savedToast": "השינויים שלך נשמרו.",
-            "saveFailed": "לא ניתן לשמור את השינויים. נסה שוב."
+            "saveFailed": "לא ניתן לשמור את השינויים. נסה שוב.",
+            "save": "שמירה",
+            "edit": "עריכה"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "חסרים נתונים נדרשים",
             "thresholdProposalTitle": "עדכון מדיניות - ספי הצבעה",
             "thresholdProposalSummary": "{account} ביקש לשנות את סף ההצבעה מ-{oldValue} ל-{newValue}.",
-            "thresholdSubmitted": "בקשה לעדכון סף הצבעה נשלחה",
+            "thresholdSubmitted": "בקשת סף הצבעה נוצרה",
             "createProposalFailed": "יצירת ההצעה נכשלה",
             "durationProposalTitle": "עדכון מדיניות - משך הצבעה",
             "durationProposalSummary": "{account} ביקש לשנות את משך ההצבעה מ-{oldValue} ל-{newValue}.",
-            "durationSubmitted": "הבקשה נוצרה בהצלחה",
-            "pendingTitle": "בקשת סף הצבעה פעילה",
-            "pendingBody": "כדי להימנע מהתנגשויות, עליך להשלים או לפתור את הבקשות הממתינות הקיימות לפני שתמשיך. בקשות אלו פעילות כעת ויש לאשר או לדחות אותן תחילה.",
-            "viewRequest": "הצג בקשה",
-            "thresholdHeading": "סף הצבעה",
-            "thresholdDescriptionApprovers": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות תשלום ובקשות הקשורות לצוות. הגדר ספים בנפרד עבור מאשרים וממשל.",
-            "thresholdDescriptionGeneric": "הגדר כמה הצבעות נדרשות כדי לאשר בקשות. הגדר ספים עבור כל תפקיד בהתאם לאחריותם.",
+            "durationSubmitted": "בקשת משך הצבעה נוצרה",
+            "viewRequest": "הצגת הבקשה",
             "membersWhoCanVote": "חברים שיכולים להצביע",
-            "votesRequired": "הצבעות נדרשות כדי לאשר בקשות",
-            "durationHeading": "משך הצבעה",
-            "durationDescription": "פרק הזמן (בימים) שבו הצעה תישאר פתוחה להצבעה. אם ההצבעה לא תושלם בפרק זמן זה, ההחלטה תפוג.",
-            "durationApprovers": " משך זה חל באופן שווה על תפקידי ממשל ומאשרים כאחד.",
-            "durationGeneric": " משך זה אחיד בכל תפקידי האוצר.",
-            "days": "ימים"
-        },
-        "preferences": {
-            "timeZone": "אזור זמן",
-            "timeZoneDescription": "הגדר את אזור הזמן המקומי שלך לתצוגת תאריך וזמן מדויקים.",
-            "timeFormat": "פורמט זמן",
-            "hour12": "12 שעות (1:00 PM)",
-            "hour24": "24 שעות (13:00)",
-            "autoTimezone": "הגדר אזור זמן אוטומטית באמצעות מיקומך",
-            "timezone": "אזור זמן",
-            "loadingTimezones": "טוען אזורי זמן...",
-            "selectTimezone": "בחר אזור זמן",
-            "searchTimezones": "חיפוש אזורי זמן...",
-            "noTimezones": "לא נמצאו אזורי זמן",
-            "save": "שמירה",
-            "savedToast": "ההעדפות נשמרו בהצלחה",
-            "saveFailed": "שמירת ההעדפות נכשלה",
-            "loadFailed": "טעינת אזורי הזמן נכשלה"
+            "durationHeading": "משך ההצבעה",
+            "durationDescription": "כמה זמן בקשה נשארת פתוחה עד לפקיעתה. אחר כך היא נעלמת.",
+            "days": "ימים",
+            "roleThresholdTitle": "סף עבור {role}",
+            "roleDescription": {
+                "financial": "חברים אלה מאשרים בקשות שליחה והחלפה.",
+                "governance": "חברים אלה מאשרים שינויים בחברים ובכללים.",
+                "generic": "חברים אלה מאשרים בקשות עבור תפקיד זה."
+            },
+            "pendingAlert": "{count, plural, one {בקשת הגדרות אחת דורשת טיפול} other {# בקשות הגדרות דורשות טיפול}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "אשר ושלח בקשה",
         "useDifferentAddress": "השתמש בכתובת אחרת",
         "failed1ClickQuote": "יצירת ציטוט העברה של 1Click נכשלה",
-        "paymentSubmitted": "בקשה לשליחת תשלום נשלחה",
+        "paymentSubmitted": "בקשת שליחה נוצרה",
         "confidentialTooltip": "פרטי הנמען והסכום המבוקש חסויים לחלוטין.",
         "destinationNetwork": "רשת יעד",
         "selectRecipientPlaceholder": "בחר נמען",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "שליחה מרובה תגיע בקרוב!",
         "submittingList": "שולח את רשימת השליחה המרובה",
         "submittingProposal": "שולח הצעה",
-        "proposalSubmitted": "בקשת שליחה מרובה נשלחה",
+        "proposalSubmitted": "בקשת שליחה מרובה נוצרה",
         "submitListFailed": "שליחת רשימת התשלומים נכשלה",
         "submitFailed": "שליחת השליחה המרובה נכשלה",
         "quoteFetchFailed": "לא ניתן היה לקבל את עמלות ההעברה. נסו שוב.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "ממתין לאישורים",
         "awaitingDescription": "בקשת ההפעלה נוצרה. לאחר שדי חברי אוצר יאשרו אותה, מפתח הגישה המרובה החסוי יירשם והשליחה המרובה תיפתח אוטומטית.",
         "awaitingHint": "לא נדרשת פעולה נוספת לאחר האישור — הדף מתעדכן אוטומטית.",
-        "proposalCreated": "בקשת ההפעלה נוצרה — ממתין לאישורי חברים",
+        "proposalCreated": "בקשת הפעלה נוצרה",
         "activationFailed": "הפעלת השליחה המרובה נכשלה",
         "errorTitle": "לא ניתן לטעון את סטטוס ההפעלה",
         "noPermissionNote": "אין לך הרשאה להתחיל בהפעלה. בקשו מחבר אוצר עם הרשאות הצעה להפעיל שליחה מרובה.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "הסכום חייב להיות גדול מ-0"
         },
-        "requestSubmitted": "בקשת החלפה נשלחה",
+        "requestSubmitted": "בקשת החלפה נוצרה",
         "heading": "החלפה",
         "sell": "מכירה",
         "receive": "קבלה",
@@ -1418,7 +1379,7 @@
             "review": "סקירה"
         },
         "proposalTitle": "צור לוח זמנים להבשלה עבור {address}",
-        "scheduleSubmitted": "בקשה ליצירת לוח זמנים להבשלה נשלחה",
+        "scheduleSubmitted": "בקשת הבשלה נוצרה",
         "heading": "לוח זמנים חדש להבשלה",
         "amount": "סכום",
         "startDate": "תאריך התחלה",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "מרכז תמיכה",
-        "resources": "משאבים",
-        "support": "תמיכה",
-        "websiteTitle": "אתר Near Business",
-        "websiteDescription": "קראו על Near Business ומה חדש.",
-        "demo": "Near Business דמו",
-        "demoTitle": "גלה את הגרסה הציבורית",
-        "demoDescription": "אוצר אמיתי שכל אחד יכול לצפות בו.",
-        "confidentialDemoTitle": "גלה את הגרסה החסויה",
-        "confidentialDemoDescription": "כך נראה אוצר פרטי בשימוש.",
-        "videoTitle": "צפה בדמו",
-        "videoDescription": "סרטון קצר - רואים את Near Business מקצה לקצה.",
-        "xTitle": "עקוב אחרינו ב-X",
-        "xDescription": "ראו מה אנחנו בונים, בזמן אמת.",
-        "statsTitle": "סטטיסטיקה",
-        "statsDescription": "ראו את סך הנכסים המנוהלים בכל האוצרות.",
+        "websiteTitle": "אתר near business",
+        "websiteDescription": "קראו על near business ומה חדש.",
         "docsTitle": "תיעוד",
         "docsDescription": "מדריכים לכל פיצ'ר, שלב אחר שלב.",
         "productSupportTitle": "תמיכת מוצר",
@@ -1776,16 +1724,18 @@
                 "title": "פיננסי",
                 "description": "פיננסי יכול להצביע על בקשות עסקה הקשורות לתשלום אך לא יכול ליצור אותן."
             }
-        }
+        },
+        "title": "בחר תפקידים"
     },
     "memberInput": {
-        "creatorYou": "יוצר (אתה)",
-        "memberAddress": "כתובת החבר",
-        "addNewMember": "הוסף חבר",
+        "addNewMember": "הוסף חבר נוסף",
         "validation": {
             "rolesRequired": "לפחות תפקיד אחד נדרש",
             "duplicateAddress": "הכתובת כבר חברה"
-        }
+        },
+        "enterAddress": "הזן כתובת",
+        "selectRole": "בחר תפקיד",
+        "memberNumber": "חבר {number}"
     },
     "recipientInput": {
         "title": "אל",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "בדקו תשלומים הממתינים לאישור",
         "exchangeSettings": "הגדרו את שינוי המחיר המרבי (החלקה) שתקבלו בהחלפה.",
         "membersPending": "ראו בקשות הקשורות לחברים הממתינות לאישור",
+        "membersWantsToJoin": "ראו את החבר שרוצה להצטרף לצוות",
         "guestSaveIntro": "אתה אורח של אוצר זה. אתה יכול לראות רק את הנתונים.",
         "guestSaveAction": "ניתן לשמור את האוצר האורח הזה לרשימת האוצרות שלך.",
         "newFeatureRich": "חדש! 🎉 שמור כתובות בשימוש תדיר לתשלומים מהירים יותר וללא שגיאות. אנשי הקשר שלך נשארים פרטיים וגלויים רק לצוות שלך.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "לא נמצאה תבנית עבור ״{slug}״.",
             "invalidManifest": "המניפסט של תבנית זו אינו תקין:",
-            "proposalFiled": "הבקשה הוגשה"
-        },
-        "developer": {
-            "title": "בקשות מותאמות אישית",
-            "description": "בנו סוגי בקשות משלכם כשאתם זקוקים ליותר מתשלומים והחלפה. הוסיפו את השדות שאתם צריכים והחברים שלכם יוכלו להגיש אותם כמו כל בקשה אחרת.",
-            "enable": "הפעל",
-            "disable": "השבת",
-            "errUpdate": "לא ניתן היה לעדכן את ההגדרה"
+            "proposalFiled": "בקשה מותאמת נוצרה"
         },
         "visual": {
             "detailsTitle": "פרטים",
@@ -2693,6 +2637,13 @@
             "pattern": "{label} אינו תואם לתבנית הנדרשת",
             "min": "{label} חייב להיות לפחות {min}",
             "max": "{label} חייב להיות לכל היותר {max}"
+        },
+        "settingsCard": {
+            "title": "בקשות מותאמות אישית",
+            "description": "בנו סוגי בקשות משלכם כשאתם זקוקים ליותר מתשלומים והחלפה. הוסיפו את השדות שאתם צריכים והחברים שלכם יוכלו להגיש אותם כמו כל בקשה אחרת.",
+            "enable": "הפעל",
+            "disable": "השבת",
+            "errUpdate": "לא ניתן היה לעדכן את ההגדרה"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "העברת נכסים",
         "description": "העבר נכסים מהרשת הציבורית לאוצר הסודי שלך.",
-        "submitted": "בקשת ההעברה נשלחה",
+        "submitted": "בקשת העברה נוצרה",
         "banner": {
             "title": "<amount></amount> הגיעו ליתרה הציבורית שלך",
             "description": "מישהו שלח אותם ברשת הלא נכונה. העבר אותם לכאן כדי להפוך אותם לסודיים.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "הסכום עולה על היתרה הציבורית",
             "failed": "לא ניתן להכין את בקשת ההעברה. נסה שוב."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "הפחתת הסף",
+        "increase": "הגדלת הסף"
     }
 }

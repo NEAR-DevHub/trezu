@@ -157,10 +157,6 @@
     "dateInput": {
         "placeholder": "yyyy/mm/dd"
     },
-    "thresholdSlider": {
-        "warningSingleMember": "{memberCount}명 중 1명 임계값은 단일 멤버가 트랜잭션을 실행할 수 있음을 의미합니다. 이는 보안을 약화시킵니다.",
-        "infoBalanced": "{memberCount}명 중 {currentThreshold}명 임계값은 보안과 운영 유연성 사이에 좋은 균형을 제공합니다."
-    },
     "metadata": {
         "treasuryTitle": "대시보드 | Near Business",
         "landingTitle": "Near Business | 크로스체인 트레저리 관리",
@@ -194,8 +190,7 @@
             "description": "팀 멤버 및 권한 관리"
         },
         "settings": {
-            "title": "설정",
-            "description": "애플리케이션 설정 조정"
+            "title": "설정"
         },
         "addressBook": {
             "title": "주소록",
@@ -930,8 +925,8 @@
         "title": "멤버",
         "description": "팀 멤버 및 권한 관리",
         "permissions": "권한",
+        "added": "추가됨",
         "member": "멤버",
-        "activeMembers": "활성 멤버",
         "noActiveMembers": "활성 멤버를 찾을 수 없습니다.",
         "addNewMember": "멤버 추가",
         "addManually": "수동으로 추가",
@@ -955,6 +950,7 @@
             "readyDescription": "추가하려는 사람에게 보내세요. 지갑을 연결하고 가입을 요청합니다.",
             "onceTitle": "이 링크는 한 사람, 한 번만 사용할 수 있습니다",
             "onceDescription": "멤버마다 새 링크를 만드세요.",
+            "linkTitle": "초대 링크",
             "yourLink": "초대 링크",
             "copyLink": "링크 복사",
             "linkCopied": "초대 링크가 복사되었습니다",
@@ -981,7 +977,7 @@
             "askDescription": "무엇을 보거나 승인하기 전에 팀이 요청을 검토합니다.",
             "walletConnected": "지갑 연결됨",
             "nameLabel": "이름 (선택)",
-            "namePlaceholder": "팀이 당신을 알아볼 수 있도록",
+            "namePlaceholder": "팀이 알아볼 수 있도록 이름을 입력하세요",
             "askJoin": "가입 요청",
             "submitting": "제출 중...",
             "successTitle": "거의 다 왔습니다",
@@ -992,8 +988,8 @@
             "goToTreasury": "트레저리로 이동",
             "invalidTitle": "초대를 찾을 수 없음",
             "invalidDescription": "이 초대 링크는 유효하지 않거나 더 이상 사용할 수 없습니다.",
-            "usedTitle": "이미 사용된 초대",
-            "usedDescription": "이 초대 링크는 이미 사용되었습니다.",
+            "usedTitle": "이 초대 링크는 이미 사용되었습니다",
+            "usedDescription": "초대 링크는 한 번만 사용할 수 있습니다. {treasury}에 새 링크를 요청하세요.",
             "expiredTitle": "만료된 초대",
             "expiredDescription": "이 초대 링크가 만료되었습니다. 팀에 새 링크를 요청하세요.",
             "goHome": "홈으로",
@@ -1001,17 +997,18 @@
         },
         "membersSelected": "{count, plural, =0 {멤버 없음} other {멤버 #명}} 선택됨",
         "remove": "제거",
+        "send": "보내기",
         "edit": "편집",
         "requestorOnlyTooltip": "이 멤버는 NEARN에서 결제 요청을 생성하는 역할을 담당하므로 Requestor 역할만 추가할 수 있습니다.",
         "memberModal": {
-            "editRoles": "역할 편집",
+            "editRoles": "멤버 편집",
             "addNewMember": "멤버 추가",
             "validatingAddresses": "주소 검증 중...",
             "reviewRequest": "요청 검토",
             "noChanges": "멤버 역할에 변경 사항이 없습니다"
         },
         "previewModal": {
-            "title": "요청 검토",
+            "title": "멤버 검토",
             "youAreEditing": "편집 중",
             "youAreAdding": "추가 중",
             "membersCount": "{count, plural, other {멤버 #명}}",
@@ -1019,10 +1016,10 @@
             "updatedMembers": "업데이트된 멤버",
             "newMembers": "신규 멤버",
             "creatingProposal": "제안 생성 중...",
-            "confirmSubmit": "확인 및 요청 제출"
+            "confirmSubmit": "요청 만들기"
         },
         "removeDialog": {
-            "title": "요청 제거",
+            "title": "{count, plural, one {멤버} other {멤버}}를 제거할까요?",
             "nearnBody": "승인되면 {account}이(가) 트레저리에서 영구적으로 제거되고 모든 관련 권한이 취소됩니다. 제거 후에는 이 계정이 더 이상 NEARN에서 요청을 생성할 수 없습니다.",
             "genericBody": "승인되면 이 작업은 트레저리에서 <bold>{accounts}</bold>을(를) 영구적으로 제거하고 할당된 모든 권한을 취소합니다.",
             "creatingProposal": "제안 생성 중..."
@@ -1040,36 +1037,22 @@
         },
         "policy": {
             "addMembers": "정책 업데이트 - 새 멤버 추가",
-            "addMembersSuccess": "새 멤버 요청이 성공적으로 생성되었습니다",
+            "addMembersSuccess": "멤버 추가 요청이 생성되었습니다",
             "editMember": "정책 업데이트 - 멤버 권한 편집",
             "editMembers": "정책 업데이트 - 여러 멤버 편집",
-            "editMemberSuccess": "멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
-            "editMembersSuccess": "일괄 멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
+            "editMemberSuccess": "멤버 수정 요청이 생성되었습니다",
+            "editMembersSuccess": "멤버 일괄 수정 요청이 생성되었습니다",
             "removeMember": "정책 업데이트 - 멤버 제거",
             "removeMembers": "정책 업데이트 - 멤버 제거",
-            "removeMemberSuccess": "멤버 제거 요청이 성공적으로 생성되었습니다",
+            "removeMemberSuccess": "멤버 제거 요청이 생성되었습니다",
             "createProposalFailed": "멤버 요청 생성에 실패했습니다. 다시 시도해 주세요."
         },
-        "infoSection": {
-            "title": "왜 멤버를 더 추가해야 하나요?",
-            "description": "멤버를 더 추가하면 자금을 안전하게 보호하고 지갑을 잃어도 접근이 막히지 않습니다.",
-            "readGuide": "전체 가이드 읽기",
-            "dismiss": "닫기",
-            "strongerProtectionTitle": "더 강력한 보호",
-            "strongerProtectionDescription": "자금 이동 전 요청에는 두 명 이상 승인이 필요합니다.",
-            "rolesForEveryoneTitle": "모두를 위한 역할",
-            "rolesForEveryoneDescription": "각 멤버는 역할을 가집니다 - 결제 요청, 승인 또는 설정 관리.",
-            "neverLoseAccessTitle": "접근 권한을 잃지 마세요",
-            "neverLoseAccessDescription": "지갑을 잃어도 미리 추가한 백업으로 접근 권한을 복구할 수 있습니다."
-        }
+        "activeMembersCount": "{count, plural, other {활성 멤버 #명}}"
     },
     "settings": {
         "tabs": {
             "general": "일반",
-            "voting": "투표",
-            "preferences": "환경설정",
-            "integrations": "통합",
-            "developer": "개발자"
+            "voting": "투표"
         },
         "general": {
             "validation": {
@@ -1081,27 +1064,23 @@
             "treasuryNotFound": "트레저리를 찾을 수 없습니다",
             "treasuryName": "트레저리 이름",
             "treasuryNameDescription": "트레저리의 이름입니다. 이 이름은 앱 전체에 표시됩니다.",
-            "displayName": "표시 이름",
             "displayNamePlaceholder": "표시 이름 입력",
-            "accountName": "계정 이름",
             "logo": "로고",
             "logoDescription": "트레저리용 로고를 업로드하세요. SVG, PNG 또는 JPG (256x256 픽셀) 권장.",
-            "treasuryLogoAlt": "트레저리 로고",
             "uploading": "업로드 중...",
-            "uploadLogo": "로고 업로드",
-            "removeLogo": "로고 제거",
+            "removeLogo": "삭제",
             "logoUploaded": "로고가 성공적으로 업로드되었습니다",
             "uploadError": "이미지 업로드 중 오류가 발생했습니다. 다시 시도해 주세요.",
             "invalidLogo": "잘못된 로고입니다. 정확히 256x256 픽셀의 PNG, JPG 또는 SVG 파일을 업로드해 주세요",
             "invalidImage": "잘못된 이미지 파일입니다. 유효한 이미지를 업로드해 주세요.",
             "fileReadError": "파일 읽기 오류입니다. 다시 시도해 주세요.",
             "primaryColor": "기본 색상",
-            "primaryColorDescription": "트레저리의 인터페이스 요소에 대한 기본 색상을 설정하세요. 이 색상은 라이트 모드와 다크 모드 모두에서 사용되므로 중성 색조를 선택할 때 대비를 고려하세요.",
+            "primaryColorDescription": "트레저리 인터페이스 요소의 기본 색상을 설정하세요.",
             "selectColorLabel": "색상 {color} 선택",
-            "saveChanges": "변경 사항 저장",
-            "saving": "저장 중...",
             "savedToast": "변경 사항이 저장되었습니다.",
-            "saveFailed": "변경 사항을 저장하지 못했습니다. 다시 시도하세요."
+            "saveFailed": "변경 사항을 저장하지 못했습니다. 다시 시도하세요.",
+            "save": "저장",
+            "edit": "편집"
         },
         "voting": {
             "validation": {
@@ -1114,41 +1093,23 @@
             "missingData": "필수 데이터 누락",
             "thresholdProposalTitle": "정책 업데이트 - 투표 임계값",
             "thresholdProposalSummary": "{account}이(가) 투표 임계값을 {oldValue}에서 {newValue}(으)로 변경하도록 요청했습니다.",
-            "thresholdSubmitted": "투표 임계값 업데이트 요청이 제출되었습니다",
+            "thresholdSubmitted": "투표 임계값 요청이 생성되었습니다",
             "createProposalFailed": "제안 생성에 실패했습니다",
             "durationProposalTitle": "정책 업데이트 - 투표 기간",
             "durationProposalSummary": "{account}이(가) 투표 기간을 {oldValue}에서 {newValue}(으)로 변경하도록 요청했습니다.",
-            "durationSubmitted": "요청이 성공적으로 생성되었습니다",
-            "pendingTitle": "활성 투표 임계값 요청",
-            "pendingBody": "충돌을 피하기 위해, 진행하기 전에 기존 대기 중인 요청을 완료하거나 해결해야 합니다. 이러한 요청은 현재 활성 상태이며 먼저 승인하거나 거부해야 합니다.",
+            "durationSubmitted": "투표 기간 요청이 생성되었습니다",
             "viewRequest": "요청 보기",
-            "thresholdHeading": "투표 임계값",
-            "thresholdDescriptionApprovers": "결제 및 팀 관련 요청을 승인하는 데 필요한 투표 수를 정의합니다. Approver와 Governance에 대해 임계값을 별도로 구성하세요.",
-            "thresholdDescriptionGeneric": "요청을 승인하는 데 필요한 투표 수를 정의합니다. 각 역할에 대해 책임에 따라 임계값을 구성하세요.",
             "membersWhoCanVote": "투표할 수 있는 멤버",
-            "votesRequired": "요청을 승인하는 데 필요한 투표",
             "durationHeading": "투표 기간",
-            "durationDescription": "제안이 투표를 위해 열려 있는 기간(일 단위)입니다. 이 기간 내에 투표가 완료되지 않으면 결정이 만료됩니다.",
-            "durationApprovers": " 이 기간은 Governance와 Approver 역할 모두에 동일하게 적용됩니다.",
-            "durationGeneric": " 이 기간은 모든 트레저리 역할에 일관되게 적용됩니다.",
-            "days": "일"
-        },
-        "preferences": {
-            "timeZone": "시간대",
-            "timeZoneDescription": "정확한 날짜 및 시간 표시를 위해 현지 시간대를 설정하세요.",
-            "timeFormat": "시간 형식",
-            "hour12": "12시간 (오후 1:00)",
-            "hour24": "24시간 (13:00)",
-            "autoTimezone": "위치를 사용하여 시간대를 자동으로 설정",
-            "timezone": "시간대",
-            "loadingTimezones": "시간대 로딩 중...",
-            "selectTimezone": "시간대 선택",
-            "searchTimezones": "시간대 검색...",
-            "noTimezones": "시간대를 찾을 수 없습니다",
-            "save": "저장",
-            "savedToast": "환경설정이 성공적으로 저장되었습니다",
-            "saveFailed": "환경설정 저장에 실패했습니다",
-            "loadFailed": "시간대를 불러오지 못했습니다"
+            "durationDescription": "요청이 만료되기 전까지 열려 있는 기간입니다. 이후에는 사라집니다.",
+            "days": "일",
+            "roleThresholdTitle": "{role} 임계값",
+            "roleDescription": {
+                "financial": "이 멤버들이 전송 및 스왑 요청을 승인합니다.",
+                "governance": "이 멤버들이 멤버와 규칙 변경을 승인합니다.",
+                "generic": "이 멤버들이 이 역할의 요청을 승인합니다."
+            },
+            "pendingAlert": "{count, plural, other {설정 요청 #건을 확인해야 합니다}}"
         }
     },
     "addressBook": {
@@ -1251,7 +1212,7 @@
         "confirmSubmit": "확인 및 요청 제출",
         "useDifferentAddress": "다른 주소 사용",
         "failed1ClickQuote": "1Click 전송 견적 생성에 실패했습니다",
-        "paymentSubmitted": "결제 송금 요청이 제출되었습니다",
+        "paymentSubmitted": "보내기 요청이 생성되었습니다",
         "confidentialTooltip": "수취인 정보와 요청 금액은 완전히 기밀입니다.",
         "destinationNetwork": "대상 네트워크",
         "selectRecipientPlaceholder": "수신자 선택",
@@ -1263,7 +1224,7 @@
         "comingSoonToast": "일괄 전송은 곧 출시됩니다!",
         "submittingList": "일괄 전송 목록 제출 중",
         "submittingProposal": "제안 제출 중",
-        "proposalSubmitted": "일괄 전송 제안이 제출되었습니다",
+        "proposalSubmitted": "일괄 전송 요청이 생성되었습니다",
         "submitListFailed": "결제 목록 제출에 실패했습니다",
         "submitFailed": "일괄 전송 제출에 실패했습니다",
         "quoteFetchFailed": "이체 수수료를 가져오지 못했습니다. 다시 시도해 주세요.",
@@ -1352,7 +1313,7 @@
         "awaitingTitle": "승인 대기 중",
         "awaitingDescription": "활성화 요청이 생성되었습니다. 충분한 트레저리 멤버가 승인하면 기밀 일괄 액세스 키가 등록되고 일괄 전송이 자동으로 잠금 해제됩니다.",
         "awaitingHint": "승인 후 추가 작업이 필요 없습니다 — 이 페이지는 자동으로 갱신됩니다.",
-        "proposalCreated": "활성화 요청 생성됨 — 구성원 승인 대기 중",
+        "proposalCreated": "활성화 요청이 생성되었습니다",
         "activationFailed": "일괄 전송 활성화 시작에 실패했습니다",
         "errorTitle": "활성화 상태를 불러올 수 없습니다",
         "noPermissionNote": "활성화를 시작할 권한이 없습니다. 제안 권한이 있는 트레저리 멤버에게 일괄 전송 활성화를 요청하세요.",
@@ -1371,7 +1332,7 @@
         "validation": {
             "amountPositive": "금액은 0보다 커야 합니다"
         },
-        "requestSubmitted": "교환 요청이 제출되었습니다",
+        "requestSubmitted": "스왑 요청이 생성되었습니다",
         "heading": "교환",
         "sell": "판매",
         "receive": "수신",
@@ -1418,7 +1379,7 @@
             "review": "검토"
         },
         "proposalTitle": "{address}에 대한 베스팅 일정 생성",
-        "scheduleSubmitted": "베스팅 일정 생성 요청이 제출되었습니다",
+        "scheduleSubmitted": "베스팅 요청이 생성되었습니다",
         "heading": "새 베스팅 일정",
         "amount": "금액",
         "startDate": "시작 날짜",
@@ -1725,21 +1686,8 @@
     },
     "supportCenter": {
         "title": "지원 센터",
-        "resources": "리소스",
-        "support": "지원",
-        "websiteTitle": "Near Business 웹사이트",
-        "websiteDescription": "Near Business와 최신 소식을 확인하세요.",
-        "demo": "Near Business 데모",
-        "demoTitle": "공개 버전 살펴보기",
-        "demoDescription": "누구나 볼 수 있는 실제 트레저리입니다.",
-        "confidentialDemoTitle": "비공개 버전 살펴보기",
-        "confidentialDemoDescription": "비공개 트레저리가 실제로 어떻게 사용되는지.",
-        "videoTitle": "데모 시청",
-        "videoDescription": "짧은 영상 — Near Business를 처음부터 끝까지 확인하세요.",
-        "xTitle": "X에서 팔로우하기",
-        "xDescription": "우리가 무엇을 만들고 있는지 실시간으로 확인하세요.",
-        "statsTitle": "통계",
-        "statsDescription": "모든 트레저리에서 관리 중인 총자산을 확인하세요.",
+        "websiteTitle": "near business 웹사이트",
+        "websiteDescription": "near business와 최신 소식을 확인하세요.",
         "docsTitle": "문서",
         "docsDescription": "모든 기능을 단계별로 안내합니다.",
         "productSupportTitle": "제품 지원",
@@ -1776,16 +1724,18 @@
                 "title": "Financial",
                 "description": "Financial은 결제 관련 트랜잭션 요청에 투표할 수 있지만 생성할 수는 없습니다."
             }
-        }
+        },
+        "title": "역할 선택"
     },
     "memberInput": {
-        "creatorYou": "생성자 (본인)",
-        "memberAddress": "멤버 주소",
-        "addNewMember": "멤버 추가",
+        "addNewMember": "다른 멤버 추가",
         "validation": {
             "rolesRequired": "최소 하나의 역할이 필요합니다",
             "duplicateAddress": "주소가 이미 멤버입니다"
-        }
+        },
+        "enterAddress": "주소 입력",
+        "selectRole": "역할 선택",
+        "memberNumber": "멤버 {number}"
     },
     "recipientInput": {
         "title": "받는 사람",
@@ -2180,6 +2130,7 @@
         "paymentsPending": "승인 대기 중인 결제를 확인하세요",
         "exchangeSettings": "스왑에서 허용할 최대 가격 변동(슬리피지)을 설정하세요.",
         "membersPending": "승인 대기 중인 멤버 관련 요청을 확인하세요",
+        "membersWantsToJoin": "팀에 가입하려는 멤버를 확인하세요",
         "guestSaveIntro": "이 트레저리의 게스트입니다. 데이터 보기만 가능합니다.",
         "guestSaveAction": "이 게스트 트레저리를 트레저리 목록에 저장할 수 있습니다.",
         "newFeatureRich": "신규! 🎉 자주 사용하는 주소를 저장하여 더 빠르고 오류 없는 지급을 하세요. 연락처는 비공개로 유지되며 팀에게만 표시됩니다.",
@@ -2604,14 +2555,7 @@
         "fill": {
             "noTemplate": "“{slug}”에 해당하는 템플릿을 찾을 수 없습니다.",
             "invalidManifest": "이 템플릿의 매니페스트가 유효하지 않습니다:",
-            "proposalFiled": "요청이 제출되었습니다"
-        },
-        "developer": {
-            "title": "맞춤 요청",
-            "description": "결제와 교환만으로는 부족할 때 직접 요청 유형을 만드세요. 필요한 필드를 추가하면 멤버가 다른 요청과 똑같이 제출할 수 있습니다.",
-            "enable": "사용",
-            "disable": "사용 안 함",
-            "errUpdate": "설정을 업데이트할 수 없습니다"
+            "proposalFiled": "맞춤 요청이 생성되었습니다"
         },
         "visual": {
             "detailsTitle": "세부 정보",
@@ -2693,6 +2637,13 @@
             "pattern": "{label}이(가) 요구되는 형식과 일치하지 않습니다",
             "min": "{label}은(는) 최소 {min} 이상이어야 합니다",
             "max": "{label}은(는) 최대 {max} 이하여야 합니다"
+        },
+        "settingsCard": {
+            "title": "맞춤 요청",
+            "description": "결제와 교환만으로는 부족할 때 직접 요청 유형을 만드세요. 필요한 필드를 추가하면 멤버가 다른 요청과 똑같이 제출할 수 있습니다.",
+            "enable": "사용",
+            "disable": "사용 안 함",
+            "errUpdate": "설정을 업데이트할 수 없습니다"
         }
     },
     "account": {
@@ -2716,7 +2667,7 @@
     "moveAssets": {
         "title": "자산 이동",
         "description": "퍼블릭 체인의 자산을 기밀 트레저리로 이동합니다.",
-        "submitted": "이동 요청이 제출되었습니다",
+        "submitted": "이동 요청이 생성되었습니다",
         "banner": {
             "title": "<amount></amount>이(가) 퍼블릭 잔액에 입금되었습니다",
             "description": "누군가 잘못된 네트워크로 보냈습니다. 여기로 이동하여 기밀로 전환하세요.",
@@ -2747,5 +2698,9 @@
             "exceedsBalance": "금액이 퍼블릭 잔액을 초과합니다",
             "failed": "이동 요청을 준비할 수 없습니다. 다시 시도하세요."
         }
+    },
+    "thresholdStepper": {
+        "decrease": "임계값 낮추기",
+        "increase": "임계값 높이기"
     }
 }

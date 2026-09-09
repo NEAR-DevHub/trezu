@@ -13,6 +13,7 @@ import { PageComponentLayout } from "@/components/page-component-layout";
 import { StepWizard } from "@/components/step-wizard";
 import { useTreasury } from "@/hooks/use-treasury";
 import { trackEvent } from "@/lib/analytics";
+import { isCompleteMember, isEmptyMember } from "@/lib/member-draft";
 import {
     isValidNearAddressFormat,
     validateNearAddress,
@@ -22,8 +23,8 @@ import { reportError } from "@/lib/report-error";
 import { encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import {
-    MemberFormStep,
     type MemberFormData,
+    MemberFormStep,
 } from "../components/member-form-step";
 import { MemberReviewStep } from "../components/member-review-step";
 import { useDisabledMemberRoles } from "../hooks/use-disabled-member-roles";
@@ -31,7 +32,6 @@ import { useMemberPolicyGate } from "../hooks/use-member-policy-gate";
 import { applyMemberRolesToPolicy } from "../utils/policy-helpers";
 
 export default function AddMemberPage() {
-    const t = useTranslations("pages.members");
     const tMembers = useTranslations("members");
     const tAccountInput = useTranslations("accountInput");
     const tMemberValidation = useTranslations("memberValidation");
@@ -75,8 +75,9 @@ export default function AddMemberPage() {
                     z.object({
                         accountId: z
                             .string()
-                            .min(1, tMembers("validation.accountIdRequired"))
                             .superRefine(async (accountIdValue, ctx) => {
+                                if (!accountIdValue) return;
+
                                 if (!isValidNearAddressFormat(accountIdValue)) {
                                     ctx.addIssue({
                                         code: "custom",
@@ -99,16 +100,42 @@ export default function AddMemberPage() {
                                         ),
                                 });
                             }),
-                        roles: z
-                            .array(z.string())
-                            .min(1, tMembers("validation.atLeastOneRole")),
+                        roles: z.array(z.string()),
                     }),
                 )
                 .min(1, tMembers("validation.atLeastOneMember"))
                 .superRefine((members, ctx) => {
                     const seenAccountIds = new Map<string, number>();
 
+                    if (!members.some(isCompleteMember)) {
+                        ctx.addIssue({
+                            code: "custom",
+                            message: tMembers("validation.atLeastOneMember"),
+                        });
+                    }
+
                     members.forEach((member, index) => {
+                        const isTrailingDraft =
+                            index === members.length - 1 &&
+                            isEmptyMember(member);
+                        if (isTrailingDraft) return;
+
+                        if (!member.accountId) {
+                            ctx.addIssue({
+                                code: "custom",
+                                message: tMembers(
+                                    "validation.accountIdRequired",
+                                ),
+                                path: [index, "accountId"],
+                            });
+                        }
+                        if ((member.roles?.length ?? 0) === 0) {
+                            ctx.addIssue({
+                                code: "custom",
+                                message: tMembers("validation.atLeastOneRole"),
+                                path: [index, "roles"],
+                            });
+                        }
                         if (!member.accountId) return;
 
                         const normalizedId = member.accountId.toLowerCase();
@@ -201,10 +228,6 @@ export default function AddMemberPage() {
         }
     }, [searchParams, canAddMember, form, availableRoles]);
 
-    const exitToMembers = useCallback(() => {
-        router.push(`/${treasuryId}/members`);
-    }, [router, treasuryId]);
-
     const membersInForm = form.watch("members") || [];
     const getDisabledRoles = useDisabledMemberRoles(
         membersInForm,
@@ -223,12 +246,17 @@ export default function AddMemberPage() {
 
         try {
             const validationResults = await Promise.all(
-                members.map((member, index) =>
-                    validateNearAddress(member.accountId).then((error) => ({
-                        index,
-                        error,
-                    })),
-                ),
+                members.map((member, index) => {
+                    if (isEmptyMember(member)) {
+                        return Promise.resolve({ index, error: null });
+                    }
+                    return validateNearAddress(member.accountId).then(
+                        (error) => ({
+                            index,
+                            error,
+                        }),
+                    );
+                }),
             );
 
             const failedValidation = validationResults.find(
@@ -262,10 +290,12 @@ export default function AddMemberPage() {
         if (!policy || !treasuryId || isMemberActionsDisabled) return;
 
         const data = form.getValues();
-        const membersList = data.members.map(({ accountId, roles }) => ({
-            member: accountId,
-            roles,
-        }));
+        const membersList = data.members
+            .filter(isCompleteMember)
+            .map(({ accountId, roles }) => ({
+                member: accountId,
+                roles,
+            }));
 
         const { updatedPolicy, summary } = applyMemberRolesToPolicy(
             policy,
@@ -300,7 +330,7 @@ export default function AddMemberPage() {
 
             trackEvent("member-add-submitted", {
                 treasury_id: treasuryId,
-                members_count: data.members.length,
+                members_count: membersList.length,
             });
 
             queryClient.invalidateQueries({
@@ -337,7 +367,7 @@ export default function AddMemberPage() {
                         ? tMemberValidation("pendingRequest")
                         : undefined,
                     onReviewRequest: handleReviewRequest,
-                    onExit: exitToMembers,
+                    hideInnerHeader: true,
                 },
             },
             {
@@ -355,18 +385,27 @@ export default function AddMemberPage() {
             hasPendingMemberRequest,
             tMemberValidation,
             handleReviewRequest,
-            exitToMembers,
             handleSubmit,
         ],
     );
 
+    const isReview = step === 1;
+
     return (
         <PageComponentLayout
-            title={t("title")}
-            description={t("description")}
-            hideHeaderOnMobile
+            title={tMembers("memberModal.addNewMember")}
+            backButton={
+                isReview
+                    ? undefined
+                    : treasuryId
+                      ? `/${treasuryId}/members`
+                      : true
+            }
+            hideMobileShellControls
+            hideTitle={isReview}
+            reserveHeaderSpace
         >
-            <div className="max-w-xl mx-auto w-full">
+            <div className="mx-auto w-full max-w-lg">
                 <FormProvider {...form}>
                     {isLoading ? (
                         <PageCard>

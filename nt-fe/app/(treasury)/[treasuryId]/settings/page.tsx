@@ -1,104 +1,73 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
+import { MobilePageHeading } from "@/components/mobile-page-heading";
 import { PageComponentLayout } from "@/components/page-component-layout";
-import { TabGroup } from "@/components/tab-group";
-import { features } from "@/constants/features";
-import { useTreasury } from "@/hooks/use-treasury";
-import { DeveloperTab } from "./components/developer-tab";
+import { Tabs, TabsList, TabsTrigger } from "@/components/underline-tabs";
 import { GeneralTab } from "./components/general-tab";
-import { IntegrationsTab } from "./components/integrations-tab";
-import { PreferencesTab } from "./components/preferences-tab";
 import { VotingTab } from "./components/voting-tab";
+
+/** The only tabs this page serves; also the single source of truth for `?tab=`. */
+const SETTINGS_TABS = ["general", "voting"] as const;
+
+type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+function isSettingsTab(value: string | null): value is SettingsTab {
+    return SETTINGS_TABS.some((tab) => tab === value);
+}
 
 function SettingsPageContent() {
     const t = useTranslations("pages.settings");
     const tTabs = useTranslations("settings.tabs");
     const searchParams = useSearchParams();
-    const tabFromUrl = searchParams.get("tab");
-    // The Developer tab only does anything for a signed-in member (its Enable action is
-    // ChangePolicy-gated), so hide it from guests and signed-out viewers — same idea as the
-    // feature-flag-gated Integrations tab.
-    const { isGuestTreasury, treasuryId } = useTreasury();
-    const showDeveloper = !isGuestTreasury;
-    const [activeTab, setActiveTab] = useState(() => {
-        if (tabFromUrl === "integrations" && features.integrations) {
-            return "integrations";
-        }
-        if (tabFromUrl === "developer" && showDeveloper) {
-            return "developer";
-        }
-        if (tabFromUrl === "voting") {
-            return "voting";
-        }
-        return "general";
-    });
+    const pathname = usePathname();
+    const router = useRouter();
+    const tabParam = searchParams.get("tab");
+    const [activeTab, setActiveTab] = useState<SettingsTab>(() =>
+        isSettingsTab(tabParam) ? tabParam : "general",
+    );
 
     useEffect(() => {
-        const tab = searchParams.get("tab");
-        if (tab === "integrations" && features.integrations) {
-            setActiveTab("integrations");
-        } else if (tab === "developer" && showDeveloper) {
-            setActiveTab("developer");
-        } else if (tab === "voting") {
-            setActiveTab("voting");
+        if (isSettingsTab(tabParam)) {
+            setActiveTab(tabParam);
+            return;
         }
-    }, [searchParams, showDeveloper]);
-
-    // `isGuestTreasury` resolves async, so a guest can land on `?tab=developer` before it's known;
-    // once Developer is hidden, never strand on it (no matching tab or body).
-    useEffect(() => {
-        if (!showDeveloper) {
-            setActiveTab((current) =>
-                current === "developer" ? "general" : current,
-            );
+        // A link to a tab this page no longer serves would otherwise leave the URL
+        // advertising a tab nobody is on; drop it so the address matches General.
+        if (tabParam !== null) {
+            router.replace(pathname, { scroll: false });
         }
-    }, [showDeveloper]);
-
-    const tabs = [
-        { value: "general", label: tTabs("general") },
-        { value: "voting", label: tTabs("voting") },
-        { value: "preferences", label: tTabs("preferences") },
-        ...(features.integrations
-            ? [
-                  {
-                      value: "integrations",
-                      label: tTabs("integrations"),
-                      showNewPill: true,
-                  },
-              ]
-            : []),
-        ...(showDeveloper
-            ? [{ value: "developer", label: tTabs("developer") }]
-            : []),
-    ];
+    }, [tabParam, pathname, router]);
 
     return (
-        <PageComponentLayout
-            title={t("title")}
-            description={t("description")}
-            backButton={treasuryId ? `/${treasuryId}` : true}
-            backKind="section"
-            hideMobileShellControls
-        >
-            <div className="mx-auto w-full max-w-4xl">
-                <div className="mb-6 flex">
-                    <TabGroup
-                        tabs={tabs}
-                        activeTab={activeTab}
-                        onTabChange={setActiveTab}
-                    />
-                </div>
+        <PageComponentLayout title={t("title")}>
+            <div className="mx-auto w-full max-w-[464px]">
+                <MobilePageHeading>{t("title")}</MobilePageHeading>
+                <Tabs
+                    value={activeTab}
+                    onValueChange={(value) => {
+                        if (isSettingsTab(value)) {
+                            setActiveTab(value);
+                        }
+                    }}
+                    className="mb-5"
+                >
+                    <TabsList className="gap-2">
+                        {SETTINGS_TABS.map((tab) => (
+                            <TabsTrigger
+                                key={tab}
+                                value={tab}
+                                className="px-1 pt-0.5 pb-3 text-lg font-semibold md:text-lg data-[state=active]:after:h-px data-[state=active]:after:bg-general-bg-primary"
+                            >
+                                {tTabs(tab)}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
 
-                {activeTab === "general" && <GeneralTab />}
-                {activeTab === "voting" && <VotingTab />}
-                {activeTab === "preferences" && <PreferencesTab />}
-                {activeTab === "integrations" && features.integrations && (
-                    <IntegrationsTab />
-                )}
-                {activeTab === "developer" && showDeveloper && <DeveloperTab />}
+                {activeTab === "general" ? <GeneralTab /> : <VotingTab />}
             </div>
         </PageComponentLayout>
     );
@@ -106,19 +75,14 @@ function SettingsPageContent() {
 
 export default function SettingsPage() {
     const t = useTranslations("pages.settings");
-    const { treasuryId } = useTreasury();
 
     return (
         <Suspense
             fallback={
-                <PageComponentLayout
-                    title={t("title")}
-                    description={t("description")}
-                    backButton={treasuryId ? `/${treasuryId}` : true}
-                    backKind="section"
-                    hideMobileShellControls
-                >
-                    <div className="mx-auto min-h-48 w-full max-w-4xl" />
+                <PageComponentLayout title={t("title")}>
+                    <div className="mx-auto min-h-48 w-full max-w-[464px]">
+                        <MobilePageHeading>{t("title")}</MobilePageHeading>
+                    </div>
                 </PageComponentLayout>
             }
         >

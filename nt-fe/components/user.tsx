@@ -201,9 +201,11 @@ const skeletonSizeClasses = {
 export function UserSkeleton({
     variant = "full",
     size = "sm",
+    avatarClassName,
 }: {
     variant?: UserVariant;
     size?: UserSize;
+    avatarClassName?: string;
 }) {
     const s = skeletonSizeClasses[size];
     const showAvatar = variant !== "details";
@@ -212,7 +214,13 @@ export function UserSkeleton({
     return (
         <div className="flex items-center gap-1.5">
             {showAvatar && (
-                <Skeleton className={cn("rounded-full shrink-0", s.avatar)} />
+                <Skeleton
+                    className={cn(
+                        "rounded-full shrink-0",
+                        s.avatar,
+                        avatarClassName,
+                    )}
+                />
             )}
             {showDetails && (
                 <div className="flex flex-col items-start gap-1 min-w-0">
@@ -244,6 +252,8 @@ interface UserWithDataProps {
     highlightQuery?: string;
     /** When false, show the full address (no middle ellipsis). Default true. */
     truncateAddress?: boolean;
+    /** Overrides avatar size and roundness (default is a circle). */
+    avatarClassName?: string;
 }
 
 export function UserWithData({
@@ -258,6 +268,7 @@ export function UserWithData({
     chainName = NEAR_NETWORK_ID,
     highlightQuery,
     truncateAddress = true,
+    avatarClassName,
 }: UserWithDataProps) {
     const bareAddress = stripNearComAddressPrefix(address);
     const visibleAddress = displayAddress ?? address;
@@ -313,7 +324,12 @@ export function UserWithData({
     const content = (
         <>
             {showAvatar && (
-                <UserAvatar name={name} imageUrl={imageUrl} size={size} />
+                <UserAvatar
+                    name={name}
+                    imageUrl={imageUrl}
+                    size={size}
+                    className={avatarClassName}
+                />
             )}
             {showDetails && (
                 <div
@@ -346,12 +362,12 @@ export function UserWithData({
             <Link
                 href={explorerUrl}
                 target="_blank"
-                className="flex items-center gap-1.5 min-w-0"
+                className="flex items-center gap-2 min-w-0"
             >
                 {content}
             </Link>
         ) : (
-            <div className="flex items-center gap-1.5 min-w-0">{content}</div>
+            <div className="flex items-center gap-2 min-w-0">{content}</div>
         );
 
     if (withHoverCard) {
@@ -554,6 +570,8 @@ interface UserProps {
     highlightQuery?: string;
     /** When false, show the full address (no middle ellipsis). Default true. */
     truncateAddress?: boolean;
+    /** Overrides avatar size and roundness (default is a circle). */
+    avatarClassName?: string;
 }
 
 export function User({
@@ -568,6 +586,7 @@ export function User({
     preferAddressBook = false,
     highlightQuery,
     truncateAddress = true,
+    avatarClassName,
 }: UserProps) {
     const bareAccountId = stripNearComAddressPrefix(accountId);
     const { data: profile, isLoading } = useProfile(bareAccountId);
@@ -588,7 +607,13 @@ export function User({
         !normalizeDisplayName(nameProp) &&
         !normalizeDisplayName(treasuryName)
     ) {
-        return <UserSkeleton variant={variant} size={size} />;
+        return (
+            <UserSkeleton
+                variant={variant}
+                size={size}
+                avatarClassName={avatarClassName}
+            />
+        );
     }
 
     const resolvedName = resolveUserDisplayName({
@@ -612,6 +637,7 @@ export function User({
             chainName={chainName}
             highlightQuery={highlightQuery}
             truncateAddress={truncateAddress}
+            avatarClassName={avatarClassName}
         />
     );
 }
