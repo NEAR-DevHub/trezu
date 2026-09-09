@@ -10,9 +10,11 @@ import {
     USDC_NEAR_CONTRACT_ID,
 } from "@/constants/token";
 import { buildIntentsQuoteRequest } from "@/hooks/use-intents-quote";
+import { isIntentsCrossChainToken } from "@/lib/intents-fee";
 import {
     classifyPaymentToken,
     normalizePaymentRecipient,
+    paymentIntentsAmountModeForInput,
     shouldUseDirectPaymentTransfer,
 } from "@/lib/payment-route";
 
@@ -158,6 +160,18 @@ describe("shouldUseDirectPaymentTransfer", () => {
                 isConfidential: false,
             }),
         ).toBe(false);
+    });
+});
+
+describe("paymentIntentsAmountModeForInput", () => {
+    it("uses EXACT_INPUT on Max even for NEAR-network intents tokens", () => {
+        // Regression: Max used to key off isIntentsCrossChainToken, which is
+        // false when token.network is near — USDC/wNEAR then quoted EXACT_OUTPUT
+        // and failed the amount+fee balance check.
+        expect(isIntentsCrossChainToken(INTENTS_USDC)).toBe(false);
+        expect(isIntentsCrossChainToken(CONFIDENTIAL_NATIVE)).toBe(false);
+        expect(paymentIntentsAmountModeForInput("max")).toBe("total");
+        expect(paymentIntentsAmountModeForInput("typed")).toBe("recipient");
     });
 });
 

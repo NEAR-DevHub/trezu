@@ -59,11 +59,7 @@ import { generateIntent, getIntentsQuote } from "@/lib/api";
 import Big from "@/lib/big";
 import { getBlockchainType } from "@/lib/blockchain-utils";
 import { findBridgeAssetForToken } from "@/lib/bridge-asset-resolver";
-import {
-    computeQuoteNetworkFee,
-    isIntentsCrossChainToken,
-    isIntentsToken,
-} from "@/lib/intents-fee";
+import { computeQuoteNetworkFee, isIntentsToken } from "@/lib/intents-fee";
 import { getNearComChainIcons, isNearComNetwork } from "@/lib/intents-network";
 import {
     buildIntentsTransferProposal,
@@ -75,6 +71,7 @@ import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
 import {
     classifyPaymentToken,
     normalizePaymentRecipient,
+    paymentIntentsAmountModeForInput,
     shouldUseDirectPaymentTransfer,
 } from "@/lib/payment-route";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
@@ -860,8 +857,6 @@ export default function PaymentsPage() {
         ],
     );
 
-    const isCrossChainIntentsToken =
-        !!watchedToken && isIntentsCrossChainToken(watchedToken);
     const quoteAmountDecimals = useMemo(
         () =>
             quoteToken
@@ -1088,14 +1083,12 @@ export default function PaymentsPage() {
     }, [ensureBeforeReview, form, quoteToken, intentsAmountMode]);
 
     const handleAmountInput = useCallback(() => {
-        setIntentsAmountMode("recipient");
+        setIntentsAmountMode(paymentIntentsAmountModeForInput("typed"));
     }, []);
 
     const handleMaxSet = useCallback(() => {
-        if (isCrossChainIntentsToken) {
-            setIntentsAmountMode("total");
-        }
-    }, [isCrossChainIntentsToken]);
+        setIntentsAmountMode(paymentIntentsAmountModeForInput("max"));
+    }, []);
 
     // ── Effects ───────────────────────────────────────────────────────────────
 
@@ -1171,12 +1164,6 @@ export default function PaymentsPage() {
             shouldValidate: true,
         });
     }, [defaultAddress, form]);
-
-    useEffect(() => {
-        if (!isCrossChainIntentsToken) {
-            setIntentsAmountMode("recipient");
-        }
-    }, [isCrossChainIntentsToken]);
 
     // ── Submit ────────────────────────────────────────────────────────────────
 
