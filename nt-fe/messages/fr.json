@@ -920,6 +920,7 @@
         "title": "Membres",
         "description": "Gérez les membres de l'équipe et les autorisations",
         "permissions": "Autorisations",
+        "added": "Ajouté",
         "member": "Membre",
         "noActiveMembers": "Aucun membre actif trouvé.",
         "addNewMember": "Ajouter un membre",

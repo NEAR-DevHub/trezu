@@ -22,9 +22,12 @@ import { useTreasuryStore } from "@/stores/treasury-store";
  */
 export function LandingGate({
     hasSessionHint,
+    stayOnLanding = false,
     children,
 }: {
     hasSessionHint: boolean;
+    /** Server-read `?welcome` so a shared link never flashes the loading screen. */
+    stayOnLanding?: boolean;
     children: React.ReactNode;
 }) {
     const router = useRouter();
@@ -41,6 +44,7 @@ export function LandingGate({
     }, [checkAuth]);
 
     useEffect(() => {
+        if (stayOnLanding) return;
         if (!hasCheckedAuth || isInitializing || !isAuthenticated) return;
         // Signed in but terms not yet accepted: `accountId` stays null and the
         // treasury list never loads. `/create` hosts the terms modal and then
@@ -57,10 +61,15 @@ export function LandingGate({
         isAuthenticated,
         isInitializing,
         isLoading,
+        stayOnLanding,
         lastTreasuryId,
         router,
         treasuries,
     ]);
+
+    if (stayOnLanding) {
+        return <>{children}</>;
+    }
 
     const authResolved = hasCheckedAuth && !isInitializing;
     if (authResolved ? isAuthenticated : hasSessionHint) {

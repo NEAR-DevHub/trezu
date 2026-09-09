@@ -13,7 +13,8 @@ import {
     DialogTitle,
     mobileInsetSheetClassName,
 } from "@/components/modal";
-import { APP_DOCS_URL, LANDING_PAGE } from "@/constants/config";
+import { APP_DOCS_URL } from "@/constants/config";
+import { LANDING_HREF } from "@/lib/welcome-entry";
 import { cn } from "@/lib/utils";
 import { NearBusinessLogo } from "./icons/near-business-logo";
 
@@ -52,12 +53,14 @@ function SupportItem({
 
     const link = href?.trim();
     if (link) {
+        const isExternal = /^https?:\/\//.test(link);
         return (
             <Link
                 href={link}
-                target="_blank"
-                rel="noopener noreferrer"
                 className={className}
+                {...(isExternal
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : {})}
             >
                 {content}
             </Link>
@@ -106,7 +109,7 @@ export function SupportCenterModal({
                 icon: <NearBusinessLogo className="size-6" variant="mark" />,
                 title: t("websiteTitle"),
                 description: t("websiteDescription"),
-                href: LANDING_PAGE,
+                href: LANDING_HREF,
             },
             {
                 icon: (

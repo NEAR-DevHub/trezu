@@ -12,7 +12,7 @@ import { NearBusinessLogo } from "@/components/icons/near-business-logo";
 import { Pill } from "@/components/pill";
 import { NetworkIconDisplay } from "@/components/token-display";
 import { Skeleton } from "@/components/ui/skeleton";
-import { LANDING_PAGE } from "@/constants/config";
+import { APP_ORIGIN } from "@/constants/config";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import { StatusPill } from "@/features/proposals/components/proposal-status-pill";
 import type { BatchPaymentRequestData } from "@/features/proposals/types/index";
@@ -261,15 +261,15 @@ function ReceiptLayout({
                 </div>
                 <div className="flex shrink-0 flex-col items-center gap-2">
                     <a
-                        href={LANDING_PAGE}
+                        href={APP_ORIGIN}
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label="Open Near Business landing page"
                     >
-                        <QRCode size={66} value={LANDING_PAGE} />
+                        <QRCode size={66} value={APP_ORIGIN} />
                     </a>
                     <a
-                        href={LANDING_PAGE}
+                        href={APP_ORIGIN}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm font-medium leading-[1.5] underline"

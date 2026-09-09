@@ -920,6 +920,7 @@
         "title": "Anggota",
         "description": "Kelola anggota tim dan izin",
         "permissions": "Izin",
+        "added": "Ditambahkan",
         "member": "Anggota",
         "noActiveMembers": "Tidak ada anggota aktif ditemukan.",
         "addNewMember": "Tambah Anggota",

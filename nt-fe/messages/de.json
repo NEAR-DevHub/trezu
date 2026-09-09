@@ -920,6 +920,7 @@
         "title": "Mitglieder",
         "description": "Teammitglieder und Berechtigungen verwalten",
         "permissions": "Berechtigungen",
+        "added": "Hinzugefügt",
         "member": "Mitglied",
         "noActiveMembers": "Keine aktiven Mitglieder gefunden.",
         "addNewMember": "Mitglied hinzufügen",
@@ -1680,7 +1681,7 @@
     },
     "supportCenter": {
         "title": "Support-Center",
-        "websiteTitle": "near business Website",
+        "websiteTitle": "near business website",
         "websiteDescription": "Lies über near business und was es Neues gibt.",
         "docsTitle": "Dokumentation",
         "docsDescription": "Anleitungen für jede Funktion, Schritt für Schritt.",
