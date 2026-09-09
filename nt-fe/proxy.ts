@@ -9,6 +9,12 @@ import {
     isEnabledLocale,
     pickLocaleFromAcceptLanguage,
 } from "@/i18n/config";
+import {
+    INVITE_COOKIE_MAX_AGE_SECONDS,
+    INVITE_COOKIE_NAME,
+    readInviteGateConfig,
+    resolveInviteRedirect,
+} from "@/lib/invite-gate";
 
 const ATTRIBUTION_KEYS = [
     "utm_source",
@@ -114,9 +120,56 @@ function appendLoginAttributionFromReturnTo(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
 }
 
+/**
+ * Invite links: validate `?ref=` on the server, keep an accepted code in an
+ * httpOnly cookie, and redirect to the same URL without the code so it never
+ * reaches client JavaScript, analytics, or history. A rejected code is
+ * dropped the same way; `/create` then shows the access message.
+ */
+function redirectInviteRef(
+    request: NextRequest,
+    gate: ReturnType<typeof readInviteGateConfig>,
+) {
+    const invite = resolveInviteRedirect(request.nextUrl, gate);
+    if (!invite) return null;
+
+    const response = NextResponse.redirect(invite.location);
+    if (invite.inviteCode) {
+        response.cookies.set(INVITE_COOKIE_NAME, invite.inviteCode, {
+            path: "/",
+            httpOnly: true,
+            sameSite: "lax",
+            secure: request.nextUrl.protocol === "https:",
+            maxAge: INVITE_COOKIE_MAX_AGE_SECONDS,
+        });
+    }
+    return response;
+}
+
+/**
+ * An invite-only deployment is kept out of search results. The header (not
+ * robots.txt) is what makes crawlers drop already-known URLs, and it also
+ * covers redirects and rewrites.
+ */
+function withNoIndex(response: NextResponse, enabled: boolean) {
+    if (enabled) response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
+}
+
 export function proxy(request: NextRequest) {
+    const gate = readInviteGateConfig();
+    return withNoIndex(handleRequest(request, gate), gate.enabled);
+}
+
+function handleRequest(
+    request: NextRequest,
+    gate: ReturnType<typeof readInviteGateConfig>,
+) {
     const attributionRedirect = appendLoginAttributionFromReturnTo(request);
     if (attributionRedirect) return attributionRedirect;
+
+    const inviteRedirect = redirectInviteRef(request, gate);
+    if (inviteRedirect) return inviteRedirect;
 
     const { countryCode, regionCode } = getGeoInfo(request);
 

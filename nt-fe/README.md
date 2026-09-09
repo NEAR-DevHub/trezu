@@ -118,6 +118,9 @@ nt-fe/
 ## Environment Variables
 
 - `NEXT_PUBLIC_BACKEND_API_BASE` - Backend API base URL (default: http://localhost:8080)
+- `INVITE_ONLY_ENABLED` - `true` gates `/create` behind invite links (`/create?ref=<code>`) and adds `X-Robots-Tag: noindex, nofollow` (default: `false`). Frontend-only: the creation API is not gated
+- `INVITE_CODES` - server-only, comma-separated, case-sensitive invite codes. Never use a `NEXT_PUBLIC_` name for it
+- `EARLY_ACCESS_LANDING_URL` - where the invite-only access message sends visitors to request early access (default: `/`)
 - `NEXT_PUBLIC_GTM_ID` - Google Tag Manager container ID (for example: GTM-XXXXXXX). Marketing configures conversion tags and ad pixels inside GTM.
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example: G-XXXXXXXXXX). Loaded alongside GTM for direct GA4 tracking.
 - `NEXT_PUBLIC_HELPSCOUT_BEACON_ID` - Help Scout Beacon ID (optional). Enables the Help Scout support chat widget.

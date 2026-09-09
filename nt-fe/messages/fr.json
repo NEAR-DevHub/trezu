@@ -136,6 +136,11 @@
         "title": "Service non disponible dans votre pays",
         "description": "En raison de restrictions, ce service n'est actuellement pas disponible dans votre région."
     },
+    "inviteRequired": {
+        "title": "Configurons votre trésorerie ensemble",
+        "description": "Les nouvelles trésoreries commencent par un court appel avec notre équipe. Réservez-en un ci-dessous.",
+        "cta": "Réserver une démo"
+    },
     "notFound": {
         "title": "Oups, cette page a disparu...",
         "description": "Il semble que vous ayez suivi un lien qui ne fonctionne plus. Essayez de revenir en arrière ou retournez au tableau de bord.",

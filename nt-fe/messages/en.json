@@ -136,6 +136,11 @@
         "title": "Service not available in your country",
         "description": "Due to restrictions, this service is currently unavailable in your region."
     },
+    "inviteRequired": {
+        "title": "Let's set up your treasury together",
+        "description": "New treasuries go through a quick call with our team first. Book one below.",
+        "cta": "Book a demo"
+    },
     "notFound": {
         "title": "Wooops, this page is gone...",
         "description": "It looks like you followed a link that no longer works. Try going back or return to the Dashboard.",

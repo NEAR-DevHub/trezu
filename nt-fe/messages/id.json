@@ -136,6 +136,11 @@
         "title": "Layanan tidak tersedia di negara Anda",
         "description": "Karena pembatasan, layanan ini saat ini tidak tersedia di wilayah Anda."
     },
+    "inviteRequired": {
+        "title": "Mari siapkan treasury Anda bersama",
+        "description": "Treasury baru dimulai dengan panggilan singkat bersama tim kami. Jadwalkan di bawah ini.",
+        "cta": "Pesan demo"
+    },
     "notFound": {
         "title": "Wah, halaman ini hilang...",
         "description": "Sepertinya Anda mengikuti tautan yang sudah tidak berfungsi. Coba kembali atau pergi ke Dasbor.",

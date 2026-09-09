@@ -136,6 +136,11 @@
         "title": "Dienst in Ihrem Land nicht verfügbar",
         "description": "Aufgrund von Einschränkungen ist dieser Dienst in Ihrer Region derzeit nicht verfügbar."
     },
+    "inviteRequired": {
+        "title": "Richten wir Ihre Treasury gemeinsam ein",
+        "description": "Neue Treasuries beginnen mit einem kurzen Gespräch mit unserem Team. Buchen Sie unten einen Termin.",
+        "cta": "Demo buchen"
+    },
     "notFound": {
         "title": "Hoppla, diese Seite ist nicht mehr verfügbar...",
         "description": "Es scheint, dass Sie einem nicht mehr funktionierenden Link gefolgt sind. Gehen Sie zurück oder kehren Sie zum Dashboard zurück.",

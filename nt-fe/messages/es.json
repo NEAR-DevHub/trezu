@@ -136,6 +136,11 @@
         "title": "Servicio no disponible en tu país",
         "description": "Debido a restricciones, este servicio no está disponible actualmente en tu región."
     },
+    "inviteRequired": {
+        "title": "Configuremos tu tesorería juntos",
+        "description": "Las nuevas tesorerías pasan primero por una breve llamada con nuestro equipo. Reserva una a continuación.",
+        "cta": "Reservar una demo"
+    },
     "notFound": {
         "title": "Ups, esta página ya no existe...",
         "description": "Parece que seguiste un enlace que ya no funciona. Intenta volver atrás o regresa al Panel.",
