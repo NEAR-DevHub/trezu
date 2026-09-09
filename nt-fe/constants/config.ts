@@ -1,4 +1,4 @@
-export { APP_ORIGIN, APP_ORIGIN as LANDING_PAGE } from "./app-origin";
+export { APP_ORIGIN } from "./app-origin";
 export const APP_DOCS_URL = "https://docs.business.near.com/";
 export const APP_ACTIVE_TREASURY = "/trezu-demo.sputnik-dao.near";
 export const APP_CONTACT_US_URL = "https://trezu.org/contact-us";

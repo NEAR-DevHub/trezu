@@ -1,7 +1,14 @@
+import {
+    APP_PRODUCTION_ORIGIN,
+    APP_STAGING_ORIGIN,
+} from "../near-connect/src/app-origin";
 import { isStaging } from "./features";
 
-export const APP_PRODUCTION_ORIGIN = "https://business.near.com";
-export const APP_STAGING_ORIGIN = "https://testenv.business.near.com";
+export {
+    APP_PRODUCTION_ORIGIN,
+    APP_STAGING_ORIGIN,
+    resolveAppOriginFromHostname,
+} from "../near-connect/src/app-origin";
 
 /** App origin for dummy URL parsing and wallet metadata. */
 export function resolveAppOrigin(staging = isStaging): string {

@@ -2,6 +2,8 @@ import { nanosToMs } from "@/lib/utils";
 import type { Proposal, ProposalKind } from "@/lib/proposals-api";
 import type { Policy, RolePermission } from "@/types/policy";
 
+// Excludes kinds that change rules/voting without touching membership
+// (ChangePolicyUpdateParameters, ChangePolicyUpdateDefaultVotePolicy).
 export const MEMBER_ADDED_PROPOSAL_TYPES = [
     "ChangePolicy",
     "ChangePolicyAddOrUpdateRole",

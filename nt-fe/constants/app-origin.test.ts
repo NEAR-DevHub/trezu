@@ -3,6 +3,7 @@ import {
     APP_PRODUCTION_ORIGIN,
     APP_STAGING_ORIGIN,
     resolveAppOrigin,
+    resolveAppOriginFromHostname,
 } from "./app-origin";
 
 describe("resolveAppOrigin", () => {
@@ -21,5 +22,22 @@ describe("resolveAppOrigin", () => {
         expect(APP_PRODUCTION_ORIGIN).toBe("https://business.near.com");
         expect(APP_STAGING_ORIGIN.endsWith("/")).toBe(false);
         expect(APP_PRODUCTION_ORIGIN.endsWith("/")).toBe(false);
+    });
+});
+
+describe("resolveAppOriginFromHostname", () => {
+    it("maps the staging and production hosts", () => {
+        expect(resolveAppOriginFromHostname("testenv.business.near.com")).toBe(
+            APP_STAGING_ORIGIN,
+        );
+        expect(resolveAppOriginFromHostname("business.near.com")).toBe(
+            APP_PRODUCTION_ORIGIN,
+        );
+    });
+
+    it("uses the local origin on localhost", () => {
+        expect(
+            resolveAppOriginFromHostname("localhost", "http://localhost:3000"),
+        ).toBe("http://localhost:3000");
     });
 });
