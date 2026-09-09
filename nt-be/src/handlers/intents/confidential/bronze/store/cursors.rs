@@ -3,16 +3,30 @@ use sqlx::PgPool;
 
 use super::models::HistoryCursor;
 
+/// A recently submitted intent is still waiting for 1Click to settle: poll at
+/// the scheduler's native cadence so the terminal status lands within seconds.
+/// Bounded by a 10-minute window anchored to the intent's execution/creation
+/// time (immutable columns — `updated_at` is churned by enrichment/linker
+/// passes) so a stuck intent can't pin this tier.
+const AWAIT_SETTLEMENT_POLL_DELAY: Duration = Duration::seconds(10);
 const HOT_POLL_DELAY: Duration = Duration::seconds(30);
 const RECENT_POLL_DELAY: Duration = Duration::seconds(120);
 const WARM_POLL_DELAY: Duration = Duration::seconds(600);
 const INACTIVE_POLL_DELAY: Duration = Duration::seconds(3600);
 
+/// 1Click history statuses after which a swap can no longer change.
+const ONECLICK_TERMINAL_STATUSES: &[&str] =
+    &["SUCCESS", "INCOMPLETE_DEPOSIT", "REFUNDED", "FAILED"];
+
 pub(crate) fn confidential_history_next_poll_delay(
     had_history_changes: bool,
+    awaiting_intent_settlement: bool,
     last_confidential_activity_at: Option<DateTime<Utc>>,
     now: DateTime<Utc>,
 ) -> Duration {
+    if awaiting_intent_settlement {
+        return AWAIT_SETTLEMENT_POLL_DELAY;
+    }
     if had_history_changes {
         return HOT_POLL_DELAY;
     }
@@ -157,17 +171,32 @@ pub async fn record_confidential_history_poll_result(
     had_history_changes: bool,
 ) -> Result<(), sqlx::Error> {
     let now = Utc::now();
-    let current_last_activity_at = sqlx::query_scalar::<_, Option<DateTime<Utc>>>(
-        r#"
-        SELECT last_confidential_activity_at
-        FROM bronze_confidential_history_cursors
-        WHERE account_id = $1
+    let (current_last_activity_at, awaiting_intent_settlement) =
+        sqlx::query_as::<_, (Option<DateTime<Utc>>, bool)>(
+            r#"
+        SELECT
+            (
+                SELECT last_confidential_activity_at
+                FROM bronze_confidential_history_cursors
+                WHERE account_id = $1
+            ),
+            EXISTS (
+                SELECT 1
+                FROM confidential_intents ci
+                LEFT JOIN bronze_confidential_history_events he
+                  ON he.id = ci.history_event_id
+                WHERE ci.dao_id = $1
+                  AND ci.status = 'submitted'
+                  AND COALESCE(ci.proposal_executed_at, ci.created_at)
+                      > NOW() - INTERVAL '10 minutes'
+                  AND (he.id IS NULL OR NOT (UPPER(he.status) = ANY($2)))
+            )
         "#,
-    )
-    .bind(account_id)
-    .fetch_optional(pool)
-    .await?
-    .flatten();
+        )
+        .bind(account_id)
+        .bind(ONECLICK_TERMINAL_STATUSES)
+        .fetch_one(pool)
+        .await?;
 
     let last_confidential_activity_at = if had_history_changes {
         Some(now)
@@ -176,6 +205,7 @@ pub async fn record_confidential_history_poll_result(
     };
     let delay = confidential_history_next_poll_delay(
         had_history_changes,
+        awaiting_intent_settlement,
         last_confidential_activity_at,
         now,
     );
@@ -285,24 +315,59 @@ mod tests {
             .with_timezone(&Utc);
 
         assert_eq!(
-            confidential_history_next_poll_delay(true, None, now),
+            confidential_history_next_poll_delay(true, false, None, now),
             HOT_POLL_DELAY
         );
         assert_eq!(
-            confidential_history_next_poll_delay(false, Some(now - Duration::minutes(30)), now),
+            confidential_history_next_poll_delay(
+                false,
+                false,
+                Some(now - Duration::minutes(30)),
+                now
+            ),
             RECENT_POLL_DELAY
         );
         assert_eq!(
-            confidential_history_next_poll_delay(false, Some(now - Duration::hours(12)), now),
+            confidential_history_next_poll_delay(
+                false,
+                false,
+                Some(now - Duration::hours(12)),
+                now
+            ),
             WARM_POLL_DELAY
         );
         assert_eq!(
-            confidential_history_next_poll_delay(false, Some(now - Duration::hours(72)), now),
+            confidential_history_next_poll_delay(
+                false,
+                false,
+                Some(now - Duration::hours(72)),
+                now
+            ),
             INACTIVE_POLL_DELAY
         );
         assert_eq!(
-            confidential_history_next_poll_delay(false, None, now),
+            confidential_history_next_poll_delay(false, false, None, now),
             INACTIVE_POLL_DELAY
+        );
+    }
+
+    #[test]
+    fn test_awaiting_intent_settlement_overrides_every_tier() {
+        let now = DateTime::parse_from_rfc3339("2026-05-20T00:00:00Z")
+            .unwrap()
+            .with_timezone(&Utc);
+
+        assert_eq!(
+            confidential_history_next_poll_delay(true, true, Some(now), now),
+            AWAIT_SETTLEMENT_POLL_DELAY
+        );
+        assert_eq!(
+            confidential_history_next_poll_delay(false, true, None, now),
+            AWAIT_SETTLEMENT_POLL_DELAY
+        );
+        assert_eq!(
+            confidential_history_next_poll_delay(false, true, Some(now - Duration::hours(72)), now),
+            AWAIT_SETTLEMENT_POLL_DELAY
         );
     }
 }

@@ -23,10 +23,10 @@ use chrono::{DateTime, Datelike, Duration, Utc};
 use sqlx::PgPool;
 
 use crate::AppState;
-use crate::handlers::balance_changes::balance::staking::{
+use crate::handlers::public_history::bronze::store::is_public_history_backfill_complete;
+use crate::services::chain_balances::staking::{
     get_staking_balance_at_exact_block, is_staking_pool,
 };
-use crate::handlers::public_history::bronze::store::is_public_history_backfill_complete;
 use crate::services::public_balance_reader::validate_staking_pool_at_block;
 
 const DAILY_HORIZON_DAYS: i64 = 90;

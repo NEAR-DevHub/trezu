@@ -533,13 +533,16 @@ mod tests {
         assert_eq!(event.fingerprint.as_ref(), ["CONF_INTENT_SUBMIT_FAILED"]);
 
         let mut event = sentry::protocol::Event {
-            tags: [("queue".to_string(), "price-sync".to_string())]
+            tags: [("queue".to_string(), "token-price-ingest".to_string())]
                 .into_iter()
                 .collect(),
             ..Default::default()
         };
         apply_stable_fingerprint(&mut event);
-        assert_eq!(event.fingerprint.as_ref(), ["job-failure", "price-sync"]);
+        assert_eq!(
+            event.fingerprint.as_ref(),
+            ["job-failure", "token-price-ingest"]
+        );
 
         // Untagged events keep Sentry's default grouping.
         let mut event = sentry::protocol::Event::default();

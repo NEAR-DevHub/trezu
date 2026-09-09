@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO monitored_accounts (\n                account_id,\n                enabled,\n                export_credits,\n                batch_payment_credits,\n                gas_covered_transactions,\n                plan_type,\n                credits_reset_at\n            )\n            VALUES (\n                'plus-afternoon-reset.sputnik-dao.near',\n                true,\n                0,\n                0,\n                0,\n                'plus',\n                '2026-06-01T15:30:00Z'::timestamptz\n            )\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "b7bbe56e26df7ebe9e6b80ecc83dcb8e996470612c81e8bb36bbb487bbeb7616"
+}

@@ -1,9 +1,9 @@
 //! USD-value backfills that read the local `token_prices` series.
 //!
 //! Set-based stages fill NULL USD columns from the 5-minute price series (no
-//! external API calls): `balance_changes.usd_value`, and `amount_in_usd` /
-//! `amount_out_usd` on public and confidential gold history events. The gold
-//! stages run after historical price loading in one ordered background job.
+//! external API calls): `amount_in_usd` / `amount_out_usd` on unified gold
+//! ledger events. The fill runs after historical price loading in one ordered
+//! background job.
 //! `usd_change` is left untouched — its semantics are event-type dependent
 //! and quote-anchored where it exists.
 //!
@@ -28,25 +28,12 @@ const CHUNK_SIZE: i64 = 50_000;
 /// Runaway backstop far above any realistic table size / chunk count.
 const MAX_CHUNKS_PER_RUN: usize = 10_000;
 
-/// Fills `balance_changes.usd_value = abs(amount) * price` (amounts are
-/// decimal-adjusted human values; see the 20251228 migration comment).
-pub struct BalanceChangesUsdBackfill {
-    inner: UsdBackfill,
-}
-
 /// Fills `gold_treasury_ledger_events.amount_in_usd / amount_out_usd` for
 /// rows the projectors (public and confidential) left NULL (price was
 /// missing at projection time). Hidden ledger rows are enriched too — they
 /// carry token/amount/event_time like activity rows and would otherwise keep
 /// NULL USD forever.
 pub struct GoldLedgerUsdBackfill {
-    inner: UsdBackfill,
-}
-
-// TODO(confidential-v2): remove with the dual-write.
-/// Legacy fill for `gold_confidential_history_events` while
-/// `UNIFIED_GOLD_LEDGER_READS` can still serve confidential reads from it.
-pub struct GoldConfidentialUsdBackfill {
     inner: UsdBackfill,
 }
 
@@ -282,38 +269,6 @@ impl UsdBackfill {
     }
 }
 
-impl BalanceChangesUsdBackfill {
-    pub fn new(pool: PgPool, service: Arc<TokenPriceService>) -> Self {
-        Self {
-            inner: UsdBackfill {
-                pool,
-                service,
-                label: "balance_changes usd backfill",
-                distinct_ids_sql: r#"
-                    SELECT DISTINCT COALESCE(token_id, 'near')
-                    FROM balance_changes
-                    WHERE usd_value IS NULL AND block_time IS NOT NULL
-                "#,
-                specs: vec![UpdateSpec {
-                    table: "balance_changes",
-                    token_expr: "COALESCE(src.token_id, 'near')",
-                    time_expr: "src.block_time",
-                    amount_expr: "ABS(src.amount)",
-                    target_col: "usd_value",
-                    extra_where: "AND src.block_time IS NOT NULL",
-                    report_price_pending: false,
-                }],
-            },
-        }
-    }
-
-    pub async fn run(
-        &self,
-    ) -> Result<UsdBackfillSummary, Box<dyn std::error::Error + Send + Sync>> {
-        self.inner.run().await
-    }
-}
-
 impl GoldLedgerUsdBackfill {
     pub fn new(pool: PgPool, service: Arc<TokenPriceService>) -> Self {
         Self {
@@ -345,51 +300,6 @@ impl GoldLedgerUsdBackfill {
                         amount_expr: "src.amount_out",
                         target_col: "amount_out_usd",
                         extra_where: "AND src.amount_out IS NOT NULL",
-                        report_price_pending: true,
-                    },
-                ],
-            },
-        }
-    }
-
-    pub async fn run(
-        &self,
-    ) -> Result<UsdBackfillSummary, Box<dyn std::error::Error + Send + Sync>> {
-        self.inner.run().await
-    }
-}
-
-impl GoldConfidentialUsdBackfill {
-    pub fn new(pool: PgPool, service: Arc<TokenPriceService>) -> Self {
-        Self {
-            inner: UsdBackfill {
-                pool,
-                service,
-                label: "gold confidential usd backfill",
-                distinct_ids_sql: r#"
-                    SELECT DISTINCT origin_asset FROM gold_confidential_history_events
-                    WHERE origin_asset IS NOT NULL AND amount_in_usd IS NULL
-                    UNION
-                    SELECT DISTINCT destination_asset FROM gold_confidential_history_events
-                    WHERE amount_out_usd IS NULL
-                "#,
-                specs: vec![
-                    UpdateSpec {
-                        table: "gold_confidential_history_events",
-                        token_expr: "src.origin_asset",
-                        time_expr: "COALESCE(src.proposal_executed_at, src.quote_created_at)",
-                        amount_expr: "src.amount_in",
-                        target_col: "amount_in_usd",
-                        extra_where: "AND src.amount_in IS NOT NULL",
-                        report_price_pending: true,
-                    },
-                    UpdateSpec {
-                        table: "gold_confidential_history_events",
-                        token_expr: "src.destination_asset",
-                        time_expr: "COALESCE(src.proposal_executed_at, src.quote_created_at)",
-                        amount_expr: "src.amount_out",
-                        target_col: "amount_out_usd",
-                        extra_where: "",
                         report_price_pending: true,
                     },
                 ],

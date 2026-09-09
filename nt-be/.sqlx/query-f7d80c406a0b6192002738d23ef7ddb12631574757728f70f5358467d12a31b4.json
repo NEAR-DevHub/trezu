@@ -1,0 +1,34 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT is_policy_member, is_saved, is_hidden\n            FROM dao_members\n            WHERE dao_id = $1 AND account_id = 'guest.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_policy_member",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_saved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 2,
+        "name": "is_hidden",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "f7d80c406a0b6192002738d23ef7ddb12631574757728f70f5358467d12a31b4"
+}

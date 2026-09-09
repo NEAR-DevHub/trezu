@@ -6,19 +6,20 @@ use futures::StreamExt;
 use near_account_id::AccountIdRef;
 use sqlx::PgPool;
 
-use super::convert::bronze_to_gold;
+use super::convert::{bronze_to_gold, confidential_gold_event_key};
 use super::models::{ConfidentialDepositCorrectionIndex, DaoProjectionStats, ProjectionCycleStats};
 use super::repository::{
     clear_balance_check_errors, clear_projection_error, delete_stale_gold_rows,
-    delete_stale_legacy_gold_rows, earliest_success_for_dao, has_gold_before, load_bronze_suffix,
+    earliest_success_for_dao, has_gold_before, load_bronze_suffix,
     load_confidential_deposit_corrections, load_dirty_daos, load_ledger_head_balances,
-    record_balance_check_mismatch, seed_ledger_before, upsert_legacy_projection, upsert_projection,
-    upsert_projection_error,
+    record_balance_check_mismatch, seed_ledger_before, upsert_projection, upsert_projection_error,
 };
 use crate::AppState;
 use crate::constants::intents_tokens::get_defuse_tokens_map;
 use crate::handlers::intents::confidential::balances::fetch_confidential_balances;
 use crate::handlers::intents::confidential::gold::cursors::clear_gold_dirty_if_not_advanced;
+use crate::handlers::intents::confidential::types::ConfidentialTxType;
+use crate::handlers::notifications::emitter::emit_gold_ledger_notification;
 
 /// Env flag (default ON) gating the confidential deposit-amount correction.
 /// Set `CORRECT_CONFIDENTIAL_DEPOSIT_AMOUNTS=false` to revert to raw 1Click
@@ -109,7 +110,13 @@ pub async fn project_confidential_gold_for_dao(
             Ok(Some(projected)) => {
                 preserve_ids.insert(projected.history_event_id);
                 upsert_projection(&mut tx, &projected).await?;
-                upsert_legacy_projection(&mut tx, &projected).await?;
+                if !matches!(projected.transaction_type, ConfidentialTxType::Deposit) {
+                    emit_gold_ledger_notification(
+                        &mut tx,
+                        &confidential_gold_event_key(projected.history_event_id),
+                    )
+                    .await?;
+                }
                 stats.rows_projected += 1;
             }
             Ok(None) => {
@@ -126,7 +133,6 @@ pub async fn project_confidential_gold_for_dao(
     let preserve_ids: Vec<i64> = preserve_ids.into_iter().collect();
     stats.rows_deleted =
         delete_stale_gold_rows(&mut tx, dao_id, recompute_from, &preserve_ids).await?;
-    delete_stale_legacy_gold_rows(&mut tx, dao_id, recompute_from, &preserve_ids).await?;
 
     clear_gold_dirty_if_not_advanced(&mut tx, dao_id, dirty_since).await?;
 

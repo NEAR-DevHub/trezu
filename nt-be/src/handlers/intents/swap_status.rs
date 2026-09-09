@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use crate::{
     AppState,
-    handlers::balance_changes::confidential_list::is_confidential_dao,
+    handlers::public_history::confidential_list::is_confidential_dao,
     utils::cache::{CacheKey, CacheTier},
 };
 

@@ -9,10 +9,10 @@ use std::sync::Arc;
 
 use crate::{
     AppState,
-    handlers::balance_changes::transfer_hints::tx_resolver::resolve_receipt_to_transaction,
-    handlers::balance_changes::utils::with_transport_retry,
+    services::receipt_resolver::resolve_receipt_to_transaction,
     utils::cache::{CacheKey, CacheTier},
     utils::jsonrpc::create_rpc_client,
+    utils::transport::with_transport_retry,
 };
 
 #[derive(Debug, Deserialize, Serialize)]

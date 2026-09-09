@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO proposal_templates (dao_id, name, manifest, enabled, created_by)\n            VALUES ($1, $2, $3, true, NULL)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Text",
+        "Jsonb"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ef29b48d2146660e83ae3cd8867021517ebb0bc89ca72fc60a040c16dabb0f9c"
+}

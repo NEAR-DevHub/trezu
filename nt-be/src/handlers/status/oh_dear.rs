@@ -14,9 +14,7 @@ use std::{
 
 use super::config::OhDearHealthConfig;
 use crate::AppState;
-use crate::constants::external_apis::{
-    FASTNEAR_ACCOUNT_API_BASE, FASTNEAR_TRANSFERS_BASE, NEARBLOCKS_API_BASE, NEARDATA_DEFAULT_BASE,
-};
+use crate::constants::external_apis::{FASTNEAR_ACCOUNT_API_BASE, NEARBLOCKS_API_BASE};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 
 pub const SUPPORTED_SERVICES: &[&str] = &[
@@ -31,7 +29,6 @@ pub const SUPPORTED_SERVICES: &[&str] = &[
     "near-protocol",
     "near-rpc",
     "nearblocks",
-    "neardata",
 ];
 const NEAR_STATUS_UP: &str = "up";
 const INTENTS_POST_INCIDENT: &str = "incident";
@@ -104,13 +101,6 @@ const INTENTS_EXPLORER_CHECK: CheckDefinition = CheckDefinition {
     notification_subject: "Intents Explorer API",
     short_subject: "Intents Explorer",
 };
-const NEARDATA_CHECK: CheckDefinition = CheckDefinition {
-    name: "neardata.api",
-    label: "Neardata",
-    notification_subject: "Neardata API",
-    short_subject: "Neardata",
-};
-
 #[derive(Debug, Clone, Copy)]
 enum StatusService {
     Backend,
@@ -124,7 +114,6 @@ enum StatusService {
     NearProtocol,
     NearRpc,
     Nearblocks,
-    Neardata,
 }
 
 impl StatusService {
@@ -141,7 +130,6 @@ impl StatusService {
             "near-protocol" => Some(Self::NearProtocol),
             "near-rpc" => Some(Self::NearRpc),
             "nearblocks" => Some(Self::Nearblocks),
-            "neardata" => Some(Self::Neardata),
             _ => None,
         }
     }
@@ -301,7 +289,6 @@ pub async fn run_service_check(state: &AppState, service: &str) -> Option<OhDear
         StatusService::NearProtocol => check_near_protocol(state).await,
         StatusService::NearRpc => check_near_rpc(state).await,
         StatusService::Nearblocks => check_nearblocks(state).await,
-        StatusService::Neardata => check_neardata(state).await,
     })
 }
 
@@ -344,7 +331,6 @@ pub async fn get_status(
         StatusService::NearProtocol => check_near_protocol(&state).await,
         StatusService::NearRpc => check_near_rpc(&state).await,
         StatusService::Nearblocks => check_nearblocks(&state).await,
-        StatusService::Neardata => check_neardata(&state).await,
     };
 
     Ok(Json(OhDearResponse {
@@ -577,12 +563,6 @@ async fn check_near_rpc(state: &AppState) -> OhDearCheckResult {
     .await
 }
 
-#[derive(Debug, Deserialize)]
-struct FastNearTransfersProbeResponse {
-    #[allow(dead_code)]
-    transfers: Vec<Value>,
-}
-
 #[derive(Debug, Serialize)]
 struct ProbeResult {
     probe: &'static str,
@@ -597,21 +577,15 @@ struct ProbeResult {
 async fn check_fastnear(state: &AppState) -> OhDearCheckResult {
     let config = OhDearHealthConfig::default();
     let timeout = Duration::from_secs(config.http_timeout_seconds);
-    let transfers_base_url = state
-        .env_vars
-        .transfer_hints_base_url
-        .as_deref()
-        .unwrap_or(FASTNEAR_TRANSFERS_BASE);
     let account_id = &config.fastnear_probe_account_id;
     let api_key = &state.env_vars.fastnear_api_key;
 
-    let (account_result, transfers_result, archival_rpc_result) = tokio::join!(
+    let (account_result, archival_rpc_result) = tokio::join!(
         probe_fastnear_account(state, account_id, api_key, timeout),
-        probe_fastnear_transfers(state, account_id, api_key, transfers_base_url, timeout),
         probe_fastnear_archival_rpc(state, timeout),
     );
 
-    let probes = vec![account_result, transfers_result, archival_rpc_result];
+    let probes = vec![account_result, archival_rpc_result];
     map_probe_results(
         FASTNEAR_CHECK,
         "FastNear APIs reachable",
@@ -642,37 +616,6 @@ async fn probe_fastnear_account(
             duration_ms: started.elapsed().as_millis(),
         },
         Err(error) => probe_error("account_api", error, started.elapsed().as_millis()),
-    }
-}
-
-async fn probe_fastnear_transfers(
-    state: &AppState,
-    account_id: &str,
-    api_key: &str,
-    base_url: &str,
-    timeout: Duration,
-) -> ProbeResult {
-    let started = Instant::now();
-    let url = format!("{}/v0/transfers", base_url.trim_end_matches('/'));
-    let request = state
-        .http_client
-        .post(url)
-        .header("content-type", "application/json")
-        .header("Authorization", format!("Bearer {api_key}"))
-        .json(&json!({
-            "account_id": account_id,
-            "limit": 1
-        }));
-
-    match send_json_check::<FastNearTransfersProbeResponse>(request, timeout).await {
-        Ok(_) => ProbeResult {
-            probe: "transfers_api",
-            ok: true,
-            error: None,
-            http_status: None,
-            duration_ms: started.elapsed().as_millis(),
-        },
-        Err(error) => probe_error("transfers_api", error, started.elapsed().as_millis()),
     }
 }
 
@@ -895,44 +838,6 @@ async fn check_intents_explorer(state: &AppState) -> OhDearCheckResult {
         },
     )
     .await
-}
-
-async fn check_neardata(state: &AppState) -> OhDearCheckResult {
-    let config = OhDearHealthConfig::default();
-    let timeout = Duration::from_secs(config.http_timeout_seconds);
-    let base_url =
-        std::env::var("NEARDATA_BASE_URL").unwrap_or_else(|_| NEARDATA_DEFAULT_BASE.to_string());
-    let block_height = config.neardata_probe_block_height;
-    let started = Instant::now();
-    let mut request = state.http_client.get(format!(
-        "{}/v0/block/{}",
-        base_url.trim_end_matches('/'),
-        block_height
-    ));
-
-    if !state.env_vars.fastnear_api_key.is_empty() {
-        request = request.header(
-            "Authorization",
-            format!("Bearer {}", state.env_vars.fastnear_api_key),
-        );
-    }
-
-    match send_json_check::<Value>(request, timeout).await {
-        Ok(_) => NEARDATA_CHECK.ok(
-            "Neardata API reachable",
-            json!({
-                "duration_ms": started.elapsed().as_millis(),
-                "block_height": block_height
-            }),
-        ),
-        Err(error) => NEARDATA_CHECK.failed_http(
-            error,
-            started.elapsed().as_millis(),
-            json!({
-                "block_height": block_height
-            }),
-        ),
-    }
 }
 
 fn map_exchange_quote_status(body: Value, duration_ms: u128, route: &str) -> OhDearCheckResult {
@@ -1376,26 +1281,6 @@ mod tests {
             .expect("failed to create lazy test pool")
     }
 
-    /// Keeps `NEARDATA_BASE_URL` scoped to a single test (must run serially).
-    struct NeardataEnvGuard;
-
-    impl NeardataEnvGuard {
-        fn set(base_url: impl AsRef<str>) -> Self {
-            unsafe {
-                std::env::set_var("NEARDATA_BASE_URL", base_url.as_ref());
-            }
-            Self
-        }
-    }
-
-    impl Drop for NeardataEnvGuard {
-        fn drop(&mut self) {
-            unsafe {
-                std::env::remove_var("NEARDATA_BASE_URL");
-            }
-        }
-    }
-
     fn fresh_near_rpc_status_body() -> Value {
         json!({
             "jsonrpc": "2.0",
@@ -1813,18 +1698,12 @@ mod tests {
     async fn fastnear_endpoint_returns_oh_dear_json() {
         let mock_server = MockServer::start().await;
         Mock::given(method("POST"))
-            .and(path("/v0/transfers"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "transfers": [] })))
-            .mount(&mock_server)
-            .await;
-        Mock::given(method("POST"))
             .and(path("/"))
             .respond_with(ResponseTemplate::new(200).set_body_json(fresh_near_rpc_status_body()))
             .mount(&mock_server)
             .await;
 
         let state = test_state(|env| {
-            env.transfer_hints_base_url = Some(mock_server.uri());
             env.near_archival_rpc_url = Some(mock_server.uri());
         })
         .await;
@@ -1886,41 +1765,6 @@ mod tests {
         assert_check(&json, "intents-explorer.api", "ok");
     }
 
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn neardata_endpoint_maps_success_to_ok() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/v0/block/100000000"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "header": {} })))
-            .mount(&mock_server)
-            .await;
-
-        let _neardata_env = NeardataEnvGuard::set(mock_server.uri());
-        let state = test_state(|_| {}).await;
-        let json = get_status_json(state, "/api/oh-dear/status/neardata").await;
-
-        assert_check(&json, "neardata.api", "ok");
-    }
-
-    #[tokio::test]
-    #[serial_test::serial]
-    async fn neardata_endpoint_maps_http_error_to_failed() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/v0/block/100000000"))
-            .respond_with(ResponseTemplate::new(503))
-            .mount(&mock_server)
-            .await;
-
-        let _neardata_env = NeardataEnvGuard::set(mock_server.uri());
-        let state = test_state(|_| {}).await;
-        let json = get_status_json(state, "/api/oh-dear/status/neardata").await;
-
-        assert_check(&json, "neardata.api", "failed");
-        assert_eq!(json["checkResults"][0]["meta"]["http_status"], 503);
-    }
-
     #[test]
     fn monitor_treats_non_intents_warnings_as_healthy() {
         assert!(!is_unhealthy_for_monitor(
@@ -1971,13 +1815,6 @@ mod tests {
                     duration_ms: 10,
                 },
                 ProbeResult {
-                    probe: "transfers_api",
-                    ok: true,
-                    error: None,
-                    http_status: None,
-                    duration_ms: 12,
-                },
-                ProbeResult {
                     probe: "archival_rpc",
                     ok: true,
                     error: None,
@@ -2004,13 +1841,6 @@ mod tests {
                     error: Some("unsuccessful_status".to_string()),
                     http_status: Some(403),
                     duration_ms: 10,
-                },
-                ProbeResult {
-                    probe: "transfers_api",
-                    ok: true,
-                    error: None,
-                    http_status: None,
-                    duration_ms: 12,
                 },
                 ProbeResult {
                     probe: "archival_rpc",

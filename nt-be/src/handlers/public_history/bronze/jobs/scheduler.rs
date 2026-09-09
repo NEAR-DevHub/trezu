@@ -12,15 +12,13 @@ use super::worker::{
     job_concurrency,
 };
 use crate::AppState;
-use crate::handlers::balance_changes::confidential_enrichment::{
-    extract_sign_call_from_logs, mark_confidential_intent_submitted,
-};
-use crate::handlers::balance_changes::goldsky_enrichment::{
-    decode_success_value_u64, handle_confidential_add_proposal,
-};
 use crate::handlers::intents::confidential::bronze::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::link_intent_to_history_event;
+use crate::handlers::intents::confidential::proposal_signals::{
+    decode_success_value_u64, extract_sign_call_from_logs, handle_confidential_add_proposal,
+    mark_confidential_intent_submitted,
+};
 use crate::handlers::public_history::bronze::store::{
     PublicHistorySource, load_ready_latest_demands, oldest_ready_latest_demand_age_seconds,
     ready_latest_demand_count, upsert_latest_demand,

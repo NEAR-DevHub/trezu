@@ -187,6 +187,125 @@ async fn test_record_confidential_history_poll_result_schedules_from_activity() 
 
 #[tokio::test]
 #[ignore]
+async fn test_record_confidential_history_poll_result_fast_polls_awaiting_settlement() {
+    let pool = test_pool().await;
+    let account_id = format!(
+        "test-confidential-awaiting-{}-dao.near",
+        uuid::Uuid::new_v4()
+    );
+
+    let intent_id: i32 = sqlx::query_scalar(
+        r#"
+        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, status)
+        VALUES ($1, 1, '{}'::jsonb, 'submitted')
+        RETURNING id
+        "#,
+    )
+    .bind(&account_id)
+    .fetch_one(&pool)
+    .await
+    .expect("intent insert should succeed");
+
+    record_confidential_history_poll_result(&pool, &account_id, false)
+        .await
+        .expect("poll with awaiting intent should schedule");
+
+    let awaiting_cursor = load_history_cursor(&pool, &account_id)
+        .await
+        .expect("cursor load should succeed")
+        .expect("cursor row should exist");
+    assert!(awaiting_cursor.next_poll_at <= Utc::now() + Duration::seconds(15));
+
+    sqlx::query(
+        r#"
+        UPDATE confidential_intents
+        SET created_at = NOW() - INTERVAL '11 minutes'
+        WHERE id = $1
+        "#,
+    )
+    .bind(intent_id)
+    .execute(&pool)
+    .await
+    .expect("intent age update should succeed");
+
+    record_confidential_history_poll_result(&pool, &account_id, false)
+        .await
+        .expect("poll with expired window should schedule");
+
+    let expired_cursor = load_history_cursor(&pool, &account_id)
+        .await
+        .expect("cursor load should succeed")
+        .expect("cursor row should exist");
+    assert!(expired_cursor.next_poll_at > Utc::now() + Duration::seconds(15));
+}
+
+async fn insert_linked_intent(pool: &sqlx::PgPool, dao_id: &str, event_status: &str) {
+    let mut raw_payload = sample_history_event().raw_payload;
+    raw_payload["status"] = serde_json::json!(event_status);
+    let item =
+        serde_json::from_value::<HistoryItem>(raw_payload.clone()).expect("event should parse");
+    let event = HistoryEvent { item, raw_payload };
+
+    upsert_history_events(pool, dao_id, std::slice::from_ref(&event))
+        .await
+        .expect("event upsert should succeed");
+    let event_id: i64 = sqlx::query_scalar(
+        "SELECT id FROM bronze_confidential_history_events WHERE account_id = $1",
+    )
+    .bind(dao_id)
+    .fetch_one(pool)
+    .await
+    .expect("event id load should succeed");
+
+    sqlx::query(
+        r#"
+        INSERT INTO confidential_intents (dao_id, proposal_id, intent_payload, status, history_event_id)
+        VALUES ($1, 1, '{}'::jsonb, 'submitted', $2)
+        "#,
+    )
+    .bind(dao_id)
+    .bind(event_id)
+    .execute(pool)
+    .await
+    .expect("intent insert should succeed");
+}
+
+#[tokio::test]
+#[ignore]
+async fn test_awaiting_settlement_gate_follows_linked_event_status() {
+    let pool = test_pool().await;
+
+    let settled_dao = format!(
+        "test-confidential-linked-done-{}-dao.near",
+        uuid::Uuid::new_v4()
+    );
+    insert_linked_intent(&pool, &settled_dao, "SUCCESS").await;
+    record_confidential_history_poll_result(&pool, &settled_dao, false)
+        .await
+        .expect("poll with settled intent should schedule");
+    let settled_cursor = load_history_cursor(&pool, &settled_dao)
+        .await
+        .expect("cursor load should succeed")
+        .expect("cursor row should exist");
+    assert!(settled_cursor.next_poll_at > Utc::now() + Duration::seconds(15));
+
+    let pending_dao = format!(
+        "test-confidential-linked-open-{}-dao.near",
+        uuid::Uuid::new_v4()
+    );
+    insert_linked_intent(&pool, &pending_dao, "PROCESSING").await;
+    record_confidential_history_poll_result(&pool, &pending_dao, false)
+        .await
+        .expect("poll with unsettled intent should schedule");
+    let pending_cursor = load_history_cursor(&pool, &pending_dao)
+        .await
+        .expect("cursor load should succeed")
+        .expect("cursor row should exist");
+    assert!(pending_cursor.next_poll_at <= Utc::now() + Duration::seconds(15));
+}
+
+#[tokio::test]
+#[ignore]
 async fn test_load_due_confidential_history_accounts_filters_by_next_poll_at() {
     let pool = test_pool().await;
     let suffix = uuid::Uuid::new_v4().simple().to_string();
