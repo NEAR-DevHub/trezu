@@ -3,9 +3,18 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { EARLY_ACCESS_HREF, NAV_LINKS, PROOF_STATS } from "../content";
 import { NearBusinessWordmark } from "./landing-icons";
+import { Reveal } from "./reveal";
 
 /** Horizontal page gutter: 120px at the 1440 design width, tighter below. */
 export const GUTTER = "px-6 md:px-12 xl:px-[120px]";
+
+/**
+ * Hero entrance: every element lifts 16px into place on first paint, staggered
+ * in reading order via `animationDelay` (headline 120ms through the render at
+ * 420ms). Pure CSS, so it costs no client JS and needs no scroll trigger —
+ * the whole hero is above the fold. Under reduced-motion only the fade plays.
+ */
+const REVEAL = "animate-landing-rise motion-reduce:animate-landing-fade";
 
 export function EarlyAccessButton({
     className,
@@ -75,26 +84,44 @@ export function Hero() {
             {/* From lg up the copy keeps to the left ~62% so the screenshot
                 never overlaps it. */}
             <div className="flex flex-col gap-6 py-10 lg:w-[65%] lg:py-16 xl:min-h-[480px]">
-                <h1 className="text-[44px] font-medium leading-[1.04] tracking-[-1.1px] md:text-[56px] md:tracking-[-1.4px] lg:text-[min(72px,5vw)] lg:tracking-[-0.025em]">
+                <h1
+                    className={cn(
+                        REVEAL,
+                        "text-[44px] font-medium leading-[1.04] tracking-[-1.1px] md:text-[56px] md:tracking-[-1.4px] lg:text-[min(72px,5vw)] lg:tracking-[-0.025em]",
+                    )}
+                    style={{ animationDelay: "120ms" }}
+                >
                     Confidential
                     <br />
                     <span className="font-light">treasury management</span>
                     <br />
                     for crypto-native finance teams
                 </h1>
-                <p className="max-w-[650px] text-lg leading-[1.55]">
+                <p
+                    className={cn(
+                        REVEAL,
+                        "max-w-[650px] text-lg leading-[1.55]",
+                    )}
+                    style={{ animationDelay: "180ms" }}
+                >
                     Unify your team&apos;s finances, run payroll, allocate
                     capital, and swap across 35+ chains from a single dashboard.
                     Multisig approvals, your keys, your terms.
                 </p>
                 {/* Uncapped on purpose: the design sets this caption on one
                     line and only lets it wrap once the column runs out. */}
-                <p className="text-xs leading-normal">
+                <p
+                    className={cn(REVEAL, "text-xs leading-normal")}
+                    style={{ animationDelay: "240ms" }}
+                >
                     One dashboard for confidential balances, approvals,
                     payments, and swaps across every chain you hold assets on.
                 </p>
             </div>
-            <div className="xl:pt-4">
+            <div
+                className={cn(REVEAL, "xl:pt-4")}
+                style={{ animationDelay: "300ms" }}
+            >
                 <EarlyAccessButton className="h-12 w-full max-w-[229px] px-8 text-base sm:w-auto" />
             </div>
             {/* Sized as a share of the hero (981/1440 wide, starting at
@@ -102,7 +129,13 @@ export function Hero() {
                 right edge like the design; below lg it drops into the flow.
                 The render carries its own dark bezel, so there is no CSS
                 frame around it. */}
-            <div className="lg:absolute lg:left-[63.9%] lg:top-[111px] lg:w-[68.125%]">
+            <div
+                className={cn(
+                    REVEAL,
+                    "lg:absolute lg:left-[63.9%] lg:top-[111px] lg:w-[68.125%]",
+                )}
+                style={{ animationDelay: "420ms" }}
+            >
                 <Image
                     src="/landing/dashboard.png"
                     alt="NEAR Business dashboard showing balances, pending requests and recent transactions"
@@ -121,9 +154,10 @@ export function ProofGrid() {
     return (
         <section className="relative z-10 bg-landing-ink">
             <div className="mx-auto grid w-full max-w-[1440px] grid-cols-2 gap-y-10 px-6 py-12 text-center md:px-12 lg:grid-cols-4 xl:px-32">
-                {PROOF_STATS.map(({ value, label }) => (
-                    <div
+                {PROOF_STATS.map(({ value, label }, index) => (
+                    <Reveal
                         key={label}
+                        delayMs={index * 60}
                         className="flex flex-col items-center gap-2"
                     >
                         <p className="text-[48px] font-medium leading-[1.1] text-landing-paper md:text-[64px] xl:text-[72px]">
@@ -132,7 +166,7 @@ export function ProofGrid() {
                         <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
                             {label}
                         </p>
-                    </div>
+                    </Reveal>
                 ))}
             </div>
         </section>

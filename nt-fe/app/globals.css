@@ -626,6 +626,34 @@
     --animate-landing-marquee-reverse: landing-marquee 80s linear infinite
         reverse;
 
+    /* Hero entrance choreography. `--ease-landing` is the house curve the
+       marketing motion study uses for everything above the fold; `rise` is the
+       16px lift each element gets on first paint, `fade` the reduced-motion
+       stand-in that keeps the opacity ramp but drops the movement. */
+    --ease-landing: cubic-bezier(0.625, 0.05, 0, 1);
+    --animate-landing-rise: landing-rise 800ms var(--ease-landing) both;
+    --animate-landing-fade: landing-fade 500ms var(--ease-landing) both;
+
+    @keyframes landing-rise {
+        from {
+            opacity: 0;
+            transform: translateY(16px);
+        }
+        to {
+            opacity: 1;
+            transform: none;
+        }
+    }
+
+    @keyframes landing-fade {
+        from {
+            opacity: 0;
+        }
+        to {
+            opacity: 1;
+        }
+    }
+
     @keyframes landing-marquee {
         from {
             transform: translateX(0);
