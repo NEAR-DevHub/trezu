@@ -920,6 +920,7 @@
         "title": "成员",
         "description": "管理团队成员与权限",
         "permissions": "权限",
+        "added": "添加时间",
         "member": "成员",
         "noActiveMembers": "未找到活跃成员。",
         "addNewMember": "添加成员",

@@ -920,6 +920,7 @@
         "title": "Thành viên",
         "description": "Quản lý thành viên đội và quyền hạn",
         "permissions": "Quyền",
+        "added": "Đã thêm",
         "member": "Thành viên",
         "noActiveMembers": "Không tìm thấy thành viên đang hoạt động.",
         "addNewMember": "Thêm thành viên",

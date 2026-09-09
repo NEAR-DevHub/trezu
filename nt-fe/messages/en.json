@@ -918,6 +918,7 @@
         "title": "Members",
         "description": "Manage team members and permissions",
         "permissions": "Permissions",
+        "added": "Added",
         "member": "Member",
         "activeMembersCount": "{count, plural, one {# active member} other {# active members}}",
         "noActiveMembers": "No active members found.",
@@ -1678,7 +1679,7 @@
     },
     "supportCenter": {
         "title": "Support center",
-        "websiteTitle": "near business Website",
+        "websiteTitle": "near business website",
         "websiteDescription": "Read about near business and what's new.",
         "docsTitle": "Documentation",
         "docsDescription": "Guides for every feature, step by step.",

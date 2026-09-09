@@ -920,6 +920,7 @@
         "title": "メンバー",
         "description": "チームメンバーと権限を管理",
         "permissions": "権限",
+        "added": "追加日",
         "member": "メンバー",
         "noActiveMembers": "アクティブなメンバーは見つかりませんでした。",
         "addNewMember": "メンバーを追加",

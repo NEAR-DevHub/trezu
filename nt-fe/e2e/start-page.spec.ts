@@ -97,6 +97,57 @@ test("Signed in + no treasuries => stays on create treasury form", async ({
     ).toBeVisible();
 });
 
+test("Signed in + has treasury + ?welcome stays on landing", async ({
+    page,
+}) => {
+    const daoId = "webassemblymusic-treasury.sputnik-dao.near";
+    await setupStartPageMocks(page, {
+        accountId: "test.near",
+        treasuries: [
+            {
+                daoId,
+                config: { name: "My Treasury" },
+                isMember: true,
+                isSaved: true,
+                isHidden: false,
+            },
+        ],
+    });
+
+    await page.goto("/?welcome");
+
+    await expect(page).toHaveURL(/\/\?welcome/, { timeout: 15000 });
+    await expect(
+        page.getByRole("heading", { name: /confidential/i }),
+    ).toBeVisible();
+});
+
+test("Signed in + has treasury + /create?welcome stays on create", async ({
+    page,
+}) => {
+    const daoId = "webassemblymusic-treasury.sputnik-dao.near";
+    await setupStartPageMocks(page, {
+        accountId: "test.near",
+        treasuries: [
+            {
+                daoId,
+                config: { name: "My Treasury" },
+                isMember: true,
+                isSaved: true,
+                isHidden: false,
+            },
+        ],
+    });
+
+    await page.goto("/create?welcome");
+
+    await expect(page).toHaveURL(/\/create\?welcome/, { timeout: 15000 });
+    await expect(
+        page.getByRole("heading", { name: /create treasury/i }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /^back$/i })).toHaveCount(0);
+});
+
 test("Signed in + has treasury => redirects to /{daoId}", async ({ page }) => {
     const daoId = "webassemblymusic-treasury.sputnik-dao.near";
     await setupStartPageMocks(page, {

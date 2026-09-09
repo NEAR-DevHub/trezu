@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import { PageComponentLayout } from "@/components/page-component-layout";
+import { APP_ORIGIN } from "@/constants/config";
 import { sanitizeReturnTo } from "@/lib/auth-redirect";
 import { useNear } from "@/stores/near-store";
 
@@ -18,7 +19,7 @@ function appendUtmParamsToReturnTo(
     returnTo: string,
     searchParams: ReturnType<typeof useSearchParams>,
 ): string {
-    const url = new URL(returnTo, "https://trezu.app");
+    const url = new URL(returnTo, APP_ORIGIN);
     let hasChanges = false;
 
     for (const key of UTM_KEYS) {

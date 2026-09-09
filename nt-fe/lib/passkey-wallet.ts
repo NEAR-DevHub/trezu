@@ -1,5 +1,6 @@
 import type { NearConnector } from "@hot-labs/near-connect";
 import type { WalletManifest } from "@hot-labs/near-connect/build/types";
+import { APP_ORIGIN } from "@/constants/config";
 
 /**
  * Bump with EVERY change to the published executor: near-connect caches
@@ -32,7 +33,7 @@ export function getPasskeyWalletManifest(): WalletManifest {
         name: "Passkey",
         icon: "/icons/passkey.svg",
         description: "Sign in with Face ID, Touch ID, or your device passcode.",
-        website: "https://trezu.app",
+        website: APP_ORIGIN,
         executor: PASSKEY_EXECUTOR_URL,
         type: "sandbox",
         platform: ["web"],
