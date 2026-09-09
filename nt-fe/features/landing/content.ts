@@ -11,10 +11,12 @@ export const EARLY_ACCESS_HREF =
 
 export const CONTACT_HREF = "mailto:hello@near.org?subject=NEAR%20Business";
 
+// Rooted fragments: the nav also renders on the legal pages, where a bare
+// "#product" would go nowhere.
 export const NAV_LINKS = [
-    { label: "Product", href: "#product" },
-    { label: "Security", href: "#security" },
-    { label: "Pricing", href: "#pricing" },
+    { label: "Product", href: "/#product" },
+    { label: "Security", href: "/#security" },
+    { label: "Pricing", href: "/#pricing" },
     { label: "Docs", href: APP_DOCS_URL },
 ] as const;
 
