@@ -158,10 +158,8 @@
         "placeholder": "mm/dd/yyyy"
     },
     "metadata": {
-        "treasuryTitle": "Dashboard | Near Business",
-        "landingTitle": "Near Business | Cross-chain Treasury Management",
-        "description": "Manage your team's capital in minutes from a single dashboard without ever giving up your keys.",
-        "ogTitle": "Near Business | One multisig. Any crypto. Total control."
+        "title": "NEAR Business | Confidential treasury management for crypto-native finance teams",
+        "description": "Unify your team’s capital, run payroll and grants, and swap across 35+ chains from a single dashboard. Multisig approvals, your keys, your terms."
     },
     "pages": {
         "dashboard": {
@@ -252,13 +250,7 @@
         },
         "telegram": {
             "title": "Connect treasury",
-            "description": "Link your treasuries to a Telegram chat",
-            "metaTitle": "Near Business — Connect Telegram",
-            "metaDescription": "Connect your Near Business treasury to a Telegram chat"
-        },
-        "wallet": {
-            "title": "Near Business wallet",
-            "description": "Sign treasury proposals via Near Business"
+            "description": "Link your treasuries to a Telegram chat"
         }
     },
     "depositModal": {
@@ -970,8 +962,6 @@
             "pendingPolicyRequest": "You can't add members while there is an active policy change request. Please approve or reject it first."
         },
         "join": {
-            "metaTitle": "Join Treasury | Near Business",
-            "metaDescription": "Ask to join a Near Business treasury via invite link",
             "pageTitle": "Join treasury",
             "pageDescription": "Request to join a treasury",
             "treasuryFallback": "this treasury",

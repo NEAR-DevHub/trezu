@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
+import { generateMetadata as sharedMetadata } from "@/lib/metadata";
 
 export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations("blocked");
-    return {
-        title: `${t("title")} | Near Business`,
-        description: t("description"),
-        robots: "noindex, nofollow",
-    };
+    // The geo-block interstitial carries the same metadata as every other page,
+    // but must stay out of search results.
+    return { ...(await sharedMetadata()), robots: "noindex, nofollow" };
 }
 
 export default async function BlockedLayout({

@@ -158,10 +158,8 @@
         "placeholder": "dd/mm/yyyy"
     },
     "metadata": {
-        "treasuryTitle": "לוח בקרה | Near Business",
-        "landingTitle": "Near Business | ניהול אוצר חוצה-רשתות",
-        "description": "נהל את ההון של הצוות שלך בתוך דקות מלוח בקרה אחד מבלי לוותר על המפתחות.",
-        "ogTitle": "Near Business | מולטיסיג אחד. כל קריפטו. שליטה מלאה."
+        "title": "NEAR Business | ניהול אוצר חסוי לצוותי פיננסים קריפטו-נייטיב",
+        "description": "אחדו את ההון של הצוות שלכם, נהלו תשלומי שכר ומענקים והחליפו נכסים ביותר מ-35 רשתות מלוח בקרה אחד. אישורי מולטיסיג, המפתחות שלכם, התנאים שלכם."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "חיבור אוצר",
-            "description": "קשר את האוצרות שלך לצ'אט Telegram",
-            "metaTitle": "Near Business — חיבור Telegram",
-            "metaDescription": "חבר את אוצר Near Business שלך לצ'אט Telegram"
-        },
-        "wallet": {
-            "title": "ארנק Near Business",
-            "description": "חתום על הצעות אוצר באמצעות Near Business"
+            "description": "קשר את האוצרות שלך לצ'אט Telegram"
         },
         "account": {
             "title": "החשבון שלי",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "לא ניתן להוסיף חברים בזמן שיש בקשת שינוי מדיניות פעילה. אשרו או דחו אותה קודם."
         },
         "join": {
-            "metaTitle": "הצטרפות לאוצר | Near Business",
-            "metaDescription": "בקשו להצטרף לאוצר Near Business באמצעות קישור הזמנה",
             "pageTitle": "הצטרפות לאוצר",
             "pageDescription": "בקשה להצטרף לאוצר",
             "treasuryFallback": "האוצר הזה",

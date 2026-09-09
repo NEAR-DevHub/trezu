@@ -158,10 +158,8 @@
         "placeholder": "dd/mm/aaaa"
     },
     "metadata": {
-        "treasuryTitle": "Panel | Near Business",
-        "landingTitle": "Near Business | Gestión de tesorería multicadena",
-        "description": "Gestiona el capital de tu equipo en minutos desde un único panel sin entregar nunca tus claves.",
-        "ogTitle": "Near Business | Una multifirma. Cualquier cripto. Control total."
+        "title": "NEAR Business | Gestión confidencial de tesorería para equipos financieros cripto-nativos",
+        "description": "Unifica el capital de tu equipo, gestiona nóminas y grants, e intercambia en más de 35 cadenas desde un único panel. Aprobaciones multifirma, tus claves, tus condiciones."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Conectar tesorería",
-            "description": "Vincula tus tesorerías a un chat de Telegram",
-            "metaTitle": "Near Business — Conectar Telegram",
-            "metaDescription": "Conecta tu tesorería Near Business a un chat de Telegram"
-        },
-        "wallet": {
-            "title": "Near Business Wallet",
-            "description": "Firma propuestas de tesorería a través de Near Business"
+            "description": "Vincula tus tesorerías a un chat de Telegram"
         },
         "account": {
             "title": "Mi cuenta",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "No puedes añadir miembros mientras hay una solicitud de cambio de política activa. Apruébala o recházala primero."
         },
         "join": {
-            "metaTitle": "Unirse al treasury | Near Business",
-            "metaDescription": "Pide unirte a un treasury de Near Business con un enlace de invitación",
             "pageTitle": "Unirse al treasury",
             "pageDescription": "Solicitar unirse a un treasury",
             "treasuryFallback": "este treasury",

@@ -158,10 +158,8 @@
         "placeholder": "dd/mm/aaaa"
     },
     "metadata": {
-        "treasuryTitle": "Painel | Near Business",
-        "landingTitle": "Near Business | Gestão de tesouraria multichain",
-        "description": "Gerencie o capital da sua equipe em minutos a partir de um único painel sem nunca abrir mão das suas chaves.",
-        "ogTitle": "Near Business | Um multisig. Qualquer cripto. Controle total."
+        "title": "NEAR Business | Gestão de tesouraria confidencial para equipes financeiras cripto-nativas",
+        "description": "Unifique o capital da sua equipe, execute folha de pagamento e grants e faça swaps em mais de 35 blockchains a partir de um único painel. Aprovações multisig, suas chaves, seus termos."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Conectar tesouraria",
-            "description": "Vincule suas tesourarias a um chat do Telegram",
-            "metaTitle": "Near Business — Conectar Telegram",
-            "metaDescription": "Conecte sua tesouraria Near Business a um chat do Telegram"
-        },
-        "wallet": {
-            "title": "Near Business Wallet",
-            "description": "Assine propostas de tesouraria pelo Near Business"
+            "description": "Vincule suas tesourarias a um chat do Telegram"
         },
         "account": {
             "title": "Minha conta",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Você não pode adicionar membros enquanto houver uma solicitação de alteração de política ativa. Aprove ou rejeite primeiro."
         },
         "join": {
-            "metaTitle": "Entrar no treasury | Near Business",
-            "metaDescription": "Peça para entrar em um treasury Near Business com um link de convite",
             "pageTitle": "Entrar no treasury",
             "pageDescription": "Solicitar entrada em um treasury",
             "treasuryFallback": "este treasury",
