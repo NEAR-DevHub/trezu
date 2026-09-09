@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 import { AuthProvider } from "@/components/auth-provider";
@@ -10,13 +9,7 @@ import { Toaster } from "@/components/toaster";
 import { WarningsProvider } from "@/components/warnings-provider";
 import { figtree } from "@/lib/fonts";
 
-export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations("pages.telegram");
-    return {
-        title: t("metaTitle"),
-        description: t("metaDescription"),
-    };
-}
+export { generateMetadata } from "@/lib/metadata";
 
 export default async function TelegramLayout({
     children,
@@ -34,20 +27,6 @@ export default async function TelegramLayout({
             suppressHydrationWarning
             className={figtree.variable}
         >
-            <head>
-                <link
-                    rel="icon"
-                    href="/favicon_light.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: light)"
-                />
-                <link
-                    rel="icon"
-                    href="/favicon_dark.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: dark)"
-                />
-            </head>
             <body
                 className={`${figtree.variable} antialiased bg-background text-foreground`}
             >

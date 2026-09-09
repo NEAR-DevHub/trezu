@@ -158,10 +158,8 @@
         "placeholder": "yyyy/mm/dd"
     },
     "metadata": {
-        "treasuryTitle": "ダッシュボード | Near Business",
-        "landingTitle": "Near Business | クロスチェーン・トレジャリー管理",
-        "description": "鍵を手放すことなく、単一のダッシュボードからチームの資金を数分で管理できます。",
-        "ogTitle": "Near Business | 一つのマルチシグ。あらゆる暗号資産。完全なコントロール。"
+        "title": "NEAR Business | 暗号資産財団のための機密トレジャリー管理",
+        "description": "財団の資金を一元化し、給与支払いとグラントを実行し、35以上のチェーンでスワップ。すべて単一のダッシュボードから。マルチシグ承認、鍵はあなたの手に、条件もあなた次第。"
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "トレジャリーを接続",
-            "description": "トレジャリーをTelegramチャットにリンク",
-            "metaTitle": "Near Business — Telegramを接続",
-            "metaDescription": "Near BusinessトレジャリーをTelegramチャットに接続"
-        },
-        "wallet": {
-            "title": "Near Businessウォレット",
-            "description": "Near Business経由でトレジャリー提案に署名"
+            "description": "トレジャリーをTelegramチャットにリンク"
         },
         "account": {
             "title": "マイアカウント",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "ポリシー変更リクエストが進行中の間はメンバーを追加できません。先に承認または却下してください。"
         },
         "join": {
-            "metaTitle": "トレジャリーに参加 | Near Business",
-            "metaDescription": "招待リンクから Near Business トレジャリーへの参加を申請",
             "pageTitle": "トレジャリーに参加",
             "pageDescription": "トレジャリーへの参加をリクエスト",
             "treasuryFallback": "このトレジャリー",

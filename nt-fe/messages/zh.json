@@ -158,10 +158,8 @@
         "placeholder": "yyyy/mm/dd"
     },
     "metadata": {
-        "treasuryTitle": "仪表板 | Near Business",
-        "landingTitle": "Near Business | 跨链金库管理",
-        "description": "通过单一仪表板,几分钟内即可管理团队资金,而无需交出您的密钥。",
-        "ogTitle": "Near Business | 一个多签。任意加密货币。完全掌控。"
+        "title": "NEAR Business | 面向加密基金会的机密金库管理",
+        "description": "在单一仪表板中统一管理基金会资金、发放薪资与资助,并在 35+ 条链上进行兑换。多签审批,密钥在您手中,规则由您制定。"
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "连接金库",
-            "description": "将您的金库链接到 Telegram 聊天",
-            "metaTitle": "Near Business — 连接 Telegram",
-            "metaDescription": "将您的 Near Business 金库连接到 Telegram 聊天"
-        },
-        "wallet": {
-            "title": "Near Business 钱包",
-            "description": "通过 Near Business 签署金库提案"
+            "description": "将您的金库链接到 Telegram 聊天"
         },
         "account": {
             "title": "我的账户",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "存在进行中的策略变更请求时无法添加成员。请先批准或拒绝。"
         },
         "join": {
-            "metaTitle": "加入金库 | Near Business",
-            "metaDescription": "通过邀请链接申请加入 Near Business 金库",
             "pageTitle": "加入金库",
             "pageDescription": "请求加入金库",
             "treasuryFallback": "此金库",

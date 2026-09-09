@@ -158,10 +158,8 @@
         "placeholder": "дд.мм.рррр"
     },
     "metadata": {
-        "treasuryTitle": "Огляд | Near Business",
-        "landingTitle": "Near Business | Керування скарбницею між блокчейнами",
-        "description": "Керуйте капіталом команди за хвилини з єдиної панелі, не передаючи свої ключі.",
-        "ogTitle": "Near Business | Один мультипідпис. Будь-яка крипта. Повний контроль."
+        "title": "NEAR Business | Конфіденційне керування скарбницею для криптофондів",
+        "description": "Об'єднайте капітал свого фонду, нараховуйте зарплати та гранти й обмінюйте активи в понад 35 блокчейнах з єдиної панелі. Підтвердження мультипідписом, ваші ключі, ваші умови."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Підключити скарбницю",
-            "description": "Прив'яжіть скарбниці до чату Telegram",
-            "metaTitle": "Near Business — Підключити Telegram",
-            "metaDescription": "Підключіть вашу скарбницю Near Business до чату Telegram"
-        },
-        "wallet": {
-            "title": "Near Business Wallet",
-            "description": "Підписуйте пропозиції скарбниці через Near Business"
+            "description": "Прив'яжіть скарбниці до чату Telegram"
         },
         "account": {
             "title": "Мій обліковий запис",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Не можна додавати учасників, поки є активний запит на зміну політики. Спочатку схвалити або відхилити його."
         },
         "join": {
-            "metaTitle": "Приєднатися до treasury | Near Business",
-            "metaDescription": "Попросити приєднатися до treasury Near Business за посиланням-запрошенням",
             "pageTitle": "Приєднатися до treasury",
             "pageDescription": "Запит на приєднання до treasury",
             "treasuryFallback": "цього treasury",

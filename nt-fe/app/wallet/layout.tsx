@@ -1,18 +1,11 @@
-import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 import { QueryProvider } from "@/components/query-provider";
 import { figtree } from "@/lib/fonts";
 
-export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations("pages.wallet");
-    return {
-        title: t("title"),
-        description: t("description"),
-    };
-}
+export { generateMetadata } from "@/lib/metadata";
 
 export default async function WalletLayout({
     children,
@@ -30,20 +23,6 @@ export default async function WalletLayout({
             suppressHydrationWarning
             className={figtree.variable}
         >
-            <head>
-                <link
-                    rel="icon"
-                    href="/favicon_light.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: light)"
-                />
-                <link
-                    rel="icon"
-                    href="/favicon_dark.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: dark)"
-                />
-            </head>
             <body
                 className={`${figtree.variable} antialiased bg-background text-foreground`}
             >
