@@ -22,6 +22,7 @@ const http = require("http");
 const https = require("https");
 const { URL } = require("url");
 
+const PROXY_HOST = process.env.PROXY_HOST || "localhost";
 const PROXY_PORT = process.env.PROXY_PORT || 8888;
 const TARGET_HOST =
     process.env.BACKEND_PROXY_TARGET || "https://api.testenv.trezu.app";
@@ -114,7 +115,7 @@ const server = http.createServer((req, res) => {
     req.pipe(proxy);
 });
 
-server.listen(PROXY_PORT, () => {
+server.listen(PROXY_PORT, PROXY_HOST, () => {
     console.log("\n🔄 CORS Proxy Server");
     console.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
     console.log(`📡 Listening on:  http://localhost:${PROXY_PORT}`);

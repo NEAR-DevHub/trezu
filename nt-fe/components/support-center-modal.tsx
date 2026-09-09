@@ -1,7 +1,6 @@
 "use client";
 
 import { CustomerSupportIcon, File01Icon } from "@hugeicons/core-free-icons";
-import Gleap from "gleap";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useMemo } from "react";
@@ -14,6 +13,7 @@ import {
     mobileInsetSheetClassName,
 } from "@/components/modal";
 import { APP_DOCS_URL } from "@/constants/config";
+import { openSupportChat } from "@/lib/support-chat";
 import { LANDING_HREF } from "@/lib/welcome-entry";
 import { cn } from "@/lib/utils";
 import { NearBusinessLogo } from "./icons/near-business-logo";
@@ -130,7 +130,7 @@ export function SupportCenterModal({
                 title: t("productSupportTitle"),
                 description: t("productSupportDescription"),
                 onClick: () => {
-                    Gleap.open();
+                    void openSupportChat();
                 },
             },
         ],
