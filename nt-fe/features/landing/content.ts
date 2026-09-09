@@ -233,7 +233,7 @@ export const FAQ_ITEMS = [
     },
     {
         question: "Which chains and assets are supported?",
-        answer: "35+ chains including Bitcoin, Ethereum, Solana and NEAR, and 150+ tokens, with cross-chain swaps built in. No external bridges.",
+        answer: "35+ chains including Bitcoin, Ethereum, Solana and NEAR, and 180+ assets, with cross-chain swaps built in. No external bridges.",
     },
     {
         question: "How do approvals and permissions work?",
