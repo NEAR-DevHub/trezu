@@ -158,8 +158,8 @@
         "placeholder": "yyyy/mm/dd"
     },
     "metadata": {
-        "title": "NEAR Business | 面向加密基金会的机密金库管理",
-        "description": "在单一仪表板中统一管理基金会资金、发放薪资与资助,并在 35+ 条链上进行兑换。多签审批,密钥在您手中,规则由您制定。"
+        "title": "NEAR Business | 面向加密原生财务团队的机密金库管理",
+        "description": "在单一仪表板中统一管理团队资金、发放薪资与资助,并在 35+ 条链上进行兑换。多签审批,密钥在您手中,规则由您制定。"
     },
     "pages": {
         "dashboard": {
