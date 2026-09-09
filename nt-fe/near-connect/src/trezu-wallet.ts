@@ -5,17 +5,11 @@ const DEFAULT_POPUP_WIDTH = 520;
 const DEFAULT_POPUP_HEIGHT = 700;
 const POLL_INTERVAL = 300;
 
-const APP_PRODUCTION_ORIGIN = "https://business.near.com";
-const APP_STAGING_ORIGIN = "https://testenv.business.near.com";
-
-function appOrigin(): string {
-    if (typeof window === "undefined") return APP_PRODUCTION_ORIGIN;
-    const { hostname, origin } = window.location;
-    if (hostname === "testenv.business.near.com") return APP_STAGING_ORIGIN;
-    if (hostname === "business.near.com") return APP_PRODUCTION_ORIGIN;
-    if (hostname === "localhost" || hostname === "127.0.0.1") return origin;
-    return APP_PRODUCTION_ORIGIN;
-}
+const TREZU_URLS: Record<string, string> = {
+    mainnet: "https://trezu.app",
+    // Only mainnet is supported, but we keep it here just in case
+    // testnet: "https://trezu.app",
+};
 
 const RPC_URLS: Record<string, string> = {
     mainnet: "https://rpc.mainnet.near.org",
@@ -228,7 +222,7 @@ class TrezuWalletConnector {
 }
 
 const wallets: Record<string, TrezuWalletConnector> = {
-    mainnet: new TrezuWalletConnector(appOrigin(), "mainnet"),
+    mainnet: new TrezuWalletConnector(TREZU_URLS.mainnet, "mainnet"),
 };
 
 const TrezuWallet = async () => {
