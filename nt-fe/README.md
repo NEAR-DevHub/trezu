@@ -120,6 +120,10 @@ nt-fe/
 - `NEXT_PUBLIC_BACKEND_API_BASE` - Backend API base URL (default: http://localhost:8080)
 - `NEXT_PUBLIC_GTM_ID` - Google Tag Manager container ID (for example: GTM-XXXXXXX). Marketing configures conversion tags and ad pixels inside GTM.
 - `NEXT_PUBLIC_GA_MEASUREMENT_ID` - Google Analytics 4 measurement ID (for example: G-XXXXXXXXXX). Loaded alongside GTM for direct GA4 tracking.
+- `NEXT_PUBLIC_HELPSCOUT_BEACON_ID` - Help Scout Beacon ID (optional). Enables the Help Scout support chat widget.
+- `NEXT_PUBLIC_GLEAP_API_KEY` - Gleap API key (optional). Enables the Gleap support chat widget. Only one chat provider is active at a time; Help Scout takes precedence when both are set. Without either, "Product support" opens the contact-us page instead.
+
+The support chat launcher button is hidden on mobile viewports and while a modal is open; the chat remains reachable via Help & Support in the user menu.
 
 ## Tech Stack
 

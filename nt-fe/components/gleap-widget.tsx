@@ -1,20 +1,22 @@
 "use client";
 
-import { useEffect } from "react";
 import Gleap from "gleap";
-import { useUiStore } from "@/stores/ui-store";
+import { useEffect } from "react";
 
-export function GleapWidget() {
-    const overlayOpen = useUiStore((s) => s.overlayCount > 0);
+interface GleapWidgetProps {
+    apiKey: string;
+    /** Hide the floating feedback button; `Gleap.open()` still works. */
+    hideLauncher: boolean;
+}
+
+export function GleapWidget({ apiKey, hideLauncher }: GleapWidgetProps) {
+    useEffect(() => {
+        Gleap.initialize(apiKey);
+    }, [apiKey]);
 
     useEffect(() => {
-        Gleap.initialize("linZWdHygUIv7pmrByyph1yJHvx1Kdzw");
-        Gleap.showFeedbackButton(true);
-    }, []);
-
-    useEffect(() => {
-        Gleap.showFeedbackButton(!overlayOpen);
-    }, [overlayOpen]);
+        Gleap.showFeedbackButton(!hideLauncher);
+    }, [hideLauncher]);
 
     return null;
 }

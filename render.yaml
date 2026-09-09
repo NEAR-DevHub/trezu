@@ -70,6 +70,8 @@ services:
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
         value: https://api.business.near.com
+      - key: NEXT_PUBLIC_HELPSCOUT_BEACON_ID
+        value: fafa62c2-1d85-4964-a894-559473b9ce79
     healthCheckPath: /
 
   # Staging Backend Service (Rust/Axum)
@@ -139,6 +141,8 @@ services:
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
         sync: false
+      - key: NEXT_PUBLIC_HELPSCOUT_BEACON_ID
+        value: fafa62c2-1d85-4964-a894-559473b9ce79
     healthCheckPath: /
 
 databases:

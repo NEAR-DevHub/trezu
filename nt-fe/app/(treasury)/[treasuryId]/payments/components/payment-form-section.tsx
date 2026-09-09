@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowDown01Icon, Wallet03Icon } from "@hugeicons/core-free-icons";
-import Gleap from "gleap";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -44,6 +43,7 @@ import {
     resolveRecipientBlockchain,
 } from "@/lib/recipient-address-rules";
 import type { SectionRule } from "@/lib/section-rules";
+import { openSupportChat } from "@/lib/support-chat";
 import {
     type RecipientNetworkRuleOption,
     RecipientNetworkSelect,
@@ -420,7 +420,7 @@ export function PaymentFormSection<
         isSubmitting;
 
     const handleOpenProductSupport = useCallback(() => {
-        Gleap.open();
+        void openSupportChat();
     }, []);
 
     const restrictedAlertNode = showRestrictedRecipientAlert ? (
