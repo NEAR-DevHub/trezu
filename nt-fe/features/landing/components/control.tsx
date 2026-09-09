@@ -14,6 +14,7 @@ import {
 } from "../content";
 import { Tag } from "./confidential";
 import { NearMark } from "./landing-icons";
+import { Reveal } from "./reveal";
 
 /** "Every movement passes the rules you set" — photo split with floating copy. */
 export function ControlSplit() {
@@ -42,13 +43,13 @@ export function ControlSplit() {
 
             {/* The heading keeps to a ~400px column so it breaks over four
                 lines like the design and leaves the portrait uncovered. */}
-            <div className="relative flex flex-col items-start gap-4 lg:mt-20 lg:w-[400px]">
+            <Reveal className="relative flex flex-col items-start gap-4 lg:mt-20 lg:w-[400px]">
                 <Tag>Control</Tag>
                 <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
                     <span className="font-light">Every movement passes </span>
                     <span className="font-medium">the rules you set.</span>
                 </h2>
-            </div>
+            </Reveal>
 
             {/* The cards sit near the foot of the portrait, so from lg the gap
                 tracks the photo's height rather than staying fixed. Their copy
@@ -56,9 +57,10 @@ export function ControlSplit() {
                 aligned, so every title sits on the same line whatever the
                 length of the body beneath it. */}
             <div className="relative mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[min(290px,20vw)] lg:grid-cols-4">
-                {CONTROL_CARDS.map(({ title, body }) => (
-                    <div
+                {CONTROL_CARDS.map(({ title, body }, index) => (
+                    <Reveal
                         key={title}
+                        delayMs={index * 60}
                         className="flex flex-col rounded-2xl bg-white/20 p-4 sm:min-h-[180px] sm:pt-14"
                     >
                         <p className="text-2xl font-medium leading-normal">
@@ -67,7 +69,7 @@ export function ControlSplit() {
                         <p className="mt-2 text-base font-normal leading-normal">
                             {body}
                         </p>
-                    </div>
+                    </Reveal>
                 ))}
             </div>
         </section>
@@ -82,7 +84,7 @@ export function Capabilities() {
         <section className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-6 py-16 md:px-12 lg:flex-row lg:gap-20 lg:pl-16 lg:pr-32">
             {/* The render is landscape, so the portrait tile centre-crops it;
                 below lg the tile goes full width and shows more of the frame. */}
-            <div className="relative h-[280px] w-full shrink-0 overflow-hidden rounded-3xl bg-landing-mist lg:h-[415px] lg:w-[379px]">
+            <Reveal className="relative h-[280px] w-full shrink-0 overflow-hidden rounded-3xl bg-landing-mist lg:h-[415px] lg:w-[379px]">
                 <Image
                     src="/landing/near-glass.jpg"
                     alt=""
@@ -90,8 +92,8 @@ export function Capabilities() {
                     sizes="(min-width: 1024px) 379px, 100vw"
                     className="object-cover"
                 />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
+            </Reveal>
+            <Reveal delayMs={80} className="flex min-w-0 flex-1 flex-col gap-4">
                 <h2 className="text-[32px] font-medium leading-none lg:text-[40px]">
                     The full operating surface
                     <br />
@@ -140,7 +142,7 @@ export function Capabilities() {
                         );
                     })}
                 </ol>
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -156,7 +158,7 @@ export function Capabilities() {
 export function MultichainHeader() {
     return (
         <section className="relative mx-auto w-full max-w-[1440px] px-6 pb-6 pt-16 md:px-12 lg:aspect-[1440/609] lg:px-16 lg:pb-0 lg:pt-0">
-            <div className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
+            <Reveal className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
                 <h2 className="text-[36px] font-normal leading-[1.1] lg:text-[min(48px,3.33vw)]">
                     Manage BTC, ETH, SOL,{" "}
                     <span className="font-medium text-landing-green">NEAR</span>{" "}
@@ -169,10 +171,13 @@ export function MultichainHeader() {
                     <br />
                     no chain-by-chain ops overhead.
                 </p>
-            </div>
+            </Reveal>
             {/* The render is flush to its own edges, so it is sized to start
                 just past the copy column instead of overlapping it. */}
-            <div className="mt-2 lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:w-[50%] xl:w-[53%]">
+            <Reveal
+                delayMs={80}
+                className="mt-2 lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:w-[50%] xl:w-[53%]"
+            >
                 <Image
                     src="/landing/devices.png"
                     alt="The NEAR Business dashboard on a laptop and a phone"
@@ -181,7 +186,7 @@ export function MultichainHeader() {
                     sizes="(min-width: 1024px) 53vw, 100vw"
                     className="h-auto w-full"
                 />
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -243,13 +248,16 @@ export function Multichain() {
             </div>
 
             <div className="px-6 md:px-12">
-                <h2 className="mt-16 text-center text-[32px] leading-none lg:mt-[72px]">
-                    Built for treasuries that run on a mandate
-                </h2>
+                <Reveal>
+                    <h2 className="mt-16 text-center text-[32px] leading-none lg:mt-[72px]">
+                        Built for treasuries that run on a mandate
+                    </h2>
+                </Reveal>
                 <div className="mx-auto mt-12 grid w-full max-w-[1178px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:mt-16 lg:px-4 lg:pt-4">
-                    {BUILT_FOR.map(({ title, body }) => (
-                        <div
+                    {BUILT_FOR.map(({ title, body }, index) => (
+                        <Reveal
                             key={title}
+                            delayMs={index * 60}
                             className="min-h-[188px] rounded-[12px] border border-landing-grey bg-landing-paper px-8 py-8 text-landing-ink lg:pt-10"
                         >
                             <p className="text-lg font-medium leading-normal">
@@ -258,7 +266,7 @@ export function Multichain() {
                             <p className="mt-3 text-base font-normal leading-normal">
                                 {body}
                             </p>
-                        </div>
+                        </Reveal>
                     ))}
                 </div>
             </div>
@@ -281,7 +289,7 @@ export function TreasuryStatement() {
                 sizes="100vw"
                 className="object-cover"
             />
-            <div className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center px-6 pb-24 pt-16 text-center md:px-12 lg:min-h-[675px] lg:pb-0 lg:pt-[70px]">
+            <Reveal className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center px-6 pb-24 pt-16 text-center md:px-12 lg:min-h-[675px] lg:pb-0 lg:pt-[70px]">
                 <NearMark className="size-12" />
                 <p className="mt-6 font-landing-mono text-xs uppercase leading-normal tracking-[0.72px]">
                     Built on NEAR Intents
@@ -291,7 +299,7 @@ export function TreasuryStatement() {
                     <br />
                     your business.
                 </h2>
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -300,10 +308,12 @@ export function CustodyTruth() {
     return (
         <section className="bg-landing-ink text-landing-paper">
             <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-8 pt-8 md:px-12 xl:px-32">
-                <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
-                    Self-custodial by architecture
-                </p>
-                <div className="mt-24 lg:mt-[176px]">
+                <Reveal>
+                    <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
+                        Self-custodial by architecture
+                    </p>
+                </Reveal>
+                <Reveal className="mt-24 lg:mt-[176px]">
                     <p className="text-base font-normal leading-[1.2] text-landing-paper">
                         Funds move only on the signatures your organization
                         defines.
@@ -319,8 +329,8 @@ export function CustodyTruth() {
                         </span>{" "}
                         to initiate, alter, or reverse a transaction.
                     </p>
-                </div>
-                <div className="mt-24 flex min-h-12 flex-wrap items-center justify-between gap-4 border-t border-landing-grey-light py-3 lg:mt-[176px]">
+                </Reveal>
+                <Reveal className="mt-24 flex min-h-12 flex-wrap items-center justify-between gap-4 border-t border-landing-grey-light py-3 lg:mt-[176px]">
                     <div className="flex items-center gap-2">
                         <Icon
                             icon={SecurityCheckIcon}
@@ -339,7 +349,7 @@ export function CustodyTruth() {
                     >
                         Read the report
                     </a>
-                </div>
+                </Reveal>
             </div>
         </section>
     );

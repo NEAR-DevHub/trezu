@@ -15,6 +15,7 @@ import {
 import { Tag } from "./confidential";
 import { GUTTER } from "./hero";
 import { CheckCircleIcon } from "./landing-icons";
+import { Reveal } from "./reveal";
 
 const PRICING_ICONS = {
     diamond: Diamond01Icon,
@@ -48,12 +49,14 @@ export function Comparison() {
     return (
         <section className="mx-auto w-full max-w-[1440px] px-4 py-12 md:p-12 lg:p-16">
             <div className="rounded-3xl bg-landing-paper p-6 md:p-10 lg:p-16">
-                <h2 className="text-center text-[40px] font-light leading-[1.1] tracking-[-1px] text-landing-ink md:text-[56px] md:tracking-[-1.4px] xl:text-[72px] xl:tracking-[-1.8px]">
-                    <span className="block font-medium">
-                        Advanced treasury control
-                    </span>
-                    without enterprise prices or custody risk.
-                </h2>
+                <Reveal>
+                    <h2 className="text-center text-[40px] font-light leading-[1.1] tracking-[-1px] text-landing-ink md:text-[56px] md:tracking-[-1.4px] xl:text-[72px] xl:tracking-[-1.8px]">
+                        <span className="block font-medium">
+                            Advanced treasury control
+                        </span>
+                        without enterprise prices or custody risk.
+                    </h2>
+                </Reveal>
                 {/* Column geometry follows the Figma table: 415 / 400 / 369 of
                     1184, the label cell inset 49px and the other two flush to
                     their column. Only the outer columns carry row rules; the
@@ -61,7 +64,10 @@ export function Comparison() {
                 {/* The horizontal scroller computes overflow-y to `auto`, so
                     the highlight fill's 15px overhang is carried as padding
                     here — inside the clip box — instead of being clipped. */}
-                <div className="mt-[57px] overflow-x-auto pt-[15px]">
+                <Reveal
+                    delayMs={80}
+                    className="mt-[57px] overflow-x-auto pt-[15px]"
+                >
                     <div className="relative min-w-[720px] pb-14">
                         <div
                             aria-hidden
@@ -114,7 +120,7 @@ export function Comparison() {
                             We cover the gas. Swap fee 0.70%.
                         </p>
                     </div>
-                </div>
+                </Reveal>
             </div>
         </section>
     );
@@ -134,68 +140,75 @@ export function Pricing() {
                     GUTTER,
                 )}
             >
-                <h2 className="text-[32px] font-medium leading-none lg:text-[40px]">
-                    Transparent fees, always.
-                </h2>
-                <p className="mt-4 text-base leading-normal">
-                    No subscriptions. No hidden charges. Pay only for what you
-                    use.
-                </p>
+                <Reveal>
+                    <h2 className="text-[32px] font-medium leading-none lg:text-[40px]">
+                        Transparent fees, always.
+                    </h2>
+                    <p className="mt-4 text-base leading-normal">
+                        No subscriptions. No hidden charges. Pay only for what
+                        you use.
+                    </p>
+                </Reveal>
                 <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 lg:mt-16 lg:gap-8">
-                    {PRICING_CELLS.map(({ label, icon, price, unit, body }) => (
-                        <div
-                            key={label}
-                            className="flex min-h-[255px] flex-col rounded-[12px] bg-landing-paper px-8 pt-10 pb-8"
-                        >
-                            <div className="flex h-12 items-start justify-between">
-                                <MonoLabel className="text-landing-grey">
-                                    {label}
-                                </MonoLabel>
-                                <Icon
-                                    icon={PRICING_ICONS[icon]}
-                                    strokeWidth={1.25}
-                                    className="size-12 text-landing-green"
-                                />
-                            </div>
-                            <p className="mt-[10px] text-[48px] leading-[1.04] lg:text-[64px]">
-                                {price}
-                                {/* The unit rides at half the figure's size on
+                    {PRICING_CELLS.map(
+                        ({ label, icon, price, unit, body }, index) => (
+                            <Reveal
+                                key={label}
+                                delayMs={index * 60}
+                                className="flex min-h-[255px] flex-col rounded-[12px] bg-landing-paper px-8 pt-10 pb-8"
+                            >
+                                <div className="flex h-12 items-start justify-between">
+                                    <MonoLabel className="text-landing-grey">
+                                        {label}
+                                    </MonoLabel>
+                                    <Icon
+                                        icon={PRICING_ICONS[icon]}
+                                        strokeWidth={1.25}
+                                        className="size-12 text-landing-green"
+                                    />
+                                </div>
+                                <p className="mt-[10px] text-[48px] leading-[1.04] lg:text-[64px]">
+                                    {price}
+                                    {/* The unit rides at half the figure's size on
                                     its baseline, as in the design. */}
-                                {unit && (
-                                    <span className="text-[24px] lg:text-[32px]">
-                                        {unit}
-                                    </span>
-                                )}
-                            </p>
-                            <p className="mt-2 text-sm leading-normal text-landing-grey">
-                                {body.map((line) => (
-                                    <span key={line} className="block">
-                                        {line}
-                                    </span>
-                                ))}
-                            </p>
-                        </div>
-                    ))}
+                                    {unit && (
+                                        <span className="text-[24px] lg:text-[32px]">
+                                            {unit}
+                                        </span>
+                                    )}
+                                </p>
+                                <p className="mt-2 text-sm leading-normal text-landing-grey">
+                                    {body.map((line) => (
+                                        <span key={line} className="block">
+                                            {line}
+                                        </span>
+                                    ))}
+                                </p>
+                            </Reveal>
+                        ),
+                    )}
                 </div>
-                <div className="mt-12 lg:mt-16">
+                <Reveal className="mt-12 lg:mt-16">
                     <MonoLabel>Everything included</MonoLabel>
                     <div className="mt-6 flex max-w-[1200px] flex-wrap gap-3">
                         {INCLUDED_FEATURES.map((feature) => (
                             <Tag key={feature}>{feature}</Tag>
                         ))}
                     </div>
-                </div>
-                <p className="mt-12 text-center text-base leading-normal text-landing-grey lg:mt-16">
-                    Enterprise or custom volume?{" "}
-                    <Link
-                        href={EARLY_ACCESS_HREF}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-landing-ink underline underline-offset-4"
-                    >
-                        Request early access
-                    </Link>
-                </p>
+                </Reveal>
+                <Reveal>
+                    <p className="mt-12 text-center text-base leading-normal text-landing-grey lg:mt-16">
+                        Enterprise or custom volume?{" "}
+                        <Link
+                            href={EARLY_ACCESS_HREF}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-landing-ink underline underline-offset-4"
+                        >
+                            Request early access
+                        </Link>
+                    </p>
+                </Reveal>
             </div>
         </section>
     );
