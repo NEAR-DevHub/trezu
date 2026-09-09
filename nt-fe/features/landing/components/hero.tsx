@@ -87,6 +87,8 @@ export function Hero() {
                     capital, and swap across 35+ chains from a single dashboard.
                     Multisig approvals, your keys, your terms.
                 </p>
+                {/* Uncapped on purpose: the design sets this caption on one
+                    line and only lets it wrap once the column runs out. */}
                 <p className="text-xs leading-normal">
                     One dashboard for confidential balances, approvals,
                     payments, and swaps across every chain you hold assets on.
