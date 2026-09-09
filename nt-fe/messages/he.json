@@ -920,6 +920,7 @@
         "title": "חברים",
         "description": "נהל חברי צוות והרשאות",
         "permissions": "הרשאות",
+        "added": "נוסף",
         "member": "חבר",
         "noActiveMembers": "לא נמצאו חברים פעילים.",
         "addNewMember": "הוסף חבר",

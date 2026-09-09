@@ -7,6 +7,7 @@ import { CopyButton } from "@/components/copy-button";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
 import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
+import { FormattedDate } from "@/components/formatted-date";
 import { User } from "@/components/user";
 
 interface Member {
@@ -21,6 +22,7 @@ interface MemberActionSheetProps {
     member: Member | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    addedAt?: number;
     onSend: () => void;
     onRemove: () => void;
     removeDisabled?: boolean;
@@ -31,6 +33,7 @@ export function MemberActionSheet({
     member,
     open,
     onOpenChange,
+    addedAt,
     onSend,
     onRemove,
     removeDisabled,
@@ -80,6 +83,12 @@ export function MemberActionSheet({
                             className="shrink-0 text-general-secondary-foreground"
                         />
                     </div>
+                    {addedAt ? (
+                        <div className="text-sm text-general-muted-foreground">
+                            {tMembers("added")}{" "}
+                            <FormattedDate date={addedAt} relative />
+                        </div>
+                    ) : null}
                 </div>
                 <div className="flex gap-3">
                     <AuthButton

@@ -920,6 +920,7 @@
         "title": "멤버",
         "description": "팀 멤버 및 권한 관리",
         "permissions": "권한",
+        "added": "추가됨",
         "member": "멤버",
         "noActiveMembers": "활성 멤버를 찾을 수 없습니다.",
         "addNewMember": "멤버 추가",

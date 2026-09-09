@@ -920,6 +920,7 @@
         "title": "Üyeler",
         "description": "Ekip üyelerini ve izinleri yönetin",
         "permissions": "İzinler",
+        "added": "Eklendi",
         "member": "Üye",
         "noActiveMembers": "Aktif üye bulunamadı.",
         "addNewMember": "Üye Ekle",

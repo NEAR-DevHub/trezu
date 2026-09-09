@@ -920,6 +920,7 @@
         "title": "Membros",
         "description": "Gerencie membros da equipe e permissões",
         "permissions": "Permissões",
+        "added": "Adicionado",
         "member": "Membro",
         "noActiveMembers": "Nenhum membro ativo encontrado.",
         "addNewMember": "Adicionar membro",

@@ -12,6 +12,7 @@ import {
 import { TreasuryBalance, TreasuryLogo } from "@/components/treasury-info";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Treasury } from "@/lib/api";
+import { CREATE_HREF } from "@/lib/welcome-entry";
 
 interface DepositPayTreasuryModalProps {
     open: boolean;
@@ -74,7 +75,7 @@ export function DepositPayTreasuryModal({
                                 variant="secondary"
                                 className="w-full"
                             >
-                                <Link href="/create">
+                                <Link href={CREATE_HREF}>
                                     {t("createTreasury")}
                                 </Link>
                             </Button>

@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
+import { FormattedDate } from "@/components/formatted-date";
 import { EmptyState } from "@/components/empty-state";
 import { Icon } from "@/components/icon";
 import { NumberBadge } from "@/components/number-badge";
@@ -52,6 +53,7 @@ import {
 import { HEAD_CLASS } from "@/features/proposals/components/proposals-table-layout";
 import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { useMemberAddedAt } from "@/hooks/use-member-added-at";
 import { useMemberJoinRequests } from "@/hooks/use-member-invites";
 import { useTreasury } from "@/hooks/use-treasury";
 import { trackEvent } from "@/lib/analytics";
@@ -80,6 +82,7 @@ const MEMBER_COLUMN_IDS = [
     "select",
     "member",
     "permissions",
+    "added",
     "actions",
 ] as const;
 
@@ -88,6 +91,7 @@ const MEMBER_COLUMN_CLASS: Record<(typeof MEMBER_COLUMN_IDS)[number], string> =
         select: "w-10 px-3",
         member: "px-3",
         permissions: "px-3",
+        added: "w-[140px] px-3",
         actions: "w-[88px] px-3",
     };
 
@@ -233,6 +237,7 @@ export default function MembersPage() {
         }
     }, [searchParams, canAddMember, router, treasuryId]);
 
+    const { addedAt } = useMemberAddedAt(treasuryId);
     const { canModifyMember, canDeleteBulk } = useMemberValidation(
         existingMembers,
         {
@@ -467,6 +472,11 @@ export default function MembersPage() {
                     <PermissionsHeader policyRoles={availableRoles} />
                 </TableHead>
                 <TableHead
+                    className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.added)}
+                >
+                    {tMembers("added")}
+                </TableHead>
+                <TableHead
                     className={cn(HEAD_CLASS, MEMBER_COLUMN_CLASS.actions)}
                 />
             </TableRow>
@@ -539,6 +549,9 @@ export default function MembersPage() {
                                                                 <Skeleton className="h-7 w-20 rounded-full bg-general-bg-secondary" />
                                                                 <Skeleton className="h-7 w-24 rounded-full bg-general-bg-secondary" />
                                                             </div>
+                                                        ) : columnId ===
+                                                          "added" ? (
+                                                            <Skeleton className="h-4 w-20 bg-general-bg-secondary" />
                                                         ) : null}
                                                     </TableCell>
                                                 ),
@@ -632,6 +645,15 @@ export default function MembersPage() {
                                             ),
                                         )}
                                     </div>
+                                    {addedAt[member.accountId] ? (
+                                        <p className="mt-2 text-sm text-general-muted-foreground">
+                                            <FormattedDate
+                                                date={addedAt[member.accountId]}
+                                                relative
+                                                withTooltip={false}
+                                            />
+                                        </p>
+                                    ) : null}
                                 </div>
                             </div>
                         </button>
@@ -742,6 +764,31 @@ export default function MembersPage() {
                                                         rowCount:
                                                             members.length,
                                                         columnIndex: 3,
+                                                    },
+                                                )}
+                                            >
+                                                {addedAt[member.accountId] ? (
+                                                    <FormattedDate
+                                                        date={
+                                                            addedAt[
+                                                                member.accountId
+                                                            ]
+                                                        }
+                                                        relative
+                                                    />
+                                                ) : (
+                                                    <span className="text-general-muted-foreground">
+                                                        —
+                                                    </span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell
+                                                className={memberSheetCellClass(
+                                                    {
+                                                        rowIndex,
+                                                        rowCount:
+                                                            members.length,
+                                                        columnIndex: 4,
                                                     },
                                                 )}
                                                 onClick={(event) =>
@@ -1273,6 +1320,9 @@ export default function MembersPage() {
                 onOpenChange={(open) => {
                     if (!open) setSheetMember(null);
                 }}
+                addedAt={
+                    sheetMember ? addedAt[sheetMember.accountId] : undefined
+                }
                 onSend={handleSheetSend}
                 onRemove={handleSheetRemove}
                 removeDisabled={
