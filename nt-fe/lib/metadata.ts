@@ -1,7 +1,16 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 
-const SITE_URL = "https://business.near.com";
+/**
+ * Canonical origin the link preview URLs are resolved against. Render injects
+ * `RENDER_EXTERNAL_URL` with the service's own `*.onrender.com` address, which
+ * keeps staging from advertising production cards; production overrides it with
+ * `SITE_URL` because its custom domain isn't what Render injects.
+ */
+const SITE_URL =
+    process.env.SITE_URL ??
+    process.env.RENDER_EXTERNAL_URL ??
+    "https://business.near.com";
 
 /** Suffixes the title of every segment nested under a root layout. */
 const TITLE_TEMPLATE = "%s | Near Business";
