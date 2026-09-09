@@ -6,7 +6,7 @@ import {
     membersFromPolicy,
 } from "./member-added-at";
 import type { ProposalKind } from "./proposals-api";
-import type { Policy, RolePermission } from "@/types/policy";
+import type { Policy } from "@/types/policy";
 
 const EMPTY_VOTE = {
     weight_kind: "RoleWeight" as const,
@@ -14,20 +14,22 @@ const EMPTY_VOTE = {
     threshold: [1, 2] as [number, number],
 };
 
-function groupRole(name: string, members: string[]): RolePermission {
+function groupRole(name: string, members: string[]) {
     return {
         name,
         kind: { Group: members },
-        permissions: [],
+        permissions: [] as string[],
         vote_policy: {},
     };
 }
 
-function policyWith(roles: RolePermission[]): Pick<Policy, "roles"> {
+function policyWith(
+    roles: ReturnType<typeof groupRole>[],
+): Pick<Policy, "roles"> {
     return { roles };
 }
 
-function changePolicy(roles: RolePermission[]): ProposalKind {
+function changePolicy(roles: ReturnType<typeof groupRole>[]): ProposalKind {
     return {
         ChangePolicy: {
             policy: {
