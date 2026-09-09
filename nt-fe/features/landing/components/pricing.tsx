@@ -7,8 +7,8 @@ import Link from "next/link";
 import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import {
-    BOOK_DEMO_HREF,
     COMPARISON_ROWS,
+    EARLY_ACCESS_HREF,
     INCLUDED_FEATURES,
     PRICING_CELLS,
 } from "../content";
@@ -108,7 +108,7 @@ export function Comparison() {
                         {/* The footnote lives inside the highlighted column, so
                             it shares the column offset and stretches the fill
                             past the last row. */}
-                        <p className="relative ml-[32.35%] mt-[88px] w-[34.46%] px-6 text-center text-[13px] leading-[1.55] text-landing-ink">
+                        <p className="relative ml-[32.35%] mt-[88px] w-[34.46%] px-6 text-center text-sm font-medium leading-[1.55] text-landing-ink">
                             Free includes 1,000 sponsored actions a month.
                             <br />
                             We cover the gas. Swap fee 0.70%.
@@ -188,10 +188,12 @@ export function Pricing() {
                 <p className="mt-12 text-center text-base leading-normal text-landing-grey lg:mt-16">
                     Enterprise or custom volume?{" "}
                     <Link
-                        href={BOOK_DEMO_HREF}
+                        href={EARLY_ACCESS_HREF}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="font-medium text-landing-ink underline underline-offset-4"
                     >
-                        Book a demo
+                        Request early access
                     </Link>
                 </p>
             </div>

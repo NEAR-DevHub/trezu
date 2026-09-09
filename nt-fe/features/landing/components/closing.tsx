@@ -13,22 +13,22 @@ import {
     PRIVACY_POLICY_URL,
     TERMS_OF_SERVICE_URL,
 } from "@/constants/config";
-import { BOOK_DEMO_HREF, FAQ_ITEMS } from "../content";
-import { BookDemoButton } from "./hero";
+import { CONTACT_HREF, FAQ_ITEMS } from "../content";
+import { EarlyAccessButton } from "./hero";
 import { NearBusinessWordmark } from "./landing-icons";
 
 export function WorksWith() {
     return (
         <section className="border-t border-landing-ink/10">
-            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:justify-between lg:gap-16 lg:pb-12 lg:pt-24 xl:px-32">
-                <h2 className="text-[40px] font-light leading-[1.12] lg:w-[584px] lg:text-[64px]">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:pb-12 lg:pt-24 xl:px-32">
+                <h2 className="text-[40px] font-light leading-[1.12] lg:shrink-0 lg:text-[60px]">
                     Your treasury <br className="hidden lg:inline" />
                     <span className="font-medium">
                         isn&apos;t the last stop.
                     </span>
                 </h2>
-                <div className="leading-normal lg:mt-5 lg:w-[552px]">
-                    <p className="text-xl font-medium">
+                <div className="leading-normal lg:mt-5 lg:flex-1">
+                    <p className="text-2xl font-medium">
                         Audit-ready exports fit the reporting stack you already
                         run.
                     </p>
@@ -90,7 +90,7 @@ const FOOTER_COLUMNS = [
     {
         heading: "Company",
         links: [
-            { label: "Contact", href: BOOK_DEMO_HREF },
+            { label: "Contact", href: CONTACT_HREF },
             { label: "Sign in", href: "/login" },
         ],
     },
@@ -140,35 +140,28 @@ export function Footer() {
 
                 <div className="mt-10 flex flex-col gap-10 lg:mt-[50px] lg:flex-row lg:justify-between">
                     <div>
-                        <BookDemoButton className="h-12 w-full max-w-[229px] text-base" />
+                        <EarlyAccessButton className="h-12 w-full max-w-[229px] px-8 text-base sm:w-auto" />
                         <p className="mt-8 text-sm leading-[1.2]">
                             We respond within one business day. No commitment.
                         </p>
                     </div>
-                    <div className="text-xs lg:w-[214px]">
-                        <p className="leading-[1.33]">
-                            &quot;NEAR maintains no technical capability to
-                            initiate, alter, or reverse transactions on your
-                            treasury.&quot;
-                        </p>
-                        <div className="mt-4 flex gap-4 leading-[1.2] text-landing-paper/50">
-                            <a
-                                href={TERMS_OF_SERVICE_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="lg:w-[99px] hover:underline"
-                            >
-                                Terms of Use
-                            </a>
-                            <a
-                                href={PRIVACY_POLICY_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="lg:w-[99px] hover:underline"
-                            >
-                                Privacy Policy
-                            </a>
-                        </div>
+                    <div className="flex gap-4 text-xs leading-[1.2] text-landing-paper/50 lg:w-[214px]">
+                        <a
+                            href={TERMS_OF_SERVICE_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="lg:w-[99px] hover:underline"
+                        >
+                            Terms of Use
+                        </a>
+                        <a
+                            href={PRIVACY_POLICY_URL}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="lg:w-[99px] hover:underline"
+                        >
+                            Privacy Policy
+                        </a>
                     </div>
                 </div>
 
