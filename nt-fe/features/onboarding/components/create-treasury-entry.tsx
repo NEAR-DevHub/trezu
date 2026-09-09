@@ -37,7 +37,6 @@ import {
     type CreationProgressEvent,
     checkHandleUnused,
     createTreasuryStream,
-    isInviteRequiredError,
     submitWhitelistRequest,
 } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
@@ -46,7 +45,6 @@ import { resolvePreferredMemberTreasuryId } from "@/lib/treasury-home";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { ConnectedAccountCard } from "./connected-account-card";
-import { InviteRequired } from "./invite-required";
 
 const ACCOUNT_SUFFIX = ".sputnik-dao.near";
 
@@ -140,14 +138,11 @@ function AlreadyHaveTreasurySignIn({ onSignIn }: { onSignIn: () => void }) {
 
 export function TreasuryOnboardingPage({
     initialScreen = "create",
-    inviteCode,
-    earlyAccessUrl = "/",
+    invited = false,
 }: {
     initialScreen?: InitialScreen;
-    /** Accepted invite for an invite-only deployment; sent with the creation request. */
-    inviteCode?: string;
-    /** Where the access message points when the backend rejects the invite. */
-    earlyAccessUrl?: string;
+    /** The visit came through an invite link on an invite-only deployment. */
+    invited?: boolean;
 }) {
     const router = useRouter();
     const pathname = usePathname();
@@ -189,7 +184,6 @@ export function TreasuryOnboardingPage({
     const [isSubmittingWaitlist, setIsSubmittingWaitlist] = useState(false);
     const [isWaitlistSubmitted, setIsWaitlistSubmitted] = useState(false);
     const [showWaitlist, setShowWaitlist] = useState(false);
-    const [inviteRequired, setInviteRequired] = useState(false);
     const pendingAutoCreateRef = useRef(false);
     const hasTrackedOnboardingEntry = useRef(false);
     const waitlistCardClassName =
@@ -205,7 +199,7 @@ export function TreasuryOnboardingPage({
     // An invited visit is an explicit request to create, even for someone who
     // already has a treasury they would otherwise be forwarded to.
     const shouldKeepUserOnCreatePage =
-        !!returnTo || forceStayOnCreatePage || !!inviteCode;
+        !!returnTo || forceStayOnCreatePage || invited;
     // Reached from inside the app, the screen is a self-contained detour: it
     // drops the branding and account chrome and centres the form in the
     // viewport, with its own way back to the page that sent the user here.
@@ -388,7 +382,6 @@ export function TreasuryOnboardingPage({
             isConfidential: true,
             financiers: [accountId],
             requestors: [accountId],
-            inviteCode,
         };
 
         setProgressSteps(CONFIDENTIAL_STEPS.map((step) => ({ ...step })));
@@ -418,18 +411,15 @@ export function TreasuryOnboardingPage({
         // earlier steps and skip already-done ones, which would make the UI jump
         // around — so there we ignore step events and hold a single spinner
         // (see `showLoaderOnCurrentStep`) until it's actually done.
-        // A 403 INVITE_REQUIRED is terminal: it is returned before any
-        // creation work starts, so re-driving the stream can never help.
         const attemptStream = async (
             trackProgress: boolean,
         ): Promise<
             | { done: true; treasuryId: string }
-            | { done: false; message?: string; inviteRequired?: boolean }
+            | { done: false; message?: string }
         > => {
             let outcome:
                 | { done: true; treasuryId: string }
-                | { done: false; message?: string; inviteRequired?: boolean } =
-                { done: false };
+                | { done: false; message?: string } = { done: false };
             const onCreationEvent = (event: CreationProgressEvent) => {
                 if (event.step === "done") {
                     outcome = { done: true, treasuryId: event.treasury! };
@@ -453,20 +443,8 @@ export function TreasuryOnboardingPage({
                     }),
                 );
             };
-            try {
-                await createTreasuryStream(request, onCreationEvent);
-            } catch (error) {
-                if (isInviteRequiredError(error)) {
-                    return { done: false, inviteRequired: true };
-                }
-                throw error;
-            }
+            await createTreasuryStream(request, onCreationEvent);
             return outcome;
-        };
-
-        const denyInvite = () => {
-            setProgressOpen(false);
-            setInviteRequired(true);
         };
 
         // Show the spinner on the step where it stalled (the first one that
@@ -485,9 +463,7 @@ export function TreasuryOnboardingPage({
 
         // Keep the progress modal open and re-drive the flow until the backend
         // (this call or the background sweeper) finishes the treasury, then send
-        // the user straight into it. Returns true once the flow reached a
-        // terminal outcome (created, or invite denied), false if it never
-        // completes in time.
+        // the user straight into it. Returns false if it never completes in time.
         const recoverInSession = async (): Promise<boolean> => {
             showLoaderOnCurrentStep();
             for (
@@ -502,10 +478,6 @@ export function TreasuryOnboardingPage({
                     const result = await attemptStream(false);
                     if (result.done) {
                         finishWithTreasury(result.treasuryId);
-                        return true;
-                    }
-                    if (result.inviteRequired) {
-                        denyInvite();
                         return true;
                     }
                     if (isPermanentCreationError(result.message)) {
@@ -525,10 +497,6 @@ export function TreasuryOnboardingPage({
             const first = await attemptStream(true);
             if (first.done) {
                 finishWithTreasury(first.treasuryId);
-                return;
-            }
-            if (first.inviteRequired) {
-                denyInvite();
                 return;
             }
             // A permanent error can't be resumed; otherwise the sweeper is
@@ -852,10 +820,6 @@ export function TreasuryOnboardingPage({
             {!accountId && <AlreadyHaveTreasurySignIn onSignIn={openSignIn} />}
         </div>
     );
-
-    if (inviteRequired) {
-        return <InviteRequired landingUrl={earlyAccessUrl} />;
-    }
 
     const screenBody = showLoginScreen
         ? loginScreenBody

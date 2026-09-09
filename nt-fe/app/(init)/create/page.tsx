@@ -35,8 +35,7 @@ export default async function CreatePage() {
                 <RequireAuth>
                     <TreasuryOnboardingPage
                         initialScreen="create"
-                        inviteCode={inviteCode}
-                        earlyAccessUrl={gate.earlyAccessUrl}
+                        invited={gate.enabled}
                     />
                 </RequireAuth>
             </AuthProvider>

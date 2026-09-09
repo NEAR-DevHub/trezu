@@ -984,50 +984,6 @@ export interface CreateTreasuryRequest {
     financiers: string[];
     requestors: string[];
     isConfidential?: boolean;
-    /** Required when the deployment is invite-only. */
-    inviteCode?: string;
-}
-
-/** Stable backend error code: the deployment is invite-only and no accepted code was sent. */
-export const INVITE_REQUIRED_ERROR = "INVITE_REQUIRED";
-
-/** A non-2xx reply from `create-stream`, before any progress event streamed. */
-export class CreateTreasuryRequestError extends Error {
-    constructor(
-        public readonly status: number,
-        public readonly code: string | null,
-        message: string,
-    ) {
-        super(message);
-        this.name = "CreateTreasuryRequestError";
-    }
-}
-
-export function isInviteRequiredError(error: unknown): boolean {
-    return (
-        error instanceof CreateTreasuryRequestError &&
-        error.code === INVITE_REQUIRED_ERROR
-    );
-}
-
-async function readCreateTreasuryRequestError(
-    response: Response,
-): Promise<CreateTreasuryRequestError> {
-    const text = await response.text();
-    let code: string | null = null;
-    let message = text;
-    try {
-        const body = JSON.parse(text) as { error?: unknown; message?: unknown };
-        if (typeof body.error === "string") code = body.error;
-        if (typeof body.message === "string") message = body.message;
-    } catch {
-        // Plain-text error body.
-    }
-    return new CreateTreasuryRequestError(
-        response.status,
-        code,
-        message || `Treasury creation failed (${response.status})`,
-    );
 }
 
 export interface CreateTreasuryResponse {
@@ -1055,7 +1011,10 @@ export async function createTreasuryStream(
     });
 
     if (!response.ok) {
-        throw await readCreateTreasuryRequestError(response);
+        const text = await response.text();
+        throw new Error(
+            text || `Treasury creation failed (${response.status})`,
+        );
     }
 
     const reader = response.body?.getReader();

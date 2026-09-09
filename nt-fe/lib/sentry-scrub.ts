@@ -7,11 +7,11 @@ import type { Event } from "@sentry/nextjs";
  */
 
 const SENSITIVE_KEY_RE =
-    /^(access[_-]?token|refresh[_-]?token|token|jwt|secret|api[_-]?key|authorization|cookie|set[_-]?cookie|invite[_-]?code)$/i;
+    /^(access[_-]?token|refresh[_-]?token|token|jwt|secret|api[_-]?key|authorization|cookie|set[_-]?cookie)$/i;
 const JWT_RE =
     /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/g;
 const SENSITIVE_KV_RE =
-    /\b(accessToken|access_token|refreshToken|refresh_token|token|jwt|secret|apiKey|api_key|authorization|inviteCode|invite_code)\b(\s*[:=]\s*)("[^"]*"|'[^']*'|[^\s,}\]]+)/gi;
+    /\b(accessToken|access_token|refreshToken|refresh_token|token|jwt|secret|apiKey|api_key|authorization)\b(\s*[:=]\s*)("[^"]*"|'[^']*'|[^\s,}\]]+)/gi;
 
 const REDACTED = "[REDACTED]";
 

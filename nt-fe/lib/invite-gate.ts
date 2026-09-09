@@ -5,8 +5,10 @@
  * server. An accepted code moves into a short-lived httpOnly cookie and the
  * `ref` parameter is stripped, so the code never reaches client JavaScript,
  * analytics, or browser history. `/create` then renders onboarding only when
- * the cookie holds an accepted code, and that code is sent to the backend,
- * which enforces the same list on `POST /api/treasury/create-stream`.
+ * the cookie holds an accepted code.
+ *
+ * This is a frontend-only gate by design: a signed-in member can still call
+ * the creation API directly, which the team accepts.
  *
  * `INVITE_CODES` is server-only by design: a `NEXT_PUBLIC_` variable would
  * ship the full list in the browser bundle.

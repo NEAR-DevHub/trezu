@@ -19,18 +19,6 @@ describe("scrubSentryEvent", () => {
         );
     });
 
-    it("redacts invite codes in keys and key-value text", () => {
-        const event = scrubSentryEvent({
-            message: "create failed inviteCode=alpha-123 name=Team",
-            extra: { inviteCode: "alpha-123", invite_code: "alpha-123" },
-        } as unknown as Event);
-
-        expect(event.message).not.toContain("alpha-123");
-        expect(event.message).toContain("name=Team");
-        expect(event.extra?.inviteCode).toBe("[REDACTED]");
-        expect(event.extra?.invite_code).toBe("[REDACTED]");
-    });
-
     it("leaves non-JWT dotted strings alone", () => {
         const event = scrubSentryEvent({
             message:

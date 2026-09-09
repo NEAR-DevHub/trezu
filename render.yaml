@@ -45,10 +45,6 @@ services:
         sync: false
       - key: ANALYTICS_USERS
         sync: false
-      - key: INVITE_ONLY_ENABLED
-        sync: false
-      - key: INVITE_CODES
-        sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -125,10 +121,6 @@ services:
       - key: ANALYTICS_API_KEY
         sync: false
       - key: ANALYTICS_USERS
-        sync: false
-      - key: INVITE_ONLY_ENABLED
-        sync: false
-      - key: INVITE_CODES
         sync: false
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
