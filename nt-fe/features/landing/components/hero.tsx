@@ -97,19 +97,19 @@ export function Hero() {
             <div className="xl:pt-4">
                 <EarlyAccessButton className="h-12 w-full max-w-[229px] px-8 text-base sm:w-auto" />
             </div>
-            {/* Sized as a share of the hero (862/1440 wide, starting at
+            {/* Sized as a share of the hero (981/1440 wide, starting at
                 920/1440) so it scales with the viewport and bleeds off the
                 right edge like the design; below lg it drops into the flow.
                 The render carries its own dark bezel, so there is no CSS
                 frame around it. */}
-            <div className="lg:absolute lg:left-[63.9%] lg:top-[79px] lg:w-[59.9%]">
+            <div className="lg:absolute lg:left-[63.9%] lg:top-[111px] lg:w-[68.125%]">
                 <Image
                     src="/landing/dashboard.png"
                     alt="NEAR Business dashboard showing balances, pending requests and recent transactions"
-                    width={1724}
-                    height={1077}
+                    width={3924}
+                    height={2452}
                     priority
-                    sizes="(min-width: 1440px) 862px, (min-width: 1024px) 60vw, 100vw"
+                    sizes="(min-width: 1440px) 981px, (min-width: 1024px) 68vw, 100vw"
                     className="h-auto w-full"
                 />
             </div>
