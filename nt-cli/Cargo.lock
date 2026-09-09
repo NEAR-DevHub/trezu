@@ -4112,6 +4112,7 @@ name = "trezu-cli"
 version = "0.2.1"
 dependencies = [
  "base64 0.22.1",
+ "borsh",
  "chrono",
  "clap",
  "color-eyre",
@@ -4129,6 +4130,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "sha3",
  "shell-words",
  "strum",
  "strum_macros",

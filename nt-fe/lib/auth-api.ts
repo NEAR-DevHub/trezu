@@ -9,11 +9,20 @@ const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 export interface AuthChallengeResponse {
     /** Unique message the wallet authorizes via NEP-641 `resolveAuth`. */
     payload: string;
+    /**
+     * Chain ID the backend resolves the authorization against (e.g.
+     * `mainnet`). Bound into the signed NEP-641 `OffchainMessage`.
+     */
+    chainId: string;
 }
 
 export interface LoginRequest {
     accountId: string;
-    /** JSON-stringified NEP-641 authorization blob from `wallet.resolveAuth`. */
+    /**
+     * JSON-stringified NEP-641 authorization blob from `wallet.resolveAuth`:
+     * the wallet contract's own blob (resolved via `w_resolve_auth`) or, for a
+     * regular account, an `AccessKeyAuthorization` signed with a full-access key.
+     */
     authorization: string;
 }
 

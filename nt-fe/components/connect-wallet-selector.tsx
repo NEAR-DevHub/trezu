@@ -260,6 +260,9 @@ export function ConnectWalletSelector({
     // Show "Offline" badge only for per-wallet warnings, not when all
     // login is paused (the banner already covers that case).
     const getTopLevelBadge = (wallet: WalletOption): BadgeInfo | null => {
+        if (wallet.comingSoon) {
+            return { label: t("walletSelector.comingSoonBadge") };
+        }
         // The NEAR group card opens a modal, so its inner choices show their own
         // "Offline" badges — don't tag the container itself.
         if (!isLoginPaused && wallet.id !== WALLET_IDS.NEAR) {
@@ -319,7 +322,7 @@ export function ConnectWalletSelector({
     };
 
     const handleWalletChoice = (wallet: WalletOption) => {
-        if (isWalletChoiceBlocked(wallet.id)) {
+        if (isWalletChoiceBlocked(wallet.id) || wallet.comingSoon) {
             return;
         }
 
@@ -479,14 +482,15 @@ export function ConnectWalletSelector({
                         const isOfflineBlocked = isWalletChoiceBlocked(
                             wallet.id,
                         );
+                        const isComingSoon = Boolean(wallet.comingSoon);
                         return (
                             <WalletCard
                                 key={wallet.id}
                                 icon={<WalletOptionIcon wallet={wallet} />}
                                 badge={renderBadge(getTopLevelBadge(wallet))}
                                 title={wallet.label}
-                                disabled={isConnectingWallet}
-                                dimmed={isOfflineBlocked}
+                                disabled={isConnectingWallet || isComingSoon}
+                                dimmed={isOfflineBlocked || isComingSoon}
                                 onClick={() => handleWalletChoice(wallet)}
                             />
                         );

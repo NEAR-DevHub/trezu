@@ -1458,6 +1458,7 @@
             "subtitle": "Utilisez une passkey pour l'expérience la plus simple, ou connectez un wallet.",
             "helpCta": "Vous ne savez pas quoi choisir ?",
             "popularBadge": "Populaire",
+            "comingSoonBadge": "Bientôt disponible",
             "recentBadge": "Récent",
             "noFundsNote": "Aucun fonds nécessaire pour commencer : nous couvrons les frais de transaction afin que vous puissiez essayer",
             "chooseNearWallet": "Choisissez vos wallets NEAR",

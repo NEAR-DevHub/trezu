@@ -27,7 +27,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import * as nearAPI from 'near-api-js';
 import { NearRpcClient, tx as rpcTx } from '@near-js/jsonrpc-client';
 import { serialize } from 'borsh';
@@ -35,6 +35,10 @@ const { connect, keyStores, KeyPair, utils } = nearAPI;
 
 // NEP-413 tag prefix: 2^31 + 413 = 2147484061
 const NEP413_TAG = 2147484061;
+// NEP-641 canonical hash domain separator.
+const NEP641_DOMAIN_SEPARATOR = 'NEAR_NEP641_OFFCHAIN_MESSAGE/V1';
+// NEP-641: clients SHOULD timestamp the envelope ~60s before signing time.
+const NEP641_TIMESTAMP_SKEW_MS = 60_000;
 
 // ============================================================================
 // Configuration
@@ -129,10 +133,21 @@ function sleep(ms) {
 }
 
 // ============================================================================
-// NEP-413 Authentication
+// NEP-641 Authentication (access-key authorization, NEP-413 signed)
 // ============================================================================
 
-// Borsh schema for NEP-413 payload
+// Borsh schema for the NEP-641 `OffchainMessage` envelope (timestamp as u64
+// nanoseconds) and for the NEP-413 payload it maps onto.
+const OffchainMessageSchema = {
+  struct: {
+    chain_id: 'string',
+    signer_id: 'string',
+    path: { array: { type: 'string' } },
+    timestamp: 'u64',
+    payload: 'string',
+  }
+};
+
 const NEP413PayloadSchema = {
   struct: {
     message: 'string',
@@ -143,44 +158,54 @@ const NEP413PayloadSchema = {
 };
 
 /**
- * Create NEP-413 signature for authentication
- * @param {KeyPair} keyPair - The signing key pair
- * @param {Uint8Array} nonce - Random 32-byte nonce
- * @param {string} recipient - The recipient (app identifier)
- * @param {string} message - The message to sign
+ * NEP-641 `AccessKeyAuthorization`: sign the `OffchainMessage` envelope via
+ * NEP-413 with a full-access key of `signerId`.
+ *
+ * NEP-413 mapping: `message` = payload, `nonce` = canonical envelope hash
+ * (SHA3-256 over domain separator + borsh(msg)), `recipient` =
+ * `"<chain_id>: <signer_id> @ <timestamp>"` (top-level: empty path).
+ *
+ * @param {KeyPair} keyPair - Full-access key of `signerId`
+ * @param {string} chainId - Chain ID advertised by the backend challenge
+ * @param {string} signerId - The account to authenticate as
+ * @param {string} payload - The challenge payload to authorize
  */
-function signNep413(keyPair, nonce, recipient, message) {
-  // Create NEP-413 payload
-  const payload = {
-    message,
+function signAccessKeyAuthorization(keyPair, chainId, signerId, payload) {
+  const timestampMs = Math.floor((Date.now() - NEP641_TIMESTAMP_SKEW_MS) / 1000) * 1000;
+  const timestamp = new Date(timestampMs).toISOString().replace('.000Z', 'Z');
+
+  // Canonical hash of the envelope (binds every field into the NEP-413 nonce).
+  const envelope = serialize(OffchainMessageSchema, {
+    chain_id: chainId,
+    signer_id: signerId,
+    path: [],
+    timestamp: BigInt(timestampMs) * 1_000_000n,
+    payload,
+  });
+  const nonce = createHash('sha3-256')
+    .update(Buffer.from(NEP641_DOMAIN_SEPARATOR, 'utf8'))
+    .update(Buffer.from(envelope))
+    .digest();
+
+  const nep413Payload = serialize(NEP413PayloadSchema, {
+    message: payload,
     nonce: Array.from(nonce),
-    recipient,
+    recipient: `${chainId}: ${signerId} @ ${timestamp}`,
     callbackUrl: null,
-  };
-
-  // Borsh serialize the payload
-  const serializedPayload = serialize(NEP413PayloadSchema, payload);
-
-  // Prepend NEP-413 tag (2^31 + 413) as little-endian u32
+  });
   const tagBuffer = Buffer.alloc(4);
   tagBuffer.writeUInt32LE(NEP413_TAG, 0);
-
-  // Concatenate tag + serialized payload
-  const dataToHash = Buffer.concat([tagBuffer, Buffer.from(serializedPayload)]);
-
-  // SHA256 hash
-  const hash = createHash('sha256').update(dataToHash).digest();
-
-  // Sign the hash
-  const signature = keyPair.sign(hash);
+  const hash = createHash('sha256')
+    .update(Buffer.concat([tagBuffer, Buffer.from(nep413Payload)]))
+    .digest();
+  const { signature } = keyPair.sign(hash);
 
   return {
-    publicKey: keyPair.getPublicKey().toString(),
-    signature: Buffer.from(signature.signature).toString('base64'),
-    message,
-    nonce: Buffer.from(nonce).toString('base64'),
-    recipient,
-    callbackUrl: null,
+    msg: { chain_id: chainId, signer_id: signerId, timestamp, payload },
+    // `extra` is required by the resolver even without a callback URL.
+    via: { schema: 'nep413', extra: {} },
+    access_key: keyPair.getPublicKey().toString(),
+    signature: `ed25519:${utils.serialize.base_encode(signature)}`,
   };
 }
 
@@ -188,14 +213,14 @@ function signNep413(keyPair, nonce, recipient, message) {
 let authCookie = null;
 
 /**
- * Authenticate with the API using NEP-413 signature
+ * Authenticate with the API using a NEP-641 access-key authorization
  * @param {KeyPair} keyPair - The signing key pair
  * @param {string} accountId - The account ID to authenticate as
  */
 async function authenticate(keyPair, accountId) {
   console.log(`\n🔐 Authenticating as ${accountId}...`);
 
-  // Step 1: Get challenge payload
+  // Step 1: Get challenge payload + chain ID
   const challengeResponse = await fetch(`${CONFIG.API_URL}/api/auth/challenge`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -207,19 +232,17 @@ async function authenticate(keyPair, accountId) {
 
   const challengeData = await challengeResponse.json();
   const challengePayload = challengeData?.payload;
+  const chainId = challengeData?.chainId;
   if (typeof challengePayload !== 'string' || challengePayload.length === 0) {
     throw new Error(`Challenge response missing payload: ${JSON.stringify(challengeData)}`);
   }
+  if (typeof chainId !== 'string' || chainId.length === 0) {
+    throw new Error(`Challenge response missing chainId: ${JSON.stringify(challengeData)}`);
+  }
 
-  // Step 2: Sign challenge payload with NEP-413 fallback authorization format
-  // The backend binds purpose and recipient as: "<PURPOSE>@<recipient>".
-  const nonce = randomBytes(32);
-  const authorization = signNep413(
-    keyPair,
-    nonce,
-    'PROVE_OWNERSHIP@Near Business App',
-    challengePayload,
-  );
+  // Step 2: Sign the challenge payload as a NEP-641 access-key authorization
+  // (the sandbox key is a full-access key on every test account).
+  const authorization = signAccessKeyAuthorization(keyPair, chainId, accountId, challengePayload);
 
   // Step 3: Login with authorization
   const loginResponse = await fetch(`${CONFIG.API_URL}/api/auth/login`, {

@@ -7,6 +7,8 @@ use std::collections::HashMap;
 pub struct ChallengeResponse {
     /// Unique message the wallet authorizes via NEP-641 `resolveAuth`.
     pub payload: String,
+    /// Chain ID (e.g. `mainnet`) bound into the signed NEP-641 `OffchainMessage`.
+    pub chain_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -14,7 +16,8 @@ pub struct ChallengeResponse {
 pub struct LoginRequest {
     pub account_id: String,
     /// JSON-stringified NEP-641 authorization blob. For key-based signing this
-    /// is a NEP-413 `SignedMessage` the backend verifies as the fallback path.
+    /// is an `AccessKeyAuthorization` (NEP-413-signed `OffchainMessage`) the
+    /// backend verifies against the account's full-access keys.
     pub authorization: String,
 }
 

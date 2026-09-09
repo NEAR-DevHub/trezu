@@ -86,6 +86,12 @@ export type WalletOption = {
     isPopular?: boolean;
     recentGroupAlias?: WalletId;
     supported: boolean;
+    /**
+     * Temporarily unavailable: rendered disabled with a "Coming soon" badge
+     * (no unsupported-wallet modal). Used while the EIP-712 wallet contract
+     * and executor migrate to the final NEP-641 protocol.
+     */
+    comingSoon?: boolean;
 };
 
 export const WALLET_OPTIONS: WalletOption[] = [
@@ -114,6 +120,7 @@ export const WALLET_OPTIONS: WalletOption[] = [
         secondaryIconSrc: "/icons/fireblocks.svg",
         tertiaryIconSrc: "/icons/binance-web3.svg",
         supported: true,
+        comingSoon: true,
     },
     {
         id: WALLET_IDS.PHANTOM,
