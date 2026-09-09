@@ -1,30 +1,49 @@
-import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     MEMBER_ADDED_PROPOSAL_TYPES,
-    buildMemberAddedAtMap,
+    resolveMemberAddedAtSnapshot,
+    type MemberAddedAtSnapshot,
+    type MemberAddedHistoryHead,
 } from "@/lib/member-added-at";
-import { getProposals, type Proposal } from "@/lib/proposals-api";
+import { getProposals } from "@/lib/proposals-api";
 
-const MEMBER_HISTORY_PAGE_SIZE = 500;
+const MEMBER_HISTORY_PAGE_SIZE = 10;
+const MEMBER_ADDED_AT_GC_MS = 1000 * 60 * 60 * 24;
 
-async function fetchAllMemberAddedProposals(
+const MEMBER_HISTORY_FILTERS = {
+    statuses: ["Approved" as const],
+    proposal_types: [...MEMBER_ADDED_PROPOSAL_TYPES],
+    sort_by: "CreationTime" as const,
+};
+
+export function memberAddedAtQueryKey(treasuryId: string) {
+    return ["memberAddedAt", treasuryId] as const;
+}
+
+async function fetchMemberAddedHistoryHead(
     treasuryId: string,
-): Promise<Proposal[]> {
-    const filters = {
-        statuses: ["Approved" as const],
-        proposal_types: [...MEMBER_ADDED_PROPOSAL_TYPES],
-        sort_by: "CreationTime" as const,
-        sort_direction: "asc" as const,
+): Promise<MemberAddedHistoryHead> {
+    const response = await getProposals(treasuryId, {
+        ...MEMBER_HISTORY_FILTERS,
+        sort_direction: "desc",
+        page: 0,
+        page_size: 1,
+    });
+    return {
+        total: response.total,
+        lastId: response.proposals[0]?.id ?? null,
     };
+}
 
-    const collected: Proposal[] = [];
+async function fetchAllMemberAddedProposals(treasuryId: string) {
+    const collected = [];
     let page = 0;
     let total = Number.POSITIVE_INFINITY;
 
     while (collected.length < total) {
         const response = await getProposals(treasuryId, {
-            ...filters,
+            ...MEMBER_HISTORY_FILTERS,
+            sort_direction: "asc",
             page,
             page_size: MEMBER_HISTORY_PAGE_SIZE,
         });
@@ -34,24 +53,32 @@ async function fetchAllMemberAddedProposals(
         page += 1;
     }
 
-    return collected;
+    return { proposals: collected, total };
 }
 
 export function useMemberAddedAt(treasuryId: string | null | undefined) {
-    const { data: proposals = [], isLoading } = useQuery({
-        queryKey: ["memberAddedProposals", treasuryId],
-        queryFn: () => fetchAllMemberAddedProposals(treasuryId!),
+    const queryClient = useQueryClient();
+    const queryKey = memberAddedAtQueryKey(treasuryId ?? "");
+
+    const { data, isLoading } = useQuery({
+        queryKey,
+        queryFn: () =>
+            resolveMemberAddedAtSnapshot(
+                queryClient.getQueryData<MemberAddedAtSnapshot>(queryKey),
+                {
+                    fetchHead: () => fetchMemberAddedHistoryHead(treasuryId!),
+                    fetchAll: () => fetchAllMemberAddedProposals(treasuryId!),
+                },
+            ),
         enabled: !!treasuryId,
-        staleTime: 1000 * 10,
+        staleTime: Number.POSITIVE_INFINITY,
+        gcTime: MEMBER_ADDED_AT_GC_MS,
+        refetchOnMount: "always",
+        refetchOnWindowFocus: false,
     });
 
-    const addedAt = useMemo(
-        () => buildMemberAddedAtMap(proposals),
-        [proposals],
-    );
-
     return {
-        addedAt,
+        addedAt: data?.addedAt ?? {},
         isLoading,
     };
 }

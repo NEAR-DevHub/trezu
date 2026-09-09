@@ -187,6 +187,7 @@ export default function MembersPage() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
+    const isDesktopMembersTable = useMediaQuery("(min-width: 768px)");
 
     const { data: joinRequests = [] } = useMemberJoinRequests(
         canAddMember ? treasuryId : undefined,
@@ -353,9 +354,13 @@ export default function MembersPage() {
         [isMemberActionsDisabled, router, treasuryId],
     );
 
-    const handleOpenMemberSheet = useCallback((member: Member) => {
-        setSheetMember(member);
-    }, []);
+    const handleOpenMemberSheet = useCallback(
+        (member: Member) => {
+            if (isDesktopMembersTable) return;
+            setSheetMember(member);
+        },
+        [isDesktopMembersTable],
+    );
 
     const handleSheetSend = useCallback(() => {
         if (!sheetMember || !treasuryId) return;
@@ -412,6 +417,12 @@ export default function MembersPage() {
             setIsMobileSelectMode(false);
         }
     }, [isMobile]);
+
+    useEffect(() => {
+        if (isDesktopMembersTable) {
+            setSheetMember(null);
+        }
+    }, [isDesktopMembersTable]);
 
     const exitMobileSelectMode = useCallback(() => {
         setIsMobileSelectMode(false);
@@ -689,10 +700,7 @@ export default function MembersPage() {
                                                     ? "selected"
                                                     : undefined
                                             }
-                                            className="group cursor-pointer border-0 hover:bg-transparent"
-                                            onClick={() =>
-                                                handleOpenMemberSheet(member)
-                                            }
+                                            className="group border-0 hover:bg-transparent"
                                         >
                                             <TableCell
                                                 className={memberSheetCellClass(

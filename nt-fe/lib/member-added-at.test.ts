@@ -2,8 +2,12 @@ import { describe, expect, it } from "bun:test";
 import {
     applyMemberProposal,
     buildMemberAddedAtMap,
+    isMemberAddedAtSnapshotCurrent,
     memberProposalTimestampMs,
     membersFromPolicy,
+    resolveMemberAddedAtSnapshot,
+    type MemberAddedAtSnapshot,
+    type MemberAddedHistoryEntry,
 } from "./member-added-at";
 import type { ProposalKind } from "./proposals-api";
 import type { Policy } from "@/types/policy";
@@ -191,5 +195,101 @@ describe("buildMemberAddedAtMap", () => {
         ]);
 
         expect(addedAt["bob.near"]).toBe(1_700_007_200_000);
+    });
+});
+
+function historyEntry(
+    id: number,
+    kind: ProposalKind,
+    submissionTime = FIRST_TS,
+): MemberAddedHistoryEntry {
+    return { id, kind, submission_time: submissionTime };
+}
+
+describe("isMemberAddedAtSnapshotCurrent", () => {
+    const snapshot: MemberAddedAtSnapshot = {
+        addedAt: { "alice.near": 1 },
+        total: 3,
+        lastId: 12,
+    };
+
+    it("is current only when total and latest id match", () => {
+        expect(
+            isMemberAddedAtSnapshotCurrent(snapshot, { total: 3, lastId: 12 }),
+        ).toBe(true);
+        expect(
+            isMemberAddedAtSnapshotCurrent(snapshot, { total: 4, lastId: 12 }),
+        ).toBe(false);
+        expect(
+            isMemberAddedAtSnapshotCurrent(snapshot, { total: 3, lastId: 13 }),
+        ).toBe(false);
+        expect(
+            isMemberAddedAtSnapshotCurrent(undefined, {
+                total: 0,
+                lastId: null,
+            }),
+        ).toBe(false);
+    });
+});
+
+describe("resolveMemberAddedAtSnapshot", () => {
+    const aliceAdd = historyEntry(1, {
+        AddMemberToRole: { member_id: "alice.near", role: "Council" },
+    });
+    const snapshot: MemberAddedAtSnapshot = {
+        addedAt: { "alice.near": 1_700_000_000_000 },
+        total: 1,
+        lastId: 1,
+    };
+
+    it("returns the cache after a head check when history is unchanged", async () => {
+        let fetchAllCalls = 0;
+        const resolved = await resolveMemberAddedAtSnapshot(snapshot, {
+            fetchHead: async () => ({ total: 1, lastId: 1 }),
+            fetchAll: async () => {
+                fetchAllCalls += 1;
+                return { proposals: [aliceAdd], total: 1 };
+            },
+        });
+
+        expect(resolved).toBe(snapshot);
+        expect(fetchAllCalls).toBe(0);
+    });
+
+    it("rebuilds from a full walk when a newer approved proposal appears", async () => {
+        const bobAdd = historyEntry(
+            2,
+            { AddMemberToRole: { member_id: "bob.near", role: "Council" } },
+            SECOND_TS,
+        );
+        let fetchHeadCalls = 0;
+        const resolved = await resolveMemberAddedAtSnapshot(snapshot, {
+            fetchHead: async () => {
+                fetchHeadCalls += 1;
+                return { total: 2, lastId: 2 };
+            },
+            fetchAll: async () => ({ proposals: [aliceAdd, bobAdd], total: 2 }),
+        });
+
+        expect(fetchHeadCalls).toBe(1);
+        expect(resolved.total).toBe(2);
+        expect(resolved.lastId).toBe(2);
+        expect(resolved.addedAt["alice.near"]).toBe(1_700_000_000_000);
+        expect(resolved.addedAt["bob.near"]).toBe(1_700_003_600_000);
+    });
+
+    it("skips the head check and walks once when there is no cache", async () => {
+        let fetchHeadCalls = 0;
+        const resolved = await resolveMemberAddedAtSnapshot(undefined, {
+            fetchHead: async () => {
+                fetchHeadCalls += 1;
+                return { total: 1, lastId: 1 };
+            },
+            fetchAll: async () => ({ proposals: [aliceAdd], total: 1 }),
+        });
+
+        expect(fetchHeadCalls).toBe(0);
+        expect(resolved.lastId).toBe(1);
+        expect(resolved.addedAt["alice.near"]).toBe(1_700_000_000_000);
     });
 });
