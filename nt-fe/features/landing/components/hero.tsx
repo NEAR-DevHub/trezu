@@ -1,26 +1,28 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { BOOK_DEMO_HREF, NAV_LINKS, PROOF_STATS } from "../content";
+import { EARLY_ACCESS_HREF, NAV_LINKS, PROOF_STATS } from "../content";
 import { NearBusinessWordmark } from "./landing-icons";
 
 /** Horizontal page gutter: 120px at the 1440 design width, tighter below. */
 export const GUTTER = "px-6 md:px-12 xl:px-[120px]";
 
-export function BookDemoButton({
+export function EarlyAccessButton({
     className,
     ...props
 }: Omit<React.ComponentProps<typeof Link>, "href">) {
     return (
         <Link
-            href={BOOK_DEMO_HREF}
+            href={EARLY_ACCESS_HREF}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
-                "inline-flex items-center justify-center rounded-full bg-landing-green font-medium leading-none text-landing-ink transition-colors hover:bg-[#00c97f]",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-full bg-landing-green font-medium leading-none text-landing-ink transition-colors hover:bg-[#00c97f]",
                 className,
             )}
             {...props}
         >
-            Book a demo
+            Request Early Access
         </Link>
     );
 }
@@ -30,12 +32,12 @@ export function LandingNav() {
         <header className="pt-6 md:pt-8">
             <div
                 className={cn(
-                    "mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-6",
+                    "mx-auto flex h-16 w-full max-w-[1440px] items-center justify-between gap-3 md:gap-6",
                     GUTTER,
                 )}
             >
                 <Link href="/" aria-label="NEAR Business home">
-                    <NearBusinessWordmark className="h-[21.79px] w-[187.5px]" />
+                    <NearBusinessWordmark className="h-4 w-[137.6px] md:h-[21.79px] md:w-[187.5px]" />
                 </Link>
                 <nav className="hidden items-center gap-6 lg:flex">
                     {NAV_LINKS.map(({ label, href }) => (
@@ -51,11 +53,11 @@ export function LandingNav() {
                 <div className="flex items-center gap-4">
                     <Link
                         href="/login"
-                        className="whitespace-nowrap text-sm leading-normal hover:underline"
+                        className="hidden whitespace-nowrap text-sm leading-normal hover:underline sm:inline"
                     >
                         Sign in
                     </Link>
-                    <BookDemoButton className="h-11 shrink-0 px-4 text-sm md:w-[140px] md:px-0" />
+                    <EarlyAccessButton className="h-11 shrink-0 px-4 text-sm md:h-12 md:px-8 md:text-base" />
                 </div>
             </div>
         </header>
@@ -78,32 +80,37 @@ export function Hero() {
                     <br />
                     <span className="font-light">treasury management</span>
                     <br />
-                    for crypto foundations
+                    for crypto-native finance teams
                 </h1>
                 <p className="max-w-[650px] text-lg leading-[1.55]">
-                    Unify your foundation&apos;s capital, run payroll and
-                    grants, and swap across 35+ chains from a single dashboard.
+                    Unify your team&apos;s finances, run payroll, allocate
+                    capital, and swap across 35+ chains from a single dashboard.
                     Multisig approvals, your keys, your terms.
                 </p>
-                <p className="max-w-[325px] text-xs leading-normal">
+                {/* Uncapped on purpose: the design sets this caption on one
+                    line and only lets it wrap once the column runs out. */}
+                <p className="text-xs leading-normal">
                     One dashboard for confidential balances, approvals,
                     payments, and swaps across every chain you hold assets on.
                 </p>
             </div>
             <div className="xl:pt-4">
-                <BookDemoButton className="h-12 w-full max-w-[229px] text-base" />
+                <EarlyAccessButton className="h-12 w-full max-w-[229px] px-8 text-base sm:w-auto" />
             </div>
             {/* Sized as a share of the hero (862/1440 wide, starting at
                 920/1440) so it scales with the viewport and bleeds off the
-                right edge like the design; below lg it drops into the flow. */}
-            <div className="relative aspect-[862/613] w-full overflow-hidden rounded-[20px] border-8 border-landing-ink lg:absolute lg:left-[63.9%] lg:top-[79px] lg:w-[59.9%] lg:rounded-[max(12px,1.39vw)] lg:border-[max(5px,0.56vw)]">
+                right edge like the design; below lg it drops into the flow.
+                The render carries its own dark bezel, so there is no CSS
+                frame around it. */}
+            <div className="lg:absolute lg:left-[63.9%] lg:top-[79px] lg:w-[59.9%]">
                 <Image
                     src="/landing/dashboard.png"
                     alt="NEAR Business dashboard showing balances, pending requests and recent transactions"
-                    fill
+                    width={1724}
+                    height={1077}
                     priority
                     sizes="(min-width: 1440px) 862px, (min-width: 1024px) 60vw, 100vw"
-                    className="object-cover object-left-top"
+                    className="h-auto w-full"
                 />
             </div>
         </section>

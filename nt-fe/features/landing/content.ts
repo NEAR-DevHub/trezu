@@ -4,10 +4,12 @@ import { APP_DOCS_URL } from "@/constants/config";
 // file, so it lives here instead of the i18n catalogue (which would force
 // twelve translations of every headline).
 
-// TODO: swap for the real booking link once sales settles on one; the Figma
-// file has the button but no destination.
-export const BOOK_DEMO_HREF =
-    "mailto:hello@near.org?subject=NEAR%20Business%20demo";
+// The private-beta waitlist form. External, so every link to it opens in a
+// new tab.
+export const EARLY_ACCESS_HREF =
+    "https://airtable.com/app5IOgKsH6H3RVp1/pagQscnz5uBKiHxc7/form";
+
+export const CONTACT_HREF = "mailto:hello@near.org?subject=NEAR%20Business";
 
 export const NAV_LINKS = [
     { label: "Product", href: "#product" },
@@ -19,13 +21,13 @@ export const NAV_LINKS = [
 export const PROOF_STATS = [
     { value: "35+", label: "Chains" },
     { value: "180+", label: "Assets" },
-    { value: "$27B+", label: "All-time volume" },
-    { value: "$50M+", label: "Confidential TVL" },
+    { value: "$30B+", label: "All-time volume" },
+    { value: "$65M+", label: "Confidential TVL" },
 ] as const;
 
 export const CONFIDENTIAL_TAGS = [
     "Confidential receipts",
-    "Bulk send",
+    "Bulk payments",
     "Audit-ready exports",
 ] as const;
 
@@ -43,21 +45,14 @@ export const NEAR_BUSINESS_POINTS = [
     "Auditors get everything; the chain gets nothing",
 ] as const;
 
-export const CONTROL_TICKER = [
-    "Roles",
-    "Thresholds",
-    "Recipients",
-    "Audit log",
-] as const;
-
 export const CONTROL_CARDS = [
     {
-        title: "Roles",
-        body: "Requestor, finance, governance. Permissions that match your org chart.",
+        title: "Hardware signing",
+        body: "Sign with hardware through Ledger support. No custody, no compromise.",
     },
     {
-        title: "Thresholds",
-        body: "Configurable per action. Routine payments move fast, large transfers gather signatures.",
+        title: "Roles and thresholds",
+        body: "Requestor, finance, governance. Set rules that match how your organization already makes decisions.",
     },
     {
         title: "Recipients",
@@ -65,7 +60,7 @@ export const CONTROL_CARDS = [
     },
     {
         title: "Audit log",
-        body: "The chain itself, verifiable by construction. Your auditors don't have to trust ours.",
+        body: "The chain itself, verifiable by construction. Your auditors don't have to trust a vendor.",
     },
 ] as const;
 
@@ -73,28 +68,32 @@ export const CONTROL_CARDS = [
 // from the page's own language so the list can expand.
 export const CAPABILITIES = [
     {
-        title: "Send",
+        title: "Payments",
         body: "Send to any address on any supported chain. Every payment carries your approval rules and settles with a confidential receipt.",
     },
     {
-        title: "Bulk send",
-        body: "Pay dozens of recipients in a single batch. One approval flow, one confidential receipt per payment.",
+        title: "Bulk payments",
+        body: "Pay dozens of recipients in one batch: payroll, grants, vendor runs. One approval flow, one record, zero public exposure.",
     },
     {
         title: "Cross-chain swaps",
-        body: "Swap between 35+ chains from the treasury itself. No external bridges, no chain-by-chain ops overhead.",
+        body: "Swap across 35+ chains in seconds without leaving the app or touching an external bridge. Powered by NEAR Intents.",
     },
     {
-        title: "History",
-        body: "Every movement in one record, ready for your accountants, auditors and board pack.",
+        title: "Capital allocation",
+        body: "Deploy treasury capital across chains and assets: positions, reserves, and rebalancing runs. Same approval thresholds, same confidential receipts as any other payment.",
+    },
+    {
+        title: "History and exports",
+        body: "A complete record of every movement, exportable and audit-ready. Your accountants get everything; the public chain gets nothing.",
     },
     {
         title: "Roles and thresholds",
-        body: "Requestor, finance, governance. Set rules that match how your organisation already makes decisions.",
+        body: "Requestor, finance, governance. Configurable approval thresholds per action, so a $500 payment and a $5M transfer follow different rules.",
     },
     {
         title: "Contacts",
-        body: "Named, verified addresses for every counterparty. No raw-hex paste mistakes.",
+        body: "Named, verified recipients instead of raw addresses. Because treasury mistakes are usually paste mistakes.",
     },
 ] as const;
 
@@ -138,22 +137,18 @@ export function chainIconUrl(chain: MarqueeChain) {
     return `/landing/chains/${chain.slug}.svg`;
 }
 
-// `featured` is the mist-filled middle card; the other two are outlined.
 export const BUILT_FOR = [
     {
         title: "Foundations",
         body: "Mandates, vesting, and grants executed exactly as the council approved them. Prudence your community can verify.",
-        featured: false,
     },
     {
         title: "Digital asset treasury companies",
         body: "Multi-treasury view, reporting, and reconciliation across every chain and entity you run.",
-        featured: true,
     },
     {
         title: "Funds, desks, and family offices",
         body: "Cross-chain positions, allocation, and settlement risk from one account. Balances and counterparties stay off the public ledger.",
-        featured: false,
     },
 ] as const;
 
@@ -223,35 +218,33 @@ export const INCLUDED_FEATURES = [
     "Unlimited users, no asset caps",
 ] as const;
 
-// Answers aren't in the design (every item is collapsed); they restate the
-// claims the page already makes above.
 export const FAQ_ITEMS = [
     {
         question: "What is NEAR Business?",
-        answer: "A self-custodial, multisig treasury for organisations that hold assets across many chains. Payments, bulk payouts, swaps, roles and audit-ready history from one dashboard, with balances confidential by default.",
+        answer: "A confidential multisig treasury for foundations, DATs, and crypto-native finance teams. Payments, bulk payments, and cross-chain swaps across 35+ chains, governed by roles and approval thresholds your organization defines. Built on NEAR Intents and audited multisig infrastructure.",
     },
     {
         question: "Confidential from whom, exactly?",
-        answer: "From the public. Balances, payroll and counterparties are hidden from block explorers and address watchers, while the people accountable for the treasury (your signers, board and auditors) can be granted full visibility.",
+        answer: "Confidential from the public chain, from market observers, and from anyone watching your treasury address. Fully legible to your own members, your board, and your auditors. Confidentiality is about controlling who can watch your operations, not about hiding them from the people accountable for them.",
     },
     {
         question: "Can NEAR move or freeze our funds?",
-        answer: "No. Funds move only on the signatures your organisation defines. NEAR holds no key, no key share, and has no technical capability to initiate, alter or reverse a transaction.",
+        answer: "No. Funds move only on the signatures your organization defines. NEAR holds no key and no key share, and maintains no technical capability to initiate, alter, or reverse a transaction.",
     },
     {
         question: "Which chains and assets are supported?",
-        answer: "BTC, ETH, SOL, NEAR and 35+ chains with 180+ assets, without external bridges. Native chains are supported alongside EVM networks.",
+        answer: "35+ chains including Bitcoin, Ethereum, Solana and NEAR, and 180+ assets, with cross-chain swaps built in. No external bridges.",
     },
     {
         question: "How do approvals and permissions work?",
-        answer: "Assign roles such as requestor, finance and governance, then set thresholds per action. Routine payments move fast; large transfers gather the signatures your policy requires before funds leave.",
+        answer: "Roles (requestor, finance, governance) with configurable thresholds per action. Every movement requires the approvals your policy defines, and changing the policy requires the same quorum as moving funds.",
     },
     {
         question: "Is the code audited?",
-        answer: "Yes. The core contract has been audited by Valhalla Security, and the chain itself serves as the audit log, verifiable by construction.",
+        answer: "The core contract is audited by Valhalla Security. The full report is available for download.",
     },
     {
         question: "How do we get access during the private beta?",
-        answer: "Book a demo. We walk through your actual signer setup and chains in a 30-minute session and onboard your treasury from there.",
+        answer: "Request early access. We are onboarding a small group of ecosystem treasuries and open access after a walkthrough with your team.",
     },
 ] as const;

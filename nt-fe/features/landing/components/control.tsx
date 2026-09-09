@@ -9,29 +9,11 @@ import {
     BUILT_FOR,
     CAPABILITIES,
     CONTROL_CARDS,
-    CONTROL_TICKER,
     chainIconUrl,
     MARQUEE_CHAINS,
 } from "../content";
 import { Tag } from "./confidential";
 import { NearMark } from "./landing-icons";
-
-function ControlPoint({
-    title,
-    body,
-    className,
-}: {
-    title: string;
-    body: string;
-    className?: string;
-}) {
-    return (
-        <div className={cn("flex flex-col gap-0.5 leading-normal", className)}>
-            <p className="text-xl font-medium">{title}</p>
-            <p className="text-base">{body}</p>
-        </div>
-    );
-}
 
 /** "Every movement passes the rules you set" — photo split with floating copy. */
 export function ControlSplit() {
@@ -58,52 +40,33 @@ export function ControlSplit() {
                 <div className="absolute bottom-0 left-0 h-[25%] w-full bg-gradient-to-b from-landing-paper/0 to-landing-paper backdrop-blur-[2px]" />
             </div>
 
-            <div className="relative flex items-center justify-between gap-4 font-landing-mono text-xs uppercase leading-normal md:text-sm">
-                {CONTROL_TICKER.map((label) => (
-                    <span key={label}>{label}</span>
-                ))}
+            {/* The heading keeps to a ~400px column so it breaks over four
+                lines like the design and leaves the portrait uncovered. */}
+            <div className="relative flex flex-col items-start gap-4 lg:mt-20 lg:w-[400px]">
+                <Tag>Control</Tag>
+                <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
+                    <span className="font-light">Every movement passes </span>
+                    <span className="font-medium">the rules you set.</span>
+                </h2>
             </div>
 
-            {/* Heading and "Hardware signing" hug the left edge, the other two
-                points hug the right edge, mirroring the floating copy in the
-                design; below lg everything stacks. */}
-            <div className="relative mt-12 grid gap-y-10 lg:mt-20 lg:grid-cols-[400px_1fr_314px]">
-                <div className="flex flex-col items-start gap-4">
-                    <Tag>Control</Tag>
-                    <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
-                        <span className="font-light">
-                            Every movement passes{" "}
-                        </span>
-                        <span className="font-medium">the rules you set.</span>
-                    </h2>
-                </div>
-                <ControlPoint
-                    className="lg:col-start-3"
-                    title="Roles and thresholds"
-                    body="Requestor, finance, governance. Set rules that match how your organisation already makes decisions."
-                />
-                <ControlPoint
-                    className="lg:col-start-1 lg:w-[311px]"
-                    title="Hardware signing"
-                    body="Sign with hardware through Ledger support. No custody, no compromise."
-                />
-                <ControlPoint
-                    className="lg:col-start-3"
-                    title="Multiple approvals"
-                    body="Every transaction gathers the signatures your policy requires before funds move."
-                />
-            </div>
-
-            <div className="relative mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[110px] lg:grid-cols-4">
+            {/* The cards sit near the foot of the portrait, so from lg the gap
+                tracks the photo's height rather than staying fixed. Their copy
+                is pushed down by a fixed top padding instead of being bottom
+                aligned, so every title sits on the same line whatever the
+                length of the body beneath it. */}
+            <div className="relative mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[min(290px,20vw)] lg:grid-cols-4">
                 {CONTROL_CARDS.map(({ title, body }) => (
                     <div
                         key={title}
-                        className="flex min-h-[180px] flex-col justify-end rounded-2xl bg-white/20 p-4"
+                        className="flex flex-col rounded-2xl bg-white/20 p-4 sm:min-h-[180px] sm:pt-14"
                     >
-                        <p className="text-base font-medium leading-normal">
+                        <p className="text-2xl font-medium leading-normal">
                             {title}
                         </p>
-                        <p className="mt-2 text-base leading-[1.2]">{body}</p>
+                        <p className="mt-2 text-base font-normal leading-normal">
+                            {body}
+                        </p>
                     </div>
                 ))}
             </div>
@@ -207,15 +170,15 @@ export function MultichainHeader() {
                     no chain-by-chain ops overhead.
                 </p>
             </div>
-            {/* The render carries its own transparent margin, so it overlaps
-                the copy column a little without the devices ever touching it. */}
-            <div className="mt-2 lg:absolute lg:right-[1.25%] lg:top-0 lg:mt-0 lg:w-[57.2%]">
+            {/* The render is flush to its own edges, so it is sized to start
+                just past the copy column instead of overlapping it. */}
+            <div className="mt-2 lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:w-[50%] xl:w-[53%]">
                 <Image
                     src="/landing/devices.png"
                     alt="The NEAR Business dashboard on a laptop and a phone"
-                    width={1024}
-                    height={731}
-                    sizes="(min-width: 1024px) 58vw, 100vw"
+                    width={1648}
+                    height={1099}
+                    sizes="(min-width: 1024px) 53vw, 100vw"
                     className="h-auto w-full"
                 />
             </div>
@@ -261,7 +224,7 @@ function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
 /** Chain marquee plus the "Built for" audience grid. */
 export function Multichain() {
     return (
-        <section className="mx-auto w-full max-w-[1440px] overflow-hidden pb-16 lg:pb-[168px]">
+        <section className="mx-auto w-full max-w-[1440px] overflow-hidden pb-16 lg:pb-24">
             <div className="relative flex flex-col gap-[35px] pt-[13px]">
                 <div className="w-full overflow-hidden">
                     <MarqueeRow />
@@ -280,24 +243,19 @@ export function Multichain() {
             </div>
 
             <div className="px-6 md:px-12">
-                <h2 className="mt-16 text-center text-[32px] font-medium leading-none lg:mt-[72px]">
+                <h2 className="mt-16 text-center text-[32px] leading-none lg:mt-[72px]">
                     Built for treasuries that run on a mandate
                 </h2>
-                <div className="mx-auto mt-12 grid w-full max-w-[1178px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:mt-16 lg:p-4">
-                    {BUILT_FOR.map(({ title, body, featured }) => (
+                <div className="mx-auto mt-12 grid w-full max-w-[1178px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:mt-16 lg:px-4 lg:pt-4">
+                    {BUILT_FOR.map(({ title, body }) => (
                         <div
                             key={title}
-                            className={cn(
-                                "min-h-[188px] px-8 py-8 text-landing-ink lg:pt-10",
-                                featured
-                                    ? "rounded-3xl bg-landing-mist"
-                                    : "rounded-[12px] border border-landing-grey bg-landing-paper",
-                            )}
+                            className="min-h-[188px] rounded-[12px] border border-landing-grey bg-landing-paper px-8 py-8 text-landing-ink lg:pt-10"
                         >
-                            <p className="text-[17px] font-medium leading-normal">
+                            <p className="text-lg font-medium leading-normal">
                                 {title}
                             </p>
-                            <p className="mt-3 text-sm leading-[23px]">
+                            <p className="mt-3 text-base font-normal leading-normal">
                                 {body}
                             </p>
                         </div>
