@@ -1,5 +1,4 @@
 "use client";
-import { Icon } from "@/components/icon";
 import {
     ArrowDown01Icon,
     File01Icon,
@@ -18,12 +17,13 @@ import {
 import { useTranslations } from "next-intl";
 import { useCallback, useState } from "react";
 import { Button } from "@/components/button";
+import { Icon } from "@/components/icon";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
+import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { buildLoginHref } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
@@ -112,7 +112,7 @@ export function AccountMenuItems({
                 </Link>
             )}
             <Link
-                href={TERMS_OF_SERVICE_URL}
+                href={TERMS_OF_SERVICE_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={accountMenuItemClass}
@@ -122,7 +122,7 @@ export function AccountMenuItems({
                 {t("termsOfService")}
             </Link>
             <Link
-                href={PRIVACY_POLICY_URL}
+                href={PRIVACY_POLICY_HREF}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={accountMenuItemClass}

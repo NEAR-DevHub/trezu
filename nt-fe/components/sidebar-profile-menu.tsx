@@ -27,7 +27,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
+import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { isStaging } from "@/constants/features";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -223,7 +223,7 @@ export function SidebarProfileMenu({
                         {tNav("helpSupport")}
                     </button>
                     <Link
-                        href={TERMS_OF_SERVICE_URL}
+                        href={TERMS_OF_SERVICE_HREF}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={accountMenuItemClass}
@@ -233,7 +233,7 @@ export function SidebarProfileMenu({
                         {t("termsOfService")}
                     </Link>
                     <Link
-                        href={PRIVACY_POLICY_URL}
+                        href={PRIVACY_POLICY_HREF}
                         target="_blank"
                         rel="noopener noreferrer"
                         className={accountMenuItemClass}

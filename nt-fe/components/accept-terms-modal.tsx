@@ -1,8 +1,11 @@
 "use client";
 
-import { Icon } from "@/components/icon";
 import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { Button } from "@/components/button";
+import { Icon } from "@/components/icon";
 import {
     Dialog,
     DialogContent,
@@ -11,14 +14,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
-import { Button } from "@/components/button";
 import { ScrollContainer } from "@/components/scroll-container";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { useNear } from "@/stores/near-store";
-import { useTranslations } from "next-intl";
-import Link from "next/link";
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
 
 interface AcceptTermsModalProps {
     open: boolean;
@@ -138,7 +138,7 @@ export function AcceptTermsModal({ open, variant }: AcceptTermsModalProps) {
                             {t.rich("agreement", {
                                 terms: (chunks) => (
                                     <Link
-                                        href={TERMS_OF_SERVICE_URL}
+                                        href={TERMS_OF_SERVICE_HREF}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-primary underline underline-offset-4 hover:text-primary/80"
@@ -148,7 +148,7 @@ export function AcceptTermsModal({ open, variant }: AcceptTermsModalProps) {
                                 ),
                                 privacy: (chunks) => (
                                     <Link
-                                        href={PRIVACY_POLICY_URL}
+                                        href={PRIVACY_POLICY_HREF}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-primary underline underline-offset-4 hover:text-primary/80"

@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/collapsible";
 import {
     APP_DOCS_URL,
-    PRIVACY_POLICY_URL,
-    TERMS_OF_SERVICE_URL,
+    PRIVACY_POLICY_HREF,
+    TERMS_OF_SERVICE_HREF,
 } from "@/constants/config";
 import { CONTACT_HREF, FAQ_ITEMS } from "../content";
 import { EarlyAccessButton } from "./hero";
@@ -82,8 +82,8 @@ const FOOTER_COLUMNS = [
     {
         heading: "Product",
         links: [
-            { label: "Product", href: "#product" },
-            { label: "Security", href: "#security" },
+            { label: "Product", href: "/#product" },
+            { label: "Security", href: "/#security" },
             { label: "Docs", href: APP_DOCS_URL },
         ],
     },
@@ -146,22 +146,18 @@ export function Footer() {
                         </p>
                     </div>
                     <div className="flex gap-4 text-xs leading-[1.2] text-landing-paper/50 lg:w-[214px]">
-                        <a
-                            href={TERMS_OF_SERVICE_URL}
-                            target="_blank"
-                            rel="noreferrer"
+                        <Link
+                            href={TERMS_OF_SERVICE_HREF}
                             className="lg:w-[99px] hover:underline"
                         >
                             Terms of Use
-                        </a>
-                        <a
-                            href={PRIVACY_POLICY_URL}
-                            target="_blank"
-                            rel="noreferrer"
+                        </Link>
+                        <Link
+                            href={PRIVACY_POLICY_HREF}
                             className="lg:w-[99px] hover:underline"
                         >
                             Privacy Policy
-                        </a>
+                        </Link>
                     </div>
                 </div>
 
