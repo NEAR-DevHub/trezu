@@ -238,7 +238,8 @@ export default function MembersPage() {
         }
     }, [searchParams, canAddMember, router, treasuryId]);
 
-    const { addedAt } = useMemberAddedAt(treasuryId);
+    const { addedAt, isLoading: isAddedAtLoading } =
+        useMemberAddedAt(treasuryId);
     const { canModifyMember, canDeleteBulk } = useMemberValidation(
         existingMembers,
         {
@@ -664,6 +665,8 @@ export default function MembersPage() {
                                                 withTooltip={false}
                                             />
                                         </p>
+                                    ) : isAddedAtLoading ? (
+                                        <Skeleton className="mt-2 h-4 w-20 bg-general-bg-secondary" />
                                     ) : null}
                                 </div>
                             </div>
@@ -784,6 +787,8 @@ export default function MembersPage() {
                                                         }
                                                         relative
                                                     />
+                                                ) : isAddedAtLoading ? (
+                                                    <Skeleton className="h-4 w-20 bg-general-bg-secondary" />
                                                 ) : (
                                                     <span className="text-general-muted-foreground">
                                                         —
@@ -1331,6 +1336,7 @@ export default function MembersPage() {
                 addedAt={
                     sheetMember ? addedAt[sheetMember.accountId] : undefined
                 }
+                addedAtLoading={isAddedAtLoading}
                 onSend={handleSheetSend}
                 onRemove={handleSheetRemove}
                 removeDisabled={

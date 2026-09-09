@@ -12,6 +12,15 @@ export const MEMBER_ADDED_PROPOSAL_TYPES = [
     "RemoveMemberFromRole",
 ] as const;
 
+export function memberAddedAtQueryKey(treasuryId: string) {
+    return ["memberAddedAt", treasuryId] as const;
+}
+
+export function isMemberAddedProposalKind(kind: ProposalKind): boolean {
+    if (typeof kind !== "object" || kind === null) return false;
+    return MEMBER_ADDED_PROPOSAL_TYPES.some((type) => type in kind);
+}
+
 type MemberRoles = Map<string, Set<string>>;
 
 function groupRoleAccounts(role: RolePermission): string[] {
@@ -165,57 +174,4 @@ export function buildMemberAddedAtMap(
     }
 
     return addedAt;
-}
-
-export type MemberAddedHistoryEntry = Pick<
-    Proposal,
-    "id" | "kind" | "submission_time" | "public_metadata"
->;
-
-export type MemberAddedHistoryHead = {
-    total: number;
-    lastId: number | null;
-};
-
-/** Cached derive of Added dates. `total` + `lastId` fingerprint the history. */
-export type MemberAddedAtSnapshot = {
-    addedAt: Record<string, number>;
-    total: number;
-    lastId: number | null;
-};
-
-export function isMemberAddedAtSnapshotCurrent(
-    cached: MemberAddedAtSnapshot | undefined,
-    head: MemberAddedHistoryHead,
-): boolean {
-    return (
-        cached !== undefined &&
-        cached.total === head.total &&
-        cached.lastId === head.lastId
-    );
-}
-
-export async function resolveMemberAddedAtSnapshot(
-    cached: MemberAddedAtSnapshot | undefined,
-    deps: {
-        fetchHead: () => Promise<MemberAddedHistoryHead>;
-        fetchAll: () => Promise<{
-            proposals: MemberAddedHistoryEntry[];
-            total: number;
-        }>;
-    },
-): Promise<MemberAddedAtSnapshot> {
-    if (cached) {
-        const head = await deps.fetchHead();
-        if (isMemberAddedAtSnapshotCurrent(cached, head)) {
-            return cached;
-        }
-    }
-
-    const { proposals, total } = await deps.fetchAll();
-    return {
-        addedAt: buildMemberAddedAtMap(proposals),
-        total,
-        lastId: proposals.at(-1)?.id ?? null,
-    };
 }
