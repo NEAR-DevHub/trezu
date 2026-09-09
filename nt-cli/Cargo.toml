@@ -44,6 +44,8 @@ near-cli-rs = { version = "0.26", default-features = false }
 dirs = "6"
 chrono = { version = "0.4", features = ["serde"] }
 base64 = "0.22"
+sha3 = "0.10"
+borsh = { version = "1", features = ["derive"] }
 near-token = "0.3"
 uuid = { version = "1", features = ["serde"] }
 colored = "3"

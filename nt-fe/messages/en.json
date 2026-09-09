@@ -1455,6 +1455,7 @@
             "subtitle": "Use a passkey for the easiest experience, or connect a wallet.",
             "helpCta": "Wondering which to choose?",
             "popularBadge": "Popular",
+            "comingSoonBadge": "Coming soon",
             "recentBadge": "Recent",
             "noFundsNote": "No funds needed to start - we cover transaction fees so you can try it out",
             "chooseNearWallet": "Choose your NEAR wallet",

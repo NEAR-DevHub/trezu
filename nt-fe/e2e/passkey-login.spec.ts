@@ -261,19 +261,29 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
         route.fulfill({
             status: 200,
             contentType: "application/json",
-            body: JSON.stringify({ payload: "Login to Trezu — test payload" }),
+            body: JSON.stringify({
+                payload: "Login to Trezu — test payload",
+                chainId: "mainnet",
+            }),
         }),
     );
 
     await context.route("**/api/auth/login", async (route) => {
         const body = JSON.parse(route.request().postData() ?? "{}");
         // The executor must produce a NEP-641 authorization blob for a
-        // deterministic 0s… wallet account.
+        // deterministic 0s… wallet account: the signed `OffchainMessage`
+        // envelope (bound to chain, signer, empty path, timestamp, payload)
+        // plus the passkey proof, in the reference wallet's
+        // `{ signature: { msg, proof } }` shape.
         expect(body.accountId).toMatch(/^0s[0-9a-f]{40}$/);
         const authorization = JSON.parse(body.authorization);
-        expect(authorization.message.purpose).toBe("PROVE_OWNERSHIP");
-        expect(authorization.message.recipient).toBe("Near Business App");
-        expect(authorization.proof).toBeTruthy();
+        expect(authorization.signature.msg.chain_id).toBe("mainnet");
+        expect(authorization.signature.msg.signer_id).toBe(body.accountId);
+        expect(authorization.signature.msg.path ?? []).toEqual([]);
+        expect(authorization.signature.msg.payload).toBe(
+            "Login to Trezu — test payload",
+        );
+        expect(authorization.signature.proof).toBeTruthy();
 
         resolvedAccountId = body.accountId;
         isLoggedIn = true;

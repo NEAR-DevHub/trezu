@@ -346,7 +346,10 @@ test("Ledger login flow", async ({ page, context }) => {
             contentType: "application/json",
             // NEP-641 payload the wallet authorizes (login is mocked to succeed
             // regardless of the resolved authorization).
-            body: JSON.stringify({ payload: "Login to Trezu — test payload" }),
+            body: JSON.stringify({
+                payload: "Login to Trezu — test payload",
+                chainId: "mainnet",
+            }),
         });
     });
 
