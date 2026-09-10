@@ -2695,5 +2695,20 @@
     "thresholdStepper": {
         "decrease": "降低阈值",
         "increase": "提高阈值"
+    },
+    "cookieConsent": {
+        "bannerBody": "我们使用 Cookie 来了解网站使用情况、改进网站、记住您的设置并支持我们的营销工作。<privacy>隐私政策</privacy>",
+        "acceptAll": "全部接受",
+        "managePreferences": "管理偏好",
+        "closeBanner": "关闭并仅使用必要 Cookie",
+        "title": "存储偏好",
+        "intro": "当您访问网站时，网站可能会使用 Cookie 及类似技术（“Cookie”）存储或读取有关您的数据。Cookie 可能是网站基本功能及其他用途所必需的。您可以禁用某些类型的 Cookie，但这可能会影响您在网站上的体验。",
+        "essentialTitle": "必要",
+        "essentialBody": "网站基本功能所必需。您无法禁用必要 Cookie。",
+        "personalizationTitle": "个性化",
+        "personalizationBody": "允许网站记住您的选择并提供更个性化的增强功能。",
+        "analyticsTitle": "分析",
+        "analyticsBody": "帮助网站运营者了解网站表现、访问者如何与网站互动以及是否存在技术问题。",
+        "save": "保存"
     }
 }

@@ -35,21 +35,8 @@ Sentry.init({
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 
-import posthog from "posthog-js";
+import { enableAnalytics, isAnalyticsAllowed } from "./lib/analytics";
 
-const posthogToken = process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
-
-if (typeof posthogToken === "string") {
-    posthog.init(posthogToken, {
-        api_host: "/_telemetry",
-        ui_host: "https://us.posthog.com",
-        flags_api_host: "/_features",
-        defaults: "2026-01-30",
-        // Sentry is the error-reporting system; capturing exceptions here too
-        // produced duplicate, unrouted copies of every client error.
-        capture_exceptions: false,
-        // We use custom onboarding questionnaire UI; disable PostHog survey runtime.
-        disable_surveys: true,
-        debug: process.env.NODE_ENV === "development",
-    });
+if (isAnalyticsAllowed()) {
+    enableAnalytics();
 }

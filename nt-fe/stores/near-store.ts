@@ -8,13 +8,16 @@ import {
 import type { SignDelegateActionsParams } from "@hot-labs/near-connect/build/types";
 import { useQueryClient } from "@tanstack/react-query";
 import SignClient from "@walletconnect/sign-client";
-import posthog from "posthog-js";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getNearStoreMessages } from "@/i18n/store-messages";
-import { trackEvent } from "@/lib/analytics";
+import {
+    identifyAnalyticsUser,
+    resetAnalyticsUser,
+    trackEvent,
+} from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
 import {
     isMemberAddedProposalKind,
@@ -362,7 +365,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 user: null,
                 authError: null,
             });
-            posthog.reset();
+            resetAnalyticsUser();
         });
 
         // Login is driven explicitly in `connect()` via NEP-641 `resolveAuth`,
@@ -455,9 +458,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 },
                 isAuthenticating: false,
             });
-            posthog.identify(loginResponse.accountId, {
-                account_id: loginResponse.accountId,
-            });
+            identifyAnalyticsUser(loginResponse.accountId);
             trackEvent("wallet_connection_completed", {
                 source: "resolve-auth",
                 account_id: loginResponse.accountId,
@@ -506,7 +507,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             user: null,
             authError: null,
         });
-        posthog.reset();
+        resetAnalyticsUser();
 
         // Forget the persisted direct-trigger wallet so the next reload doesn't
         // restore a stale target.
@@ -587,9 +588,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     },
                     walletAccountId: user.accountId,
                 });
-                posthog.identify(user.accountId, {
-                    account_id: user.accountId,
-                });
+                identifyAnalyticsUser(user.accountId);
             } else {
                 clearSessionHint();
                 set({

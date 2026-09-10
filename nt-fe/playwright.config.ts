@@ -1,4 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import {
+    COOKIE_CONSENT_COOKIE,
+    ESSENTIAL_ONLY_CONSENT,
+    serializeConsentCookie,
+} from "./lib/cookie-consent";
 
 /**
  * Playwright configuration for Treasury26 Frontend E2E Tests
@@ -17,6 +22,23 @@ export default defineConfig({
 
     use: {
         baseURL: "http://localhost:3000",
+        // Pre-answer the cookie banner so it never overlaps test targets; tests
+        // that exercise the banner itself clear this cookie first.
+        storageState: {
+            cookies: [
+                {
+                    name: COOKIE_CONSENT_COOKIE,
+                    value: serializeConsentCookie(ESSENTIAL_ONLY_CONSENT),
+                    domain: "localhost",
+                    path: "/",
+                    expires: -1,
+                    httpOnly: false,
+                    secure: false,
+                    sameSite: "Lax",
+                },
+            ],
+            origins: [],
+        },
         // Record every test (pass or fail) so the published HTML report is a
         // full visual walkthrough of the behaviour the PR produces, not just a
         // failure debugging aid. The report embeds these videos so reviewers

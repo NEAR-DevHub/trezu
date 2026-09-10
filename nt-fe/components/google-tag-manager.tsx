@@ -3,6 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import Script from "next/script";
 import { Suspense, useEffect } from "react";
+import { useCookieConsentStore } from "@/stores/cookie-consent-store";
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID;
 
@@ -32,7 +33,10 @@ function GoogleTagManagerPageTracker() {
 }
 
 export function GoogleTagManager() {
-    if (!GTM_ID) {
+    const analyticsAllowed = useCookieConsentStore(
+        (s) => s.preferences?.analytics === true,
+    );
+    if (!GTM_ID || !analyticsAllowed) {
         return null;
     }
 

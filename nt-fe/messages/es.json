@@ -2695,5 +2695,20 @@
     "thresholdStepper": {
         "decrease": "Reducir el umbral",
         "increase": "Aumentar el umbral"
+    },
+    "cookieConsent": {
+        "bannerBody": "Usamos cookies para entender el uso del sitio, mejorarlo, recordar tus ajustes y apoyar nuestras acciones de marketing. <privacy>Política de privacidad</privacy>",
+        "acceptAll": "Aceptar todo",
+        "managePreferences": "Gestionar preferencias",
+        "closeBanner": "Cerrar y usar solo cookies esenciales",
+        "title": "Preferencias de almacenamiento",
+        "intro": "Cuando visitas sitios web, estos pueden almacenar o recuperar datos sobre ti mediante cookies y tecnologías similares («Cookies»). Las cookies pueden ser necesarias para el funcionamiento básico del sitio, así como para otros fines. Puedes desactivar ciertos tipos de cookies, aunque hacerlo puede afectar tu experiencia en el sitio.",
+        "essentialTitle": "Esenciales",
+        "essentialBody": "Necesarias para el funcionamiento básico del sitio. No puedes desactivar las cookies esenciales.",
+        "personalizationTitle": "Personalización",
+        "personalizationBody": "Permite que el sitio recuerde tus elecciones y ofrezca funciones mejoradas y más personales.",
+        "analyticsTitle": "Analítica",
+        "analyticsBody": "Ayuda al operador a entender cómo funciona el sitio, cómo interactúan los visitantes y si puede haber problemas técnicos.",
+        "save": "Guardar"
     }
 }
