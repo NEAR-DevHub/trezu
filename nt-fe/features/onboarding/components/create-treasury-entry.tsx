@@ -22,7 +22,7 @@ import {
     CreationProgressModal,
     type CreationStep,
 } from "@/components/creation-progress-modal";
-import { CircleIconInput } from "@/components/circle-icon-input";
+import { NameField } from "@/components/name-field";
 import { LargeInput } from "@/components/large-input";
 import { LoadingScreen } from "@/components/loading-screen";
 import { PageCard } from "@/components/card";
@@ -577,8 +577,9 @@ export function TreasuryOnboardingPage({
                         name="treasuryName"
                         render={({ field, fieldState }) => (
                             <div className="flex flex-col gap-1">
-                                <CircleIconInput
+                                <NameField
                                     {...field}
+                                    variant="hero"
                                     icon={Coins01Icon}
                                     invalid={Boolean(fieldState.error)}
                                     aria-label={t("namePlaceholder")}

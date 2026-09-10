@@ -320,6 +320,7 @@ export default function JoinInvitePage() {
                     autoComplete="name"
                     value={displayName}
                     onChange={(event) => setDisplayName(event.target.value)}
+                    onClear={() => setDisplayName("")}
                     placeholder={t("namePlaceholder")}
                     clearLabel={t("clearName")}
                 />

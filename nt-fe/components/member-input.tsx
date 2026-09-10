@@ -208,6 +208,7 @@ export function MemberInput<
                                         field.onChange(input);
                                     }}
                                     onBlur={field.onBlur}
+                                    onClear={() => field.onChange("")}
                                     placeholder={t("enterAddress")}
                                     clearLabel={t("clearAddress")}
                                     aria-invalid={!!fieldState.error}
