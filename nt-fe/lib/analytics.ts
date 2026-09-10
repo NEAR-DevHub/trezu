@@ -26,7 +26,7 @@ function initPostHog() {
 
     posthog.init(POSTHOG_TOKEN, {
         api_host: "/_telemetry",
-        ui_host: "https://us.posthog.com",
+        ui_host: "https://eu.posthog.com",
         flags_api_host: "/_features",
         defaults: "2026-01-30",
         // Sentry is the error-reporting system; capturing exceptions here too
