@@ -968,6 +968,7 @@
             "walletConnected": "Billetera conectada",
             "nameLabel": "Tu nombre (opcional)",
             "namePlaceholder": "Introduce un nombre para que el equipo te reconozca",
+            "clearName": "Borrar nombre",
             "askJoin": "Pedir unirme",
             "submitting": "Enviando...",
             "successTitle": "Casi estás dentro",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "La dirección ya es miembro"
         },
         "enterAddress": "Introducir dirección",
+        "clearAddress": "Borrar dirección",
         "selectRole": "Seleccionar rol",
         "memberNumber": "Miembro {number}"
     },

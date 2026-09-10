@@ -5,7 +5,7 @@ import {
     CheckIcon,
     InformationCircleIcon,
     LogoutSquare01Icon,
-    User02Icon,
+    UserIcon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
@@ -16,6 +16,7 @@ import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import NearBusinessLogo from "@/components/icons/near-business-logo";
+import { NameField } from "@/components/name-field";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
 import { selectorTriggerClassName } from "@/components/selector-field";
@@ -29,6 +30,18 @@ import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 
 const ALREADY_MEMBER_ERROR = "Account is already a treasury member";
+
+function JoinHomeLogo({ className }: { className?: string }) {
+    return (
+        <Link
+            href="/"
+            className={cn("inline-flex", className)}
+            aria-label="Home"
+        >
+            <NearBusinessLogo className="h-7" />
+        </Link>
+    );
+}
 
 function StatusCard({
     icon,
@@ -44,7 +57,7 @@ function StatusCard({
     action?: ReactNode;
 }) {
     return (
-        <PageCard className="items-center gap-4 px-6 py-10 text-center">
+        <PageCard className="items-center gap-4 rounded-3xl px-6 py-10 text-center">
             <div
                 className={cn(
                     "flex size-10 items-center justify-center rounded-full",
@@ -146,7 +159,10 @@ export default function JoinInvitePage() {
         !isAlreadyMember;
 
     const successIcon = (
-        <Icon icon={CheckIcon} className="size-5 text-emerald-600" />
+        <Icon
+            icon={CheckIcon}
+            className="size-5 text-general-success-foreground"
+        />
     );
     const infoIcon = (
         <Icon
@@ -154,18 +170,22 @@ export default function JoinInvitePage() {
             className="size-5 text-general-orange-foreground"
         />
     );
+    const successIconClassName =
+        "border border-general-success-border bg-general-success-background-faded";
+    const warningIconClassName =
+        "border border-general-orange-border bg-general-orange-background-faded";
 
     const alreadyMemberCard = treasuryDaoId ? (
         <StatusCard
             icon={successIcon}
-            iconClassName="bg-emerald-500/15"
+            iconClassName={successIconClassName}
             title={t("alreadyMemberTitle")}
             description={t("alreadyMemberDescription", {
                 treasury: treasuryName,
             })}
             action={
                 <Button
-                    className="mt-2 h-11 w-full rounded-2xl"
+                    className="mt-2 h-10 w-full"
                     onClick={() => router.push(`/${treasuryDaoId}`)}
                 >
                     {t("goToTreasury")}
@@ -177,7 +197,7 @@ export default function JoinInvitePage() {
     const pendingSuccessCard = pendingDaoId ? (
         <StatusCard
             icon={successIcon}
-            iconClassName="bg-emerald-500/15"
+            iconClassName={successIconClassName}
             title={t("successTitle")}
             description={t("successDescription")}
         />
@@ -197,9 +217,12 @@ export default function JoinInvitePage() {
             isAlreadyMember ||
             hasPendingRequest ||
             invite.status !== "valid");
+    // Ask-to-join form + status cards share the same chrome. Connect-wallet
+    // stays on the login layout.
+    const isFramedScreen = !isBootstrapping && !showLogin;
 
     const pageBody = isBootstrapping ? (
-        <PageCard className="gap-4">
+        <PageCard className="gap-4 rounded-3xl">
             <Skeleton className="h-6 w-48" />
             <Skeleton className="h-4 w-72" />
             <Skeleton className="h-18 w-full" />
@@ -208,7 +231,7 @@ export default function JoinInvitePage() {
     ) : isError || !invite ? (
         <StatusCard
             icon={infoIcon}
-            iconClassName="bg-general-orange-background-faded"
+            iconClassName={warningIconClassName}
             title={t("invalidTitle")}
             description={t("invalidDescription")}
         />
@@ -219,7 +242,7 @@ export default function JoinInvitePage() {
     ) : invite.status !== "valid" ? (
         <StatusCard
             icon={infoIcon}
-            iconClassName="bg-general-orange-background-faded"
+            iconClassName={warningIconClassName}
             title={
                 invite.status === "used" ? t("usedTitle") : t("expiredTitle")
             }
@@ -237,7 +260,7 @@ export default function JoinInvitePage() {
             onConnectSupported={connect}
         />
     ) : (
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold leading-[1.2] text-general-foreground">
                     {t("askTitle", { treasury: treasuryName })}
@@ -292,25 +315,18 @@ export default function JoinInvitePage() {
             </div>
 
             {hasExistingName ? null : (
-                <label className={cn(selectorTriggerClassName, "cursor-text")}>
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-general-border bg-muted">
-                        <Icon
-                            icon={User02Icon}
-                            className="size-5 text-muted-foreground"
-                        />
-                    </span>
-                    <input
-                        autoComplete="name"
-                        value={displayName}
-                        onChange={(event) => setDisplayName(event.target.value)}
-                        placeholder={t("namePlaceholder")}
-                        className="min-w-0 flex-1 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground"
-                    />
-                </label>
+                <NameField
+                    icon={UserIcon}
+                    autoComplete="name"
+                    value={displayName}
+                    onChange={(event) => setDisplayName(event.target.value)}
+                    placeholder={t("namePlaceholder")}
+                    clearLabel={t("clearName")}
+                />
             )}
 
             <Button
-                className="h-11 w-full rounded-2xl"
+                className="h-10 w-full mt-3"
                 onClick={() => void handleAskJoin()}
                 disabled={joinMutation.isPending}
             >
@@ -327,35 +343,28 @@ export default function JoinInvitePage() {
             hideAppWarningBanner
             transparentHeader
             hideHeaderBottomBorder
-            hideHeaderContent={!isStatusScreen}
+            hideHeaderContent={!isFramedScreen}
             hideHeaderControls
-            logo={
-                isStatusScreen ? (
-                    <Link href="/" className="inline-flex">
-                        <NearBusinessLogo className="h-7" />
-                    </Link>
-                ) : undefined
-            }
+            headerClassName={isFramedScreen ? "md:hidden" : undefined}
+            logo={isFramedScreen ? <JoinHomeLogo /> : undefined}
             mainClassName={cn(
                 "flex flex-col bg-general-bg-tertiary",
-                isStatusScreen ? "max-md:pt-0" : "pt-1",
+                isFramedScreen ? "pt-0" : "pt-1",
             )}
         >
             <div
                 className={cn(
                     "mx-auto w-full",
                     showLogin ? "max-w-md md:mt-3" : "max-w-lg",
-                    isStatusScreen
-                        ? "flex max-md:min-h-full max-md:flex-1 max-md:flex-col max-md:justify-center md:space-y-6"
+                    isFramedScreen
+                        ? "flex max-md:flex-1 max-md:flex-col max-md:items-center max-md:justify-center md:flex-col md:items-start md:gap-6 md:pt-20"
                         : "space-y-6",
                 )}
             >
-                {showLogin || isBootstrapping || isStatusScreen ? null : (
-                    <Link href="/" className="inline-flex">
-                        <NearBusinessLogo className="h-7" />
-                    </Link>
-                )}
-                {pageBody}
+                {isFramedScreen ? (
+                    <JoinHomeLogo className="hidden md:inline-flex" />
+                ) : null}
+                <div className={cn(isFramedScreen && "w-full")}>{pageBody}</div>
             </div>
         </PageComponentLayout>
     );

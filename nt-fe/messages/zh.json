@@ -968,6 +968,7 @@
             "walletConnected": "钱包已连接",
             "nameLabel": "你的姓名（可选）",
             "namePlaceholder": "输入姓名，方便团队认出你",
+            "clearName": "清除姓名",
             "askJoin": "申请加入",
             "submitting": "提交中...",
             "successTitle": "快要加入了",
@@ -1708,6 +1709,7 @@
             "duplicateAddress": "地址已是成员"
         },
         "enterAddress": "输入地址",
+        "clearAddress": "清除地址",
         "selectRole": "选择角色",
         "memberNumber": "成员 {number}"
     },

@@ -11,11 +11,9 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/modal";
+import { NameFieldButton } from "@/components/name-field";
 import { ScrollContainer } from "@/components/scroll-container";
-import {
-    EmptySelectorIcon,
-    selectorTriggerClassName,
-} from "@/components/selector-field";
+import { EmptySelectorIcon } from "@/components/selector-field";
 import { SelectorOptionRow } from "@/components/selector-option-row";
 import { cn } from "@/lib/utils";
 import { shouldPreventMobileDialogAutoFocus } from "@/lib/wallet-address-input-props";
@@ -159,27 +157,15 @@ export function RoleSelector({
     return (
         <>
             {triggerVariant === "field" ? (
-                <button
-                    type="button"
+                <NameFieldButton
+                    leading={<EmptySelectorIcon />}
+                    invalid={invalid}
+                    empty={selectedRoles.length === 0}
+                    className={className}
                     onClick={() => handleOpenChange(true)}
-                    className={cn(
-                        selectorTriggerClassName,
-                        invalid && "border-destructive bg-destructive/5",
-                        className,
-                    )}
                 >
-                    <EmptySelectorIcon />
-                    <span
-                        className={cn(
-                            "min-w-0 flex-1 truncate text-base leading-[1.2]",
-                            selectedRoles.length === 0
-                                ? "font-medium text-muted-foreground"
-                                : "font-semibold text-general-foreground",
-                        )}
-                    >
-                        {triggerLabel}
-                    </span>
-                </button>
+                    {triggerLabel}
+                </NameFieldButton>
             ) : (
                 <Button
                     type="button"
@@ -196,7 +182,7 @@ export function RoleSelector({
 
             <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogContent
-                    className="h-auto max-sm:h-auto max-sm:gap-4"
+                    className="h-auto max-sm:gap-4"
                     onOpenAutoFocus={(event) => {
                         if (
                             shouldPreventMobileDialogAutoFocus(
@@ -215,8 +201,8 @@ export function RoleSelector({
                             {t("title")}
                         </DialogTitle>
                     </DialogHeader>
-                    <div className="flex flex-col">
-                        <ScrollContainer className="touch-pan-y overscroll-contain pr-1">
+                    <div className="-mx-4 flex flex-col">
+                        <ScrollContainer className="touch-pan-y overscroll-contain">
                             {translatedRoles.map((role) => {
                                 const disabledInfo = disabledRoles.find(
                                     (d) => d.roleId === role.id,
@@ -233,8 +219,8 @@ export function RoleSelector({
                                         }
                                         primary={role.title}
                                         secondary={role.description}
-                                        primaryClassName="text-sm font-semibold leading-[1.5] text-general-secondary-foreground"
-                                        secondaryClassName="text-sm font-normal leading-[1.5] tracking-[0.00438rem] text-general-muted-foreground"
+                                        primaryClassName="text-sm font-semibold leading-normal text-general-secondary-foreground"
+                                        secondaryClassName="text-sm font-normal leading-normal text-general-muted-foreground"
                                         trailing={
                                             isChecked ? (
                                                 <Icon
@@ -262,7 +248,7 @@ export function RoleSelector({
                                             key={role.id}
                                             content={disabledInfo.reason}
                                             contentProps={{
-                                                className: "max-w-[320px]",
+                                                className: "max-w-80",
                                             }}
                                         >
                                             {content}
@@ -277,7 +263,7 @@ export function RoleSelector({
                     <DialogFooter className="border-0">
                         <Button
                             type="button"
-                            className="h-11 w-full rounded-2xl"
+                            className="h-10 w-full"
                             disabled={draftRoles.length === 0}
                             tooltipContent={
                                 draftRoles.length === 0

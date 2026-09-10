@@ -968,6 +968,7 @@
             "walletConnected": "Đã kết nối ví",
             "nameLabel": "Tên của bạn (tuỳ chọn)",
             "namePlaceholder": "Nhập tên để nhóm nhận ra bạn",
+            "clearName": "Xoá tên",
             "askJoin": "Yêu cầu tham gia",
             "submitting": "Đang gửi...",
             "successTitle": "Bạn sắp được vào",
@@ -1708,6 +1709,7 @@
             "duplicateAddress": "Địa chỉ đã là một thành viên"
         },
         "enterAddress": "Nhập địa chỉ",
+        "clearAddress": "Xoá địa chỉ",
         "selectRole": "Chọn vai trò",
         "memberNumber": "Thành viên {number}"
     },

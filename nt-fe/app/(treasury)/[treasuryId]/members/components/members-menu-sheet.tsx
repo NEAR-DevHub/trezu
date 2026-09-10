@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
 import { cn } from "@/lib/utils";
 
 const ITEM_CLASS =
-    "h-14 w-full justify-start gap-3 rounded-full bg-gray-100 px-5 text-base font-semibold text-foreground shadow-none hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20";
+    "h-14 w-full justify-start gap-3 rounded-lg bg-gray-100 px-5 text-base font-semibold text-foreground shadow-none hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20";
 
 interface MembersMenuSheetProps {
     open: boolean;

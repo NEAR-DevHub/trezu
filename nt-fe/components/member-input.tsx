@@ -17,8 +17,9 @@ import {
     useFormContext,
 } from "react-hook-form";
 import z from "zod";
+import { NameField } from "@/components/name-field";
 import { Icon } from "@/components/icon";
-import { selectorTriggerClassName } from "@/components/selector-field";
+import { User } from "@/components/user";
 import { formatShortAddress } from "@/lib/format-short-address";
 import {
     getCommittedMembers,
@@ -193,37 +194,24 @@ export function MemberInput<
                         }
                         render={({ field, fieldState }) => (
                             <div className="flex flex-col gap-1">
-                                <label
-                                    className={cn(
-                                        selectorTriggerClassName,
-                                        "cursor-text",
-                                        fieldState.error &&
-                                            "border-destructive bg-destructive/5",
-                                    )}
-                                >
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-general-border bg-muted">
-                                        <Icon
-                                            icon={Wallet03Icon}
-                                            className="size-5 text-muted-foreground"
-                                        />
-                                    </span>
-                                    <input
-                                        {...WALLET_ADDRESS_INPUT_PROPS}
-                                        ref={addressInputRef}
-                                        value={field.value ?? ""}
-                                        onChange={(event) => {
-                                            const input = event.target.value
-                                                .toLowerCase()
-                                                .replace(/[^a-z0-9_.-]+/g, "")
-                                                .slice(0, 64);
-                                            field.onChange(input);
-                                        }}
-                                        onBlur={field.onBlur}
-                                        placeholder={t("enterAddress")}
-                                        aria-invalid={!!fieldState.error}
-                                        className="min-w-0 flex-1 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground"
-                                    />
-                                </label>
+                                <NameField
+                                    {...WALLET_ADDRESS_INPUT_PROPS}
+                                    ref={addressInputRef}
+                                    icon={Wallet03Icon}
+                                    invalid={!!fieldState.error}
+                                    value={field.value ?? ""}
+                                    onChange={(event) => {
+                                        const input = event.target.value
+                                            .toLowerCase()
+                                            .replace(/[^a-z0-9_.-]+/g, "")
+                                            .slice(0, 64);
+                                        field.onChange(input);
+                                    }}
+                                    onBlur={field.onBlur}
+                                    placeholder={t("enterAddress")}
+                                    clearLabel={t("clearAddress")}
+                                    aria-invalid={!!fieldState.error}
+                                />
                                 {fieldState.error ? (
                                     <FormMessage className="mt-1 text-sm text-destructive" />
                                 ) : null}
@@ -290,7 +278,7 @@ export function MemberInput<
                                 )}
                             >
                                 <div className="flex items-center justify-between gap-3">
-                                    <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                    <p className="text-sm font-medium leading-normal text-general-secondary-foreground">
                                         {t("memberNumber", {
                                             number: index + 1,
                                         })}
@@ -332,9 +320,12 @@ export function MemberInput<
                                 </div>
                                 {isEditMode ? (
                                     <div className="flex flex-col gap-3">
-                                        <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-secondary-foreground">
-                                            {formatShortAddress(accountId)}
-                                        </span>
+                                        <User
+                                            accountId={accountId}
+                                            variant="details"
+                                            withLink={false}
+                                            withHoverCard={false}
+                                        />
                                         <FormField
                                             control={control}
                                             name={
@@ -380,7 +371,7 @@ export function MemberInput<
                                     </div>
                                 ) : (
                                     <div className="flex items-center justify-between gap-3">
-                                        <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                                        <span className="min-w-0 truncate text-sm font-medium leading-normal text-general-secondary-foreground">
                                             {formatShortAddress(accountId)}
                                         </span>
                                         <div className="flex flex-wrap justify-end gap-2">

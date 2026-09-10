@@ -968,6 +968,7 @@
             "walletConnected": "Cüzdan bağlandı",
             "nameLabel": "Adınız (isteğe bağlı)",
             "namePlaceholder": "Ekibin sizi tanıması için ad girin",
+            "clearName": "Adı temizle",
             "askJoin": "Katılma isteği",
             "submitting": "Gönderiliyor...",
             "successTitle": "Neredeyse katıldınız",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "Adres zaten bir üye"
         },
         "enterAddress": "Adres girin",
+        "clearAddress": "Adresi temizle",
         "selectRole": "Rol seçin",
         "memberNumber": "Üye {number}"
     },

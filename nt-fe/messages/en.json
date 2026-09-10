@@ -972,6 +972,7 @@
             "walletConnected": "Wallet connected",
             "nameLabel": "Your name (optional)",
             "namePlaceholder": "Enter name, the team recognize you",
+            "clearName": "Clear name",
             "askJoin": "Ask to join",
             "submitting": "Submitting...",
             "successTitle": "You're almost in",
@@ -1718,6 +1719,7 @@
     },
     "memberInput": {
         "enterAddress": "Enter address",
+        "clearAddress": "Clear address",
         "selectRole": "Select role",
         "memberNumber": "Member {number}",
         "addNewMember": "Add another member",

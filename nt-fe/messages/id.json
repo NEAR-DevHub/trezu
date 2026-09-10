@@ -968,6 +968,7 @@
             "walletConnected": "Dompet terhubung",
             "nameLabel": "Nama Anda (opsional)",
             "namePlaceholder": "Masukkan nama agar tim mengenali Anda",
+            "clearName": "Hapus nama",
             "askJoin": "Minta bergabung",
             "submitting": "Mengirim...",
             "successTitle": "Hampir bergabung",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "Alamat sudah menjadi anggota"
         },
         "enterAddress": "Masukkan alamat",
+        "clearAddress": "Hapus alamat",
         "selectRole": "Pilih peran",
         "memberNumber": "Anggota {number}"
     },

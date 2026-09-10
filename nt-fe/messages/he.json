@@ -968,6 +968,7 @@
             "walletConnected": "הארנק מחובר",
             "nameLabel": "השם שלכם (אופציונלי)",
             "namePlaceholder": "הזינו שם כדי שהצוות יזהה אתכם",
+            "clearName": "נקה שם",
             "askJoin": "בקשת הצטרפות",
             "submitting": "שולח...",
             "successTitle": "כמעט בפנים",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "הכתובת כבר חברה"
         },
         "enterAddress": "הזן כתובת",
+        "clearAddress": "נקה כתובת",
         "selectRole": "בחר תפקיד",
         "memberNumber": "חבר {number}"
     },
