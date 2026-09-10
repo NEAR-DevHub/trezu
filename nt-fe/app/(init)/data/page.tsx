@@ -13,12 +13,6 @@ export const metadata: Metadata = {
 export default function DataProcessingPage() {
     return (
         <LegalPage title={["Data", "Processing"]}>
-            <p>
-                <strong>near.com for Business</strong>
-            </p>
-            <p>
-                <strong>Data Processing Addendum</strong>
-            </p>
             <p>Last updated: 10 September 2026</p>
             <h2>
                 <strong>1. Application and definitions</strong>

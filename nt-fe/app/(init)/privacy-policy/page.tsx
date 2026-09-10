@@ -13,12 +13,6 @@ export const metadata: Metadata = {
 export default function PrivacyPolicyPage() {
     return (
         <LegalPage title={["Privacy", "Policy"]}>
-            <p>
-                <strong>near.com for Business</strong>
-            </p>
-            <p>
-                <strong>Privacy Notice</strong>
-            </p>
             <p>Last updated: 10 September 2026</p>
             <h2>
                 <strong>1. About this notice</strong>
