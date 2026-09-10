@@ -17,9 +17,6 @@ export const metadata: Metadata = {
 export default function TermsOfUsePage() {
     return (
         <LegalPage title={["Terms", "of Use"]}>
-            <p>
-                <strong>NEAR.COM FOR BUSINESS TERMS AND CONDITIONS</strong>
-            </p>
             <p>Updated 6 September 2026</p>
             <p>
                 These Terms &amp; Conditions constitute a legally binding
