@@ -122,12 +122,6 @@ export const WALLET_OPTIONS: WalletOption[] = [
         supported: true,
         comingSoon: true,
     },
-    {
-        id: WALLET_IDS.PHANTOM,
-        label: "Phantom Wallet",
-        imgSrc: "/icons/phantom.svg",
-        supported: false,
-    },
 ];
 
 export const NEAR_WALLET_CHOICES: WalletOption[] = [
