@@ -60,6 +60,7 @@ function WalletPageContent() {
                             treasuries={flow.treasuries}
                             treasuriesLoading={flow.treasuriesLoading}
                             onSelect={flow.handleSelectTreasury}
+                            onSwitchAccount={flow.handleSwitchAccount}
                         />
                     )}
 

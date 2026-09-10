@@ -8,6 +8,7 @@ export function SelectTreasuryStep({
     treasuries,
     treasuriesLoading,
     onSelect,
+    onSwitchAccount,
 }: {
     accountId: string | null;
     action: WalletAction;
@@ -15,12 +16,13 @@ export function SelectTreasuryStep({
     treasuries: Treasury[];
     treasuriesLoading: boolean;
     onSelect: (daoId: string) => void;
+    onSwitchAccount: () => void;
 }) {
     const tW = useTranslations("wallet");
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
                 <p className="text-sm text-muted-foreground">
                     {tW.rich("connectedAs", {
                         account: accountId ?? "",
@@ -31,6 +33,13 @@ export function SelectTreasuryStep({
                         ),
                     })}
                 </p>
+                <button
+                    type="button"
+                    onClick={onSwitchAccount}
+                    className="shrink-0 text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground cursor-pointer"
+                >
+                    {tW("switchAccount")}
+                </button>
             </div>
             <p className="text-sm font-medium">
                 {action === "sign_in"

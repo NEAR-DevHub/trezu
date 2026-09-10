@@ -1554,6 +1554,7 @@
         "connectWallet": "חבר ארנק",
         "connecting": "מתחבר...",
         "connectedAs": "מחובר כ-<strong>{account}</strong>",
+        "switchAccount": "זה לא אתה? החלף חשבון",
         "loadingTreasuries": "טוען אוצרות...",
         "selectSignIn": "{app, select, unknown {בחר באיזה אוצר להשתמש.} other {בחר באיזה אוצר להשתמש ב-{app}.}}",
         "selectSignTx": "בחר אוצר ליצור בו הצעה:",

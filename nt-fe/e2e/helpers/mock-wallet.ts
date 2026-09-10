@@ -31,6 +31,24 @@ export const MOCK_WALLET_EXECUTOR_JS = `(function() {
     },
     async verifyOwner() { throw new Error('Not supported'); },
     async signMessage()  { throw new Error('Not supported'); },
+    async resolveAuth(p) {
+      const accountId = window.sandboxedLocalStorage.getItem('signedAccountId') || '';
+      if (!accountId) throw new Error('No signed-in account');
+      // A structurally-valid NEP-641 authorization blob. E2E tests mock
+      // /api/auth/login, so no real signature is needed — only the shape
+      // the login route asserts on.
+      return {
+        accountId,
+        authorization: JSON.stringify({
+          message: {
+            purpose: p.purpose,
+            recipient: p.recipient,
+            payload: p.payload,
+          },
+          proof: { mockWallet: true },
+        }),
+      };
+    },
     async signAndSendTransaction(p)  { return {}; },
     async signAndSendTransactions(p) { return []; },
     async signDelegateActions(p) {
@@ -128,7 +146,11 @@ export const MOCK_MANIFEST = {
             version: "1.0.0",
             type: "sandbox",
             executor: "/_near-connect-test/mock-wallet.js",
-            features: { signDelegateActions: true, signInAndSignMessage: true },
+            features: {
+                signDelegateActions: true,
+                signInAndSignMessage: true,
+                resolveAuth: true,
+            },
             permissions: { allowsOpen: false },
         },
     ],
