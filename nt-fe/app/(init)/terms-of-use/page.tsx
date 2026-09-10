@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
+import {
+    DATA_PROCESSING_HREF,
+    PRIVACY_POLICY_HREF,
+    TERMS_OF_SERVICE_HREF,
+} from "@/constants/config";
 import { LegalPage } from "@/features/landing/components/legal-page";
 
 // English-only, like the rest of the marketing pages, so the copy stays out
@@ -1360,10 +1364,13 @@ export default function TermsOfUsePage() {
                 notices, consents and lawful bases required for Intents
                 Technology to process Customer Data under this Agreement.
                 Personal data is processed in accordance with the Privacy Policy
-                and the Data Processing Agreement published at [URL], which
-                forms part of this Agreement and governs the parties' roles,
-                international transfers, subprocessors, security, retention and
-                data-subject rights.
+                and the Data Processing Agreement published at{" "}
+                <Link href={DATA_PROCESSING_HREF}>
+                    https://business.near.com/data
+                </Link>
+                , which forms part of this Agreement and governs the parties'
+                roles, international transfers, subprocessors, security,
+                retention and data-subject rights.
             </p>
             <p>
                 Following termination, Intents Technology will delete or return
