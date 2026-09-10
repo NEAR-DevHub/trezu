@@ -208,15 +208,7 @@ export default function JoinInvitePage() {
         isInitializing ||
         (Boolean(accountId) &&
             (isProfileLoading ||
-                (isTreasuriesLoading && viewerStatus == null)));
-    const isStatusScreen =
-        !isBootstrapping &&
-        !showLogin &&
-        (isError ||
-            !invite ||
-            isAlreadyMember ||
-            hasPendingRequest ||
-            invite.status !== "valid");
+                (isTreasuriesLoading && viewerStatus === undefined)));
     // Ask-to-join form + status cards share the same chrome. Connect-wallet
     // stays on the login layout.
     const isFramedScreen = !isBootstrapping && !showLogin;
