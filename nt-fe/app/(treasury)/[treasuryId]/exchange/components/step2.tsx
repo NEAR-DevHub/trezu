@@ -21,6 +21,7 @@ import { decimalOrNull } from "@/lib/amount-format";
 import {
     calculateExchangeFeeAmount,
     EXCHANGE_FEE_PERCENTAGE,
+    quoteHasAppFee,
 } from "@/lib/exchange-fee";
 import { minimumReceivedFromRaw } from "@/lib/minimum-received";
 import { cn } from "@/lib/utils";
@@ -143,9 +144,11 @@ export function Step2({ handleBack }: StepProps) {
               slippageTolerance,
           )
         : null;
-    const feeAmount = sellAmount
-        ? calculateExchangeFeeAmount(sellAmount)
-        : null;
+    const showExchangeFee = quoteHasAppFee(localLiveQuoteData?.quoteRequest);
+    const feeAmount =
+        showExchangeFee && sellAmount
+            ? calculateExchangeFeeAmount(sellAmount)
+            : null;
     const priceUsdAbs =
         decimalOrNull(marketPriceDifference?.usdDifference)?.abs() ?? null;
 
@@ -245,7 +248,7 @@ export function Step2({ handleBack }: StepProps) {
                                     "—"
                                 )}
                             </DetailRow>
-                            {!isWrapConversion ? (
+                            {showExchangeFee ? (
                                 <DetailRow
                                     label={tEx("info.exchangeFee")}
                                     info={tEx("info.exchangeFeeTooltip")}

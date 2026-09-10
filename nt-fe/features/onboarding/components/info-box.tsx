@@ -1,11 +1,13 @@
 "use client";
 
 import { Cancel01Icon, File01Icon, PlayIcon } from "@hugeicons/core-free-icons";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useNextStep } from "nextstepjs";
 import { useEffect, useMemo, useState } from "react";
 import { PageCard } from "@/components/card";
 import { Icon } from "@/components/icon";
+import { APP_DOCS_URL } from "@/constants/config";
 import {
     LOCAL_STORAGE_KEYS,
     scheduleHelpSupportTour,
@@ -17,10 +19,11 @@ interface InfoItemProps {
     icon: React.ReactNode;
     title: string;
     description: string;
+    href?: string;
 }
 
-function InfoItem({ icon, title, description }: InfoItemProps) {
-    return (
+function InfoItem({ icon, title, description, href }: InfoItemProps) {
+    const body = (
         <PageCard className="w-full gap-1.5 p-3">
             <div className="flex items-center gap-4">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-700 dark:bg-white/10 dark:text-gray-300">
@@ -34,6 +37,21 @@ function InfoItem({ icon, title, description }: InfoItemProps) {
                 </div>
             </div>
         </PageCard>
+    );
+
+    if (!href) {
+        return body;
+    }
+
+    return (
+        <Link
+            href={href}
+            className="block rounded-2xl transition-colors hover:bg-general-secondary"
+            target="_blank"
+            rel="noopener noreferrer"
+        >
+            {body}
+        </Link>
     );
 }
 
@@ -52,6 +70,7 @@ export function InfoBox() {
                 icon: <Icon icon={File01Icon} />,
                 title: t("docsTitle"),
                 description: t("docsDescription"),
+                href: APP_DOCS_URL,
             },
         ],
         [t],

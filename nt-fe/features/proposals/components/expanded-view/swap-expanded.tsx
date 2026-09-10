@@ -17,6 +17,7 @@ import {
 import {
     calculateExchangeFeeAmount,
     EXCHANGE_FEE_PERCENTAGE,
+    shouldShowStoredExchangeFee,
 } from "@/lib/exchange-fee";
 import { formatDurationSeconds } from "@/lib/utils";
 import type { SwapRequestData } from "../../types/index";
@@ -94,13 +95,15 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         if (!amountOut || !slippage) return null;
         return amountOut.minus(amountOut.mul(slippage).div(100));
     }, [data.amountOut, data.slippage]);
+    const showExchangeFee = shouldShowStoredExchangeFee(data.hasAppFee);
     const exchangeFeeAmount = useMemo(() => {
+        if (!showExchangeFee) return null;
         const amountIn = decimalFromBaseUnitsOrNull(
             data.amountIn,
             tokenInData?.decimals || 24,
         );
         return amountIn ? calculateExchangeFeeAmount(amountIn.toFixed()) : null;
-    }, [data.amountIn, tokenInData?.decimals]);
+    }, [data.amountIn, showExchangeFee, tokenInData?.decimals]);
 
     const infoItems: InfoItem[] = [
         {
@@ -206,30 +209,32 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         });
     }
 
-    expandableItems.push({
-        label: tExchange("info.exchangeFee"),
-        value: isTokenInLoading ? (
-            <Skeleton className="h-5 w-24" />
-        ) : (
-            <span>
-                <FormattedAmount
-                    kind="percent"
-                    value={EXCHANGE_FEE_PERCENTAGE}
-                />{" "}
-                /{" "}
-                <FormattedAmount
-                    kind="token"
-                    value={exchangeFeeAmount}
-                    symbol={tokenInData?.symbol || ""}
-                    tokenDecimals={tokenInData?.decimals}
-                    unitPriceUsd={tokenInData?.price}
-                    profile="standard"
-                    rounding="up"
-                />
-            </span>
-        ),
-        info: tExchange("info.exchangeFeeTooltip"),
-    });
+    if (showExchangeFee) {
+        expandableItems.push({
+            label: tExchange("info.exchangeFee"),
+            value: isTokenInLoading ? (
+                <Skeleton className="h-5 w-24" />
+            ) : (
+                <span>
+                    <FormattedAmount
+                        kind="percent"
+                        value={EXCHANGE_FEE_PERCENTAGE}
+                    />{" "}
+                    /{" "}
+                    <FormattedAmount
+                        kind="token"
+                        value={exchangeFeeAmount}
+                        symbol={tokenInData?.symbol || ""}
+                        tokenDecimals={tokenInData?.decimals}
+                        unitPriceUsd={tokenInData?.price}
+                        profile="standard"
+                        rounding="up"
+                    />
+                </span>
+            ),
+            info: tExchange("info.exchangeFeeTooltip"),
+        });
+    }
 
     return <InfoDisplay items={infoItems} expandableItems={expandableItems} />;
 }

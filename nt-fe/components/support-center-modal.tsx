@@ -53,14 +53,12 @@ function SupportItem({
 
     const link = href?.trim();
     if (link) {
-        const isExternal = /^https?:\/\//.test(link);
         return (
             <Link
                 href={link}
                 className={className}
-                {...(isExternal
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
+                target="_blank"
+                rel="noopener noreferrer"
             >
                 {content}
             </Link>
@@ -130,7 +128,10 @@ export function SupportCenterModal({
                 title: t("productSupportTitle"),
                 description: t("productSupportDescription"),
                 onClick: () => {
-                    void openSupportChat();
+                    onOpenChange(false);
+                    window.setTimeout(() => {
+                        void openSupportChat();
+                    }, 0);
                 },
             },
         ],

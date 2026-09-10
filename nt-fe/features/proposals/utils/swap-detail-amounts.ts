@@ -17,12 +17,15 @@ export function resolveSwapDetailAmounts({
     amountOutRaw,
     tokenInDecimals,
     slippage,
+    showExchangeFee = false,
 }: {
     isWrapConversion: boolean;
     amountInRaw: string;
     amountOutRaw: string;
     tokenInDecimals: number;
     slippage?: string;
+    /** Only when the stored/live quote charged an app fee. */
+    showExchangeFee?: boolean;
 }): {
     amountIn: Big | null;
     amountOut: Big | null;
@@ -47,7 +50,7 @@ export function resolveSwapDetailAmounts({
             : null;
 
     const exchangeFee =
-        !isWrapConversion && amountIn
+        showExchangeFee && !isWrapConversion && amountIn
             ? calculateExchangeFeeAmount(amountIn.toFixed())
             : null;
 

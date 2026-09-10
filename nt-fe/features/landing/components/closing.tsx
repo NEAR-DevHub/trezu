@@ -135,6 +135,12 @@ export function Footer() {
                                             <Link
                                                 href={href}
                                                 className="transition-colors hover:text-landing-green"
+                                                {...(href === APP_DOCS_URL
+                                                    ? {
+                                                          target: "_blank",
+                                                          rel: "noopener noreferrer",
+                                                      }
+                                                    : {})}
                                             >
                                                 {label}
                                             </Link>

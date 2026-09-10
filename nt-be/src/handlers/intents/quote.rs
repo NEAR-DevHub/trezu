@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::auth::OptionalAuthUser;
+use crate::constants::intents_tokens::{is_stablecoin_to_stablecoin, same_quote_asset};
 use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
 
 /// Default DAO proposal period (7 days) used when policy is unavailable.
@@ -143,14 +144,12 @@ fn build_quote_body(state: &AppState, request: &QuoteRequest) -> Value {
         "quoteWaitingTimeMs": request.quote_waiting_time_ms,
     });
 
-    // Inject app fees when origin != destination. Skip for payments (same
-    // token across networks, no swap).
-    let is_payment = request.is_payment.unwrap_or(false);
+    // Inject app fees when origin != destination. Skip for payments, and for
+    // stablecoin→stablecoin (incl. native NEAR USDC/USDT without nep141:).
     if let (Some(fee_bps), Some(recipient)) = (
         state.env_vars.oneclick_app_fee_bps,
         state.env_vars.oneclick_app_fee_recipient.as_ref(),
-    ) && request.origin_asset != request.destination_asset
-        && !is_payment
+    ) && should_inject_app_fee(request)
     {
         body["appFees"] = serde_json::json!([{ "recipient": recipient, "fee": fee_bps }]);
     }
@@ -161,6 +160,16 @@ fn build_quote_body(state: &AppState, request: &QuoteRequest) -> Value {
     }
 
     body
+}
+
+fn should_inject_app_fee(request: &QuoteRequest) -> bool {
+    if request.is_payment.unwrap_or(false) {
+        return false;
+    }
+    if same_quote_asset(&request.origin_asset, &request.destination_asset) {
+        return false;
+    }
+    !is_stablecoin_to_stablecoin(&request.origin_asset, &request.destination_asset)
 }
 
 /// Proxy endpoint for 1click API quote.
@@ -256,6 +265,70 @@ mod tests {
             quote_waiting_time_ms: Some(3000),
             is_payment: None,
         }
+    }
+
+    fn quote_request(origin: &str, destination: &str, is_payment: Option<bool>) -> QuoteRequest {
+        QuoteRequest {
+            origin_asset: origin.to_string(),
+            destination_asset: destination.to_string(),
+            is_payment,
+            ..create_test_request()
+        }
+    }
+
+    #[test]
+    fn injects_app_fee_for_near_to_usdt() {
+        assert!(should_inject_app_fee(&create_test_request()));
+    }
+
+    #[test]
+    fn skips_app_fee_for_payments() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "nep141:wrap.near",
+            "nep141:eth.omft.near",
+            Some(true),
+        )));
+    }
+
+    #[test]
+    fn skips_app_fee_for_same_asset() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "nep141:wrap.near",
+            "nep141:wrap.near",
+            None,
+        )));
+    }
+
+    #[test]
+    fn skips_app_fee_for_same_asset_across_prefixes() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "nep141:wrap.near",
+            "wrap.near",
+            None,
+        )));
+        assert!(!should_inject_app_fee(&quote_request(
+            "intents.near:nep141:usdt.tether-token.near",
+            "nep141:usdt.tether-token.near",
+            None,
+        )));
+    }
+
+    #[test]
+    fn skips_app_fee_for_native_usdc_to_eth_usdc() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "1cs_v1:eth:erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            None,
+        )));
+    }
+
+    #[test]
+    fn skips_app_fee_for_intents_usdc_to_usdt() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+            "usdt.tether-token.near",
+            None,
+        )));
     }
 
     /// Realistic mock response based on actual 1click API response

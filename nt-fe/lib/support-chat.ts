@@ -1,4 +1,4 @@
-import { APP_CONTACT_US_URL } from "@/constants/config";
+import { APP_DOCS_URL } from "@/constants/config";
 
 /**
  * Support chat provider selection.
@@ -8,7 +8,7 @@ import { APP_CONTACT_US_URL } from "@/constants/config";
  * - `NEXT_PUBLIC_GLEAP_API_KEY` → Gleap
  *
  * Only one provider is active at a time. Help Scout wins when both are set.
- * When neither is configured, "open support" falls back to the contact-us page.
+ * When neither is configured, "open support" falls back to the docs.
  */
 export type SupportChatConfig =
     | { provider: "helpscout"; beaconId: string }
@@ -30,7 +30,7 @@ export const SUPPORT_CHAT_ENABLED = SUPPORT_CHAT !== null;
 
 /**
  * Open the support chat window of the configured provider.
- * Falls back to opening the contact-us page when no provider is configured.
+ * Falls back to the docs when no provider is configured.
  */
 export async function openSupportChat(): Promise<void> {
     switch (SUPPORT_CHAT?.provider) {
@@ -44,7 +44,7 @@ export async function openSupportChat(): Promise<void> {
             return;
         }
         default: {
-            window.open(APP_CONTACT_US_URL, "_blank", "noopener,noreferrer");
+            window.open(APP_DOCS_URL, "_blank", "noopener,noreferrer");
         }
     }
 }
