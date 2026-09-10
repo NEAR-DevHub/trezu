@@ -34,7 +34,10 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { decimalOrNull } from "@/lib/amount-format";
 import type { RecentActivity, SwapInfo, TokenMetadataInfo } from "@/lib/api";
 import Big from "@/lib/big";
-import { calculateExchangeFeeAmount } from "@/lib/exchange-fee";
+import {
+    calculateExchangeFeeAmount,
+    shouldShowStoredExchangeFee,
+} from "@/lib/exchange-fee";
 import {
     cn,
     formatActivityAmount,
@@ -426,9 +429,11 @@ function useDetailItems(
         },
     ];
     if (variant === "exchange" && activity.swap) {
-        // Hide until the quote says we injected a fee. Missing means the
-        // public status blob has not landed yet — do not invent 0.7%.
-        if (activity.hasAppFee === true) {
+        // Same default as request details: hide only on an explicit false
+        // (protocol-fee only or stablecoin↔stablecoin). Missing means an
+        // older swap that always charged, or a public row whose status
+        // blob has not landed yet.
+        if (shouldShowStoredExchangeFee(activity.hasAppFee ?? undefined)) {
             const fee = swapFeeValue(activity.swap);
             if (fee) {
                 items.push({

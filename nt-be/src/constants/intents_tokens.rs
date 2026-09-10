@@ -311,6 +311,24 @@ fn normalize_quote_asset_id(asset_id: &str) -> String {
     trimmed.to_ascii_lowercase()
 }
 
+/// Strip `intents.near:` / `nep141:` / `nep245:` so the same token is
+/// comparable across quote id shapes. `1cs_v1:` routing ids stay intact.
+pub fn canonical_quote_asset_id(asset_id: &str) -> String {
+    let normalized = normalize_quote_asset_id(asset_id);
+    if normalized.starts_with("1cs_v1:") {
+        return normalized;
+    }
+    normalized
+        .strip_prefix("nep141:")
+        .or_else(|| normalized.strip_prefix("nep245:"))
+        .unwrap_or(&normalized)
+        .to_string()
+}
+
+pub fn same_quote_asset(left: &str, right: &str) -> bool {
+    canonical_quote_asset_id(left) == canonical_quote_asset_id(right)
+}
+
 /// True when a 1Click / Intents / native-NEAR asset id is a catalog stablecoin.
 ///
 /// Native NEAR USDC (`17208628…`) and USDT (`usdt.tether-token.near`) match
@@ -376,6 +394,16 @@ mod tests {
         assert!(!is_stablecoin_asset("nep141:wrap.near"));
         assert!(!is_stablecoin_asset("wrap.near"));
         assert!(!is_stablecoin_asset("near"));
+    }
+
+    #[test]
+    fn same_asset_matches_across_prefixes() {
+        assert!(same_quote_asset("nep141:wrap.near", "wrap.near"));
+        assert!(same_quote_asset(
+            "intents.near:nep141:usdt.tether-token.near",
+            "nep141:usdt.tether-token.near",
+        ));
+        assert!(!same_quote_asset("nep141:wrap.near", USDT_NEAR));
     }
 
     #[test]

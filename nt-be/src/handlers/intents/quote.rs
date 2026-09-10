@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::auth::OptionalAuthUser;
-use crate::constants::intents_tokens::is_stablecoin_to_stablecoin;
+use crate::constants::intents_tokens::{is_stablecoin_to_stablecoin, same_quote_asset};
 use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
 
 /// Default DAO proposal period (7 days) used when policy is unavailable.
@@ -166,7 +166,7 @@ fn should_inject_app_fee(request: &QuoteRequest) -> bool {
     if request.is_payment.unwrap_or(false) {
         return false;
     }
-    if request.origin_asset == request.destination_asset {
+    if same_quote_asset(&request.origin_asset, &request.destination_asset) {
         return false;
     }
     !is_stablecoin_to_stablecoin(&request.origin_asset, &request.destination_asset)
@@ -295,6 +295,20 @@ mod tests {
         assert!(!should_inject_app_fee(&quote_request(
             "nep141:wrap.near",
             "nep141:wrap.near",
+            None,
+        )));
+    }
+
+    #[test]
+    fn skips_app_fee_for_same_asset_across_prefixes() {
+        assert!(!should_inject_app_fee(&quote_request(
+            "nep141:wrap.near",
+            "wrap.near",
+            None,
+        )));
+        assert!(!should_inject_app_fee(&quote_request(
+            "intents.near:nep141:usdt.tether-token.near",
+            "nep141:usdt.tether-token.near",
             None,
         )));
     }
