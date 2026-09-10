@@ -2,6 +2,7 @@ services:
   # Backend Service (Rust/Axum)
   - type: web
     name: near-business-backend
+    region: frankfurt
     runtime: rust
     plan: standard
     rootDir: nt-be
@@ -51,6 +52,7 @@ services:
   # Frontend Service (Next.js)
   - type: web
     name: near-business-frontend
+    region: frankfurt
     runtime: node
     plan: starter
     rootDir: nt-fe
@@ -87,6 +89,7 @@ services:
   # Staging Backend Service (Rust/Axum)
   - type: web
     name: near-business-backend-staging
+    region: frankfurt
     runtime: rust
     plan: starter
     rootDir: nt-be
@@ -134,6 +137,7 @@ services:
   # Staging Frontend Service (Next.js)
   - type: web
     name: near-business-frontend-staging
+    region: frankfurt
     runtime: node
     plan: starter
     rootDir: nt-fe
@@ -163,9 +167,11 @@ services:
 
 databases:
   - name: near-business-db
+    region: frankfurt
     plan: basic-1gb
     diskSizeGB: 5
 
   - name: near-business-db-staging
+    region: frankfurt
     plan: basic-1gb
     diskSizeGB: 5
