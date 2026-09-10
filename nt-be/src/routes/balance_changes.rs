@@ -150,6 +150,10 @@ pub struct EnrichedBalanceChange {
     /// row as intents-routed so clients can link the intents explorer.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quote_deposit_address: Option<String>,
+    /// From the stored 1Click quote / proposal description. Missing on older
+    /// swaps, which always charged an app fee.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub has_app_fee: Option<bool>,
 }
 
 /// The backing store selected for one balance-history request.
@@ -628,6 +632,7 @@ async fn fetch_legacy_balance_changes(
                 usd_value: change.usd_value,
                 proposal_id: None,
                 quote_deposit_address: None,
+                has_app_fee: None,
             }
         })
         .collect();

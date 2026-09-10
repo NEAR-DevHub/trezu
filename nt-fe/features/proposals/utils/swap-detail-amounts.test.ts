@@ -10,6 +10,7 @@ function intents(amountInRaw: string, amountOutRaw: string, slippage = "0.5") {
         amountOutRaw,
         tokenInDecimals: USDC_DECIMALS,
         slippage,
+        showExchangeFee: true,
     });
 }
 
@@ -50,5 +51,16 @@ describe("resolveSwapDetailAmounts", () => {
         expect(figures.rate).toBeNull();
         expect(figures.exchangeFee).toBeNull();
         expect(figures.minimumReceived).toBeNull();
+    });
+
+    it("hides the exchange fee unless the quote charged one", () => {
+        const withoutFee = resolveSwapDetailAmounts({
+            isWrapConversion: false,
+            amountInRaw: "1000000000",
+            amountOutRaw: "1000",
+            tokenInDecimals: USDC_DECIMALS,
+            slippage: "0.5",
+        });
+        expect(withoutFee.exchangeFee).toBeNull();
     });
 });

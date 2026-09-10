@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { externalHrefProps } from "@/lib/external-href";
 import { cn } from "@/lib/utils";
 import { EARLY_ACCESS_HREF, NAV_LINKS, PROOF_STATS } from "../content";
 import { NearBusinessWordmark } from "./landing-icons";
@@ -54,6 +55,7 @@ export function LandingNav() {
                             key={label}
                             href={href}
                             className="rounded-lg px-3 py-2 text-base leading-normal hover:bg-landing-ink/5"
+                            {...externalHrefProps(href)}
                         >
                             {label}
                         </a>

@@ -11,7 +11,10 @@ import { useQuoteByDepositAddress } from "@/hooks/use-proposals";
 import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
 import { decimalOrNull } from "@/lib/amount-format";
 import type Big from "@/lib/big";
-import { EXCHANGE_FEE_PERCENTAGE } from "@/lib/exchange-fee";
+import {
+    EXCHANGE_FEE_PERCENTAGE,
+    shouldShowStoredExchangeFee,
+} from "@/lib/exchange-fee";
 import {
     formatCurrencyWithSubCent,
     formatTokenDisplayAmount,
@@ -79,6 +82,7 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
             amountOutRaw: data.amountOut,
             tokenInDecimals: tokenIn?.decimals ?? 24,
             slippage: data.slippage,
+            showExchangeFee: shouldShowStoredExchangeFee(data.hasAppFee),
         });
 
     const usdIn = resolveUsd(data.amountInUsd, quote?.amountInUsd, {

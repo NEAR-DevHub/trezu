@@ -37,7 +37,7 @@ fn tagged_rank(tags: &[String], prefix: &str) -> Option<u32> {
     })
 }
 
-fn is_stablecoin(tags: &[String]) -> bool {
+pub fn is_stablecoin(tags: &[String]) -> bool {
     tags.iter()
         .any(|tag| tag.eq_ignore_ascii_case("type:stablecoin"))
 }
