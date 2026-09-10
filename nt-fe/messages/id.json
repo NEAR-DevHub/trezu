@@ -2695,5 +2695,18 @@
     "thresholdStepper": {
         "decrease": "Kurangi ambang",
         "increase": "Tambah ambang"
+    },
+    "cookieConsent": {
+        "bannerBody": "Kami menggunakan cookie untuk memahami penggunaan situs, meningkatkan situs, mengingat pengaturan Anda, dan mendukung upaya pemasaran kami. <privacy>Kebijakan Privasi</privacy>",
+        "acceptAll": "Terima semua",
+        "managePreferences": "Kelola preferensi",
+        "closeBanner": "Tutup dan gunakan cookie esensial saja",
+        "title": "Preferensi penyimpanan",
+        "intro": "Saat Anda mengunjungi situs web, situs tersebut dapat menyimpan atau mengambil data tentang Anda menggunakan cookie dan teknologi serupa (“Cookie”). Cookie mungkin diperlukan untuk fungsi dasar situs web serta tujuan lainnya. Anda dapat menonaktifkan jenis cookie tertentu, meskipun hal ini dapat memengaruhi pengalaman Anda di situs web.",
+        "essentialTitle": "Esensial",
+        "essentialBody": "Diperlukan untuk fungsi dasar situs web. Anda tidak dapat menonaktifkan cookie esensial.",
+        "analyticsTitle": "Analitik",
+        "analyticsBody": "Membantu operator situs memahami kinerja situs, cara pengunjung berinteraksi, dan apakah ada masalah teknis.",
+        "save": "Simpan"
     }
 }

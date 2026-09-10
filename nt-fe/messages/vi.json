@@ -2695,5 +2695,18 @@
     "thresholdStepper": {
         "decrease": "Giảm ngưỡng",
         "increase": "Tăng ngưỡng"
+    },
+    "cookieConsent": {
+        "bannerBody": "Chúng tôi sử dụng cookie để hiểu cách sử dụng trang web, cải thiện trang web, ghi nhớ cài đặt của bạn và hỗ trợ hoạt động tiếp thị. <privacy>Chính sách quyền riêng tư</privacy>",
+        "acceptAll": "Chấp nhận tất cả",
+        "managePreferences": "Quản lý tùy chọn",
+        "closeBanner": "Đóng và chỉ dùng cookie thiết yếu",
+        "title": "Tùy chọn lưu trữ",
+        "intro": "Khi bạn truy cập các trang web, chúng có thể lưu trữ hoặc truy xuất dữ liệu về bạn bằng cookie và các công nghệ tương tự (“Cookie”). Cookie có thể cần thiết cho chức năng cơ bản của trang web cũng như các mục đích khác. Bạn có thể tắt một số loại cookie nhất định, nhưng điều này có thể ảnh hưởng đến trải nghiệm của bạn trên trang web.",
+        "essentialTitle": "Thiết yếu",
+        "essentialBody": "Cần thiết cho chức năng cơ bản của trang web. Bạn không thể tắt cookie thiết yếu.",
+        "analyticsTitle": "Phân tích",
+        "analyticsBody": "Giúp nhà điều hành hiểu hiệu suất trang web, cách khách truy cập tương tác và liệu có vấn đề kỹ thuật hay không.",
+        "save": "Lưu"
     }
 }

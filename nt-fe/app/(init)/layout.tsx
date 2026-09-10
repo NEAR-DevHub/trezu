@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
+import { CookieConsent } from "@/components/cookie-consent/cookie-consent";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleTagManager } from "@/components/google-tag-manager";
 import { QueryProvider } from "@/components/query-provider";
@@ -36,6 +37,7 @@ export default async function RootLayout({
                             <WarningsProvider>
                                 {children}
                                 <Toaster />
+                                <CookieConsent />
                                 <GoogleAnalytics />
                                 <GoogleTagManager />
                             </WarningsProvider>

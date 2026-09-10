@@ -1,5 +1,7 @@
 # Analytics Events
 
+Nothing is sent until the visitor grants **Analytics** consent in the cookie banner (`nt-fe/components/cookie-consent/`). Consent lives in the `trezu_cookie_consent` cookie; PostHog is only initialized, and GA/GTM scripts only loaded, once it is granted. `trackEvent()` is a no-op without it.
+
 Most events are fired via `trackEvent()` from `nt-fe/lib/analytics.ts`, which sends to **PostHog**, **Google Tag Manager** (`dataLayer`), and **Google Analytics** (GA4 via `gtag`) simultaneously. Marketing configures conversion tracking and ad pixels inside GTM; GA4 also receives events directly.
 
 Some onboarding survey events are provider-specific and are sent directly with `posthog.capture()` (PostHog-only).

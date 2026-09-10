@@ -2695,5 +2695,18 @@
     "thresholdStepper": {
         "decrease": "Schwelle verringern",
         "increase": "Schwelle erhöhen"
+    },
+    "cookieConsent": {
+        "bannerBody": "Wir verwenden Cookies, um die Nutzung der Website zu verstehen, die Website zu verbessern, Ihre Einstellungen zu speichern und unsere Marketingmaßnahmen zu unterstützen. <privacy>Datenschutzerklärung</privacy>",
+        "acceptAll": "Alle akzeptieren",
+        "managePreferences": "Einstellungen verwalten",
+        "closeBanner": "Schließen und nur essenzielle Cookies verwenden",
+        "title": "Speichereinstellungen",
+        "intro": "Wenn Sie Websites besuchen, können diese Daten über Sie mithilfe von Cookies und ähnlichen Technologien („Cookies“) speichern oder abrufen. Cookies können für die Grundfunktionen der Website sowie für andere Zwecke erforderlich sein. Sie können bestimmte Arten von Cookies deaktivieren, was jedoch Ihre Erfahrung auf der Website beeinträchtigen kann.",
+        "essentialTitle": "Essenziell",
+        "essentialBody": "Erforderlich für die Grundfunktionen der Website. Essenzielle Cookies können nicht deaktiviert werden.",
+        "analyticsTitle": "Analyse",
+        "analyticsBody": "Hilft dem Betreiber zu verstehen, wie die Website funktioniert, wie Besucher mit ihr interagieren und ob technische Probleme vorliegen.",
+        "save": "Speichern"
     }
 }

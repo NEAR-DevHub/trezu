@@ -2695,5 +2695,18 @@
     "thresholdStepper": {
         "decrease": "しきい値を下げる",
         "increase": "しきい値を上げる"
+    },
+    "cookieConsent": {
+        "bannerBody": "当社は、サイトの利用状況の把握、サイトの改善、設定の記憶、マーケティング活動の支援のためにCookieを使用します。<privacy>プライバシーポリシー</privacy>",
+        "acceptAll": "すべて許可",
+        "managePreferences": "設定を管理",
+        "closeBanner": "閉じて必須Cookieのみ使用する",
+        "title": "ストレージ設定",
+        "intro": "ウェブサイトを訪問すると、Cookieや類似の技術（以下「Cookie」）を使用してお客様に関するデータが保存または取得されることがあります。Cookieはウェブサイトの基本機能やその他の目的に必要な場合があります。特定の種類のCookieを無効にすることもできますが、ウェブサイトでの体験に影響する可能性があります。",
+        "essentialTitle": "必須",
+        "essentialBody": "ウェブサイトの基本機能に必要です。必須Cookieは無効にできません。",
+        "analyticsTitle": "分析",
+        "analyticsBody": "サイト運営者がウェブサイトのパフォーマンス、訪問者の操作、技術的な問題の有無を把握するのに役立ちます。",
+        "save": "保存"
     }
 }

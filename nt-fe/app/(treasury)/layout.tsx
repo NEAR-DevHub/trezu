@@ -3,6 +3,7 @@ import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 import { AuthProvider } from "@/components/auth-provider";
+import { CookieConsent } from "@/components/cookie-consent/cookie-consent";
 import { GoogleAnalytics } from "@/components/google-analytics";
 import { GoogleTagManager } from "@/components/google-tag-manager";
 import { NearInitializer } from "@/components/near-initializer";
@@ -43,6 +44,7 @@ export default async function RootLayout({
                                 </AuthProvider>
                             </WarningsProvider>
                             <Toaster />
+                            <CookieConsent />
                             <GoogleAnalytics />
                             <GoogleTagManager />
                         </QueryProvider>

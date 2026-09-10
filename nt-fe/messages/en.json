@@ -2693,5 +2693,18 @@
     "thresholdStepper": {
         "decrease": "Decrease threshold",
         "increase": "Increase threshold"
+    },
+    "cookieConsent": {
+        "bannerBody": "We use cookies to understand site usage, make site improvements, remember your settings and assist in our marketing efforts. <privacy>Privacy Policy</privacy>",
+        "acceptAll": "Accept all",
+        "managePreferences": "Manage preferences",
+        "closeBanner": "Close and use essential cookies only",
+        "title": "Storage preferences",
+        "intro": "When you visit websites, they may store or retrieve data about you using Cookies and similar technologies (“Cookies”). Cookies may be necessary for the basic functionality of the website as well as other purposes. You have the option of disabling certain types of Cookies, though doing so may impact your experience on the website.",
+        "essentialTitle": "Essential",
+        "essentialBody": "Required to enable basic website functionality. You may not disable essential cookies.",
+        "analyticsTitle": "Analytics",
+        "analyticsBody": "Help the website operator understand how its website performs, how visitors interact with the site, and whether there may be technical issues.",
+        "save": "Save"
     }
 }

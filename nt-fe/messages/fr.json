@@ -2695,5 +2695,18 @@
     "thresholdStepper": {
         "decrease": "Diminuer le seuil",
         "increase": "Augmenter le seuil"
+    },
+    "cookieConsent": {
+        "bannerBody": "Nous utilisons des cookies pour comprendre l’utilisation du site, l’améliorer, mémoriser vos paramètres et soutenir nos actions marketing. <privacy>Politique de confidentialité</privacy>",
+        "acceptAll": "Tout accepter",
+        "managePreferences": "Gérer les préférences",
+        "closeBanner": "Fermer et n’utiliser que les cookies essentiels",
+        "title": "Préférences de stockage",
+        "intro": "Lorsque vous visitez des sites web, ceux-ci peuvent stocker ou récupérer des données vous concernant à l’aide de cookies et de technologies similaires (« Cookies »). Les cookies peuvent être nécessaires au fonctionnement de base du site ainsi qu’à d’autres fins. Vous pouvez désactiver certains types de cookies, mais cela peut affecter votre expérience sur le site.",
+        "essentialTitle": "Essentiels",
+        "essentialBody": "Nécessaires au fonctionnement de base du site. Vous ne pouvez pas désactiver les cookies essentiels.",
+        "analyticsTitle": "Analyse",
+        "analyticsBody": "Aide l’exploitant à comprendre les performances du site, la façon dont les visiteurs interagissent avec lui et l’existence éventuelle de problèmes techniques.",
+        "save": "Enregistrer"
     }
 }
