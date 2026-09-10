@@ -9,11 +9,7 @@ import {
 
 describe("cookie consent", () => {
     it("round-trips preferences through the cookie value", () => {
-        for (const prefs of [
-            ALL_CONSENT,
-            ESSENTIAL_ONLY_CONSENT,
-            { analytics: true, personalization: false },
-        ]) {
+        for (const prefs of [ALL_CONSENT, ESSENTIAL_ONLY_CONSENT]) {
             const header = `${COOKIE_CONSENT_COOKIE}=${serializeConsentCookie(prefs)}`;
             expect(parseConsentCookie(header)).toEqual(prefs);
         }
@@ -33,12 +29,8 @@ describe("cookie consent", () => {
         const bad = [
             "not-json",
             encodeURIComponent('{"v":1}'),
-            encodeURIComponent(
-                '{"v":2,"analytics":true,"personalization":true}',
-            ),
-            encodeURIComponent(
-                '{"v":1,"analytics":"yes","personalization":true}',
-            ),
+            encodeURIComponent('{"v":2,"analytics":true}'),
+            encodeURIComponent('{"v":1,"analytics":"yes"}'),
         ];
         for (const value of bad) {
             expect(

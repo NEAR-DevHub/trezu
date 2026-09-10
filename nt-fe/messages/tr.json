@@ -2705,8 +2705,6 @@
         "intro": "Web sitelerini ziyaret ettiğinizde, çerezler ve benzeri teknolojiler (“Çerezler”) kullanılarak hakkınızda veri saklanabilir veya alınabilir. Çerezler, web sitesinin temel işlevleri ve diğer amaçlar için gerekli olabilir. Belirli çerez türlerini devre dışı bırakabilirsiniz; ancak bu, web sitesindeki deneyiminizi etkileyebilir.",
         "essentialTitle": "Temel",
         "essentialBody": "Web sitesinin temel işlevleri için gereklidir. Temel çerezleri devre dışı bırakamazsınız.",
-        "personalizationTitle": "Kişiselleştirme",
-        "personalizationBody": "Web sitesinin seçimlerinizi hatırlamasına ve daha kişisel, gelişmiş özellikler sunmasına olanak tanır.",
         "analyticsTitle": "Analitik",
         "analyticsBody": "Site işletmecisinin web sitesinin performansını, ziyaretçilerin siteyle nasıl etkileşim kurduğunu ve teknik sorun olup olmadığını anlamasına yardımcı olur.",
         "save": "Kaydet"

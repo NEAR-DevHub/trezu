@@ -5,17 +5,14 @@ const COOKIE_CONSENT_MAX_AGE_SECONDS = 365 * 24 * 60 * 60;
 
 export interface ConsentPreferences {
     analytics: boolean;
-    personalization: boolean;
 }
 
 export const ALL_CONSENT: ConsentPreferences = {
     analytics: true,
-    personalization: true,
 };
 
 export const ESSENTIAL_ONLY_CONSENT: ConsentPreferences = {
     analytics: false,
-    personalization: false,
 };
 
 export function serializeConsentCookie(prefs: ConsentPreferences): string {
@@ -23,7 +20,6 @@ export function serializeConsentCookie(prefs: ConsentPreferences): string {
         JSON.stringify({
             v: COOKIE_CONSENT_VERSION,
             analytics: prefs.analytics,
-            personalization: prefs.personalization,
         }),
     );
 }
@@ -49,17 +45,11 @@ export function parseConsentCookie(
         ) {
             return null;
         }
-        const { analytics, personalization } = parsed as Record<
-            string,
-            unknown
-        >;
-        if (
-            typeof analytics !== "boolean" ||
-            typeof personalization !== "boolean"
-        ) {
+        const { analytics } = parsed as Record<string, unknown>;
+        if (typeof analytics !== "boolean") {
             return null;
         }
-        return { analytics, personalization };
+        return { analytics };
     } catch {
         return null;
     }

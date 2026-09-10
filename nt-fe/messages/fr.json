@@ -2705,8 +2705,6 @@
         "intro": "Lorsque vous visitez des sites web, ceux-ci peuvent stocker ou récupérer des données vous concernant à l’aide de cookies et de technologies similaires (« Cookies »). Les cookies peuvent être nécessaires au fonctionnement de base du site ainsi qu’à d’autres fins. Vous pouvez désactiver certains types de cookies, mais cela peut affecter votre expérience sur le site.",
         "essentialTitle": "Essentiels",
         "essentialBody": "Nécessaires au fonctionnement de base du site. Vous ne pouvez pas désactiver les cookies essentiels.",
-        "personalizationTitle": "Personnalisation",
-        "personalizationBody": "Permet au site de mémoriser vos choix et de proposer des fonctionnalités enrichies et plus personnelles.",
         "analyticsTitle": "Analyse",
         "analyticsBody": "Aide l’exploitant à comprendre les performances du site, la façon dont les visiteurs interagissent avec lui et l’existence éventuelle de problèmes techniques.",
         "save": "Enregistrer"

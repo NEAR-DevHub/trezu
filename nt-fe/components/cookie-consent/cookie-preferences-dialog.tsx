@@ -91,15 +91,6 @@ export function CookiePreferencesDialog() {
                         disabled
                     />
                     <ConsentRow
-                        id="cookie-consent-personalization"
-                        title={t("personalizationTitle")}
-                        body={t("personalizationBody")}
-                        checked={draft.personalization}
-                        onCheckedChange={(personalization) =>
-                            setDraft((d) => ({ ...d, personalization }))
-                        }
-                    />
-                    <ConsentRow
                         id="cookie-consent-analytics"
                         title={t("analyticsTitle")}
                         body={t("analyticsBody")}

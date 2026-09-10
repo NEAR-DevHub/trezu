@@ -2703,8 +2703,6 @@
         "intro": "When you visit websites, they may store or retrieve data about you using Cookies and similar technologies (“Cookies”). Cookies may be necessary for the basic functionality of the website as well as other purposes. You have the option of disabling certain types of Cookies, though doing so may impact your experience on the website.",
         "essentialTitle": "Essential",
         "essentialBody": "Required to enable basic website functionality. You may not disable essential cookies.",
-        "personalizationTitle": "Personalization",
-        "personalizationBody": "Allow the website to remember choices you make and provide enhanced, more personal features.",
         "analyticsTitle": "Analytics",
         "analyticsBody": "Help the website operator understand how its website performs, how visitors interact with the site, and whether there may be technical issues.",
         "save": "Save"
