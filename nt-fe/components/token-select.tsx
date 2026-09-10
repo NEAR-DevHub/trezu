@@ -48,6 +48,7 @@ import {
     EmptySelectorIcon,
     paymentSelectModalListClassName,
     paymentSelectModalSearchInputClassName,
+    paymentSelectModalSectionClassName,
     selectorTriggerClassName,
 } from "./selector-field";
 import {
@@ -682,7 +683,12 @@ export default function TokenSelect({
                                 {showPopularAssets &&
                                     popularTokens.length > 0 && (
                                         <div className="mb-3">
-                                            <div className="px-2 py-2 text-sm text-muted-foreground">
+                                            <div
+                                                className={cn(
+                                                    paymentSelectModalSectionClassName,
+                                                    "text-sm",
+                                                )}
+                                            >
                                                 {tDepositSections(
                                                     "popularAssets",
                                                 )}
@@ -706,7 +712,12 @@ export default function TokenSelect({
 
                                 {yourAssets.length > 0 && (
                                     <div>
-                                        <div className="text-xs font-medium text-muted-foreground px-2 py-2">
+                                        <div
+                                            className={cn(
+                                                paymentSelectModalSectionClassName,
+                                                "text-xs font-medium",
+                                            )}
+                                        >
                                             {t("yourAssets")}
                                         </div>
                                         {yourAssets.map(renderTokenButton)}
@@ -715,7 +726,12 @@ export default function TokenSelect({
 
                                 {otherAssets.length > 0 && (
                                     <div>
-                                        <div className="text-xs font-medium text-muted-foreground px-2 py-2">
+                                        <div
+                                            className={cn(
+                                                paymentSelectModalSectionClassName,
+                                                "text-xs font-medium",
+                                            )}
+                                        >
                                             {t("otherAssets")}
                                         </div>
                                         {otherAssets.map(renderTokenButton)}
@@ -860,7 +876,12 @@ export default function TokenSelect({
                                     <>
                                         {supportedWithBalance.length > 0 && (
                                             <div>
-                                                <div className="text-xs font-medium text-muted-foreground px-2 py-2">
+                                                <div
+                                                    className={cn(
+                                                        paymentSelectModalSectionClassName,
+                                                        "text-xs font-medium",
+                                                    )}
+                                                >
                                                     {t("networksWithAssets")}
                                                 </div>
                                                 {supportedWithBalance.map(
@@ -871,7 +892,12 @@ export default function TokenSelect({
 
                                         {supportedWithoutBalance.length > 0 && (
                                             <div>
-                                                <div className="text-xs font-medium text-muted-foreground px-2 py-2">
+                                                <div
+                                                    className={cn(
+                                                        paymentSelectModalSectionClassName,
+                                                        "text-xs font-medium",
+                                                    )}
+                                                >
                                                     {t("supportedNetworks")}
                                                 </div>
                                                 {supportedWithoutBalance.map(
@@ -882,7 +908,12 @@ export default function TokenSelect({
 
                                         {comingSoonNetworks.length > 0 && (
                                             <div>
-                                                <div className="text-xs font-medium text-muted-foreground px-2 py-2 flex items-center gap-1.5">
+                                                <div
+                                                    className={cn(
+                                                        paymentSelectModalSectionClassName,
+                                                        "flex items-center gap-1.5 text-xs font-medium",
+                                                    )}
+                                                >
                                                     {t("comingSoon")}
                                                     {disableTokenMessage && (
                                                         <Tooltip

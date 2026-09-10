@@ -26,7 +26,7 @@ export function PopularTokenTiles<T extends PopularTokenTileItem>({
     isItemSelected?: (item: T) => boolean;
 }) {
     return (
-        <div className="grid grid-cols-4 gap-2 px-1">
+        <div className="grid grid-cols-4 gap-2 px-4">
             {items.map((item) => {
                 const label = item.symbol || item.name || "";
                 const selected = isItemSelected?.(item) ?? false;

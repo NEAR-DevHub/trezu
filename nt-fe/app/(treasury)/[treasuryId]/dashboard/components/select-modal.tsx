@@ -21,10 +21,12 @@ import {
 import {
     paymentSelectModalListClassName,
     paymentSelectModalSearchInputClassName,
+    paymentSelectModalSectionClassName,
 } from "@/components/selector-field";
 import { SelectorOptionRow } from "@/components/selector-option-row";
 import { ScrollContainer } from "@/components/scroll-container";
 import { useScrollOverflow } from "@/hooks/use-scroll-overflow";
+import { cn } from "@/lib/utils";
 
 export interface SelectOption extends SelectListItem {}
 
@@ -240,7 +242,12 @@ export function SelectModal({
                                                     key={section.title}
                                                     className="mb-3"
                                                 >
-                                                    <div className="px-2 py-2 text-sm text-muted-foreground">
+                                                    <div
+                                                        className={cn(
+                                                            paymentSelectModalSectionClassName,
+                                                            "text-sm",
+                                                        )}
+                                                    >
                                                         {section.title}
                                                     </div>
                                                     <PopularTokenTiles
@@ -262,7 +269,12 @@ export function SelectModal({
 
                                         return (
                                             <div key={section.title}>
-                                                <div className="text-xs font-medium text-muted-foreground px-2 py-2">
+                                                <div
+                                                    className={cn(
+                                                        paymentSelectModalSectionClassName,
+                                                        "text-xs font-medium",
+                                                    )}
+                                                >
                                                     {section.title}
                                                 </div>
                                                 {section.options.map(

@@ -968,6 +968,7 @@
             "walletConnected": "Гаманець під’єднано",
             "nameLabel": "Ваше ім’я (необов’язково)",
             "namePlaceholder": "Введіть ім’я, щоб команда вас упізнала",
+            "clearName": "Очистити ім’я",
             "askJoin": "Попросити приєднатися",
             "submitting": "Надсилання...",
             "successTitle": "Ви майже всередині",
@@ -1708,6 +1709,7 @@
             "duplicateAddress": "Ця адреса вже є учасником"
         },
         "enterAddress": "Введіть адресу",
+        "clearAddress": "Очистити адресу",
         "selectRole": "Вибрати роль",
         "memberNumber": "Учасник {number}"
     },

@@ -968,6 +968,7 @@
             "walletConnected": "Wallet verbunden",
             "nameLabel": "Dein Name (optional)",
             "namePlaceholder": "Namen eingeben, damit das Team dich erkennt",
+            "clearName": "Namen löschen",
             "askJoin": "Beitritt anfragen",
             "submitting": "Wird gesendet…",
             "successTitle": "Du bist fast dabei",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "Adresse ist bereits Mitglied"
         },
         "enterAddress": "Adresse eingeben",
+        "clearAddress": "Adresse löschen",
         "selectRole": "Rolle wählen",
         "memberNumber": "Mitglied {number}"
     },

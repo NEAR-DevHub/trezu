@@ -121,7 +121,7 @@ export function MemberFormStep({
                 disabled={
                     !canReview || isValidatingAddresses || !!validationError
                 }
-                className="h-11 w-full rounded-2xl"
+                className="w-full h-10"
                 tooltipMessage={
                     validationError ||
                     (isEditMode && !hasChanges ? t("noChanges") : undefined)

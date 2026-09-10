@@ -148,7 +148,7 @@ function JoinRequestsAssignStep({
             </div>
             <ButtonWithTooltip
                 type="button"
-                className="h-11 w-full rounded-2xl"
+                className="w-full h-10"
                 disabled={!canReview}
                 tooltipMessage={
                     reviewDisabledReason ||

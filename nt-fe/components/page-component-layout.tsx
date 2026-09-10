@@ -83,6 +83,7 @@ interface PageComponentLayoutProps {
      */
     fitViewport?: boolean;
     logo?: ReactNode;
+    headerClassName?: string;
     mainClassName?: string;
     children: ReactNode;
 }
@@ -107,6 +108,7 @@ export function PageComponentLayout({
     reserveHeaderSpace = false,
     fitViewport = false,
     logo,
+    headerClassName,
     mainClassName,
     children,
 }: PageComponentLayoutProps) {
@@ -243,6 +245,7 @@ export function PageComponentLayout({
                         hasSidebarRail || transparentHeader
                             ? "bg-transparent"
                             : "bg-card",
+                        headerClassName,
                     )}
                 >
                     <div

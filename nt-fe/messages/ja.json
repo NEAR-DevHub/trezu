@@ -968,6 +968,7 @@
             "walletConnected": "ウォレット接続済み",
             "nameLabel": "お名前（任意）",
             "namePlaceholder": "チームが認識できる名前を入力",
+            "clearName": "名前をクリア",
             "askJoin": "参加を申請",
             "submitting": "送信中...",
             "successTitle": "もう少しで参加できます",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "アドレスはすでにメンバーです"
         },
         "enterAddress": "アドレスを入力",
+        "clearAddress": "アドレスをクリア",
         "selectRole": "ロールを選択",
         "memberNumber": "メンバー {number}"
     },

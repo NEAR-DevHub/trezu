@@ -968,6 +968,7 @@
             "walletConnected": "Portefeuille connecté",
             "nameLabel": "Votre nom (facultatif)",
             "namePlaceholder": "Entrez un nom pour que l’équipe vous reconnaisse",
+            "clearName": "Effacer le nom",
             "askJoin": "Demander à rejoindre",
             "submitting": "Envoi…",
             "successTitle": "Vous y êtes presque",
@@ -1725,6 +1726,7 @@
             "duplicateAddress": "L'adresse est déjà membre"
         },
         "enterAddress": "Saisir l'adresse",
+        "clearAddress": "Effacer l'adresse",
         "selectRole": "Sélectionner un rôle",
         "memberNumber": "Membre {number}"
     },
