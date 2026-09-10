@@ -77,13 +77,13 @@ export default function TermsOfUsePage() {
                 Advance notice may not be possible where an immediate change is
                 reasonably necessary for legal, regulatory, security or
                 technical reasons. The current version is available at
-                business.near.com/terms, and the date shown above identifies
-                when it was last updated. Our Privacy Policy at
-                https://business.near.com/privacy forms part of this Agreement.
-                An updated Agreement applies to your use of the Services from
-                its effective date. If you do not agree to an update, you must
-                stop using the Services before that date; continued use on or
-                after that date constitutes acceptance.
+                business.near.com/terms-of-use, and the date shown above
+                identifies when it was last updated. Our Privacy Policy at
+                https://business.near.com/privacy-policy forms part of this
+                Agreement. An updated Agreement applies to your use of the
+                Services from its effective date. If you do not agree to an
+                update, you must stop using the Services before that date;
+                continued use on or after that date constitutes acceptance.
             </p>
             <h2>
                 <strong>Supplemental Terms</strong>
