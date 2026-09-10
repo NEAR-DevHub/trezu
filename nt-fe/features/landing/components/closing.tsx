@@ -64,7 +64,7 @@ export function Faq() {
                     <Reveal key={question} delayMs={index * 60}>
                         <Collapsible className="group border-b border-landing-ink/15">
                             <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-6 py-6 text-left lg:py-8 lg:pl-2">
-                                <span className="text-xl font-medium leading-[1.3] lg:text-[30px]">
+                                <span className="text-xl font-light leading-[1.3] lg:text-[30px]">
                                     {question}
                                 </span>
                                 <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-landing-ink transition-transform duration-200 group-data-[state=open]:rotate-45">

@@ -1,9 +1,7 @@
 "use client";
 
-import { SecurityCheckIcon } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import { useState } from "react";
-import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import {
     BUILT_FOR,
@@ -159,12 +157,13 @@ export function MultichainHeader() {
     return (
         <section className="relative mx-auto w-full max-w-[1440px] px-6 pb-6 pt-16 md:px-12 lg:aspect-[1440/609] lg:px-16 lg:pb-0 lg:pt-0">
             <Reveal className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
-                <h2 className="text-[36px] font-normal leading-[1.1] lg:text-[min(48px,3.33vw)]">
-                    Manage BTC, ETH, SOL,{" "}
+                <h2 className="text-[36px] font-normal leading-none lg:text-[32px] xl:text-[40px]">
+                    Manage BTC, ETH, SOL, <br className="hidden lg:inline" />
                     <span className="font-medium text-landing-green">NEAR</span>{" "}
-                    and 35+ chains from a single dashboard.
+                    and 35+ chains from <br className="hidden lg:inline" />a
+                    single dashboard.
                 </h2>
-                <p className="text-lg font-light leading-[1.24] lg:text-[min(24px,1.67vw)]">
+                <p className="text-lg font-light leading-[1.3] lg:text-2xl xl:text-[30px]">
                     Not just EVM networks.
                     <br />
                     No external bridges,
@@ -180,9 +179,9 @@ export function MultichainHeader() {
             >
                 <Image
                     src="/landing/devices.png"
-                    alt="The NEAR Business dashboard on a laptop and a phone"
-                    width={1648}
-                    height={1099}
+                    alt="The NEAR Business dashboard on desktop and on a phone"
+                    width={2860}
+                    height={1924}
                     sizes="(min-width: 1024px) 53vw, 100vw"
                     className="h-auto w-full"
                 />
@@ -307,7 +306,7 @@ export function TreasuryStatement() {
 export function CustodyTruth() {
     return (
         <section className="bg-landing-ink text-landing-paper">
-            <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-8 pt-8 md:px-12 xl:px-32">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-24 pt-8 md:px-12 lg:pb-[176px] xl:px-32">
                 <Reveal>
                     <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
                         Self-custodial by architecture
@@ -329,26 +328,6 @@ export function CustodyTruth() {
                         </span>{" "}
                         to initiate, alter, or reverse a transaction.
                     </p>
-                </Reveal>
-                <Reveal className="mt-24 flex min-h-12 flex-wrap items-center justify-between gap-4 border-t border-landing-grey-light py-3 lg:mt-[176px]">
-                    <div className="flex items-center gap-2">
-                        <Icon
-                            icon={SecurityCheckIcon}
-                            strokeWidth={1.5}
-                            className="size-6 text-landing-green"
-                        />
-                        <span className="font-landing-mono text-xs font-normal uppercase leading-normal tracking-[0.72px] text-landing-paper">
-                            Core contract audited by Valhalla Security.
-                        </span>
-                    </div>
-                    <a
-                        href="https://valhallasec.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green underline underline-offset-4"
-                    >
-                        Read the report
-                    </a>
                 </Reveal>
             </div>
         </section>
