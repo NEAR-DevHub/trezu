@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
     APP_DOCS_URL,
+    DATA_PROCESSING_HREF,
     PRIVACY_POLICY_HREF,
     TERMS_OF_SERVICE_HREF,
 } from "@/constants/config";
@@ -159,18 +160,24 @@ export function Footer() {
                             We respond within one business day. No commitment.
                         </p>
                     </div>
-                    <div className="flex gap-4 text-xs leading-[1.2] text-landing-paper/50 lg:w-[214px]">
+                    <div className="flex flex-wrap gap-4 text-xs leading-[1.2] text-landing-paper/50">
                         <Link
                             href={TERMS_OF_SERVICE_HREF}
-                            className="lg:w-[99px] hover:underline"
+                            className="hover:underline"
                         >
                             Terms of Use
                         </Link>
                         <Link
                             href={PRIVACY_POLICY_HREF}
-                            className="lg:w-[99px] hover:underline"
+                            className="hover:underline"
                         >
                             Privacy Policy
+                        </Link>
+                        <Link
+                            href={DATA_PROCESSING_HREF}
+                            className="hover:underline"
+                        >
+                            Data Processing Addendum
                         </Link>
                     </div>
                 </Reveal>
