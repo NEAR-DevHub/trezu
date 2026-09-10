@@ -10,25 +10,31 @@ import {
 } from "@/components/ui/collapsible";
 import {
     APP_DOCS_URL,
-    PRIVACY_POLICY_URL,
-    TERMS_OF_SERVICE_URL,
+    PRIVACY_POLICY_HREF,
+    TERMS_OF_SERVICE_HREF,
 } from "@/constants/config";
-import { BOOK_DEMO_HREF, FAQ_ITEMS } from "../content";
-import { BookDemoButton } from "./hero";
+import { CONTACT_HREF, FAQ_ITEMS } from "../content";
+import { EarlyAccessButton } from "./hero";
 import { NearBusinessWordmark } from "./landing-icons";
+import { Reveal } from "./reveal";
 
 export function WorksWith() {
     return (
         <section className="border-t border-landing-ink/10">
-            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:justify-between lg:gap-16 lg:pb-12 lg:pt-24 xl:px-32">
-                <h2 className="text-[40px] font-light leading-[1.12] lg:w-[584px] lg:text-[64px]">
-                    Your treasury <br className="hidden lg:inline" />
-                    <span className="font-medium">
-                        isn&apos;t the last stop.
-                    </span>
-                </h2>
-                <div className="leading-normal lg:mt-5 lg:w-[552px]">
-                    <p className="text-xl font-medium">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:pb-12 lg:pt-24 xl:px-32">
+                <Reveal className="lg:shrink-0">
+                    <h2 className="text-[40px] font-light leading-[1.12] lg:text-[60px]">
+                        Your treasury <br className="hidden lg:inline" />
+                        <span className="font-medium">
+                            isn&apos;t the last stop.
+                        </span>
+                    </h2>
+                </Reveal>
+                <Reveal
+                    delayMs={80}
+                    className="leading-normal lg:mt-5 lg:flex-1"
+                >
+                    <p className="text-2xl font-medium">
                         Audit-ready exports fit the reporting stack you already
                         run.
                     </p>
@@ -38,7 +44,7 @@ export function WorksWith() {
                         trust our logs: the chain is the audit log, verifiable
                         by construction.
                     </p>
-                </div>
+                </Reveal>
             </div>
         </section>
     );
@@ -47,31 +53,33 @@ export function WorksWith() {
 export function Faq() {
     return (
         <section className="mx-auto w-full max-w-[1440px] px-6 py-16 md:px-12 lg:py-32 xl:px-32">
-            <h2 className="text-[40px] font-light leading-[1.12] text-landing-ink lg:text-[64px]">
-                FAQs about <span className="font-medium">NEAR Business</span>
-            </h2>
+            <Reveal>
+                <h2 className="text-[40px] font-light leading-[1.12] text-landing-ink lg:text-[64px]">
+                    FAQs about{" "}
+                    <span className="font-medium">NEAR Business</span>
+                </h2>
+            </Reveal>
             <div className="mt-8">
-                {FAQ_ITEMS.map(({ question, answer }) => (
-                    <Collapsible
-                        key={question}
-                        className="group border-b border-landing-ink/15"
-                    >
-                        <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-6 py-6 text-left lg:py-8 lg:pl-2">
-                            <span className="text-xl font-medium leading-[1.3] lg:text-[30px]">
-                                {question}
-                            </span>
-                            <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-landing-ink transition-transform duration-200 group-data-[state=open]:rotate-45">
-                                <Icon
-                                    icon={PlusSignIcon}
-                                    strokeWidth={1.5}
-                                    className="size-5"
-                                />
-                            </span>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="max-w-[880px] pb-6 text-base leading-normal text-landing-grey lg:pb-8 lg:pl-2">
-                            {answer}
-                        </CollapsibleContent>
-                    </Collapsible>
+                {FAQ_ITEMS.map(({ question, answer }, index) => (
+                    <Reveal key={question} delayMs={index * 60}>
+                        <Collapsible className="group border-b border-landing-ink/15">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-6 py-6 text-left lg:py-8 lg:pl-2">
+                                <span className="text-xl font-light leading-[1.3] lg:text-[30px]">
+                                    {question}
+                                </span>
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-landing-ink transition-transform duration-200 group-data-[state=open]:rotate-45">
+                                    <Icon
+                                        icon={PlusSignIcon}
+                                        strokeWidth={1.5}
+                                        className="size-5"
+                                    />
+                                </span>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="max-w-[880px] pb-6 text-base leading-normal text-landing-grey lg:pb-8 lg:pl-2">
+                                {answer}
+                            </CollapsibleContent>
+                        </Collapsible>
+                    </Reveal>
                 ))}
             </div>
         </section>
@@ -82,15 +90,15 @@ const FOOTER_COLUMNS = [
     {
         heading: "Product",
         links: [
-            { label: "Product", href: "#product" },
-            { label: "Security", href: "#security" },
+            { label: "Product", href: "/#product" },
+            { label: "Security", href: "/#security" },
             { label: "Docs", href: APP_DOCS_URL },
         ],
     },
     {
         heading: "Company",
         links: [
-            { label: "Contact", href: BOOK_DEMO_HREF },
+            { label: "Contact", href: CONTACT_HREF },
             { label: "Sign in", href: "/login" },
         ],
     },
@@ -100,7 +108,7 @@ export function Footer() {
     return (
         <footer className="bg-landing-ink text-landing-paper">
             <div className="mx-auto w-full max-w-[1457px] p-6 md:p-10 xl:p-[60px]">
-                <div className="flex flex-col gap-10 lg:flex-row lg:justify-between">
+                <Reveal className="flex flex-col gap-10 lg:flex-row lg:justify-between">
                     <div className="lg:w-[600px]">
                         <h2 className="text-[40px] font-light leading-[1.04] lg:text-[64px]">
                             See it with{" "}
@@ -127,6 +135,12 @@ export function Footer() {
                                             <Link
                                                 href={href}
                                                 className="transition-colors hover:text-landing-green"
+                                                {...(href === APP_DOCS_URL
+                                                    ? {
+                                                          target: "_blank",
+                                                          rel: "noopener noreferrer",
+                                                      }
+                                                    : {})}
                                             >
                                                 {label}
                                             </Link>
@@ -136,43 +150,34 @@ export function Footer() {
                             </div>
                         ))}
                     </div>
-                </div>
+                </Reveal>
 
-                <div className="mt-10 flex flex-col gap-10 lg:mt-[50px] lg:flex-row lg:justify-between">
+                <Reveal className="mt-10 flex flex-col gap-10 lg:mt-[50px] lg:flex-row lg:justify-between">
                     <div>
-                        <BookDemoButton className="h-12 w-full max-w-[229px] text-base" />
+                        <EarlyAccessButton className="h-12 w-full max-w-[229px] px-8 text-base sm:w-auto" />
                         <p className="mt-8 text-sm leading-[1.2]">
                             We respond within one business day. No commitment.
                         </p>
                     </div>
-                    <div className="text-xs lg:w-[214px]">
-                        <p className="leading-[1.33]">
-                            &quot;NEAR maintains no technical capability to
-                            initiate, alter, or reverse transactions on your
-                            treasury.&quot;
-                        </p>
-                        <div className="mt-4 flex gap-4 leading-[1.2] text-landing-paper/50">
-                            <a
-                                href={TERMS_OF_SERVICE_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="lg:w-[99px] hover:underline"
-                            >
-                                Terms of Use
-                            </a>
-                            <a
-                                href={PRIVACY_POLICY_URL}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="lg:w-[99px] hover:underline"
-                            >
-                                Privacy Policy
-                            </a>
-                        </div>
+                    <div className="flex gap-4 text-xs leading-[1.2] text-landing-paper/50 lg:w-[214px]">
+                        <Link
+                            href={TERMS_OF_SERVICE_HREF}
+                            className="lg:w-[99px] hover:underline"
+                        >
+                            Terms of Use
+                        </Link>
+                        <Link
+                            href={PRIVACY_POLICY_HREF}
+                            className="lg:w-[99px] hover:underline"
+                        >
+                            Privacy Policy
+                        </Link>
                     </div>
-                </div>
+                </Reveal>
 
-                <NearBusinessWordmark className="mt-10 h-auto w-full text-landing-grey" />
+                <Reveal>
+                    <NearBusinessWordmark className="mt-10 h-auto w-full text-landing-grey" />
+                </Reveal>
             </div>
         </footer>
     );

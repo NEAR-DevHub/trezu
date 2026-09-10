@@ -2,7 +2,6 @@
 
 import { Icon } from "@/components/icon";
 import {
-    Cancel01Icon,
     Coins01Icon,
     LoaderCircleIcon,
     CheckIcon,
@@ -23,6 +22,7 @@ import {
     CreationProgressModal,
     type CreationStep,
 } from "@/components/creation-progress-modal";
+import { NameField } from "@/components/name-field";
 import { LargeInput } from "@/components/large-input";
 import { LoadingScreen } from "@/components/loading-screen";
 import { PageCard } from "@/components/card";
@@ -577,59 +577,25 @@ export function TreasuryOnboardingPage({
                         name="treasuryName"
                         render={({ field, fieldState }) => (
                             <div className="flex flex-col gap-1">
-                                <label
-                                    className={cn(
-                                        "group flex h-16 items-center gap-3 rounded-3xl border bg-card py-2 pr-4 pl-3 transition-colors",
-                                        fieldState.error
-                                            ? "border-destructive"
-                                            : "border-general-border focus-within:border-general-unofficial-border-4",
-                                    )}
-                                >
-                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-green-700">
-                                        <Icon
-                                            icon={Coins01Icon}
-                                            className="size-4.5 text-white"
-                                        />
-                                    </span>
-                                    <input
-                                        {...field}
-                                        // The design has no visible label, so
-                                        // the placeholder doubles as one.
-                                        aria-label={t("namePlaceholder")}
-                                        autoComplete="off"
-                                        maxLength={64}
-                                        placeholder={t("namePlaceholder")}
-                                        className="min-w-0 flex-1 bg-transparent text-xl leading-[1.2] font-semibold tracking-[-0.02em] text-general-foreground outline-none placeholder:text-general-muted-foreground"
-                                        onChange={(e) => {
-                                            field.onChange(e);
-                                            form.clearErrors("treasuryName");
-                                        }}
-                                    />
-                                    {field.value && (
-                                        <button
-                                            type="button"
-                                            aria-label={t("clearName")}
-                                            // Only offered while typing, and
-                                            // mousedown is swallowed so the
-                                            // blur doesn't hide us mid-click.
-                                            className="hidden size-5 shrink-0 items-center justify-center text-general-muted-foreground group-focus-within:flex"
-                                            onMouseDown={(e) =>
-                                                e.preventDefault()
-                                            }
-                                            onClick={() => {
-                                                field.onChange("");
-                                                form.clearErrors(
-                                                    "treasuryName",
-                                                );
-                                            }}
-                                        >
-                                            <Icon
-                                                icon={Cancel01Icon}
-                                                className="size-5"
-                                            />
-                                        </button>
-                                    )}
-                                </label>
+                                <NameField
+                                    {...field}
+                                    variant="hero"
+                                    icon={Coins01Icon}
+                                    invalid={Boolean(fieldState.error)}
+                                    aria-label={t("namePlaceholder")}
+                                    autoComplete="off"
+                                    maxLength={64}
+                                    placeholder={t("namePlaceholder")}
+                                    clearLabel={t("clearName")}
+                                    onChange={(e) => {
+                                        field.onChange(e);
+                                        form.clearErrors("treasuryName");
+                                    }}
+                                    onClear={() => {
+                                        field.onChange("");
+                                        form.clearErrors("treasuryName");
+                                    }}
+                                />
                                 <FormMessage />
                             </div>
                         )}

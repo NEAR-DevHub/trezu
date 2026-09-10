@@ -154,7 +154,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
                 >
                     <Icon
                         icon={InformationCircleIcon}
-                        className="text-muted-foreground cursor-help"
+                        className="text-muted-foreground cursor-pointer"
                     />
                 </Tooltip>
             )}
@@ -504,17 +504,19 @@ export default function MembersPage() {
                         {skeletonRows.map((rowId) => (
                             <div
                                 key={rowId}
-                                className="rounded-xl border border-general-border bg-card p-4"
+                                className="rounded-2xl border border-general-border bg-card p-4"
                             >
-                                <div className="flex items-start gap-3">
-                                    <Skeleton className="size-8 shrink-0 rounded-lg bg-general-bg-secondary" />
-                                    <div className="flex min-w-0 flex-1 flex-col gap-2">
-                                        <Skeleton className="h-4 w-28 bg-general-bg-secondary" />
-                                        <Skeleton className="h-3 w-36 bg-general-bg-secondary" />
-                                        <div className="flex gap-2">
-                                            <Skeleton className="h-7 w-20 rounded-full bg-general-bg-secondary" />
-                                            <Skeleton className="h-7 w-24 rounded-full bg-general-bg-secondary" />
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-center gap-3">
+                                        <Skeleton className="size-8 shrink-0 rounded-lg bg-general-bg-secondary" />
+                                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                                            <Skeleton className="h-4 w-28 bg-general-bg-secondary" />
+                                            <Skeleton className="h-3 w-36 bg-general-bg-secondary" />
                                         </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Skeleton className="h-7 w-20 rounded-full bg-general-bg-secondary" />
+                                        <Skeleton className="h-7 w-24 rounded-full bg-general-bg-secondary" />
                                     </div>
                                 </div>
                             </div>
@@ -605,32 +607,33 @@ export default function MembersPage() {
                                 handleOpenMemberSheet(member);
                             }}
                             className={cn(
-                                "w-full rounded-xl border border-general-border bg-card p-4 text-left",
+                                "w-full rounded-2xl border border-general-border bg-card p-4 text-left",
                                 selected && "bg-general-tertiary",
                             )}
                         >
-                            <div className="flex items-start gap-3">
-                                {isMobileSelectMode ? (
-                                    <Checkbox
-                                        checked={selected}
-                                        className="mt-2"
-                                        onClick={(event) =>
-                                            event.stopPropagation()
-                                        }
-                                        onCheckedChange={() =>
-                                            handleToggleMember(member.accountId)
-                                        }
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-3">
+                                    {isMobileSelectMode ? (
+                                        <Checkbox
+                                            checked={selected}
+                                            onClick={(event) =>
+                                                event.stopPropagation()
+                                            }
+                                            onCheckedChange={() =>
+                                                handleToggleMember(
+                                                    member.accountId,
+                                                )
+                                            }
+                                        />
+                                    ) : null}
+                                    <User
+                                        accountId={member.accountId}
+                                        size="md"
+                                        variant="avatar"
+                                        withLink={false}
+                                        avatarClassName="rounded-lg"
                                     />
-                                ) : null}
-                                <User
-                                    accountId={member.accountId}
-                                    size="md"
-                                    variant="avatar"
-                                    withLink={false}
-                                    avatarClassName="rounded-lg"
-                                />
-                                <div className="min-w-0 flex-1">
-                                    <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0 flex-1">
                                         <User
                                             accountId={member.accountId}
                                             size="md"
@@ -638,36 +641,25 @@ export default function MembersPage() {
                                             withLink={false}
                                             withHoverCard={false}
                                         />
-                                        {isMobileSelectMode ? null : (
-                                            <Icon
-                                                icon={ArrowRight01Icon}
-                                                className="size-5 shrink-0 text-general-secondary-foreground"
-                                            />
-                                        )}
                                     </div>
-                                    <div className="mt-2 flex flex-wrap gap-2">
-                                        {sortRolesByOrder(member.roles).map(
-                                            (role) => (
-                                                <RoleBadge
-                                                    key={role}
-                                                    role={role}
-                                                    variant="pill"
-                                                    showTooltip={false}
-                                                />
-                                            ),
-                                        )}
-                                    </div>
-                                    {addedAt[member.accountId] ? (
-                                        <p className="mt-2 text-sm text-general-muted-foreground">
-                                            <FormattedDate
-                                                date={addedAt[member.accountId]}
-                                                relative
-                                                withTooltip={false}
+                                    {isMobileSelectMode ? null : (
+                                        <Icon
+                                            icon={ArrowRight01Icon}
+                                            className="size-5 shrink-0 text-general-secondary-foreground"
+                                        />
+                                    )}
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {sortRolesByOrder(member.roles).map(
+                                        (role) => (
+                                            <RoleBadge
+                                                key={role}
+                                                role={role}
+                                                variant="pill"
+                                                showTooltip={false}
                                             />
-                                        </p>
-                                    ) : isAddedAtLoading ? (
-                                        <Skeleton className="mt-2 h-4 w-20 bg-general-bg-secondary" />
-                                    ) : null}
+                                        ),
+                                    )}
                                 </div>
                             </div>
                         </button>
@@ -918,11 +910,17 @@ export default function MembersPage() {
         joinRequestCount > 0 && pendingMemberRequestCount === 0;
     const showRequestsMenu =
         pendingMemberRequestCount > 0 && joinRequestCount > 0;
-    const requestsMenuClassName =
-        "min-w-55 rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]";
-    const requestsMenuItemClassName =
-        "cursor-pointer justify-between gap-3 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background";
+    const invertedMenuClassName =
+        "rounded-xl border-none bg-[var(--card-card,#171717)] p-2 text-[var(--general-foreground,#fff)] shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)] [--card-card:#171717] [--general-foreground:#fff]";
+    const invertedMenuItemClassName =
+        "rounded-lg px-3 py-2.5 text-[var(--general-foreground,#fff)] focus:bg-white/10 focus:text-[var(--general-foreground,#fff)]";
+    const requestsMenuClassName = cn("min-w-55", invertedMenuClassName);
+    const requestsMenuItemClassName = cn(
+        "cursor-pointer justify-between gap-3",
+        invertedMenuItemClassName,
+    );
 
+    const headerActionClassName = "h-10 gap-2 rounded-lg";
     const pageActions = (
         <div className="flex items-center gap-2 sm:gap-3">
             {showPendingButton ? (
@@ -930,7 +928,7 @@ export default function MembersPage() {
                     id="members-pending-btn"
                     type="button"
                     variant="pill"
-                    className="gap-2 rounded-lg"
+                    className={headerActionClassName}
                     onClick={() =>
                         router.push(`/${treasuryId}/requests?tab=InProgress`)
                     }
@@ -948,7 +946,7 @@ export default function MembersPage() {
                     id="members-wants-to-join-btn"
                     type="button"
                     variant="pill"
-                    className="gap-2"
+                    className={headerActionClassName}
                     onClick={() =>
                         router.push(`/${treasuryId}/members/join-requests`)
                     }
@@ -965,7 +963,7 @@ export default function MembersPage() {
                             id="members-pending-btn"
                             type="button"
                             variant="pill"
-                            className="gap-2 rounded-lg"
+                            className={headerActionClassName}
                             onClick={() => setRequestsMenuOpen(true)}
                         >
                             {tRequests("title")}
@@ -1020,7 +1018,7 @@ export default function MembersPage() {
                                 id="members-pending-btn"
                                 type="button"
                                 variant="pill"
-                                className="gap-2 rounded-lg"
+                                className={headerActionClassName}
                             >
                                 {tRequests("title")}
                                 <NumberBadge
@@ -1076,7 +1074,7 @@ export default function MembersPage() {
                     balanceCheck={{ withProposalBond: true }}
                     disabled={!isMemberDataReady}
                     size={isMobile ? "icon" : "default"}
-                    className="size-9 sm:w-auto"
+                    className="size-9 sm:h-10 sm:w-auto"
                 >
                     <Icon icon={Add01Icon} />
                     <span className="hidden sm:inline">
@@ -1161,14 +1159,17 @@ export default function MembersPage() {
                     }}
                 >
                     <DropdownMenuTrigger asChild>
-                        <Button>
+                        <Button className="h-10">
                             <Icon icon={Add01Icon} />
                             {tMembers("addNewMember")}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="w-max min-w-0 overflow-visible rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]"
+                        className={cn(
+                            "w-max min-w-0 overflow-visible",
+                            invertedMenuClassName,
+                        )}
                     >
                         {hasPendingMemberRequest ? (
                             <Tooltip
@@ -1181,7 +1182,10 @@ export default function MembersPage() {
                                 <span className="flex w-full cursor-not-allowed">
                                     <DropdownMenuItem
                                         disabled
-                                        className="w-full gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                                        className={cn(
+                                            "w-full gap-2.5",
+                                            invertedMenuItemClassName,
+                                        )}
                                     >
                                         <Icon icon={Wallet03Icon} />
                                         {tMembers("addManually")}
@@ -1191,7 +1195,10 @@ export default function MembersPage() {
                         ) : (
                             <DropdownMenuItem
                                 asChild
-                                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                                className={cn(
+                                    "cursor-pointer gap-2.5",
+                                    invertedMenuItemClassName,
+                                )}
                             >
                                 <Link
                                     href={`/${treasuryId}/members/add`}
@@ -1208,7 +1215,10 @@ export default function MembersPage() {
                         )}
                         <DropdownMenuItem
                             asChild
-                            className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                            className={cn(
+                                "cursor-pointer gap-2.5",
+                                invertedMenuItemClassName,
+                            )}
                         >
                             <Link href={`/${treasuryId}/members/invite`}>
                                 <Icon icon={SentIcon} />

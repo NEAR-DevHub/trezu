@@ -158,10 +158,8 @@
         "placeholder": "dd/mm/yyyy"
     },
     "metadata": {
-        "treasuryTitle": "Bảng điều khiển | Near Business",
-        "landingTitle": "Near Business | Quản lý ngân quỹ liên chuỗi",
-        "description": "Quản lý vốn của đội bạn trong vài phút từ một bảng điều khiển duy nhất mà không cần từ bỏ khóa của mình.",
-        "ogTitle": "Near Business | Một multisig. Mọi loại crypto. Toàn quyền kiểm soát."
+        "title": "NEAR Business | Quản lý ngân quỹ bảo mật cho các đội tài chính crypto-native",
+        "description": "Hợp nhất vốn của đội bạn, chi trả lương và tài trợ, và hoán đổi trên hơn 35 chuỗi từ một bảng điều khiển duy nhất. Phê duyệt multisig, khóa của bạn, điều khoản của bạn."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Kết nối Ngân quỹ",
-            "description": "Liên kết ngân quỹ của bạn với một cuộc trò chuyện Telegram",
-            "metaTitle": "Near Business — Kết nối Telegram",
-            "metaDescription": "Kết nối ngân quỹ Near Business của bạn với một cuộc trò chuyện Telegram"
-        },
-        "wallet": {
-            "title": "Ví Near Business",
-            "description": "Ký các đề xuất ngân quỹ thông qua Near Business"
+            "description": "Liên kết ngân quỹ của bạn với một cuộc trò chuyện Telegram"
         },
         "account": {
             "title": "Tài khoản của tôi",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Bạn không thể thêm thành viên khi còn yêu cầu thay đổi chính sách đang hoạt động. Hãy phê duyệt hoặc từ chối trước."
         },
         "join": {
-            "metaTitle": "Tham gia Treasury | Near Business",
-            "metaDescription": "Yêu cầu tham gia treasury Near Business qua liên kết mời",
             "pageTitle": "Tham gia Treasury",
             "pageDescription": "Yêu cầu tham gia một treasury",
             "treasuryFallback": "treasury này",
@@ -978,6 +968,7 @@
             "walletConnected": "Đã kết nối ví",
             "nameLabel": "Tên của bạn (tuỳ chọn)",
             "namePlaceholder": "Nhập tên để nhóm nhận ra bạn",
+            "clearName": "Xoá tên",
             "askJoin": "Yêu cầu tham gia",
             "submitting": "Đang gửi...",
             "successTitle": "Bạn sắp được vào",
@@ -1446,6 +1437,7 @@
             "subtitle": "Dùng passkey để có trải nghiệm dễ nhất, hoặc kết nối ví.",
             "helpCta": "Bạn chưa chắc nên chọn gì?",
             "popularBadge": "Phổ biến",
+            "comingSoonBadge": "Sắp ra mắt",
             "recentBadge": "Gần đây",
             "noFundsNote": "Không cần vốn để bắt đầu — chúng tôi chi trả phí giao dịch để bạn có thể thử",
             "chooseNearWallet": "Chọn ví NEAR của bạn",
@@ -1717,6 +1709,7 @@
             "duplicateAddress": "Địa chỉ đã là một thành viên"
         },
         "enterAddress": "Nhập địa chỉ",
+        "clearAddress": "Xoá địa chỉ",
         "selectRole": "Chọn vai trò",
         "memberNumber": "Thành viên {number}"
     },

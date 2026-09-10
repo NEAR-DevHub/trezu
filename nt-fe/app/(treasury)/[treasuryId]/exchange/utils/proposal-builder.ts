@@ -2,6 +2,7 @@ import type { Token } from "@/components/token-input";
 import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
+import { quoteHasAppFee } from "@/lib/exchange-fee";
 import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
 import { buildIntentsTransferProposal } from "@/lib/near-proposal-builders";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
@@ -78,6 +79,7 @@ export function buildProposalDescription(
             : undefined,
         depositAddress: proposalData.quote.depositAddress,
         signature: proposalData.signature,
+        hasAppFee: quoteHasAppFee(proposalData.quoteRequest) ? "true" : "false",
     });
 }
 

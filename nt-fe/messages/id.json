@@ -158,10 +158,8 @@
         "placeholder": "dd/mm/yyyy"
     },
     "metadata": {
-        "treasuryTitle": "Dasbor | Near Business",
-        "landingTitle": "Near Business | Manajemen Treasury Lintas-rantai",
-        "description": "Kelola modal tim Anda dalam hitungan menit dari satu dasbor tanpa harus menyerahkan kunci Anda.",
-        "ogTitle": "Near Business | Satu multisig. Semua kripto. Kendali penuh."
+        "title": "NEAR Business | Manajemen treasury rahasia untuk tim keuangan kripto-native",
+        "description": "Satukan modal tim Anda, jalankan penggajian dan hibah, serta tukar aset di 35+ rantai dari satu dasbor. Persetujuan multisig, kunci Anda, ketentuan Anda."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Hubungkan Treasury",
-            "description": "Tautkan treasury Anda ke chat Telegram",
-            "metaTitle": "Near Business — Hubungkan Telegram",
-            "metaDescription": "Hubungkan treasury Near Business Anda ke chat Telegram"
-        },
-        "wallet": {
-            "title": "Dompet Near Business",
-            "description": "Tandatangani usulan treasury via Near Business"
+            "description": "Tautkan treasury Anda ke chat Telegram"
         },
         "account": {
             "title": "Akun Saya",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Anda tidak dapat menambah anggota saat ada permintaan perubahan kebijakan aktif. Setujui atau tolak dulu."
         },
         "join": {
-            "metaTitle": "Gabung Treasury | Near Business",
-            "metaDescription": "Minta bergabung ke treasury Near Business lewat tautan undangan",
             "pageTitle": "Gabung Treasury",
             "pageDescription": "Ajukan permintaan bergabung ke treasury",
             "treasuryFallback": "treasury ini",
@@ -978,6 +968,7 @@
             "walletConnected": "Dompet terhubung",
             "nameLabel": "Nama Anda (opsional)",
             "namePlaceholder": "Masukkan nama agar tim mengenali Anda",
+            "clearName": "Hapus nama",
             "askJoin": "Minta bergabung",
             "submitting": "Mengirim...",
             "successTitle": "Hampir bergabung",
@@ -1463,6 +1454,7 @@
             "subtitle": "Gunakan passkey untuk pengalaman termudah, atau hubungkan wallet.",
             "helpCta": "Belum yakin harus pilih yang mana?",
             "popularBadge": "Populer",
+            "comingSoonBadge": "Segera hadir",
             "recentBadge": "Terbaru",
             "noFundsNote": "Tidak perlu dana untuk memulai — kami menanggung biaya transaksi agar Anda bisa mencobanya",
             "chooseNearWallet": "Pilih wallet NEAR Anda",
@@ -1734,6 +1726,7 @@
             "duplicateAddress": "Alamat sudah menjadi anggota"
         },
         "enterAddress": "Masukkan alamat",
+        "clearAddress": "Hapus alamat",
         "selectRole": "Pilih peran",
         "memberNumber": "Anggota {number}"
     },

@@ -158,10 +158,8 @@
         "placeholder": "gg.aa.yyyy"
     },
     "metadata": {
-        "treasuryTitle": "Panel | Near Business",
-        "landingTitle": "Near Business | Zincirler Arası Hazine Yönetimi",
-        "description": "Anahtarlarınızı asla teslim etmeden, tek bir panelden ekibinizin sermayesini dakikalar içinde yönetin.",
-        "ogTitle": "Near Business | Tek multisig. Her kripto. Tam kontrol."
+        "title": "NEAR Business | Kripto yerlisi finans ekipleri için gizli hazine yönetimi",
+        "description": "Ekibinizin sermayesini tek çatı altında toplayın, maaş ödemelerini ve hibeleri yönetin ve 35'ten fazla zincirde takas yapın; hepsi tek bir panelden. Multisig onayları, sizin anahtarlarınız, sizin şartlarınız."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Hazineyi Bağla",
-            "description": "Hazinelerinizi bir Telegram sohbetine bağlayın",
-            "metaTitle": "Near Business — Telegram Bağla",
-            "metaDescription": "Near Business hazinenizi bir Telegram sohbetine bağlayın"
-        },
-        "wallet": {
-            "title": "Near Business Cüzdan",
-            "description": "Near Business üzerinden hazine önerilerini imzalayın"
+            "description": "Hazinelerinizi bir Telegram sohbetine bağlayın"
         },
         "account": {
             "title": "Hesabım",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Aktif bir politika değişikliği talebi varken üye ekleyemezsiniz. Önce onaylayın veya reddedin."
         },
         "join": {
-            "metaTitle": "Treasury’ye katıl | Near Business",
-            "metaDescription": "Davet bağlantısıyla bir Near Business treasury’sine katılma isteği gönderin",
             "pageTitle": "Treasury’ye katıl",
             "pageDescription": "Bir treasury’ye katılma isteği",
             "treasuryFallback": "bu treasury",
@@ -978,6 +968,7 @@
             "walletConnected": "Cüzdan bağlandı",
             "nameLabel": "Adınız (isteğe bağlı)",
             "namePlaceholder": "Ekibin sizi tanıması için ad girin",
+            "clearName": "Adı temizle",
             "askJoin": "Katılma isteği",
             "submitting": "Gönderiliyor...",
             "successTitle": "Neredeyse katıldınız",
@@ -1463,6 +1454,7 @@
             "subtitle": "En kolay deneyim için bir passkey kullanın veya bir cüzdan bağlayın.",
             "helpCta": "Hangisini seçeceğinizden emin değil misiniz?",
             "popularBadge": "Popüler",
+            "comingSoonBadge": "Yakında",
             "recentBadge": "Son kullanılan",
             "noFundsNote": "Başlamak için fon gerekmez — denemeniz için işlem ücretlerini biz karşılıyoruz",
             "chooseNearWallet": "NEAR cüzdanınızı seçin",
@@ -1734,6 +1726,7 @@
             "duplicateAddress": "Adres zaten bir üye"
         },
         "enterAddress": "Adres girin",
+        "clearAddress": "Adresi temizle",
         "selectRole": "Rol seçin",
         "memberNumber": "Üye {number}"
     },

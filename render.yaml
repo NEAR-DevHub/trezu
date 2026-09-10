@@ -70,6 +70,10 @@ services:
         sync: false
       - key: NEXT_PUBLIC_BACKEND_API_BASE
         value: https://api.business.near.com
+      # Overrides the RENDER_EXTERNAL_URL fallback so link previews point at the
+      # custom domain rather than the *.onrender.com address.
+      - key: SITE_URL
+        value: https://business.near.com
       - key: INVITE_ONLY_ENABLED
         sync: false
       - key: INVITE_CODES

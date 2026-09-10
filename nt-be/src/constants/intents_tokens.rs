@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::OnceLock;
+
+use crate::constants::nearcom_ranking::is_stablecoin;
 
 /// Represents the root of the vendored token catalog JSON.
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -263,4 +265,158 @@ fn load_tokens_from_json() -> Result<Vec<UnifiedTokenInfo>, Box<dyn std::error::
     }
 
     Ok(result)
+}
+
+/// Lowercased catalog keys that identify a stablecoin: defuse ids, bare
+/// NEP-141 contracts (native NEAR USDC/USDT), and on-chain deployment
+/// addresses used by `1cs_v1:` destination ids.
+static STABLECOIN_KEYS_CELL: OnceLock<HashSet<String>> = OnceLock::new();
+
+fn stablecoin_lookup_keys() -> &'static HashSet<String> {
+    STABLECOIN_KEYS_CELL.get_or_init(|| {
+        let mut keys = HashSet::new();
+        for unified in get_tokens_map().values() {
+            let unified_stable = unified.tags.as_deref().is_some_and(is_stablecoin);
+            for base in &unified.grouped_tokens {
+                if !unified_stable && !base.tags.as_deref().is_some_and(is_stablecoin) {
+                    continue;
+                }
+                insert_stablecoin_asset_keys(&mut keys, &base.defuse_asset_id);
+                for deployment in &base.deployments {
+                    if let TokenDeployment::Fungible { address, .. } = deployment {
+                        keys.insert(address.to_ascii_lowercase());
+                    }
+                }
+            }
+        }
+        keys
+    })
+}
+
+fn insert_stablecoin_asset_keys(keys: &mut HashSet<String>, defuse_asset_id: &str) {
+    let lower = defuse_asset_id.to_ascii_lowercase();
+    keys.insert(lower.clone());
+    if let Some(rest) = lower.strip_prefix("nep141:") {
+        keys.insert(rest.to_string());
+    } else if let Some(rest) = lower.strip_prefix("nep245:") {
+        keys.insert(rest.to_string());
+    }
+}
+
+fn normalize_quote_asset_id(asset_id: &str) -> String {
+    let trimmed = asset_id.trim();
+    if let Some(stripped) = trimmed.strip_prefix("intents.near:") {
+        return normalize_quote_asset_id(stripped);
+    }
+    trimmed.to_ascii_lowercase()
+}
+
+/// Strip `intents.near:` / `nep141:` / `nep245:` so the same token is
+/// comparable across quote id shapes. `1cs_v1:` routing ids stay intact.
+pub fn canonical_quote_asset_id(asset_id: &str) -> String {
+    let normalized = normalize_quote_asset_id(asset_id);
+    if normalized.starts_with("1cs_v1:") {
+        return normalized;
+    }
+    normalized
+        .strip_prefix("nep141:")
+        .or_else(|| normalized.strip_prefix("nep245:"))
+        .unwrap_or(&normalized)
+        .to_string()
+}
+
+pub fn same_quote_asset(left: &str, right: &str) -> bool {
+    canonical_quote_asset_id(left) == canonical_quote_asset_id(right)
+}
+
+/// True when a 1Click / Intents / native-NEAR asset id is a catalog stablecoin.
+///
+/// Native NEAR USDC (`17208628…`) and USDT (`usdt.tether-token.near`) match
+/// the same catalog row as their `nep141:` Intents ids.
+pub fn is_stablecoin_asset(asset_id: &str) -> bool {
+    let keys = stablecoin_lookup_keys();
+    let normalized = normalize_quote_asset_id(asset_id);
+    if keys.contains(&normalized) {
+        return true;
+    }
+    if let Some(addr) = normalized.rsplit(':').next()
+        && !addr.is_empty()
+        && keys.contains(addr)
+    {
+        return true;
+    }
+    false
+}
+
+/// Skip the 1Click app fee when both legs are catalog stablecoins (USDC→USDT,
+/// native NEAR USDC→ETH USDC, etc.). Payments and same-asset quotes already
+/// skip independently.
+pub fn is_stablecoin_to_stablecoin(origin_asset: &str, destination_asset: &str) -> bool {
+    is_stablecoin_asset(origin_asset) && is_stablecoin_asset(destination_asset)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const USDC_NEAR: &str = "17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+    const USDC_NEAR_NEP141: &str =
+        "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+    const USDT_NEAR: &str = "usdt.tether-token.near";
+    const USDT_NEAR_NEP141: &str = "nep141:usdt.tether-token.near";
+    const ETH_USDC_1CS: &str = "1cs_v1:eth:erc20:0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48";
+    const ETH_USDC_OMFT: &str = "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near";
+
+    #[test]
+    fn native_near_usdc_matches_with_or_without_nep141() {
+        assert!(is_stablecoin_asset(USDC_NEAR), "bare native USDC");
+        assert!(is_stablecoin_asset(USDC_NEAR_NEP141), "intents USDC");
+        assert!(
+            is_stablecoin_asset(&format!("intents.near:{USDC_NEAR_NEP141}")),
+            "prefixed intents USDC"
+        );
+    }
+
+    #[test]
+    fn native_near_usdt_matches_with_or_without_nep141() {
+        assert!(is_stablecoin_asset(USDT_NEAR), "bare native USDT");
+        assert!(is_stablecoin_asset(USDT_NEAR_NEP141), "intents USDT");
+    }
+
+    #[test]
+    fn cross_chain_usdc_ids_are_stablecoins() {
+        assert!(is_stablecoin_asset(ETH_USDC_1CS), "1cs ETH USDC");
+        assert!(is_stablecoin_asset(ETH_USDC_OMFT), "omft ETH USDC");
+    }
+
+    #[test]
+    fn wrap_near_is_not_a_stablecoin() {
+        assert!(!is_stablecoin_asset("nep141:wrap.near"));
+        assert!(!is_stablecoin_asset("wrap.near"));
+        assert!(!is_stablecoin_asset("near"));
+    }
+
+    #[test]
+    fn same_asset_matches_across_prefixes() {
+        assert!(same_quote_asset("nep141:wrap.near", "wrap.near"));
+        assert!(same_quote_asset(
+            "intents.near:nep141:usdt.tether-token.near",
+            "nep141:usdt.tether-token.near",
+        ));
+        assert!(!same_quote_asset("nep141:wrap.near", USDT_NEAR));
+    }
+
+    #[test]
+    fn both_legs_stable_skips_fee() {
+        assert!(is_stablecoin_to_stablecoin(USDC_NEAR, ETH_USDC_1CS));
+        assert!(is_stablecoin_to_stablecoin(USDC_NEAR_NEP141, USDT_NEAR));
+        assert!(!is_stablecoin_to_stablecoin(
+            "nep141:wrap.near",
+            USDT_NEAR_NEP141
+        ));
+        assert!(!is_stablecoin_to_stablecoin(
+            USDC_NEAR_NEP141,
+            "nep141:wrap.near"
+        ));
+    }
 }

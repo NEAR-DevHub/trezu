@@ -9,15 +9,16 @@ import { APP_ORIGIN } from "@/constants/config";
  * served from the NEAR-DevHub/near-connect-passkey main branch, so the URL is
  * stable while its bytes change — the version is the only cache-buster.
  */
-const PASSKEY_EXECUTOR_VERSION = "1.0.1";
+const PASSKEY_EXECUTOR_VERSION = "1.1.0";
 
 /**
  * Raw GitHub URL of the committed executor build on the
- * NEAR-DevHub/near-connect-passkey main branch — the same distribution model as
- * the other near-connect executors (e.g. near-connect-ledger).
+ * NEAR-DevHub/near-connect-passkey `nep641` branch (NEP-641 `resolveAuth` with
+ * the `OffchainMessage` envelope) — the same distribution model as the other
+ * near-connect executors (e.g. near-connect-ledger).
  */
 const PASSKEY_EXECUTOR_URL =
-    "https://raw.githubusercontent.com/NEAR-DevHub/near-connect-passkey/refs/heads/main/passkey-executor.js";
+    "https://raw.githubusercontent.com/NEAR-DevHub/near-connect-passkey/refs/heads/nep641/passkey-executor.js";
 
 /**
  * Trezu-local manifest for the Passkey wallet executor

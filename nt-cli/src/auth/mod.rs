@@ -1,20 +1,163 @@
 use crate::api::ApiClient;
 use crate::config::TrezuContext;
 use crate::types::LoginRequest;
-use base64::Engine;
 use colored::Colorize;
 
+use borsh::BorshSerialize;
 use near_cli_rs::commands::message::sign_nep413::{
     FinalSignNep413Context, NEP413Payload, SignedMessage,
 };
-use rand::RngCore;
+use sha3::{Digest, Sha3_256};
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
 
-/// NEP-641 authorization purpose used for dApp authentication.
-const AUTH_PURPOSE: &str = "PROVE_OWNERSHIP";
-/// Bare recipient bound into the authorization. Must match the backend's
-/// `AUTH_RECIPIENT` in `nt-be/src/auth/handlers.rs`.
-const AUTH_RECIPIENT: &str = "Near Business App";
+/// Clients SHOULD set the NEP-641 `timestamp` slightly before the actual
+/// signing time to absorb clock skew and block-time lag.
+const OFFCHAIN_MESSAGE_TIMESTAMP_SKEW: chrono::Duration = chrono::Duration::seconds(60);
+
+/// NEP-641 `OffchainMessage`: the standardized signable envelope. Binds the
+/// payload to the chain, the signer account, the resolution path (empty for a
+/// top-level authorization) and the signing time.
+///
+/// Field order and encodings mirror the reference implementation
+/// (`defuse-nep641`): Borsh strings, `Vec<AccountId>` as a vector of strings,
+/// timestamp as `u64` nanoseconds.
+#[derive(Debug, Clone, BorshSerialize)]
+struct OffchainMessage {
+    chain_id: String,
+    signer_id: String,
+    path: Vec<String>,
+    timestamp_nanos: u64,
+    payload: String,
+}
+
+impl OffchainMessage {
+    const DOMAIN_SEPARATOR: &[u8] = b"NEAR_NEP641_OFFCHAIN_MESSAGE/V1";
+
+    /// Top-level authorization envelope timestamped "now minus skew".
+    fn new(chain_id: String, signer_id: String, payload: String) -> Self {
+        Self::at(
+            chain_id,
+            signer_id,
+            payload,
+            chrono::Utc::now() - OFFCHAIN_MESSAGE_TIMESTAMP_SKEW,
+        )
+    }
+
+    fn at(
+        chain_id: String,
+        signer_id: String,
+        payload: String,
+        timestamp: chrono::DateTime<chrono::Utc>,
+    ) -> Self {
+        // Whole seconds: keeps the RFC-3339 rendering and the Borsh nanoseconds
+        // trivially consistent.
+        let seconds = timestamp.timestamp().max(0) as u64;
+        Self {
+            chain_id,
+            signer_id,
+            path: Vec::new(),
+            timestamp_nanos: seconds * 1_000_000_000,
+            payload,
+        }
+    }
+
+    /// RFC-3339 timestamp, whole seconds (`2026-08-05T07:28:00Z`).
+    fn timestamp_rfc3339(&self) -> String {
+        chrono::DateTime::<chrono::Utc>::from_timestamp_nanos(self.timestamp_nanos as i64)
+            .to_rfc3339_opts(chrono::SecondsFormat::Secs, true)
+    }
+
+    /// Canonical hash: `SHA3-256(b"NEAR_NEP641_OFFCHAIN_MESSAGE/V1" || borsh(msg))`.
+    fn hash(&self) -> color_eyre::eyre::Result<[u8; 32]> {
+        let mut hasher = Sha3_256::new_with_prefix(Self::DOMAIN_SEPARATOR);
+        borsh::to_writer(&mut hasher, self)?;
+        Ok(hasher.finalize().into())
+    }
+
+    /// NEP-641 §"NEP-413 mapping": `message` = payload, `nonce` = canonical
+    /// hash (binds every envelope field), `recipient` renders the bindings for
+    /// the user: `"<chain_id>: <signer_id>[ -> <path>]... @ <timestamp>"`.
+    fn to_nep413_payload(&self) -> color_eyre::eyre::Result<NEP413Payload> {
+        let recipient = format!(
+            "{}: {} @ {}",
+            self.chain_id,
+            std::iter::once(self.signer_id.as_str())
+                .chain(self.path.iter().map(String::as_str))
+                .collect::<Vec<_>>()
+                .join(" -> "),
+            self.timestamp_rfc3339(),
+        );
+        Ok(NEP413Payload {
+            message: self.payload.clone(),
+            nonce: self.hash()?,
+            recipient,
+            callback_url: None,
+        })
+    }
+
+    /// JSON wire form (RFC-3339 timestamp; `path` omitted when empty).
+    fn to_json(&self) -> serde_json::Value {
+        let mut msg = serde_json::json!({
+            "chain_id": self.chain_id,
+            "signer_id": self.signer_id,
+            "timestamp": self.timestamp_rfc3339(),
+            "payload": self.payload,
+        });
+        if !self.path.is_empty() {
+            msg["path"] = serde_json::json!(self.path);
+        }
+        msg
+    }
+
+    /// NEP-641 `AccessKeyAuthorization` blob: this envelope, NEP-413-signed by
+    /// `access_key` (a full-access key on `signer_id`).
+    fn access_key_authorization(&self, access_key: &str, signature: &str) -> String {
+        serde_json::json!({
+            "msg": self.to_json(),
+            "via": { "schema": "nep413", "extra": {} },
+            "access_key": access_key,
+            "signature": signature,
+        })
+        .to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Deterministic `AccessKeyAuthorization` blob, cross-checked by
+    /// `nt-be/src/auth/resolve_auth.rs` tests against the `defuse-nep641`
+    /// reference implementation (parse + signature verification). Keep both
+    /// fixtures in sync.
+    const FIXTURE_SECRET_KEY: &str = "ed25519:3tgdk2wPraJzT4nsTuf86UX41xgPNk3MHnq8epARMdBNs29AFEztAuaQ7iHddDfXG9F2RzV1XNQYgJyAyoW51UBB";
+    const FIXTURE_AUTHORIZATION: &str = r#"{"access_key":"ed25519:5BGSaf6YjVm7565VzWQHNxoyEjwr3jUpRJSGjREvU9dB","msg":{"chain_id":"mainnet","payload":"Login to Trezu initiated at 2026-08-05T07:29:00Z with request ID: fixture","signer_id":"alice.near","timestamp":"2026-08-05T07:28:00Z"},"signature":"ed25519:3V9pmw68DqdLJeDnG18eQFMFvFGT6NGwjZ1zkPSjLtSvRFgBVvhVo71xvtSUKvWU7P81jNFeuatWBVc5Detii1Dz","via":{"extra":{},"schema":"nep413"}}"#;
+
+    #[test]
+    fn access_key_authorization_fixture() {
+        let secret_key: near_crypto::SecretKey = FIXTURE_SECRET_KEY.parse().unwrap();
+        let message = OffchainMessage::at(
+            "mainnet".to_string(),
+            "alice.near".to_string(),
+            "Login to Trezu initiated at 2026-08-05T07:29:00Z with request ID: fixture".to_string(),
+            "2026-08-05T07:28:00Z".parse().unwrap(),
+        );
+
+        let payload = message.to_nep413_payload().unwrap();
+        assert_eq!(
+            payload.recipient,
+            "mainnet: alice.near @ 2026-08-05T07:28:00Z"
+        );
+
+        let signature =
+            near_cli_rs::commands::message::sign_nep413::sign_nep413_payload(&payload, &secret_key)
+                .unwrap();
+        let authorization = message
+            .access_key_authorization(&secret_key.public_key().to_string(), &signature.to_string());
+
+        assert_eq!(authorization, FIXTURE_AUTHORIZATION);
+    }
+}
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
 #[interactive_clap(context = TrezuContext)]
@@ -87,23 +230,18 @@ impl LoginContext {
         let api = ApiClient::new(&previous_context.config);
         let challenge = api.get_challenge()?;
 
-        // NEP-641 NEP-413 fallback: the challenge payload is the signed message
-        // and the purpose is bound into the recipient as "<PURPOSE>@<recipient>".
-        // The nonce is generated client-side; replay protection comes from the
-        // backend consuming the unique challenge payload.
-        let mut nonce_32 = [0u8; 32];
-        rand::thread_rng().fill_bytes(&mut nonce_32);
-        let nonce_b64 = base64::engine::general_purpose::STANDARD.encode(nonce_32);
-
-        let payload = NEP413Payload {
-            message: challenge.payload.clone(),
-            nonce: nonce_32,
-            recipient: format!("{AUTH_PURPOSE}@{AUTH_RECIPIENT}"),
-            callback_url: None,
-        };
+        // NEP-641 access-key authorization: sign the `OffchainMessage` envelope
+        // (chain, signer, empty path, timestamp, challenge payload) via NEP-413
+        // with a full-access key. Replay protection comes from the backend
+        // consuming the unique challenge payload.
+        let message = OffchainMessage::new(
+            challenge.chain_id.clone(),
+            signer_id.to_string(),
+            challenge.payload.clone(),
+        );
+        let payload = message.to_nep413_payload()?;
 
         let trezu_config = previous_context.config.clone();
-        let challenge_payload = challenge.payload.clone();
         let login_account_id = account_id.clone();
 
         let on_after_signing_callback: near_cli_rs::commands::message::sign_nep413::OnAfterSigningNep413Callback =
@@ -111,10 +249,9 @@ impl LoginContext {
                 complete_login(
                     &trezu_config,
                     &login_account_id,
+                    &message,
                     &signed_message.public_key,
                     &signed_message.signature,
-                    &challenge_payload,
-                    &nonce_b64,
                 )
             });
 
@@ -137,26 +274,22 @@ impl From<LoginContext> for FinalSignNep413Context {
 fn complete_login(
     config: &crate::config::TrezuConfig,
     account_id: &str,
+    message: &OffchainMessage,
     public_key: &str,
     signature: &str,
-    challenge_payload: &str,
-    nonce_b64: &str,
 ) -> color_eyre::eyre::Result<()> {
-    if !signature.starts_with("ed25519:") {
-        return Err(color_eyre::eyre::eyre!("Only ED25519 keys are supported"));
+    if !(signature.starts_with("ed25519:") || signature.starts_with("secp256k1:")) {
+        return Err(color_eyre::eyre::eyre!(
+            "Unsupported signature scheme: {signature}"
+        ));
     }
 
     let api = ApiClient::new(config);
 
-    // NEP-413 `SignedMessage` blob the backend's NEP-641 fallback verifies.
-    let authorization = serde_json::json!({
-        "publicKey": public_key,
-        "signature": signature,
-        "message": challenge_payload,
-        "recipient": format!("{AUTH_PURPOSE}@{AUTH_RECIPIENT}"),
-        "nonce": nonce_b64,
-    })
-    .to_string();
+    // NEP-641 `AccessKeyAuthorization` blob: the backend verifies the NEP-413
+    // signature over the envelope and checks the key has FullAccess on the
+    // account at the pinned block.
+    let authorization = message.access_key_authorization(public_key, signature);
 
     let login_request = LoginRequest {
         account_id: account_id.to_string(),

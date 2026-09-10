@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages, getTranslations } from "next-intl/server";
+import { getLocale, getMessages } from "next-intl/server";
 import { getLocaleDirection } from "@/i18n/config";
 import "../globals.css";
 import { GoogleAnalytics } from "@/components/google-analytics";
@@ -12,31 +11,7 @@ import { Toaster } from "@/components/toaster";
 import { WarningsProvider } from "@/components/warnings-provider";
 import { figtree } from "@/lib/fonts";
 
-export async function generateMetadata(): Promise<Metadata> {
-    const t = await getTranslations("metadata");
-    return {
-        title: {
-            default: t("landingTitle"),
-            template: "%s | Near Business",
-        },
-        description: t("description"),
-        openGraph: {
-            title: t("ogTitle"),
-            description: t("description"),
-            images: [
-                "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
-            ],
-        },
-        twitter: {
-            card: "summary_large_image",
-            title: t("ogTitle"),
-            description: t("description"),
-            images: [
-                "https://framerusercontent.com/assets/3H8WN4PxElLu7XMiyq7jbNMH8es.png",
-            ],
-        },
-    };
-}
+export { generateMetadata } from "@/lib/metadata";
 
 export default async function RootLayout({
     children,
@@ -54,20 +29,6 @@ export default async function RootLayout({
             suppressHydrationWarning
             className={figtree.variable}
         >
-            <head>
-                <link
-                    rel="icon"
-                    href="/favicon_light.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: light)"
-                />
-                <link
-                    rel="icon"
-                    href="/favicon_dark.svg"
-                    type="image/svg+xml"
-                    media="(prefers-color-scheme: dark)"
-                />
-            </head>
             <body className={`${figtree.variable} antialiased`}>
                 <NextIntlClientProvider locale={locale} messages={messages}>
                     <ThemeProvider>

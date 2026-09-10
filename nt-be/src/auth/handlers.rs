@@ -1,5 +1,5 @@
 use crate::AppState;
-use crate::auth::resolve_auth::verify_resolve_auth;
+use crate::auth::resolve_auth::{fetch_chain_id, verify_resolve_auth};
 use crate::auth::{AuthError, AuthUser, create_jwt, jwt::hash_token, middleware::AUTH_COOKIE_NAME};
 use axum::{Json, extract::State, http::StatusCode, response::IntoResponse};
 use axum_extra::extract::CookieJar;
@@ -11,20 +11,18 @@ use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use std::sync::Arc;
 
-/// NEP-641 authorization purpose used for dApp authentication.
-const AUTH_PURPOSE: &str = "PROVE_OWNERSHIP";
-/// Bare recipient bound into the authorization. Must match the value the
-/// frontend passes to `wallet.resolveAuth(...)`.
-const AUTH_RECIPIENT: &str = "Near Business App";
-
 /// Response body for challenge creation.
 ///
 /// The `payload` is the unique message the wallet authorizes (via NEP-641
 /// `resolveAuth`). It is echoed back unchanged inside the resolved
 /// authorization, which the backend matches against the issued challenge.
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ChallengeResponse {
     pub payload: String,
+    /// Chain ID the authorization is resolved against (e.g. `mainnet`). Signers
+    /// bind it into the NEP-641 `OffchainMessage`; a mismatch is rejected.
+    pub chain_id: String,
 }
 
 /// Request body for login.
@@ -88,27 +86,30 @@ pub async fn create_challenge(
         .await
         .ok(); // Ignore errors for cleanup
 
-    Ok(Json(ChallengeResponse { payload }))
+    let chain_id = fetch_chain_id(&state.network)
+        .await
+        .map_err(AuthError::InternalError)?;
+
+    Ok(Json(ChallengeResponse { payload, chain_id }))
 }
 
 /// Login with a NEP-641 authorization.
 ///
-/// Resolves the authorization on-chain (recursively, via `w_resolve_auth`, with
-/// NEP-413 fallback for regular accounts), then confirms the resolved payload
-/// matches a challenge this backend issued and consumes it.
+/// Resolves the authorization on-chain (recursively, via `w_resolve_auth`, or
+/// as a full-access-key `AccessKeyAuthorization` for regular accounts), then
+/// confirms the resolved payload matches a challenge this backend issued and
+/// consumes it.
 pub async fn login(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,
     Json(request): Json<LoginRequest>,
 ) -> Result<(CookieJar, Json<MeResponse>), AuthError> {
     // NEP-641: resolve the authorization to its unwrapped payload. The account
-    // contract (or NEP-413 fallback) is the authority for whether the holder is
-    // willing to authenticate.
+    // contract (or a full-access key) is the authority for whether the holder
+    // is willing to authenticate.
     let payload = verify_resolve_auth(
         &state.network,
         request.account_id.as_str(),
-        AUTH_PURPOSE,
-        AUTH_RECIPIENT,
         &request.authorization,
     )
     .await

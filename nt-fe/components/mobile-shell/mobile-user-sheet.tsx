@@ -18,7 +18,7 @@ import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
 import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
 import { SupportCenterModal } from "@/components/support-center-modal";
-import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
+import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { isEnabledLocale, type Locale, localeFlags } from "@/i18n/config";
@@ -173,7 +173,7 @@ export function MobileUserSheet() {
                             {tNav("helpSupport")}
                         </button>
                         <Link
-                            href={TERMS_OF_SERVICE_URL}
+                            href={TERMS_OF_SERVICE_HREF}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={rowClass}
@@ -183,7 +183,7 @@ export function MobileUserSheet() {
                             {t("termsOfService")}
                         </Link>
                         <Link
-                            href={PRIVACY_POLICY_URL}
+                            href={PRIVACY_POLICY_HREF}
                             target="_blank"
                             rel="noopener noreferrer"
                             className={rowClass}

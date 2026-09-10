@@ -222,6 +222,11 @@ export interface SwapRequestData {
     amountOutUsd?: number | null;
     slippage?: string;
     quoteDeadline?: string;
+    /**
+     * From the 1Click quote's `quoteRequest.appFees` at create time.
+     * Missing on older proposals, which always charged a fee.
+     */
+    hasAppFee?: boolean;
 }
 
 /**

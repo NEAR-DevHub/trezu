@@ -1,37 +1,18 @@
 "use client";
 
-import { SecurityCheckIcon } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import { useState } from "react";
-import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import {
     BUILT_FOR,
     CAPABILITIES,
     CONTROL_CARDS,
-    CONTROL_TICKER,
     chainIconUrl,
     MARQUEE_CHAINS,
 } from "../content";
 import { Tag } from "./confidential";
 import { NearMark } from "./landing-icons";
-
-function ControlPoint({
-    title,
-    body,
-    className,
-}: {
-    title: string;
-    body: string;
-    className?: string;
-}) {
-    return (
-        <div className={cn("flex flex-col gap-0.5 leading-normal", className)}>
-            <p className="text-xl font-medium">{title}</p>
-            <p className="text-base">{body}</p>
-        </div>
-    );
-}
+import { Reveal } from "./reveal";
 
 /** "Every movement passes the rules you set" — photo split with floating copy. */
 export function ControlSplit() {
@@ -58,53 +39,35 @@ export function ControlSplit() {
                 <div className="absolute bottom-0 left-0 h-[25%] w-full bg-gradient-to-b from-landing-paper/0 to-landing-paper backdrop-blur-[2px]" />
             </div>
 
-            <div className="relative flex items-center justify-between gap-4 font-landing-mono text-xs uppercase leading-normal md:text-sm">
-                {CONTROL_TICKER.map((label) => (
-                    <span key={label}>{label}</span>
-                ))}
-            </div>
+            {/* The heading keeps to a ~400px column so it breaks over four
+                lines like the design and leaves the portrait uncovered. */}
+            <Reveal className="relative flex flex-col items-start gap-4 lg:mt-20 lg:w-[400px]">
+                <Tag>Control</Tag>
+                <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
+                    <span className="font-light">Every movement passes </span>
+                    <span className="font-medium">the rules you set.</span>
+                </h2>
+            </Reveal>
 
-            {/* Heading and "Hardware signing" hug the left edge, the other two
-                points hug the right edge, mirroring the floating copy in the
-                design; below lg everything stacks. */}
-            <div className="relative mt-12 grid gap-y-10 lg:mt-20 lg:grid-cols-[400px_1fr_314px]">
-                <div className="flex flex-col items-start gap-4">
-                    <Tag>Control</Tag>
-                    <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
-                        <span className="font-light">
-                            Every movement passes{" "}
-                        </span>
-                        <span className="font-medium">the rules you set.</span>
-                    </h2>
-                </div>
-                <ControlPoint
-                    className="lg:col-start-3"
-                    title="Roles and thresholds"
-                    body="Requestor, finance, governance. Set rules that match how your organisation already makes decisions."
-                />
-                <ControlPoint
-                    className="lg:col-start-1 lg:w-[311px]"
-                    title="Hardware signing"
-                    body="Sign with hardware through Ledger support. No custody, no compromise."
-                />
-                <ControlPoint
-                    className="lg:col-start-3"
-                    title="Multiple approvals"
-                    body="Every transaction gathers the signatures your policy requires before funds move."
-                />
-            </div>
-
-            <div className="relative mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[110px] lg:grid-cols-4">
-                {CONTROL_CARDS.map(({ title, body }) => (
-                    <div
+            {/* The cards sit near the foot of the portrait, so from lg the gap
+                tracks the photo's height rather than staying fixed. Their copy
+                is pushed down by a fixed top padding instead of being bottom
+                aligned, so every title sits on the same line whatever the
+                length of the body beneath it. */}
+            <div className="relative mt-16 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mt-[min(290px,20vw)] lg:grid-cols-4">
+                {CONTROL_CARDS.map(({ title, body }, index) => (
+                    <Reveal
                         key={title}
-                        className="flex min-h-[180px] flex-col justify-end rounded-2xl bg-white/20 p-4"
+                        delayMs={index * 60}
+                        className="flex flex-col rounded-2xl bg-white/20 p-4 sm:min-h-[180px] sm:pt-14"
                     >
-                        <p className="text-base font-medium leading-normal">
+                        <p className="text-2xl font-medium leading-normal">
                             {title}
                         </p>
-                        <p className="mt-2 text-base leading-[1.2]">{body}</p>
-                    </div>
+                        <p className="mt-2 text-base font-normal leading-normal">
+                            {body}
+                        </p>
+                    </Reveal>
                 ))}
             </div>
         </section>
@@ -119,7 +82,7 @@ export function Capabilities() {
         <section className="mx-auto flex w-full max-w-[1440px] flex-col gap-12 px-6 py-16 md:px-12 lg:flex-row lg:gap-20 lg:pl-16 lg:pr-32">
             {/* The render is landscape, so the portrait tile centre-crops it;
                 below lg the tile goes full width and shows more of the frame. */}
-            <div className="relative h-[280px] w-full shrink-0 overflow-hidden rounded-3xl bg-landing-mist lg:h-[415px] lg:w-[379px]">
+            <Reveal className="relative h-[280px] w-full shrink-0 overflow-hidden rounded-3xl bg-landing-mist lg:h-[415px] lg:w-[379px]">
                 <Image
                     src="/landing/near-glass.jpg"
                     alt=""
@@ -127,8 +90,8 @@ export function Capabilities() {
                     sizes="(min-width: 1024px) 379px, 100vw"
                     className="object-cover"
                 />
-            </div>
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
+            </Reveal>
+            <Reveal delayMs={80} className="flex min-w-0 flex-1 flex-col gap-4">
                 <h2 className="text-[32px] font-medium leading-none lg:text-[40px]">
                     The full operating surface
                     <br />
@@ -177,7 +140,7 @@ export function Capabilities() {
                         );
                     })}
                 </ol>
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -193,32 +156,36 @@ export function Capabilities() {
 export function MultichainHeader() {
     return (
         <section className="relative mx-auto w-full max-w-[1440px] px-6 pb-6 pt-16 md:px-12 lg:aspect-[1440/609] lg:px-16 lg:pb-0 lg:pt-0">
-            <div className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
-                <h2 className="text-[36px] font-normal leading-[1.1] lg:text-[min(48px,3.33vw)]">
-                    Manage BTC, ETH, SOL,{" "}
+            <Reveal className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
+                <h2 className="text-[36px] font-normal leading-none lg:text-[32px] xl:text-[40px]">
+                    Manage BTC, ETH, SOL, <br className="hidden lg:inline" />
                     <span className="font-medium text-landing-green">NEAR</span>{" "}
-                    and 35+ chains from a single dashboard.
+                    and 35+ chains from <br className="hidden lg:inline" />a
+                    single dashboard.
                 </h2>
-                <p className="text-lg font-light leading-[1.24] lg:text-[min(24px,1.67vw)]">
+                <p className="text-lg font-light leading-[1.3] lg:text-2xl xl:text-[30px]">
                     Not just EVM networks.
                     <br />
                     No external bridges,
                     <br />
                     no chain-by-chain ops overhead.
                 </p>
-            </div>
-            {/* The render carries its own transparent margin, so it overlaps
-                the copy column a little without the devices ever touching it. */}
-            <div className="mt-2 lg:absolute lg:right-[1.25%] lg:top-0 lg:mt-0 lg:w-[57.2%]">
+            </Reveal>
+            {/* The render is flush to its own edges, so it is sized to start
+                just past the copy column instead of overlapping it. */}
+            <Reveal
+                delayMs={80}
+                className="mt-2 lg:absolute lg:right-0 lg:top-0 lg:mt-0 lg:w-[50%] xl:w-[53%]"
+            >
                 <Image
                     src="/landing/devices.png"
-                    alt="The NEAR Business dashboard on a laptop and a phone"
-                    width={1024}
-                    height={731}
-                    sizes="(min-width: 1024px) 58vw, 100vw"
+                    alt="The NEAR Business dashboard on desktop and on a phone"
+                    width={2860}
+                    height={1924}
+                    sizes="(min-width: 1024px) 53vw, 100vw"
                     className="h-auto w-full"
                 />
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -261,7 +228,7 @@ function MarqueeRow({ reverse = false }: { reverse?: boolean }) {
 /** Chain marquee plus the "Built for" audience grid. */
 export function Multichain() {
     return (
-        <section className="mx-auto w-full max-w-[1440px] overflow-hidden pb-16 lg:pb-[168px]">
+        <section className="mx-auto w-full max-w-[1440px] overflow-hidden pb-16 lg:pb-24">
             <div className="relative flex flex-col gap-[35px] pt-[13px]">
                 <div className="w-full overflow-hidden">
                     <MarqueeRow />
@@ -280,27 +247,25 @@ export function Multichain() {
             </div>
 
             <div className="px-6 md:px-12">
-                <h2 className="mt-16 text-center text-[32px] font-medium leading-none lg:mt-[72px]">
-                    Built for treasuries that run on a mandate
-                </h2>
-                <div className="mx-auto mt-12 grid w-full max-w-[1178px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:mt-16 lg:p-4">
-                    {BUILT_FOR.map(({ title, body, featured }) => (
-                        <div
+                <Reveal>
+                    <h2 className="mt-16 text-center text-[32px] leading-none lg:mt-[72px]">
+                        Built for treasuries that run on a mandate
+                    </h2>
+                </Reveal>
+                <div className="mx-auto mt-12 grid w-full max-w-[1178px] grid-cols-1 gap-6 md:grid-cols-3 md:gap-8 lg:mt-16 lg:px-4 lg:pt-4">
+                    {BUILT_FOR.map(({ title, body }, index) => (
+                        <Reveal
                             key={title}
-                            className={cn(
-                                "min-h-[188px] px-8 py-8 text-landing-ink lg:pt-10",
-                                featured
-                                    ? "rounded-3xl bg-landing-mist"
-                                    : "rounded-[12px] border border-landing-grey bg-landing-paper",
-                            )}
+                            delayMs={index * 60}
+                            className="min-h-[188px] rounded-[12px] border border-landing-grey bg-landing-paper px-8 py-8 text-landing-ink lg:pt-10"
                         >
-                            <p className="text-[17px] font-medium leading-normal">
+                            <p className="text-lg font-medium leading-normal">
                                 {title}
                             </p>
-                            <p className="mt-3 text-sm leading-[23px]">
+                            <p className="mt-3 text-base font-normal leading-normal">
                                 {body}
                             </p>
-                        </div>
+                        </Reveal>
                     ))}
                 </div>
             </div>
@@ -323,7 +288,7 @@ export function TreasuryStatement() {
                 sizes="100vw"
                 className="object-cover"
             />
-            <div className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center px-6 pb-24 pt-16 text-center md:px-12 lg:min-h-[675px] lg:pb-0 lg:pt-[70px]">
+            <Reveal className="relative mx-auto flex w-full max-w-[1440px] flex-col items-center px-6 pb-24 pt-16 text-center md:px-12 lg:min-h-[675px] lg:pb-0 lg:pt-[70px]">
                 <NearMark className="size-12" />
                 <p className="mt-6 font-landing-mono text-xs uppercase leading-normal tracking-[0.72px]">
                     Built on NEAR Intents
@@ -333,7 +298,7 @@ export function TreasuryStatement() {
                     <br />
                     your business.
                 </h2>
-            </div>
+            </Reveal>
         </section>
     );
 }
@@ -341,11 +306,13 @@ export function TreasuryStatement() {
 export function CustodyTruth() {
     return (
         <section className="bg-landing-ink text-landing-paper">
-            <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-8 pt-8 md:px-12 xl:px-32">
-                <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
-                    Self-custodial by architecture
-                </p>
-                <div className="mt-24 lg:mt-[176px]">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-24 pt-8 md:px-12 lg:pb-[176px] xl:px-32">
+                <Reveal>
+                    <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
+                        Self-custodial by architecture
+                    </p>
+                </Reveal>
+                <Reveal className="mt-24 lg:mt-[176px]">
                     <p className="text-base font-normal leading-[1.2] text-landing-paper">
                         Funds move only on the signatures your organization
                         defines.
@@ -361,27 +328,7 @@ export function CustodyTruth() {
                         </span>{" "}
                         to initiate, alter, or reverse a transaction.
                     </p>
-                </div>
-                <div className="mt-24 flex min-h-12 flex-wrap items-center justify-between gap-4 border-t border-landing-grey-light py-3 lg:mt-[176px]">
-                    <div className="flex items-center gap-2">
-                        <Icon
-                            icon={SecurityCheckIcon}
-                            strokeWidth={1.5}
-                            className="size-6 text-landing-green"
-                        />
-                        <span className="font-landing-mono text-xs font-normal uppercase leading-normal tracking-[0.72px] text-landing-paper">
-                            Core contract audited by Valhalla Security.
-                        </span>
-                    </div>
-                    <a
-                        href="https://valhallasec.com"
-                        target="_blank"
-                        rel="noreferrer"
-                        className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green underline underline-offset-4"
-                    >
-                        Read the report
-                    </a>
-                </div>
+                </Reveal>
             </div>
         </section>
     );

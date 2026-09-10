@@ -184,10 +184,6 @@ interface Vote {
     proposal: Proposal;
 }
 
-// NEP-641 authorization purpose + bare recipient. Must match the backend's
-// AUTH_PURPOSE / AUTH_RECIPIENT (nt-be/src/auth/handlers.rs).
-const LOGIN_PURPOSE = "PROVE_OWNERSHIP" as const;
-const LOGIN_RECIPIENT = "Near Business App";
 // localStorage key @hot-labs/near-connect uses to remember the chosen wallet
 // (so `connector.wallet()` resolves it on later calls and after reload).
 // Our own copy of the forced direct-trigger wallet id (Ledger / EIP-712).
@@ -398,8 +394,9 @@ export const useNearStore = create<NearStore>((set, get) => ({
         set({ isAuthenticating: true, authError: null });
 
         try {
-            // 1. Backend issues a unique payload to authorize.
-            const { payload } = await getAuthChallenge();
+            // 1. Backend issues a unique payload to authorize, plus the chain
+            //    ID it resolves against (bound into the signed envelope).
+            const { payload, chainId } = await getAuthChallenge();
 
             // 2. Let the user pick a wallet (filtered to NEP-641-capable ones)
             //    and remember it so later `connector.wallet()` calls resolve it.
@@ -432,12 +429,13 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 wallet_name: wallet.manifest.name,
             });
 
-            // 3. NEP-641 PROVE_OWNERSHIP: sign in and authorize in one gesture.
-            //    Produces an authorization blob the backend resolves on-chain.
+            // 3. NEP-641: authorize the login payload. Produces an
+            //    authorization blob the backend resolves on-chain
+            //    (`w_resolve_auth` for wallet contracts, full-access-key
+            //    verification for regular accounts).
             const { accountId, authorization } = await wallet.resolveAuth!({
                 network: "mainnet",
-                purpose: LOGIN_PURPOSE,
-                recipient: LOGIN_RECIPIENT,
+                chainId,
                 payload,
             });
 

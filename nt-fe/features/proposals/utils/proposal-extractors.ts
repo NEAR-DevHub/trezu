@@ -11,6 +11,7 @@ import {
 } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { getKindFromProposal } from "@/lib/config-utils";
+import { quoteHasAppFee } from "@/lib/exchange-fee";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 import type {
     FunctionCallAction,
@@ -540,6 +541,16 @@ export function extractExchangeRequestData(
         proposal.description,
     );
     const timeEstimate = normalizeTimeEstimateSeconds(timeEstimateRaw);
+    const hasAppFeeRaw = decodeProposalDescription(
+        "hasAppFee",
+        proposal.description,
+    );
+    const hasAppFee =
+        hasAppFeeRaw === "true"
+            ? true
+            : hasAppFeeRaw === "false"
+              ? false
+              : undefined;
 
     // Determine tokenIn and depositAddress based on proposal structure:
     // 1. Native NEAR: ft_transfer from wrap.near WITH near_deposit action, tokenIn = near
@@ -606,6 +617,7 @@ export function extractExchangeRequestData(
         timeEstimate,
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
+        hasAppFee,
     };
 }
 
@@ -644,6 +656,7 @@ export function extractNearWrapSwapRequestData(
         amountOut: amountFormatted,
         destinationNetwork: NEAR_NETWORK_ID,
         sourceNetwork: NEAR_NETWORK_ID,
+        hasAppFee: false,
     };
 }
 
@@ -961,6 +974,7 @@ export function extractConfidentialRequestData(
                         (quoteRequest.slippageTolerance ?? 0) / 100
                     ).toString(),
                     quoteDeadline: quoteRequest.deadline,
+                    hasAppFee: quoteHasAppFee(quoteRequest),
                 } as SwapRequestData,
             };
             title = "Swap";

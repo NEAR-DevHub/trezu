@@ -99,19 +99,20 @@ export function MemberReviewStep({
                         key={isEditMode ? member.accountId : index}
                         className="flex flex-col gap-2 border-b border-general-border py-4 last:border-b-0"
                     >
-                        <p className="text-sm font-medium leading-[1.5] text-general-secondary-foreground">
+                        <p className="text-sm font-medium leading-normal text-general-secondary-foreground">
                             {tInput("memberNumber", { number: index + 1 })}
                         </p>
                         <div className="flex items-center justify-between gap-4">
-                            {showJoinProfiles ? (
+                            {showJoinProfiles || isEditMode ? (
                                 <User
                                     accountId={member.accountId}
                                     variant="details"
                                     withLink={false}
-                                    truncateAddress={false}
+                                    withHoverCard={false}
+                                    truncateAddress={!showJoinProfiles}
                                 />
                             ) : (
-                                <span className="min-w-0 overflow-hidden text-ellipsis text-sm font-medium leading-[1.5] text-general-foreground">
+                                <span className="min-w-0 truncate text-sm font-medium leading-normal text-general-foreground">
                                     {formatShortAddress(member.accountId)}
                                 </span>
                             )}
@@ -135,7 +136,7 @@ export function MemberReviewStep({
             <CreateRequestButton
                 type="button"
                 onClick={handleSubmit}
-                className="h-11 w-full rounded-2xl"
+                className="w-full h-10"
                 disabled={isSubmitting || !!validationError}
                 isSubmitting={isSubmitting}
                 idleMessage={t("confirmSubmit")}

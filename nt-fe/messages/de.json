@@ -158,10 +158,8 @@
         "placeholder": "tt.mm.jjjj"
     },
     "metadata": {
-        "treasuryTitle": "Dashboard | Near Business",
-        "landingTitle": "Near Business | Cross-Chain Treasury Management",
-        "description": "Verwalten Sie das Kapital Ihres Teams in wenigen Minuten über ein einziges Dashboard, ohne jemals Ihre Schlüssel aus der Hand zu geben.",
-        "ogTitle": "Near Business | Eine Multisig. Jede Krypto. Volle Kontrolle."
+        "title": "NEAR Business | Vertrauliches Treasury-Management für krypto-native Finanzteams",
+        "description": "Bündeln Sie das Kapital Ihres Teams, wickeln Sie Gehaltszahlungen und Grants ab und tauschen Sie über 35+ Chains hinweg – alles aus einem einzigen Dashboard. Multisig-Freigaben, Ihre Schlüssel, Ihre Bedingungen."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Treasury verbinden",
-            "description": "Verknüpfen Sie Ihre Treasuries mit einem Telegram-Chat",
-            "metaTitle": "Near Business — Telegram verbinden",
-            "metaDescription": "Verbinden Sie Ihre Near Business Treasury mit einem Telegram-Chat"
-        },
-        "wallet": {
-            "title": "Near Business Wallet",
-            "description": "Treasury-Vorschläge über Near Business signieren"
+            "description": "Verknüpfen Sie Ihre Treasuries mit einem Telegram-Chat"
         },
         "account": {
             "title": "Mein Konto",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Du kannst keine Mitglieder hinzufügen, solange eine aktive Richtlinienänderung aussteht. Bitte genehmige oder lehne sie zuerst ab."
         },
         "join": {
-            "metaTitle": "Treasury beitreten | Near Business",
-            "metaDescription": "Über einen Einladungslink um Beitritt zu einem Near Business Treasury bitten",
             "pageTitle": "Treasury beitreten",
             "pageDescription": "Beitritt zu einem Treasury anfragen",
             "treasuryFallback": "diesem Treasury",
@@ -978,6 +968,7 @@
             "walletConnected": "Wallet verbunden",
             "nameLabel": "Dein Name (optional)",
             "namePlaceholder": "Namen eingeben, damit das Team dich erkennt",
+            "clearName": "Namen löschen",
             "askJoin": "Beitritt anfragen",
             "submitting": "Wird gesendet…",
             "successTitle": "Du bist fast dabei",
@@ -1463,6 +1454,7 @@
             "subtitle": "Nutze einen Passkey für das einfachste Erlebnis oder verbinde eine Wallet.",
             "helpCta": "Nicht sicher, was du wählen sollst?",
             "popularBadge": "Beliebt",
+            "comingSoonBadge": "Demnächst",
             "recentBadge": "Zuletzt verwendet",
             "noFundsNote": "Keine Startmittel nötig – wir übernehmen die Transaktionsgebühren, damit du es ausprobieren kannst",
             "chooseNearWallet": "Wähle deine NEAR-Wallets",
@@ -1734,6 +1726,7 @@
             "duplicateAddress": "Adresse ist bereits Mitglied"
         },
         "enterAddress": "Adresse eingeben",
+        "clearAddress": "Adresse löschen",
         "selectRole": "Rolle wählen",
         "memberNumber": "Mitglied {number}"
     },

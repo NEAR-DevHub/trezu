@@ -158,10 +158,8 @@
         "placeholder": "jj/mm/aaaa"
     },
     "metadata": {
-        "treasuryTitle": "Tableau de bord | Near Business",
-        "landingTitle": "Near Business | Gestion de trésorerie multi-chaînes",
-        "description": "Gérez le capital de votre équipe en quelques minutes depuis un tableau de bord unique sans jamais céder vos clés.",
-        "ogTitle": "Near Business | Un seul multisig. N'importe quelle crypto. Contrôle total."
+        "title": "NEAR Business | Gestion de trésorerie confidentielle pour les équipes financières crypto-natives",
+        "description": "Unifiez le capital de votre équipe, gérez la paie et les subventions et échangez sur plus de 35 blockchains depuis un tableau de bord unique. Approbations multisig, vos clés, vos conditions."
     },
     "pages": {
         "dashboard": {
@@ -248,13 +246,7 @@
         },
         "telegram": {
             "title": "Connecter la trésorerie",
-            "description": "Liez vos trésoreries à un chat Telegram",
-            "metaTitle": "Near Business — Connecter Telegram",
-            "metaDescription": "Connectez votre trésorerie Near Business à un chat Telegram"
-        },
-        "wallet": {
-            "title": "Portefeuille Near Business",
-            "description": "Signez les propositions de trésorerie via Near Business"
+            "description": "Liez vos trésoreries à un chat Telegram"
         },
         "account": {
             "title": "Mon compte",
@@ -966,8 +958,6 @@
             "pendingPolicyRequest": "Vous ne pouvez pas ajouter de membres tant qu’une demande de modification de politique est active. Approuvez-la ou rejetez-la d’abord."
         },
         "join": {
-            "metaTitle": "Rejoindre le treasury | Near Business",
-            "metaDescription": "Demander à rejoindre un treasury Near Business via un lien d’invitation",
             "pageTitle": "Rejoindre le treasury",
             "pageDescription": "Demander à rejoindre un treasury",
             "treasuryFallback": "ce treasury",
@@ -978,6 +968,7 @@
             "walletConnected": "Portefeuille connecté",
             "nameLabel": "Votre nom (facultatif)",
             "namePlaceholder": "Entrez un nom pour que l’équipe vous reconnaisse",
+            "clearName": "Effacer le nom",
             "askJoin": "Demander à rejoindre",
             "submitting": "Envoi…",
             "successTitle": "Vous y êtes presque",
@@ -1463,6 +1454,7 @@
             "subtitle": "Utilisez une passkey pour l'expérience la plus simple, ou connectez un wallet.",
             "helpCta": "Vous ne savez pas quoi choisir ?",
             "popularBadge": "Populaire",
+            "comingSoonBadge": "Bientôt disponible",
             "recentBadge": "Récent",
             "noFundsNote": "Aucun fonds nécessaire pour commencer : nous couvrons les frais de transaction afin que vous puissiez essayer",
             "chooseNearWallet": "Choisissez vos wallets NEAR",
@@ -1734,6 +1726,7 @@
             "duplicateAddress": "L'adresse est déjà membre"
         },
         "enterAddress": "Saisir l'adresse",
+        "clearAddress": "Effacer l'adresse",
         "selectRole": "Sélectionner un rôle",
         "memberNumber": "Membre {number}"
     },

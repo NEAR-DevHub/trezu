@@ -311,6 +311,11 @@ export interface RecentActivity {
     proposalId?: number | null;
     /** 1Click deposit address of the linked quote proposal; marks the row as intents-routed. */
     quoteDepositAddress?: string | null;
+    /**
+     * From the stored 1Click quote / proposal description.
+     * Missing on older swaps, which always charged an app fee.
+     */
+    hasAppFee?: boolean | null;
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;
@@ -1348,6 +1353,15 @@ export interface IntentsQuoteRequest {
     deadline: string;
     quoteWaitingTimeMs?: number;
     isPayment?: boolean;
+    /**
+     * Echoed from 1Click. Always an array: one protocol-fee entry when we did
+     * not inject, plus our recipients when we did.
+     */
+    appFees?: Array<{
+        recipient?: string;
+        fee?: number;
+        limitOrderId?: string | null;
+    }>;
 }
 
 export interface IntentsQuote {
