@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { DATA_PROCESSING_HREF } from "@/constants/config";
 import { LegalPage } from "@/features/landing/components/legal-page";
 
 // English-only, like the rest of the marketing pages, so the copy stays out
@@ -27,8 +29,15 @@ export default function PrivacyPolicyPage() {
                 information in connection with near.com for Business at
                 business.near.com (the <strong>Business Platform</strong>), and
                 in connection with enquiries about it. The near.com privacy
-                policy at near.com/privacy covers near.com itself, the near.com
-                app and our other services.
+                policy at{" "}
+                <a
+                    href="https://near.com/privacy"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    near.com/privacy
+                </a>{" "}
+                covers near.com itself, the near.com app and our other services.
             </p>
             <p>
                 Intents Technology Ltd is a company incorporated in the British
@@ -64,7 +73,11 @@ export default function PrivacyPolicyPage() {
                 into it and why. For that information the business is the data
                 controller and we act as its data processor, on its
                 instructions. Our obligations to it are set out in our Data
-                Processing Addendum at https://business.near.com/data.
+                Processing Addendum at{" "}
+                <Link href={DATA_PROCESSING_HREF}>
+                    https://business.near.com/data
+                </Link>
+                .
             </p>
             <p>
                 If you use a workspace and want to exercise your rights over
@@ -257,7 +270,8 @@ export default function PrivacyPolicyPage() {
                 Platform and related Intents Technology products and services.
                 We rely on consent for that marketing. You can withdraw consent
                 at any time by using the unsubscribe link in any marketing email
-                or by contacting us at legal@near.com.
+                or by contacting us at{" "}
+                <a href="mailto:legal@near.com">legal@near.com</a>.
             </p>
             <h2>
                 <strong>7. Support</strong>
@@ -466,13 +480,13 @@ export default function PrivacyPolicyPage() {
                 You can change your own display name and avatar at any time,
                 which replaces the previous value. To close a workspace, or to
                 ask us to delete information or remove a particular entry such
-                as an address book record or a note, contact us at
-                legal@near.com. Closing a workspace does not affect the treasury
-                contract, the assets in it, or anyone’s ability to reach it
-                directly. What it removes is the layer we provide: aliases,
-                avatars, address book entries, notes and our cached copy of
-                balances and history. It does not remove records on a public
-                blockchain.
+                as an address book record or a note, contact us at{" "}
+                <a href="mailto:legal@near.com">legal@near.com</a>. Closing a
+                workspace does not affect the treasury contract, the assets in
+                it, or anyone’s ability to reach it directly. What it removes is
+                the layer we provide: aliases, avatars, address book entries,
+                notes and our cached copy of balances and history. It does not
+                remove records on a public blockchain.
             </p>
             <p>
                 You can also complain to a data protection authority. In the
@@ -492,7 +506,9 @@ export default function PrivacyPolicyPage() {
             <h2>
                 <strong>16. Contact us</strong>
             </h2>
-            <p>legal@near.com</p>
+            <p>
+                <a href="mailto:legal@near.com">legal@near.com</a>
+            </p>
             <p>
                 Intents Technology Ltd, Rodus Building, P.O. Box 3093, Road
                 Town, Tortola, VG1110, British Virgin Islands.

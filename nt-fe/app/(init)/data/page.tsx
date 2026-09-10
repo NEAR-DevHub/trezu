@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { PRIVACY_POLICY_HREF } from "@/constants/config";
 import { LegalPage } from "@/features/landing/components/legal-page";
 
 // English-only, like the rest of the marketing pages, so the copy stays out
@@ -34,12 +36,13 @@ export default function DataProcessingPage() {
             </p>
             <p>
                 <strong>1.2 </strong>If you need an executed copy, or a
-                completed set of the transfer clauses in Annex 4, ask us at
-                legal@near.com and give us your legal name, jurisdiction of
-                incorporation, registered or business address and a contact for
-                data protection matters. We will counter-sign this version as it
-                stands. We do not otherwise collect those details, because
-                access to the Business Platform is by blockchain account.
+                completed set of the transfer clauses in Annex 4, ask us at{" "}
+                <a href="mailto:legal@near.com">legal@near.com</a> and give us
+                your legal name, jurisdiction of incorporation, registered or
+                business address and a contact for data protection matters. We
+                will counter-sign this version as it stands. We do not otherwise
+                collect those details, because access to the Business Platform
+                is by blockchain account.
             </p>
             <p>
                 <strong>1.3 </strong>If there is a conflict, Annex 4 prevails
@@ -119,8 +122,11 @@ export default function DataProcessingPage() {
             </p>
             <p>
                 <strong>2.3 </strong>Our processing as controller is described
-                in our privacy notice at business.near.com/privacy-policy. This
-                DPA does not apply to it.
+                in our privacy notice at{" "}
+                <Link href={PRIVACY_POLICY_HREF}>
+                    business.near.com/privacy-policy
+                </Link>
+                . This DPA does not apply to it.
             </p>
             <p>
                 <strong>2.4 </strong>You are responsible for deciding what
@@ -316,7 +322,8 @@ export default function DataProcessingPage() {
             <p>
                 An instruction under this clause may identify particular records
                 or request deletion of all Customer Personal Data associated
-                with a Workspace, and may be sent to legal@near.com.
+                with a Workspace, and may be sent to{" "}
+                <a href="mailto:legal@near.com">legal@near.com</a>.
             </p>
             <p>
                 <strong>8.3 </strong>An instruction to close your Workspace is

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { LegalPage } from "@/features/landing/components/legal-page";
 
 // English-only, like the rest of the marketing pages, so the copy stays out
@@ -76,14 +78,20 @@ export default function TermsOfUsePage() {
                 address you have provided or giving an in-Service notification.
                 Advance notice may not be possible where an immediate change is
                 reasonably necessary for legal, regulatory, security or
-                technical reasons. The current version is available at
-                business.near.com/terms-of-use, and the date shown above
-                identifies when it was last updated. Our Privacy Policy at
-                https://business.near.com/privacy-policy forms part of this
-                Agreement. An updated Agreement applies to your use of the
-                Services from its effective date. If you do not agree to an
-                update, you must stop using the Services before that date;
-                continued use on or after that date constitutes acceptance.
+                technical reasons. The current version is available at{" "}
+                <Link href={TERMS_OF_SERVICE_HREF}>
+                    business.near.com/terms-of-use
+                </Link>
+                , and the date shown above identifies when it was last updated.
+                Our Privacy Policy at{" "}
+                <Link href={PRIVACY_POLICY_HREF}>
+                    https://business.near.com/privacy-policy
+                </Link>{" "}
+                forms part of this Agreement. An updated Agreement applies to
+                your use of the Services from its effective date. If you do not
+                agree to an update, you must stop using the Services before that
+                date; continued use on or after that date constitutes
+                acceptance.
             </p>
             <h2>
                 <strong>Supplemental Terms</strong>
@@ -1420,16 +1428,22 @@ export default function TermsOfUsePage() {
                 providers, which are charged to you directly by such Third Party
                 Service providers. The fees applicable to your use of the
                 Services, including the current fee types and amounts, are set
-                out in our fee documentation available at
-                https://docs.near-intents.org/resources/fees (the "Fee
-                Schedule"). Those parts of the Fee Schedule that apply to the
-                Business Platform form part of this Agreement and are expressly
-                incorporated herein by reference; parts of that documentation
-                that apply to other channels, integrations or products do not
-                form part of this Agreement. The Fee Schedule may be updated
-                from time to time, and the fees applicable to any transaction
-                are those made available to you at or before the time you
-                authorize that transaction.
+                out in our fee documentation available at{" "}
+                <a
+                    href="https://docs.near-intents.org/resources/fees"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    https://docs.near-intents.org/resources/fees
+                </a>{" "}
+                (the "Fee Schedule"). Those parts of the Fee Schedule that apply
+                to the Business Platform form part of this Agreement and are
+                expressly incorporated herein by reference; parts of that
+                documentation that apply to other channels, integrations or
+                products do not form part of this Agreement. The Fee Schedule
+                may be updated from time to time, and the fees applicable to any
+                transaction are those made available to you at or before the
+                time you authorize that transaction.
             </p>
             <p>
                 <strong>Quote Improvement and Capture Share.</strong> Where the
@@ -2625,14 +2639,21 @@ export default function TermsOfUsePage() {
             <p>
                 Certain other legal resources including links to the Intents
                 Technology corporate group's law enforcement portal may be found
-                at https://app.kodexglobal.com/nearintents/requests
+                at{" "}
+                <a
+                    href="https://app.kodexglobal.com/nearintents/requests"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    https://app.kodexglobal.com/nearintents/requests
+                </a>
             </p>
             <h2>
                 <strong>Contact Information</strong>
             </h2>
             <p>
                 If you have any questions about this Agreement, please contact
-                us at legal@near.com.
+                us at <a href="mailto:legal@near.com">legal@near.com</a>.
             </p>
         </LegalPage>
     );
