@@ -154,20 +154,28 @@ export function ProofGrid() {
     return (
         <section className="relative z-10 bg-landing-ink">
             <div className="mx-auto grid w-full max-w-[1440px] grid-cols-2 gap-y-10 px-6 py-12 text-center md:px-12 lg:grid-cols-4 xl:px-32">
-                {PROOF_STATS.map(({ value, label }, index) => (
-                    <Reveal
-                        key={label}
-                        delayMs={index * 60}
-                        className="flex flex-col items-center gap-2"
-                    >
-                        <p className="text-[48px] font-medium leading-[1.1] text-landing-paper md:text-[64px] xl:text-[72px]">
-                            {value}
-                        </p>
-                        <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
-                            {label}
-                        </p>
-                    </Reveal>
-                ))}
+                {PROOF_STATS.map(({ value, label }, index) => {
+                    // The trailing "+" holds a flat 40px in the design while
+                    // the figure itself scales with the viewport.
+                    const figure = value.replace(/\+$/, "");
+                    return (
+                        <Reveal
+                            key={label}
+                            delayMs={index * 60}
+                            className="flex flex-col items-center gap-2"
+                        >
+                            <p className="text-[48px] font-medium leading-[1.1] text-landing-paper md:text-[64px] xl:text-[72px]">
+                                {figure}
+                                {figure !== value && (
+                                    <span className="text-[40px]">+</span>
+                                )}
+                            </p>
+                            <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
+                                {label}
+                            </p>
+                        </Reveal>
+                    );
+                })}
             </div>
         </section>
     );

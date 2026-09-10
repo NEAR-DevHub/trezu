@@ -1,10 +1,4 @@
-import {
-    CoinsSwapIcon,
-    Diamond01Icon,
-    DropletIcon,
-} from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 import {
     COMPARISON_ROWS,
@@ -14,17 +8,19 @@ import {
 } from "../content";
 import { Tag } from "./confidential";
 import { GUTTER } from "./hero";
-import { CheckCircleIcon } from "./landing-icons";
+import {
+    CheckCircleIcon,
+    CoinsSwapIcon,
+    DiamondIcon,
+    DropIcon,
+} from "./landing-icons";
 import { Reveal } from "./reveal";
 
 const PRICING_ICONS = {
-    diamond: Diamond01Icon,
+    diamond: DiamondIcon,
     swap: CoinsSwapIcon,
-    drop: DropletIcon,
-} satisfies Record<
-    (typeof PRICING_CELLS)[number]["icon"],
-    typeof Diamond01Icon
->;
+    drop: DropIcon,
+} satisfies Record<(typeof PRICING_CELLS)[number]["icon"], typeof DiamondIcon>;
 
 function MonoLabel({
     children,
@@ -59,8 +55,9 @@ export function Comparison() {
                 </Reveal>
                 {/* Column geometry follows the Figma table: 415 / 400 / 369 of
                     1184, the label cell inset 49px and the other two flush to
-                    their column. Only the outer columns carry row rules; the
-                    highlighted column is separated by its own fill. */}
+                    their column. Every row carries the same 1px rule straight
+                    across all three columns — including over the highlight
+                    fill — and the last row closes without one. */}
                 {/* The horizontal scroller computes overflow-y to `auto`, so
                     the highlight fill's 15px overhang is carried as padding
                     here — inside the clip box — instead of being clipped. */}
@@ -82,7 +79,7 @@ export function Comparison() {
                             <thead>
                                 <tr className="h-[72px] align-top">
                                     <th />
-                                    <th className="pt-4 pl-6 text-left text-2xl font-normal leading-[1.3] text-landing-ink lg:text-[30px]">
+                                    <th className="pt-4 pl-0.5 text-left text-2xl font-normal leading-[1.3] text-landing-ink lg:text-[30px]">
                                         NEAR Business
                                     </th>
                                     <th className="pt-5 text-left text-xl font-normal leading-[1.3] text-landing-grey lg:text-2xl">
@@ -94,16 +91,16 @@ export function Comparison() {
                                 {COMPARISON_ROWS.map(
                                     ({ label, nearBusiness, enterprise }) => (
                                         <tr key={label} className="h-[58px]">
-                                            <td className="border-t border-landing-mist pr-6 align-middle text-landing-grey lg:pl-[49px]">
+                                            <td className="border-t border-landing-grey-light pr-6 align-middle text-landing-grey lg:pl-[49px]">
                                                 <MonoLabel>{label}</MonoLabel>
                                             </td>
-                                            <td className="pl-6 pr-6 align-middle text-lg leading-[1.55] text-landing-ink">
+                                            <td className="border-t border-landing-grey-light pl-0.5 pr-4 align-middle text-lg leading-[1.55] text-landing-ink">
                                                 <span className="flex items-center gap-4">
                                                     <CheckCircleIcon className="size-6 shrink-0" />
                                                     {nearBusiness}
                                                 </span>
                                             </td>
-                                            <td className="border-t border-landing-mist align-middle text-lg leading-[1.55] text-landing-grey">
+                                            <td className="border-t border-landing-grey-light align-middle text-lg leading-[1.55] text-landing-grey">
                                                 {enterprise}
                                             </td>
                                         </tr>
@@ -151,41 +148,40 @@ export function Pricing() {
                 </Reveal>
                 <div className="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3 lg:mt-16 lg:gap-8">
                     {PRICING_CELLS.map(
-                        ({ label, icon, price, unit, body }, index) => (
-                            <Reveal
-                                key={label}
-                                delayMs={index * 60}
-                                className="flex min-h-[255px] flex-col rounded-[12px] bg-landing-paper px-8 pt-10 pb-8"
-                            >
-                                <div className="flex h-12 items-start justify-between">
-                                    <MonoLabel className="text-landing-grey">
-                                        {label}
-                                    </MonoLabel>
-                                    <Icon
-                                        icon={PRICING_ICONS[icon]}
-                                        strokeWidth={1.25}
-                                        className="size-12 text-landing-green"
-                                    />
-                                </div>
-                                <p className="mt-[10px] text-[48px] leading-[1.04] lg:text-[64px]">
-                                    {price}
-                                    {/* The unit rides at half the figure's size on
+                        ({ label, icon, price, unit, body }, index) => {
+                            const PricingIcon = PRICING_ICONS[icon];
+                            return (
+                                <Reveal
+                                    key={label}
+                                    delayMs={index * 60}
+                                    className="flex min-h-[255px] flex-col rounded-[12px] bg-landing-paper px-8 pt-10 pb-8"
+                                >
+                                    <div className="flex h-12 items-start justify-between">
+                                        <MonoLabel className="text-landing-grey">
+                                            {label}
+                                        </MonoLabel>
+                                        <PricingIcon className="size-12 text-landing-green" />
+                                    </div>
+                                    <p className="mt-[10px] text-[48px] leading-[1.04] lg:text-[64px]">
+                                        {price}
+                                        {/* The unit rides at half the figure's size on
                                     its baseline, as in the design. */}
-                                    {unit && (
-                                        <span className="text-[24px] lg:text-[32px]">
-                                            {unit}
-                                        </span>
-                                    )}
-                                </p>
-                                <p className="mt-2 text-sm leading-normal text-landing-grey">
-                                    {body.map((line) => (
-                                        <span key={line} className="block">
-                                            {line}
-                                        </span>
-                                    ))}
-                                </p>
-                            </Reveal>
-                        ),
+                                        {unit && (
+                                            <span className="text-[24px] lg:text-[32px]">
+                                                {unit}
+                                            </span>
+                                        )}
+                                    </p>
+                                    <p className="mt-2 text-sm leading-normal text-landing-grey">
+                                        {body.map((line) => (
+                                            <span key={line} className="block">
+                                                {line}
+                                            </span>
+                                        ))}
+                                    </p>
+                                </Reveal>
+                            );
+                        },
                     )}
                 </div>
                 <Reveal className="mt-12 lg:mt-16">

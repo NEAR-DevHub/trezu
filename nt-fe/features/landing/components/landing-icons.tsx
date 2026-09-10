@@ -90,6 +90,58 @@ export function EyeIcon({ className }: IconProps) {
     );
 }
 
+/**
+ * The three pricing-cell glyphs, exported at the design's 48x48 scale so the
+ * 2px stroke stays true at the size-12 the cards render them at.
+ */
+function PricingGlyph({
+    className,
+    children,
+}: IconProps & { children: React.ReactNode }) {
+    return (
+        <svg
+            className={className}
+            viewBox="0 0 48 48"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            xmlns="http://www.w3.org/2000/svg"
+        >
+            {children}
+        </svg>
+    );
+}
+
+/** Faceted gem — "Treasuries". */
+export function DiamondIcon({ className }: IconProps) {
+    return (
+        <PricingGlyph className={className}>
+            <path d="M4.99907 18H42.9991M19.9991 6L15.9991 18L23.9991 41L31.9991 18L27.9991 6M25.2282 40.525L43.1455 19.0243C43.4492 18.6599 43.601 18.4777 43.659 18.2743C43.7102 18.095 43.7102 17.905 43.659 17.7257C43.601 17.5223 43.4492 17.3401 43.1455 16.9757L34.4788 6.5757C34.3025 6.36409 34.2143 6.25828 34.1062 6.18221C34.0104 6.11481 33.9036 6.06476 33.7905 6.03434C33.6629 6 33.5251 6 33.2497 6H14.7485C14.473 6 14.3353 6 14.2076 6.03434C14.0946 6.06476 13.9877 6.11481 13.8919 6.18221C13.7838 6.25828 13.6957 6.36409 13.5193 6.57571L4.85265 16.9757C4.54899 17.3401 4.39717 17.5223 4.33915 17.7257C4.28799 17.905 4.28799 18.095 4.33915 18.2743C4.39717 18.4777 4.54899 18.6599 4.85265 19.0243L22.7699 40.525C23.192 41.0315 23.4031 41.2848 23.6558 41.3772C23.8775 41.4582 24.1207 41.4582 24.3424 41.3772C24.5951 41.2848 24.8061 41.0316 25.2282 40.525Z" />
+        </PricingGlyph>
+    );
+}
+
+/** Two circles trading places — "Swap fee". */
+export function CoinsSwapIcon({ className }: IconProps) {
+    return (
+        <PricingGlyph className={className}>
+            <path d="M12 4L16 8L12 12M16 8H12C7.58172 8 4 11.5817 4 16M36 44L32 40L36 36M32 40H36C40.4183 40 44 36.4183 44 32M20.3781 13C21.7102 7.82432 26.4085 4 32 4C38.6274 4 44 9.37258 44 16C44 21.5915 40.1757 26.2897 35.0001 27.6219M28 32C28 38.6274 22.6274 44 16 44C9.37258 44 4 38.6274 4 32C4 25.3726 9.37258 20 16 20C22.6274 20 28 25.3726 28 32Z" />
+        </PricingGlyph>
+    );
+}
+
+/** Plain teardrop — "Gas fees". */
+export function DropIcon({ className }: IconProps) {
+    return (
+        <PricingGlyph className={className}>
+            <path d="M40 28C40 36.8366 32.8366 44 24 44C15.1634 44 8 36.8366 8 28C8 25.8782 8.41301 23.8529 9.16303 22C11.5366 16.1363 24 4 24 4C24 4 36.4634 16.1363 38.837 22C39.587 23.8529 40 25.8782 40 28Z" />
+        </PricingGlyph>
+    );
+}
+
 /** Rounded-square NEAR mark; colours are part of the glyph. */
 export function NearMark({ className }: IconProps) {
     return (
