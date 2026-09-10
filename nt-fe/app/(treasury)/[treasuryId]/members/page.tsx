@@ -154,7 +154,7 @@ function PermissionsHeader({ policyRoles }: { policyRoles: RolePermission[] }) {
                 >
                     <Icon
                         icon={InformationCircleIcon}
-                        className="text-muted-foreground cursor-help"
+                        className="text-muted-foreground cursor-pointer"
                     />
                 </Tooltip>
             )}
@@ -918,10 +918,15 @@ export default function MembersPage() {
         joinRequestCount > 0 && pendingMemberRequestCount === 0;
     const showRequestsMenu =
         pendingMemberRequestCount > 0 && joinRequestCount > 0;
-    const requestsMenuClassName =
-        "min-w-55 rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]";
-    const requestsMenuItemClassName =
-        "cursor-pointer justify-between gap-3 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background";
+    const invertedMenuClassName =
+        "rounded-xl border-none bg-[var(--card-card,#171717)] p-2 text-[var(--general-foreground,#fff)] shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)] [--card-card:#171717] [--general-foreground:#fff]";
+    const invertedMenuItemClassName =
+        "rounded-lg px-3 py-2.5 text-[var(--general-foreground,#fff)] focus:bg-white/10 focus:text-[var(--general-foreground,#fff)]";
+    const requestsMenuClassName = cn("min-w-55", invertedMenuClassName);
+    const requestsMenuItemClassName = cn(
+        "cursor-pointer justify-between gap-3",
+        invertedMenuItemClassName,
+    );
 
     const pageActions = (
         <div className="flex items-center gap-2 sm:gap-3">
@@ -1168,7 +1173,10 @@ export default function MembersPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         align="end"
-                        className="w-max min-w-0 overflow-visible rounded-xl border-none bg-foreground p-2 text-background shadow-[0_-8px_20px_-6px_rgb(0_0_0/0.28),0_8px_24px_-8px_rgb(0_0_0/0.2)]"
+                        className={cn(
+                            "w-max min-w-0 overflow-visible",
+                            invertedMenuClassName,
+                        )}
                     >
                         {hasPendingMemberRequest ? (
                             <Tooltip
@@ -1181,7 +1189,10 @@ export default function MembersPage() {
                                 <span className="flex w-full cursor-not-allowed">
                                     <DropdownMenuItem
                                         disabled
-                                        className="w-full gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                                        className={cn(
+                                            "w-full gap-2.5",
+                                            invertedMenuItemClassName,
+                                        )}
                                     >
                                         <Icon icon={Wallet03Icon} />
                                         {tMembers("addManually")}
@@ -1191,7 +1202,10 @@ export default function MembersPage() {
                         ) : (
                             <DropdownMenuItem
                                 asChild
-                                className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                                className={cn(
+                                    "cursor-pointer gap-2.5",
+                                    invertedMenuItemClassName,
+                                )}
                             >
                                 <Link
                                     href={`/${treasuryId}/members/add`}
@@ -1208,7 +1222,10 @@ export default function MembersPage() {
                         )}
                         <DropdownMenuItem
                             asChild
-                            className="cursor-pointer gap-2.5 rounded-lg px-3 py-2.5 text-background focus:bg-background/10 focus:text-background"
+                            className={cn(
+                                "cursor-pointer gap-2.5",
+                                invertedMenuItemClassName,
+                            )}
                         >
                             <Link href={`/${treasuryId}/members/invite`}>
                                 <Icon icon={SentIcon} />

@@ -3,13 +3,10 @@ use serde_json::Value;
 /// Whether a stored 1Click quote charged our injected app fee.
 ///
 /// Fees live on `quoteRequest.appFees`. `None` means that array is missing
-/// (older swaps always charged). One entry is the protocol fee only; more
-/// than one means we injected a fee.
+/// (older swaps always charged). An empty array or a single protocol-fee
+/// entry means we did not inject; more than one entry means we did.
 pub fn stored_has_app_fee(quote: Option<&Value>) -> Option<bool> {
     let fees = quote_request(quote?)?.get("appFees")?.as_array()?;
-    if fees.is_empty() {
-        return None;
-    }
     Some(fees.len() > 1)
 }
 
@@ -30,6 +27,14 @@ mod tests {
     fn older_quotes_without_app_fees_are_unknown() {
         assert_eq!(stored_has_app_fee(None), None);
         assert_eq!(stored_has_app_fee(Some(&json!({}))), None);
+    }
+
+    #[test]
+    fn empty_app_fees_is_not_our_app_fee() {
+        let quote = json!({
+            "quoteRequest": { "appFees": [] }
+        });
+        assert_eq!(stored_has_app_fee(Some(&quote)), Some(false));
     }
 
     #[test]

@@ -8,7 +8,6 @@ import { useEffect, useMemo, useState } from "react";
 import { PageCard } from "@/components/card";
 import { Icon } from "@/components/icon";
 import { APP_DOCS_URL } from "@/constants/config";
-import { externalHrefProps } from "@/lib/external-href";
 import {
     LOCAL_STORAGE_KEYS,
     scheduleHelpSupportTour,
@@ -48,7 +47,8 @@ function InfoItem({ icon, title, description, href }: InfoItemProps) {
         <Link
             href={href}
             className="block rounded-2xl transition-colors hover:bg-general-secondary"
-            {...externalHrefProps(href)}
+            target="_blank"
+            rel="noopener noreferrer"
         >
             {body}
         </Link>

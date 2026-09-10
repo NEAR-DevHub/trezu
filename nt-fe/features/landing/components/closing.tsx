@@ -13,7 +13,6 @@ import {
     PRIVACY_POLICY_HREF,
     TERMS_OF_SERVICE_HREF,
 } from "@/constants/config";
-import { externalHrefProps } from "@/lib/external-href";
 import { CONTACT_HREF, FAQ_ITEMS } from "../content";
 import { EarlyAccessButton } from "./hero";
 import { NearBusinessWordmark } from "./landing-icons";
@@ -136,7 +135,12 @@ export function Footer() {
                                             <Link
                                                 href={href}
                                                 className="transition-colors hover:text-landing-green"
-                                                {...externalHrefProps(href)}
+                                                {...(href === APP_DOCS_URL
+                                                    ? {
+                                                          target: "_blank",
+                                                          rel: "noopener noreferrer",
+                                                      }
+                                                    : {})}
                                             >
                                                 {label}
                                             </Link>

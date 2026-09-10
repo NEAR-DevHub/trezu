@@ -95,14 +95,15 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         if (!amountOut || !slippage) return null;
         return amountOut.minus(amountOut.mul(slippage).div(100));
     }, [data.amountOut, data.slippage]);
+    const showExchangeFee = shouldShowStoredExchangeFee(data.hasAppFee);
     const exchangeFeeAmount = useMemo(() => {
-        if (!shouldShowStoredExchangeFee(data.hasAppFee)) return null;
+        if (!showExchangeFee) return null;
         const amountIn = decimalFromBaseUnitsOrNull(
             data.amountIn,
             tokenInData?.decimals || 24,
         );
         return amountIn ? calculateExchangeFeeAmount(amountIn.toFixed()) : null;
-    }, [data.amountIn, data.hasAppFee, tokenInData?.decimals]);
+    }, [data.amountIn, showExchangeFee, tokenInData?.decimals]);
 
     const infoItems: InfoItem[] = [
         {
@@ -208,7 +209,7 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         });
     }
 
-    if (shouldShowStoredExchangeFee(data.hasAppFee)) {
+    if (showExchangeFee) {
         expandableItems.push({
             label: tExchange("info.exchangeFee"),
             value: isTokenInLoading ? (

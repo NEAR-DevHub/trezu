@@ -34,10 +34,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { decimalOrNull } from "@/lib/amount-format";
 import type { RecentActivity, SwapInfo, TokenMetadataInfo } from "@/lib/api";
 import Big from "@/lib/big";
-import {
-    calculateExchangeFeeAmount,
-    shouldShowStoredExchangeFee,
-} from "@/lib/exchange-fee";
+import { calculateExchangeFeeAmount } from "@/lib/exchange-fee";
 import {
     cn,
     formatActivityAmount,
@@ -429,7 +426,9 @@ function useDetailItems(
         },
     ];
     if (variant === "exchange" && activity.swap) {
-        if (shouldShowStoredExchangeFee(activity.hasAppFee ?? undefined)) {
+        // Hide until the quote says we injected a fee. Missing means the
+        // public status blob has not landed yet — do not invent 0.7%.
+        if (activity.hasAppFee === true) {
             const fee = swapFeeValue(activity.swap);
             if (fee) {
                 items.push({
