@@ -5,6 +5,7 @@ export const APP_CONTACT_US_URL = "https://trezu.org/contact-us";
 export const LOCKUP_NO_WHITELIST_ACCOUNT_ID = "lockup-no-whitelist.near";
 export const TERMS_OF_SERVICE_HREF = "/terms-of-use";
 export const PRIVACY_POLICY_HREF = "/privacy-policy";
+export const DATA_PROCESSING_HREF = "/data";
 
 export const APP_WALLET_SETUP_URL = undefined;
 
