@@ -2681,7 +2681,7 @@
     },
     "cookieConsent": {
         "bannerBody": "We use essential cookies to operate the site. With your permission, we also use analytics to understand site usage and improve the service. See our <privacy>Privacy Policy</privacy>.",
-        "acceptAll": "Accept analytics",
+        "acceptAll": "Accept all",
         "rejectNonEssential": "Reject non-essential",
         "managePreferences": "Manage preferences",
         "closeBanner": "Close and use essential cookies only",
