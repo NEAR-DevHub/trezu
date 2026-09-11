@@ -95,7 +95,7 @@ export function Comparison() {
                                             <td className="border-t border-landing-grey-light pr-6 align-middle text-landing-grey lg:pl-[49px]">
                                                 <MonoLabel>{label}</MonoLabel>
                                             </td>
-                                            <td className="border-t border-landing-grey-light pl-0.5 pr-4 align-middle text-lg leading-[1.55] text-landing-ink">
+                                            <td className="border-t border-landing-grey-light pl-0.5 pr-12 align-middle text-lg leading-[1.55] text-landing-ink">
                                                 <span className="flex items-center gap-4">
                                                     <CheckCircleIcon className="size-6 shrink-0" />
                                                     {nearBusiness}

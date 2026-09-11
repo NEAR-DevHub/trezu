@@ -22,7 +22,9 @@ import { Reveal } from "./reveal";
 export function WorksWith() {
     return (
         <section className="border-t border-landing-ink/10">
-            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:pb-12 lg:pt-24 xl:px-32">
+            {/* From lg the copy sits beside the title with their last lines
+                on one baseline, centred in the band, as in the design. */}
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-8 px-6 py-16 md:px-12 lg:flex-row lg:items-baseline-last lg:py-18 xl:px-32">
                 <Reveal className="lg:shrink-0">
                     <h2 className="text-[40px] font-light leading-[1.12] lg:text-[60px]">
                         Your treasury <br className="hidden lg:inline" />
@@ -31,10 +33,7 @@ export function WorksWith() {
                         </span>
                     </h2>
                 </Reveal>
-                <Reveal
-                    delayMs={80}
-                    className="leading-normal lg:mt-5 lg:flex-1"
-                >
+                <Reveal delayMs={80} className="leading-normal lg:flex-1">
                     <p className="text-2xl font-medium">
                         Audit-ready exports fit the reporting stack you already
                         run.
@@ -111,7 +110,7 @@ const FOOTER_COLUMNS = [
 export function Footer() {
     return (
         <footer className="bg-landing-ink text-landing-paper">
-            <div className="mx-auto w-full max-w-[1457px] p-6 md:p-10 xl:p-[60px]">
+            <div className="mx-auto w-full max-w-[1457px] p-6 md:p-16">
                 <Reveal className="flex flex-col gap-10 lg:flex-row lg:justify-between">
                     <div className="lg:w-[600px]">
                         <h2 className="text-[40px] font-light leading-[1.04] lg:text-[64px]">

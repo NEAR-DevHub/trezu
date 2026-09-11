@@ -105,7 +105,8 @@ export function Hero() {
                     <br />
                     <span className="font-light">treasury management</span>
                     <br />
-                    for crypto-native finance teams
+                    for crypto-native{" "}
+                    <span className="whitespace-nowrap">finance teams</span>
                 </h1>
                 <p
                     className={cn(

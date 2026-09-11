@@ -860,6 +860,14 @@ body[data-onboarding-tour="info-box-dismissed"]
     }
 }
 
+/* Help Scout Beacon has no launcher size option, so shrink its 60px button to
+   48px toward the corner (offsets are in helpscout-beacon.tsx). `scale`
+   composes with the inline `transform` Beacon animates instead of fighting it. */
+.BeaconFabButtonFrame {
+    scale: 0.8;
+    transform-origin: bottom right;
+}
+
 /* App toast chrome — always the dark card, regardless of page theme. */
 [data-sonner-toaster] {
     --card-card: #171717;

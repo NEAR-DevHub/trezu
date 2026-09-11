@@ -10,7 +10,7 @@ export function NearBusinessWordmark({ className }: IconProps) {
     return (
         <svg
             className={className}
-            viewBox="0 0 187.5 21.79"
+            viewBox="0 -0.12 187.5 22.34"
             fill="currentColor"
             role="img"
             aria-label="NEAR Business"

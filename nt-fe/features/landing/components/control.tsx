@@ -155,11 +155,16 @@ export function Capabilities() {
  * From lg up the block keeps the design's 1440x609 proportions: the section
  * scales by aspect ratio, the render keeps its share of the width, and the
  * heading scales with the viewport so the copy never runs into the laptop.
+ * The copy column runs from the top of the render to the foot of the laptop
+ * in it, so the heading lines up with the render's top and the paragraph
+ * ends level with the laptop's bottom edge. The laptop ends 89.35% down the
+ * render, which is 50% (lg) / 53% (xl) of the section wide at 1924/2860
+ * aspect; over the section's 609/1440 height that is 71.1% / 75.3%.
  */
 export function MultichainHeader() {
     return (
         <section className="relative mx-auto w-full max-w-[1440px] px-6 pb-6 pt-16 md:px-12 lg:aspect-[1440/609] lg:px-16 lg:pb-0 lg:pt-0">
-            <Reveal className="flex flex-col justify-between gap-12 lg:h-full lg:w-[46%] lg:gap-0 lg:py-[7.6%]">
+            <Reveal className="flex flex-col gap-12 lg:h-[71.1%] lg:w-[46%] lg:justify-between lg:gap-0 xl:h-[75.3%]">
                 <h2 className="text-[36px] font-normal leading-none lg:text-[32px] xl:text-[40px]">
                     Manage BTC, ETH, SOL, <br className="hidden lg:inline" />
                     <span className="font-medium text-landing-green">NEAR</span>{" "}
