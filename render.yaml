@@ -57,7 +57,7 @@ services:
     plan: standard
     rootDir: nt-fe
     branch: nearcom_redesign_v1
-    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp /etc/secrets/*.woff2 public/fonts/ && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && for f in /etc/secrets/*.woff2.b64; do base64 -d < "$f" > "public/fonts/$(basename "$f" .b64)"; done && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
     startCommand: node .next/standalone/server.js
     domains:
       - business.near.com
@@ -142,7 +142,7 @@ services:
     plan: starter
     rootDir: nt-fe
     branch: nearcom_redesign
-    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && cp /etc/secrets/*.woff2 public/fonts/ && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
+    buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && for f in /etc/secrets/*.woff2.b64; do base64 -d < "$f" > "public/fonts/$(basename "$f" .b64)"; done && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
     startCommand: node .next/standalone/server.js
     envVars:
       - key: NODE_ENV
