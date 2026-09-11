@@ -49,6 +49,7 @@ export function useWalletFlow() {
         authError,
         connect,
         createProposal,
+        disconnect,
     } = useNearStore();
     // Only a fully authenticated account (session + terms) can act: the
     // sponsored relay requires the backend session cookie.
@@ -200,6 +201,16 @@ export function useWalletFlow() {
         // NEP-641 login (backend session); failures land in authError.
         await connect();
     }, [connect]);
+
+    const handleSwitchAccount = useCallback(async () => {
+        // Full logout (backend session + wallet), then drop the flow back to
+        // the untouched connect step so the user logs in as whoever they
+        // choose next.
+        await disconnect();
+        setTreasuries([]);
+        setSelectedDao(null);
+        setStep("connect");
+    }, [disconnect]);
 
     const handleSelectTreasury = useCallback(
         (daoId: string) => {
@@ -440,6 +451,7 @@ export function useWalletFlow() {
         note,
         error,
         handleConnect,
+        handleSwitchAccount,
         handleSelectTreasury,
         handleConfirmTransactions,
         retry,

@@ -1554,6 +1554,7 @@
         "connectWallet": "Conectar carteira",
         "connecting": "Conectando...",
         "connectedAs": "Conectado como <strong>{account}</strong>",
+        "switchAccount": "Não é você? Trocar de conta",
         "loadingTreasuries": "Carregando tesourarias...",
         "selectSignIn": "{app, select, unknown {Escolha qual tesouraria você quer usar.} other {Escolha qual tesouraria você quer usar em {app}.}}",
         "selectSignTx": "Selecione uma tesouraria para criar uma proposta:",

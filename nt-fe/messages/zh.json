@@ -1537,6 +1537,7 @@
         "connectWallet": "连接钱包",
         "connecting": "连接中...",
         "connectedAs": "已以 <strong>{account}</strong> 身份连接",
+        "switchAccount": "不是你？切换账户",
         "loadingTreasuries": "正在加载金库...",
         "selectSignIn": "{app, select, unknown {选择要使用的金库。} other {选择要在 {app} 中使用的金库。}}",
         "selectSignTx": "选择要为其创建提案的金库:",

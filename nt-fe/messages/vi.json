@@ -1537,6 +1537,7 @@
         "connectWallet": "Kết nối ví",
         "connecting": "Đang kết nối...",
         "connectedAs": "Đã kết nối với tư cách <strong>{account}</strong>",
+        "switchAccount": "Không phải bạn? Đổi tài khoản",
         "loadingTreasuries": "Đang tải các ngân quỹ...",
         "selectSignIn": "{app, select, unknown {Chọn ngân quỹ bạn muốn sử dụng.} other {Chọn ngân quỹ bạn muốn sử dụng trong {app}.}}",
         "selectSignTx": "Chọn một ngân quỹ để tạo đề xuất trên:",
