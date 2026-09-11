@@ -50,7 +50,8 @@ export function Comparison() {
                         <span className="block font-medium">
                             Advanced treasury control
                         </span>
-                        without enterprise prices or custody risk.
+                        without enterprise prices. Your Treasury Contract stays
+                        self-custodial.
                     </h2>
                 </Reveal>
                 {/* Column geometry follows the Figma table: 415 / 400 / 369 of

@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "Chúng tôi sử dụng cookie để hiểu cách sử dụng trang web, cải thiện trang web, ghi nhớ cài đặt của bạn và hỗ trợ hoạt động tiếp thị. <privacy>Chính sách quyền riêng tư</privacy>",
         "acceptAll": "Chấp nhận tất cả",
+        "rejectNonEssential": "Từ chối cookie không thiết yếu",
         "managePreferences": "Quản lý tùy chọn",
         "closeBanner": "Đóng và chỉ dùng cookie thiết yếu",
         "title": "Tùy chọn lưu trữ",

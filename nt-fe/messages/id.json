@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "Kami menggunakan cookie untuk memahami penggunaan situs, meningkatkan situs, mengingat pengaturan Anda, dan mendukung upaya pemasaran kami. <privacy>Kebijakan Privasi</privacy>",
         "acceptAll": "Terima semua",
+        "rejectNonEssential": "Tolak yang tidak esensial",
         "managePreferences": "Kelola preferensi",
         "closeBanner": "Tutup dan gunakan cookie esensial saja",
         "title": "Preferensi penyimpanan",

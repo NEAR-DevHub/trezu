@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "当社は、サイトの利用状況の把握、サイトの改善、設定の記憶、マーケティング活動の支援のためにCookieを使用します。<privacy>プライバシーポリシー</privacy>",
         "acceptAll": "すべて許可",
+        "rejectNonEssential": "必須以外を拒否",
         "managePreferences": "設定を管理",
         "closeBanner": "閉じて必須Cookieのみ使用する",
         "title": "ストレージ設定",

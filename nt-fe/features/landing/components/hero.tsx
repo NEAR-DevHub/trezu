@@ -114,9 +114,10 @@ export function Hero() {
                     )}
                     style={{ animationDelay: "180ms" }}
                 >
-                    Unify your team&apos;s finances, run payroll, allocate
-                    capital, and swap across 35+ chains from a single dashboard.
-                    Multisig approvals, your keys, your terms.
+                    Unify your team&apos;s finances, manage payroll payments,
+                    allocate capital, and swap across 35+ chains from a single
+                    dashboard. Multisig approvals. Your Treasury Contract. Your
+                    terms.
                 </p>
                 {/* Uncapped on purpose: the design sets this caption on one
                     line and only lets it wrap once the column runs out. */}
@@ -164,7 +165,8 @@ export function ProofGrid() {
     return (
         <section className="relative z-10 bg-landing-ink">
             <div className="mx-auto grid w-full max-w-[1440px] grid-cols-2 gap-y-10 px-6 py-12 text-center md:px-12 lg:grid-cols-4 xl:px-32">
-                {PROOF_STATS.map(({ value, label }, index) => {
+                {PROOF_STATS.map((stat, index) => {
+                    const { value, label } = stat;
                     // The trailing "+" holds a flat 40px in the design while
                     // the figure itself scales with the viewport.
                     const figure = value.replace(/\+$/, "");
@@ -183,6 +185,11 @@ export function ProofGrid() {
                             <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
                                 {label}
                             </p>
+                            {"note" in stat && (
+                                <p className="text-[10px] leading-normal text-neutral-500">
+                                    {stat.note}
+                                </p>
+                            )}
                         </Reveal>
                     );
                 })}

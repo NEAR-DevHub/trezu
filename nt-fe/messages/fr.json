@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "Nous utilisons des cookies pour comprendre l’utilisation du site, l’améliorer, mémoriser vos paramètres et soutenir nos actions marketing. <privacy>Politique de confidentialité</privacy>",
         "acceptAll": "Tout accepter",
+        "rejectNonEssential": "Refuser les cookies non essentiels",
         "managePreferences": "Gérer les préférences",
         "closeBanner": "Fermer et n’utiliser que les cookies essentiels",
         "title": "Préférences de stockage",

@@ -97,11 +97,11 @@ export function Confidential() {
                     operations, not about hiding them.
                 </p>
                 <p className="mt-8 max-w-[920px] text-base leading-normal lg:mt-12 font-normal">
-                    Allocate capital and run payroll without exposing who you
-                    pay, how much, or when. Send assets to dozens of recipients
-                    in a single batch. Every payment generates a confidential
-                    receipt for your records, visible only to your team and
-                    never to a block explorer.
+                    Allocate capital and make payroll payments without publicly
+                    exposing who you pay, how much, or when. Send assets to
+                    dozens of recipients in a single batch. Every payment
+                    generates a confidential receipt for your records, visible
+                    to your team and never to a block explorer.
                 </p>
             </Reveal>
         </section>

@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "사이트 이용 현황 파악, 사이트 개선, 설정 기억, 마케팅 활동 지원을 위해 쿠키를 사용합니다. <privacy>개인정보 처리방침</privacy>",
         "acceptAll": "모두 허용",
+        "rejectNonEssential": "필수 항목 외 거부",
         "managePreferences": "환경설정 관리",
         "closeBanner": "닫고 필수 쿠키만 사용",
         "title": "저장소 환경설정",

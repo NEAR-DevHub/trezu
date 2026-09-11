@@ -14,7 +14,7 @@ import { Tag } from "./confidential";
 import { NearMark } from "./landing-icons";
 import { Reveal } from "./reveal";
 
-/** "Every movement passes the rules you set" — photo split with floating copy. */
+/** "Every Treasury Contract transaction follows the rules you set" — photo split with floating copy. */
 export function ControlSplit() {
     return (
         <section
@@ -45,7 +45,9 @@ export function ControlSplit() {
             <Reveal className="relative flex flex-col items-start gap-4 lg:mt-20 lg:w-[400px]">
                 <Tag>Control</Tag>
                 <h2 className="text-[44px] leading-[1.12] tracking-[-1.1px] md:text-[56px] lg:text-[64px] lg:tracking-[-1.6px]">
-                    <span className="font-light">Every movement passes </span>
+                    <span className="font-light">
+                        Every Treasury Contract transaction follows{" "}
+                    </span>
                     <span className="font-medium">the rules you set.</span>
                 </h2>
             </Reveal>
@@ -167,7 +169,7 @@ export function MultichainHeader() {
                 <p className="text-lg font-light leading-[1.3] lg:text-2xl xl:text-[30px]">
                     Not just EVM networks.
                     <br />
-                    No external bridges,
+                    No external bridge interfaces,
                     <br />
                     no chain-by-chain ops overhead.
                 </p>
@@ -310,24 +312,21 @@ export function CustodyTruth() {
             <div className="mx-auto flex w-full max-w-[1440px] flex-col px-6 pb-24 pt-8 md:px-12 lg:pb-[176px] xl:px-32">
                 <Reveal>
                     <p className="font-landing-mono text-xs uppercase leading-normal tracking-[0.72px] text-landing-green">
-                        Self-custodial by architecture
+                        Self-custodial Treasury Contracts by architecture
                     </p>
                 </Reveal>
                 <Reveal className="mt-24 lg:mt-[176px]">
                     <p className="text-base font-normal leading-[1.2] text-landing-paper">
-                        Funds move only on the signatures your organization
-                        defines.
+                        Funds held in a Treasury Contract move only when the
+                        approval rules your organisation defines are satisfied.
                     </p>
                     <p className="mt-4 text-[28px] leading-[1.1] lg:text-[36px]">
-                        NEAR holds{" "}
+                        NEAR Business holds{" "}
                         <span className="font-medium text-landing-green lg:text-[40px]">
-                            no key, no key share
-                        </span>
-                        , and maintains{" "}
-                        <span className="font-medium text-landing-green lg:text-[40px]">
-                            no technical capability
+                            no key or key share
                         </span>{" "}
-                        to initiate, alter, or reverse a transaction.
+                        capable of unilaterally moving funds from your Treasury
+                        Contract or overriding your approval rules.
                     </p>
                 </Reveal>
             </div>

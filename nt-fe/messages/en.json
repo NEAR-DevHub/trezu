@@ -159,7 +159,7 @@
     },
     "metadata": {
         "title": "NEAR Business | Confidential treasury management for crypto-native finance teams",
-        "description": "Unify your team’s capital, run payroll and grants, and swap across 35+ chains from a single dashboard. Multisig approvals, your keys, your terms."
+        "description": "Unify your team's finances, manage payroll payments, allocate capital, and swap across 35+ chains from a single dashboard. Multisig approvals. Your Treasury Contract. Your terms."
     },
     "pages": {
         "dashboard": {
@@ -2680,8 +2680,9 @@
         "increase": "Increase threshold"
     },
     "cookieConsent": {
-        "bannerBody": "We use cookies to understand site usage, make site improvements, remember your settings and assist in our marketing efforts. <privacy>Privacy Policy</privacy>",
-        "acceptAll": "Accept all",
+        "bannerBody": "We use essential cookies to operate the site. With your permission, we also use analytics to understand site usage and improve the service. See our <privacy>Privacy Policy</privacy>.",
+        "acceptAll": "Accept analytics",
+        "rejectNonEssential": "Reject non-essential",
         "managePreferences": "Manage preferences",
         "closeBanner": "Close and use essential cookies only",
         "title": "Storage preferences",

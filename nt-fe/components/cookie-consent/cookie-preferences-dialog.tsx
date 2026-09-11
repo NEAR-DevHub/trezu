@@ -13,7 +13,10 @@ import {
 } from "@/components/modal";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ALL_CONSENT, type ConsentPreferences } from "@/lib/cookie-consent";
+import {
+    type ConsentPreferences,
+    ESSENTIAL_ONLY_CONSENT,
+} from "@/lib/cookie-consent";
 import { useCookieConsentStore } from "@/stores/cookie-consent-store";
 
 interface ConsentRowProps {
@@ -58,10 +61,12 @@ export function CookiePreferencesDialog() {
     const preferences = useCookieConsentStore((s) => s.preferences);
     const save = useCookieConsentStore((s) => s.save);
     const closePreferences = useCookieConsentStore((s) => s.closePreferences);
-    const [draft, setDraft] = useState<ConsentPreferences>(ALL_CONSENT);
+    const [draft, setDraft] = useState<ConsentPreferences>(
+        ESSENTIAL_ONLY_CONSENT,
+    );
 
     useEffect(() => {
-        if (open) setDraft(preferences ?? ALL_CONSENT);
+        if (open) setDraft(preferences ?? ESSENTIAL_ONLY_CONSENT);
     }, [open, preferences]);
 
     return (
