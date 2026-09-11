@@ -63,12 +63,15 @@ export function Faq() {
             <div className="mt-8">
                 {FAQ_ITEMS.map(({ question, answer }, index) => (
                     <Reveal key={question} delayMs={index * 60}>
-                        <Collapsible className="group border-b border-landing-ink/15">
-                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-6 py-6 text-left lg:py-8 lg:pl-2">
-                                <span className="text-xl font-light leading-[1.3] lg:text-[30px]">
+                        {/* On desktop the answer opens beside the question: the
+                            trigger spans the whole row as a subgrid and the
+                            content overlays its middle column. */}
+                        <Collapsible className="group border-b border-landing-ink/15 lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,580px)_auto] lg:gap-x-6">
+                            <CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between gap-6 py-6 text-left lg:col-span-full lg:row-start-1 lg:grid lg:grid-cols-subgrid lg:items-start lg:px-2 lg:py-8">
+                                <span className="text-xl font-light leading-[1.3] group-data-[state=open]:font-medium lg:col-span-2 lg:text-[30px] lg:group-data-[state=open]:col-span-1">
                                     {question}
                                 </span>
-                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-landing-ink transition-transform duration-200 group-data-[state=open]:rotate-45">
+                                <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-landing-ink transition-transform duration-200 group-data-[state=open]:rotate-45 lg:col-start-3">
                                     <Icon
                                         icon={PlusSignIcon}
                                         strokeWidth={1.5}
@@ -76,7 +79,7 @@ export function Faq() {
                                     />
                                 </span>
                             </CollapsibleTrigger>
-                            <CollapsibleContent className="max-w-[880px] pb-6 text-base leading-normal text-landing-grey lg:pb-8 lg:pl-2">
+                            <CollapsibleContent className="max-w-[880px] pb-6 text-base leading-normal lg:col-start-2 lg:row-start-1 lg:py-8">
                                 {answer}
                             </CollapsibleContent>
                         </Collapsible>
