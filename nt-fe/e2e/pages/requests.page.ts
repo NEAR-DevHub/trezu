@@ -35,6 +35,8 @@ export class RequestsPage extends BasePage {
 
     /** The onboarding-progress-widget's own Send button, distinct from BalanceWithGraph's `#dashboard-step2` one. */
     onboardingStepSendButton() {
+        // Excludes BalanceWithGraph's #dashboard-step2 Send button (see dashboard.page.ts)
+        // so this only ever matches the onboarding-progress-widget's own Send button.
         return this.main.locator("button:not(#dashboard-step2)", {
             hasText: /send/i,
         });

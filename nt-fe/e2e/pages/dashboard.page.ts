@@ -55,7 +55,13 @@ export class DashboardPage extends BasePage {
         }
     }
 
-    /** Navigate to the treasury dashboard, waiting for the bootstrap auth/assets calls. */
+    /**
+     * Navigate to the treasury dashboard, waiting for the bootstrap auth/assets calls.
+     * `optional: true` preserves onboarding-tour.spec.ts's pre-refactor
+     * `.waitForResponse(...).catch(() => null)` waiters verbatim: not every
+     * onboarding scenario is guaranteed to trigger both calls, so a hard wait
+     * risked flaking tests that never made the assertion depend on them.
+     */
     async goto(treasuryId: string): Promise<void> {
         const authResp = waitForResponseIncludes(this.page, "/auth/me", {
             timeout: 60_000,
