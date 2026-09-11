@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Acceptez les conditions pour continuer",
         "returningTitle": "Nous avons mis à jour nos conditions",
-        "returningEffectiveDate": "Entrée en vigueur le 21 mai 2026",
-        "returningBody": "Nous avons apporté des mises à jour à nos Conditions d'utilisation et à notre Politique de confidentialité. Veuillez les consulter avant de continuer à utiliser Near Business.",
-        "returningAcceptAndContinue": "Accepter et continuer",
-        "privacyTitle": "Votre vie privée chez Near Business",
-        "privacyBody": "Near Business est une interface non-custodiale. Nous accordons la priorité à votre vie privée tout en garantissant que la plateforme reste sécurisée et fonctionnelle.",
-        "minimalTitle": "Données minimales",
-        "minimalBody": "Nous collectons des informations limitées, telles que les adresses publiques de portefeuille, les adresses IP et les analyses d'utilisation, pour exploiter et améliorer l'interface.",
-        "noCustodyTitle": "Aucune custodie",
-        "noCustodyBody": "Nous n'avons jamais accès à vos clés privées, phrases de récupération ou actifs numériques.",
-        "publicTitle": "Registres publics",
-        "publicBody": "N'oubliez pas que toutes les transactions blockchain sont intrinsèquement publiques et ne sont pas contrôlées par nous.",
-        "responsibilityTitle": "Votre responsabilité",
-        "responsibilityBody": "Vous êtes seul responsable de la surveillance de l'activité de votre portefeuille et de la sécurité de vos identifiants.",
-        "futureTitle": "Mises à jour futures",
-        "futureBody": "Si vous optez pour de futures notifications (telles qu'e-mail ou Telegram), nous n'utiliserons ces données que pour vous tenir informé.",
-        "agreement": "J'ai lu et j'accepte les <terms>Conditions d'utilisation</terms> et la <privacy>Politique de confidentialité</privacy>",
+        "agreement": "J'ai lu et j'accepte les <terms>Conditions d'utilisation</terms> et je prends connaissance de la <privacy>Politique de confidentialité</privacy>.",
         "accepting": "Acceptation...",
-        "continue": "Continuer"
+        "agreeAndContinue": "Accepter et continuer"
     },
     "supportCenter": {
         "title": "Centre d'assistance",

@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "קבל תנאים כדי להמשיך",
         "returningTitle": "התנאים שלנו עודכנו",
-        "returningEffectiveDate": "בתוקף מ-21 במאי 2026",
-        "returningBody": "עדכנו את תנאי השימוש ומדיניות הפרטיות שלנו. אנא עיינו בהם לפני שתמשיכו להשתמש ב-Near Business.",
-        "returningAcceptAndContinue": "אישור והמשך",
-        "privacyTitle": "הפרטיות שלך ב-Near Business",
-        "privacyBody": "Near Business היא ממשק לא-משמורתי. אנו נותנים עדיפות לפרטיות שלך תוך הבטחה שהפלטפורמה תישאר מאובטחת ופונקציונלית.",
-        "minimalTitle": "נתונים מינימליים",
-        "minimalBody": "אנו אוספים מידע מוגבל, כגון כתובות ארנק ציבוריות, כתובות IP ואנליטיקת שימוש, כדי להפעיל ולשפר את הממשק.",
-        "noCustodyTitle": "ללא משמורת",
-        "noCustodyBody": "אין לנו גישה למפתחות הפרטיים, ביטויי השחזור או הנכסים הדיגיטליים שלך.",
-        "publicTitle": "רשומות ציבוריות",
-        "publicBody": "זכור שכל עסקאות הבלוקצ'יין הן מטבען ציבוריות ואינן נשלטות על ידינו.",
-        "responsibilityTitle": "האחריות שלך",
-        "responsibilityBody": "אתה אחראי בלעדית לניטור פעילות הארנק שלך ולאבטחת האישורים שלך.",
-        "futureTitle": "עדכונים עתידיים",
-        "futureBody": "אם תסכים להתראות עתידיות (כמו אימייל או Telegram), נשתמש בנתונים אלה רק כדי לעדכן אותך.",
-        "agreement": "קראתי ואני מסכים ל-<terms>תנאי השימוש</terms> ול-<privacy>מדיניות הפרטיות</privacy>",
+        "agreement": "קראתי ואני מסכים/ה ל-<terms>תנאי השימוש</terms> ומאשר/ת את <privacy>מדיניות הפרטיות</privacy>.",
         "accepting": "מקבל...",
-        "continue": "המשך"
+        "agreeAndContinue": "אישור והמשך"
     },
     "supportCenter": {
         "title": "מרכז תמיכה",

@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Terima Ketentuan untuk Melanjutkan",
         "returningTitle": "Ketentuan kami telah diperbarui",
-        "returningEffectiveDate": "Berlaku mulai 21 Mei 2026",
-        "returningBody": "Kami telah memperbarui Ketentuan Layanan dan Kebijakan Privasi kami. Harap tinjau sebelum melanjutkan penggunaan Near Business.",
-        "returningAcceptAndContinue": "Setujui & lanjutkan",
-        "privacyTitle": "Privasi Anda di Near Business",
-        "privacyBody": "Near Business adalah antarmuka non-kustodian. Kami memprioritaskan privasi Anda sambil memastikan platform tetap aman dan fungsional.",
-        "minimalTitle": "Data Minimal",
-        "minimalBody": "Kami mengumpulkan informasi terbatas, seperti alamat dompet publik, alamat IP, dan analitik penggunaan, untuk mengoperasikan dan meningkatkan Antarmuka.",
-        "noCustodyTitle": "Tanpa Kustodi",
-        "noCustodyBody": "Kami tidak pernah memiliki akses ke kunci pribadi, frasa pemulihan, atau aset digital Anda.",
-        "publicTitle": "Catatan Publik",
-        "publicBody": "Ingatlah bahwa semua transaksi blockchain pada dasarnya bersifat publik dan tidak dikendalikan oleh kami.",
-        "responsibilityTitle": "Tanggung Jawab Anda",
-        "responsibilityBody": "Anda sepenuhnya bertanggung jawab untuk memantau aktivitas dompet Anda dan mengamankan kredensial Anda.",
-        "futureTitle": "Pembaruan Mendatang",
-        "futureBody": "Jika Anda memilih untuk menerima notifikasi mendatang (seperti email atau Telegram), kami hanya akan menggunakan data tersebut untuk memberi tahu Anda.",
-        "agreement": "Saya telah membaca dan menyetujui <terms>Ketentuan Layanan</terms> dan <privacy>Kebijakan Privasi</privacy>",
+        "agreement": "Saya telah membaca dan menyetujui <terms>Ketentuan Layanan</terms> serta mengakui <privacy>Kebijakan Privasi</privacy>.",
         "accepting": "Menerima...",
-        "continue": "Lanjutkan"
+        "agreeAndContinue": "Setuju dan lanjutkan"
     },
     "supportCenter": {
         "title": "Pusat Dukungan",

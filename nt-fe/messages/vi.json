@@ -1640,24 +1640,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Chấp nhận điều khoản để tiếp tục",
         "returningTitle": "Chúng tôi đã cập nhật Điều khoản",
-        "returningEffectiveDate": "Có hiệu lực từ ngày 21 tháng 5 năm 2026",
-        "returningBody": "Chúng tôi đã cập nhật Điều khoản dịch vụ và Chính sách quyền riêng tư. Vui lòng xem lại trước khi tiếp tục sử dụng Near Business.",
-        "returningAcceptAndContinue": "Chấp nhận và tiếp tục",
-        "privacyTitle": "Quyền riêng tư của bạn tại Near Business",
-        "privacyBody": "Near Business là giao diện không lưu ký. Chúng tôi ưu tiên quyền riêng tư của bạn đồng thời đảm bảo nền tảng vẫn an toàn và hoạt động tốt.",
-        "minimalTitle": "Dữ liệu tối thiểu",
-        "minimalBody": "Chúng tôi thu thập thông tin hạn chế, như địa chỉ ví công khai, địa chỉ IP và phân tích sử dụng, để vận hành và cải thiện Giao diện.",
-        "noCustodyTitle": "Không lưu ký",
-        "noCustodyBody": "Chúng tôi không bao giờ có quyền truy cập vào khóa cá nhân, cụm từ khôi phục hay tài sản số của bạn.",
-        "publicTitle": "Hồ sơ công khai",
-        "publicBody": "Hãy nhớ rằng tất cả các giao dịch blockchain vốn đã công khai và không do chúng tôi kiểm soát.",
-        "responsibilityTitle": "Trách nhiệm của bạn",
-        "responsibilityBody": "Bạn hoàn toàn chịu trách nhiệm theo dõi hoạt động ví của mình và bảo mật thông tin xác thực.",
-        "futureTitle": "Cập nhật trong tương lai",
-        "futureBody": "Nếu bạn chọn nhận thông báo trong tương lai (như email hoặc Telegram), chúng tôi sẽ chỉ sử dụng dữ liệu đó để giữ cho bạn được cập nhật.",
-        "agreement": "Tôi đã đọc và đồng ý với <terms>Điều khoản dịch vụ</terms> và <privacy>Chính sách bảo mật</privacy>",
+        "agreement": "Tôi đã đọc và đồng ý với <terms>Điều khoản dịch vụ</terms> và xác nhận <privacy>Chính sách quyền riêng tư</privacy>.",
         "accepting": "Đang chấp nhận...",
-        "continue": "Tiếp tục"
+        "agreeAndContinue": "Đồng ý và tiếp tục"
     },
     "supportCenter": {
         "title": "Trung tâm hỗ trợ",

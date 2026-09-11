@@ -13,11 +13,12 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    mobileInsetSheetClassName,
 } from "@/components/modal";
-import { ScrollContainer } from "@/components/scroll-container";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
+import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 
 interface AcceptTermsModalProps {
@@ -48,121 +49,70 @@ export function AcceptTermsModal({ open, variant }: AcceptTermsModalProps) {
     return (
         <Dialog open={open}>
             <DialogContent
-                className="lg:max-w-lg sm:max-w-sm max-h-[90vh] overflow-hidden"
+                className={cn(
+                    mobileInsetSheetClassName,
+                    "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                )}
                 onPointerDownOutside={(e) => e.preventDefault()}
                 onEscapeKeyDown={(e) => e.preventDefault()}
                 onInteractOutside={(e) => e.preventDefault()}
-                showCloseButton={false}
             >
-                <DialogHeader closeButton={false}>
-                    <DialogTitle>
+                <DialogHeader
+                    closeButton={false}
+                    className="mx-0 border-0 px-0 pb-0"
+                />
+                <div className="flex flex-col items-center gap-2 text-center">
+                    <DialogTitle className="text-xl font-bold leading-[1.2] tracking-[-0.4px]">
                         {isReturningUser
                             ? t("returningTitle")
                             : t("firstTimeTitle")}
                     </DialogTitle>
-                </DialogHeader>
-
-                <ScrollContainer className="flex-1 min-h-0 -mx-3 px-3">
-                    {isReturningUser ? (
-                        <DialogDescription asChild>
-                            <div className="space-y-3 text-sm">
-                                <p className="text-muted-foreground">
-                                    {t("returningEffectiveDate")}
-                                </p>
-                                <p className="text-foreground">
-                                    {t("returningBody")}
-                                </p>
-                            </div>
-                        </DialogDescription>
-                    ) : (
-                        <DialogDescription asChild>
-                            <div className="space-y-3 text-sm text-muted-foreground">
-                                <ul className="space-y-4">
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("privacyTitle")}
-                                        </p>
-                                        {t("privacyBody")}
-                                    </li>
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("minimalTitle")}
-                                        </p>
-                                        {t("minimalBody")}
-                                    </li>
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("noCustodyTitle")}
-                                        </p>
-                                        {t("noCustodyBody")}
-                                    </li>
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("publicTitle")}
-                                        </p>
-                                        {t("publicBody")}
-                                    </li>
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("responsibilityTitle")}
-                                        </p>
-                                        {t("responsibilityBody")}
-                                    </li>
-                                    <li>
-                                        <p className="text-foreground mb-1">
-                                            {t("futureTitle")}
-                                        </p>
-                                        {t("futureBody")}
-                                    </li>
-                                </ul>
-                            </div>
-                        </DialogDescription>
-                    )}
-                </ScrollContainer>
-
-                <DialogFooter className="flex-col gap-3 items-stretch sm:flex-col  pt-0">
-                    <div className="flex items-start gap-3">
-                        <Checkbox
-                            id="terms"
-                            checked={accepted}
-                            className="mt-0.5"
-                            onCheckedChange={(checked) =>
-                                setAccepted(checked === true)
-                            }
-                            disabled={isSubmitting}
-                        />
-                        <Label
-                            htmlFor="terms"
-                            className="text-sm text-foreground font-normal inline-block leading-relaxed cursor-pointer"
-                        >
-                            {t.rich("agreement", {
-                                terms: (chunks) => (
-                                    <Link
-                                        href={TERMS_OF_SERVICE_HREF}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-primary underline underline-offset-4 hover:text-primary/80"
-                                    >
-                                        {chunks}
-                                    </Link>
-                                ),
-                                privacy: (chunks) => (
-                                    <Link
-                                        href={PRIVACY_POLICY_HREF}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-primary underline underline-offset-4 hover:text-primary/80"
-                                    >
-                                        {chunks}
-                                    </Link>
-                                ),
-                            })}
-                        </Label>
-                    </div>
+                    <DialogDescription asChild>
+                        <div className="flex w-full items-start gap-3 text-left">
+                            <Checkbox
+                                id="terms"
+                                checked={accepted}
+                                className="mt-[5px]"
+                                onCheckedChange={(checked) =>
+                                    setAccepted(checked === true)
+                                }
+                                disabled={isSubmitting}
+                            />
+                            <Label
+                                htmlFor="terms"
+                                className="text-sm font-medium text-general-secondary-foreground inline-block leading-relaxed cursor-pointer"
+                            >
+                                {t.rich("agreement", {
+                                    terms: (chunks) => (
+                                        <Link
+                                            href={TERMS_OF_SERVICE_HREF}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-foreground underline underline-offset-4 hover:text-foreground/80"
+                                        >
+                                            {chunks}
+                                        </Link>
+                                    ),
+                                    privacy: (chunks) => (
+                                        <Link
+                                            href={PRIVACY_POLICY_HREF}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-foreground underline underline-offset-4 hover:text-foreground/80"
+                                        >
+                                            {chunks}
+                                        </Link>
+                                    ),
+                                })}
+                            </Label>
+                        </div>
+                    </DialogDescription>
+                </div>
+                <DialogFooter className="mx-0 px-0 pt-0">
                     <Button
                         onClick={handleAccept}
                         disabled={!accepted || isSubmitting}
-                        className="w-full"
+                        className="h-10 w-full"
                     >
                         {isSubmitting ? (
                             <>
@@ -172,10 +122,8 @@ export function AcceptTermsModal({ open, variant }: AcceptTermsModalProps) {
                                 />
                                 {t("accepting")}
                             </>
-                        ) : isReturningUser ? (
-                            t("returningAcceptAndContinue")
                         ) : (
-                            t("continue")
+                            t("agreeAndContinue")
                         )}
                     </Button>
                 </DialogFooter>

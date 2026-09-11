@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Devam Etmek İçin Şartları Kabul Edin",
         "returningTitle": "Şartlarımızı güncelledik",
-        "returningEffectiveDate": "21 Mayıs 2026 itibarıyla geçerlidir",
-        "returningBody": "Hizmet Şartlarımızı ve Gizlilik Politikamızı güncelledik. Near Business'i kullanmaya devam etmeden önce lütfen inceleyin.",
-        "returningAcceptAndContinue": "Kabul et ve devam et",
-        "privacyTitle": "Near Business'ta Gizliliğiniz",
-        "privacyBody": "Near Business, saklamaya dayalı olmayan bir arayüzdür. Platformun güvenli ve işlevsel kalmasını sağlarken gizliliğinize öncelik veriyoruz.",
-        "minimalTitle": "Minimum Veri",
-        "minimalBody": "Arayüzü işletmek ve geliştirmek için genel cüzdan adresleri, IP adresleri ve kullanım analizleri gibi sınırlı bilgiler topluyoruz.",
-        "noCustodyTitle": "Saklama Yok",
-        "noCustodyBody": "Özel anahtarlarınıza, kurtarma ifadelerinize veya dijital varlıklarınıza asla erişmiyoruz.",
-        "publicTitle": "Genel Kayıtlar",
-        "publicBody": "Tüm blok zinciri işlemlerinin doğal olarak genel olduğunu ve tarafımızdan kontrol edilmediğini unutmayın.",
-        "responsibilityTitle": "Sorumluluğunuz",
-        "responsibilityBody": "Cüzdan etkinliğinizi izlemekten ve kimlik bilgilerinizi güvende tutmaktan yalnızca siz sorumlusunuz.",
-        "futureTitle": "Gelecekteki Güncellemeler",
-        "futureBody": "Gelecekteki bildirimlere (e-posta veya Telegram gibi) abone olursanız, bu verileri yalnızca sizi bilgilendirmek için kullanacağız.",
-        "agreement": "<terms>Hizmet Şartları</terms> ve <privacy>Gizlilik Politikası</privacy>'nı okudum ve kabul ediyorum",
+        "agreement": "<terms>Hizmet Şartları</terms>'nı okudum ve kabul ediyorum ve <privacy>Gizlilik Politikası</privacy>'nı onaylıyorum.",
         "accepting": "Kabul ediliyor...",
-        "continue": "Devam Et"
+        "agreeAndContinue": "Kabul et ve devam et"
     },
     "supportCenter": {
         "title": "Destek Merkezi",

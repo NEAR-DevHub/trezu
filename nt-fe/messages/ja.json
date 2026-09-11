@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "続行するには利用規約に同意してください",
         "returningTitle": "利用規約を更新いたしました",
-        "returningEffectiveDate": "施行日: 2026年5月21日",
-        "returningBody": "利用規約およびプライバシーポリシーを更新いたしました。Near Business の利用を継続する前にご確認ください。",
-        "returningAcceptAndContinue": "同意して続ける",
-        "privacyTitle": "Near Businessでのプライバシー",
-        "privacyBody": "Near Businessはノンカストディアル(非保管型)インターフェースです。プラットフォームの安全性と機能性を保ちながら、プライバシーを最優先します。",
-        "minimalTitle": "最小限のデータ",
-        "minimalBody": "インターフェースの運営と改善のために、公開ウォレットアドレス、IPアドレス、利用分析など限られた情報を収集します。",
-        "noCustodyTitle": "非保管",
-        "noCustodyBody": "秘密鍵、リカバリーフレーズ、デジタル資産には一切アクセスしません。",
-        "publicTitle": "公開記録",
-        "publicBody": "すべてのブロックチェーントランザクションは本質的に公開されており、当社が制御するものではないことにご注意ください。",
-        "responsibilityTitle": "あなたの責任",
-        "responsibilityBody": "ウォレットのアクティビティの監視と認証情報の保護は、すべてあなたの責任となります。",
-        "futureTitle": "今後のアップデート",
-        "futureBody": "今後の通知(メールやTelegramなど)にオプトインする場合、そのデータは情報提供のためだけに使用します。",
-        "agreement": "<terms>利用規約</terms>と<privacy>プライバシーポリシー</privacy>を読み、同意します",
+        "agreement": "<terms>利用規約</terms>を読み同意し、<privacy>プライバシーポリシー</privacy>を確認しました。",
         "accepting": "同意中...",
-        "continue": "続ける"
+        "agreeAndContinue": "同意して続ける"
     },
     "supportCenter": {
         "title": "サポートセンター",

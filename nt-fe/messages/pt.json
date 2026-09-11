@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Aceite os termos para continuar",
         "returningTitle": "Atualizamos nossos termos",
-        "returningEffectiveDate": "Em vigor em 21 de maio de 2026",
-        "returningBody": "Fizemos atualizações nos nossos Termos de Serviço e na Política de Privacidade. Revise-os antes de continuar usando o Near Business.",
-        "returningAcceptAndContinue": "Aceitar e continuar",
-        "privacyTitle": "Sua privacidade na Near Business",
-        "privacyBody": "A Near Business é uma interface não custodial. Priorizamos sua privacidade ao mesmo tempo em que garantimos que a plataforma permaneça segura e funcional.",
-        "minimalTitle": "Dados mínimos",
-        "minimalBody": "Coletamos informações limitadas, como endereços públicos de carteira, endereços IP e análises de uso, para operar e melhorar a Interface.",
-        "noCustodyTitle": "Sem custódia",
-        "noCustodyBody": "Nunca temos acesso às suas chaves privadas, frases de recuperação ou ativos digitais.",
-        "publicTitle": "Registros públicos",
-        "publicBody": "Lembre-se de que todas as transações em blockchain são inerentemente públicas e não são controladas por nós.",
-        "responsibilityTitle": "Sua responsabilidade",
-        "responsibilityBody": "Você é o único responsável por monitorar a atividade da sua carteira e proteger suas credenciais.",
-        "futureTitle": "Atualizações futuras",
-        "futureBody": "Se você optar por receber notificações futuras (como e-mail ou Telegram), usaremos esses dados apenas para mantê-lo informado.",
-        "agreement": "Eu li e concordo com os <terms>Termos de Serviço</terms> e a <privacy>Política de Privacidade</privacy>",
+        "agreement": "Li e concordo com os <terms>Termos de Serviço</terms> e reconheço a <privacy>Política de Privacidade</privacy>.",
         "accepting": "Aceitando...",
-        "continue": "Continuar"
+        "agreeAndContinue": "Concordar e continuar"
     },
     "supportCenter": {
         "title": "Central de suporte",
