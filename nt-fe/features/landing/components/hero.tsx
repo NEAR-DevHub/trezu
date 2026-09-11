@@ -67,14 +67,16 @@ export function LandingNav() {
                         </SectionLink>
                     ))}
                 </nav>
+                {/* Phones can't fit both next to the wordmark, so they keep
+                    Sign in and rely on the hero's Early Access CTA just below. */}
                 <div className="flex items-center gap-4">
                     <Link
                         href="/login"
-                        className="hidden whitespace-nowrap text-sm leading-normal hover:underline sm:inline"
+                        className="whitespace-nowrap text-sm leading-normal hover:underline"
                     >
                         Sign in
                     </Link>
-                    <EarlyAccessButton className="h-11 shrink-0 px-4 text-sm md:h-12 md:px-8 md:text-base" />
+                    <EarlyAccessButton className="hidden h-11 shrink-0 px-4 text-sm sm:inline-flex md:h-12 md:px-8 md:text-base" />
                 </div>
             </div>
         </header>
