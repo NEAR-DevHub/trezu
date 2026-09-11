@@ -129,7 +129,8 @@ export function Pricing() {
         // the mint-grey the design ends on — so it bleeds past the 1440 frame.
         <section
             id="pricing"
-            className="bg-[linear-gradient(360deg,#A6B9B3_0%,#FFFFFF_99.95%)]"
+            tabIndex={-1}
+            className="bg-[linear-gradient(360deg,#A6B9B3_0%,#FFFFFF_99.95%)] outline-none"
         >
             <div
                 className={cn(

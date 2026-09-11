@@ -19,7 +19,8 @@ export function ControlSplit() {
     return (
         <section
             id="security"
-            className="relative mx-auto w-full max-w-[1440px] overflow-hidden px-6 py-12 md:px-12 lg:p-16"
+            tabIndex={-1}
+            className="relative mx-auto w-full max-w-[1440px] overflow-hidden px-6 py-12 outline-none md:px-12 lg:p-16"
         >
             {/* The photo scales with the section width at its own aspect
                 ratio and fades into the page colour where it ends, so the

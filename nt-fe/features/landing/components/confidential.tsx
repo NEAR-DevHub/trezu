@@ -29,7 +29,8 @@ export function Confidential() {
     return (
         <section
             id="product"
-            className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-16 px-6 py-16 md:px-12 lg:gap-20 lg:py-20"
+            tabIndex={-1}
+            className="mx-auto flex w-full max-w-[1440px] flex-col items-center gap-16 px-6 py-16 outline-none md:px-12 lg:gap-20 lg:py-20"
         >
             <Reveal className="flex w-full flex-col items-center gap-6">
                 <h2 className="text-center text-[40px] font-medium leading-[1.04] tracking-[-1px] md:text-[56px] md:tracking-[-1.4px] xl:text-[72px] xl:tracking-[-1.8px]">

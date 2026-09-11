@@ -8,6 +8,9 @@
  * take the navigation over and scroll to it, instead of letting the browser
  * snap there in a single frame. Anything else (a missing section, a modified
  * click) falls through to the default behaviour.
+ *
+ * Focus follows the scroll so keyboard and screen-reader users land on the
+ * section too, which means every target needs `tabIndex={-1}`.
  */
 export function SectionLink({
     href,
@@ -44,6 +47,8 @@ export function SectionLink({
                         ? "auto"
                         : "smooth",
                 });
+                // Without preventScroll the focus jump cuts the animation short.
+                section.focus({ preventScroll: true });
                 window.history.replaceState(null, "", `#${id}`);
             }}
             {...props}
