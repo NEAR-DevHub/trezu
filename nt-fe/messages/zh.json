@@ -1640,24 +1640,9 @@
     "acceptTerms": {
         "firstTimeTitle": "接受条款以继续",
         "returningTitle": "我们的条款已更新",
-        "returningEffectiveDate": "生效日期：2026年5月21日",
-        "returningBody": "我们已更新《服务条款》和《隐私政策》。请在继续使用 Near Business 前先阅读。",
-        "returningAcceptAndContinue": "同意并继续",
-        "privacyTitle": "您在 Near Business 的隐私",
-        "privacyBody": "Near Business 是一个非托管界面。我们在确保平台安全和功能正常的同时,优先保护您的隐私。",
-        "minimalTitle": "最少数据",
-        "minimalBody": "我们仅收集有限的信息,例如公开钱包地址、IP 地址和使用分析,以运营和改进本界面。",
-        "noCustodyTitle": "非托管",
-        "noCustodyBody": "我们绝不会访问您的私钥、助记词或数字资产。",
-        "publicTitle": "公开记录",
-        "publicBody": "请记住,所有区块链交易本身都是公开的,且不受我们控制。",
-        "responsibilityTitle": "您的责任",
-        "responsibilityBody": "您需自行负责监控钱包活动并保护您的凭证。",
-        "futureTitle": "未来更新",
-        "futureBody": "如果您选择接收未来的通知(如电子邮件或 Telegram),我们将仅使用这些数据来通知您。",
-        "agreement": "我已阅读并同意<terms>服务条款</terms>和<privacy>隐私政策</privacy>",
+        "agreement": "我已阅读并同意<terms>服务条款</terms>，并确认<privacy>隐私政策</privacy>。",
         "accepting": "正在接受...",
-        "continue": "继续"
+        "agreeAndContinue": "同意并继续"
     },
     "supportCenter": {
         "title": "支持中心",

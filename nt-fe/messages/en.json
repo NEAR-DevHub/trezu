@@ -1655,24 +1655,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Accept terms to continue",
         "returningTitle": "We've updated our Terms",
-        "returningEffectiveDate": "Effective May 21, 2026",
-        "returningBody": "We've made updates to our Terms of Service and Privacy Policy. Please review them before continuing to use Near Business.",
-        "returningAcceptAndContinue": "Accept & continue",
-        "privacyTitle": "Your Privacy at Near Business",
-        "privacyBody": "Near Business is a non-custodial interface. We prioritize your privacy while ensuring the platform stays secure and functional.",
-        "minimalTitle": "Minimal Data",
-        "minimalBody": "We collect limited information, such as public wallet addresses, IP addresses, and usage analytics, to operate and improve the Interface.",
-        "noCustodyTitle": "No Custody",
-        "noCustodyBody": "We never have access to your private keys, recovery phrases, or digital assets.",
-        "publicTitle": "Public Records",
-        "publicBody": "Remember that all blockchain transactions are inherently public and are not controlled by us.",
-        "responsibilityTitle": "Your Responsibility",
-        "responsibilityBody": "You are solely responsible for monitoring your wallet activity and securing your credentials.",
-        "futureTitle": "Future Updates",
-        "futureBody": "If you opt-in to future notifications (like email or Telegram), we will only use that data to keep you informed.",
-        "agreement": "I have read and agree to the <terms>Terms of Service</terms> and <privacy>Privacy Policy</privacy>",
+        "agreement": "I have read and agree to the <terms>Terms of Service</terms> and acknowledge the <privacy>Privacy Policy</privacy>.",
         "accepting": "Accepting...",
-        "continue": "Continue"
+        "agreeAndContinue": "Agree and continue"
     },
     "supportCenter": {
         "title": "Support center",

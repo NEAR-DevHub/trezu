@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Acepta los términos para continuar",
         "returningTitle": "Hemos actualizado nuestros términos",
-        "returningEffectiveDate": "Vigente desde el 21 de mayo de 2026",
-        "returningBody": "Hemos realizado actualizaciones en nuestros Términos de servicio y Política de privacidad. Revísalos antes de continuar usando Near Business.",
-        "returningAcceptAndContinue": "Aceptar y continuar",
-        "privacyTitle": "Tu privacidad en Near Business",
-        "privacyBody": "Near Business es una interfaz no custodial. Damos prioridad a tu privacidad mientras mantenemos la plataforma segura y funcional.",
-        "minimalTitle": "Datos mínimos",
-        "minimalBody": "Recopilamos información limitada, como direcciones públicas de cartera, direcciones IP y analíticas de uso, para operar y mejorar la interfaz.",
-        "noCustodyTitle": "Sin custodia",
-        "noCustodyBody": "Nunca tenemos acceso a tus claves privadas, frases de recuperación ni activos digitales.",
-        "publicTitle": "Registros públicos",
-        "publicBody": "Recuerda que todas las transacciones de blockchain son inherentemente públicas y no están bajo nuestro control.",
-        "responsibilityTitle": "Tu responsabilidad",
-        "responsibilityBody": "Eres responsable exclusivo de supervisar tu actividad de cartera y proteger tus credenciales.",
-        "futureTitle": "Actualizaciones futuras",
-        "futureBody": "Si optas por recibir notificaciones futuras (como correo o Telegram), solo usaremos esos datos para mantenerte informado.",
-        "agreement": "He leído y acepto los <terms>Términos del servicio</terms> y la <privacy>Política de privacidad</privacy>",
+        "agreement": "He leído y acepto los <terms>Términos de servicio</terms> y reconozco la <privacy>Política de privacidad</privacy>.",
         "accepting": "Aceptando...",
-        "continue": "Continuar"
+        "agreeAndContinue": "Aceptar y continuar"
     },
     "supportCenter": {
         "title": "Centro de soporte",

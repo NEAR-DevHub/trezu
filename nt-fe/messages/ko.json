@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "계속하려면 약관에 동의하세요",
         "returningTitle": "이용약관이 업데이트되었습니다",
-        "returningEffectiveDate": "시행일: 2026년 5월 21일",
-        "returningBody": "이용약관 및 개인정보처리방침이 업데이트되었습니다. Near Business를 계속 사용하시기 전에 내용을 확인해 주세요.",
-        "returningAcceptAndContinue": "동의 후 계속",
-        "privacyTitle": "Near Business에서의 개인정보 보호",
-        "privacyBody": "Near Business는 비수탁형 인터페이스입니다. 플랫폼이 안전하고 기능적으로 유지되도록 하는 동시에 사용자의 개인정보를 우선시합니다.",
-        "minimalTitle": "최소한의 데이터",
-        "minimalBody": "인터페이스를 운영하고 개선하기 위해 공개 지갑 주소, IP 주소, 사용 분석과 같은 제한된 정보를 수집합니다.",
-        "noCustodyTitle": "비수탁",
-        "noCustodyBody": "당사는 사용자의 개인 키, 복구 문구 또는 디지털 자산에 절대 접근하지 않습니다.",
-        "publicTitle": "공개 기록",
-        "publicBody": "모든 블록체인 트랜잭션은 본질적으로 공개되며 당사가 통제하지 않는다는 점을 기억하세요.",
-        "responsibilityTitle": "사용자 책임",
-        "responsibilityBody": "사용자는 지갑 활동을 모니터링하고 자격 증명을 보호하는 것에 전적으로 책임이 있습니다.",
-        "futureTitle": "향후 업데이트",
-        "futureBody": "향후 알림(이메일 또는 Telegram 등)을 수신하기로 선택하시면, 해당 데이터는 정보를 알려드리는 용도로만 사용됩니다.",
-        "agreement": "<terms>이용약관</terms> 및 <privacy>개인정보 처리방침</privacy>을 읽고 동의합니다",
+        "agreement": "<terms>이용약관</terms>에 동의하며 <privacy>개인정보 처리방침</privacy>을 확인했습니다.",
         "accepting": "동의 중...",
-        "continue": "계속"
+        "agreeAndContinue": "동의 후 계속"
     },
     "supportCenter": {
         "title": "지원 센터",

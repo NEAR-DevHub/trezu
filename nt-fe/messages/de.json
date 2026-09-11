@@ -1657,24 +1657,9 @@
     "acceptTerms": {
         "firstTimeTitle": "Bedingungen akzeptieren, um fortzufahren",
         "returningTitle": "Wir haben unsere Bedingungen aktualisiert",
-        "returningEffectiveDate": "Gültig ab 21. Mai 2026",
-        "returningBody": "Wir haben unsere Nutzungsbedingungen und Datenschutzrichtlinie aktualisiert. Bitte prüfe sie, bevor du Near Business weiter nutzt.",
-        "returningAcceptAndContinue": "Akzeptieren und fortfahren",
-        "privacyTitle": "Ihre Privatsphäre bei Near Business",
-        "privacyBody": "Near Business ist eine nicht-verwahrende Schnittstelle. Wir priorisieren Ihre Privatsphäre und stellen gleichzeitig sicher, dass die Plattform sicher und funktional bleibt.",
-        "minimalTitle": "Minimale Daten",
-        "minimalBody": "Wir erfassen begrenzte Informationen wie öffentliche Wallet-Adressen, IP-Adressen und Nutzungsanalysen, um die Schnittstelle zu betreiben und zu verbessern.",
-        "noCustodyTitle": "Keine Verwahrung",
-        "noCustodyBody": "Wir haben niemals Zugriff auf Ihre privaten Schlüssel, Wiederherstellungsphrasen oder digitalen Vermögenswerte.",
-        "publicTitle": "Öffentliche Aufzeichnungen",
-        "publicBody": "Beachten Sie, dass alle Blockchain-Transaktionen von Natur aus öffentlich sind und nicht von uns kontrolliert werden.",
-        "responsibilityTitle": "Ihre Verantwortung",
-        "responsibilityBody": "Sie sind allein dafür verantwortlich, Ihre Wallet-Aktivität zu überwachen und Ihre Anmeldedaten zu sichern.",
-        "futureTitle": "Zukünftige Aktualisierungen",
-        "futureBody": "Wenn Sie sich für zukünftige Benachrichtigungen entscheiden (wie E-Mail oder Telegram), verwenden wir diese Daten ausschließlich, um Sie zu informieren.",
-        "agreement": "Ich habe die <terms>Nutzungsbedingungen</terms> und die <privacy>Datenschutzerklärung</privacy> gelesen und stimme ihnen zu",
+        "agreement": "Ich habe die <terms>Nutzungsbedingungen</terms> gelesen und stimme ihnen zu und bestätige die <privacy>Datenschutzerklärung</privacy>.",
         "accepting": "Wird akzeptiert...",
-        "continue": "Weiter"
+        "agreeAndContinue": "Zustimmen und fortfahren"
     },
     "supportCenter": {
         "title": "Support-Center",
