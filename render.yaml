@@ -139,7 +139,7 @@ services:
     name: near-business-frontend-staging
     region: frankfurt
     runtime: node
-    plan: starter
+    plan: standard
     rootDir: nt-fe
     branch: nearcom_redesign
     buildCommand: bun install && node ./node_modules/geoip-lite/scripts/updatedb.js license_key=$MAXMIND_LICENSE_KEY && bun run build && for f in /etc/secrets/*.woff2.b64; do base64 -d < "$f" > "public/fonts/$(basename "$f" .b64)"; done && cp -r public .next/standalone/ && cp -r .next/static .next/standalone/.next/
