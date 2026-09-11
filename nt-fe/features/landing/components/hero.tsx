@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { EARLY_ACCESS_HREF, NAV_LINKS, PROOF_STATS } from "../content";
 import { NearBusinessWordmark } from "./landing-icons";
 import { Reveal } from "./reveal";
+import { SectionLink } from "./section-link";
 
 /** Horizontal page gutter: 120px at the 1440 design width, tighter below. */
 export const GUTTER = "px-6 md:px-12 xl:px-[120px]";
@@ -51,7 +52,7 @@ export function LandingNav() {
                 </Link>
                 <nav className="hidden items-center gap-6 lg:flex">
                     {NAV_LINKS.map(({ label, href }) => (
-                        <a
+                        <SectionLink
                             key={label}
                             href={href}
                             className="rounded-lg px-3 py-2 text-base leading-normal hover:bg-landing-ink/5"
@@ -63,7 +64,7 @@ export function LandingNav() {
                                 : {})}
                         >
                             {label}
-                        </a>
+                        </SectionLink>
                     ))}
                 </nav>
                 <div className="flex items-center gap-4">
