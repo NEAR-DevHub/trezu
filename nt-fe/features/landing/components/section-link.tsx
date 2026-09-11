@@ -44,7 +44,7 @@ export function SectionLink({
                         ? "auto"
                         : "smooth",
                 });
-                window.history.pushState(null, "", `#${id}`);
+                window.history.replaceState(null, "", `#${id}`);
             }}
             {...props}
         />
