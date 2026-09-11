@@ -73,7 +73,14 @@ export function HelpScoutBeacon({
 
     useEffect(() => {
         window.Beacon?.("config", {
-            display: { style: hideLauncher ? "manual" : "icon" },
+            display: {
+                style: hideLauncher ? "manual" : "icon",
+                // With the launcher scaled to 48px in globals.css, 12px keeps
+                // it inside the landing footer's 64px corner padding, clear
+                // of the full-width wordmark.
+                horizontalOffset: 12,
+                verticalOffset: 12,
+            },
         });
     }, [hideLauncher]);
 

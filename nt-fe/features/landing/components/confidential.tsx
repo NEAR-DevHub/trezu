@@ -96,12 +96,18 @@ export function Confidential() {
                     Confidentiality is about controlling who can watch your
                     operations, not about hiding them.
                 </p>
-                <p className="mt-8 max-w-[920px] text-base leading-normal lg:mt-12 font-normal">
+                {/* From lg the copy breaks after "in a single batch." like the
+                    design; the cap fits that first line even in the Figtree
+                    fallback. */}
+                <p className="mt-8 max-w-[1140px] text-base leading-normal lg:mt-12 font-normal">
                     Allocate capital and make payroll payments without publicly
-                    exposing who you pay, how much, or when. Send assets to
-                    dozens of recipients in a single batch. Every payment
-                    generates a confidential receipt for your records, visible
-                    to your team and never to a block explorer.
+                    exposing who you pay, how much, or when.{" "}
+                    <span className="lg:whitespace-nowrap">
+                        Send assets to dozens of recipients in a single batch.
+                    </span>
+                    <br className="hidden lg:inline" /> Every payment generates
+                    a confidential receipt for your records, visible to your
+                    team and never to a block explorer.
                 </p>
             </Reveal>
         </section>
