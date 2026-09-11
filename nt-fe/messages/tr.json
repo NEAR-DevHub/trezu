@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "Site kullanımını anlamak, siteyi iyileştirmek, ayarlarınızı hatırlamak ve pazarlama çalışmalarımıza destek olmak için çerezler kullanıyoruz. <privacy>Gizlilik Politikası</privacy>",
         "acceptAll": "Tümünü kabul et",
+        "rejectNonEssential": "Zorunlu olmayanları reddet",
         "managePreferences": "Tercihleri yönet",
         "closeBanner": "Kapat ve yalnızca temel çerezleri kullan",
         "title": "Depolama tercihleri",

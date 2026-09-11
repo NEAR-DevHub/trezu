@@ -60,15 +60,20 @@ export function CookieConsentBanner() {
 
             <div className="mt-4 flex flex-col gap-2">
                 <Button
+                    onClick={rejectNonEssential}
+                    className="w-full bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90 text-[14px] leading-none"
+                >
+                    {t("rejectNonEssential")}
+                </Button>
+                <Button
                     onClick={acceptAll}
                     className="w-full bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90 text-[14px] leading-none"
                 >
                     {t("acceptAll")}
                 </Button>
                 <Button
-                    variant="ghost"
                     onClick={openPreferences}
-                    className="w-full bg-popover/10 text-popover/80 hover:bg-popover/20 hover:text-popover text-[14px] leading-none"
+                    className="w-full bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90 text-[14px] leading-none"
                 >
                     {t("managePreferences")}
                 </Button>

@@ -23,8 +23,16 @@ export const NAV_LINKS = [
 export const PROOF_STATS = [
     { value: "35+", label: "Chains" },
     { value: "180+", label: "Assets" },
-    { value: "$30B+", label: "All-time volume" },
-    { value: "$65M+", label: "Confidential TVL" },
+    {
+        value: "$30B+",
+        label: "All-time volume",
+        note: "NEAR Intents metric as of 08 September 2026.",
+    },
+    {
+        value: "$65M+",
+        label: "Confidential TVL",
+        note: "NEAR Intents metric as of 08 September 2026.",
+    },
 ] as const;
 
 export const CONFIDENTIAL_TAGS = [
@@ -41,16 +49,16 @@ export const PUBLIC_CHAIN_POINTS = [
 ] as const;
 
 export const NEAR_BUSINESS_POINTS = [
-    "Balances visible only to your quorum",
-    "Payroll settles with confidential receipts",
-    "Recipients named and verified, never exposed",
+    "Balances visible to your quorum, not the public",
+    "Payroll payments settle with confidential receipts",
+    "Recipients named and verified, never exposed to the general public",
     "Auditors get everything; the chain gets nothing",
 ] as const;
 
 export const CONTROL_CARDS = [
     {
         title: "Hardware signing",
-        body: "Sign with hardware through Ledger support. No custody, no compromise.",
+        body: "Sign with hardware through Ledger support. Your Treasury Contract remains self-custodial.",
     },
     {
         title: "Roles and thresholds",
@@ -79,7 +87,7 @@ export const CAPABILITIES = [
     },
     {
         title: "Cross-chain swaps",
-        body: "Swap across 35+ chains in seconds without leaving the app or touching an external bridge. Powered by NEAR Intents.",
+        body: "Swap across 35+ chains in seconds without leaving the app or touching a separate bridge interface. Powered by NEAR Intents.",
     },
     {
         title: "Capital allocation",
@@ -160,7 +168,11 @@ export const COMPARISON_ROWS = [
         nearBusiness: "35+ chains, BTC, ETH, SOL and beyond",
         enterprise: "EVM only",
     },
-    { label: "Self-custodial", nearBusiness: "Yes", enterprise: "No" },
+    {
+        label: "Self-custodial Treasury Contract",
+        nearBusiness: "Yes",
+        enterprise: "No",
+    },
     {
         label: "Confidential treasuries",
         nearBusiness: "Always",
@@ -227,15 +239,15 @@ export const FAQ_ITEMS = [
     },
     {
         question: "Confidential from whom, exactly?",
-        answer: "Confidential from the public chain, from market observers, and from anyone watching your treasury address. Fully legible to your own members, your board, and your auditors. Confidentiality is about controlling who can watch your operations, not about hiding them from the people accountable for them.",
+        answer: "Confidential from the public chain, from market observers, and from anyone watching your treasury address. Fully legible to your own members, your board, and your auditors. Confidentiality is about controlling who can watch your operations, not about hiding them from the people accountable for them. Transaction data is processed as needed to operate and secure the service and meet legal obligations, as described in our Privacy Policy.",
     },
     {
         question: "Can NEAR move or freeze our funds?",
-        answer: "No. Funds move only on the signatures your organization defines. NEAR holds no key and no key share, and maintains no technical capability to initiate, alter, or reverse a transaction.",
+        answer: "No. NEAR Business cannot unilaterally move funds held in your Treasury Contract or override the approval rules your organization defines. Deposits, withdrawals and swaps made through connected services remain subject to applicable legal and regulatory requirements, our Terms of Service, and the availability and requirements of the relevant networks and providers.",
     },
     {
         question: "Which chains and assets are supported?",
-        answer: "35+ chains including Bitcoin, Ethereum, Solana and NEAR, and 180+ assets, with cross-chain swaps built in. No external bridges.",
+        answer: "35+ chains including Bitcoin, Ethereum, Solana and NEAR, and 180+ assets, with cross-chain swaps built in. No external bridges for your team to manage.",
     },
     {
         question: "How do approvals and permissions work?",

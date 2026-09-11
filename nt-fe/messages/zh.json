@@ -2684,6 +2684,7 @@
     "cookieConsent": {
         "bannerBody": "我们使用 Cookie 来了解网站使用情况、改进网站、记住您的设置并支持我们的营销工作。<privacy>隐私政策</privacy>",
         "acceptAll": "全部接受",
+        "rejectNonEssential": "拒绝非必要 Cookie",
         "managePreferences": "管理偏好",
         "closeBanner": "关闭并仅使用必要 Cookie",
         "title": "存储偏好",
