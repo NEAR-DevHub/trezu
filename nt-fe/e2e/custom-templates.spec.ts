@@ -1,4 +1,5 @@
-import { expect, type Page, type Route, test } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
 import {
     maybeFulfillMockWalletRequest,
     seedMockWalletAccount,
@@ -302,74 +303,71 @@ async function setupMocks(
 test.describe("Custom Templates — authoring", () => {
     test("submit gating: disabled until a name and a valid manifest are present", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, []);
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
 
-        await expect(
-            page.getByRole("heading", { name: "New Template" }),
-        ).toBeVisible({ timeout: 15000 });
+        await expect(customTemplatesPage.newTemplateHeading()).toBeVisible({
+            timeout: 15000,
+        });
 
-        const submit = page.getByRole("button", { name: "Create Template" });
+        const submit = customTemplatesPage.createSubmitButton();
         // Empty draft is an invalid manifest → disabled out of the gate.
         await expect(submit).toBeDisabled();
 
         // Author in Code mode (one textarea drives the same validator as Visual).
-        await page.getByRole("tab", { name: "Code" }).click();
-        const code = page.locator("textarea");
-        await code.fill(VALID_MANIFEST_TEXT);
+        await customTemplatesPage.codeTab().click();
+        await customTemplatesPage.codeTextarea().fill(VALID_MANIFEST_TEXT);
 
         // Valid manifest, but the name is still empty → still gated.
         await expect(submit).toBeDisabled();
 
-        // Name is addressed by its aria-label — its placeholder "Set Greeting" collides with the
-        // manifest textarea's example and the Visual builder's Title field.
-        await page
-            .getByRole("textbox", { name: "Name", exact: true })
-            .fill("My Template");
+        await customTemplatesPage.nameInput().fill("My Template");
         await expect(submit).toBeEnabled();
     });
 
     test("touched-gating: 'Name is required' shows only after the name is blurred", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, []);
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
 
-        // Name is addressed by its aria-label (see submit-gating for the placeholder collision).
-        const name = page.getByRole("textbox", { name: "Name", exact: true });
+        const name = customTemplatesPage.nameInput();
         await expect(name).toBeVisible({ timeout: 15000 });
 
         // Untouched → no error yet (editing the builder must not light it up).
-        await expect(page.getByText("Name is required")).not.toBeVisible();
+        await expect(
+            customTemplatesPage.fieldRequiredError("Name"),
+        ).not.toBeVisible();
 
         // Focus then blur without typing → the field is touched and the error appears.
         await name.focus();
         await name.blur();
-        await expect(page.getByText("Name is required")).toBeVisible();
+        await expect(customTemplatesPage.fieldRequiredError("Name")).toBeVisible();
     });
 
     test("code-mode section errors: invalid JSON surfaces errors and blocks submit", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, []);
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
 
-        await page.getByRole("tab", { name: "Code" }).click();
-        const code = page.locator("textarea");
+        await customTemplatesPage.codeTab().click();
         // Malformed JSON — only shows once the textarea is touched (typing sets that).
-        await code.fill('{ "version": 1, ');
+        await customTemplatesPage.codeTextarea().fill('{ "version": 1, ');
 
-        const submit = page.getByRole("button", { name: "Create Template" });
+        const submit = customTemplatesPage.createSubmitButton();
         await expect(submit).toBeDisabled();
         // The error list under the editor renders at least one item.
-        await expect(
-            page.locator("ul.text-destructive li").first(),
-        ).toBeVisible();
+        await expect(customTemplatesPage.codeErrorListFirstItem()).toBeVisible();
     });
 
     test("create happy path: POST fires and redirects to the template's fill page", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()]);
 
@@ -382,14 +380,12 @@ test.describe("Custom Templates — authoring", () => {
             return json(route, template(), 201);
         });
 
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
-        await page.getByRole("tab", { name: "Code" }).click();
-        await page.locator("textarea").fill(VALID_MANIFEST_TEXT);
-        await page
-            .getByRole("textbox", { name: "Name", exact: true })
-            .fill("Set Greeting");
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
+        await customTemplatesPage.codeTab().click();
+        await customTemplatesPage.codeTextarea().fill(VALID_MANIFEST_TEXT);
+        await customTemplatesPage.nameInput().fill("Set Greeting");
 
-        await page.getByRole("button", { name: "Create Template" }).click();
+        await customTemplatesPage.createSubmitButton().click();
 
         await page.waitForURL(/custom-templates\/set-greeting$/, {
             timeout: 15000,
@@ -399,14 +395,15 @@ test.describe("Custom Templates — authoring", () => {
 
     test("visual mode: a required field reds only after it is blurred", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, []);
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
 
         // The editor opens in the Visual builder. The Receiver field is required, so the empty draft
         // is already invalid — but the error must stay hidden until that input is touched. The unit
         // tests pin the initial-render half; this is the after-blur half they defer to e2e.
-        const receiver = page.getByPlaceholder("guestbook.near");
+        const receiver = customTemplatesPage.visualReceiverInput();
         await expect(receiver).toBeVisible({ timeout: 15000 });
         await expect(receiver).not.toHaveAttribute("aria-invalid", "true");
 
@@ -419,6 +416,7 @@ test.describe("Custom Templates — authoring", () => {
 test.describe("Custom Templates — pin", () => {
     test("'Pin to the Sidebar' fires a PUT and the menu flips to 'Unpin Template'", async ({
         page,
+        customTemplatesPage,
     }) => {
         // Mutable so the post-mutation refetch (the hook invalidates the list query) reflects the
         // new pinned state — that invalidation→refetch→UI contract is what this asserts.
@@ -435,45 +433,41 @@ test.describe("Custom Templates — pin", () => {
             return json(route, templates[0]);
         });
 
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
-        await expect(page.getByText("Set Greeting")).toBeVisible({
-            timeout: 15000,
-        });
+        await customTemplatesPage.gotoList(TREASURY_ID);
+        await expect(
+            customTemplatesPage.templateRowText("Set Greeting"),
+        ).toBeVisible({ timeout: 15000 });
 
-        await page.getByRole("button", { name: "Template actions" }).click();
-        await page
-            .getByRole("menuitem", { name: /pin to the sidebar/i })
-            .click();
+        await customTemplatesPage.templateActionsButton().click();
+        await customTemplatesPage.pinMenuItem().click();
 
         // The request carried the flag...
         await expect.poll(() => putBody).toMatchObject({ pinned: true });
         // ...and after the list refetches, re-opening the row menu shows the flipped label.
-        await page.getByRole("button", { name: "Template actions" }).click();
-        await expect(
-            page.getByRole("menuitem", { name: /unpin template/i }),
-        ).toBeVisible();
+        await customTemplatesPage.templateActionsButton().click();
+        await expect(customTemplatesPage.unpinMenuItem()).toBeVisible();
     });
 });
 
 test.describe("Custom Templates — fill", () => {
     test("renders the manifest fields and the File Proposal button", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()]);
-        await page.goto(`/${TREASURY_ID}/custom-templates/set-greeting`);
+        await customTemplatesPage.gotoFill(TREASURY_ID, "set-greeting");
 
         await expect(
-            page.getByRole("heading", { name: "Set Greeting" }),
+            customTemplatesPage.fillHeading("Set Greeting"),
         ).toBeVisible({ timeout: 15000 });
         // Exact — "Greeting" (the field label) is a substring of the "Set Greeting" heading.
-        await expect(page.getByText("Greeting", { exact: true })).toBeVisible();
-        await expect(
-            page.getByRole("button", { name: "File Proposal" }),
-        ).toBeVisible();
+        await expect(customTemplatesPage.fieldLabel("Greeting")).toBeVisible();
+        await expect(customTemplatesPage.fileProposalButton()).toBeVisible();
     });
 
     test("required-field gate: submitting empty shows an error and fires no relay", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()]);
 
@@ -484,13 +478,15 @@ test.describe("Custom Templates — fill", () => {
             return json(route, { success: true });
         });
 
-        await page.goto(`/${TREASURY_ID}/custom-templates/set-greeting`);
-        const submit = page.getByRole("button", { name: "File Proposal" });
+        await customTemplatesPage.gotoFill(TREASURY_ID, "set-greeting");
+        const submit = customTemplatesPage.fileProposalButton();
         await expect(submit).toBeVisible({ timeout: 15000 });
 
         await submit.click();
 
-        await expect(page.getByText("Greeting is required")).toBeVisible();
+        await expect(
+            customTemplatesPage.fieldRequiredError("Greeting"),
+        ).toBeVisible();
         expect(relayHit).toBe(false);
     });
 
@@ -513,138 +509,117 @@ test.describe("Custom Templates — fill", () => {
 test.describe("Custom Templates — access gates", () => {
     test("feature disabled: /custom-templates redirects to Settings → Developer (#1026)", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()], {
             customRequestsEnabled: false,
         });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
         await page.waitForURL(/settings\?tab=developer/, { timeout: 15000 });
     });
 
     test("bare member (neither propose nor manage) is redirected to the dashboard (#1027)", async ({
         page,
+        customTemplatesPage,
     }) => {
         // No access + can't manage → the treasury dashboard, not a Settings tab hidden from them.
         await setupMocks(page, [template()], { policy: BARE_MEMBER_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
         await page.waitForURL(/\/dashboard$/, { timeout: 15000 });
     });
 
     test("Requestor may reach the create page — authoring is a Requestor capability (#1046)", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()], { policy: PROPOSER_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates/create`);
+        await customTemplatesPage.gotoCreate(TREASURY_ID);
         // Not bounced: the create form loads and stays on /create.
-        await expect(
-            page.getByRole("heading", { name: "New Template" }),
-        ).toBeVisible({ timeout: 15000 });
+        await expect(customTemplatesPage.newTemplateHeading()).toBeVisible({
+            timeout: 15000,
+        });
         await expect(page).toHaveURL(/custom-templates\/create$/);
     });
 
     test("Requestor: Create Request + Add New enabled; ⋮ menu offers Edit/Pin, Delete shown disabled", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()], { policy: PROPOSER_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
 
-        await expect(page.getByText("Set Greeting")).toBeVisible({
-            timeout: 15000,
-        });
+        await expect(
+            customTemplatesPage.templateRowText("Set Greeting"),
+        ).toBeVisible({ timeout: 15000 });
         // Can file a request...
-        await expect(
-            page.getByRole("button", { name: "Create Request" }),
-        ).toBeEnabled();
+        await expect(customTemplatesPage.createRequestButton()).toBeEnabled();
         // ...and author: "Add New" is now enabled for a Requestor (#1046)...
-        await expect(
-            page.getByRole("button", { name: "Add New" }),
-        ).toBeEnabled();
+        await expect(customTemplatesPage.addNewButton()).toBeEnabled();
         // ...the per-row ⋮ overflow is shown, with Edit + Pin enabled and Delete visible but
         // disabled (admin-only) — discoverable, not hidden.
-        await page.getByRole("button", { name: "Template actions" }).click();
-        await expect(
-            page.getByRole("menuitem", { name: "Edit", exact: true }),
-        ).toBeVisible();
-        await expect(
-            page.getByRole("menuitem", { name: /pin to the sidebar/i }),
-        ).toBeVisible();
+        await customTemplatesPage.templateActionsButton().click();
+        await expect(customTemplatesPage.editMenuItem()).toBeVisible();
+        await expect(customTemplatesPage.pinMenuItem()).toBeVisible();
         // Delete is present (discoverable) but marked disabled — Radix sets aria-disabled.
-        const deleteItem = page.getByRole("menuitem", {
-            name: "Delete",
-            exact: true,
-        });
+        const deleteItem = customTemplatesPage.deleteMenuItem();
         await expect(deleteItem).toBeVisible();
         await expect(deleteItem).toHaveAttribute("aria-disabled", "true");
     });
 
     test("admin without call:AddProposal: authoring + Delete available, Create Request disabled", async ({
         page,
+        customTemplatesPage,
     }) => {
         await setupMocks(page, [template()], { policy: MANAGER_ONLY_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
 
-        await expect(page.getByText("Set Greeting")).toBeVisible({
-            timeout: 15000,
-        });
-        // Can author (Add New enabled)...
         await expect(
-            page.getByRole("button", { name: "Add New" }),
-        ).toBeEnabled();
+            customTemplatesPage.templateRowText("Set Greeting"),
+        ).toBeVisible({ timeout: 15000 });
+        // Can author (Add New enabled)...
+        await expect(customTemplatesPage.addNewButton()).toBeEnabled();
         // ...but can't file a FunctionCall template → Create Request shown disabled, not hidden.
         // Assert this BEFORE opening the ⋮ menu — an open Radix menu makes the row content
         // aria-hidden, which would hide the button from the role query.
-        await expect(
-            page.getByRole("button", { name: "Create Request" }),
-        ).toBeDisabled();
+        await expect(customTemplatesPage.createRequestButton()).toBeDisabled();
         // ...and the ⋮ menu exposes the admin-only Delete, enabled.
-        await page.getByRole("button", { name: "Template actions" }).click();
-        await expect(
-            page.getByRole("menuitem", { name: "Delete", exact: true }),
-        ).toBeVisible();
+        await customTemplatesPage.templateActionsButton().click();
+        await expect(customTemplatesPage.deleteMenuItem()).toBeVisible();
     });
 
     test("transfer-only requestor: can author (mirrors nt-be AddProposal) but Create Request disabled", async ({
         page,
+        customTemplatesPage,
     }) => {
         // transfer:AddProposal satisfies nt-be's AddProposal authoring gate, so the list + authoring
         // are available; but it can't file the FunctionCall a template builds (needs call:AddProposal).
         await setupMocks(page, [template()], { policy: TRANSFER_ONLY_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
 
-        await expect(page.getByText("Set Greeting")).toBeVisible({
-            timeout: 15000,
-        });
         await expect(
-            page.getByRole("button", { name: "Add New" }),
-        ).toBeEnabled();
-        await expect(
-            page.getByRole("button", { name: "Create Request" }),
-        ).toBeDisabled();
+            customTemplatesPage.templateRowText("Set Greeting"),
+        ).toBeVisible({ timeout: 15000 });
+        await expect(customTemplatesPage.addNewButton()).toBeEnabled();
+        await expect(customTemplatesPage.createRequestButton()).toBeDisabled();
     });
 
     test("sole member of a real trezu DAO (Requestor+Admin+Approver) has full access (#1046 regression)", async ({
         page,
+        customTemplatesPage,
     }) => {
         // The exact case that regressed: one account IS the DAO, Admin role uses config:*/policy:*
         // (real shape), not the synthetic *:ChangePolicy. Must get every affordance enabled.
         await setupMocks(page, [template()], { policy: SOLE_MEMBER_POLICY });
-        await page.goto(`/${TREASURY_ID}/custom-templates`);
+        await customTemplatesPage.gotoList(TREASURY_ID);
 
-        await expect(page.getByText("Set Greeting")).toBeVisible({
-            timeout: 15000,
-        });
         await expect(
-            page.getByRole("button", { name: "Add New" }),
-        ).toBeEnabled();
-        await expect(
-            page.getByRole("button", { name: "Create Request" }),
-        ).toBeEnabled();
+            customTemplatesPage.templateRowText("Set Greeting"),
+        ).toBeVisible({ timeout: 15000 });
+        await expect(customTemplatesPage.addNewButton()).toBeEnabled();
+        await expect(customTemplatesPage.createRequestButton()).toBeEnabled();
         // Admin → the ⋮ Delete is live, not the disabled/tooltip variant.
-        await page.getByRole("button", { name: "Template actions" }).click();
-        const deleteItem = page.getByRole("menuitem", {
-            name: "Delete",
-            exact: true,
-        });
+        await customTemplatesPage.templateActionsButton().click();
+        const deleteItem = customTemplatesPage.deleteMenuItem();
         await expect(deleteItem).toBeVisible();
         await expect(deleteItem).not.toHaveAttribute("aria-disabled", "true");
     });
