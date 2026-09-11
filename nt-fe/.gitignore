@@ -42,6 +42,9 @@ yarn-error.log*
 # generated files (synced from shared/ at dev/build time)
 /lib/generated/
 
+# commercial fonts (licensed, never committed; synced from Render Secret Files at build time)
+/public/fonts/PPNeueMontreal*.woff2
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
