@@ -2377,7 +2377,7 @@
         "welcome": {
             "heading": "🎉 Your treasury is ready",
             "subheading": "Take a quick tour?",
-            "body": "Deposit funds, send payments, exchange assets, and manage your team — all from this dashboard.",
+            "body": "Deposit funds, send payments, exchange assets, and manage your team - all from this dashboard.",
             "progress": "{current} of {total}",
             "next": "Got it",
             "body2": "We'll walk you through depositing funds, sending payments, swapping assets, and managing your team – about 60 seconds.",
