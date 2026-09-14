@@ -395,14 +395,14 @@ export function VotingTab() {
                 {hasPendingVotingRequest && (
                     <Alert
                         variant="warning"
-                        className="rounded-3xl border-[#FEF3C6] bg-[#FFFBEB] p-3 text-[#973C00] has-[>svg]:gap-x-3 [&>svg]:size-5 [&>svg]:translate-y-0 [&>svg]:text-white"
+                        className="rounded-3xl border-[#FEF3C6] bg-[#FFFBEB] p-3 text-[#973C00] dark:border-[#7B3306] dark:bg-[#461901] has-[>svg]:gap-x-3 [&>svg]:size-5 [&>svg]:translate-y-0 [&>svg]:text-white dark:[&>svg]:text-[#461901]"
                     >
                         <Icon
                             icon={Alert02Icon}
                             className="size-5 shrink-0 fill-[#FE9A00] [&>path:first-child]:stroke-[#FE9A00]"
                         />
                         <AlertDescription className="min-w-0 flex-1 gap-2.5 [&_p]:leading-[1.5]">
-                            <p className="text-sm font-medium">
+                            <p className="text-sm font-medium dark:text-[#FFB900]">
                                 {t("pendingAlert", {
                                     count: pendingVotingRequestCount,
                                 })}
