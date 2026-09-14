@@ -45,19 +45,39 @@ interface AssetMetrics {
 }
 
 const SORT_BUTTON_CLASS =
-    "inline-flex h-auto items-center gap-1.5 px-0! py-0! text-sm/5 font-medium text-gray-500 hover:bg-transparent hover:text-gray-900 dark:text-gray-400 dark:hover:bg-transparent dark:hover:text-white";
+    "inline-flex h-auto items-center gap-1.5 px-0! py-0! text-sm/5 font-semibold text-gray-500 hover:bg-transparent hover:text-gray-900 dark:text-gray-400 dark:hover:bg-transparent dark:hover:text-white";
+
+/**
+ * Column geometry from the design, shared by the header and the rows so the
+ * populated table, the skeleton and the empty state always line up.
+ */
+const COLUMN_CLASS = {
+    asset: "w-[62%] overflow-hidden pr-3 pl-4 sm:w-[28.5%] sm:pl-6",
+    balance: "w-[38%] text-right sm:w-[18.5%]",
+    price: "hidden w-[21%] text-right sm:table-cell",
+    // Widest cell — percent plus its bar — so it takes whatever is left.
+    weight: "hidden pr-6 text-right sm:table-cell",
+    actions: "hidden w-14 sm:table-cell sm:w-18",
+} as const;
+
+/** 40px header row, `paragraph small/semibold` in the secondary foreground. */
+const HEAD_CLASS =
+    "h-10 px-3 py-2 font-semibold text-gray-500 text-sm/5 normal-case dark:text-gray-400";
 
 /** Rounds the row block into an inset card, like the near.com vaults table. */
 const TABLE_CARD_FILL_CLASS = [
     // Paint on cells, not tbody — a tbody fill is square and bleeds over
     // the rounded card border at the top corners.
     "[&>tr>td]:bg-white dark:[&>tr>td]:bg-gray-850",
-    "[&>tr+tr>td]:border-t [&>tr+tr>td]:border-gray-200 dark:[&>tr+tr>td]:border-white/5",
     "[&>tr:first-child>td:first-child]:rounded-tl-lg",
     "max-sm:[&>tr:first-child>td:nth-child(2)]:rounded-tr-lg sm:[&>tr:first-child>td:last-child]:rounded-tr-lg",
     "[&>tr:last-child>td:first-child]:rounded-bl-lg",
     "max-sm:[&>tr:last-child>td:nth-child(2)]:rounded-br-lg sm:[&>tr:last-child>td:last-child]:rounded-br-lg",
 ].join(" ");
+
+/** Hairline between rows; the empty state leaves it out. */
+const TABLE_ROW_DIVIDER_CLASS =
+    "[&>tr+tr>td]:border-t [&>tr+tr>td]:border-gray-200 dark:[&>tr+tr>td]:border-white/5";
 
 const TABLE_CARD_CLASS = [
     TABLE_CARD_FILL_CLASS,
@@ -143,12 +163,14 @@ function AvailableView({
             <TableCell className="hidden px-3 py-3 text-right font-semibold text-base/5 text-gray-900 sm:table-cell dark:text-white">
                 {formatCurrencyWithSubCent(asset.price)}
             </TableCell>
-            <TableCell className="hidden px-3 py-3 text-right sm:table-cell">
+            <TableCell className="hidden px-3 py-3 text-right sm:table-cell sm:pr-6">
                 <div className="flex items-center justify-end gap-3">
-                    <span className="text-right font-semibold text-base/5 text-gray-900 tabular-nums dark:text-white">
+                    <span className="shrink-0 text-right font-semibold text-base/5 text-gray-900 tabular-nums dark:text-white">
                         {weight.toFixed(2)}%
                     </span>
-                    <div className="h-2 w-18 shrink-0 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                    {/* The design's column is narrow, so the bar — not the
+                        percentage — gives way when the table is squeezed. */}
+                    <div className="h-2 w-18 min-w-6 overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
                         <div
                             className="h-full rounded-full bg-gray-900 transition-all dark:bg-white"
                             style={{ width: `${weight}%` }}
@@ -268,12 +290,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
             buttonClassName?: string;
         },
     ) => (
-        <TableHead
-            className={cn(
-                "h-auto px-3 py-2.5 font-medium text-gray-500 text-sm/5 normal-case dark:text-gray-400",
-                options?.headClassName,
-            )}
-        >
+        <TableHead className={cn(HEAD_CLASS, options?.headClassName)}>
             <Button
                 type="button"
                 variant="ghost"
@@ -301,28 +318,32 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                     <TableHeader className="border-0 bg-transparent [&_tr]:border-0">
                         <TableRow className="border-0 hover:bg-transparent">
                             {renderSortableHead("token", t("columnAsset"), {
-                                headClassName:
-                                    "overflow-hidden pr-3 pl-4 sm:pl-5 w-[62%] sm:w-[26%]",
+                                headClassName: COLUMN_CLASS.asset,
                                 buttonClassName: "justify-start",
                             })}
                             {renderSortableHead("balance", t("balance"), {
-                                headClassName: "text-right w-[38%] sm:w-[20%]",
+                                headClassName: COLUMN_CLASS.balance,
                                 buttonClassName: "ml-auto",
                             })}
                             {renderSortableHead("price", t("columnPrice"), {
-                                headClassName:
-                                    "text-right w-[14%] hidden sm:table-cell",
+                                headClassName: COLUMN_CLASS.price,
                                 buttonClassName: "ml-auto",
                             })}
                             {renderSortableHead("weight", t("weight"), {
-                                headClassName:
-                                    "text-right hidden sm:table-cell",
+                                headClassName: COLUMN_CLASS.weight,
                                 buttonClassName: "ml-auto",
                             })}
-                            <TableHead className="hidden w-14 p-0 sm:table-cell sm:w-16" />
+                            <TableHead
+                                className={cn("p-0", COLUMN_CLASS.actions)}
+                            />
                         </TableRow>
                     </TableHeader>
-                    <TableBody className={TABLE_CARD_CLASS}>
+                    <TableBody
+                        className={cn(
+                            TABLE_CARD_CLASS,
+                            TABLE_ROW_DIVIDER_CLASS,
+                        )}
+                    >
                         {viewAssets.map(({ asset, weight }) => {
                             const availableNetworks = asset.networks.filter(
                                 (n) => networkAvailableRaw(n).gt(0),
@@ -371,7 +392,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                             : undefined
                                     }
                                 >
-                                    <TableCell className="overflow-hidden py-3 pr-3 pl-4 sm:pl-5">
+                                    <TableCell className="overflow-hidden py-3 pr-3 pl-4 sm:pl-6">
                                         <div className="flex items-center gap-3 min-w-0">
                                             <TokenIconImage
                                                 icon={asset.icon}
@@ -394,7 +415,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                         availableUsd={availableUsd}
                                         weight={weight}
                                     />
-                                    <TableCell className="hidden py-3 pr-4 pl-2 sm:table-cell sm:pr-5">
+                                    <TableCell className="hidden py-3 pr-4 pl-2 sm:table-cell sm:pr-6">
                                         {actions ? (
                                             <Icon
                                                 icon={ArrowDown01Icon}
@@ -443,10 +464,17 @@ export function AssetsTable({ aggregatedTokens }: Props) {
     );
 }
 
-const SKELETON_ROWS = ["a", "b", "c"];
+/**
+ * Behind the empty state the rows stay inside the white card — only their
+ * placeholders fade out downwards, so the card's border keeps its full weight.
+ */
+const EMPTY_ROW_FADE = [
+    "**:data-[slot=skeleton]:opacity-100",
+    "**:data-[slot=skeleton]:opacity-45",
+    "**:data-[slot=skeleton]:opacity-15",
+];
 
-const SKELETON_HEAD_CLASS =
-    "h-auto px-3 py-2.5 font-medium text-gray-500 text-sm/5 normal-case dark:text-gray-400";
+const SKELETON_ROWS = ["a", "b", "c"];
 
 export function AssetsTableSkeleton({
     overlay,
@@ -461,61 +489,48 @@ export function AssetsTableSkeleton({
                 <TableHeader className="border-0 bg-transparent [&_tr]:border-0">
                     <TableRow className="border-0 hover:bg-transparent">
                         <TableHead
-                            className={cn(
-                                SKELETON_HEAD_CLASS,
-                                "overflow-hidden pr-3 pl-4 sm:pl-5 w-[62%] sm:w-[26%]",
-                            )}
+                            className={cn(HEAD_CLASS, COLUMN_CLASS.asset)}
                         >
                             {t("columnAsset")}
                         </TableHead>
                         <TableHead
-                            className={cn(
-                                SKELETON_HEAD_CLASS,
-                                "text-right w-[38%] sm:w-[20%]",
-                            )}
+                            className={cn(HEAD_CLASS, COLUMN_CLASS.balance)}
                         >
                             {t("balance")}
                         </TableHead>
                         <TableHead
-                            className={cn(
-                                SKELETON_HEAD_CLASS,
-                                "text-right w-[14%] hidden sm:table-cell",
-                            )}
+                            className={cn(HEAD_CLASS, COLUMN_CLASS.price)}
                         >
                             {t("columnPrice")}
                         </TableHead>
                         <TableHead
-                            className={cn(
-                                SKELETON_HEAD_CLASS,
-                                "text-right hidden sm:table-cell",
-                            )}
+                            className={cn(HEAD_CLASS, COLUMN_CLASS.weight)}
                         >
                             {t("weight")}
                         </TableHead>
-                        <TableHead className="hidden w-14 p-0 sm:table-cell sm:w-16" />
+                        <TableHead
+                            className={cn("p-0", COLUMN_CLASS.actions)}
+                        />
                     </TableRow>
                 </TableHeader>
-                <TableBody className={overlay ? undefined : TABLE_CARD_CLASS}>
+                <TableBody
+                    className={cn(
+                        TABLE_CARD_CLASS,
+                        !overlay && TABLE_ROW_DIVIDER_CLASS,
+                    )}
+                >
                     {SKELETON_ROWS.map((row, idx) => (
                         <TableRow
                             key={row}
                             className={cn(
                                 "border-0 hover:bg-transparent",
-                                overlay &&
+                                overlay && [
                                     "**:data-[slot=skeleton]:animate-none",
+                                    EMPTY_ROW_FADE[idx],
+                                ],
                             )}
-                            style={
-                                overlay
-                                    ? {
-                                          opacity: Math.max(
-                                              0.15,
-                                              1 - idx * 0.55,
-                                          ),
-                                      }
-                                    : undefined
-                            }
                         >
-                            <TableCell className="overflow-hidden py-3 pr-3 pl-4 sm:pl-5">
+                            <TableCell className="overflow-hidden py-3 pr-3 pl-4 sm:pl-6">
                                 <div className="flex min-w-0 items-center gap-3">
                                     <Skeleton className="size-9 shrink-0 rounded-full" />
                                     <div className="flex min-w-0 flex-col gap-1.5">
@@ -533,10 +548,10 @@ export function AssetsTableSkeleton({
                             <TableCell className="hidden px-3 py-3 sm:table-cell">
                                 <Skeleton className="ml-auto h-3.5 w-20 rounded-full" />
                             </TableCell>
-                            <TableCell className="hidden px-3 py-3 sm:table-cell">
+                            <TableCell className="hidden px-3 py-3 sm:table-cell sm:pr-6">
                                 <Skeleton className="ml-auto h-3.5 w-20 rounded-full" />
                             </TableCell>
-                            <TableCell className="hidden py-3 pr-4 pl-2 sm:table-cell sm:pr-5">
+                            <TableCell className="hidden py-3 pr-4 pl-2 sm:table-cell sm:pr-6">
                                 <Skeleton className="ml-auto size-8 shrink-0 rounded-full" />
                             </TableCell>
                         </TableRow>

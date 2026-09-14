@@ -8,7 +8,6 @@ import { EmptyState } from "@/components/empty-state";
 import { useIsHistoryRefreshing } from "@/features/activity";
 import { useAggregatedTokens } from "@/hooks/use-assets";
 import type { TreasuryAsset } from "@/lib/api";
-import { cn } from "@/lib/utils";
 
 interface Props {
     tokens: TreasuryAsset[];
@@ -62,14 +61,7 @@ export default function Assets({ tokens, state }: Props) {
     };
 
     return (
-        <PageCard
-            className={cn(
-                "flex flex-col gap-0 overflow-hidden border-gray-200 p-0 dark:border-general-border",
-                // Empty state mirrors the "No recent transaction yet" card:
-                // faded skeleton rows straight on the card, no inset fill.
-                isEmpty ? "bg-card" : "bg-gray-50 dark:bg-gray-900",
-            )}
-        >
+        <PageCard className="flex flex-col gap-0 overflow-hidden border-gray-200 bg-gray-50 p-0 dark:border-general-border dark:bg-gray-900">
             {renderContent()}
         </PageCard>
     );
