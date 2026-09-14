@@ -37,15 +37,15 @@ const nextConfig: NextConfig = {
         return [
             {
                 source: "/_telemetry/static/:path*",
-                destination: "https://us-assets.i.posthog.com/static/:path*",
+                destination: "https://eu-assets.i.posthog.com/static/:path*",
             },
             {
                 source: "/_telemetry/:path*",
-                destination: "https://us.i.posthog.com/:path*",
+                destination: "https://eu.i.posthog.com/:path*",
             },
             {
                 source: "/_features/:path*",
-                destination: "https://us.i.posthog.com/:path*",
+                destination: "https://eu.i.posthog.com/:path*",
             },
         ];
     },
