@@ -24,7 +24,6 @@ import { updateTreasurySettings } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { disabledActionClasses } from "./button-styles";
-import { CustomRequestsSection } from "./custom-requests-section";
 import { SectionIcon, SectionText } from "./section";
 
 const COLOR_OPTIONS = [
@@ -233,7 +232,7 @@ export function GeneralTab() {
     return (
         <Form {...form}>
             <div className="flex flex-col gap-5">
-                <PageCard className="flex-row gap-3">
+                <PageCard className="flex-row gap-3 rounded-3xl">
                     <SectionIcon
                         icon={Coins01Icon}
                         className="rounded-full bg-general-bg-primary text-green-500"
@@ -296,14 +295,14 @@ export function GeneralTab() {
                     </div>
                 </PageCard>
 
-                <PageCard className="flex-row gap-3">
+                <PageCard className="flex-row gap-3 rounded-3xl">
                     {/* The uploaded logo takes over the tile; the green coins
-                        squircle is only the empty state. */}
+                        circle is only the empty state. */}
                     <TreasuryLogo
                         logo={logo}
                         fallbackIcon={Coins01Icon}
-                        imageClassName="size-10 shrink-0 rounded-lg object-cover"
-                        fallbackClassName="size-10 shrink-0 rounded-lg bg-green-700"
+                        imageClassName="size-10 shrink-0 rounded-full object-cover"
+                        fallbackClassName="size-10 shrink-0 rounded-full bg-green-700"
                         fallbackIconClassName="size-[18px] text-white"
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
@@ -350,7 +349,7 @@ export function GeneralTab() {
                     </div>
                 </PageCard>
 
-                <PageCard className="flex-row gap-3">
+                <PageCard className="flex-row gap-3 rounded-3xl">
                     <SectionIcon
                         icon={PaletteIcon}
                         className="rounded-full bg-general-bg-primary text-green-500"
@@ -435,8 +434,6 @@ export function GeneralTab() {
                         </div>
                     </div>
                 </PageCard>
-
-                <CustomRequestsSection canEdit={canEdit} />
 
                 {!canEdit && (
                     <p className="text-center text-sm text-muted-foreground">

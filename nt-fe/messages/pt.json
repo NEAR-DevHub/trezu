@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Você é um convidado desta tesouraria. Você só pode ver os dados.",
         "guestSaveAction": "Você pode salvar esta tesouraria de convidado na sua lista de tesourarias.",
         "newFeatureRich": "Novo! 🎉 Salve endereços usados com frequência para pagamentos mais rápidos e sem erros. Seus contatos permanecem privados e visíveis apenas para sua equipe.",
-        "newFeatureCta": "Experimente",
-        "requestTemplates": "As Solicitações personalizadas estão prontas. Abra-as aqui para criar seu primeiro tipo de solicitação."
+        "newFeatureCta": "Experimente"
     },
     "statusDate": {
         "expires": "Expira",
@@ -2615,13 +2614,6 @@
             "pattern": "{label} não corresponde ao padrão exigido",
             "min": "{label} deve ser no mínimo {min}",
             "max": "{label} deve ser no máximo {max}"
-        },
-        "settingsCard": {
-            "title": "Solicitações personalizadas",
-            "description": "Crie seus próprios tipos de solicitação quando precisar de mais do que pagamentos e trocas. Adicione os campos de que você precisa e seus membros poderão enviá-los como qualquer outra solicitação.",
-            "enable": "Ativar",
-            "disable": "Desativar",
-            "errUpdate": "Não foi possível atualizar a configuração"
         }
     },
     "account": {

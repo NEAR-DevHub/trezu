@@ -2095,8 +2095,7 @@
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
         "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
-        "newFeatureCta": "Hãy thử",
-        "requestTemplates": "Yêu cầu tùy chỉnh đã sẵn sàng. Mở nó tại đây để tạo loại yêu cầu đầu tiên của bạn."
+        "newFeatureCta": "Hãy thử"
     },
     "statusDate": {
         "expires": "Hết hạn",
@@ -2598,13 +2597,6 @@
             "pattern": "{label} không khớp với định dạng yêu cầu",
             "min": "{label} phải lớn hơn hoặc bằng {min}",
             "max": "{label} phải nhỏ hơn hoặc bằng {max}"
-        },
-        "settingsCard": {
-            "title": "Yêu cầu tùy chỉnh",
-            "description": "Tạo các loại yêu cầu của riêng bạn khi bạn cần nhiều hơn thanh toán và trao đổi. Thêm các trường bạn cần và các thành viên của bạn có thể gửi chúng như bất kỳ yêu cầu nào khác.",
-            "enable": "Bật",
-            "disable": "Tắt",
-            "errUpdate": "Không thể cập nhật cài đặt"
         }
     },
     "bulkActivation": {

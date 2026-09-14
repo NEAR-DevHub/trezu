@@ -3,7 +3,6 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Suspense, useEffect, useState } from "react";
-import { MobilePageHeading } from "@/components/mobile-page-heading";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { Tabs, TabsList, TabsTrigger } from "@/components/underline-tabs";
 import { GeneralTab } from "./components/general-tab";
@@ -13,6 +12,13 @@ import { VotingTab } from "./components/voting-tab";
 const SETTINGS_TABS = ["general", "voting"] as const;
 
 type SettingsTab = (typeof SETTINGS_TABS)[number];
+
+/**
+ * General fits the viewport while Voting scrolls, so the scroller's bar would
+ * come and go with the tab and shunt the centred column sideways. Reserving the
+ * gutter on both edges keeps it put (and is a no-op with overlay scrollbars).
+ */
+const STABLE_SCROLL_GUTTER = "[scrollbar-gutter:stable_both-edges]";
 
 function isSettingsTab(value: string | null): value is SettingsTab {
     return SETTINGS_TABS.some((tab) => tab === value);
@@ -42,9 +48,11 @@ function SettingsPageContent() {
     }, [tabParam, pathname, router]);
 
     return (
-        <PageComponentLayout title={t("title")}>
+        <PageComponentLayout
+            title={t("title")}
+            mainClassName={STABLE_SCROLL_GUTTER}
+        >
             <div className="mx-auto w-full max-w-[464px]">
-                <MobilePageHeading>{t("title")}</MobilePageHeading>
                 <Tabs
                     value={activeTab}
                     onValueChange={(value) => {
@@ -79,10 +87,11 @@ export default function SettingsPage() {
     return (
         <Suspense
             fallback={
-                <PageComponentLayout title={t("title")}>
-                    <div className="mx-auto min-h-48 w-full max-w-[464px]">
-                        <MobilePageHeading>{t("title")}</MobilePageHeading>
-                    </div>
+                <PageComponentLayout
+                    title={t("title")}
+                    mainClassName={STABLE_SCROLL_GUTTER}
+                >
+                    <div className="mx-auto min-h-48 w-full max-w-[464px]" />
                 </PageComponentLayout>
             }
         >

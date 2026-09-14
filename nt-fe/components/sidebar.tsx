@@ -407,11 +407,9 @@ export function Sidebar({ onClose }: SidebarProps) {
                                 )}
                             >
                                 <Button
-                                    id="request-templates-nav"
                                     variant="unstyled"
                                     asChild
-                                    // Collapsed sidebar is icon-only, so restore the hover label
-                                    // there (and keep the tour selector id on this element).
+                                    // Collapsed sidebar is icon-only, so restore the hover label there.
                                     tooltipContent={
                                         showLabels
                                             ? undefined
