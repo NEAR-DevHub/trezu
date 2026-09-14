@@ -431,7 +431,7 @@ export function VotingTab() {
                         thresholds?.[role.name] ?? role.threshold;
 
                     return (
-                        <PageCard key={role.name} className="gap-3">
+                        <PageCard key={role.name} className="gap-3 rounded-3xl">
                             <div className="flex flex-col gap-1">
                                 <h3 className="text-base font-semibold leading-[1.2]">
                                     {t("roleThresholdTitle", {
@@ -504,7 +504,7 @@ export function VotingTab() {
                     );
                 })}
 
-                <PageCard className="gap-3">
+                <PageCard className="gap-3 rounded-3xl">
                     <div className="flex flex-col gap-1">
                         <h3 className="text-base font-semibold leading-[1.2]">
                             {t("durationHeading")}

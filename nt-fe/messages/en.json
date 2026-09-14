@@ -1051,7 +1051,7 @@
             "proposalDescriptionTitle": "Update Config - Theme & logo",
             "proposalSubmitted": "Request to update configuration submitted",
             "treasuryNotFound": "Treasury not found",
-            "treasuryName": "Treasury Name",
+            "treasuryName": "Treasury name",
             "treasuryNameDescription": "The name of your treasury. This will be displayed across the app.",
             "displayNamePlaceholder": "Enter display name",
             "logo": "Logo",
@@ -1063,7 +1063,7 @@
             "invalidLogo": "Invalid logo. Please upload a PNG, JPG, or SVG file that is exactly 256x256 px",
             "invalidImage": "Invalid image file. Please upload a valid image.",
             "fileReadError": "Error reading file. Please try again.",
-            "primaryColor": "Primary Color",
+            "primaryColor": "Primary color",
             "primaryColorDescription": "Set the primary color for your treasury's interface elements.",
             "selectColorLabel": "Select color {color}",
             "savedToast": "Your changes are saved.",
@@ -1089,10 +1089,10 @@
             "durationSubmitted": "Vote duration request created",
             "viewRequest": "View request",
             "membersWhoCanVote": "Members who can vote",
-            "durationHeading": "Voting Duration",
+            "durationHeading": "Voting duration",
             "durationDescription": "How long a request stays open before it expires. After that, it's gone.",
             "days": "Days",
-            "roleThresholdTitle": "{role} Threshold",
+            "roleThresholdTitle": "{role} threshold",
             "roleDescription": {
                 "financial": "These members approve send and swap requests.",
                 "governance": "These members approve changes to members and rules.",
@@ -2613,13 +2613,6 @@
             "pattern": "{label} does not match the required pattern",
             "min": "{label} must be at least {min}",
             "max": "{label} must be at most {max}"
-        },
-        "settingsCard": {
-            "title": "Custom requests",
-            "description": "Build your own request types when you need more than payments and exchange. Add the fields you need and your members can submit them like any other request.",
-            "enable": "Enable",
-            "disable": "Disable",
-            "errUpdate": "Could not update the setting"
         }
     },
     "account": {
