@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Você é um convidado desta tesouraria. Você só pode ver os dados.",
         "guestSaveAction": "Você pode salvar esta tesouraria de convidado na sua lista de tesourarias.",
         "newFeatureRich": "Novo! 🎉 Salve endereços usados com frequência para pagamentos mais rápidos e sem erros. Seus contatos permanecem privados e visíveis apenas para sua equipe.",
-        "newFeatureCta": "Experimente",
-        "requestTemplates": "As Solicitações personalizadas estão prontas. Abra-as aqui para criar seu primeiro tipo de solicitação."
+        "newFeatureCta": "Experimente"
     },
     "statusDate": {
         "expires": "Expira",

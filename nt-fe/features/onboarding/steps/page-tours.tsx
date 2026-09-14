@@ -14,11 +14,7 @@ import {
 } from "@/features/onboarding/feature-announcement-queue";
 import { useTreasury } from "@/hooks/use-treasury";
 
-type PageTourKey =
-    | "membersPending"
-    | "membersWantsToJoin"
-    | "requestTemplates"
-    | "paymentsBulk";
+type PageTourKey = "membersPending" | "membersWantsToJoin" | "paymentsBulk";
 
 function PageTourContent({ k }: { k: PageTourKey }) {
     const t = useTranslations("pageTours");
@@ -35,19 +31,13 @@ export const PAGE_TOUR_NAMES = {
     MEMBERS_PENDING: "members-pending",
     MEMBERS_WANTS_TO_JOIN: "members-wants-to-join",
     EARN_ANNOUNCEMENT: EARN_ANNOUNCEMENT_TOUR_NAME,
-    REQUEST_TEMPLATES: "request-templates",
     PAYMENTS_BULK: "payments-bulk",
 } as const;
-
-// Fired right after a DAO enables Custom Requests in Settings → General, to point at the
-// newly revealed sidebar section.
-export const REQUEST_TEMPLATES_TOUR_NAME = PAGE_TOUR_NAMES.REQUEST_TEMPLATES;
 
 // Local storage keys
 export const PAGE_TOUR_STORAGE_KEYS = {
     MEMBERS_PENDING_SHOWN: "members-pending-tour-shown",
     MEMBERS_WANTS_TO_JOIN_SHOWN: "members-wants-to-join-tour-shown",
-    REQUEST_TEMPLATES_SHOWN: "request-templates-tour-shown",
     PAYMENTS_BULK_SHOWN: "payments-bulk-tour-shown",
 } as const;
 
@@ -55,7 +45,6 @@ export const PAGE_TOUR_STORAGE_KEYS = {
 export const PAGE_TOUR_SELECTORS = {
     MEMBERS_PENDING_BTN: "#members-pending-btn",
     MEMBERS_WANTS_TO_JOIN_BTN: "#members-wants-to-join-btn",
-    REQUEST_TEMPLATES_NAV: "#request-templates-nav",
     PAYMENTS_BULK_BTN: "#payments-bulk-btn",
 } as const;
 
@@ -109,18 +98,6 @@ export const NEW_FEATURE_TOUR: Tour = {
             ...defaultStepProps,
             content: EARN_ANNOUNCEMENT.content,
             selector: EARN_ANNOUNCEMENT.selector,
-            side: "right",
-        },
-    ],
-};
-
-export const REQUEST_TEMPLATES_TOUR: Tour = {
-    tour: PAGE_TOUR_NAMES.REQUEST_TEMPLATES,
-    steps: [
-        {
-            ...defaultStepProps,
-            content: <PageTourContent k="requestTemplates" />,
-            selector: PAGE_TOUR_SELECTORS.REQUEST_TEMPLATES_NAV,
             side: "right",
         },
     ],

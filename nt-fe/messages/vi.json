@@ -2095,8 +2095,7 @@
         "guestSaveIntro": "Bạn là khách của ngân quỹ này. Bạn chỉ có thể xem dữ liệu.",
         "guestSaveAction": "Bạn có thể lưu ngân quỹ khách này vào danh sách ngân quỹ của bạn.",
         "newFeatureRich": "Mới! 🎉 Lưu các địa chỉ thường dùng để chi trả nhanh hơn và không có lỗi. Liên hệ của bạn được giữ riêng tư và chỉ đội của bạn nhìn thấy.",
-        "newFeatureCta": "Hãy thử",
-        "requestTemplates": "Yêu cầu tùy chỉnh đã sẵn sàng. Mở nó tại đây để tạo loại yêu cầu đầu tiên của bạn."
+        "newFeatureCta": "Hãy thử"
     },
     "statusDate": {
         "expires": "Hết hạn",

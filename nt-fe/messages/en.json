@@ -2110,8 +2110,7 @@
         "guestSaveIntro": "You are a guest of this treasury. You can only view the data.",
         "guestSaveAction": "You can save this guest treasury to your treasuries list.",
         "newFeatureRich": "New! 🎉 Stake your assets with Earn and start earning rewards. Put your funds to work effortlessly.",
-        "newFeatureCta": "Try it",
-        "requestTemplates": "Your Custom Requests section is ready. Open it here to build your first request type."
+        "newFeatureCta": "Try it"
     },
     "statusDate": {
         "expires": "Expires",

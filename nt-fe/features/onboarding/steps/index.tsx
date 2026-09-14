@@ -4,7 +4,6 @@ import {
     MEMBERS_WANTS_TO_JOIN_TOUR,
     NEW_FEATURE_TOUR,
     PAYMENTS_BULK_TOUR,
-    REQUEST_TEMPLATES_TOUR,
 } from "./page-tours";
 
 export const TOURS = [
@@ -14,5 +13,4 @@ export const TOURS = [
     MEMBERS_WANTS_TO_JOIN_TOUR,
     NEW_FEATURE_TOUR,
     PAYMENTS_BULK_TOUR,
-    REQUEST_TEMPLATES_TOUR,
 ];

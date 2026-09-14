@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Eres invitado de esta tesorería. Solo puedes ver los datos.",
         "guestSaveAction": "Puedes guardar esta tesorería de invitado en tu lista de tesorerías.",
         "newFeatureRich": "¡Nuevo! 🎉 Guarda direcciones usadas con frecuencia para pagos más rápidos y sin errores. Tus contactos quedan privados y visibles solo para tu equipo.",
-        "newFeatureCta": "Pruébalo",
-        "requestTemplates": "Solicitudes personalizadas está listo. Ábrelo aquí para crear tu primer tipo de solicitud."
+        "newFeatureCta": "Pruébalo"
     },
     "statusDate": {
         "expires": "Caduca",

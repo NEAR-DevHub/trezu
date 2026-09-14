@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Sie sind Gast dieser Treasury. Sie können nur die Daten einsehen.",
         "guestSaveAction": "Sie können diese Gast-Treasury in Ihrer Treasury-Liste speichern.",
         "newFeatureRich": "Neu! 🎉 Staken Sie Ihre Assets mit Earn und verdienen Sie Belohnungen. Lassen Sie Ihr Kapital muehelos fuer sich arbeiten.",
-        "newFeatureCta": "Ausprobieren",
-        "requestTemplates": "Benutzerdefinierte Anträge sind bereit. Öffnen Sie sie hier, um Ihren ersten Antragstyp zu erstellen."
+        "newFeatureCta": "Ausprobieren"
     },
     "statusDate": {
         "expires": "Läuft ab",

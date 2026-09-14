@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Bu hazinenin misafirisiniz. Yalnızca verileri görüntüleyebilirsiniz.",
         "guestSaveAction": "Bu misafir hazineyi hazinelerinize kaydedebilirsiniz.",
         "newFeatureRich": "Yeni! 🎉 Daha hızlı, hatasız ödemeler için sık kullanılan adresleri kaydedin. Kişileriniz gizli kalır ve yalnızca ekibinize görünür.",
-        "newFeatureCta": "Deneyin",
-        "requestTemplates": "Özel İstekler hazır. İlk istek türünüzü oluşturmak için burada açın."
+        "newFeatureCta": "Deneyin"
     },
     "statusDate": {
         "expires": "Sona Erer",

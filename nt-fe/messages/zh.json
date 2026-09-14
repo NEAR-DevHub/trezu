@@ -2095,8 +2095,7 @@
         "guestSaveIntro": "您是此金库的访客。您只能查看数据。",
         "guestSaveAction": "您可以将此访客金库保存到您的金库列表。",
         "newFeatureRich": "新功能!🎉 保存常用地址,实现更快、零错误的付款。 您的联系人保持私密,仅对您的团队可见。",
-        "newFeatureCta": "试用一下",
-        "requestTemplates": "自定义请求已就绪。在此打开它，构建你的第一个请求类型。"
+        "newFeatureCta": "试用一下"
     },
     "statusDate": {
         "expires": "过期",

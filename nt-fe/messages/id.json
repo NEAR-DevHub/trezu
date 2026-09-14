@@ -2112,8 +2112,7 @@
         "guestSaveIntro": "Anda adalah tamu treasury ini. Anda hanya dapat melihat data.",
         "guestSaveAction": "Anda dapat menyimpan treasury tamu ini ke daftar treasury Anda.",
         "newFeatureRich": "Baru! 🎉 Simpan alamat yang sering digunakan untuk pembayaran lebih cepat dan bebas kesalahan. Kontak Anda tetap pribadi dan hanya terlihat oleh tim Anda.",
-        "newFeatureCta": "Coba Sekarang",
-        "requestTemplates": "Permintaan Khusus sudah siap. Buka di sini untuk membangun jenis permintaan pertama Anda."
+        "newFeatureCta": "Coba Sekarang"
     },
     "statusDate": {
         "expires": "Kedaluwarsa",
