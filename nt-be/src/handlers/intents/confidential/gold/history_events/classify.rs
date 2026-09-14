@@ -149,7 +149,9 @@ pub(crate) fn project_row(
     let destination_asset =
         destination_asset_opt.ok_or_else(|| "missing destinationAsset".to_string())?;
     let origin_asset = origin_asset_opt;
-    let deposit_address = coalesce_str(
+    // Validation only: a SUCCESS row without a deposit address never
+    // projected cleanly, so keep refusing it.
+    coalesce_str(
         Some(&row.deposit_address),
         &row.raw_payload,
         "depositAddress",
@@ -408,11 +410,6 @@ pub(crate) fn project_row(
         }
     };
 
-    let refund_to_bare = match refund_to.as_deref() {
-        Some(raw) => bare_account(raw),
-        None => bare_account(row.account_id.as_str()),
-    };
-
     // Extract quoteTransactions[0] from the parsed API item or raw_payload directly
     // (fallback for rows ingested before the typed field was added).
     let first_quote_tx = row
@@ -456,7 +453,6 @@ pub(crate) fn project_row(
 
     Ok(Some(GoldHistoryEvent {
         history_event_id: row.id,
-        intent_id: row.intent_id,
         dao_id: dao_account_id,
         transaction_type: kind,
         origin_asset,
@@ -471,13 +467,7 @@ pub(crate) fn project_row(
         destination_balance_before,
         destination_balance_after,
         recipient,
-        refund_to: refund_to_bare,
         counterparty,
-        deposit_address,
-        deposit_memo: row
-            .deposit_memo
-            .clone()
-            .or_else(|| payload_str(&row.raw_payload, "depositMemo")),
         proposal_execution_block_height: row.proposal_execution_block_height,
         proposal_executed_at: row.proposal_executed_at,
         proposal_execution_transaction_hash: row.proposal_execution_transaction_hash.clone(),
@@ -514,14 +504,12 @@ mod tests {
             account_id: dao_id.to_string(),
             created_at_external: Utc::now(),
             deposit_address: "deposit-address".to_string(),
-            deposit_memo: None,
             deposit_type: "CONFIDENTIAL_INTENTS".to_string(),
             recipient_type: Some("CONFIDENTIAL_INTENTS".to_string()),
             recipient: recipient.map(ToString::to_string),
             origin_asset: origin_asset.map(ToString::to_string),
             destination_asset: destination_asset.to_string(),
             raw_payload,
-            intent_id: None,
             proposal_id: None,
             proposal_created_at: None,
             proposal_executed_at: None,

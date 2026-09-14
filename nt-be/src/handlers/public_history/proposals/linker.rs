@@ -30,7 +30,6 @@ use serde_json::Value;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::AppState;
-use crate::handlers::balance_changes::utils::with_transport_retry;
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::link_intent_to_history_event;
 use crate::handlers::intents::swap_status::fetch_public_swap_status;
@@ -43,6 +42,7 @@ use crate::handlers::public_history::quotes::{
 };
 use crate::handlers::public_history::silver::cursors::mark_silver_dirty_tx;
 use crate::utils::jsonrpc::create_rpc_client;
+use crate::utils::transport::with_transport_retry;
 
 const PUBLIC_PROPOSAL_TX_STATUS_LABEL: &str = "public_proposal_tx_status";
 
@@ -78,6 +78,7 @@ struct PublicProposalDetails {
     status: Option<&'static str>,
     kind: Option<Value>,
     description: Option<String>,
+    proposer: Option<String>,
 }
 
 /// Block/tx coordinates of a creation or execution receipt.
@@ -111,6 +112,10 @@ struct DaoProposalUpsert<'a> {
     proposal_kind: Option<Value>,
     quote_metadata: Option<Value>,
     quote_deposit_address: Option<String>,
+    /// Proposal submitter and title/notes, persisted so the notification
+    /// detector can render proposals without RPC or raw-args decoding.
+    proposer: Option<String>,
+    description: Option<String>,
     creation: Option<ReceiptFacts>,
     execution: Option<ReceiptFacts>,
 }
@@ -139,11 +144,13 @@ impl DaoProposalUpsert<'_> {
                 proposal_execution_block_height,
                 proposal_execution_transaction_hash,
                 proposal_execution_receipt_id,
+                proposer,
+                description,
                 updated_at
             )
             VALUES (
                 $1, $2, COALESCE($3::proposal_status, 'in_progress'),
-                $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW()
+                $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW()
             )
             ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
                 status = CASE
@@ -204,6 +211,8 @@ impl DaoProposalUpsert<'_> {
                     dao_proposals.proposal_execution_receipt_id,
                     EXCLUDED.proposal_execution_receipt_id
                 ),
+                proposer = COALESCE(EXCLUDED.proposer, dao_proposals.proposer),
+                description = COALESCE(EXCLUDED.description, dao_proposals.description),
                 updated_at = NOW()
             RETURNING proposal_kind
             "#,
@@ -238,6 +247,8 @@ impl DaoProposalUpsert<'_> {
                 .as_ref()
                 .and_then(|facts| facts.receipt_id.as_deref()),
         )
+        .bind(&self.proposer)
+        .bind(&self.description)
         .fetch_one(&mut **tx)
         .await?;
 
@@ -462,6 +473,7 @@ async fn fetch_proposal_details(
             status: None,
             kind: None,
             description: None,
+            proposer: None,
         };
     };
     let Ok(proposal_id) = u64::try_from(proposal_id) else {
@@ -469,6 +481,7 @@ async fn fetch_proposal_details(
             status: None,
             kind: None,
             description: None,
+            proposer: None,
         };
     };
     match fetch_proposal(&state.network, &account_id, proposal_id).await {
@@ -476,6 +489,7 @@ async fn fetch_proposal_details(
             status: Some(proposal_status_as_str(&proposal.status)),
             kind: Some(proposal.kind),
             description: Some(proposal.description),
+            proposer: Some(proposal.proposer),
         },
         Err(e) => {
             tracing::warn!(
@@ -488,6 +502,7 @@ async fn fetch_proposal_details(
                 status: None,
                 kind: None,
                 description: None,
+                proposer: None,
             }
         }
     }
@@ -995,6 +1010,8 @@ async fn link_proposal_group(
         proposal_kind,
         quote_metadata,
         quote_deposit_address,
+        proposer: details.proposer,
+        description: description.clone(),
         creation: group.created.map(ReceiptFacts::from_event),
         execution: group.executed.map(ReceiptFacts::from_event),
     };
@@ -1081,6 +1098,8 @@ pub(crate) async fn refresh_proposal_from_chain(
         proposal_kind: details.kind,
         quote_metadata,
         quote_deposit_address,
+        proposer: details.proposer,
+        description: details.description,
         creation: None,
         execution: None,
     };

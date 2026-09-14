@@ -74,12 +74,6 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     let env_vars = crate::utils::env::EnvVars::default();
     let http_client = reqwest::Client::new();
 
-    // Initialize price service with DeFiLlama provider (free, no API key required)
-    let base_url = &env_vars.defillama_api_base_url;
-    let defillama_client =
-        crate::services::DeFiLlamaClient::with_base_url(http_client.clone(), base_url.clone());
-    let price_service = crate::services::PriceLookupService::new(db_pool.clone(), defillama_client);
-
     // Create network configs first (needed for transfer hint service)
     // Respects NEAR_RPC_URL / NEAR_ARCHIVAL_RPC_URL env vars for proxy/cache override
     let rpc_url = env_vars
@@ -105,22 +99,6 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
                 .with_api_key(env_vars.fastnear_api_key.clone()),
         ],
         ..NetworkConfig::mainnet()
-    };
-
-    // Create transfer hint service if enabled
-    let transfer_hint_service = if env_vars.transfer_hints_enabled {
-        use crate::handlers::balance_changes::transfer_hints::{
-            TransferHintService, fastnear::FastNearProvider,
-        };
-        let provider = if let Some(base_url) = &env_vars.transfer_hints_base_url {
-            FastNearProvider::with_base_url(archival_network.clone(), base_url.clone())
-        } else {
-            FastNearProvider::new(archival_network.clone())
-        }
-        .with_api_key(&env_vars.fastnear_api_key);
-        Some(TransferHintService::new().with_provider(provider))
-    } else {
-        None
     };
 
     // Drop the driver so the gate fails open (no rate limiting in tests, matching
@@ -156,10 +134,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         env_vars,
         token_price_service: Arc::new(crate::services::TokenPriceService::new(db_pool.clone())),
         db_pool,
-        price_service,
-        transfer_hint_service: transfer_hint_service.map(Arc::new),
         goldsky_pool: None,
-        neardata_client: None,
         confidential_keyring: None,
         event_tx,
         background_jobs_status: Arc::new(crate::jobs::leadership::BackgroundJobsStatus::new()),

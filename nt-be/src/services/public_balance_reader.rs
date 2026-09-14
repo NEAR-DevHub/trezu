@@ -8,10 +8,10 @@ use bigdecimal::BigDecimal;
 use near_api::NetworkConfig;
 use sqlx::PgPool;
 
-pub use crate::handlers::balance_changes::history::{
+pub use crate::handlers::public_history::charts::models::{
     BalanceSnapshot, ChartMeta, ChartResponse, ChartStatus, Interval,
 };
-pub use crate::handlers::balance_changes::utils::with_transport_retry;
+pub use crate::utils::transport::with_transport_retry;
 
 fn is_proven_nonexistence(message: &str) -> bool {
     message.contains("UnknownAccount")
@@ -41,7 +41,7 @@ pub async fn validate_staking_pool_at_block(
     pool_id: &str,
     block_height: u64,
 ) -> Result<bool, String> {
-    match crate::handlers::balance_changes::balance::staking::get_staking_balance_at_exact_block(
+    match crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
         network,
         account_id,
         pool_id,
@@ -94,14 +94,13 @@ pub async fn get_public_balance_at_block(
     block_height: u64,
 ) -> Result<BigDecimal, String> {
     if let Some(staking_pool) = asset.strip_prefix("staking:") {
-        let result =
-            crate::handlers::balance_changes::balance::staking::get_staking_balance_at_exact_block(
-                network,
-                account_id,
-                staking_pool,
-                block_height,
-            )
-            .await;
+        let result = crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
+            network,
+            account_id,
+            staking_pool,
+            block_height,
+        )
+        .await;
         return match result {
             Ok(balance) => Ok(balance),
             Err(error) if is_proven_nonexistence(&error.to_string()) => Ok(BigDecimal::from(0)),
@@ -109,7 +108,7 @@ pub async fn get_public_balance_at_block(
         };
     }
 
-    let result = crate::handlers::balance_changes::balance::get_balance_at_block(
+    let result = crate::services::chain_balances::get_balance_at_block(
         pool,
         network,
         account_id,

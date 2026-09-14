@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT is_saved, is_hidden\n            FROM dao_members\n            WHERE dao_id = 'guest-hide.sputnik-dao.near' AND account_id = 'alice.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_saved",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_hidden",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "3e141d86b0f581661f15bfcfb8ab7f8f90f024a301f9b68454eec1dd1fe0c917"
+}

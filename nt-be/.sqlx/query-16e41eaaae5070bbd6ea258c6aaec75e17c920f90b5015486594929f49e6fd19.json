@@ -1,0 +1,26 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT is_policy_member, is_saved\n            FROM dao_members\n            WHERE dao_id = 'member-remove.sputnik-dao.near' AND account_id = 'alice.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "is_policy_member",
+        "type_info": "Bool"
+      },
+      {
+        "ordinal": 1,
+        "name": "is_saved",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "16e41eaaae5070bbd6ea258c6aaec75e17c920f90b5015486594929f49e6fd19"
+}

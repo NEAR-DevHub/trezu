@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                        SELECT block_height, block_timestamp::BIGINT AS \"block_timestamp!\"\n                        FROM bronze_public_history_events\n                        WHERE block_time <= $1\n                        ORDER BY block_time DESC\n                        LIMIT 1\n                        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "block_height",
+        "type_info": "Int8"
+      },
+      {
+        "ordinal": 1,
+        "name": "block_timestamp!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "cf1838a23ef4021c51f34432cc03fdbda5c6cce75f772c9f696fa8f1ce61dd85"
+}

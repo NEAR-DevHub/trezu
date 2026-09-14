@@ -16,6 +16,4 @@ mod usd_backfill;
 pub use backfill::{BackfillSummary, HistoricalPriceBackfill};
 pub use ingest::{TokenPriceIngestor, spawn_token_price_ingest_worker};
 pub use service::{TokenPriceService, TokenRecord, canonicalize_token_id};
-pub use usd_backfill::{
-    BalanceChangesUsdBackfill, GoldConfidentialUsdBackfill, GoldLedgerUsdBackfill,
-};
+pub use usd_backfill::GoldLedgerUsdBackfill;

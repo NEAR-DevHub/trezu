@@ -8,15 +8,9 @@ use tokio::sync::broadcast;
 use crate::{
     error_event::ErrorCode,
     events::{AppEvent, EVENT_BUS_CAPACITY},
-    handlers::balance_changes::transfer_hints::{
-        TransferHintService, fastnear::FastNearProvider, neardata::NeardataClient,
-    },
     handlers::public_history::bronze::NearblocksPriority,
     jobs::leadership::BackgroundJobsStatus,
-    services::{
-        ConfidentialCredentialStore, DeFiLlamaClient, PriceLookupService, TokenKeyring,
-        TokenPriceService,
-    },
+    services::{ConfidentialCredentialStore, TokenKeyring, TokenPriceService},
     utils::{
         cache::{Cache, CacheKey, CacheTier},
         env::EnvVars,
@@ -103,17 +97,13 @@ pub struct AppState {
     pub archival_network: NetworkConfig,
     pub env_vars: EnvVars,
     pub db_pool: PgPool,
-    pub price_service: PriceLookupService<DeFiLlamaClient>,
     /// Centralized token registry + minute-level USD prices, fed by the
     /// token price ingest worker. Latest-price reads are in-memory.
     pub token_price_service: Arc<TokenPriceService>,
     pub bulk_payment_contract_id: AccountId,
     pub telegram_client: TelegramClient,
     /// Optional transfer hint service for accelerated balance change detection
-    pub transfer_hint_service: Option<Arc<TransferHintService>>,
-    /// Optional neardata.xyz client for accelerated block metadata resolution.
     /// Replaces multiple RPC calls with a single HTTP call per block.
-    pub neardata_client: Option<NeardataClient>,
     /// Optional connection pool to Goldsky sink Postgres database.
     /// Used by the enrichment worker to read indexed_dao_outcomes.
     /// None if GOLDSKY_DATABASE_URL is not configured.
@@ -160,10 +150,8 @@ pub struct AppStateBuilder {
     archival_network: Option<NetworkConfig>,
     env_vars: Option<EnvVars>,
     db_pool: Option<PgPool>,
-    price_service: Option<PriceLookupService<DeFiLlamaClient>>,
     bulk_payment_contract_id: Option<AccountId>,
     telegram_client: Option<TelegramClient>,
-    transfer_hint_service: Option<TransferHintService>,
     goldsky_pool: Option<PgPool>,
     confidential_keyring: Option<Arc<TokenKeyring>>,
 }
@@ -181,10 +169,8 @@ impl AppStateBuilder {
             archival_network: None,
             env_vars: None,
             db_pool: None,
-            price_service: None,
             bulk_payment_contract_id: None,
             telegram_client: None,
-            transfer_hint_service: None,
             goldsky_pool: None,
             confidential_keyring: None,
         }
@@ -251,17 +237,7 @@ impl AppStateBuilder {
     }
 
     /// Set the price service
-    pub fn price_service(mut self, price_service: PriceLookupService<DeFiLlamaClient>) -> Self {
-        self.price_service = Some(price_service);
-        self
-    }
-
     /// Set the transfer hint service
-    pub fn transfer_hint_service(mut self, service: TransferHintService) -> Self {
-        self.transfer_hint_service = Some(service);
-        self
-    }
-
     /// Set the Goldsky database pool (Goldsky sink, read-only)
     pub fn goldsky_pool(mut self, goldsky_pool: PgPool) -> Self {
         self.goldsky_pool = Some(goldsky_pool);
@@ -286,7 +262,6 @@ impl AppStateBuilder {
     /// - archival_network: Archival mainnet with fastnear API (from env)
     /// - env_vars: EnvVars::default()
     /// - db_pool: REQUIRED - must be provided
-    /// - price_service: Cache-only service (no provider)
     pub async fn build(self) -> Result<AppState, Box<dyn std::error::Error>> {
         // Load env vars for defaults
         let env_vars = self.env_vars.unwrap_or_default();
@@ -363,38 +338,12 @@ impl AppStateBuilder {
         });
 
         // Create default price service (cache-only) if not provided
-        let price_service = self
-            .price_service
-            .unwrap_or_else(|| PriceLookupService::without_provider(db_pool.clone()));
-
         let token_price_service = Arc::new(TokenPriceService::new(db_pool.clone()));
 
         // Use bulk payment contract from env or default
         let bulk_payment_contract_id = self
             .bulk_payment_contract_id
             .unwrap_or_else(|| env_vars.bulk_payment_contract_id.clone());
-
-        // Create transfer hint service if enabled (and not explicitly provided)
-        let transfer_hint_service = if let Some(service) = self.transfer_hint_service {
-            Some(Arc::new(service))
-        } else if env_vars.transfer_hints_enabled {
-            let provider = if let Some(base_url) = &env_vars.transfer_hints_base_url {
-                FastNearProvider::with_base_url(archival_network.clone(), base_url.clone())
-            } else {
-                FastNearProvider::new(archival_network.clone())
-            }
-            .with_api_key(&env_vars.fastnear_api_key);
-            Some(Arc::new(TransferHintService::new().with_provider(provider)))
-        } else {
-            None
-        };
-
-        // Create neardata client (uses same FASTNEAR_API_KEY)
-        let neardata_client = if !env_vars.fastnear_api_key.is_empty() {
-            Some(NeardataClient::new().with_api_key(&env_vars.fastnear_api_key))
-        } else {
-            None
-        };
 
         // Create Goldsky pool if URL is configured (Goldsky sink, read-only)
         let goldsky_pool = if let Some(existing) = self.goldsky_pool {
@@ -464,11 +413,8 @@ impl AppStateBuilder {
             archival_network,
             env_vars,
             db_pool,
-            price_service,
             token_price_service,
             bulk_payment_contract_id,
-            transfer_hint_service,
-            neardata_client,
             goldsky_pool,
             confidential_keyring,
             event_tx,
@@ -588,16 +534,6 @@ impl AppState {
             .build()
             .expect("failed to build shared HTTP client");
 
-        // Initialize price service with DeFiLlama provider (free, no API key required)
-        let base_url = &env_vars.defillama_api_base_url;
-        tracing::info!(
-            "Initializing DeFiLlama price provider with base URL: {}",
-            base_url
-        );
-        let defillama_client =
-            DeFiLlamaClient::with_base_url(http_client.clone(), base_url.clone());
-        let price_service = PriceLookupService::new(db_pool.clone(), defillama_client);
-
         let telegram_client = TelegramClient::new(
             env_vars.telegram_bot_token.clone(),
             env_vars.telegram_chat_id.clone(),
@@ -624,7 +560,6 @@ impl AppState {
             .signer_id(env_vars.signer_id.clone())
             .env_vars(env_vars)
             .db_pool(db_pool)
-            .price_service(price_service)
             .telegram_client(telegram_client)
             .build()
             .await?;
@@ -707,7 +642,7 @@ impl AppState {
     ///
     /// This method performs the following steps:
     /// 1. Check the cache for a previously found block height
-    /// 2. Try to lookup the block height from the database (balance_changes table)
+    /// 2. Try to look up the block height from bronze public history events
     /// 3. If not found in DB, use binary search with NEAR RPC to locate the block
     /// 4. Cache the result for future lookups
     /// 5. Return an error if all methods fail
@@ -740,25 +675,25 @@ impl AppState {
         self.cache
             .cached(CacheTier::LongTerm, cache_key.clone(), async {
                 // Step 1: Find the nearest indexed block at-or-before the target
-                // timestamp. `balance_changes` is global (every monitored
-                // account) and continuously indexed, so for any timestamp within
-                // an active indexed range this returns a block within moments of
-                // the target — instant via `idx_balance_changes_timestamp`. An
-                // exact timestamp match almost never existed, so the old query
-                // fell through to the RPC binary search (~20 sequential archival
-                // calls, ~6s), which made the proposal detail page — it resolves
-                // the policy at a proposal's submission block — slow on first
-                // load. The gap to the target is validated below before the
-                // block is used.
+                // timestamp. `bronze_public_history_events` is the raw event
+                // stream across every monitored account and is continuously
+                // written, so for any timestamp within an active indexed range
+                // this returns a block within moments of the target — instant
+                // via `idx_bphe_block_time`. Without it, every lookup would be
+                // the RPC binary search (~20 sequential archival calls, ~6s),
+                // which made the proposal detail page — it resolves the policy
+                // at a proposal's submission block — slow on first load. The
+                // gap to the target is validated below before the block is
+                // used.
                 let db_result = sqlx::query!(
                     r#"
-                        SELECT block_height, block_timestamp
-                        FROM balance_changes
-                        WHERE block_timestamp <= $1
-                        ORDER BY block_timestamp DESC
+                        SELECT block_height, block_timestamp::BIGINT AS "block_timestamp!"
+                        FROM bronze_public_history_events
+                        WHERE block_time <= $1
+                        ORDER BY block_time DESC
                         LIMIT 1
                         "#,
-                    target_timestamp_ns
+                    date,
                 )
                 .fetch_optional(&self.db_pool)
                 .await
@@ -847,7 +782,7 @@ impl AppState {
         timestamp_ns: i64,
         lower_bound: Option<u64>,
     ) -> Result<u64, Box<dyn std::error::Error>> {
-        use crate::handlers::balance_changes::utils::with_transport_retry;
+        use crate::utils::transport::with_transport_retry;
         use near_api::{Chain, Reference};
 
         // Get the latest block to establish the search range
@@ -944,7 +879,7 @@ mod tests {
     /// Test finding block height from database when data exists
     #[sqlx::test]
     async fn test_find_block_height_from_database(pool: PgPool) -> sqlx::Result<()> {
-        // Insert a test balance change record
+        // Insert a bronze event at the target block
         let account_id = "test.near";
         let block_height: i64 = 151386339;
         let block_timestamp: i64 = 1750097144159145697; // nanoseconds since Unix epoch
@@ -954,13 +889,14 @@ mod tests {
 
         sqlx::query!(
             r#"
-            INSERT INTO balance_changes
-            (account_id, block_height, block_timestamp, block_time, transaction_hashes, counterparty, amount, balance_before, balance_after)
-            VALUES ($1, $2, $3, $4, '{}', 'test_counterparty', 1000, 0, 1000)
+            INSERT INTO bronze_public_history_events
+            (account_id, source, source_event_key, block_height, block_timestamp, block_time,
+             affected_account_id, raw_payload)
+            VALUES ($1, 'nearblocks_receipt', 'find-block-height-test', $2, $3, $4, $1, '{}')
             "#,
             account_id,
             block_height,
-            block_timestamp,
+            bigdecimal::BigDecimal::from(block_timestamp),
             block_time,
         )
         .execute(&pool)

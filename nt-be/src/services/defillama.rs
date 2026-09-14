@@ -7,15 +7,11 @@
 //! - `coingecko:{id}` - For major coins using CoinGecko IDs
 //! - `near:{contract}` - For NEAR native tokens using contract addresses
 
-use async_trait::async_trait;
-use chrono::{DateTime, NaiveDate, TimeZone, Utc};
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
 use std::time::Duration;
-
-use super::price_provider::PriceProvider;
 
 /// Default DeFiLlama Coins API base URL
 const DEFAULT_DEFILLAMA_API_BASE: &str = "https://coins.llama.fi";
@@ -24,8 +20,6 @@ const DEFAULT_DEFILLAMA_API_BASE: &str = "https://coins.llama.fi";
 /// DeFiLlama's /chart endpoint has timeout issues with large spans.
 /// Testing showed span=1500 works reliably, span=2000 fails.
 /// Using 365 days (1 year) for faster sync times while maintaining sufficient history.
-const HISTORICAL_DAYS: i64 = 365;
-
 /// Static mapping from symbols to DeFiLlama asset IDs
 /// For major coins, we use coingecko:{id} format
 static SYMBOL_TO_DEFILLAMA_ID: OnceLock<HashMap<&'static str, &'static str>> = OnceLock::new();
@@ -199,25 +193,6 @@ impl std::fmt::Display for BatchHistoricalError {
 }
 
 impl std::error::Error for BatchHistoricalError {}
-
-/// Response from DeFiLlama /chart endpoint for historical data
-#[derive(Debug, Deserialize)]
-struct ChartResponse {
-    coins: HashMap<String, ChartData>,
-}
-
-#[derive(Debug, Deserialize)]
-struct ChartData {
-    prices: Vec<PricePoint>,
-    #[allow(dead_code)]
-    symbol: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct PricePoint {
-    timestamp: i64,
-    price: f64,
-}
 
 /// DeFiLlama API client
 pub struct DeFiLlamaClient {
@@ -489,13 +464,10 @@ impl DeFiLlamaClient {
     }
 }
 
-#[async_trait]
-impl PriceProvider for DeFiLlamaClient {
-    fn source_name(&self) -> &'static str {
-        "defillama"
-    }
-
-    fn translate_asset_id(&self, unified_asset_id: &str) -> Option<String> {
+impl DeFiLlamaClient {
+    /// Maps a unified/canonical asset id (e.g. "btc", "usdc") to DeFiLlama's
+    /// provider-specific id via the symbol map.
+    pub fn translate_asset_id(&self, unified_asset_id: &str) -> Option<String> {
         // The unified_asset_id is lowercase (e.g., "btc", "eth", "usdc")
         // Convert to uppercase for symbol lookup
         let upper = unified_asset_id.to_uppercase();
@@ -511,146 +483,11 @@ impl PriceProvider for DeFiLlamaClient {
             .get(token.symbol.to_uppercase().as_str())
             .map(|s| s.to_string())
     }
-
-    async fn get_price_at_date(
-        &self,
-        asset_id: &str,
-        date: NaiveDate,
-    ) -> Result<Option<f64>, Box<dyn std::error::Error + Send + Sync>> {
-        // Convert date to Unix timestamp (midnight UTC)
-        let datetime = date.and_hms_opt(0, 0, 0).ok_or("Invalid date")?;
-        let timestamp = Utc.from_utc_datetime(&datetime).timestamp();
-
-        let url = format!(
-            "{}/prices/historical/{}/{}",
-            self.base_url, timestamp, asset_id
-        );
-
-        tracing::debug!(
-            "Fetching price from DeFiLlama: {} for {} (timestamp: {})",
-            asset_id,
-            date,
-            timestamp
-        );
-
-        let response = self
-            .http_client
-            .get(&url)
-            .header("accept", "application/json")
-            .send()
-            .await?;
-
-        let status = response.status();
-
-        if status == reqwest::StatusCode::NOT_FOUND {
-            tracing::debug!("DeFiLlama: Asset {} not found", asset_id);
-            return Ok(None);
-        }
-
-        if !status.is_success() {
-            tracing::warn!("DeFiLlama API error for {}: {}", asset_id, status,);
-            return Err(format!("DeFiLlama API error: {}", status).into());
-        }
-
-        let data: PricesResponse = response.json().await?;
-
-        let price = data.coins.get(asset_id).map(|c| c.price);
-
-        if let Some(p) = price {
-            tracing::debug!("DeFiLlama: {} price on {} = ${}", asset_id, date, p);
-        } else {
-            tracing::debug!("DeFiLlama: No price data for {} on {}", asset_id, date);
-        }
-
-        Ok(price)
-    }
-
-    async fn get_current_prices(
-        &self,
-        asset_ids: &[String],
-    ) -> Result<HashMap<String, f64>, Box<dyn std::error::Error + Send + Sync>> {
-        self.get_current_prices_batch(asset_ids).await
-    }
-
-    async fn get_all_historical_prices(
-        &self,
-        asset_id: &str,
-    ) -> Result<HashMap<NaiveDate, f64>, Box<dyn std::error::Error + Send + Sync>> {
-        let now = Utc::now();
-        let from = now - chrono::Duration::days(HISTORICAL_DAYS);
-
-        // DeFiLlama chart endpoint: /chart/{coins}?start={timestamp}&span={days}&period=1d
-        let url = format!(
-            "{}/chart/{}?start={}&span={}&period=1d",
-            self.base_url,
-            asset_id,
-            from.timestamp(),
-            HISTORICAL_DAYS
-        );
-
-        tracing::info!(
-            "Fetching all historical prices from DeFiLlama for {} ({} days)",
-            asset_id,
-            HISTORICAL_DAYS
-        );
-
-        let response = self
-            .http_client
-            .get(&url)
-            .header("accept", "application/json")
-            .send()
-            .await?;
-
-        let status = response.status();
-
-        if status == reqwest::StatusCode::NOT_FOUND {
-            tracing::debug!("DeFiLlama: Asset {} not found", asset_id);
-            return Ok(HashMap::new());
-        }
-
-        if !status.is_success() {
-            tracing::warn!(
-                "DeFiLlama API error fetching history for {}: {}",
-                asset_id,
-                status,
-            );
-            return Err(format!("DeFiLlama API error: {}", status).into());
-        }
-
-        let data: ChartResponse = response.json().await?;
-
-        // Convert to daily prices
-        let mut daily_prices: HashMap<NaiveDate, f64> = HashMap::new();
-
-        if let Some(chart_data) = data.coins.get(asset_id) {
-            for point in &chart_data.prices {
-                if let Some(dt) = DateTime::from_timestamp(point.timestamp, 0) {
-                    let date = dt.date_naive();
-                    // Only keep the first price for each day
-                    daily_prices.entry(date).or_insert(point.price);
-                }
-            }
-        }
-
-        tracing::info!(
-            "DeFiLlama: Fetched {} daily prices for {}",
-            daily_prices.len(),
-            asset_id
-        );
-
-        Ok(daily_prices)
-    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_source_name() {
-        let client = DeFiLlamaClient::new(Client::new());
-        assert_eq!(client.source_name(), "defillama");
-    }
 
     #[test]
     fn test_translate_asset_id_symbol_fallback() {

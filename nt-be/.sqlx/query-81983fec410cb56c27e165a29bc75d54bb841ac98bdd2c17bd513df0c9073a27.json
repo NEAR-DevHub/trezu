@@ -1,0 +1,30 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n        SELECT token_out as \"token_id!\", SUM(amount_out) as \"total_amount!\"\n        FROM gold_treasury_ledger_events\n        WHERE dao_id = $1\n          AND status = 'success'\n          AND history_visible\n          AND transaction_type IN ('sent', 'exchange')\n          AND token_out IS NOT NULL\n          AND amount_out IS NOT NULL\n          AND event_time >= $2\n          AND event_time < $3\n        GROUP BY token_out\n        ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "token_id!",
+        "type_info": "Text"
+      },
+      {
+        "ordinal": 1,
+        "name": "total_amount!",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text",
+        "Timestamptz",
+        "Timestamptz"
+      ]
+    },
+    "nullable": [
+      true,
+      null
+    ]
+  },
+  "hash": "81983fec410cb56c27e165a29bc75d54bb841ac98bdd2c17bd513df0c9073a27"
+}
