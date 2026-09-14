@@ -42,7 +42,7 @@ import { useBalanceChart } from "@/hooks/use-treasury-queries";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
 import type { ChartInterval, TreasuryAsset } from "@/lib/api";
-import { availableBalance, totalBalance } from "@/lib/balance";
+import { totalBalance } from "@/lib/balance";
 import { getBalanceHistoryTokenIds } from "@/lib/balance-history-token-ids";
 import Big from "@/lib/big";
 import {
@@ -444,7 +444,7 @@ export default function BalanceWithGraph({
                         (sum, t) =>
                             sum.add(
                                 decimalFromBaseUnits(
-                                    availableBalance(t.balance),
+                                    totalBalance(t.balance),
                                     t.decimals,
                                 ),
                             ),
