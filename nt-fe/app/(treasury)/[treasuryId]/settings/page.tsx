@@ -50,6 +50,7 @@ function SettingsPageContent() {
     return (
         <PageComponentLayout
             title={t("title")}
+            hideMobileShellControls
             mainClassName={STABLE_SCROLL_GUTTER}
         >
             <div className="mx-auto w-full max-w-[464px]">
@@ -89,6 +90,7 @@ export default function SettingsPage() {
             fallback={
                 <PageComponentLayout
                     title={t("title")}
+                    hideMobileShellControls
                     mainClassName={STABLE_SCROLL_GUTTER}
                 >
                     <div className="mx-auto min-h-48 w-full max-w-[464px]" />
