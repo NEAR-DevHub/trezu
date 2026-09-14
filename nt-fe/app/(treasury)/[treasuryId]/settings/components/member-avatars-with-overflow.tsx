@@ -169,7 +169,7 @@ export function MemberAvatarsWithOverflow({
         >
             {/* Visible member avatars */}
             {visibleMembers.map((member) => (
-                <div key={member} className="-ml-[9px] first:ml-0">
+                <div key={member} className="-ml-[9px] flex first:ml-0">
                     <MemberAvatar accountId={member} />
                 </div>
             ))}
