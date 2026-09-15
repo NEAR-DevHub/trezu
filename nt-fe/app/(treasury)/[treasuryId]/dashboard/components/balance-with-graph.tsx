@@ -335,18 +335,10 @@ export default function BalanceWithGraph({
                         .map(([tokenId]) => tokenId),
                 );
                 const nowBalanceUSD = groupedTokens
-                    .filter(
-                        (group) =>
-                            group.tokens.some(
-                                (t) => t.residency !== "Lockup",
-                            ) &&
-                            group.tokenIds.some((id) =>
-                                tokenIdsWithPrices.has(id),
-                            ),
+                    .filter((group) =>
+                        group.tokenIds.some((id) => tokenIdsWithPrices.has(id)),
                     )
-                    .flatMap((group) =>
-                        group.tokens.filter((t) => t.residency !== "Lockup"),
-                    )
+                    .flatMap((group) => group.tokens)
                     .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
                     name: t("chartNow"),
@@ -420,9 +412,7 @@ export default function BalanceWithGraph({
                     balanceValue: balanceValue,
                 }));
             if (data.length > 0) {
-                const nonLockupTokens = (
-                    selectedTokenGroup?.tokens ?? []
-                ).filter((t) => t.residency !== "Lockup");
+                const groupTokens = selectedTokenGroup?.tokens ?? [];
                 const selectedTokenIdsWithPrices = new Set(
                     Object.entries(balanceChartData)
                         .filter(
@@ -437,9 +427,9 @@ export default function BalanceWithGraph({
                         selectedTokenIdsWithPrices.has(id),
                     ) ?? false;
                 const nowUSD = hasHistoricalPrices
-                    ? nonLockupTokens.reduce((sum, t) => sum + t.balanceUSD, 0)
+                    ? groupTokens.reduce((sum, t) => sum + t.balanceUSD, 0)
                     : undefined;
-                const nowBalance = nonLockupTokens
+                const nowBalance = groupTokens
                     .reduce(
                         (sum, t) =>
                             sum.add(

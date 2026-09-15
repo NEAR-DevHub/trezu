@@ -54,12 +54,12 @@ function getTokenBucketRaw(token: TreasuryAsset): {
         totalRaw = staked.add(unstaked);
         earningRaw = staked.add(unstaked);
     } else if (token.balance.type === "Vested") {
+        // Everything inside the lockup that is not staked stays locked until
+        // it is withdrawn to the treasury account.
         const lockup = token.balance.lockup;
-        const staked = lockup.staked;
-        const nonStakedLocked = lockup.unvested.sub(staked);
         totalRaw = lockup.total;
-        earningRaw = staked;
-        lockedRaw = clampNonNegative(nonStakedLocked).add(lockup.storageLocked);
+        earningRaw = lockup.staked;
+        lockedRaw = clampNonNegative(totalRaw.sub(earningRaw));
     }
 
     return { totalRaw, availableRaw, lockedRaw, earningRaw };

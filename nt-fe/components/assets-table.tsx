@@ -129,6 +129,15 @@ function networkLockedRaw(asset: NetworkAsset): Big.Big {
     return lockedBalance(asset.balance);
 }
 
+// Locked bucket total: for lockups, everything not staked (including the
+// unlocked-but-not-withdrawn part) stays locked until it reaches the treasury.
+function networkLockedBucketRaw(asset: NetworkAsset): Big.Big {
+    const locked = networkLockedRaw(asset);
+    return asset.residency === "Lockup"
+        ? locked.add(networkAvailableRaw(asset))
+        : locked;
+}
+
 function networkEarningRaw(asset: NetworkAsset): Big.Big {
     if (asset.balance.type === "Staked") {
         return asset.balance.staking.stakedBalance.add(
@@ -150,7 +159,7 @@ function getAssetMetrics(asset: AggregatedAsset): AssetMetrics {
     let hasEarning = false;
 
     for (const network of asset.networks) {
-        const lockedRaw = networkLockedRaw(network);
+        const lockedRaw = networkLockedBucketRaw(network);
         const earningRaw = networkEarningRaw(network);
         const availableForAvailableViewRaw =
             networkAvailableRawForAvailableView(network);
@@ -458,7 +467,7 @@ function buildMobileModalData(
                   networkAvailableRawForAvailableView,
               )
             : view === "locked"
-              ? sumTokenAmountsByNetwork(lockedNetworks, networkLockedRaw)
+              ? sumTokenAmountsByNetwork(lockedNetworks, networkLockedBucketRaw)
               : sumTokenAmountsByNetwork(earningNetworks, networkEarningRaw);
     const summaryUsd =
         view === "available"
@@ -475,7 +484,8 @@ function buildMobileModalData(
             : view === "locked"
               ? lockedNetworks.reduce(
                     (sum, n) =>
-                        sum + toUsd(networkLockedRaw(n), n.decimals, n.price),
+                        sum +
+                        toUsd(networkLockedBucketRaw(n), n.decimals, n.price),
                     0,
                 )
               : earningNetworks.reduce(
@@ -1528,7 +1538,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                 : 0,
                         locked: metrics.lockedUsd,
                         unlocked: unlockedUsd,
-                        totalAllocated: metrics.lockedUsd + unlockedUsd,
+                        totalAllocated: metrics.lockedUsd,
                         earningTotal: metrics.earningUsd,
                         withdrawable: withdrawableUsd,
                     },
