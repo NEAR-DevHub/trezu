@@ -110,6 +110,29 @@ const formatTimestampForPeriod = (
     }
 };
 
+const isSameCalendarDay = (a: Date, b: Date): boolean =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate();
+
+// Drop trailing historical points that already fall on today: the "Now"
+// point appended after this represents today's live value, so keeping a
+// separate historical point for today as well would duplicate today's
+// label on the chart.
+function dropTodaysHistoricalEntries<T extends [string, unknown]>(
+    sortedEntries: T[],
+): T[] {
+    const now = new Date();
+    let end = sortedEntries.length;
+    while (
+        end > 0 &&
+        isSameCalendarDay(new Date(sortedEntries[end - 1][0]), now)
+    ) {
+        end -= 1;
+    }
+    return sortedEntries.slice(0, end);
+}
+
 // Full date for tooltip label when axis label is abbreviated (3M/1Y)
 const formatFullDateForPeriod = (
     timestamp: string,
@@ -304,24 +327,25 @@ export default function BalanceWithGraph({
                 }
             }
 
-            const data = Array.from(timeMap.entries())
-                .sort(
+            const sortedEntries = dropTodaysHistoricalEntries(
+                Array.from(timeMap.entries()).sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
-                )
-                .map(([timestamp, { usdValue }]) => ({
-                    name: formatTimestampForPeriod(
-                        timestamp,
-                        selectedPeriod,
-                        locale,
-                    ),
-                    fullDate: formatFullDateForPeriod(
-                        timestamp,
-                        selectedPeriod,
-                        locale,
-                    ),
-                    usdValue: usdValue,
-                }));
+                ),
+            );
+            const data = sortedEntries.map(([timestamp, { usdValue }]) => ({
+                name: formatTimestampForPeriod(
+                    timestamp,
+                    selectedPeriod,
+                    locale,
+                ),
+                fullDate: formatFullDateForPeriod(
+                    timestamp,
+                    selectedPeriod,
+                    locale,
+                ),
+                usdValue: usdValue,
+            }));
 
             if (data.length > 0) {
                 // Only include tokens whose history token IDs have price data
@@ -400,12 +424,14 @@ export default function BalanceWithGraph({
             const hasAnyUSD = Array.from(timeMap.values()).some(
                 (v) => v.hasUSD,
             );
-            const data = Array.from(timeMap.entries())
-                .sort(
+            const sortedEntries = dropTodaysHistoricalEntries(
+                Array.from(timeMap.entries()).sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
-                )
-                .map(([timestamp, { usdValue, balanceValue, hasUSD }]) => ({
+                ),
+            );
+            const data = sortedEntries.map(
+                ([timestamp, { usdValue, balanceValue, hasUSD }]) => ({
                     name: formatTimestampForPeriod(
                         timestamp,
                         selectedPeriod,
@@ -418,7 +444,8 @@ export default function BalanceWithGraph({
                     ),
                     usdValue: hasUSD ? usdValue : undefined,
                     balanceValue: balanceValue,
-                }));
+                }),
+            );
             if (data.length > 0) {
                 const nonLockupTokens = (
                     selectedTokenGroup?.tokens ?? []
