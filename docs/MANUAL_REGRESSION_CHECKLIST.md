@@ -1,7 +1,45 @@
 # Trezu — Manual Regression Checklist
 
-**Version:** 1.0 · **Date:** 2026-07-08 · **Owner:** QA
-**Companion to:** [TEST_STRATEGY.md](TEST_STRATEGY.md) (risk tiers, environments, ownership)
+**Version:** 1.3 · **Date:** 2026-09-15 · **Owner:** QA
+**Companion to:** [TEST_STRATEGY.md](TEST_STRATEGY.md) (risk tiers, environments, ownership) · see [Changelog](#changelog) for revision history
+
+---
+
+## Quick Start — "I need to…"
+
+| Situation | Do this |
+|-----------|---------|
+| A staging deploy just went out | Run every `S` row across all sections. ~30–45 min. |
+| Signing off a production release | Run every `R` row. **All P0 checks are mandatory** — cross-check against the Coverage traceability table at the very bottom before you sign off. ~half day. |
+| Quarterly pass, or releasing relay/signing/fee changes | Run everything, including `F` rows and the wallet/i18n matrix (§16). ~2 days. |
+| I shipped one specific feature | Jump straight to its section (index below) + a basic smoke (§1 Auth, §4 Dashboard) since most flows sit behind login/dashboard. |
+| Checking prod right after deploy | §18 Post-Deploy Production Smoke only — read-only + one canary proposal. |
+| Logging what I tested | Copy [REGRESSION_RUN_LOG_TEMPLATE.md](REGRESSION_RUN_LOG_TEMPLATE.md) into the release notes / PR for this run. |
+| I want the *why* behind a check, or I'm planning new automation | [TEST_STRATEGY.md](TEST_STRATEGY.md) instead — read it quarterly, not per-run. This file is for execution, that one is for planning. |
+
+**Section index** (Ctrl+F `## <n>.` to jump):
+
+| § | Section | Risk tier |
+|---|---------|-----------|
+| 1 | Authentication & Session | P2 |
+| 2 | Compliance: Geo-blocking | P2 |
+| 3 | Treasury Creation & Management | P0 |
+| 4 | Dashboard, Charts & Deposit | P1/P3 |
+| 5 | Single Payments | P0 |
+| 6 | Relay Authorization Matrix | P0 |
+| 7 | Bulk Payments | P0 |
+| 8 | Exchange / Swap | P0 (fees) / P1 (flow) |
+| 9 | Governance: Members, Voting, Requests | P2 |
+| 10 | Address Book | P3 |
+| 11 | Exports & Activity History | P1 |
+| 12 | Plan & Credit Gating | P2 |
+| 13 | Confidential Treasuries | P0 |
+| 14 | Custom Proposal Templates | P3 |
+| 15 | Settings, Notifications & Misc Product | P3 |
+| 16 | Compatibility, i18n & Wallet Matrix | F only |
+| 17 | Admin & Internal | P2 |
+| 18 | Post-Deploy Production Smoke | run after every prod deploy |
+| 19 | CEX Transfers — Binance | P0, real funds |
 
 ---
 
@@ -19,8 +57,8 @@
 
 - Checks marked **[auto]** have automated coverage (Playwright/backend integration). During manual regression, verify the CI run is green instead of re-executing by hand — re-test manually only if the automated suite was skipped by path filters (see TEST_STRATEGY §7 cross-component blind spot).
 - Risk tier (P0–P3) follows TEST_STRATEGY §1. **Every P0 check is mandatory before release** — no exceptions, no "tested last time".
-- Record results per run: pass / fail (+ bug link with severity S1–S4) / blocked / skipped (+ reason). Keep run logs with the release notes.
-- Default environment is **staging (Render) with testnet wallets** unless a check says *sandbox* or *prod*. Never use real user funds; DAO for testing is the dedicated staging/QA-owned DAO.
+- Record results per run: pass / fail (+ bug link with severity S1–S4) / blocked / skipped (+ reason). Use [REGRESSION_RUN_LOG_TEMPLATE.md](REGRESSION_RUN_LOG_TEMPLATE.md); keep the filled-in copy with the release notes.
+- Default environment is **staging (Render) with testnet wallets** unless a check says *sandbox* or *prod*. Never use real user funds; DAO for testing is the dedicated staging/QA-owned DAO. **Exception: §19 (CEX Transfers)** — there is no testnet Binance, so those checks necessarily move small amounts of real crypto; see that section's own funds-handling rules before running it.
 
 **Test data prerequisites (set up once per run):**
 
@@ -28,6 +66,7 @@
 - [ ] A second wallet that is **NOT** a member of the DAO (for negative authorization checks).
 - [ ] Treasury on **Free plan** with credits near exhaustion (for gating checks) — coordinate with backend to set `monitored_accounts` credits, or burn them down as part of §12.
 - [ ] One **confidential** treasury (create in §3 if missing).
+- [ ] For §19: a Binance account with withdrawal enabled and a small, dedicated real-funds allowance (team-approved amount per network) — not a personal account used for anything else.
 - [ ] CSV files: valid bulk-payment CSV (≤25 rows), CSV with 26+ rows, CSV with malformed rows (bad account ID, negative amount, duplicate recipient), address-book import CSV.
 - [ ] Wallets installed per matrix in §16: Meteor, Intear, NEAR Mobile, Ledger device, MetaMask (WalletConnect/EVM).
 
@@ -47,9 +86,10 @@
 | AUTH-08 | F | Challenge expiry | Start login, wait >15 min before signing, complete signing → login rejected cleanly with a retriable error |
 | AUTH-09 | F | Challenge replay | Re-submitting an already-used login payload is rejected (challenge is single-use) |
 | AUTH-10 | F | Auth cookie scope | `auth_token` cookie is HttpOnly, Secure, SameSite=Strict (verify in devtools); token not present in localStorage or URLs |
-| AUTH-11 | R | Disabled wallets | Passkey and Phantom options are visible but disabled; no dead-end flow when clicked |
+| AUTH-11 | R | Passkey login (hero card, default option on `/login`) **[auto]** | CI: `passkey-login.spec.ts` (create + NEP-641 resolveAuth) — spec skips silently without a sibling `near-connect-passkey` checkout, so confirm it actually *ran* (not skipped) in the CI log. Manually spot-check once per release: card renders first, login completes, no dead-end if the executor asset fails to load |
 | AUTH-12 | F | Wallet "Offline" admin warning | With an active `login.wallet.*` warning slot, the affected wallet shows Offline badge and login via it is discouraged/blocked per design |
 | AUTH-13 | F | Ledger login **[auto]** | CI: `ledger-login.spec.ts`. Manual only on real hardware in §16 wallet matrix (WebHID untestable in CI) |
+| AUTH-14 | R | Phantom wallet | Shown in the wallet list, disabled (`supported: false` in `nt-fe/lib/wallets.ts`); no dead-end flow when clicked |
 
 ## 2. Compliance: Geo-blocking — P2
 
@@ -109,6 +149,7 @@ Priority #1 flow per TEST_STRATEGY §4.4 — currently **no E2E coverage**, so m
 | PAY-09 | F | Quote refresh on intents payment | Stale quote refreshes before submit; amount changes are surfaced, not silently applied |
 | PAY-10 | R | Payment receipt page (`/requests/{id}/receipt`) | QR, status, amounts, tx hash correct; printable layout intact; link shareable while unauthenticated (public treasury) |
 | PAY-11 | F | Memo/notes round-trip | Memo entered at creation is visible on proposal detail and receipt |
+| PAY-12 | R | "Max" button on a NEAR-network intents token (e.g. USDC, wNEAR) | Sets amount mode to EXACT_INPUT (send full balance) — no false insufficient-funds error. Regression check for #1572 (`paymentIntentsAmountModeForInput`, `nt-fe/lib/payment-route.ts`); the fix is unit-tested but has no E2E coverage, so this manual check is the only net against a UI-level regression |
 
 ## 6. Relay Authorization Matrix — P0 (negative tests)
 
@@ -146,18 +187,21 @@ Priority #2 flow — wizard has **no Playwright coverage** (JS flow scripts cove
 
 ## 8. Exchange / Swap — P0 (fees), P1 (flow)
 
-Priority #3 flow — no E2E coverage.
+Priority #3 flow — no full-lifecycle E2E coverage; `exchange-amount-formatting.spec.ts` narrowly covers quote-amount display formatting only (see EXC-04).
 
 | # | Tier | Check | Expected |
 |---|------|-------|----------|
 | EXC-01 | R | **Full lifecycle:** quote (sell NEAR → receive FT) → review → submit proposal → approve → swap settles | Received amount within quoted slippage; activity shows swap (swap detection classifies it, not two unrelated transfers) |
 | EXC-02 | R | **Fee integrity (server-side):** inspect `/api/intents/quote` response vs UI | Displayed fee matches server-injected app fee (bps from server env); tampering with fee fields in the client request does **not** change server quote — server ignores client-supplied `appFees`/`referral` |
 | EXC-03 | R | Quote expiry countdown on review step | Expired quote cannot be submitted; re-quote flow works |
-| EXC-04 | R | Swap direction toggle + amount recalculation | Sell/receive swap keeps amounts consistent with the live dry-run quote |
+| EXC-04 | R | Swap direction toggle + amount recalculation **[auto partial]** | Sell/receive swap keeps amounts consistent with the live dry-run quote. CI: `exchange-amount-formatting.spec.ts` covers one narrow regression — grouped/comma-formatted quote amounts (e.g. "5,000") must not leak into the raw numeric input field — on desktop + mobile; manually verify the rest of the recalculation behavior |
 | EXC-05 | R | Slippage settings modal | Custom slippage persists into the quote; extreme values warned |
 | EXC-06 | F | NEAR wrap/unwrap and native-NEAR paths | Both succeed; no app fee on same-asset conversions |
 | EXC-07 | F | Market price difference warning | Large deviation from market price is flagged on review |
 | EXC-08 | R | Pending exchange proposals button | Lists in-flight swap proposals; navigates to proposal detail |
+| EXC-09 | R | Stablecoin→stablecoin swap, cross-network (e.g. USDC on NEAR → USDC on Ethereum) | No Trezu app fee: `/api/intents/quote` response's `quoteRequest.appFees` has no entry for the server-configured recipient (a separate small 1Click-platform fee entry, different recipient, is expected and out of scope). UI shows no exchange fee row. Live-verified 2026-09-15 on `testenv.business.near.com` (`nearcom_redesign` branch — **not yet on `main`/`testenv.trezu.app`**, re-check once merged). Covers #1574/#1585 (`is_stablecoin_to_stablecoin`, `nt-be/src/handlers/intents/quote.rs`) |
+| EXC-10 | R | Non-stablecoin ↔ stablecoin swap, cross-network (e.g. wNEAR → USDC on Ethereum) | Trezu app fee **is** applied, same as any other swap — control case proving the #1574 exemption doesn't over-apply |
+| EXC-11 | F | Stablecoin→stablecoin swap, SAME network (e.g. USDT on NEAR → USDC on NEAR) | Also fee-free as implemented — the exemption isn't gated on "between networks" despite that wording in #1574's AC. Not a bug, but confirm this still matches product intent before relying on the ticket's literal wording |
 
 ## 9. Governance: Members, Voting, Requests — P2
 
@@ -299,13 +343,37 @@ Read-only plus **one canary proposal on the QA-owned DAO** (TEST_STRATEGY §6). 
 | PRD-06 | Exchange quote (dry-run only, do not submit) | Quote returns with correct fee bps |
 | PRD-07 | Sentry / warnings check | No new S1/S2-class errors in the first 30 min post-deploy |
 
+## 19. CEX Transfers — Binance — P0
+
+⚠️ **Real-funds exception.** There is no testnet Binance — every check below moves small amounts of real crypto through a real Binance account. Use only the team-approved test allowance (see prerequisites), never a personal account, and size each transfer to just above both Binance's published minimum for that network and Trezu/1Click's own `minAmountIn` bridge floor (visible in the deposit modal / quote error — see the deposit-address code notes below) so a too-small amount can't itself strand the funds. Use tokens the staging/testing treasury already holds — confirm current holdings before picking an amount; don't acquire new tokens just for this.
+
+Covers the deposit and withdrawal paths on the networks Binance and Trezu both support (`nt-fe/lib/intents-network.ts`) — this is the exact class of bug behind the 2026-08-31 near.com/1Click incident (a quote deposit address that nobody could credit, funds stranded until manual refund), so treat any stuck/unlanded transfer here as a P0, not a flaky-test retry.
+
+**Networks in scope** (most-popular-on-Binance ∩ Trezu-supported): Bitcoin (BTC), Ethereum (ETH / ERC-20), BNB Smart Chain (BEP-20), Solana (SOL), Tron (TRX / TRC-20), NEAR (native).
+
+| # | Tier | Check | Expected |
+|---|------|-------|----------|
+| CEX-01 | R | Binance withdrawal → Trezu **public** treasury, native NEAR | Withdraw from Binance to the address shown on `/dashboard/deposit` (DSH-05); Binance accepts the address with no "unsupported network" warning; deposit lands and appears in dashboard/activity with the correct amount after confirmation |
+| CEX-02 | R | Binance withdrawal → Trezu public treasury, Bitcoin | Same as CEX-01 for BTC; confirm the credited amount matches Binance's withdrawal amount minus Binance's own network fee (not double-charged by Trezu) |
+| CEX-03 | R | Binance withdrawal → Trezu public treasury, Ethereum (ETH or an ERC-20 the treasury already holds) | Same as CEX-01 for the EVM path |
+| CEX-04 | R | Binance withdrawal → Trezu public treasury, BNB Smart Chain | Same as CEX-01 for BEP-20 |
+| CEX-05 | R | Binance withdrawal → Trezu public treasury, Solana | Same as CEX-01 for SOL/SPL |
+| CEX-06 | R | Binance withdrawal → Trezu public treasury, Tron | Same as CEX-01 for TRX/TRC-20 |
+| CEX-07 | R | Binance withdrawal → Trezu **confidential** treasury, native NEAR | Generate the one-time quote address (CNF-03); withdraw from Binance to the address Trezu actually displays, and confirm that address is the **Bridge-converted on-chain address**, not the raw 1Click `intents.near` quote address (`nt-be/src/handlers/intents/deposit_address.rs` `get_confidential_deposit_address` → `fetch_bridge_deposit_address`); deposit is picked up by the deposit-status poll within the 14-day address validity window |
+| CEX-08 | R | Repeat CEX-07 for one more network (BTC or an EVM chain) | Confirms the bridge-conversion path isn't NEAR-native-only |
+| CEX-09 | R | Trezu public treasury → Binance deposit address, native NEAR | Create + approve a Payments proposal to a Binance-generated NEAR deposit address; Binance credits the deposit; amount matches minus network fee; tx hash resolvable on both sides |
+| CEX-10 | R | Trezu → Binance, one EVM network, FT token the treasury holds (e.g. USDC/USDT) | Same as CEX-09 via the cross-chain Payments/Exchange intents route; no app fee applied on the `is_payment` quote (per PAY-05/EXC-02); received amount at Binance matches the quote within slippage |
+| CEX-11 | R | Trezu → Binance, Bitcoin | Same as CEX-09; size the send comfortably above Bitcoin's real minimum-fee floor (network fee has been observed to run ≈$5 equivalent — see #1332 QA notes) so the transfer is economically valid, not just quote-valid |
+| CEX-12 | F | Minimum-amount boundary, one network | Send an amount just under Binance's published minimum deposit for that asset/network; Trezu should either block it pre-submit against the quoted `minAmountIn` floor, or the funds must be fully recoverable (not silently stranded) — this is the specific failure mode the 2026-08-31 incident review ruled out for Trezu's *own* flow; use this check to keep proving that holds |
+| CEX-13 | F | Memo/tag-required asset (if the treasury holds one needing it) | Confirm Trezu's SIMPLE→MEMO bridge fallback (`fetch_deposit_address`'s two-mode fetch) actually surfaces the memo/tag to the user, and that a deposit sent without it isn't silently dropped |
+
 ---
 
 ## Coverage traceability (strategy §1 risk tiers → checklist sections)
 
 | Risk tier | Sections | Mandatory before release |
 |-----------|----------|--------------------------|
-| **P0 — Money loss** | §3 (creation), §5 (payments), §6 (relay matrix), §7 (bulk), §8 EXC-02 (fees), §13 (confidential) | All `S` + `R` checks |
+| **P0 — Money loss** | §3 (creation), §5 (payments), §6 (relay matrix), §7 (bulk), §8 EXC-02/EXC-09/EXC-10 (fees), §13 (confidential), §19 (CEX transfers) | All `S` + `R` checks |
 | **P1 — Financial data integrity** | §4 (dashboard freshness), §11 (exports/activity), §8 (swap classification) | All `R` checks |
 | **P2 — Access & governance** | §1 (auth), §2 (geo), §6, §9 (governance), §12 (plan gates), §17 (admin) | All `R` checks |
 | **P3 — Product experience** | §10, §14, §15, §16 | Changed areas only + exploratory session |
@@ -313,3 +381,16 @@ Read-only plus **one canary proposal on the QA-owned DAO** (TEST_STRATEGY §6). 
 **Known automation gaps this checklist compensates for** (re-check when roadmap items land, then demote to `[auto]`): single payment lifecycle, bulk payment wizard, exchange flow, members/governance, plan/credit gates, confidential payments/exchange, real wallet matrix.
 
 **Maintenance:** update this checklist in the same PR as any feature that adds/changes a user-facing flow; review alongside TEST_STRATEGY.md quarterly.
+
+---
+
+## Changelog
+
+| Version | Date | Change |
+|---------|------|--------|
+| 1.3 | 2026-09-15 | Added EXC-09/EXC-10/EXC-11 — live-verified via direct `/api/intents/quote` calls on `testenv.business.near.com` (`nearcom_redesign` branch) that the #1574 stablecoin swap-fee exemption works cross-network and same-network, and doesn't over-apply to non-stablecoin legs. Flagged: this code isn't on `main` yet, so these checks don't apply to the default `testenv.trezu.app` environment until it merges. |
+| 1.2 | 2026-09-15 | Corrected AUTH-11 — Passkey is now the default/hero login option (`supported: true`, `passkey-login.spec.ts`), not a disabled placeholder; moved the "disabled wallet" check to new AUTH-14 (Phantom only). Marked EXC-04 `[auto partial]` and corrected the §8 preamble — `exchange-amount-formatting.spec.ts` gives narrow quote-display coverage, contradicting the previous "no E2E coverage" claim. Added PAY-12 for the Max/EXACT_INPUT intents regression fixed in #1572. |
+| 1.1 | 2026-08-31 | Added §19 CEX Transfers (Binance). |
+| 1.0 | 2026-07-08 | Initial version. |
+
+Each entry should name *what changed and why* (bug it closes, feature it covers) so a reader can judge relevance without diffing the file — don't just bump the version number.
