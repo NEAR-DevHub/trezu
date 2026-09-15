@@ -166,17 +166,14 @@ export function convertUrlParamsToApiFilters(
         if (dateData?.dateRange) {
             switch (dateData.operation) {
                 case "Is":
-                    // For "Is", set both from and to to the same date
-                    filters.created_date_from = dateData.dateRange.from
-                        ? new Date(dateData.dateRange.from)
-                              .toISOString()
-                              .split("T")[0]
-                        : undefined;
-                    filters.created_date_to = dateData.dateRange.to
-                        ? new Date(dateData.dateRange.to)
-                              .toISOString()
-                              .split("T")[0]
-                        : undefined;
+                    // dateRange.from/to are already local `yyyy-MM-dd` strings
+                    // (see proposal-filters.tsx) — pass through as-is. Do not
+                    // round-trip through `new Date(...).toISOString()`, which
+                    // shifts the date across midnight for non-UTC timezones.
+                    filters.created_date_from =
+                        dateData.dateRange.from || undefined;
+                    filters.created_date_to =
+                        dateData.dateRange.to || undefined;
                     break;
             }
         }
