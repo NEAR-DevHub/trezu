@@ -345,7 +345,9 @@ test.describe("Custom Templates — authoring", () => {
         // Focus then blur without typing → the field is touched and the error appears.
         await name.focus();
         await name.blur();
-        await expect(customTemplatesPage.fieldRequiredError("Name")).toBeVisible();
+        await expect(
+            customTemplatesPage.fieldRequiredError("Name"),
+        ).toBeVisible();
     });
 
     test("code-mode section errors: invalid JSON surfaces errors and blocks submit", async ({
@@ -362,7 +364,9 @@ test.describe("Custom Templates — authoring", () => {
         const submit = customTemplatesPage.createSubmitButton();
         await expect(submit).toBeDisabled();
         // The error list under the editor renders at least one item.
-        await expect(customTemplatesPage.codeErrorListFirstItem()).toBeVisible();
+        await expect(
+            customTemplatesPage.codeErrorListFirstItem(),
+        ).toBeVisible();
     });
 
     test("create happy path: POST fires and redirects to the template's fill page", async ({
