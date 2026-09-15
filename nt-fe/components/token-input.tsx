@@ -38,7 +38,14 @@ import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
 
 function sanitizeAmountInput(value: string): string {
-    return value.replace(/[^0-9.]/g, "").replace(/^0+(?=\d)/, "");
+    const digitsAndDots = value.replace(/[^0-9.]/g, "");
+    const firstDotIndex = digitsAndDots.indexOf(".");
+    const singleDot =
+        firstDotIndex === -1
+            ? digitsAndDots
+            : digitsAndDots.slice(0, firstDotIndex + 1) +
+              digitsAndDots.slice(firstDotIndex + 1).replace(/\./g, "");
+    return singleDot.replace(/^0+(?=\d)/, "");
 }
 
 function isEntireInputSelected(el: HTMLInputElement): boolean {
