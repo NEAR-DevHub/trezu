@@ -255,7 +255,14 @@ export const FAQ_ITEMS = [
     },
     {
         question: "Is the code audited?",
-        answer: "The core contract is audited by Valhalla Security. The full report is available for download.",
+        answer: [
+            "The core SputnikDAO smart contract is audited by Valhalla Security. The full report is available for ",
+            {
+                label: "download",
+                href: "/landing/audits/valhalla-sputnikdao-audit.pdf",
+            },
+            ".",
+        ],
     },
     {
         question: "How do we get access during the private beta?",

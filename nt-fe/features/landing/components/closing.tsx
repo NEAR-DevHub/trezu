@@ -79,7 +79,23 @@ export function Faq() {
                                 </span>
                             </CollapsibleTrigger>
                             <CollapsibleContent className="max-w-[880px] pb-6 text-base leading-normal lg:col-start-2 lg:row-start-1 lg:py-8">
-                                {answer}
+                                {typeof answer === "string"
+                                    ? answer
+                                    : answer.map((part) =>
+                                          typeof part === "string" ? (
+                                              part
+                                          ) : (
+                                              <a
+                                                  key={part.href}
+                                                  href={part.href}
+                                                  target="_blank"
+                                                  rel="noopener noreferrer"
+                                                  className="underline underline-offset-2 hover:text-landing-green"
+                                              >
+                                                  {part.label}
+                                              </a>
+                                          ),
+                                      )}
                             </CollapsibleContent>
                         </Collapsible>
                     </Reveal>
