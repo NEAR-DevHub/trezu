@@ -1554,6 +1554,7 @@
         "connectWallet": "Hubungkan Dompet",
         "connecting": "Menghubungkan...",
         "connectedAs": "Terhubung sebagai <strong>{account}</strong>",
+        "switchAccount": "Bukan Anda? Ganti akun",
         "loadingTreasuries": "Memuat treasury...",
         "selectSignIn": "{app, select, unknown {Pilih treasury yang ingin Anda gunakan.} other {Pilih treasury yang ingin Anda gunakan di {app}.}}",
         "selectSignTx": "Pilih treasury untuk membuat usulan pada:",

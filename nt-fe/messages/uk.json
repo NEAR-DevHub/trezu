@@ -1537,6 +1537,7 @@
         "connectWallet": "Підключити гаманець",
         "connecting": "Підключення...",
         "connectedAs": "Підключено як <strong>{account}</strong>",
+        "switchAccount": "Не ви? Змінити обліковий запис",
         "loadingTreasuries": "Завантаження скарбниць...",
         "selectSignIn": "{app, select, unknown {Виберіть, яку скарбницю використовувати.} other {Виберіть, яку скарбницю використовувати в {app}.}}",
         "selectSignTx": "Оберіть скарбницю, де створити пропозицію:",

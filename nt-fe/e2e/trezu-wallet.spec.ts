@@ -465,4 +465,131 @@ test.describe("sign_in with authenticated session", () => {
             accountId: DAO_ID,
         });
     });
+
+    test("switch account logs out, then standard flow logs in as another account", async ({
+        page,
+    }) => {
+        const alice = "alice.near";
+        const bob = "bob.near";
+        const aliceTreasury = "Alice's Test Treasury";
+        const bobTreasury = "Bob's Test Treasury";
+
+        // Mutable backend session state, flipped by the logout/login routes
+        // (same pattern as the passkey/ledger specs).
+        let sessionAccountId: string | null = alice;
+        let logoutCalled = false;
+
+        await registerMockWalletRoutes(page);
+        await seedMockWalletAccount(page, alice, "init");
+
+        await page.route("**/api/auth/me", async (route: Route) => {
+            if (sessionAccountId) {
+                await route.fulfill({
+                    status: 200,
+                    contentType: "application/json",
+                    body: JSON.stringify({
+                        accountId: sessionAccountId,
+                        termsAccepted: true,
+                    }),
+                });
+            } else {
+                await route.fulfill({
+                    status: 401,
+                    contentType: "application/json",
+                    body: JSON.stringify({ error: "unauthorized" }),
+                });
+            }
+        });
+
+        await page.route("**/api/auth/logout", async (route: Route) => {
+            logoutCalled = true;
+            sessionAccountId = null;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({}),
+            });
+        });
+
+        await page.route("**/api/auth/challenge", (route: Route) =>
+            route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    payload: "Login to Trezu — test payload",
+                }),
+            }),
+        );
+
+        await page.route("**/api/auth/login", async (route: Route) => {
+            const body = JSON.parse(route.request().postData() ?? "{}");
+            expect(body.accountId).toBe(bob);
+            const authorization = JSON.parse(body.authorization);
+            expect(authorization.message.purpose).toBe("PROVE_OWNERSHIP");
+            expect(authorization.message.recipient).toBe("Trezu App");
+            sessionAccountId = body.accountId;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    accountId: body.accountId,
+                    termsAccepted: true,
+                }),
+            });
+        });
+
+        // Treasury membership keyed off the requested accountId
+        await page.route("**/api/user/treasuries*", async (route: Route) => {
+            const accountId = new URL(route.request().url()).searchParams.get(
+                "accountId",
+            );
+            const isBob = accountId === bob;
+            await route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify([
+                    {
+                        daoId: isBob ? "bobs-dao.sputnik-dao.near" : DAO_ID,
+                        config: { name: isBob ? bobTreasury : aliceTreasury },
+                        isMember: true,
+                    },
+                ]),
+            });
+        });
+
+        await page.goto("/wallet?action=sign_in&network=mainnet");
+
+        // Alice's session: her treasury list renders
+        await expect(page.getByText(aliceTreasury)).toBeVisible({
+            timeout: 10_000,
+        });
+
+        // Switch account: the backend session is dropped and the popup falls
+        // back to the untouched connect step
+        await page
+            .getByRole("button", { name: "Not you? Switch account" })
+            .click();
+        await expect(
+            page.getByRole("button", { name: "Connect Wallet" }),
+        ).toBeVisible({ timeout: 5_000 });
+        await expect(page.getByText(aliceTreasury)).not.toBeVisible();
+        expect(logoutCalled).toBe(true);
+
+        // Log back in as bob through the standard flow: re-seed the mock
+        // wallet, connect, and pick it in the near-connect wallet picker
+        await seedMockWalletAccount(page, bob, "evaluate");
+        await page.getByRole("button", { name: "Connect Wallet" }).click();
+
+        // The near-connect wallet picker appears (rendered inside the
+        // .hot-connector-popup host, whose stale mounts stay in the DOM) —
+        // pick the Mock Wallet entry in the live picker
+        await page.getByText("Mock Wallet", { exact: true }).click({
+            timeout: 15_000,
+        });
+
+        // Bob's session: his treasury list renders
+        await expect(page.getByText(bobTreasury)).toBeVisible({
+            timeout: 10_000,
+        });
+    });
 });

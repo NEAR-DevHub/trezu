@@ -1554,6 +1554,7 @@
         "connectWallet": "ウォレットを接続",
         "connecting": "接続中...",
         "connectedAs": "<strong>{account}</strong>として接続中",
+        "switchAccount": "違うアカウントですか？アカウントを切り替える",
         "loadingTreasuries": "トレジャリーを読み込み中...",
         "selectSignIn": "{app, select, unknown {使用するトレジャリーを選択してください。} other {{app}で使用するトレジャリーを選択してください。}}",
         "selectSignTx": "提案を作成するトレジャリーを選択:",

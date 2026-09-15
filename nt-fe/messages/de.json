@@ -1554,6 +1554,7 @@
         "connectWallet": "Wallet verbinden",
         "connecting": "Verbinden...",
         "connectedAs": "Verbunden als <strong>{account}</strong>",
+        "switchAccount": "Nicht Sie? Konto wechseln",
         "loadingTreasuries": "Treasuries werden geladen...",
         "selectSignIn": "{app, select, unknown {Wählen Sie, welche Treasury Sie verwenden möchten.} other {Wählen Sie, welche Treasury Sie in {app} verwenden möchten.}}",
         "selectSignTx": "Wählen Sie eine Treasury, für die ein Vorschlag erstellt werden soll:",

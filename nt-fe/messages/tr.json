@@ -1554,6 +1554,7 @@
         "connectWallet": "Cüzdan Bağla",
         "connecting": "Bağlanıyor...",
         "connectedAs": "<strong>{account}</strong> olarak bağlanıldı",
+        "switchAccount": "Değil misiniz? Hesap değiştir",
         "loadingTreasuries": "Hazineler yükleniyor...",
         "selectSignIn": "{app, select, unknown {Kullanmak istediğiniz hazineyi seçin.} other {{app} içinde kullanmak istediğiniz hazineyi seçin.}}",
         "selectSignTx": "Üzerinde öneri oluşturmak için bir hazine seçin:",
