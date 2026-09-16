@@ -20,17 +20,34 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     timezone: null,
 };
 
-function parse(stored: string | null): UserPreferences {
+/**
+ * Until the account page was redesigned the zone was stored as the picker's
+ * whole row, `{ utc, value, name }`, and `name` held the IANA zone. The key is
+ * unchanged, so anyone who pinned a zone back then still has that object; read
+ * it rather than dropping them back to "automatic".
+ */
+function readTimezone(timezone: unknown): string | null {
+    if (typeof timezone === "string") return timezone || null;
+    if (!timezone || typeof timezone !== "object") return null;
+    const { name, value } = timezone as { name?: unknown; value?: unknown };
+    if (typeof name === "string" && name) return name;
+    if (typeof value === "string" && value) return value;
+    return null;
+}
+
+export function parseUserPreferences(stored: string | null): UserPreferences {
     if (!stored) return DEFAULT_PREFERENCES;
     try {
         const parsed: unknown = JSON.parse(stored);
         if (!parsed || typeof parsed !== "object") return DEFAULT_PREFERENCES;
-        const { timeFormat, autoTimezone, timezone } =
-            parsed as Partial<UserPreferences>;
+        const { timeFormat, autoTimezone, timezone } = parsed as Record<
+            string,
+            unknown
+        >;
         return {
             timeFormat: timeFormat === "24" ? "24" : "12",
             autoTimezone: autoTimezone !== false,
-            timezone: typeof timezone === "string" ? timezone : null,
+            timezone: readTimezone(timezone),
         };
     } catch {
         return DEFAULT_PREFERENCES;
@@ -48,7 +65,7 @@ function getSnapshot(): UserPreferences {
     const raw = localStorage.getItem(PREFERENCES_STORAGE_KEY);
     if (raw !== cachedRaw) {
         cachedRaw = raw;
-        cachedValue = parse(raw);
+        cachedValue = parseUserPreferences(raw);
     }
     return cachedValue;
 }
