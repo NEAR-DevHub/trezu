@@ -203,12 +203,7 @@ const mockWebHID = `
 
 `;
 
-test("Ledger login flow", async ({
-    page,
-    context,
-    loginPage,
-    startPage,
-}) => {
+test("Ledger login flow", async ({ page, context, loginPage, startPage }) => {
     // Increase timeout for this test due to pauses for video recording
     test.setTimeout(120000);
     // Capture console logs from the iframe
