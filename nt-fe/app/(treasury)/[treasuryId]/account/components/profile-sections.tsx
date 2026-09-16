@@ -17,6 +17,7 @@ import {
     disabledActionClasses,
     SectionIcon,
     SectionText,
+    sectionIconAccentClasses,
 } from "@/components/settings-section";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { updateProfile } from "@/lib/api";
@@ -180,7 +181,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
             <PageCard className="flex-row gap-3 rounded-3xl">
                 <SectionIcon
                     icon={User03Icon}
-                    className="rounded-full bg-general-bg-primary text-green-500"
+                    className={sectionIconAccentClasses}
                 />
                 <div className="flex min-w-0 flex-1 flex-col gap-4">
                     <SectionText

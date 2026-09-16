@@ -2622,7 +2622,7 @@
         "avatarDescription": "Add a photo to help your team tell members apart. Recommended SVG, PNG, or JPG (2 mb).",
         "timezoneTitle": "My time zone",
         "timezoneDescription": "Set your local time zone for accurate date and time display.",
-        "timeFormatLabel": "Time Format",
+        "timeFormatLabel": "Time format",
         "timeFormat12": "12-hour (1:00 PM)",
         "timeFormat24": "24-hour (13:00)",
         "timezoneLabel": "Timezone",

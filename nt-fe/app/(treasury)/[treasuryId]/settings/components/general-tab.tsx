@@ -20,6 +20,7 @@ import {
     disabledActionClasses,
     SectionIcon,
     SectionText,
+    sectionIconAccentClasses,
 } from "@/components/settings-section";
 import { TreasuryLogo } from "@/components/treasury-info";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
@@ -238,7 +239,7 @@ export function GeneralTab() {
                 <PageCard className="flex-row gap-3 rounded-3xl">
                     <SectionIcon
                         icon={Coins01Icon}
-                        className="rounded-full bg-general-bg-primary text-green-500"
+                        className={sectionIconAccentClasses}
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                         <SectionText
@@ -355,7 +356,7 @@ export function GeneralTab() {
                 <PageCard className="flex-row gap-3 rounded-3xl">
                     <SectionIcon
                         icon={PaletteIcon}
-                        className="rounded-full bg-general-bg-primary text-green-500"
+                        className={sectionIconAccentClasses}
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
                         <SectionText
