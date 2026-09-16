@@ -1,6 +1,6 @@
 # Trezu — Manual Regression Checklist
 
-**Version:** 1.3 · **Date:** 2026-09-15 · **Owner:** QA
+**Version:** 1.4 · **Date:** 2026-09-16 · **Owner:** QA
 **Companion to:** [TEST_STRATEGY.md](TEST_STRATEGY.md) (risk tiers, environments, ownership) · see [Changelog](#changelog) for revision history
 
 ---

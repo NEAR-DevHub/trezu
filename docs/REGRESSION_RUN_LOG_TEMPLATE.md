@@ -14,8 +14,9 @@ for what each check ID means.
 
 ## Results
 
-Only list checks in scope for this run's tier (see the tier table in
-"How to use this checklist"). Leave `Notes` empty for a clean pass.
+Only list checks in scope for this run's tier (see the Coverage traceability
+table at the bottom of MANUAL_REGRESSION_CHECKLIST.md — it lists which
+sections sit at each tier). Leave `Notes` empty for a clean pass.
 
 | Check ID | Result | Bug link (if fail) | Severity | Notes |
 |----------|--------|---------------------|----------|-------|
