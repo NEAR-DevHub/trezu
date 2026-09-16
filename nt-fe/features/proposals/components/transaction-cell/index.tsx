@@ -24,6 +24,8 @@ import {
     UnknownData,
 } from "../../types/index";
 import { ConfidentialRequestCell } from "./confidential-request-cell";
+import { OmniCell } from "@/features/omni/components/omni-cell";
+import type { OmniProposalData } from "@/features/omni/types";
 import {
     BountyCell,
     FactoryInfoUpdateCell,
@@ -100,6 +102,16 @@ function TransactionCellSwitch({
             return (
                 <BatchPaymentCell
                     data={batchPaymentData}
+                    timestamp={timestamp}
+                    textOnly={textOnly}
+                />
+            );
+        }
+        case "Omni Chain Signature": {
+            const omniData = data as OmniProposalData;
+            return (
+                <OmniCell
+                    data={omniData}
                     timestamp={timestamp}
                     textOnly={textOnly}
                 />
