@@ -49,7 +49,7 @@ function MemberAvatar({ accountId }: { accountId: string }) {
             variant="large"
             imageUrl={resolveProfileImageUrl(profile?.image)}
             name={profile?.name ?? accountId}
-            className="rounded-lg border border-card"
+            className="rounded-lg border border-card bg-card"
         />
     );
 
