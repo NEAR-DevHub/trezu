@@ -2159,6 +2159,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "Учасники, які можуть голосувати",
+        "copyAddress": "Скопіювати адресу",
         "moreMembers": "+{count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасників}}"
     },
     "addressBookMutations": {

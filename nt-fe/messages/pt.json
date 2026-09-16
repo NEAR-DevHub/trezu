@@ -2176,6 +2176,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "Membros que podem votar",
+        "copyAddress": "Copiar endereço",
         "moreMembers": "+{count, plural, one {# membro} other {# membros}}"
     },
     "addressBookMutations": {
