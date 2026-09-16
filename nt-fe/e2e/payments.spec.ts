@@ -20,7 +20,12 @@ import {
     seedMockWalletAccount,
 } from "./helpers/mock-wallet";
 
-const TREASURY_ID = "payments-e2e-test.sputnik-dao.near";
+// Reuses the shared, sandbox-seeded fixture DAO from global-setup.ts (also
+// used by exchange-amount-formatting.spec.ts) — a treasuryId not pre-seeded
+// there gets "UnknownAccount" from a real NEAR RPC call the server makes
+// during SSR, which page.route() can't intercept (it only sees browser-side
+// requests).
+const TREASURY_ID = "requests-e2e-test.sputnik-dao.near";
 const ACCOUNT_ID = "test.near";
 const VALID_IMPLICIT_RECIPIENT = "a".repeat(64);
 
