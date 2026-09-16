@@ -194,9 +194,7 @@ for (const viewport of [
         });
 
         await exchangePage.reviewExchangeButton().click();
-        await expect(
-            exchangePage.reviewedAmountText("5,000 ETH"),
-        ).toBeVisible({
+        await expect(exchangePage.reviewedAmountText("5,000 ETH")).toBeVisible({
             timeout: 15_000,
         });
         const unexpectedPageErrors = pageErrors.filter(

@@ -22,7 +22,9 @@ export class LoginPage extends BasePage {
 
     /** The wallet executor UI, which always renders inside a sandboxed iframe. */
     executorFrame(): FrameLocator {
-        return this.page.frameLocator('iframe[sandbox*="allow-scripts"]').first();
+        return this.page
+            .frameLocator('iframe[sandbox*="allow-scripts"]')
+            .first();
     }
 
     async openWalletPicker(): Promise<void> {

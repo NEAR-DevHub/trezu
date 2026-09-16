@@ -63,7 +63,9 @@ export class TestDappPage extends BasePage {
             (window as any).connectedAs = dao;
             const btns = ["transfer-btn", "ftcall-btn"];
             for (const id of btns) {
-                const el = document.getElementById(id) as HTMLButtonElement | null;
+                const el = document.getElementById(
+                    id,
+                ) as HTMLButtonElement | null;
                 if (el) el.disabled = false;
             }
             const status = document.getElementById("status");
