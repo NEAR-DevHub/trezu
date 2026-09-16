@@ -17,6 +17,7 @@ import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import { NumberBadge } from "@/components/number-badge";
 import { normalizeRoleId, useFormatRoleName } from "@/components/role-name";
+import { disabledActionClasses } from "@/components/settings-section";
 import { ThresholdStepper } from "@/components/threshold";
 import {
     Form,
@@ -36,7 +37,6 @@ import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { hasPermission } from "@/lib/config-utils";
 import { cn, encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
-import { disabledActionClasses } from "./button-styles";
 import { MemberAvatarsWithOverflow } from "./member-avatars-with-overflow";
 
 type VotingFormValues = {

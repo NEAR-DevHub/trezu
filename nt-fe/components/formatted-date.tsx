@@ -1,19 +1,22 @@
 "use client";
 
 import { useLocale, useTranslations } from "next-intl";
+import { Tooltip } from "@/components/tooltip";
+import { getProposalStatusDateInfo } from "@/features/proposals/utils/proposal-utils";
 import {
-    formatUserDate,
-    formatRelativeTime,
-    formatProposalStatusDate,
+    resolveTimezone,
+    useUserPreferences,
+} from "@/hooks/use-user-preferences";
+import type { Proposal } from "@/lib/proposals-api";
+import {
     cn,
     type FormatUserDateOptions,
+    formatProposalStatusDate,
+    formatRelativeTime,
+    formatUserDate,
     type RelativeTimeLabels,
 } from "@/lib/utils";
-import { useUserPreferences } from "@/hooks/use-user-preferences";
-import { Tooltip } from "@/components/tooltip";
-import type { Proposal } from "@/lib/proposals-api";
 import type { Policy } from "@/types/policy";
-import { getProposalStatusDateInfo } from "@/features/proposals/utils/proposal-utils";
 
 type BaseFormattedDateProps = Omit<
     FormatUserDateOptions,
@@ -77,7 +80,7 @@ export function FormattedDate(props: FormattedDateProps) {
     const timezone =
         props.timezone !== undefined
             ? props.timezone
-            : preferences.timezone?.name || null;
+            : resolveTimezone(preferences);
     const timeFormat = props.timeFormat || preferences.timeFormat;
 
     let displayText: string;
@@ -170,7 +173,7 @@ export function useFormatDate() {
         options: FormatUserDateOptions = {},
     ) => {
         return formatUserDate(date, {
-            timezone: preferences.timezone?.name || null,
+            timezone: resolveTimezone(preferences),
             timeFormat: preferences.timeFormat,
             ...options,
         });

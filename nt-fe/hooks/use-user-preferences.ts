@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useSyncExternalStore } from "react";
 
 export interface UserPreferences {
     timeFormat: "12" | "24";
+    /** Follow the browser's zone instead of the pinned one below. */
     autoTimezone: boolean;
-    timezone: {
-        utc: string;
-        value: string;
-        name: string;
-    } | null;
+    /** IANA zone, only consulted while `autoTimezone` is off. */
+    timezone: string | null;
 }
 
 const PREFERENCES_STORAGE_KEY = "treasury-timezone-preferences";
+/** `storage` only fires in *other* tabs, so this tab tells itself. */
+const PREFERENCES_CHANGE_EVENT = "treasury-preferences-change";
 
 const DEFAULT_PREFERENCES: UserPreferences = {
     timeFormat: "12",
@@ -20,54 +20,64 @@ const DEFAULT_PREFERENCES: UserPreferences = {
     timezone: null,
 };
 
-/**
- * Hook to access user timezone and time format preferences
- */
-export function useUserPreferences(): UserPreferences {
-    const [preferences, setPreferences] =
-        useState<UserPreferences>(DEFAULT_PREFERENCES);
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-
-        if (typeof window === "undefined") return;
-
-        const loadPreferences = () => {
-            try {
-                const stored = localStorage.getItem(PREFERENCES_STORAGE_KEY);
-                if (stored) {
-                    setPreferences(JSON.parse(stored));
-                }
-            } catch (error) {
-                console.error("Failed to load user preferences:", error);
-            }
+function parse(stored: string | null): UserPreferences {
+    if (!stored) return DEFAULT_PREFERENCES;
+    try {
+        const parsed: unknown = JSON.parse(stored);
+        if (!parsed || typeof parsed !== "object") return DEFAULT_PREFERENCES;
+        const { timeFormat, autoTimezone, timezone } =
+            parsed as Partial<UserPreferences>;
+        return {
+            timeFormat: timeFormat === "24" ? "24" : "12",
+            autoTimezone: autoTimezone !== false,
+            timezone: typeof timezone === "string" ? timezone : null,
         };
-
-        loadPreferences();
-
-        // Listen for storage changes (if user changes preferences in another tab)
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === PREFERENCES_STORAGE_KEY && e.newValue) {
-                try {
-                    setPreferences(JSON.parse(e.newValue));
-                } catch (error) {
-                    console.error(
-                        "Failed to parse preferences from storage event:",
-                        error,
-                    );
-                }
-            }
-        };
-
-        window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
-    }, []);
-
-    // Return default preferences during SSR
-    if (!isMounted) {
+    } catch {
         return DEFAULT_PREFERENCES;
     }
+}
 
-    return preferences;
+/**
+ * `useSyncExternalStore` needs a stable snapshot, so the parsed value is cached
+ * against the raw string it came from and only re-parsed when that changes.
+ */
+let cachedRaw: string | null = null;
+let cachedValue: UserPreferences = DEFAULT_PREFERENCES;
+
+function getSnapshot(): UserPreferences {
+    const raw = localStorage.getItem(PREFERENCES_STORAGE_KEY);
+    if (raw !== cachedRaw) {
+        cachedRaw = raw;
+        cachedValue = parse(raw);
+    }
+    return cachedValue;
+}
+
+function getServerSnapshot(): UserPreferences {
+    return DEFAULT_PREFERENCES;
+}
+
+function subscribe(onChange: () => void) {
+    window.addEventListener("storage", onChange);
+    window.addEventListener(PREFERENCES_CHANGE_EVENT, onChange);
+    return () => {
+        window.removeEventListener("storage", onChange);
+        window.removeEventListener(PREFERENCES_CHANGE_EVENT, onChange);
+    };
+}
+
+/** The saved timezone and time-format preferences. */
+export function useUserPreferences(): UserPreferences {
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+export function saveUserPreferences(preferences: UserPreferences) {
+    localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
+    window.dispatchEvent(new Event(PREFERENCES_CHANGE_EVENT));
+}
+
+/** The zone dates should be rendered in: the pinned one, or the browser's. */
+export function resolveTimezone(preferences: UserPreferences): string | null {
+    if (preferences.autoTimezone) return null;
+    return preferences.timezone;
 }

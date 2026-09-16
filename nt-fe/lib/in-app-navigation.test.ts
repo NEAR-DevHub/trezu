@@ -76,6 +76,15 @@ describe("in-app navigation", () => {
         ).toBe(true);
     });
 
+    it("shows mobile back on screens the sidebar does not list", () => {
+        expect(
+            shouldShowPageBack({
+                hasBackButton: true,
+                backKind: "mobile",
+            }),
+        ).toBe(true);
+    });
+
     it("never shows section back on top-level destinations", () => {
         expect(
             shouldShowPageBack({

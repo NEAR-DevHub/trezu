@@ -16,6 +16,11 @@ import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
+import {
+    disabledActionClasses,
+    SectionIcon,
+    SectionText,
+} from "@/components/settings-section";
 import { TreasuryLogo } from "@/components/treasury-info";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -23,8 +28,6 @@ import { trackEvent } from "@/lib/analytics";
 import { updateTreasurySettings } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
-import { disabledActionClasses } from "./button-styles";
-import { SectionIcon, SectionText } from "./section";
 
 const COLOR_OPTIONS = [
     "#000000", // black (appears as white in dark mode)
