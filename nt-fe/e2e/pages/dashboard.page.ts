@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { ChartComponent } from "../components/chart.component";
 import { CongratsTooltipComponent } from "../components/congrats-tooltip.component";
 import { OnboardingProgressComponent } from "../components/onboarding-progress.component";
 import { TourCardComponent } from "../components/tour-card.component";
@@ -23,6 +24,7 @@ export class DashboardPage extends BasePage {
     readonly tourCard: TourCardComponent;
     readonly congratsTooltip: CongratsTooltipComponent;
     readonly progressWidget: OnboardingProgressComponent;
+    readonly chart: ChartComponent;
 
     constructor(page: Page) {
         super(page);
@@ -30,6 +32,12 @@ export class DashboardPage extends BasePage {
         this.tourCard = new TourCardComponent(page);
         this.congratsTooltip = new CongratsTooltipComponent(page);
         this.progressWidget = new OnboardingProgressComponent(page);
+        this.chart = new ChartComponent(page);
+    }
+
+    /** Plain navigation to the dashboard URL, with none of `goto()`'s bootstrap-call waits — for specs that gate on the chart's own render instead. */
+    async gotoPlain(treasuryId: string): Promise<void> {
+        await this.page.goto(`/${treasuryId}`);
     }
 
     /** `#dashboard-step1/2/3` — the BalanceWithGraph buttons the tour actually targets (not the progress widget's look-alikes). */

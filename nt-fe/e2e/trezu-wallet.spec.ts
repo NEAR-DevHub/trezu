@@ -1,4 +1,5 @@
-import { test, expect, Page, Route } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
 import {
     registerMockWalletRoutes,
     seedMockWalletAccount,
@@ -138,17 +139,21 @@ async function mockProposalStatus(
 // ---------- connect step ----------
 
 test.describe("connect step (sign_in)", () => {
-    test("shows Connect Wallet button when not signed in", async ({ page }) => {
+    test("shows Connect Wallet button when not signed in", async ({
+        page,
+        walletPopupPage,
+    }) => {
         await mockAuthMe(page, null);
-        await page.goto("/wallet?action=sign_in&network=mainnet");
+        await walletPopupPage.goto({ action: "sign_in", network: "mainnet" });
 
-        await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(walletPopupPage.connectWalletButton()).toBeVisible({
+            timeout: 10_000,
+        });
     });
 
     test("shows Connect Wallet button for sign_transactions before wallet connects", async ({
         page,
+        walletPopupPage,
     }) => {
         await mockAuthMe(page, null);
         const transactions = [
@@ -168,47 +173,58 @@ test.describe("connect step (sign_in)", () => {
             },
         ];
 
-        const url = `/wallet?action=sign_transactions&network=mainnet&transactions=${jsonToBase64(transactions)}`;
-        await page.goto(url);
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            transactions: jsonToBase64(transactions),
+        });
 
-        await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(walletPopupPage.connectWalletButton()).toBeVisible({
+            timeout: 10_000,
+        });
     });
 });
 
 // ---------- error step ----------
 
 test.describe("error step", () => {
-    test("shows error for malformed transactions base64", async ({ page }) => {
+    test("shows error for malformed transactions base64", async ({
+        page,
+        walletPopupPage,
+    }) => {
         await mockAuthMe(page, null);
-        await page.goto(
-            "/wallet?action=sign_transactions&network=mainnet&transactions=!!!not-valid-base64!!!",
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            transactions: "!!!not-valid-base64!!!",
+        });
 
-        await expect(
-            page.getByText("Failed to parse the transaction request"),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(walletPopupPage.parseErrorText()).toBeVisible({
+            timeout: 10_000,
+        });
         // "Try again" button resets to connect step
-        await expect(
-            page.getByRole("button", { name: "Try again" }),
-        ).toBeVisible();
+        await expect(walletPopupPage.tryAgainButton()).toBeVisible();
     });
 
-    test("Try again resets to connect step", async ({ page }) => {
+    test("Try again resets to connect step", async ({
+        page,
+        walletPopupPage,
+    }) => {
         await mockAuthMe(page, null);
-        await page.goto(
-            "/wallet?action=sign_transactions&network=mainnet&transactions=!!!bad!!!",
-        );
-        await expect(
-            page.getByText("Failed to parse the transaction request"),
-        ).toBeVisible({ timeout: 10_000 });
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            transactions: "!!!bad!!!",
+        });
+        await expect(walletPopupPage.parseErrorText()).toBeVisible({
+            timeout: 10_000,
+        });
 
-        await page.getByRole("button", { name: "Try again" }).click();
+        await walletPopupPage.tryAgainButton().click();
 
-        await expect(
-            page.getByRole("button", { name: "Connect Wallet" }),
-        ).toBeVisible({ timeout: 5_000 });
+        await expect(walletPopupPage.connectWalletButton()).toBeVisible({
+            timeout: 5_000,
+        });
     });
 });
 
@@ -217,6 +233,7 @@ test.describe("error step", () => {
 test.describe("waiting-approval step", () => {
     test("restores state from URL params with a single proposal", async ({
         page,
+        walletPopupPage,
     }) => {
         const proposalId = 42;
 
@@ -224,23 +241,27 @@ test.describe("waiting-approval step", () => {
         await mockPolicy(page);
         await mockProposalStatus(page, proposalId, "InProgress");
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: String(proposalId),
+        });
 
-        await expect(page.getByText("What To Do Next")).toBeVisible({
+        await expect(walletPopupPage.whatToDoNextText()).toBeVisible({
             timeout: 10_000,
         });
         // Link to the proposal should be visible
         await expect(
-            page.getByText(`${DAO_ID} — Proposal #${proposalId}`),
+            walletPopupPage.proposalLinkText(DAO_ID, proposalId),
         ).toBeVisible();
-        await expect(
-            page.getByRole("button", { name: "Open Trezu to Approve" }),
-        ).toBeVisible();
+        await expect(walletPopupPage.openTrezuToApproveButton()).toBeVisible();
     });
 
-    test("restores state with multiple proposal IDs", async ({ page }) => {
+    test("restores state with multiple proposal IDs", async ({
+        page,
+        walletPopupPage,
+    }) => {
         const proposalIds = [1, 2, 3];
 
         await mockAuthMe(page, null);
@@ -249,22 +270,26 @@ test.describe("waiting-approval step", () => {
             await mockProposalStatus(page, id, "InProgress");
         }
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalIds.join(",")}`,
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: proposalIds.join(","),
+        });
 
-        await expect(page.getByText("What To Do Next")).toBeVisible({
+        await expect(walletPopupPage.whatToDoNextText()).toBeVisible({
             timeout: 10_000,
         });
         for (const id of proposalIds) {
             await expect(
-                page.getByText(`${DAO_ID} — Proposal #${id}`),
+                walletPopupPage.proposalLinkText(DAO_ID, id),
             ).toBeVisible();
         }
     });
 
     test("stays on the checklist while the proposal is InProgress", async ({
         page,
+        walletPopupPage,
     }) => {
         const proposalId = 42;
 
@@ -273,25 +298,27 @@ test.describe("waiting-approval step", () => {
         await mockPolicy(page);
         await mockProposalStatus(page, proposalId, "InProgress");
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
-        );
-        await expect(page.getByText("What To Do Next")).toBeVisible({
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: String(proposalId),
+        });
+        await expect(walletPopupPage.whatToDoNextText()).toBeVisible({
             timeout: 10_000,
         });
 
         // The immediate status check ran and found InProgress — the page must
         // stay on the checklist and send nothing to the opener.
         await page.waitForTimeout(1_000);
-        await expect(page.getByText("What To Do Next")).toBeVisible();
-        const messages = await page.evaluate(
-            () => (window as any).__walletMessages,
-        );
+        await expect(walletPopupPage.whatToDoNextText()).toBeVisible();
+        const messages = await walletPopupPage.capturedMessages();
         expect(messages).toHaveLength(0);
     });
 
     test("auto-advances and sends success postMessage when proposal is Approved and tx hash found", async ({
         page,
+        walletPopupPage,
     }) => {
         const proposalId = 42;
         const txHash = "abc123txhash456";
@@ -312,20 +339,21 @@ test.describe("waiting-approval step", () => {
             },
         );
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: String(proposalId),
+        });
 
         // The status poll runs immediately on entry: the page should
         // transition to the done step without any clicking.
-        await expect(page.getByText("You can close this window.")).toBeVisible({
+        await expect(walletPopupPage.doneText()).toBeVisible({
             timeout: 10_000,
         });
 
         // Should have sent a success result to the opener
-        const messages = await page.evaluate(
-            () => (window as any).__walletMessages,
-        );
+        const messages = await walletPopupPage.capturedMessages();
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "trezu:result",
@@ -336,6 +364,7 @@ test.describe("waiting-approval step", () => {
 
     test("shows note when tx endpoint fails (proposal not indexed yet)", async ({
         page,
+        walletPopupPage,
     }) => {
         const proposalId = 99;
 
@@ -351,19 +380,23 @@ test.describe("waiting-approval step", () => {
             },
         );
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: String(proposalId),
+        });
 
         // Should show "not yet indexed" note while staying on the checklist
-        await expect(page.getByText(/not yet indexed/)).toBeVisible({
+        await expect(walletPopupPage.notYetIndexedText()).toBeVisible({
             timeout: 10_000,
         });
-        await expect(page.getByText("What To Do Next")).toBeVisible();
+        await expect(walletPopupPage.whatToDoNextText()).toBeVisible();
     });
 
     test("rejected proposal shows error step and sends failure postMessage", async ({
         page,
+        walletPopupPage,
     }) => {
         const proposalId = 42;
 
@@ -372,17 +405,18 @@ test.describe("waiting-approval step", () => {
         await mockPolicy(page);
         await mockProposalStatus(page, proposalId, "Rejected");
 
-        await page.goto(
-            `/wallet?action=sign_transactions&network=mainnet&daoId=${DAO_ID}&proposalIds=${proposalId}`,
-        );
+        await walletPopupPage.goto({
+            action: "sign_transactions",
+            network: "mainnet",
+            daoId: DAO_ID,
+            proposalIds: String(proposalId),
+        });
 
-        await expect(
-            page.getByText(`Proposal #${proposalId} was rejected`),
-        ).toBeVisible({ timeout: 10_000 });
+        await expect(walletPopupPage.rejectedText(proposalId)).toBeVisible({
+            timeout: 10_000,
+        });
 
-        const messages = await page.evaluate(
-            () => (window as any).__walletMessages,
-        );
+        const messages = await walletPopupPage.capturedMessages();
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "trezu:result",
@@ -397,6 +431,7 @@ test.describe("waiting-approval step", () => {
 test.describe("sign_in with authenticated session", () => {
     test("shows treasury selection when session is valid (select-treasury step)", async ({
         page,
+        walletPopupPage,
     }) => {
         await setupAuthenticatedUser(page, "alice.near");
 
@@ -414,18 +449,21 @@ test.describe("sign_in with authenticated session", () => {
             });
         });
 
-        await page.goto("/wallet?action=sign_in&network=mainnet");
+        await walletPopupPage.goto({ action: "sign_in", network: "mainnet" });
 
         // Should skip connect step and go directly to treasury selection
+        await expect(walletPopupPage.chooseTreasuryText()).toBeVisible({
+            timeout: 10_000,
+        });
+        await expect(walletPopupPage.treasuryRow(DAO_ID)).toBeVisible();
         await expect(
-            page.getByText("Choose which treasury you want to use"),
-        ).toBeVisible({ timeout: 10_000 });
-        await expect(page.getByText(DAO_ID)).toBeVisible();
-        await expect(page.getByText("My Test Treasury")).toBeVisible();
+            walletPopupPage.treasuryRow("My Test Treasury"),
+        ).toBeVisible();
     });
 
     test("clicking a treasury sends success postMessage (sign_in done step)", async ({
         page,
+        walletPopupPage,
     }) => {
         await setupAuthenticatedUser(page, "alice.near");
         await captureOpenerMessages(page);
@@ -444,20 +482,19 @@ test.describe("sign_in with authenticated session", () => {
             });
         });
 
-        await page.goto("/wallet?action=sign_in&network=mainnet");
+        await walletPopupPage.goto({ action: "sign_in", network: "mainnet" });
 
-        await expect(page.getByText(DAO_ID)).toBeVisible({ timeout: 10_000 });
-        await page.getByText(DAO_ID).click();
+        const treasuryRow = walletPopupPage.treasuryRow(DAO_ID);
+        await expect(treasuryRow).toBeVisible({ timeout: 10_000 });
+        await treasuryRow.click();
 
         // Should show done step
-        await expect(page.getByText("Treasury connected")).toBeVisible({
+        await expect(walletPopupPage.treasuryConnectedText()).toBeVisible({
             timeout: 5_000,
         });
 
         // Should have sent the DAO account ID as the signed-in account
-        const messages = await page.evaluate(
-            () => (window as any).__walletMessages,
-        );
+        const messages = await walletPopupPage.capturedMessages();
         expect(messages).toHaveLength(1);
         expect(messages[0]).toMatchObject({
             type: "trezu:result",

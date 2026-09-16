@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
 
 // The Passkey executor ships from the NEAR-DevHub/near-connect-passkey main branch
 // (served via raw.githubusercontent.com — see lib/passkey-wallet.ts). The spec
@@ -38,6 +38,7 @@ function callFunctionResult(id: unknown, value: unknown) {
 test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     page,
     context,
+    loginPage,
 }) => {
     test.skip(
         !fs.existsSync(EXECUTOR_ARTIFACT),
@@ -305,19 +306,17 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     );
 
     // Navigate and open the sign-in screen
-    await page.goto("/create");
-    await page.getByRole("button", { name: /sign in/i }).click();
-    await expect(page.getByText("Choose how to sign in")).toBeVisible();
+    await loginPage.gotoCreate();
+    await loginPage.openWalletPicker();
+    await expect(loginPage.chooseSignInText()).toBeVisible();
 
     // Passkey card must be present without the "Coming soon" gate
-    const passkeyOption = page.getByRole("button", { name: "Passkey" });
+    const passkeyOption = loginPage.walletOption("Passkey");
     await expect(passkeyOption).toBeVisible();
     await passkeyOption.click();
 
     // The executor UI renders inside the sandboxed iframe
-    const iframe = page
-        .frameLocator('iframe[sandbox*="allow-scripts"]')
-        .first();
+    const iframe = loginPage.executorFrame();
 
     // Fresh browser: choose to create a new account. The CDP virtual
     // authenticator answers both the create() and the resolveAuth get()
@@ -336,7 +335,7 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     await confirmCreateBtn.click();
 
     // Login completes: the sign-in screen goes away
-    await expect(page.getByText("Choose how to sign in")).not.toBeVisible({
+    await expect(loginPage.chooseSignInText()).not.toBeVisible({
         timeout: 30000,
     });
     expect(resolvedAccountId).toMatch(/^0s[0-9a-f]{40}$/);
