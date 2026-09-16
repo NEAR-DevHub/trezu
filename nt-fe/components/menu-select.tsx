@@ -104,13 +104,13 @@ export function MenuSelect({
             <PopoverContent
                 align="start"
                 sideOffset={6}
+                onOpenAutoFocus={(event) => event.preventDefault()}
                 className="w-(--radix-popover-trigger-width) rounded-2xl border-general-border p-1.5 shadow-lg"
             >
                 {searchPlaceholder && (
                     <div className="pb-2">
                         <Input
                             search
-                            autoFocus
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder={searchPlaceholder}

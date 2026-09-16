@@ -1,6 +1,6 @@
 "use client";
 
-import { User03Icon } from "@hugeicons/core-free-icons";
+import { Time04Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,7 @@ import {
     disabledActionClasses,
     SectionIcon,
     SectionText,
+    sectionIconAccentClasses,
 } from "@/components/settings-section";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -91,8 +92,8 @@ export function TimezoneSection() {
     return (
         <PageCard className="flex-row gap-3 rounded-3xl">
             <SectionIcon
-                icon={User03Icon}
-                className="rounded-full bg-general-bg-primary text-green-500"
+                icon={Time04Icon}
+                className={sectionIconAccentClasses}
             />
             <div className="flex min-w-0 flex-1 flex-col gap-4">
                 <div className="flex flex-col gap-3">

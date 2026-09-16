@@ -42,6 +42,14 @@ export function SectionText({
 }
 
 /**
+ * The accent tile every settings section leads with. Dark mode flips the tile
+ * to a light surface, so the brand green (#00EC97) loses its contrast there and
+ * the glyph drops to green-700 (#009660).
+ */
+export const sectionIconAccentClasses =
+    "rounded-full bg-general-bg-primary text-green-500 dark:text-green-700";
+
+/**
  * Settings actions render their disabled state as a flat grey fill (#D4D4D4 on
  * #A1A1A1) rather than the global 50% fade, so a blocked Save reads as inert
  * instead of as a washed-out primary button.
