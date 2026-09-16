@@ -31,6 +31,16 @@ interface MenuSelectProps {
 }
 
 /**
+ * A long list would otherwise open scrolled to the top, hiding the current
+ * choice; the design shows the ticked row in view instead. Declared out here so
+ * the ref keeps one identity: an inline callback is a fresh ref on every
+ * keystroke in the filter, and React would re-run it and yank the list back.
+ */
+function revealSelected(node: HTMLButtonElement | null) {
+    node?.scrollIntoView({ block: "center" });
+}
+
+/**
  * A field that reads like an `Input` and opens the app's menu surface: one
  * row per option, a tick against the current one, and an optional filter for
  * long lists. Backed by a popover rather than a native `<select>` so the rows
@@ -64,12 +74,6 @@ export function MenuSelect({
     const handleOpenChange = (next: boolean) => {
         setOpen(next);
         if (!next) setSearch("");
-    };
-
-    // A long list would otherwise open scrolled to the top, hiding the current
-    // choice; the design shows the ticked row in view instead.
-    const revealSelected = (node: HTMLButtonElement | null) => {
-        node?.scrollIntoView({ block: "center" });
     };
 
     return (
