@@ -98,6 +98,13 @@ export function ProfileSections({ accountId }: { accountId: string }) {
         }
     };
 
+    // `PUT /user/profile` replaces the whole row — `displayName` is required and
+    // an omitted `avatarUrl` clears the avatar — so every save has to carry both
+    // fields. Two writes must therefore never overlap: the second would ship the
+    // render-time value of the field the first is still changing. One busy flag
+    // for both cards keeps them in single file.
+    const busy = savingName || uploadingImage;
+
     const trimmedName = name.trim();
     const canSaveName =
         trimmedName.length > 0 &&
@@ -191,7 +198,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             // Typing through the round-trip would be thrown
                             // away: both the reseed below and the refetched
                             // profile overwrite whatever is in the field.
-                            disabled={savingName}
+                            disabled={busy}
                         />
                         <Button
                             type="submit"
@@ -199,7 +206,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                                 "h-10 px-4 text-sm leading-none",
                                 disabledActionClasses,
                             )}
-                            disabled={savingName || !canSaveName}
+                            disabled={busy || !canSaveName}
                         >
                             {savingName && (
                                 <Icon
@@ -236,7 +243,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             variant="neutral"
                             className="h-10 px-4 text-sm leading-none"
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={uploadingImage}
+                            disabled={busy}
                         >
                             {uploadingImage && (
                                 <Icon
@@ -252,7 +259,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                                 variant="neutral"
                                 className="h-10 px-4 text-sm leading-none"
                                 onClick={handleRemoveAvatar}
-                                disabled={uploadingImage}
+                                disabled={busy}
                             >
                                 {t("remove")}
                             </Button>
