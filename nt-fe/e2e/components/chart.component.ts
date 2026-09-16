@@ -32,11 +32,9 @@ export class ChartComponent {
             .waitFor({ state: "visible", timeout });
     }
 
+    /** Not rendered at all for confidential treasuries (mobile hides the period selector there); only call this after confirming the treasury isn't confidential. */
     private mobilePeriodDropdown(): Locator {
-        return this.page
-            .locator(".md\\:hidden")
-            .locator('button[role="combobox"]')
-            .last();
+        return this.page.getByTestId("chart-period-trigger-mobile");
     }
 
     async selectMobilePeriod(period: string): Promise<void> {

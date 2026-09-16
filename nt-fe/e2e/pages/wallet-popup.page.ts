@@ -52,9 +52,18 @@ export class WalletPopupPage extends BasePage {
         return this.page.getByText("Choose which treasury you want to use");
     }
 
-    /** A treasury row in the sign_in picker — a real `<button>` whose accessible name contains the daoId and/or display name. */
+    /**
+     * A treasury row in the sign_in picker — a real `<button>` whose accessible
+     * name concatenates its display name and daoId, so a plain `getByRole`
+     * substring match against either alone can't be made `exact`. Scope
+     * instead to a button containing a descendant with that *exact* text
+     * (display name or daoId are each their own leaf element) — same
+     * precision as `exact: true` without breaking on the concatenated name.
+     */
     treasuryRow(text: string) {
-        return this.page.getByRole("button", { name: text });
+        return this.page
+            .getByRole("button")
+            .filter({ has: this.page.getByText(text, { exact: true }) });
     }
 
     treasuryConnectedText() {
@@ -66,9 +75,9 @@ export class WalletPopupPage extends BasePage {
         return this.page.getByText("Create Proposal");
     }
 
-    /** Any text in the proposal preview (recipient, acting-as DAO, …) — matches the first occurrence, same as the original `text=` locators. */
+    /** Any text in the proposal preview (recipient, acting-as DAO, …) — recipient and daoId each render in their own leaf element, so exact match is safe and precludes one substring-matching into another. */
     previewText(text: string) {
-        return this.page.getByText(text).first();
+        return this.page.getByText(text, { exact: true }).first();
     }
 
     /** Messages the page has posted to `window.opener` (captured via an init script mock). */
