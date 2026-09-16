@@ -199,8 +199,8 @@ Priority #3 flow — no full-lifecycle E2E coverage; `exchange-amount-formatting
 | EXC-06 | F | NEAR wrap/unwrap and native-NEAR paths | Both succeed; no app fee on same-asset conversions |
 | EXC-07 | F | Market price difference warning | Large deviation from market price is flagged on review |
 | EXC-08 | R | Pending exchange proposals button | Lists in-flight swap proposals; navigates to proposal detail |
-| EXC-09 | R | Stablecoin→stablecoin swap, cross-network (e.g. USDC on NEAR → USDC on Ethereum) | No Trezu app fee: `/api/intents/quote` response's `quoteRequest.appFees` has no entry for the server-configured recipient (a separate small 1Click-platform fee entry, different recipient, is expected and out of scope). UI shows no exchange fee row. Live-verified 2026-09-15 on `testenv.business.near.com` (`nearcom_redesign` branch — **not yet on `main`/`testenv.trezu.app`**, re-check once merged). Covers #1574/#1585 (`is_stablecoin_to_stablecoin`, `nt-be/src/handlers/intents/quote.rs`) |
-| EXC-10 | R | Non-stablecoin ↔ stablecoin swap, cross-network (e.g. wNEAR → USDC on Ethereum) | Trezu app fee **is** applied, same as any other swap — control case proving the #1574 exemption doesn't over-apply |
+| EXC-09 | F | Stablecoin→stablecoin swap, cross-network (e.g. USDC on NEAR → USDC on Ethereum) | No Trezu app fee: `/api/intents/quote` response's `quoteRequest.appFees` has no entry for the server-configured recipient (a separate small 1Click-platform fee entry, different recipient, is expected and out of scope). UI shows no exchange fee row. Live-verified 2026-09-15 on `testenv.business.near.com` (`nearcom_redesign` branch — **not yet on `main`/`testenv.trezu.app`**, re-check once merged). Covers #1574/#1585 (`is_stablecoin_to_stablecoin`, `nt-be/src/handlers/intents/quote.rs`). **Tier is `F`, not `R`/P0, until #1585 merges to `main`** — promote to `R` and add to the P0 row below in the same PR that merges it |
+| EXC-10 | F | Non-stablecoin ↔ stablecoin swap, cross-network (e.g. wNEAR → USDC on Ethereum) | Trezu app fee **is** applied, same as any other swap — control case proving the #1574 exemption doesn't over-apply. Same `F`-until-#1585-merges caveat as EXC-09 |
 | EXC-11 | F | Stablecoin→stablecoin swap, SAME network (e.g. USDT on NEAR → USDC on NEAR) | Also fee-free as implemented — the exemption isn't gated on "between networks" despite that wording in #1574's AC. Not a bug, but confirm this still matches product intent before relying on the ticket's literal wording |
 
 ## 9. Governance: Members, Voting, Requests — P2
@@ -373,7 +373,7 @@ Covers the deposit and withdrawal paths on the networks Binance and Trezu both s
 
 | Risk tier | Sections | Mandatory before release |
 |-----------|----------|--------------------------|
-| **P0 — Money loss** | §3 (creation), §5 (payments), §6 (relay matrix), §7 (bulk), §8 EXC-02/EXC-09/EXC-10 (fees), §13 (confidential), §19 (CEX transfers) | All `S` + `R` checks |
+| **P0 — Money loss** | §3 (creation), §5 (payments), §6 (relay matrix), §7 (bulk), §8 EXC-02 (fees) [EXC-09/10 pending #1585 merge], §13 (confidential), §19 (CEX transfers) | All `S` + `R` checks |
 | **P1 — Financial data integrity** | §4 (dashboard freshness), §11 (exports/activity), §8 (swap classification) | All `R` checks |
 | **P2 — Access & governance** | §1 (auth), §2 (geo), §6, §9 (governance), §12 (plan gates), §17 (admin) | All `R` checks |
 | **P3 — Product experience** | §10, §14, §15, §16 | Changed areas only + exploratory session |
@@ -388,6 +388,7 @@ Covers the deposit and withdrawal paths on the networks Binance and Trezu both s
 
 | Version | Date | Change |
 |---------|------|--------|
+| 1.4 | 2026-09-16 | Demoted EXC-09/EXC-10 from `R` to `F` and dropped them from the P0 — Money loss row: they were listed as mandatory-every-release checks for the #1585 stablecoin fee exemption, which the 1.3 entry below already flags as not yet on `main` — a regression sweep against the default `testenv.trezu.app` would fail them for a feature that hasn't shipped. Promote back to `R`/P0 in the same PR that merges #1585. |
 | 1.3 | 2026-09-15 | Added EXC-09/EXC-10/EXC-11 — live-verified via direct `/api/intents/quote` calls on `testenv.business.near.com` (`nearcom_redesign` branch) that the #1574 stablecoin swap-fee exemption works cross-network and same-network, and doesn't over-apply to non-stablecoin legs. Flagged: this code isn't on `main` yet, so these checks don't apply to the default `testenv.trezu.app` environment until it merges. |
 | 1.2 | 2026-09-15 | Corrected AUTH-11 — Passkey is now the default/hero login option (`supported: true`, `passkey-login.spec.ts`), not a disabled placeholder; moved the "disabled wallet" check to new AUTH-14 (Phantom only). Marked EXC-04 `[auto partial]` and corrected the §8 preamble — `exchange-amount-formatting.spec.ts` gives narrow quote-display coverage, contradicting the previous "no E2E coverage" claim. Added PAY-12 for the Max/EXACT_INPUT intents regression fixed in #1572. |
 | 1.1 | 2026-08-31 | Added §19 CEX Transfers (Binance). |
