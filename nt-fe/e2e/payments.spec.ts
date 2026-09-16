@@ -108,8 +108,7 @@ async function setupPaymentsMocks(page: Page) {
         if (url.includes("/user/assets")) return json(ASSETS);
         if (
             url.includes("/intents/deposit-tokens") ||
-            url.includes("/intents/swap-tokens") ||
-            url.includes("/intents/bridge-tokens")
+            url.includes("/intents/swap-tokens")
         ) {
             return json({ assets: [] });
         }
@@ -129,9 +128,6 @@ async function setupPaymentsMocks(page: Page) {
                 batchPaymentCredits: 10,
                 gasCoveredTransactions: 100,
             });
-        }
-        if (url.includes("/monitored-accounts")) {
-            return json({ accountId: TREASURY_ID, enabled: true });
         }
 
         return route.continue();
