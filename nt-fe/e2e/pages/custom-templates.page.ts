@@ -25,14 +25,16 @@ export class CustomTemplatesPage extends BasePage {
         return this.page.getByRole("tab", { name: "Code" });
     }
 
+    /** Scoped by data-testid — an unscoped "textarea" locator would also catch any textarea
+     * the Visual builder renders for JSON-typed fields. */
     codeTextarea() {
-        return this.page.locator("textarea");
+        return this.page.getByTestId("template-manifest-textarea");
     }
 
-    /** Addressed by aria-label — its placeholder "Set Greeting" collides with the manifest
-     * textarea's example and the Visual builder's Title field. */
+    /** Scoped by data-testid — the accessible name "Name" collides with the Visual builder's
+     * per-field Name input (fields.nameLabel), so getByRole alone isn't unique once fields exist. */
     nameInput() {
-        return this.page.getByRole("textbox", { name: "Name", exact: true });
+        return this.page.getByTestId("template-name-input");
     }
 
     /** The "<Field> is required" message shown once a required field is touched. */
