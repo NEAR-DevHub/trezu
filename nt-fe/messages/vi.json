@@ -2159,6 +2159,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
+        "copyAddress": "Sao chép địa chỉ",
         "moreMembers": "+{count, plural, other {# thành viên}}"
     },
     "addressBookMutations": {

@@ -2176,6 +2176,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "Anggota yang dapat memilih",
+        "copyAddress": "Salin alamat",
         "moreMembers": "+{count, plural, other {# anggota}}"
     },
     "addressBookMutations": {

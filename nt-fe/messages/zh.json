@@ -2159,6 +2159,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "可投票的成员",
+        "copyAddress": "复制地址",
         "moreMembers": "+{count, plural, other {# 名成员}}"
     },
     "addressBookMutations": {

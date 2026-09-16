@@ -2176,6 +2176,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "투표할 수 있는 멤버",
+        "copyAddress": "주소 복사",
         "moreMembers": "+{count, plural, other {멤버 #명}}"
     },
     "addressBookMutations": {

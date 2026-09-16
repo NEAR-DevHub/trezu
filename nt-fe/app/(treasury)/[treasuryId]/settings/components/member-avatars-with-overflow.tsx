@@ -2,29 +2,39 @@
 
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState } from "react";
-import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
-import { ScrollContainer } from "@/components/scroll-container";
+import { type RefObject, useEffect, useMemo, useRef, useState } from "react";
+import { Address } from "@/components/address";
+import { CopyButton } from "@/components/copy-button";
+import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/modal";
+import { NumberBadge } from "@/components/number-badge";
+import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
+import { ScrollContainer } from "@/components/scroll-container";
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { TooltipUser, User } from "@/components/user";
+import { resolveUserDisplayName, TooltipUser } from "@/components/user";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { getExplorerAddressUrl } from "@/lib/blockchain-utils";
 import { resolveProfileImageUrl } from "@/lib/profile-image";
 import { cn } from "@/lib/utils";
+
+/** Avatar geometry the stack is measured against: 36px tiles overlapping by 9px. */
+const AVATAR_SIZE = 36;
+const AVATAR_OVERLAP = 9;
+const AVATAR_STRIDE = AVATAR_SIZE - AVATAR_OVERLAP;
+
+/** The stack tops out at five faces; everyone past that rolls into the "+N" tile. */
+const MAX_VISIBLE_AVATARS = 5;
 
 /**
  * One member of the role, as the design's 36px squircle. `User` would render
@@ -56,6 +66,117 @@ function MemberAvatar({ accountId }: { accountId: string }) {
     );
 }
 
+/**
+ * One member row: the chip beside the member's name and wallet, the same
+ * pairing the address tooltip shows.
+ *
+ * `panel` is the desktop hover card — a 28px chip and the tooltip's small
+ * address. `sheet` is the mobile bottom sheet, where the design gives the row
+ * room for a 36px chip, a full-size address and a copy control.
+ */
+function MemberRow({
+    accountId,
+    variant,
+}: {
+    accountId: string;
+    variant: "panel" | "sheet";
+}) {
+    const t = useTranslations("memberAvatars");
+    const { data: profile } = useProfile(accountId);
+    const name = resolveUserDisplayName({
+        accountId,
+        profileName: profile?.name,
+    });
+    // Without a profile name the heading would repeat the wallet verbatim, so
+    // the address moves up into it rather than being printed twice.
+    const nameIsAddress = name === accountId;
+    const isSheet = variant === "sheet";
+
+    return (
+        <div
+            className={cn(
+                "flex items-center",
+                isSheet ? "gap-2 py-3" : "gap-3",
+            )}
+        >
+            <ProfileAvatarChip
+                variant={isSheet ? "large" : "medium"}
+                imageUrl={resolveProfileImageUrl(profile?.image)}
+                name={name}
+                className={isSheet ? "rounded-lg" : undefined}
+            />
+            <div className="flex min-w-0 flex-1 flex-col">
+                {nameIsAddress ? (
+                    <Address
+                        address={accountId}
+                        className="text-sm font-semibold leading-[1.5]"
+                    />
+                ) : (
+                    <>
+                        <span className="truncate text-sm font-semibold leading-[1.5]">
+                            {name}
+                        </span>
+                        <Address
+                            address={accountId}
+                            className={cn(
+                                "text-general-secondary-foreground",
+                                isSheet
+                                    ? "text-sm font-medium leading-[1.5]"
+                                    : "text-xs leading-4 tracking-[0.18px]",
+                            )}
+                        />
+                    </>
+                )}
+            </div>
+            {isSheet && (
+                <CopyButton
+                    text={accountId}
+                    variant="ghost"
+                    size="icon"
+                    aria-label={t("copyAddress")}
+                    className="size-10 shrink-0 rounded-lg text-general-secondary-foreground"
+                    iconClassName="size-4"
+                />
+            )}
+        </div>
+    );
+}
+
+/**
+ * How tall the mobile sheet may grow: everything below the page header, so the
+ * list fills the screen up to the "Settings" heading and scrolls from there.
+ * Measured rather than hard-coded — the header stacks differently per
+ * breakpoint and can carry warning banners.
+ */
+function useSheetMaxHeight(
+    anchor: RefObject<HTMLElement | null>,
+    open: boolean,
+) {
+    const [maxHeight, setMaxHeight] = useState<string>();
+
+    useEffect(() => {
+        if (!open) return;
+
+        const measure = () => {
+            const layout = anchor.current?.closest("main")?.parentElement;
+            const header = layout?.querySelector(":scope > header");
+            const bottom =
+                header instanceof HTMLElement
+                    ? header.getBoundingClientRect().bottom
+                    : 0;
+            setMaxHeight(`calc(100dvh - ${Math.max(0, Math.round(bottom))}px)`);
+        };
+
+        measure();
+        window.addEventListener("resize", measure);
+        return () => {
+            window.removeEventListener("resize", measure);
+        };
+    }, [anchor, open]);
+
+    return maxHeight;
+}
+
 interface MemberAvatarsWithOverflowProps {
     members: string[];
     totalCount: number;
@@ -70,34 +191,34 @@ export function MemberAvatarsWithOverflow({
     const t = useTranslations("memberAvatars");
     const [open, setOpen] = useState(false);
     const [dialogOpen, setDialogOpen] = useState(false);
-    const [visibleCount, setVisibleCount] = useState(10); // Default fallback
+    const [visibleCount, setVisibleCount] = useState(MAX_VISIBLE_AVATARS);
     const containerRef = useRef<HTMLDivElement>(null);
     const isMobile = useMediaQuery("(max-width: 640px)");
+    const sheetMaxHeight = useSheetMaxHeight(containerRef, dialogOpen);
 
     useEffect(() => {
         const calculateVisibleCount = () => {
             if (!containerRef.current) return;
 
-            const containerWidth = containerRef.current.offsetWidth;
-            // Avatar size is 36px (size-9), with -9px overlap
-            // So each avatar takes up 27px (36 - 9) of space
-            const avatarWidth = 27;
-            // Phones show the overflow as one more tile in the stack; larger
-            // screens spell it out as a "+X members" button beside the stack.
-            const buttonWidth = isMobile ? avatarWidth : 120;
-            const firstAvatarWidth = 36; // First avatar has no negative margin
-
-            const availableWidth = containerWidth - buttonWidth;
+            // The overflow indicator is one more tile in the stack, so it costs
+            // exactly as much room as the avatar it replaces.
+            const availableWidth =
+                containerRef.current.offsetWidth - AVATAR_STRIDE;
             const calculatedCount =
-                Math.floor((availableWidth - firstAvatarWidth) / avatarWidth) +
-                1;
+                Math.floor((availableWidth - AVATAR_SIZE) / AVATAR_STRIDE) + 1;
 
-            // Ensure we show at least 4 avatars and not more than total
-            const finalCount = Math.max(
-                4,
-                Math.min(calculatedCount, members.length),
+            // Never fewer than one face, never more than the stack's cap or
+            // the role itself holds.
+            setVisibleCount(
+                Math.max(
+                    1,
+                    Math.min(
+                        calculatedCount,
+                        MAX_VISIBLE_AVATARS,
+                        members.length,
+                    ),
+                ),
             );
-            setVisibleCount(finalCount);
         };
 
         calculateVisibleCount();
@@ -111,55 +232,23 @@ export function MemberAvatarsWithOverflow({
         return () => {
             resizeObserver.disconnect();
         };
-    }, [members.length, isMobile]);
+    }, [members.length]);
 
-    const visibleMembers = members
-        .sort((a, b) => a.localeCompare(b))
-        .slice(0, visibleCount);
-    const hiddenMembers = members.slice(visibleCount); // Only members not shown
+    // Sorting a copy: `members` belongs to the caller's policy data.
+    const sortedMembers = useMemo(
+        () => [...members].sort((a, b) => a.localeCompare(b)),
+        [members],
+    );
+    const visibleMembers = sortedMembers.slice(0, visibleCount);
+    const hiddenMembers = sortedMembers.slice(visibleCount);
     const remainingCount = totalCount - visibleCount;
     const hasMore = remainingCount > 0;
 
-    // Hidden members list for the popover (desktop - only remaining members)
-    const HiddenMembersList = () => (
-        <ScrollContainer className="max-h-[300px]">
-            <div className="space-y-2 p-1">
-                {hiddenMembers.map((member) => (
-                    <div
-                        key={member}
-                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors"
-                    >
-                        <User
-                            accountId={member}
-                            size="md"
-                            withLink={true}
-                            withHoverCard={false}
-                        />
-                    </div>
-                ))}
-            </div>
-        </ScrollContainer>
-    );
-
-    // All members list for mobile sheet (all members with scroll)
-    const AllMembersList = () => (
-        <ScrollArea className="h-full max-h-[70vh]">
-            <div className="space-y-2 p-1">
-                {members.map((member) => (
-                    <div
-                        key={member}
-                        className="flex items-center gap-3 p-2 rounded-md hover:bg-muted transition-colors"
-                    >
-                        <User
-                            accountId={member}
-                            size="md"
-                            withLink={true}
-                            withHoverCard={false}
-                        />
-                    </div>
-                ))}
-            </div>
-        </ScrollArea>
+    /** The design's "+N" tile, closing the stack in place of the last avatars. */
+    const overflowTile = (
+        <span className="-ml-[9px] flex size-9 shrink-0 items-center justify-center rounded-lg border border-card bg-general-bg-secondary text-base font-medium leading-[1.2] text-general-foreground">
+            +{remainingCount}
+        </span>
     );
 
     return (
@@ -177,33 +266,47 @@ export function MemberAvatarsWithOverflow({
             {/* Overflow indicator */}
             {hasMore && (
                 <>
-                    {/* Desktop: Hover popover - shows only hidden members */}
+                    {/* Desktop: hover panel listing the members the stack dropped */}
                     {!isMobile && (
                         <Popover open={open} onOpenChange={setOpen}>
                             <PopoverTrigger asChild>
                                 <button
                                     type="button"
-                                    className="ml-2 text-sm text-muted-foreground hover:text-foreground transition-colors focus:outline-none"
+                                    aria-label={t("moreMembers", {
+                                        count: remainingCount,
+                                    })}
+                                    className="flex focus:outline-none"
                                     onMouseEnter={() => setOpen(true)}
                                     onMouseLeave={() => setOpen(false)}
                                 >
-                                    {t("moreMembers", {
-                                        count: remainingCount,
-                                    })}
+                                    {overflowTile}
                                 </button>
                             </PopoverTrigger>
+                            {/* Portalled, so `dark` rides along to keep the
+                                panel the design's #262626 in both themes. */}
                             <PopoverContent
-                                className="w-80 p-3"
+                                className="dark w-[190px] rounded-2xl border-transparent bg-general-bg-secondary p-3 text-general-foreground"
                                 align="start"
+                                sideOffset={8}
                                 onMouseEnter={() => setOpen(true)}
                                 onMouseLeave={() => setOpen(false)}
                             >
-                                <HiddenMembersList />
+                                <ScrollContainer className="max-h-[264px]">
+                                    <div className="flex flex-col gap-2">
+                                        {hiddenMembers.map((member) => (
+                                            <MemberRow
+                                                key={member}
+                                                accountId={member}
+                                                variant="panel"
+                                            />
+                                        ))}
+                                    </div>
+                                </ScrollContainer>
                             </PopoverContent>
                         </Popover>
                     )}
 
-                    {/* Mobile: Click to open bottom sheet - shows all members */}
+                    {/* Mobile: tapping the tile opens the sheet with every member */}
                     {isMobile && (
                         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
@@ -212,35 +315,35 @@ export function MemberAvatarsWithOverflow({
                                     aria-label={t("moreMembers", {
                                         count: remainingCount,
                                     })}
-                                    className="-ml-[9px] flex size-9 shrink-0 items-center justify-center rounded-lg border border-card bg-general-bg-secondary text-base font-medium leading-[1.2] text-general-foreground focus:outline-none"
+                                    className="flex focus:outline-none"
                                 >
-                                    +{remainingCount}
+                                    {overflowTile}
                                 </button>
                             </DialogTrigger>
+                            {/* The sheet owns no scroll of its own: the header
+                                stays put and the list below it scrolls. */}
                             <DialogContent
-                                className="p-0 gap-0 max-w-full w-full rounded-t-xl rounded-b-none fixed top-auto bottom-0 left-0 right-0 translate-x-0 translate-y-0 data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom bg-background"
-                                showCloseButton={false}
+                                className="overflow-hidden pb-0"
+                                style={{ maxHeight: sheetMaxHeight }}
                             >
-                                <DialogHeader className="p-3 pb-2 border-b bg-background">
-                                    <DialogTitle className="flex items-center justify-between">
-                                        <span className="flex items-center gap-2">
-                                            {t("membersWhoCanVote")}
-                                            <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-muted text-xs">
-                                                {totalCount}
-                                            </span>
-                                        </span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setDialogOpen(false)}
-                                            className="text-muted-foreground hover:text-foreground"
-                                        >
-                                            ✕
-                                        </button>
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <div className="p-3 pt-0 bg-background">
-                                    <AllMembersList />
-                                </div>
+                                <SheetHandle />
+                                <DialogTitle className="flex items-center gap-2 text-left text-sm font-semibold text-general-secondary-foreground">
+                                    {t("membersWhoCanVote")}
+                                    <NumberBadge
+                                        number={totalCount}
+                                        variant="outline"
+                                        ariaLabel={t("membersWhoCanVote")}
+                                    />
+                                </DialogTitle>
+                                <ScrollContainer className="-mx-4 min-h-0 flex-1 px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                                    {sortedMembers.map((member) => (
+                                        <MemberRow
+                                            key={member}
+                                            accountId={member}
+                                            variant="sheet"
+                                        />
+                                    ))}
+                                </ScrollContainer>
                             </DialogContent>
                         </Dialog>
                     )}

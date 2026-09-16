@@ -2176,6 +2176,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "Oy kullanabilen üyeler",
+        "copyAddress": "Adresi kopyala",
         "moreMembers": "+{count, plural, one {# üye} other {# üye}}"
     },
     "addressBookMutations": {

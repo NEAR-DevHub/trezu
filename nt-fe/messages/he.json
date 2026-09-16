@@ -2176,6 +2176,7 @@
     },
     "memberAvatars": {
         "membersWhoCanVote": "חברים שיכולים להצביע",
+        "copyAddress": "העתק כתובת",
         "moreMembers": "+{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}"
     },
     "addressBookMutations": {
