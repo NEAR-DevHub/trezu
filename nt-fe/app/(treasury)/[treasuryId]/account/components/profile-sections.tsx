@@ -188,6 +188,10 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             placeholder={accountId}
                             inputClassName="h-10 rounded-lg"
                             aria-label={t("nameTitle")}
+                            // Typing through the round-trip would be thrown
+                            // away: both the reseed below and the refetched
+                            // profile overwrite whatever is in the field.
+                            disabled={savingName}
                         />
                         <Button
                             type="submit"
