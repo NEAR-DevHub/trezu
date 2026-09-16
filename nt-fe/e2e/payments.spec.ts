@@ -224,8 +224,14 @@ test.describe("Payments — review step accuracy (PAY-07)", () => {
         await expect(paymentsPage.reviewHeading()).toBeVisible({
             timeout: 10_000,
         });
+        // The <Address> component truncates long recipients to
+        // prefix...suffix (8 chars each by default), so the full 64-char
+        // implicit account never renders as one text node — match the
+        // truncated form it actually displays.
         await expect(
-            paymentsPage.stepText(VALID_IMPLICIT_RECIPIENT),
+            paymentsPage.stepText(
+                `${VALID_IMPLICIT_RECIPIENT.slice(0, 8)}...${VALID_IMPLICIT_RECIPIENT.slice(-8)}`,
+            ),
         ).toBeVisible();
         await expect(paymentsPage.stepText(/2\.5/)).toBeVisible();
         await expect(paymentsPage.stepText("NEAR")).toBeVisible();
