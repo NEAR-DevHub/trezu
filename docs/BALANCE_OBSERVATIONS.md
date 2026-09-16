@@ -65,7 +65,10 @@ Both workers keep explicit discovery state so chart readiness fails closed:
 
 After a deploy, every public chart is Unavailable until the first staking and
 lockup cycles have run discovery for each account (up to one interval each,
-default 15 min). Lockup DAOs then stay Unavailable until their horizon is
+default 15 min). Pre-existing staking candidate rows that never validated are
+genuine pending candidates (the old worker re-probed them every cycle without
+recording the outcome); they are validated or rejected at 50 per cycle, and
+their accounts' charts fail closed until that has happened. Lockup DAOs then stay Unavailable until their horizon is
 covered: about 430 archival reads per lockup, i.e. a few cycles.
 
 ## Operating notes

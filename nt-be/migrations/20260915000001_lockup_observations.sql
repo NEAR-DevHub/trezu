@@ -30,7 +30,9 @@ CREATE TABLE bronze_lockup_observations (
     observed_at TIMESTAMPTZ NOT NULL,
     -- Gross total in NEAR units: lockup account balance + pool staked + unstaked.
     balance NUMERIC NOT NULL,
-    -- {"exists": bool, "liquid": "..", "pool_account_id": ".." | null, "pool_total": ".."}
+    -- {"exists": bool, "account_balance": "..", "pool_account_id": ".." | null, "pool_total": ".."}
+    -- account_balance is view_account.amount (storage reserve included), the
+    -- same input the dashboard's LockupBalance.total uses.
     details JSONB NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -39,7 +41,13 @@ CREATE INDEX idx_blo_account_time
 
 -- Staking observations gain the same fail-closed shape: discovery recorded
 -- per account, candidate pools rejected for good when they are not pools,
--- and per-boundary retry backoff.
+-- and per-boundary retry backoff. Existing rows need no backfill: before this
+-- migration a pool that failed validation was simply left `validated = false`
+-- and re-probed every cycle, so every pre-existing unvalidated row is a
+-- genuine pending candidate. The first cycles after deploy validate them
+-- (50 per cycle) and set `rejected_at` where the chain says "not a pool";
+-- those accounts' charts fail closed until then. `staking_discovery_cursors`
+-- fills on the first cycle for every observable account (a DB-only pass).
 CREATE TABLE staking_discovery_cursors (
     account_id TEXT PRIMARY KEY,
     discovered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

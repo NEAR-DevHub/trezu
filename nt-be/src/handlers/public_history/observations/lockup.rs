@@ -227,6 +227,25 @@ async fn discover_lockups(
     Ok(())
 }
 
+/// The live assets read has just seen a lockup for this account. If discovery
+/// still says `absent`, flip it back to `pending` so the next cycle probes it
+/// instead of waiting out the daily recheck; readiness fails closed meanwhile
+/// rather than serving a chart that silently omits the new lockup.
+pub async fn nudge_discovery_if_absent(pool: &PgPool, account_id: &str) -> sqlx::Result<bool> {
+    let updated = sqlx::query(
+        r#"
+        UPDATE lockup_observation_cursors
+        SET discovery = 'pending', next_discovery_at = NULL, updated_at = NOW()
+        WHERE account_id = $1 AND discovery = 'absent'
+        "#,
+    )
+    .bind(account_id)
+    .execute(pool)
+    .await?
+    .rows_affected();
+    Ok(updated > 0)
+}
+
 /// Existence probe at the chain head. Deliberately not `fetch_lockup_contract`:
 /// that helper returns `None` on Borsh decode failures as well as on absence,
 /// and discovery must never settle `absent` on a decode problem.
@@ -420,7 +439,7 @@ async fn apply_lockup_observation(
     .bind(reading.total())
     .bind(Json(serde_json::json!({
         "exists": reading.exists,
-        "liquid": reading.liquid.to_string(),
+        "account_balance": reading.account_balance.to_string(),
         "pool_account_id": reading.pool_account_id,
         "pool_total": reading.pool_total.to_string(),
     })))
@@ -449,6 +468,37 @@ async fn apply_lockup_observation(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[sqlx::test]
+    async fn nudge_reopens_only_absent_discovery(pool: PgPool) -> sqlx::Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO lockup_observation_cursors (account_id, lockup_account_id, discovery, next_discovery_at)
+            VALUES ('absent.near', 'a.lockup.near', 'absent', NOW() + INTERVAL '1 day'),
+                   ('present.near', 'b.lockup.near', 'present', NULL)
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+
+        assert!(nudge_discovery_if_absent(&pool, "absent.near").await?);
+        assert!(!nudge_discovery_if_absent(&pool, "present.near").await?);
+        assert!(!nudge_discovery_if_absent(&pool, "unknown.near").await?);
+
+        let rows: Vec<(String, LockupDiscovery, Option<DateTime<Utc>>)> = sqlx::query_as(
+            "SELECT account_id, discovery, next_discovery_at FROM lockup_observation_cursors ORDER BY 1",
+        )
+        .fetch_all(&pool)
+        .await?;
+        assert_eq!(rows[0].0, "absent.near");
+        assert_eq!(rows[0].1, LockupDiscovery::Pending);
+        assert!(
+            rows[0].2.is_none(),
+            "probed on the next cycle, not in a day"
+        );
+        assert_eq!(rows[1].1, LockupDiscovery::Present);
+        Ok(())
+    }
 
     #[sqlx::test]
     async fn observation_lag_decodes_for_a_completed_cursor(pool: PgPool) -> sqlx::Result<()> {

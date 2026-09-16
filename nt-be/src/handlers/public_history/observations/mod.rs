@@ -581,13 +581,17 @@ async fn fetch_block_at_or_below(
     Ok(None)
 }
 
+/// Only the RPC's own "this height has no block" signals. A skipped height on
+/// the archival endpoint answers `HANDLER_ERROR / UNKNOWN_BLOCK` with
+/// "DB Not Found Error: BLOCK HEIGHT …" (verified live); a garbage-collected
+/// block on a non-archival node names itself. Anything else — a 422 from a
+/// malformed request, a transport failure — must surface as an error so the
+/// boundary backs off instead of being written off as skipped.
 fn is_block_unavailable(message: &str) -> bool {
-    message.contains("UnknownBlock")
-        || message.contains("UNKNOWN_BLOCK")
+    message.contains("UNKNOWN_BLOCK")
+        || message.contains("UnknownBlock")
+        || message.contains("DB Not Found")
         || message.contains("GarbageCollectedBlock")
-        || message.contains("422")
-        || message.contains("does not exist")
-        || message.contains("doesn't exist")
 }
 
 pub(super) async fn latest_known_block(
@@ -766,8 +770,16 @@ mod tests {
 
     #[test]
     fn skipped_height_messages_are_recognised() {
-        assert!(is_block_unavailable("UnknownBlock: DB Not Found Error"));
-        assert!(is_block_unavailable("server returned 422"));
+        assert!(is_block_unavailable(
+            "HANDLER_ERROR: UNKNOWN_BLOCK: DB Not Found Error: BLOCK HEIGHT: 215885606"
+        ));
+        assert!(is_block_unavailable("UnknownBlock"));
+        assert!(is_block_unavailable("GarbageCollectedBlock"));
+        // A 422 or a generic message is not proof of a skipped height.
+        assert!(!is_block_unavailable(
+            "server returned 422 Unprocessable Entity"
+        ));
+        assert!(!is_block_unavailable("account does not exist"));
         assert!(!is_block_unavailable("connection reset by peer"));
     }
 

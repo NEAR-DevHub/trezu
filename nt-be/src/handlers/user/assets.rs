@@ -744,6 +744,19 @@ pub async fn compute_user_assets(
                 ft_lockup_positions_future
             )?;
 
+            // A lockup that appeared after history discovery settled `absent`
+            // would otherwise stay out of the chart until the daily recheck.
+            if lockup_balance.is_some()
+                && let Err(error) =
+                    crate::handlers::public_history::observations::lockup::nudge_discovery_if_absent(
+                        &state.db_pool,
+                        account.as_str(),
+                    )
+                    .await
+            {
+                tracing::warn!(account_id = %account, %error, "lockup discovery nudge failed");
+            }
+
             Ok::<_, (StatusCode, String)>((
                 whitelist_set,
                 user_balances,

@@ -1536,7 +1536,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                             totalForView > 0
                                 ? (valueUsd / totalForView) * 100
                                 : 0,
-                        locked: metrics.lockedUsd,
+                        // The Locked column cell shows the vesting-locked part
+                        // only; the bucket total (metrics.lockedUsd) also
+                        // holds the unlocked-but-not-withdrawn part.
+                        locked: metrics.lockedUsd - unlockedUsd,
                         unlocked: unlockedUsd,
                         totalAllocated: metrics.lockedUsd,
                         earningTotal: metrics.earningUsd,

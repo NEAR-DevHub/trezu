@@ -71,8 +71,10 @@ pub async fn get_public_gross_native_balance_at_block(
     )
 }
 
-/// Gross native balance at a block, `None` when the account provably did not
-/// exist at that block (as opposed to a transport failure, which is `Err`).
+/// The account's `amount` at a block — its gross balance with the storage
+/// reserve included, exactly the field the dashboard's lockup builder adds
+/// to the pool position — or `None` when the account provably did not exist
+/// at that block (as opposed to a transport failure, which is `Err`).
 pub async fn get_gross_native_balance_if_exists_at_block(
     network: &NetworkConfig,
     account_id: &str,
@@ -102,21 +104,24 @@ pub async fn get_gross_native_balance_if_exists_at_block(
     }
 }
 
-/// A lockup contract's holdings at a block, valued the way the dashboard
-/// card values it: gross account balance plus the lockup's staked and
-/// unstaked position in its pool. `exists == false` is a zero reading for a
-/// boundary before the lockup account was created.
+/// A lockup contract's holdings at a block, valued exactly as the dashboard
+/// card's `LockupBalance.total` (`handlers::user::lockup`): the lockup
+/// account's `amount` (storage reserve included, nothing subtracted) plus
+/// its staked and unstaked position in its pool. `exists == false` is a zero
+/// reading for a boundary before the lockup account was created.
 #[derive(Debug, Clone)]
 pub struct LockupReadingAtBlock {
     pub exists: bool,
-    pub liquid: BigDecimal,
+    /// `view_account.amount` of the lockup account.
+    pub account_balance: BigDecimal,
     pub pool_account_id: Option<String>,
+    /// Staked + unstaked in `pool_account_id`; zero without a pool.
     pub pool_total: BigDecimal,
 }
 
 impl LockupReadingAtBlock {
     pub fn total(&self) -> BigDecimal {
-        &self.liquid + &self.pool_total
+        &self.account_balance + &self.pool_total
     }
 }
 
@@ -125,13 +130,13 @@ pub async fn get_lockup_reading_at_block(
     lockup_account_id: &str,
     block_height: u64,
 ) -> Result<LockupReadingAtBlock, String> {
-    let Some(liquid) =
+    let Some(account_balance) =
         get_gross_native_balance_if_exists_at_block(network, lockup_account_id, block_height)
             .await?
     else {
         return Ok(LockupReadingAtBlock {
             exists: false,
-            liquid: BigDecimal::from(0),
+            account_balance: BigDecimal::from(0),
             pool_account_id: None,
             pool_total: BigDecimal::from(0),
         });
@@ -157,7 +162,7 @@ pub async fn get_lockup_reading_at_block(
     };
     Ok(LockupReadingAtBlock {
         exists: true,
-        liquid,
+        account_balance,
         pool_account_id,
         pool_total,
     })

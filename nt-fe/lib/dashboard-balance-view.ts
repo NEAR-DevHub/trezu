@@ -54,8 +54,13 @@ function getTokenBucketRaw(token: TreasuryAsset): {
         totalRaw = staked.add(unstaked);
         earningRaw = staked.add(unstaked);
     } else if (token.balance.type === "Vested") {
-        // Everything inside the lockup that is not staked stays locked until
-        // it is withdrawn to the treasury account.
+        // Product rule for lockup rows: Earning is what the lockup has
+        // staked, and everything else inside the lockup (unvested, the
+        // storage reserve, vested-but-not-withdrawn liquid NEAR, pending
+        // unstakes) is Locked, because none of it is spendable by the
+        // treasury until it is withdrawn. Available is always zero. Locked is
+        // defined as the remainder on purpose so the three buckets sum to the
+        // backend's LockupBalance.total whatever the lockup's internal shape.
         const lockup = token.balance.lockup;
         totalRaw = lockup.total;
         earningRaw = lockup.staked;
