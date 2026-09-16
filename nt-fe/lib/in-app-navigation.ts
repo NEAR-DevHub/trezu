@@ -1,3 +1,5 @@
+export type PageBackKind = "section" | "nested" | "mobile";
+
 const PATH_KEY = "treasury26:nav-path";
 const PREV_KEY = "treasury26:nav-prev";
 
@@ -22,14 +24,15 @@ export function trackInAppPath(
 /**
  * Header back is only for second-level screens (Receive, Bulk send, request
  * details) and their inner steps. Top-level destinations (Send, Swap, Settings)
- * use the sidebar / tab bar instead.
+ * use the sidebar / tab bar instead. `mobile` sits between the two: a screen
+ * the sidebar does not list but the mobile user sheet opens (My account).
  */
 export function shouldShowPageBack(options: {
     hasBackButton: boolean;
-    backKind: "section" | "nested";
+    backKind: PageBackKind;
 }): boolean {
     if (!options.hasBackButton) return false;
-    return options.backKind === "nested";
+    return options.backKind !== "section";
 }
 
 /**

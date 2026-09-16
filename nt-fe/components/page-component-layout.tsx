@@ -23,7 +23,7 @@ import { SignIn } from "@/components/sign-in";
 import { SlotWarning } from "@/components/warning-message";
 import { isStaging } from "@/constants/features";
 import { useInAppHistory } from "@/hooks/use-in-app-history";
-import { shouldShowPageBack } from "@/lib/in-app-navigation";
+import { type PageBackKind, shouldShowPageBack } from "@/lib/in-app-navigation";
 import { cn } from "@/lib/utils";
 import { useSidebarStore } from "@/stores/sidebar-store";
 
@@ -37,8 +37,10 @@ interface PageComponentLayoutProps {
      * leave via the sidebar or tab bar.
      * `nested` — second-level screens (Receive, Bulk send) and their inner pages.
      * Header back is always shown.
+     * `mobile` — screens the sidebar does not list but the mobile user sheet
+     * opens (My account): header back below `lg` only.
      */
-    backKind?: "section" | "nested";
+    backKind?: PageBackKind;
     hideLogin?: boolean;
     hideCollapseButton?: boolean;
     hideAppWarningBanner?: boolean;
@@ -166,6 +168,7 @@ export function PageComponentLayout({
     const backControlClassName = cn(
         hideMobileShellControls &&
             "size-10 rounded-lg bg-muted text-muted-foreground hover:bg-muted hover:text-foreground lg:size-9 lg:rounded-md lg:bg-transparent",
+        backKind === "mobile" && "lg:hidden",
     );
     const backControl = showBack ? (
         <Button
