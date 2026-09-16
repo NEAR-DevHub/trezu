@@ -52,9 +52,9 @@ export class WalletPopupPage extends BasePage {
         return this.page.getByText("Choose which treasury you want to use");
     }
 
-    /** A treasury row in the sign_in picker, matched by its daoId or display name. */
+    /** A treasury row in the sign_in picker — a real `<button>` whose accessible name contains the daoId and/or display name. */
     treasuryRow(text: string) {
-        return this.page.getByText(text);
+        return this.page.getByRole("button", { name: text });
     }
 
     treasuryConnectedText() {
@@ -68,7 +68,7 @@ export class WalletPopupPage extends BasePage {
 
     /** Any text in the proposal preview (recipient, acting-as DAO, …) — matches the first occurrence, same as the original `text=` locators. */
     previewText(text: string) {
-        return this.page.locator(`text=${text}`).first();
+        return this.page.getByText(text).first();
     }
 
     /** Messages the page has posted to `window.opener` (captured via an init script mock). */

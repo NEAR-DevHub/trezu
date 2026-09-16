@@ -39,6 +39,7 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     page,
     context,
     loginPage,
+    startPage,
 }) => {
     test.skip(
         !fs.existsSync(EXECUTOR_ARTIFACT),
@@ -306,7 +307,7 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     );
 
     // Navigate and open the sign-in screen
-    await loginPage.gotoCreate();
+    await startPage.gotoCreate();
     await loginPage.openWalletPicker();
     await expect(loginPage.chooseSignInText()).toBeVisible();
 

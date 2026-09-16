@@ -203,7 +203,12 @@ const mockWebHID = `
 
 `;
 
-test("Ledger login flow", async ({ page, context, loginPage }) => {
+test("Ledger login flow", async ({
+    page,
+    context,
+    loginPage,
+    startPage,
+}) => {
     // Increase timeout for this test due to pauses for video recording
     test.setTimeout(120000);
     // Capture console logs from the iframe
@@ -385,7 +390,7 @@ test("Ledger login flow", async ({ page, context, loginPage }) => {
     });
 
     // Navigate to onboarding entry page
-    await loginPage.gotoCreate();
+    await startPage.gotoCreate();
     await page.waitForTimeout(1500); // Pause to show the initial page
 
     // Click Sign In from onboarding card footer (routes to /login?context=onboarding)

@@ -1,12 +1,8 @@
 import type { FrameLocator } from "@playwright/test";
 import { BasePage } from "./base.page";
 
-/** The wallet sign-in flow: onboarding entry → wallet picker → sandboxed executor iframe. Shared by every wallet-specific login spec (Ledger, Passkey, …). */
+/** The wallet sign-in flow: wallet picker → sandboxed executor iframe. Shared by every wallet-specific login spec (Ledger, Passkey, …). Navigate to the onboarding entry point via `StartPage.gotoCreate()` first. */
 export class LoginPage extends BasePage {
-    async gotoCreate(): Promise<void> {
-        await this.page.goto("/create");
-    }
-
     signInButton() {
         return this.page.getByRole("button", { name: /sign in/i });
     }
