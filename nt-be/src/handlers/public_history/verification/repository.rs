@@ -140,6 +140,7 @@ const LOAD_ASSET_LEDGER_HEADS_SQL: &str = r#"
               -- an exact-drift chain check would fail ledgers that are correct.
               AND token_standard = 'native'::public_token_standard
               AND asset NOT LIKE 'staking:%'
+              AND asset NOT LIKE 'lockup:%'
               -- A capped account's pre-clamp rows are unreconciled history
               -- kept for display only; an old negative dip from before the
               -- clamp must never sink the running-minimum invariant below.

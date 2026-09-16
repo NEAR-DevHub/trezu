@@ -25,6 +25,15 @@ pub struct ChartReadiness {
     /// False while a validated staking pool still has uncovered chart-horizon
     /// boundaries — a partially backfilled staked series would be misleading.
     pub staking_ready: bool,
+    /// False until lockup discovery has settled for the account and, when a
+    /// lockup exists, its chart-horizon boundaries are covered.
+    pub lockup_ready: bool,
+    /// Latest covered boundary of the slowest completed staking pool series;
+    /// `None` without staking.
+    pub staking_last_observed_at: Option<DateTime<Utc>>,
+    /// Latest covered boundary of a completed lockup series; `None` without
+    /// a lockup.
+    pub lockup_last_observed_at: Option<DateTime<Utc>>,
     /// Preserves the distinction between an empty requested range/token filter
     /// and a projection that has no balance-bearing Gold rows at all.
     pub has_gold_balance_points: bool,

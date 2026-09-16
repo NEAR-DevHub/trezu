@@ -14,6 +14,10 @@ export function getBalanceHistoryTokenIds(token: TreasuryAsset): string[] {
         ];
     }
 
+    if (token.residency === "Lockup") {
+        return token.lockupAccountId ? [`lockup:${token.lockupAccountId}`] : [];
+    }
+
     if (token.residency === "Staked" && token.balance.type === "Staked") {
         return token.balance.staking.pools.map(
             (pool) => `staking:${pool.poolId}`,

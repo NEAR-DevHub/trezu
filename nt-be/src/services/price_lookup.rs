@@ -334,7 +334,7 @@ pub fn token_id_to_unified_asset_id(token_id: &str) -> Option<String> {
 
     // Special case: staking pools (staked NEAR is still NEAR)
     // e.g., "staking:astro-stakers.poolv1.near" → "near"
-    if token_id.starts_with("staking:") {
+    if token_id.starts_with("staking:") || token_id.starts_with("lockup:") {
         return Some("near".to_string());
     }
 
@@ -400,6 +400,10 @@ mod tests {
         );
         assert_eq!(
             token_id_to_unified_asset_id("staking:any-pool.near"),
+            Some("near".to_string())
+        );
+        assert_eq!(
+            token_id_to_unified_asset_id("lockup:abc123.lockup.near"),
             Some("near".to_string())
         );
     }
