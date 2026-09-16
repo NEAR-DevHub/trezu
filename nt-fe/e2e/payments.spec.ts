@@ -70,6 +70,11 @@ const ASSETS = [
 
 async function setupPaymentsMocks(page: Page) {
     await seedMockWalletAccount(page, ACCOUNT_ID, "init");
+    // Otherwise the payments-bulk onboarding tour's overlay covers the page
+    // on first visit and intercepts every click, including Review.
+    await page.addInitScript(() => {
+        localStorage.setItem("payments-bulk-tour-shown:v1", "true");
+    });
 
     await page.route("**/*", async (route) => {
         if (await maybeFulfillMockWalletRequest(route)) return;
