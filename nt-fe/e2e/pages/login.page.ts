@@ -30,8 +30,4 @@ export class LoginPage extends BasePage {
     async openWalletPicker(): Promise<void> {
         await this.signInButton().click();
     }
-
-    async selectWallet(name: string): Promise<void> {
-        await this.walletOption(name).click();
-    }
 }
