@@ -69,10 +69,15 @@ export function ProfileSections({ accountId }: { accountId: string }) {
     const [savingName, setSavingName] = useState(false);
     const [uploadingImage, setUploadingImage] = useState(false);
 
+    // Saving the avatar refetches the profile too, so the reseed below can land
+    // while a name is half-typed. Remember that the field has been touched and
+    // leave it alone until its own save clears the flag.
+    const nameEdited = useRef(false);
+
     useEffect(() => {
-        setName(profile?.name || "");
         setSavedName(profile?.name || "");
         setAvatarUrl(resolveProfileImageUrl(profile?.image) ?? null);
+        if (!nameEdited.current) setName(profile?.name || "");
     }, [profile]);
 
     const persist = async (patch: {
@@ -116,6 +121,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
         if (!canSaveName) return;
         setSavingName(true);
         if (await persist({ displayName: trimmedName })) {
+            nameEdited.current = false;
             setName(trimmedName);
         }
         setSavingName(false);
@@ -191,7 +197,10 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             clearable={false}
                             maxLength={100}
                             value={name}
-                            onChange={(event) => setName(event.target.value)}
+                            onChange={(event) => {
+                                nameEdited.current = true;
+                                setName(event.target.value);
+                            }}
                             placeholder={accountId}
                             inputClassName="h-10 rounded-lg"
                             aria-label={t("nameTitle")}
