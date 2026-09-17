@@ -20,7 +20,7 @@ use apalis_core::layers::Stack;
 use apalis_core::worker::context::WorkerContext;
 use apalis_postgres::{
     CompactType, Config, JsonCodec, LockTaskLayer, PgAck, PgContext, PgPollFetcher, PgTask,
-    PostgresStorage, keep_alive_stream,
+    PostgresStorage,
 };
 use apalis_sql::TaskRow;
 use futures::stream::{self, BoxStream};
@@ -30,6 +30,7 @@ use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::{PgPool, postgres::PgListener};
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
 pub const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 pub const DEFAULT_CLAIM_ALERT_AFTER: Duration = Duration::from_secs(10);
@@ -40,6 +41,9 @@ pub const MIN_RUNNING_RECLAIM_AFTER: Duration = Duration::from_secs(60 * 60);
 const DB_ERROR_BACKOFF_INITIAL: Duration = Duration::from_secs(1);
 const DB_ERROR_BACKOFF_MAX: Duration = Duration::from_secs(30);
 const JITTER_MIN_PERCENT: u64 = 80;
+/// Heartbeats a registered worker may miss before a rebuilt worker with the
+/// same id treats it as dead and takes the id over.
+const REGISTRATION_STALE_HEARTBEATS: u32 = 3;
 const NOTIFY_CHANNEL: &str = "apalis::job::insert";
 
 fn steady_poller_enabled(queue: &str) -> bool {
@@ -77,6 +81,10 @@ pub struct ReclaimPolicy {
 #[derive(Clone, Debug)]
 pub struct QueueSpec {
     pub queue: &'static str,
+    /// Stable apalis worker id consuming this queue (`apalis.workers.id`).
+    /// Defaults to the queue name; the public-history consumers register
+    /// under a different id.
+    pub worker_id: &'static str,
     pub kind: QueueKind,
     pub concurrency: usize,
     pub fetch_batch: usize,
@@ -98,6 +106,7 @@ impl QueueSpec {
         let concurrency = concurrency.max(1);
         Self {
             queue,
+            worker_id: queue,
             kind: QueueKind::Cron { interval_secs },
             concurrency,
             fetch_batch: concurrency,
@@ -121,6 +130,7 @@ impl QueueSpec {
         let concurrency = concurrency.max(1);
         Self {
             queue,
+            worker_id: queue,
             kind: QueueKind::Queue,
             concurrency,
             fetch_batch: concurrency,
@@ -147,6 +157,12 @@ impl QueueSpec {
     #[must_use]
     pub fn with_backlog_alert_after(mut self, after: Duration) -> Self {
         self.backlog_alert_after = after;
+        self
+    }
+
+    #[must_use]
+    pub fn with_worker_id(mut self, worker_id: &'static str) -> Self {
+        self.worker_id = worker_id;
         self
     }
 }
@@ -397,13 +413,72 @@ async fn register_worker_and_reclaim(
     pool: &PgPool,
     config: &Config,
     worker: &WorkerContext,
+    owner: &Arc<Mutex<Option<Uuid>>>,
 ) -> Result<(), sqlx::Error> {
     // This mirrors Apalis's private worker-registration query, but deliberately
     // does not call its generic orphan recovery first: that routine requeues
     // both Queued and Running jobs, while the platform must kill ambiguous
-    // Running executions. Registration remains the exclusivity gate; a live
-    // predecessor holding the stable worker-id advisory lock makes this fail.
-    let registered = sqlx::query(
+    // Running executions. Registration remains the exclusivity gate.
+    let stale_after = config
+        .keep_alive()
+        .saturating_mul(REGISTRATION_STALE_HEARTBEATS);
+    let token = register_owner(pool, config, worker, stale_after).await?;
+    *owner
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner()) = Some(token);
+
+    reclaim_predecessor_locks(pool, worker.name(), config.queue().as_ref()).await?;
+    Ok(())
+}
+
+/// Registers this incarnation as the owner of the stable worker id.
+///
+/// Exclusivity comes from heartbeat freshness, not from a session-level
+/// advisory lock: a lock would live on whichever pooled connection ran the
+/// query, so a dead worker's lock could only be freed by recycling or
+/// terminating a shared connection that may meanwhile serve unrelated work.
+/// Instead the id is taken over only while the registered heartbeat is older
+/// than `stale_after`, and each takeover issues a new owner token; the
+/// heartbeat ([`keep_alive_owner`]) refreshes the row only for the current
+/// owner, so a superseded incarnation fails its next beat and exits. A fresh
+/// heartbeat (a live predecessor, e.g. deploy overlap) yields
+/// `WORKER_ALREADY_EXISTS` for the supervisor to retry with backoff. The
+/// transaction-scoped advisory lock only serialises concurrent takeovers of
+/// the same id and is released at commit.
+pub(crate) async fn register_owner(
+    pool: &PgPool,
+    config: &Config,
+    worker: &WorkerContext,
+    stale_after: Duration,
+) -> Result<Uuid, sqlx::Error> {
+    let mut tx = pool.begin().await?;
+    sqlx::query("SELECT pg_advisory_xact_lock(hashtext('job-worker-registration:' || $1))")
+        .bind(worker.name())
+        .execute(&mut *tx)
+        .await?;
+    let predecessor_alive: bool = sqlx::query_scalar(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM apalis.workers
+            WHERE id = $1
+              AND last_seen >= NOW() - make_interval(secs => $2)
+        )
+        "#,
+    )
+    .bind(worker.name())
+    .bind(stale_after.as_secs_f64())
+    .fetch_one(&mut *tx)
+    .await?;
+    if predecessor_alive {
+        tx.rollback().await?;
+        return Err(sqlx::Error::Io(std::io::Error::new(
+            std::io::ErrorKind::AddrInUse,
+            "WORKER_ALREADY_EXISTS",
+        )));
+    }
+
+    sqlx::query(
         r#"
         INSERT INTO apalis.workers (
             id, worker_type, storage_name, layers, last_seen
@@ -414,22 +489,60 @@ async fn register_worker_and_reclaim(
             storage_name = EXCLUDED.storage_name,
             layers = EXCLUDED.layers,
             last_seen = NOW()
-        WHERE pg_try_advisory_lock(hashtext(apalis.workers.id))
         "#,
     )
     .bind(worker.name())
     .bind(config.queue().to_string())
     .bind(worker.get_service())
+    .execute(&mut *tx)
+    .await?;
+    let token = Uuid::new_v4();
+    sqlx::query(
+        r#"
+        INSERT INTO job_worker_registrations (worker_id, owner_token)
+        VALUES ($1, $2)
+        ON CONFLICT (worker_id) DO UPDATE SET
+            owner_token = EXCLUDED.owner_token,
+            registered_at = NOW()
+        "#,
+    )
+    .bind(worker.name())
+    .bind(token)
+    .execute(&mut *tx)
+    .await?;
+    tx.commit().await?;
+    Ok(token)
+}
+
+/// Refreshes the worker heartbeat, but only while `owner` is still the
+/// registered owner of the id. A superseded incarnation gets `WORKER_FENCED`,
+/// which ends its worker so the Monitor rebuilds it (and the rebuild then
+/// waits behind the live owner's fresh heartbeat).
+pub(crate) async fn keep_alive_owner(
+    pool: &PgPool,
+    worker_id: &str,
+    owner: Uuid,
+) -> Result<(), sqlx::Error> {
+    let updated = sqlx::query(
+        r#"
+        UPDATE apalis.workers AS worker
+        SET last_seen = NOW()
+        FROM job_worker_registrations AS registration
+        WHERE worker.id = $1
+          AND registration.worker_id = worker.id
+          AND registration.owner_token = $2
+        "#,
+    )
+    .bind(worker_id)
+    .bind(owner)
     .execute(pool)
     .await?;
-    if registered.rows_affected() == 0 {
+    if updated.rows_affected() == 0 {
         return Err(sqlx::Error::Io(std::io::Error::new(
-            std::io::ErrorKind::AddrInUse,
-            "WORKER_ALREADY_EXISTS",
+            std::io::ErrorKind::NotFound,
+            "WORKER_FENCED",
         )));
     }
-
-    reclaim_predecessor_locks(pool, worker.name(), config.queue().as_ref()).await?;
     Ok(())
 }
 
@@ -630,6 +743,14 @@ pub struct SteadyPostgresStorage<Args> {
     steady_enabled: bool,
     wake: Option<watch::Receiver<u64>>,
     sink: PostgresStorage<Args>,
+    /// Owner token of this incarnation's registration, set once the poll
+    /// stream has registered the worker; the heartbeat only refreshes the
+    /// registration while this token is still the owner. Clones share it so
+    /// the heartbeat and poll paths of one worker attempt agree, which is why
+    /// every restart attempt must construct a new storage rather than clone
+    /// its predecessor's: an inherited token would keep a dead worker's
+    /// heartbeat fresh and block the replacement's own registration.
+    owner: Arc<Mutex<Option<Uuid>>>,
     _args: PhantomData<Args>,
 }
 
@@ -643,6 +764,7 @@ impl<Args> Clone for SteadyPostgresStorage<Args> {
             steady_enabled: self.steady_enabled,
             wake: self.wake.clone(),
             sink: self.sink.clone(),
+            owner: self.owner.clone(),
             _args: PhantomData,
         }
     }
@@ -664,6 +786,7 @@ impl<Args> SteadyPostgresStorage<Args> {
             startup_delay: Duration::ZERO,
             steady_enabled,
             wake,
+            owner: Arc::new(Mutex::new(None)),
             _args: PhantomData,
         }
     }
@@ -671,6 +794,16 @@ impl<Args> SteadyPostgresStorage<Args> {
     #[must_use]
     pub fn with_startup_delay(mut self, delay: Duration) -> Self {
         self.startup_delay = delay;
+        self
+    }
+
+    /// Overrides the apalis keep-alive cadence (default 30s). The heartbeat
+    /// interval also scales how quickly a rebuilt worker may reclaim a dead
+    /// predecessor's registration lock.
+    #[must_use]
+    pub fn with_keep_alive(mut self, keep_alive: Duration) -> Self {
+        self.config = self.config.clone().set_keep_alive(keep_alive);
+        self.sink = PostgresStorage::new_with_config(&self.pool, &self.config);
         self
     }
 }
@@ -688,7 +821,28 @@ where
     type Layer = Stack<LockTaskLayer, apalis_core::worker::ext::ack::AcknowledgeLayer<PgAck>>;
 
     fn heartbeat(&self, worker: &WorkerContext) -> Self::Beat {
-        let beats = keep_alive_stream(self.pool.clone(), self.config.clone(), worker.clone());
+        let pool = self.pool.clone();
+        let owner = self.owner.clone();
+        let worker_id = worker.name().to_owned();
+        let keep_alive = *self.config.keep_alive();
+        let beats = stream::unfold((), move |()| {
+            let pool = pool.clone();
+            let owner = owner.clone();
+            let worker_id = worker_id.clone();
+            async move {
+                tokio::time::sleep(keep_alive).await;
+                let token = *owner
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner());
+                let result = match token {
+                    Some(token) => keep_alive_owner(&pool, &worker_id, token).await,
+                    // Registration has not happened yet (startup delay); the
+                    // poll stream reports registration failures itself.
+                    None => Ok(()),
+                };
+                Some((result, ()))
+            }
+        });
         let startup_delay = self.startup_delay;
         stream::once(async move {
             if !startup_delay.is_zero() {
@@ -734,8 +888,15 @@ where
         let startup_pool = self.pool.clone();
         let startup_config = self.config.clone();
         let startup_worker = worker.clone();
+        let startup_owner = self.owner.clone();
         let register = stream::once(async move {
-            register_worker_and_reclaim(&startup_pool, &startup_config, &startup_worker).await?;
+            register_worker_and_reclaim(
+                &startup_pool,
+                &startup_config,
+                &startup_worker,
+                &startup_owner,
+            )
+            .await?;
             Ok(None)
         });
         let startup_delay = self.startup_delay;
@@ -1006,7 +1167,7 @@ mod tests {
 
         let config = Config::new("registration-test").set_buffer_size(1);
         let worker = WorkerContext::new::<()>("returning-worker");
-        register_worker_and_reclaim(&pool, &config, &worker).await?;
+        register_worker_and_reclaim(&pool, &config, &worker, &Arc::new(Mutex::new(None))).await?;
 
         let row: (String, i32, Option<String>) = sqlx::query_as(
             "SELECT status, attempts, lock_by FROM apalis.jobs WHERE id = 'interrupted-running'",
@@ -1020,6 +1181,91 @@ mod tests {
         .fetch_one(&pool)
         .await?;
         assert_eq!(action, "startup_killed");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn owner_state_is_shared_within_an_attempt_but_not_across_constructions() {
+        let pool = PgPool::connect_lazy("postgres://unused@localhost/unused")
+            .expect("lazy pool needs no server");
+        let spec = QueueSpec::cron("owner-state-test", 1, 1, Duration::from_secs(30));
+        let wake_hub = JobWakeHub::default();
+
+        let first = SteadyPostgresStorage::<()>::new(&pool, &spec, &wake_hub);
+        let token = Uuid::new_v4();
+        *first.owner.lock().unwrap() = Some(token);
+        // Pipe/sink clones inside one attempt see the same registration.
+        assert_eq!(*first.clone().owner.lock().unwrap(), Some(token));
+        // A restart attempt constructs its own storage and starts unowned, so
+        // its heartbeat cannot refresh the predecessor's row.
+        let replacement = SteadyPostgresStorage::<()>::new(&pool, &spec, &wake_hub)
+            .with_startup_delay(Duration::from_secs(1));
+        assert_eq!(*replacement.owner.lock().unwrap(), None);
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn registration_takes_over_stale_heartbeat_and_fences_predecessor(
+        pool: PgPool,
+    ) -> Result<(), sqlx::Error> {
+        crate::jobs::setup_apalis(&pool).await?;
+        let config = Config::new("ownership-test").set_buffer_size(1);
+        let stale_after = Duration::from_secs(90);
+
+        // A predecessor with a fresh heartbeat is alive and keeps the id.
+        sqlx::query(
+            r#"
+            INSERT INTO apalis.workers (id, worker_type, storage_name, layers, last_seen)
+            VALUES ('live-worker', 'ownership-test', 'old', '', NOW())
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+        let live = WorkerContext::new::<()>("live-worker");
+        let error = register_owner(&pool, &config, &live, stale_after)
+            .await
+            .expect_err("a live predecessor must keep its worker id");
+        assert!(error.to_string().contains("WORKER_ALREADY_EXISTS"));
+
+        // A predecessor whose heartbeat went stale is dead: the id is taken
+        // over, the heartbeat refreshed, and a new owner token issued.
+        sqlx::query(
+            r#"
+            INSERT INTO apalis.workers (id, worker_type, storage_name, layers, last_seen)
+            VALUES ('dead-worker', 'ownership-test', 'old', '', NOW() - INTERVAL '10 minutes')
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+        let worker = WorkerContext::new::<()>("dead-worker");
+        let first_owner = register_owner(&pool, &config, &worker, stale_after).await?;
+        let refreshed: bool = sqlx::query_scalar(
+            "SELECT NOW() - last_seen < INTERVAL '5 seconds' FROM apalis.workers WHERE id = 'dead-worker'",
+        )
+        .fetch_one(&pool)
+        .await?;
+        assert!(refreshed, "takeover must refresh the heartbeat");
+        keep_alive_owner(&pool, "dead-worker", first_owner).await?;
+
+        // While the owner beats, a second incarnation cannot take the id.
+        let error = register_owner(&pool, &config, &worker, stale_after)
+            .await
+            .expect_err("a beating owner must keep its worker id");
+        assert!(error.to_string().contains("WORKER_ALREADY_EXISTS"));
+
+        // Once the owner's heartbeat is stale a successor takes over and the
+        // old incarnation is fenced out of the heartbeat.
+        sqlx::query(
+            "UPDATE apalis.workers SET last_seen = NOW() - INTERVAL '10 minutes' WHERE id = 'dead-worker'",
+        )
+        .execute(&pool)
+        .await?;
+        let second_owner = register_owner(&pool, &config, &worker, stale_after).await?;
+        assert_ne!(first_owner, second_owner);
+        keep_alive_owner(&pool, "dead-worker", second_owner).await?;
+        let fenced = keep_alive_owner(&pool, "dead-worker", first_owner)
+            .await
+            .expect_err("the superseded incarnation must be fenced");
+        assert!(fenced.to_string().contains("WORKER_FENCED"));
         Ok(())
     }
 }

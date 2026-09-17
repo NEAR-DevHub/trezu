@@ -427,14 +427,21 @@ macro_rules! register_cron_worker {
         match $monitor {
             Some(monitor) => {
                 let state = $state.clone();
-                let steady = SteadyPostgresStorage::new(&$state.db_pool, &spec, $wake_hub);
+                let pool = $state.db_pool.clone();
+                let wake_hub = $wake_hub.clone();
                 let handler_timeout = spec.handler_timeout;
                 let concurrency = spec.concurrency;
                 // `register` takes a factory `Fn(attempt) -> Worker`: the Monitor
-                // calls it to (re)build the worker, so a restart gets a fresh
-                // backend/connection.
+                // calls it to (re)build the worker. The storage is constructed
+                // inside the factory so every attempt starts with its own
+                // registration-owner state; a clone of the predecessor's storage
+                // would inherit its owner token and keep a dead worker's
+                // heartbeat fresh while the replacement is still unable to
+                // register.
                 Some(monitor.register(move |attempt| {
                     let restart_delay = platform::worker_restart_delay(attempt);
+                    let steady = SteadyPostgresStorage::new(&pool, &spec, &wake_hub)
+                        .with_startup_delay(restart_delay);
                     if !restart_delay.is_zero() {
                         tracing::warn!(
                             worker = $name,
@@ -444,10 +451,7 @@ macro_rules! register_cron_worker {
                         );
                     }
                     WorkerBuilder::new($name)
-                        .backend(
-                            CronStream::new(schedule.clone())
-                                .pipe_to(steady.clone().with_startup_delay(restart_delay)),
-                        )
+                        .backend(CronStream::new(schedule.clone()).pipe_to(steady))
                         .data(state.clone())
                         // Bounds a hung handler so it cannot hold this queue's
                         // sole concurrency slot forever.
@@ -488,38 +492,61 @@ pub(crate) fn job_trace_layer() -> TraceLayer {
         .on_failure(DefaultOnFailure::new().level(tracing::Level::WARN))
 }
 
-fn job_monitor() -> Monitor {
+fn job_monitor(shutdown: CancellationToken) -> Monitor {
     // apalis's own supervisor: runs every cron worker, restarts one that
-    // exits (backend/storage failure) via `should_restart`, and drains
-    // in-flight tasks on shutdown. The three public-history payload consumers
-    // use their targeted supervisors below.
+    // exits via `should_restart`, and drains in-flight tasks on shutdown. The
+    // three public-history payload consumers use their targeted supervisors
+    // below.
     //
     // The `should_restart` hook is synchronous, so each rebuilt backend delays
     // its first claim with the platform's jittered 1-30s restart backoff.
     // Transient database outages remain inside the claim stream and use the
     // same bounds without forcing a worker rebuild.
-    //
-    // A `GracefulExit` (worker stopped via `.stop()`, i.e. shutdown) must NOT
-    // be restarted: during shutdown the Monitor stops each rebuilt worker
-    // immediately, so restarting on GracefulExit hot-loops
-    // stop→exit→restart→stop forever and the process never terminates after
-    // SIGINT/SIGTERM. Same for any exit while shutdown is in progress.
-    Monitor::new().should_restart(|ctx, err, attempt| {
-        if matches!(err, WorkerError::GracefulExit) || ctx.is_shutting_down() {
-            tracing::info!(
-                worker = %ctx.name(),
-                "job worker stopped for shutdown; not restarting"
-            );
-            return false;
-        }
+    Monitor::new().should_restart(move |ctx, err, attempt| {
+        restart_cron_worker(&shutdown, ctx.name(), err, attempt)
+    })
+}
+
+/// Decides whether a cron worker that exited is rebuilt.
+///
+/// Only the process-wide shutdown token may veto a restart. The Monitor calls
+/// `ctx.stop()` on the failed worker *before* consulting this hook, so
+/// `ctx.is_shutting_down()` is always true here and cannot distinguish a
+/// shutdown from a crash — checking it made every exit permanent (a worker
+/// that lost its heartbeat to a 10s pool-acquire timeout stayed dead until the
+/// process was restarted by hand). A `GracefulExit` outside shutdown is a stop
+/// nobody asked for and is restarted too; during real shutdown the token is
+/// already cancelled, so the old stop→exit→restart hot-loop cannot occur.
+pub(crate) fn restart_cron_worker(
+    shutdown: &CancellationToken,
+    worker: &str,
+    err: &WorkerError,
+    attempt: usize,
+) -> bool {
+    if shutdown.is_cancelled() {
+        tracing::info!(worker, "job worker stopped for shutdown; not restarting");
+        return false;
+    }
+    let error = err.to_string();
+    if error.contains("WORKER_ALREADY_EXISTS") {
+        // A predecessor still holds this stable worker id (deploy overlap, or a
+        // dead worker's registration lock not yet reclaimable). Expected to
+        // clear on its own; retry with backoff at WARN.
+        tracing::warn!(
+            worker,
+            error,
+            attempt,
+            "job worker id still registered elsewhere; monitor retrying"
+        );
+    } else {
         tracing::error!(
-            worker = %ctx.name(),
-            error = %err,
+            worker,
+            error,
             attempt,
             "job worker exited; monitor restarting it"
         );
-        true
-    })
+    }
+    true
 }
 
 fn configure_cron_runtime(
@@ -945,13 +972,14 @@ fn build_cron_runtime(
     state: Arc<AppState>,
     queues: JobQueues,
     wake_hub: &JobWakeHub,
+    shutdown: CancellationToken,
 ) -> (Monitor, JobQueues) {
     let registry = QueueRegistry {
         entries: queues.entries,
         specs: Vec::new(),
     };
     let (monitor, registry) =
-        configure_cron_runtime(state, registry, Some(job_monitor()), wake_hub);
+        configure_cron_runtime(state, registry, Some(job_monitor(shutdown)), wake_hub);
     (
         monitor.expect("cron monitor must be present when starting workers"),
         JobQueues {
@@ -1049,7 +1077,7 @@ async fn run_leader_runtime(
     run_startup_tasks: bool,
 ) -> Result<(), String> {
     let wake_hub = JobWakeHub::default();
-    let (monitor, queues) = build_cron_runtime(state.clone(), queues, &wake_hub);
+    let (monitor, queues) = build_cron_runtime(state.clone(), queues, &wake_hub, shutdown.clone());
     if run_startup_tasks {
         push_startup_tasks(&queues, &state.db_pool).await;
     }
@@ -1344,7 +1372,132 @@ mod tests {
         for spec in crate::handlers::public_history::bronze::jobs::public_history_queue_specs() {
             assert_eq!(spec.fetch_batch, spec.concurrency);
             assert_eq!(spec.poll_interval, std::time::Duration::from_secs(1));
+            // The consumers register under hyphenated ids; the watchdog's
+            // heartbeat check must look those up, not the queue namespace.
+            assert_eq!(spec.worker_id, spec.queue.replace('_', "-"));
         }
+        for spec in specs
+            .iter()
+            .filter(|spec| spec.queue != "public-history-latest-dispatcher")
+        {
+            if matches!(spec.kind, super::watchdog::QueueKind::Cron { .. }) {
+                assert_eq!(spec.worker_id, spec.queue);
+            }
+        }
+    }
+
+    #[test]
+    fn cron_worker_restarts_on_any_exit_unless_shutting_down() {
+        use apalis::prelude::WorkerError;
+        use tokio_util::sync::CancellationToken;
+
+        let shutdown = CancellationToken::new();
+        let restart = |err: WorkerError, attempt: usize| {
+            super::restart_cron_worker(&shutdown, "unit-test", &err, attempt)
+        };
+        assert!(restart(WorkerError::GracefulExit, 1));
+        assert!(restart(
+            WorkerError::HeartbeatError(
+                "pool timed out while waiting for an open connection".into()
+            ),
+            2
+        ));
+        assert!(restart(
+            WorkerError::StreamError("WORKER_ALREADY_EXISTS".into()),
+            3
+        ));
+        assert!(restart(WorkerError::PanicError("boom".into()), 4));
+
+        shutdown.cancel();
+        assert!(!restart(WorkerError::GracefulExit, 1));
+        assert!(!restart(WorkerError::HeartbeatError("x".into()), 1));
+    }
+
+    /// End-to-end through the real apalis Monitor: a cron worker that keeps
+    /// stopping for no reason must be rebuilt every time, re-register under
+    /// its stable id despite the dead incarnation's advisory lock, and keep
+    /// ticking. Shutdown must still end the Monitor promptly.
+    #[sqlx::test(migrations = "./migrations")]
+    async fn cron_worker_is_rebuilt_after_unexpected_stops(pool: sqlx::PgPool) {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::time::Duration;
+
+        use apalis::prelude::*;
+        use apalis_core::backend::pipe::PipeExt;
+        use apalis_cron::{CronStream, Tick};
+        use tokio_util::sync::CancellationToken;
+
+        use super::platform::{JobWakeHub, QueueSpec, SteadyPostgresStorage};
+
+        const QUEUE: &str = "restart-soak-test";
+        const STOPS: usize = 3;
+
+        async fn flaky_tick(
+            _t: Tick,
+            runs: Data<Arc<AtomicUsize>>,
+            worker: WorkerContext,
+        ) -> Result<(), BoxDynError> {
+            let run = runs.fetch_add(1, Ordering::SeqCst) + 1;
+            if run % 2 == 1 {
+                // The stop nobody asked for.
+                worker.stop()?;
+            }
+            Ok(())
+        }
+
+        super::setup_apalis(&pool).await.unwrap();
+        let runs = Arc::new(AtomicUsize::new(0));
+        let rebuilds = Arc::new(AtomicUsize::new(0));
+        let shutdown = CancellationToken::new();
+        let spec = QueueSpec::cron(QUEUE, 1, 1, Duration::from_secs(30));
+        let schedule = super::schedule_every_secs(1);
+
+        let monitor = super::job_monitor(shutdown.clone()).register({
+            let runs = runs.clone();
+            let rebuilds = rebuilds.clone();
+            let pool = pool.clone();
+            move |attempt| {
+                rebuilds.fetch_max(attempt, Ordering::SeqCst);
+                let restart_delay = super::platform::worker_restart_delay(attempt);
+                // Fresh storage per attempt, exactly like `register_cron_worker!`.
+                let steady = SteadyPostgresStorage::new(&pool, &spec, &JobWakeHub::default())
+                    .with_keep_alive(Duration::from_secs(1))
+                    .with_startup_delay(restart_delay);
+                WorkerBuilder::new(QUEUE)
+                    .backend(CronStream::new(schedule.clone()).pipe_to(steady))
+                    .data(runs.clone())
+                    .build(flaky_tick)
+            }
+        });
+        let monitor_shutdown = shutdown.clone();
+        let monitor_task = tokio::spawn(async move {
+            monitor
+                .run_with_signal(async move {
+                    monitor_shutdown.cancelled().await;
+                    Ok(())
+                })
+                .await
+        });
+
+        tokio::time::timeout(Duration::from_secs(150), async {
+            while runs.load(Ordering::SeqCst) < 2 * STOPS {
+                tokio::time::sleep(Duration::from_millis(200)).await;
+            }
+        })
+        .await
+        .expect("worker must keep ticking across repeated unexpected stops");
+        assert!(
+            rebuilds.load(Ordering::SeqCst) >= STOPS,
+            "monitor must rebuild the worker after every stop"
+        );
+
+        shutdown.cancel();
+        tokio::time::timeout(Duration::from_secs(20), monitor_task)
+            .await
+            .expect("monitor must exit promptly on shutdown")
+            .expect("monitor task must not panic")
+            .expect("monitor must shut down cleanly");
     }
 
     #[test]
