@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useOpenTreasury } from "@/hooks/use-open-treasury";
 import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
@@ -252,9 +253,13 @@ export function TreasurySelector({
                                 variant="unstyled"
                                 type="button"
                                 className={actionRowClass}
-                                onClick={() =>
-                                    router.push("/app/manage-treasuries")
-                                }
+                                onClick={() => {
+                                    trackEvent("treasury_menu_click", {
+                                        menu_type: "manage_treasuries",
+                                        treasury_id: treasuryId,
+                                    });
+                                    router.push("/app/manage-treasuries");
+                                }}
                             >
                                 <Icon
                                     icon={Settings01Icon}
@@ -269,7 +274,13 @@ export function TreasurySelector({
                                 variant="unstyled"
                                 type="button"
                                 className={actionRowClass}
-                                onClick={() => router.push(createTreasuryRoute)}
+                                onClick={() => {
+                                    trackEvent("treasury_menu_click", {
+                                        menu_type: "create_treasury",
+                                        treasury_id: treasuryId,
+                                    });
+                                    router.push(createTreasuryRoute);
+                                }}
                             >
                                 <Icon icon={Add01Icon} className="shrink-0" />
                                 <span className="truncate">

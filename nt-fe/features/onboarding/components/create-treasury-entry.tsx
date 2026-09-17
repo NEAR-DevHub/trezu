@@ -401,8 +401,8 @@ export function TreasuryOnboardingPage({
                 prev.map((step) => ({ ...step, status: "completed" })),
             );
             setCreatedTreasuryId(treasuryId);
-            trackEvent("treasury-created", { treasury_id: treasuryId });
-            trackEvent("onboarding-completed", { treasury_id: treasuryId });
+            trackEvent("treasury_created", { treasury_id: treasuryId });
+            trackEvent("onboarding_completed", { treasury_id: treasuryId });
             queryClient.invalidateQueries({
                 queryKey: ["userTreasuries", accountId],
             });

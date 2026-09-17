@@ -264,7 +264,7 @@ function MoveAssetWizard({ asset, onExit }: MoveAssetWizardProps) {
                 proposalBond: policy.proposal_bond || "0",
                 proposalType: "payment",
             });
-            trackEvent("confidential-move-assets-submitted", {
+            trackEvent("confidential_move_assets_submitted", {
                 treasury_id: treasuryId,
                 token_symbol: asset.symbol,
                 residency: asset.residency,

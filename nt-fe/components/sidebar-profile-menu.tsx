@@ -32,6 +32,7 @@ import { isStaging } from "@/constants/features";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProfile } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
 import { resolveProfileImageUrl } from "@/lib/profile-image";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
@@ -83,6 +84,12 @@ export function SidebarProfileMenu({
 
     const isDarkTheme = mounted ? resolvedTheme === "dark" : true;
     const accountHref = treasuryId ? `/${treasuryId}/account` : null;
+    const trackMenuClick = (menuType: string) =>
+        trackEvent("user_menu_click", {
+            menu_type: menuType,
+            source: "sidebar",
+            treasury_id: treasuryId,
+        });
 
     const close = () => setIsOpen(false);
 
@@ -190,7 +197,10 @@ export function SidebarProfileMenu({
                         <Link
                             href={accountHref}
                             className={accountMenuItemClass}
-                            onClick={close}
+                            onClick={() => {
+                                trackMenuClick("my_account");
+                                close();
+                            }}
                         >
                             <Icon icon={User03Icon} />
                             {t("myAccount")}
@@ -206,7 +216,11 @@ export function SidebarProfileMenu({
                             ? tHeader("lightMode")
                             : tHeader("darkMode")}
                     </button>
-                    <LanguageSwitcher asMenuRow align="start" />
+                    <LanguageSwitcher
+                        asMenuRow
+                        align="start"
+                        onOpen={() => trackMenuClick("language")}
+                    />
                 </div>
                 <MenuDivider />
                 <div className="flex flex-col">
@@ -215,6 +229,7 @@ export function SidebarProfileMenu({
                         data-tour-help-support=""
                         className={accountMenuItemClass}
                         onClick={() => {
+                            trackMenuClick("help_support");
                             close();
                             onOpenSupport();
                         }}
@@ -227,7 +242,10 @@ export function SidebarProfileMenu({
                         target="_blank"
                         rel="noopener noreferrer"
                         className={accountMenuItemClass}
-                        onClick={close}
+                        onClick={() => {
+                            trackMenuClick("terms_of_service");
+                            close();
+                        }}
                     >
                         <Icon icon={File01Icon} />
                         {t("termsOfService")}
@@ -237,7 +255,10 @@ export function SidebarProfileMenu({
                         target="_blank"
                         rel="noopener noreferrer"
                         className={accountMenuItemClass}
-                        onClick={close}
+                        onClick={() => {
+                            trackMenuClick("privacy_policy");
+                            close();
+                        }}
                     >
                         <Icon icon={File01Icon} />
                         {t("privacyPolicy")}

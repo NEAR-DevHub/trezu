@@ -27,7 +27,7 @@ export function MobileMenuSheet() {
     const isDashboardTour = currentTour === TOUR_NAMES.DASHBOARD;
 
     const go = (destination: string, href: string) => {
-        trackEvent("nav-click", {
+        trackEvent("nav_click", {
             destination,
             source: "mobile-menu",
             treasury_id: treasuryId,

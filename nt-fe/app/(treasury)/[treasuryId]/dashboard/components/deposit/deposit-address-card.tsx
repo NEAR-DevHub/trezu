@@ -6,6 +6,8 @@ import type { ReactNode } from "react";
 import QRCode from "react-qr-code";
 import { Button } from "@/components/button";
 import { CopyButton } from "@/components/copy-button";
+import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { formatDepositAddress } from "./deposit-format-address";
 
@@ -107,7 +109,13 @@ export function DepositAddressCard({
     className,
 }: DepositAddressCardProps) {
     const t = useTranslations("depositModal");
+    const { treasuryId } = useTreasury();
     const showActionBar = copyMode === "actions";
+    const trackCta = (buttonType: "copy" | "share") =>
+        trackEvent("receive_cta", {
+            button_type: buttonType,
+            treasury_id: treasuryId,
+        });
     const useOuterShell = showActionBar || Boolean(footer);
 
     if (!useOuterShell) {
@@ -148,6 +156,7 @@ export function DepositAddressCard({
                 <div className="flex items-center justify-start gap-4 px-2 py-2">
                     <CopyButton
                         text={address}
+                        onCopy={() => trackCta("copy")}
                         variant="unstyled"
                         className="h-auto justify-start gap-2 rounded-lg px-1 py-2 text-sm font-bold leading-3.5 text-general-unofficial-ghost-foreground hover:bg-transparent"
                     >
@@ -157,7 +166,10 @@ export function DepositAddressCard({
                         <Button
                             type="button"
                             variant="unstyled"
-                            onClick={onShare}
+                            onClick={() => {
+                                trackCta("share");
+                                onShare?.();
+                            }}
                             className="h-auto justify-start gap-2 rounded-lg px-1 py-2 text-sm font-bold leading-3.5 text-general-unofficial-ghost-foreground hover:bg-transparent"
                             data-testid="deposit-share-button"
                         >

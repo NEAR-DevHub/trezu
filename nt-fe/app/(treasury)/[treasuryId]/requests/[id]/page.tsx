@@ -82,7 +82,7 @@ export default function RequestPage({ params }: RequestPageProps) {
 
     useEffect(() => {
         if (proposal) {
-            trackEvent("request-detail-viewed", {
+            trackEvent("request_detail_viewed", {
                 proposal_id: proposal.id,
                 treasury_id: treasuryId!,
             });

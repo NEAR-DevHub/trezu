@@ -239,7 +239,7 @@ export default function AddMemberPage() {
         const isValid = await form.trigger();
         if (!isValid) return;
 
-        trackEvent("member-add-review-clicked", { treasury_id: treasuryId });
+        trackEvent("member_add_review_clicked", { treasury_id: treasuryId });
 
         setIsValidatingAddresses(true);
         const members = form.getValues("members");
@@ -328,7 +328,7 @@ export default function AddMemberPage() {
                 proposalType: "other",
             });
 
-            trackEvent("member-add-submitted", {
+            trackEvent("member_add_submitted", {
                 treasury_id: treasuryId,
                 members_count: membersList.length,
             });

@@ -40,6 +40,7 @@ import { convertUrlParamsToApiFilters } from "@/features/proposals/utils/filter-
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
 import { getProposals, type ProposalStatus } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
@@ -47,6 +48,15 @@ import { useResponsiveSidebar } from "@/stores/sidebar-store";
 
 // Constants
 const SEARCH_DEBOUNCE_MS = 300;
+/** Tab values as the analytics sheet names them. */
+const TAB_EVENT_TYPE: Record<string, string> = {
+    All: "all",
+    InProgress: "pending",
+    Approved: "executed",
+    Rejected: "rejected",
+    Expired: "expired",
+    Failed: "failed",
+};
 const FILTER_PANEL_MAX_HEIGHT = "500px";
 /** How many card placeholders the phone list shows while a page loads. */
 const SKELETON_CARDS = ["a", "b", "c", "d", "e", "f"];
@@ -295,18 +305,26 @@ export default function RequestsPage() {
 
     const handleTabChange = useCallback(
         (value: string) => {
+            trackEvent("requests_tab_click", {
+                tab_type: TAB_EVENT_TYPE[value] ?? value.toLowerCase(),
+                treasury_id: treasuryId,
+            });
             const params = new URLSearchParams(searchParams.toString());
             params.set("tab", value);
             params.delete("page");
             router.push(`${pathname}?${params.toString()}`);
         },
-        [searchParams, router, pathname],
+        [searchParams, router, pathname, treasuryId],
     );
 
     const handleSearchChange = useCallback(
         (value: string) => {
             const params = new URLSearchParams(searchParams.toString());
             if (value.trim()) {
+                trackEvent("requests_search", {
+                    action: "search_used",
+                    treasury_id: treasuryId,
+                });
                 params.set("search", value.trim());
             } else {
                 params.delete("search");
@@ -314,7 +332,7 @@ export default function RequestsPage() {
             params.delete("page");
             router.push(`${pathname}?${params.toString()}`);
         },
-        [searchParams, router, pathname],
+        [searchParams, router, pathname, treasuryId],
     );
 
     // Sync search value with URL params
@@ -436,7 +454,10 @@ export default function RequestsPage() {
                 opacity: isFiltersOpen ? 1 : 0,
             }}
         >
-            <ProposalFiltersComponent filterOptions={filterOptions} />
+            <ProposalFiltersComponent
+                filterOptions={filterOptions}
+                filterEventName="requests_filter_applied"
+            />
         </div>
     );
 
@@ -460,6 +481,7 @@ export default function RequestsPage() {
                 filterOptions={filterOptions}
                 open={isMobileFiltersOpen}
                 onOpenChange={setIsMobileFiltersOpen}
+                filterEventName="requests_filter_applied"
             />
         </PageComponentLayout>
     );

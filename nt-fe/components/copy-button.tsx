@@ -13,6 +13,7 @@ interface CopyButtonProps extends React.ComponentProps<typeof Button> {
     text: string;
     iconClassName?: string;
     icon?: IconSvgElement;
+    onCopy?: () => void;
 }
 
 export function CopyButton({
@@ -20,6 +21,7 @@ export function CopyButton({
     children,
     iconClassName,
     icon = Copy01Icon,
+    onCopy,
     ...props
 }: CopyButtonProps) {
     const t = useTranslations("copyButton");
@@ -34,6 +36,7 @@ export function CopyButton({
     }, []);
 
     const handleCopy = async () => {
+        onCopy?.();
         try {
             await navigator.clipboard.writeText(text);
             setCopied(true);

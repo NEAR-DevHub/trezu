@@ -460,7 +460,7 @@ export default function ExportActivityPage() {
             return;
         }
 
-        trackEvent("export-generate-click", {
+        trackEvent("export_generate_click", {
             source: "dashboard_export_page",
             treasury_id: treasuryId,
             document_type: documentType,

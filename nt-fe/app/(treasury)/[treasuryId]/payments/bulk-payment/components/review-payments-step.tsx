@@ -247,7 +247,7 @@ export function ReviewPaymentsStep({
 
     const handleProceedClick = () => {
         if (isSubmitting || paymentData.length === 0) return;
-        trackEvent("bulk-payments-submit-click", {
+        trackEvent("bulk_payments_submit_click", {
             source: "bulk_payments_review_step",
             treasury_id: treasuryId ?? "",
         });

@@ -13,6 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -346,10 +347,20 @@ function RecipientsView({
     const hasSelection = selectedIds.size > 0;
 
     function handleDelete(entry: AddressBookEntry) {
+        trackEvent("contact_action", {
+            contact_action: "delete",
+            treasury_id: treasuryId,
+        });
         setEntryToDelete(entry);
     }
 
     function handleRemoveSelected() {
+        trackEvent("bulk_action", {
+            page: "contacts",
+            interaction_type: "delete",
+            count: selectedIds.size,
+            treasury_id: treasuryId,
+        });
         setBulkDeleteCount(selectedIds.size);
     }
 
@@ -375,6 +386,20 @@ function RecipientsView({
     }
 
     async function handleExport() {
+        if (hasSelection) {
+            trackEvent("bulk_action", {
+                page: "contacts",
+                interaction_type: "export",
+                count: selectedIds.size,
+                treasury_id: treasuryId,
+            });
+        } else {
+            trackEvent("table_cta_click", {
+                page: "contacts",
+                cta_button: "export",
+                treasury_id: treasuryId,
+            });
+        }
         await exportEntries.mutateAsync(
             hasSelection ? [...selectedIds] : undefined,
         );
@@ -382,6 +407,10 @@ function RecipientsView({
 
     function handleSend(entry: AddressBookEntry) {
         if (!treasuryId) return;
+        trackEvent("contact_action", {
+            contact_action: "send",
+            treasury_id: treasuryId,
+        });
         router.push(
             buildPaymentsDeepLink(treasuryId, {
                 address: entry.address,
@@ -567,6 +596,7 @@ function RecipientsView({
 
 export default function AddressBookPage() {
     const t = useTranslations("pages.addressBook");
+    const { treasuryId } = useTreasury();
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -626,16 +656,26 @@ export default function AddressBookPage() {
     }, [prefilledRecipient]);
 
     const handleAdd = useCallback(() => {
+        trackEvent("table_cta_click", {
+            page: "contacts",
+            cta_button: "add_contact",
+            treasury_id: treasuryId,
+        });
         setInitialRecipient(null);
         setFlowMode("add");
         clearPrefillParams();
-    }, [clearPrefillParams]);
+    }, [clearPrefillParams, treasuryId]);
 
     const handleImport = useCallback(() => {
+        trackEvent("table_cta_click", {
+            page: "contacts",
+            cta_button: "import",
+            treasury_id: treasuryId,
+        });
         setInitialRecipient(null);
         setFlowMode("import");
         clearPrefillParams();
-    }, [clearPrefillParams]);
+    }, [clearPrefillParams, treasuryId]);
 
     const handleCloseFlow = useCallback(() => {
         setFlowMode(null);

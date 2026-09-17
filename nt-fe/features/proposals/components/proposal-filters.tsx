@@ -152,14 +152,18 @@ export interface FilterOption {
 interface ProposalFiltersProps {
     className?: string;
     filterOptions: FilterOption[];
+    /** Analytics event fired when a filter is applied with a value. */
+    filterEventName?: string;
 }
 
 export function ProposalFilters({
     className,
     filterOptions,
+    filterEventName,
 }: ProposalFiltersProps) {
     const tF = useTranslations("requests.filters");
-    const { searchParams, setFilters: updateFilters } = useFilterParams();
+    const { searchParams, setFilters: updateFilters } =
+        useFilterParams(filterEventName);
     const router = useRouter();
     const pathname = usePathname();
     const [isAddFilterOpen, setIsAddFilterOpen] = useState(false);
