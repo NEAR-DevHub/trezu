@@ -115,6 +115,11 @@ async function setupPaymentsMocks(page: Page) {
         if (url.includes("/address-book")) return json([]);
         if (url.includes("/chains")) return json([]);
         if (url.includes("/warnings")) return json({ warnings: [] });
+        if (url.includes("/monitored-accounts")) {
+            // Sidebar-mounted <TreasurySelector> POSTs this on every treasury
+            // page mount to register the treasury for monitoring.
+            return json({ accountId: TREASURY_ID, enabled: true });
+        }
         if (url.includes("/subscription/")) {
             return json({
                 accountId: TREASURY_ID,
@@ -229,8 +234,9 @@ test.describe("Payments — review step accuracy (PAY-07)", () => {
                 `${VALID_IMPLICIT_RECIPIENT.slice(0, 8)}...${VALID_IMPLICIT_RECIPIENT.slice(-8)}`,
             ),
         ).toBeVisible();
-        await expect(paymentsPage.stepText(/2\.5/)).toBeVisible();
-        await expect(paymentsPage.stepText("NEAR")).toBeVisible();
+        await expect(
+            paymentsPage.stepText("2.5 NEAR", { exact: true }),
+        ).toBeVisible();
 
         await paymentsPage.backButton().click();
 

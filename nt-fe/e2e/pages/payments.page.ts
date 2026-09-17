@@ -37,7 +37,7 @@ export class PaymentsPage extends BasePage {
     }
 
     /** Any text on the current step (recipient address, amount, symbol, …) — matches the first occurrence. */
-    stepText(text: string | RegExp) {
-        return this.page.getByText(text).first();
+    stepText(text: string | RegExp, options?: { exact?: boolean }) {
+        return this.page.getByText(text, options).first();
     }
 }
