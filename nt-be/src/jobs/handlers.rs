@@ -305,15 +305,49 @@ pub async fn staking_observation(
     state: Data<Arc<AppState>>,
 ) -> Result<String, BoxDynError> {
     let stats =
-        crate::handlers::public_history::observations::run_staking_observation_cycle(&state)
-            .await?;
+        crate::handlers::public_history::observations::staking::run_staking_observation_cycle(
+            &state,
+        )
+        .await?;
     Ok(format!(
-        "pools_discovered={} validated={} observations={} boundaries_skipped={} reads_failed={}",
+        "accounts_discovered={} pools_discovered={} validated={} rejected={} observations={} \
+         boundaries_skipped={} reads_failed={} backlog_boundaries={} max_lag_hours={}",
+        stats.accounts_discovered,
         stats.pools_discovered,
         stats.pools_validated,
+        stats.pools_rejected,
         stats.observations_written,
         stats.boundaries_skipped,
-        stats.reads_failed
+        stats.reads_failed,
+        stats.backlog_boundaries,
+        stats
+            .max_observation_lag_hours
+            .map_or("n/a".to_string(), |hours| format!("{hours:.1}"))
+    ))
+}
+
+/// Lockup observations: discovery plus archival backfill and daily capture
+/// of each treasury's lockup contract, valued like the dashboard card.
+pub async fn lockup_observation(
+    _t: Tick,
+    state: Data<Arc<AppState>>,
+) -> Result<String, BoxDynError> {
+    let stats =
+        crate::handlers::public_history::observations::lockup::run_lockup_observation_cycle(&state)
+            .await?;
+    Ok(format!(
+        "discovered_present={} discovered_absent={} discovery_pending={} observations={} \
+         boundaries_skipped={} reads_failed={} backlog_boundaries={} max_lag_hours={}",
+        stats.discovered_present,
+        stats.discovered_absent,
+        stats.discovery_pending,
+        stats.observations_written,
+        stats.boundaries_skipped,
+        stats.reads_failed,
+        stats.backlog_boundaries,
+        stats
+            .max_observation_lag_hours
+            .map_or("n/a".to_string(), |hours| format!("{hours:.1}"))
     ))
 }
 

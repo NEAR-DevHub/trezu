@@ -259,6 +259,9 @@ pub async fn load_confidential_chart_readiness(
             TRUE AS verification_passed,
             FALSE AS head_check_failed,
             TRUE AS staking_ready,
+            TRUE AS lockup_ready,
+            NULL::timestamptz AS staking_last_observed_at,
+            NULL::timestamptz AS lockup_last_observed_at,
             EXISTS (
                 SELECT 1
                 FROM gold_treasury_ledger_events gold
@@ -340,13 +343,57 @@ pub async fn load_chart_readiness(
                 WHERE verification.account_id = $1
                   AND verification.last_head_check_passed = false
             ) AS head_check_failed,
-            NOT EXISTS (
-                SELECT 1
+            (
+                -- Pool discovery has run for this account, and every candidate
+                -- pool is either rejected or validated with its horizon
+                -- covered. A missing discovery row is NOT ready: a pool that
+                -- has not been looked for must never silently drop out of a
+                -- served chart.
+                EXISTS (
+                    SELECT 1 FROM staking_discovery_cursors discovery
+                    WHERE discovery.account_id = $1
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM staking_observation_cursors staking
+                    WHERE staking.account_id = $1
+                      AND staking.rejected_at IS NULL
+                      AND (staking.validated = false OR staking.backfill_done = false)
+                )
+            ) AS staking_ready,
+            (
+                -- Discovery has run for this account (a row exists) and is
+                -- settled, and a present lockup has covered its horizon. A
+                -- missing row is NOT ready: an unprobed lockup must never
+                -- silently drop out of a served chart.
+                EXISTS (
+                    SELECT 1 FROM lockup_observation_cursors lockup
+                    WHERE lockup.account_id = $1
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM lockup_observation_cursors lockup
+                    WHERE lockup.account_id = $1
+                      AND (
+                          lockup.discovery = 'pending'
+                          OR (lockup.discovery = 'present' AND lockup.backfill_done = false)
+                      )
+                )
+            ) AS lockup_ready,
+            (
+                SELECT MIN(staking.last_observed_at)
                 FROM staking_observation_cursors staking
                 WHERE staking.account_id = $1
                   AND staking.validated = true
-                  AND staking.backfill_done = false
-            ) AS staking_ready,
+                  AND staking.rejected_at IS NULL
+                  AND staking.backfill_done = true
+            ) AS staking_last_observed_at,
+            (
+                SELECT lockup.last_observed_at
+                FROM lockup_observation_cursors lockup
+                WHERE lockup.account_id = $1
+                  AND lockup.discovery = 'present'
+                  AND lockup.backfill_done = true
+            ) AS lockup_last_observed_at,
             EXISTS (
                 SELECT 1
                 FROM gold_treasury_ledger_events gold
@@ -386,4 +433,140 @@ pub async fn load_chart_readiness(
     .bind(account_id)
     .fetch_one(pool)
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{TimeZone, Utc};
+    use sqlx::PgPool;
+
+    use super::*;
+
+    async fn set_lockup_cursor(
+        pool: &PgPool,
+        account_id: &str,
+        discovery: &str,
+        backfill_done: bool,
+    ) -> sqlx::Result<()> {
+        sqlx::query(
+            r#"
+            INSERT INTO lockup_observation_cursors
+                (account_id, lockup_account_id, discovery, backfill_done, last_observed_at)
+            VALUES ($1, 'abc.lockup.near', $2::lockup_discovery_status, $3, $4)
+            ON CONFLICT (account_id) DO UPDATE
+                SET discovery = EXCLUDED.discovery,
+                    backfill_done = EXCLUDED.backfill_done,
+                    last_observed_at = EXCLUDED.last_observed_at
+            "#,
+        )
+        .bind(account_id)
+        .bind(discovery)
+        .bind(backfill_done)
+        .bind(Utc.with_ymd_and_hms(2026, 9, 14, 0, 0, 0).unwrap())
+        .execute(pool)
+        .await?;
+        Ok(())
+    }
+
+    /// Pool discovery that has not run, or a candidate pool that is neither
+    /// rejected nor fully backfilled, keeps the chart Unavailable.
+    #[sqlx::test]
+    async fn staking_readiness_fails_closed_until_pools_are_settled(
+        pool: PgPool,
+    ) -> sqlx::Result<()> {
+        let account = "dao.near";
+        assert!(!load_chart_readiness(&pool, account).await?.staking_ready);
+
+        sqlx::query("INSERT INTO staking_discovery_cursors (account_id) VALUES ($1)")
+            .bind(account)
+            .execute(&pool)
+            .await?;
+        assert!(
+            load_chart_readiness(&pool, account).await?.staking_ready,
+            "discovered, no pools: nothing to wait for"
+        );
+
+        sqlx::query(
+            "INSERT INTO staking_observation_cursors (account_id, pool_account_id)
+             VALUES ($1, 'a.poolv1.near')",
+        )
+        .bind(account)
+        .execute(&pool)
+        .await?;
+        assert!(
+            !load_chart_readiness(&pool, account).await?.staking_ready,
+            "unvalidated"
+        );
+
+        sqlx::query(
+            "UPDATE staking_observation_cursors SET rejected_at = NOW()
+             WHERE account_id = $1 AND pool_account_id = 'a.poolv1.near'",
+        )
+        .bind(account)
+        .execute(&pool)
+        .await?;
+        assert!(
+            load_chart_readiness(&pool, account).await?.staking_ready,
+            "rejected"
+        );
+
+        sqlx::query(
+            "UPDATE staking_observation_cursors
+             SET rejected_at = NULL, validated = true, backfill_done = false
+             WHERE account_id = $1 AND pool_account_id = 'a.poolv1.near'",
+        )
+        .bind(account)
+        .execute(&pool)
+        .await?;
+        assert!(
+            !load_chart_readiness(&pool, account).await?.staking_ready,
+            "backfilling"
+        );
+
+        sqlx::query(
+            "UPDATE staking_observation_cursors SET backfill_done = true
+             WHERE account_id = $1 AND pool_account_id = 'a.poolv1.near'",
+        )
+        .bind(account)
+        .execute(&pool)
+        .await?;
+        assert!(load_chart_readiness(&pool, account).await?.staking_ready);
+        Ok(())
+    }
+
+    /// An unprobed or half-backfilled lockup must never silently drop out of
+    /// a served chart: readiness fails closed until discovery settles.
+    #[sqlx::test]
+    async fn lockup_readiness_fails_closed_until_discovery_settles(
+        pool: PgPool,
+    ) -> sqlx::Result<()> {
+        let account = "dao.near";
+
+        let readiness = load_chart_readiness(&pool, account).await?;
+        assert!(
+            !readiness.lockup_ready,
+            "no cursor row: discovery has not run"
+        );
+        assert!(readiness.lockup_last_observed_at.is_none());
+
+        set_lockup_cursor(&pool, account, "pending", false).await?;
+        assert!(!load_chart_readiness(&pool, account).await?.lockup_ready);
+
+        set_lockup_cursor(&pool, account, "absent", false).await?;
+        let readiness = load_chart_readiness(&pool, account).await?;
+        assert!(readiness.lockup_ready, "no lockup: nothing to wait for");
+        assert!(readiness.lockup_last_observed_at.is_none());
+
+        set_lockup_cursor(&pool, account, "present", false).await?;
+        assert!(!load_chart_readiness(&pool, account).await?.lockup_ready);
+
+        set_lockup_cursor(&pool, account, "present", true).await?;
+        let readiness = load_chart_readiness(&pool, account).await?;
+        assert!(readiness.lockup_ready);
+        assert_eq!(
+            readiness.lockup_last_observed_at,
+            Some(Utc.with_ymd_and_hms(2026, 9, 14, 0, 0, 0).unwrap())
+        );
+        Ok(())
+    }
 }

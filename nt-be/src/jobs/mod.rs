@@ -638,6 +638,15 @@ fn configure_cron_runtime(
             queues,
             state,
             wake_hub,
+            "lockup-observation",
+            schedule_every_secs(env_secs("LOCKUP_OBSERVATION_INTERVAL_SECONDS", 900)),
+            handlers::lockup_observation
+        );
+        monitor = register_cron_worker!(
+            monitor,
+            queues,
+            state,
+            wake_hub,
             "price-history-backfill",
             schedule_every_secs(3600),
             handlers::price_history_backfill

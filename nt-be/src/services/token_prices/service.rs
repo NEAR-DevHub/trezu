@@ -376,7 +376,7 @@ impl TokenPriceService {
 /// - `1cs_v1:` routing ids pass through unchanged (never prefixed with `nep141:`)
 /// - bare NEP-141 contract ids (`wrap.near`, balance_changes) gain `nep141:`
 pub fn canonicalize_token_id(raw: &str) -> String {
-    if raw == "near" || raw.starts_with("staking:") {
+    if raw == "near" || raw.starts_with("staking:") || raw.starts_with("lockup:") {
         return "nep141:wrap.near".to_string();
     }
     if let Some(stripped) = raw.strip_prefix("intents.near:") {
@@ -410,6 +410,10 @@ mod tests {
         assert_eq!(canonicalize_token_id("near"), "nep141:wrap.near");
         assert_eq!(
             canonicalize_token_id("staking:astro-stakers.poolv1.near"),
+            "nep141:wrap.near"
+        );
+        assert_eq!(
+            canonicalize_token_id("lockup:abc123.lockup.near"),
             "nep141:wrap.near"
         );
     }

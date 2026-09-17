@@ -1,7 +1,7 @@
 use crate::{
     handlers::user::{
         ft_lockups::fetch_ft_lockup_positions,
-        lockup::{LockupBalance, fetch_lockup_balance_of_account},
+        lockup::{LockupBalance, derive_lockup_account_id, fetch_lockup_balance_of_account},
         staking::{StakingBalance, fetch_staking_balances},
     },
     utils::cache::{CacheKey, CacheTier},
@@ -114,6 +114,10 @@ pub struct SimplifiedToken {
     pub contract_id: Option<String>,
     /// FT lockup instance contract ID (one token can have multiple lockup sessions).
     pub lockup_instance_id: Option<String>,
+    /// NEAR lockup contract account for `Lockup` rows; the id of the
+    /// `lockup:{account}` balance-history series.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lockup_account_id: Option<String>,
     /// Optional schedule metadata for FT lockup session rows.
     pub ft_lockup_schedule: Option<FtLockupSchedule>,
     pub residency: TokenResidency,
@@ -363,6 +367,7 @@ fn build_intents_tokens(
                     id: unified_id,
                     contract_id: Some(token_id),
                     lockup_instance_id: None,
+                    lockup_account_id: None,
                     ft_lockup_schedule: None,
                     decimals: metadata.decimals,
                     balance: Balance::Standard {
@@ -739,6 +744,19 @@ pub async fn compute_user_assets(
                 ft_lockup_positions_future
             )?;
 
+            // A lockup that appeared after history discovery settled `absent`
+            // would otherwise stay out of the chart until the daily recheck.
+            if lockup_balance.is_some()
+                && let Err(error) =
+                    crate::handlers::public_history::observations::lockup::nudge_discovery_if_absent(
+                        &state.db_pool,
+                        account.as_str(),
+                    )
+                    .await
+            {
+                tracing::warn!(account_id = %account, %error, "lockup discovery nudge failed");
+            }
+
             Ok::<_, (StatusCode, String)>((
                 whitelist_set,
                 user_balances,
@@ -872,6 +890,7 @@ pub async fn compute_user_assets(
                     id: unified_id,
                     contract_id: Some(token_id),
                     lockup_instance_id: None,
+                    lockup_account_id: None,
                     ft_lockup_schedule: None,
                     decimals: token_meta.decimals,
                     balance: Balance::Standard {
@@ -953,6 +972,7 @@ pub async fn compute_user_assets(
                 id: unified_id,
                 contract_id: Some(position.token_account_id),
                 lockup_instance_id: Some(position.instance_id),
+                lockup_account_id: None,
                 ft_lockup_schedule: Some(FtLockupSchedule {
                     start_timestamp: position.start_timestamp,
                     round_interval: position.session_interval,
@@ -991,6 +1011,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: Some(derive_lockup_account_id(account).to_string()),
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Vested(lockup),
@@ -1021,6 +1042,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: None,
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Staked(staking),
@@ -1046,6 +1068,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: None,
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Standard {
@@ -1195,6 +1218,7 @@ mod tests {
             id: "t".to_string(),
             contract_id: None,
             lockup_instance_id: lockup_instance_id.map(str::to_string),
+            lockup_account_id: None,
             ft_lockup_schedule: None,
             residency,
             network: "near".to_string(),
