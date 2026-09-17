@@ -96,6 +96,8 @@ interface MobileFilterSheetProps {
     filterOptions: FilterOption[];
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    /** Analytics event fired when a filter is applied with a value. */
+    filterEventName?: string;
 }
 
 /**
@@ -108,10 +110,11 @@ export function MobileFilterSheet({
     filterOptions,
     open,
     onOpenChange,
+    filterEventName,
 }: MobileFilterSheetProps) {
     const tCommon = useTranslations("common");
     const tF = useTranslations("requests.filters");
-    const { searchParams, setFilters } = useFilterParams();
+    const { searchParams, setFilters } = useFilterParams(filterEventName);
     const [activeId, setActiveId] = useState<string | null>(null);
 
     const editableOptions = filterOptions.filter(isEditable);

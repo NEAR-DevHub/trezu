@@ -332,7 +332,7 @@ export default function MembersPage() {
                 tMembers("policy.removeMemberSuccess"),
             );
 
-            trackEvent("member-delete-submitted", {
+            trackEvent("member_delete_submitted", {
                 treasury_id: treasuryId,
                 members_count: membersToRemove.length,
             });
@@ -348,6 +348,10 @@ export default function MembersPage() {
     const handleEditMember = useCallback(
         (member: Member) => {
             if (isMemberActionsDisabled || !treasuryId) return;
+            trackEvent("member_action", {
+                members_action: "edit",
+                treasury_id: treasuryId,
+            });
             router.push(
                 `/${treasuryId}/members/edit?members=${encodeURIComponent(member.accountId)}`,
             );
@@ -365,7 +369,7 @@ export default function MembersPage() {
 
     const handleSheetSend = useCallback(() => {
         if (!sheetMember || !treasuryId) return;
-        trackEvent("nav-click", {
+        trackEvent("nav_click", {
             destination: "payments",
             source: "members-action-sheet",
             treasury_id: treasuryId,
@@ -380,10 +384,14 @@ export default function MembersPage() {
 
     const handleSheetRemove = useCallback(() => {
         if (!sheetMember || isMemberActionsDisabled) return;
+        trackEvent("member_action", {
+            members_action: "delete",
+            treasury_id: treasuryId,
+        });
         setMemberToDelete(sheetMember);
         setSheetMember(null);
         setIsDeleteModalOpen(true);
-    }, [isMemberActionsDisabled, sheetMember]);
+    }, [isMemberActionsDisabled, sheetMember, treasuryId]);
 
     const handleBulkEdit = useCallback(() => {
         if (
@@ -392,6 +400,12 @@ export default function MembersPage() {
             selectedMembers.length === 0
         )
             return;
+        trackEvent("bulk_action", {
+            page: "members",
+            interaction_type: "edit",
+            count: selectedMembers.length,
+            treasury_id: treasuryId,
+        });
         const membersParam = selectedMembers
             .map((id) => encodeURIComponent(id))
             .join(",");
@@ -401,8 +415,14 @@ export default function MembersPage() {
     // Handle bulk delete
     const handleBulkDelete = useCallback(() => {
         if (isMemberActionsDisabled) return;
+        trackEvent("bulk_action", {
+            page: "members",
+            interaction_type: "delete",
+            count: selectedMembers.length,
+            treasury_id: treasuryId,
+        });
         setIsDeleteModalOpen(true);
-    }, [isMemberActionsDisabled]);
+    }, [isMemberActionsDisabled, selectedMembers.length, treasuryId]);
 
     // Handle checkbox toggle
     const handleToggleMember = useCallback((accountId: string) => {
@@ -855,6 +875,15 @@ export default function MembersPage() {
                                                                 isMemberActionsDisabled
                                                             )
                                                                 return;
+                                                            trackEvent(
+                                                                "member_action",
+                                                                {
+                                                                    members_action:
+                                                                        "delete",
+                                                                    treasury_id:
+                                                                        treasuryId,
+                                                                },
+                                                            );
                                                             setMemberToDelete(
                                                                 member,
                                                             );
@@ -1127,7 +1156,12 @@ export default function MembersPage() {
                             <MembersMenuSheetItem
                                 asChild
                                 onClick={() => {
-                                    trackEvent("member-add-modal-opened", {
+                                    trackEvent("member_add_modal_opened", {
+                                        treasury_id: treasuryId,
+                                    });
+                                    trackEvent("table_cta_click", {
+                                        page: "members",
+                                        cta_button: "add_manually",
                                         treasury_id: treasuryId,
                                     });
                                     setAddMenuOpen(false);
@@ -1141,7 +1175,14 @@ export default function MembersPage() {
                         )}
                         <MembersMenuSheetItem
                             asChild
-                            onClick={() => setAddMenuOpen(false)}
+                            onClick={() => {
+                                trackEvent("table_cta_click", {
+                                    page: "members",
+                                    cta_button: "invite_member",
+                                    treasury_id: treasuryId,
+                                });
+                                setAddMenuOpen(false);
+                            }}
                         >
                             <Link href={`/${treasuryId}/members/invite`}>
                                 <Icon icon={SentIcon} />
@@ -1202,11 +1243,16 @@ export default function MembersPage() {
                             >
                                 <Link
                                     href={`/${treasuryId}/members/add`}
-                                    onClick={() =>
-                                        trackEvent("member-add-modal-opened", {
+                                    onClick={() => {
+                                        trackEvent("member_add_modal_opened", {
                                             treasury_id: treasuryId,
-                                        })
-                                    }
+                                        });
+                                        trackEvent("table_cta_click", {
+                                            page: "members",
+                                            cta_button: "add_manually",
+                                            treasury_id: treasuryId,
+                                        });
+                                    }}
                                 >
                                     <Icon icon={Wallet03Icon} />
                                     {tMembers("addManually")}
@@ -1220,7 +1266,16 @@ export default function MembersPage() {
                                 invertedMenuItemClassName,
                             )}
                         >
-                            <Link href={`/${treasuryId}/members/invite`}>
+                            <Link
+                                href={`/${treasuryId}/members/invite`}
+                                onClick={() =>
+                                    trackEvent("table_cta_click", {
+                                        page: "members",
+                                        cta_button: "invite_member",
+                                        treasury_id: treasuryId,
+                                    })
+                                }
+                            >
                                 <Icon icon={SentIcon} />
                                 {tMembers("inviteMember")}
                             </Link>

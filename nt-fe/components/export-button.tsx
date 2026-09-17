@@ -16,7 +16,7 @@ export function ExportButton() {
     const isMobile = useMediaQuery("(max-width: 640px)");
 
     const handleClick = () => {
-        trackEvent("export-click", {
+        trackEvent("export_click", {
             source: "export_button",
             treasury_id: treasuryId,
         });

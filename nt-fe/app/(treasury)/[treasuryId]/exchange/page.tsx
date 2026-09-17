@@ -224,7 +224,7 @@ export default function ExchangePage() {
                 });
             }
 
-            trackEvent("exchange-submitted", {
+            trackEvent("exchange_submitted", {
                 treasury_id: selectedTreasury,
                 sell_token_symbol: data.sellToken.symbol,
                 receive_token_symbol: data.receiveToken.symbol,

@@ -43,7 +43,7 @@ export function AssetRowActionMenu({ sendHref, swapHref }: Props) {
                     className={MENU_ITEM_CLASS}
                     data-testid="asset-row-action-swap"
                     onClick={() => {
-                        trackEvent("nav-click", {
+                        trackEvent("nav_click", {
                             destination: "exchange",
                             source: "dashboard-assets",
                             treasury_id: treasuryId,
@@ -61,7 +61,7 @@ export function AssetRowActionMenu({ sendHref, swapHref }: Props) {
                     className={MENU_ITEM_CLASS}
                     data-testid="asset-row-action-send"
                     onClick={() => {
-                        trackEvent("nav-click", {
+                        trackEvent("nav_click", {
                             destination: "payments",
                             source: "dashboard-assets",
                             treasury_id: treasuryId,

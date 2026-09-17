@@ -334,7 +334,7 @@ export function DepositModal({
 
     useEffect(() => {
         if (selectedAsset && selectedNetwork) {
-            trackEvent("deposit-asset-and-network-selected", {
+            trackEvent("deposit_asset_and_network_selected", {
                 treasury_id: treasuryId!,
                 asset_id: selectedAsset.id,
                 asset_name: selectedAsset.name,

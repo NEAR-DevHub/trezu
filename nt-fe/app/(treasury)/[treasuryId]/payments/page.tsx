@@ -1379,7 +1379,7 @@ export default function PaymentsPage() {
                 addressBookPayment: isAddressBookRecipientSelected,
             })
                 .then(() => {
-                    trackEvent("payment-submitted", {
+                    trackEvent("payment_submitted", {
                         treasury_id: treasuryId ?? "",
                         token_symbol: token.symbol,
                         amount: data.amount,
@@ -1484,7 +1484,7 @@ export default function PaymentsPage() {
                 id="payments-bulk-btn"
                 aria-label={tPay("bulkPayments")}
                 onClick={() => {
-                    trackEvent("bulk-payments-click", {
+                    trackEvent("bulk_payments_click", {
                         source: "payments_page",
                         treasury_id: treasuryId ?? "",
                     });

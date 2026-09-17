@@ -32,6 +32,7 @@ import {
 } from "@/hooks/use-warnings";
 import { MAX_RECIPIENTS_PER_BULK_PAYMENT } from "@/lib/bulk-payment-api";
 import { isTrialPlan } from "@/lib/subscription-api";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import type { BulkPaymentData, BulkPaymentFormValues } from "../schemas";
 import {
@@ -225,6 +226,16 @@ export function UploadDataStep({
 
         setDataErrors(null);
         setIsReviewLoading(true);
+        // Fired once valid data reaches review so the default (upload)
+        // tab is counted, not only tab switches.
+        const proceedToReview: typeof onContinue = (payments, fee) => {
+            trackEvent("bulk_payment_data_type", {
+                data_type:
+                    activeTab === "upload" ? "upload_file" : "provide_data",
+                treasury_id: treasuryId,
+            });
+            onContinue(payments, fee);
+        };
         try {
             // Parse and validate data
             let result: {
@@ -300,7 +311,7 @@ export function UploadDataStep({
                     }
                 }
 
-                onContinue(
+                proceedToReview(
                     isConfidential
                         ? result.payments
                         : feeValidationResult.payments,
@@ -310,7 +321,7 @@ export function UploadDataStep({
             }
 
             // Pass validated payments to parent
-            onContinue(result.payments, null);
+            proceedToReview(result.payments, null);
         } finally {
             setIsReviewLoading(false);
         }

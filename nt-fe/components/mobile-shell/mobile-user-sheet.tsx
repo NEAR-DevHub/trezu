@@ -22,6 +22,7 @@ import { PRIVACY_POLICY_HREF, TERMS_OF_SERVICE_HREF } from "@/constants/config";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProfile } from "@/hooks/use-treasury-queries";
 import { isEnabledLocale, type Locale, localeFlags } from "@/i18n/config";
+import { trackEvent } from "@/lib/analytics";
 import { useMobileShellStore } from "@/stores/mobile-shell-store";
 import { useNear } from "@/stores/near-store";
 import { useOnboardingStore } from "@/stores/onboarding-store";
@@ -74,6 +75,12 @@ export function MobileUserSheet() {
     }, [resolvedTheme]);
     const displayName =
         profile?.name && profile.name !== accountId ? profile.name : accountId;
+    const trackMenuClick = (menuType: string) =>
+        trackEvent("user_menu_click", {
+            menu_type: menuType,
+            source: "mobile-user-sheet",
+            treasury_id: treasuryId,
+        });
 
     if (!accountId || !isAuthenticated) return null;
 
@@ -114,7 +121,10 @@ export function MobileUserSheet() {
                             <Link
                                 href={`/${treasuryId}/account`}
                                 className={rowClass}
-                                onClick={closeSheet}
+                                onClick={() => {
+                                    trackMenuClick("my_account");
+                                    closeSheet();
+                                }}
                             >
                                 <Icon icon={User03Icon} className="size-5" />
                                 {t("myAccount")}
@@ -142,7 +152,10 @@ export function MobileUserSheet() {
                         <button
                             type="button"
                             className={rowClass}
-                            onClick={() => openSheet("language")}
+                            onClick={() => {
+                                trackMenuClick("language");
+                                openSheet("language");
+                            }}
                         >
                             <Icon icon={Globe02Icon} className="size-5" />
                             <span className="flex-1">{tLang("label")}</span>
@@ -162,6 +175,7 @@ export function MobileUserSheet() {
                             data-tour-help-support=""
                             className={rowClass}
                             onClick={() => {
+                                trackMenuClick("help_support");
                                 closeSheet();
                                 setSupportOpen(true);
                             }}
@@ -177,7 +191,10 @@ export function MobileUserSheet() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={rowClass}
-                            onClick={closeSheet}
+                            onClick={() => {
+                                trackMenuClick("terms_of_service");
+                                closeSheet();
+                            }}
                         >
                             <Icon icon={File01Icon} className="size-5" />
                             {t("termsOfService")}
@@ -187,7 +204,10 @@ export function MobileUserSheet() {
                             target="_blank"
                             rel="noopener noreferrer"
                             className={rowClass}
-                            onClick={closeSheet}
+                            onClick={() => {
+                                trackMenuClick("privacy_policy");
+                                closeSheet();
+                            }}
                         >
                             <Icon icon={File01Icon} className="size-5" />
                             {t("privacyPolicy")}

@@ -48,7 +48,7 @@ export function FundAccountEmpty({ onReceiveClick }: Props) {
                 id="dashboard-step1"
                 className="h-11 gap-2 rounded-2xl px-6"
                 onClick={() => {
-                    trackEvent("nav-click", {
+                    trackEvent("nav_click", {
                         destination: "deposit",
                         source: "dashboard",
                         treasury_id: treasuryId,

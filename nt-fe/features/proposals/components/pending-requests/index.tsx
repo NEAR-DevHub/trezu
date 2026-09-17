@@ -25,6 +25,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
 import type { Proposal } from "@/lib/proposals-api";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
@@ -159,7 +160,19 @@ export function PendingRequestItem({
     }, [type, proposal, treasuryId, getProposalKindLabel]);
 
     return (
-        <Link href={`/${treasuryId}/requests/${proposal.id}`}>
+        <Link
+            href={`/${treasuryId}/requests/${proposal.id}`}
+            onClick={(event) => {
+                // Approve / Reject / Deposit call preventDefault() and
+                // bubble here; they are not "view details".
+                if (event.defaultPrevented) return;
+                trackEvent("pending_request_action", {
+                    interaction_type: "view_details",
+                    proposal_id: proposal.id,
+                    treasury_id: treasuryId,
+                });
+            }}
+        >
             <PageCard className="group relative flex w-full flex-row justify-between gap-3.5 overflow-hidden transition-colors hover:border-gray-300">
                 <ProposalTypeIcon proposal={proposal} treasuryId={treasuryId} />
                 <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
@@ -365,7 +378,14 @@ export function PendingRequests() {
                     </div>
 
                     {hasPendingRequests && (
-                        <Link href={`/${treasuryId}/requests`}>
+                        <Link
+                            href={`/${treasuryId}/requests`}
+                            onClick={() =>
+                                trackEvent("pending_requests_view_all", {
+                                    treasury_id: treasuryId,
+                                })
+                            }
+                        >
                             <Button variant="neutral" size="sm">
                                 <span className="font-bold text-[14px] leading-none">
                                     {t("viewAll")}
@@ -387,6 +407,12 @@ export function PendingRequests() {
                                     policy={policy!}
                                     treasuryId={treasuryId!}
                                     onVote={(vote) => {
+                                        trackEvent("pending_request_action", {
+                                            interaction_type:
+                                                vote.toLowerCase(),
+                                            proposal_id: proposal.id,
+                                            treasury_id: treasuryId,
+                                        });
                                         setVoteInfo({
                                             vote,
                                             proposals: [proposal],

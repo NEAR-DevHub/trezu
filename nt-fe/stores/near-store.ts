@@ -427,7 +427,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             }
             const wallet = await newConnector.wallet(selectedWalletId);
 
-            trackEvent("wallet-selected", {
+            trackEvent("wallet_selected", {
                 wallet_id: wallet.manifest.id,
                 wallet_name: wallet.manifest.name,
             });
@@ -809,7 +809,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 voteStorageBytes,
                 "vote",
             );
-            trackEvent("proposal-voted", {
+            trackEvent("proposal_voted", {
                 vote: votes[0]?.vote.toLowerCase(),
                 proposals_count: votes.length,
                 treasury_id: treasuryId,

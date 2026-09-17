@@ -378,7 +378,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                                     badgeCount={proposals?.total ?? 0}
                                     showLabels={showLabels}
                                     onClick={() => {
-                                        trackEvent("nav-click", {
+                                        trackEvent("nav_click", {
                                             destination:
                                                 link.path || "dashboard",
                                             source: "sidebar",

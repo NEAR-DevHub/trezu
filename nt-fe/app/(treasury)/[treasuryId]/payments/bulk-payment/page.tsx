@@ -235,7 +235,7 @@ export default function BulkPaymentPage() {
         source: "upload_continue" | "edit_save" | "edit_cancel",
         recipientsCount: number,
     ) => {
-        trackEvent("bulk-payments-review-step-view", {
+        trackEvent("bulk_payments_review_step_view", {
             source,
             treasury_id: selectedTreasury ?? "",
             recipients_count: recipientsCount,
@@ -337,7 +337,7 @@ export default function BulkPaymentPage() {
                 false,
             );
 
-            trackEvent("bulk-payment-submitted", {
+            trackEvent("bulk_payment_submitted", {
                 treasury_id: selectedTreasury,
                 token_symbol: selectedToken.symbol,
                 recipients_count: paymentData.length,
@@ -551,7 +551,7 @@ export default function BulkPaymentPage() {
                 false,
             );
 
-            trackEvent("bulk-payment-submitted", {
+            trackEvent("bulk_payment_submitted", {
                 treasury_id: selectedTreasury ?? "",
                 token_symbol: selectedToken.symbol,
                 recipients_count: paymentData.length,

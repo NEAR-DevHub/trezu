@@ -27,6 +27,7 @@ interface LanguageSwitcherProps {
     variant?: "ghost" | "outline";
     /** Render as a full-width labelled row, for use inside another menu. */
     asMenuRow?: boolean;
+    onOpen?: () => void;
 }
 
 export function LanguageSwitcher({
@@ -34,6 +35,7 @@ export function LanguageSwitcher({
     className,
     variant = "ghost",
     asMenuRow = false,
+    onOpen,
 }: LanguageSwitcherProps) {
     const locale = useLocale() as Locale;
     const t = useTranslations("languageSwitcher");
@@ -55,7 +57,12 @@ export function LanguageSwitcher({
     };
 
     return (
-        <DropdownMenu modal={!asMenuRow}>
+        <DropdownMenu
+            modal={!asMenuRow}
+            onOpenChange={(open) => {
+                if (open) onOpen?.();
+            }}
+        >
             <DropdownMenuTrigger asChild>
                 {asMenuRow ? (
                     <Button

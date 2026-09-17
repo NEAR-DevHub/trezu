@@ -34,11 +34,19 @@ import {
     useRecentActivityRecipients,
     useRecentActivitySenders,
 } from "@/hooks/use-treasury-queries";
+import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 
 // Constants
 const PAGE_SIZE = 15;
 const FILTER_PANEL_MAX_HEIGHT = "500px";
+/** Tab values as the analytics sheet names them. */
+const TAB_EVENT_TYPE: Record<string, string> = {
+    all: "all",
+    outgoing: "send",
+    incoming: "received",
+    exchange: "swap",
+};
 /**
  * The 40px #F2F2F2 square the design gives the mobile controls. Desktop keeps
  * the design system's 8px radius.
@@ -318,12 +326,16 @@ export default function ActivityPage() {
 
     const handleTabChange = useCallback(
         (value: string) => {
+            trackEvent("transactions_tab_click", {
+                tab_type: TAB_EVENT_TYPE[value] ?? value,
+                treasury_id: treasuryId,
+            });
             const params = new URLSearchParams(searchParams.toString());
             params.set("tab", value);
             params.delete("page"); // Reset page when changing tabs
             router.push(`${pathname}?${params.toString()}`);
         },
-        [searchParams, router, pathname],
+        [searchParams, router, pathname, treasuryId],
     );
 
     // Count active filters — the Filters button labels itself with the total.
@@ -346,6 +358,10 @@ export default function ActivityPage() {
         (value: string) => {
             const params = new URLSearchParams(searchParams.toString());
             if (value.trim()) {
+                trackEvent("transactions_search", {
+                    action: "search_used",
+                    treasury_id: treasuryId,
+                });
                 params.set("tx_hash", value.trim());
             } else {
                 params.delete("tx_hash");
@@ -353,7 +369,7 @@ export default function ActivityPage() {
             params.delete("page");
             router.push(`${pathname}?${params.toString()}`);
         },
-        [searchParams, router, pathname],
+        [searchParams, router, pathname, treasuryId],
     );
 
     const tabs: ActivityTab[] = [
@@ -425,7 +441,10 @@ export default function ActivityPage() {
             }}
         >
             <div className="px-4 py-3 md:px-0 md:py-0">
-                <GenericFilters filterOptions={activityFilterOptions} />
+                <GenericFilters
+                    filterOptions={activityFilterOptions}
+                    filterEventName="transactions_filter_applied"
+                />
             </div>
         </div>
     );
@@ -465,6 +484,7 @@ export default function ActivityPage() {
                     filterOptions={activityFilterOptions}
                     open={isMobileFiltersOpen}
                     onOpenChange={setIsMobileFiltersOpen}
+                    filterEventName="transactions_filter_applied"
                 />
             </PageComponentLayout>
         </HistoryRefreshIndicatorProvider>

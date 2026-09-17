@@ -19,6 +19,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useRecentActivity } from "@/hooks/use-treasury-queries";
 import { useWarningMessage, useWarnings } from "@/hooks/use-warnings";
+import { trackEvent } from "@/lib/analytics";
 import type { RecentActivity as RecentActivityType } from "@/lib/api";
 import { cn, formatActivityAmount } from "@/lib/utils";
 import {
@@ -447,7 +448,15 @@ export function RecentActivity() {
                     {!isHidden &&
                         !showActivityUnavailable &&
                         activities.length > 0 && (
-                            <Link href={`/${treasuryId}/dashboard/activity`}>
+                            <Link
+                                href={`/${treasuryId}/dashboard/activity`}
+                                onClick={() =>
+                                    trackEvent(
+                                        "recent_transactions_view_more",
+                                        { treasury_id: treasuryId },
+                                    )
+                                }
+                            >
                                 <Button
                                     variant="secondary"
                                     className="bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20"

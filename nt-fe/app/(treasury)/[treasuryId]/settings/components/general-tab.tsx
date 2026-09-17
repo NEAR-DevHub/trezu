@@ -135,7 +135,7 @@ export function GeneralTab() {
 
             form.reset(values);
             toast.success(t("savedToast"));
-            trackEvent("treasury-settings-updated", {
+            trackEvent("treasury_settings_updated", {
                 treasury_id: treasuryId ?? "",
             });
             return true;

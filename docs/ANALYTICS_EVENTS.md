@@ -6,7 +6,7 @@ Most events are fired via `trackEvent()` from `nt-fe/lib/analytics.ts`, which se
 
 Some onboarding survey events are provider-specific and are sent directly with `posthog.capture()` (PostHog-only).
 
-Naming is mixed today (`snake_case` and `kebab-case`) due to legacy events. New onboarding events use `snake_case`.
+All event names are `snake_case`. Events originally emitted in `kebab-case` (e.g. `nav-click`, `treasury-created`) were renamed on 2026-09-17; PostHog data before that date is under the old names.
 
 ---
 
@@ -16,7 +16,7 @@ Recommended sequential funnel for new-user onboarding:
 
 1. `onboarding_landed`
 2. `onboarding_login_completed` _(optional — users already logged in may skip this step)_
-3. `treasury-created`
+3. `treasury_created`
 
 Track returning users separately with `onboarding_existing_treasury_redirect` (not part of the funnel).
 
@@ -82,7 +82,7 @@ User clicks a wallet option in the shared wallet selector. Does **not** fire whe
 
 ---
 
-### `wallet-selected`
+### `wallet_selected`
 
 Wallet selected in the connector during login.
 
@@ -108,7 +108,7 @@ Wallet auth flow successfully completed. Fired for all login surfaces (onboardin
 
 ---
 
-### `treasury-created`
+### `treasury_created`
 
 Treasury creation stream completed successfully.
 
@@ -120,9 +120,9 @@ Treasury creation stream completed successfully.
 
 ---
 
-### `onboarding-completed`
+### `onboarding_completed`
 
-Fired alongside `treasury-created` when a new treasury is created.
+Fired alongside `treasury_created` when a new treasury is created.
 
 | Property      | Type   | Description     |
 | ------------- | ------ | --------------- |
@@ -154,7 +154,7 @@ These may still exist in old PostHog data but are no longer emitted:
 
 ## Treasury Settings
 
-### `treasury-settings-updated`
+### `treasury_settings_updated`
 
 User saves changes to treasury general settings.
 
@@ -168,7 +168,7 @@ User saves changes to treasury general settings.
 
 ## Members
 
-### `member-add-modal-opened`
+### `member_add_modal_opened`
 
 User opens the add member modal.
 
@@ -180,7 +180,7 @@ User opens the add member modal.
 
 ---
 
-### `member-add-review-clicked`
+### `member_add_review_clicked`
 
 User clicks "Review" in the add member flow, triggering validation.
 
@@ -192,7 +192,7 @@ User clicks "Review" in the add member flow, triggering validation.
 
 ---
 
-### `member-add-submitted`
+### `member_add_submitted`
 
 User successfully submits new member(s) for addition.
 
@@ -205,7 +205,7 @@ User successfully submits new member(s) for addition.
 
 ---
 
-### `member-edit-review-clicked`
+### `member_edit_review_clicked`
 
 User clicks "Review" in the edit member flow.
 
@@ -217,7 +217,7 @@ User clicks "Review" in the edit member flow.
 
 ---
 
-### `member-edit-submitted`
+### `member_edit_submitted`
 
 User successfully submits member role edits.
 
@@ -230,7 +230,7 @@ User successfully submits member role edits.
 
 ---
 
-### `member-delete-submitted`
+### `member_delete_submitted`
 
 User successfully submits member removal.
 
@@ -245,7 +245,7 @@ User successfully submits member removal.
 
 ## Payments
 
-### `payment-submitted`
+### `payment_submitted`
 
 User submits a single payment request.
 
@@ -259,7 +259,7 @@ User submits a single payment request.
 
 ---
 
-### `bulk-payments-click`
+### `bulk_payments_click`
 
 User clicks the bulk payments button on the payments page.
 
@@ -272,7 +272,7 @@ User clicks the bulk payments button on the payments page.
 
 ---
 
-### `bulk-payments-review-step-view`
+### `bulk_payments_review_step_view`
 
 User reaches the review step in the bulk payment flow.
 
@@ -286,7 +286,7 @@ User reaches the review step in the bulk payment flow.
 
 ---
 
-### `bulk-payments-submit-click`
+### `bulk_payments_submit_click`
 
 User clicks submit on the bulk payments review step.
 
@@ -299,7 +299,7 @@ User clicks submit on the bulk payments review step.
 
 ---
 
-### `bulk-payment-submitted`
+### `bulk_payment_submitted`
 
 Bulk payment batch is successfully submitted on-chain.
 
@@ -315,7 +315,7 @@ Bulk payment batch is successfully submitted on-chain.
 
 ## Exchange (Swap)
 
-### `exchange-submitted`
+### `exchange_submitted`
 
 User submits a token swap proposal.
 
@@ -331,7 +331,7 @@ User submits a token swap proposal.
 
 ## Proposals / Requests
 
-### `request-detail-viewed`
+### `request_detail_viewed`
 
 User opens a request/proposal detail page.
 
@@ -344,7 +344,7 @@ User opens a request/proposal detail page.
 
 ---
 
-### `proposal-voted`
+### `proposal_voted`
 
 User submits a vote on one or more proposals.
 
@@ -360,7 +360,7 @@ User submits a vote on one or more proposals.
 
 ## Deposit
 
-### `deposit-asset-and-network-selected`
+### `deposit_asset_and_network_selected`
 
 User selects both an asset and a network in the deposit modal.
 
@@ -378,7 +378,7 @@ User selects both an asset and a network in the deposit modal.
 
 ## Export
 
-### `export-click`
+### `export_click`
 
 User clicks the export button (CSV/report download shortcut).
 
@@ -391,7 +391,7 @@ User clicks the export button (CSV/report download shortcut).
 
 ---
 
-### `export-generate-click`
+### `export_generate_click`
 
 User clicks "Generate" on the full export page.
 
@@ -402,5 +402,64 @@ User clicks "Generate" on the full export page.
 | `document_type` | string | Type of document being exported |
 
 **Source:** [nt-fe/app/(treasury)/[treasuryId]/dashboard/export/page.tsx](<../nt-fe/app/(treasury)/[treasuryId]/dashboard/export/page.tsx>)
+
+---
+
+## Product Tracking Sheet Events (added 2026-09-17)
+
+The events below implement the product analytics sheet ("Sign in Creation" … "Members" tabs). These use the sheet's `snake_case` names as-is. Earlier events that the sheet lists under a different name (`wallet_selected`, `treasury_created`, `nav_click`, `bulk_payments_click`) keep their original names and semantics, now in `snake_case`. Every event carries `treasury_id` where a treasury is in scope.
+
+### Navigation
+
+| Event                 | Properties                                                                                                             | Source                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| `user_menu_click`     | `menu_type`: `my_account` \| `language` \| `help_support` \| `terms_of_service` \| `privacy_policy`; `source`: `sidebar` \| `mobile-user-sheet` | `components/sidebar-profile-menu.tsx`, `components/mobile-shell/mobile-user-sheet.tsx` |
+| `treasury_menu_click` | `menu_type`: `manage_treasuries` \| `create_treasury`                                                                  | `components/treasury-selector.tsx`                                         |
+
+### Dashboard
+
+| Event                           | Properties                                                                                          | Source                                                        |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| `chart_filter`                  | `filter_type`: `token` (+ `token_symbol`, `all` for the reset) \| `time_period` (+ `time_value`: `1W`/`1M`/`3M`/`1Y`) | `dashboard/components/balance-with-graph.tsx`                 |
+| `recent_transactions_view_more` | –                                                                                                   | `features/activity/components/recent-activity-card.tsx`       |
+| `transactions_search`           | `action`: `search_used` (fires when a non-empty tx hash is searched)                                | `dashboard/activity/page.tsx`                                 |
+| `transactions_filter_applied`   | `filter_type`: `created_date` \| `token` \| `from` \| `to`                                          | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
+| `transactions_tab_click`        | `tab_type`: `all` \| `send` \| `received` \| `swap`                                                 | `dashboard/activity/page.tsx`                                 |
+| `pending_request_action`        | `interaction_type`: `approve` \| `reject` \| `view_details`; `proposal_id`                          | `features/proposals/components/pending-requests/index.tsx`    |
+| `pending_requests_view_all`     | –                                                                                                   | `features/proposals/components/pending-requests/index.tsx`    |
+| `receive_cta`                   | `button_type`: `copy` \| `share`                                                                    | `dashboard/components/deposit/deposit-address-card.tsx`       |
+
+### Requests
+
+| Event                     | Properties                                                                                                     | Source                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `requests_search`         | `action`: `search_used`                                                                                        | `requests/page.tsx`                                                     |
+| `requests_filter_applied` | `filter_type`: `proposal_types` \| `created_date` \| `recipients` \| `token` \| `proposers` \| `approvers` \| `my_vote` | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
+| `requests_tab_click`      | `tab_type`: `all` \| `pending` \| `executed` \| `rejected` \| `expired` \| `failed`                            | `requests/page.tsx`                                                     |
+| `bulk_approve`            | `interaction_type`: `approve` \| `reject`; `requests_count`                                                    | `features/proposals/components/proposals-table.tsx`                     |
+
+### Send
+
+| Event                    | Properties                                    | Source                                                  |
+| ------------------------ | --------------------------------------------- | ------------------------------------------------------- |
+| `bulk_payment_data_type` | `data_type`: `upload_file` \| `provide_data`  | `payments/bulk-payment/components/upload-data-step.tsx` |
+
+### Swap
+
+| Event         | Properties | Source                           |
+| ------------- | ---------- | -------------------------------- |
+| `sell_max`    | –          | `exchange/components/step1.tsx`  |
+| `receive_max` | –          | `exchange/components/step1.tsx`  |
+
+### Contacts and Members
+
+`table_cta_click` and `bulk_action` are shared between the two pages and carry `page`: `contacts` \| `members`.
+
+| Event             | Properties                                                                                          | Source                                        |
+| ----------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `table_cta_click` | `page`; `cta_button`: `add_contact` \| `import` \| `export` (contacts), `add_manually` \| `invite_member` (members) | `address-book/page.tsx`, `members/page.tsx`   |
+| `contact_action`  | `contact_action`: `send` \| `delete`                                                                | `address-book/page.tsx`                       |
+| `member_action`   | `members_action`: `edit` \| `delete`                                                                | `members/page.tsx`                            |
+| `bulk_action`     | `page`; `interaction_type`: `export` \| `delete` (contacts), `edit` \| `delete` (members); `count`  | `address-book/page.tsx`, `members/page.tsx`   |
 
 ---

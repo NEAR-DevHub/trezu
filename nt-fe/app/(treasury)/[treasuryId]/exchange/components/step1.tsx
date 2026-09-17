@@ -13,6 +13,7 @@ import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
+import { trackEvent } from "@/lib/analytics";
 import { DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
 import { useExchangeAmountQuote } from "../hooks/use-exchange-amount-quote";
@@ -201,7 +202,12 @@ export function Step1({
                         errorMessage={isSellDerived ? quoteError : null}
                         warningMessage={sendWarningMessage}
                         onAmountInput={onSellAmountInput}
-                        onMaxSet={onSellAmountInput}
+                        onMaxSet={() => {
+                            trackEvent("sell_max", {
+                                treasury_id: selectedTreasury,
+                            });
+                            onSellAmountInput();
+                        }}
                         onTokenChange={onQuoteInputsChanged}
                     />
                     <div className="absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
@@ -250,7 +256,12 @@ export function Step1({
                     errorMessage={isReceiveDerived ? quoteError : null}
                     warningMessage={receiveWarningMessage}
                     onAmountInput={onReceiveAmountInput}
-                    onMaxSet={onReceiveAmountInput}
+                    onMaxSet={() => {
+                        trackEvent("receive_max", {
+                            treasury_id: selectedTreasury,
+                        });
+                        onReceiveAmountInput();
+                    }}
                     onTokenChange={onQuoteInputsChanged}
                 />
             </div>

@@ -89,7 +89,7 @@ export function MobileBottomNav() {
                         type="button"
                         onClick={() => {
                             closeSheet();
-                            trackEvent("nav-click", {
+                            trackEvent("nav_click", {
                                 destination: item.id,
                                 source: "mobile-bottom-nav",
                                 treasury_id: treasuryId,

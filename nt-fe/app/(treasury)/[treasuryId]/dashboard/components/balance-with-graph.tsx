@@ -698,9 +698,14 @@ export default function BalanceWithGraph({
                                 >
                                     <ScrollContainer className="max-h-[300px] p-1.5">
                                         <DropdownMenuItem
-                                            onSelect={() =>
-                                                setSelectedToken("all")
-                                            }
+                                            onSelect={() => {
+                                                trackEvent("chart_filter", {
+                                                    filter_type: "token",
+                                                    token_symbol: "all",
+                                                    treasury_id: treasuryId,
+                                                });
+                                                setSelectedToken("all");
+                                            }}
                                             className={cn(
                                                 FILTER_MENU_ITEM_CLASS,
                                                 "flex items-center justify-between",
@@ -720,11 +725,17 @@ export default function BalanceWithGraph({
                                         {groupedTokens.map((group) => (
                                             <DropdownMenuItem
                                                 key={group.symbol}
-                                                onSelect={() =>
+                                                onSelect={() => {
+                                                    trackEvent("chart_filter", {
+                                                        filter_type: "token",
+                                                        token_symbol:
+                                                            group.symbol,
+                                                        treasury_id: treasuryId,
+                                                    });
                                                     setSelectedToken(
                                                         group.symbol,
-                                                    )
-                                                }
+                                                    );
+                                                }}
                                                 className={cn(
                                                     FILTER_MENU_ITEM_CLASS,
                                                     "flex items-center justify-between",
@@ -785,9 +796,14 @@ export default function BalanceWithGraph({
                                     {TIME_PERIODS.map((period) => (
                                         <DropdownMenuItem
                                             key={period}
-                                            onSelect={() =>
-                                                setSelectedPeriod(period)
-                                            }
+                                            onSelect={() => {
+                                                trackEvent("chart_filter", {
+                                                    filter_type: "time_period",
+                                                    time_value: period,
+                                                    treasury_id: treasuryId,
+                                                });
+                                                setSelectedPeriod(period);
+                                            }}
                                             className={cn(
                                                 FILTER_MENU_ITEM_CLASS,
                                                 "flex items-center justify-between",
@@ -838,7 +854,7 @@ export default function BalanceWithGraph({
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 lg:gap-4">
                 <Button
                     onClick={() => {
-                        trackEvent("nav-click", {
+                        trackEvent("nav_click", {
                             destination: "deposit",
                             source: "dashboard",
                             treasury_id: treasuryId,
@@ -858,7 +874,7 @@ export default function BalanceWithGraph({
                     className="h-11 w-full max-lg:rounded-2xl max-lg:px-3 max-lg:text-sm"
                     id="dashboard-step2"
                     onClick={() => {
-                        trackEvent("nav-click", {
+                        trackEvent("nav_click", {
                             destination: "payments",
                             source: "dashboard",
                             treasury_id: treasuryId,
@@ -876,7 +892,7 @@ export default function BalanceWithGraph({
                     className="hidden h-11 w-full max-lg:px-3 max-lg:text-sm lg:inline-flex"
                     id="dashboard-step3"
                     onClick={() => {
-                        trackEvent("nav-click", {
+                        trackEvent("nav_click", {
                             destination: "exchange",
                             source: "dashboard",
                             treasury_id: treasuryId,

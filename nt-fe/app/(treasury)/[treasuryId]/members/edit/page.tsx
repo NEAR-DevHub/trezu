@@ -155,7 +155,7 @@ export default function EditMemberPage() {
         const isValid = await form.trigger();
         if (!isValid) return;
 
-        trackEvent("member-edit-review-clicked", { treasury_id: treasuryId });
+        trackEvent("member_edit_review_clicked", { treasury_id: treasuryId });
         setStep(1);
     }, [form, treasuryId]);
 
@@ -204,7 +204,7 @@ export default function EditMemberPage() {
                 proposalType: "other",
             });
 
-            trackEvent("member-edit-submitted", {
+            trackEvent("member_edit_submitted", {
                 treasury_id: treasuryId,
                 members_count: data.members.length,
             });

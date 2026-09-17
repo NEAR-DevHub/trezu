@@ -42,6 +42,7 @@ import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { TooltipUser } from "@/components/user";
 import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
 import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import type { TreasuryConfig } from "@/lib/api";
 import {
     getApproversAndThreshold,
@@ -460,6 +461,11 @@ export function ProposalsTable({
     const handleBulkVote = async (vote: "Approve" | "Reject") => {
         if (!treasuryId || !accountId) return;
 
+        trackEvent("bulk_approve", {
+            interaction_type: vote.toLowerCase(),
+            requests_count: selectedProposals.length,
+            treasury_id: treasuryId,
+        });
         setVoteInfo({
             vote,
             proposals: selectedProposals,
