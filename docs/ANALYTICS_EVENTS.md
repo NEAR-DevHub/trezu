@@ -173,7 +173,14 @@ User navigates between product areas from a nav surface or a shortcut button. On
 | `dashboard-assets`     | `payments`, `exchange` (Send / Swap on an asset row)                                | [nt-fe/components/asset-row-action-menu.tsx](../nt-fe/components/asset-row-action-menu.tsx), [mobile-asset-action-sheet.tsx](../nt-fe/components/mobile-shell/mobile-asset-action-sheet.tsx) |
 | `members-action-sheet` | `payments` (Send to a member)                                                       | [members/page.tsx](<../nt-fe/app/(treasury)/[treasuryId]/members/page.tsx>)                       |
 
-The sheet names the sidebar case `sidebar_navigation` and the dashboard buttons `dashboard_cta_click`; both map to `nav_click` filtered by `source`. Note the surfaces are not normalised: the same page is `payments` from the sidebar but `send` from the mobile menu, and `address-book` versus `contacts`.
+The product tracking sheet lists two of these surfaces under its own names. Neither name is sent as a value; filter `nav_click` on `source` instead:
+
+| Sheet event           | PostHog filter                              | Sheet `menu_type` / `button_type` → `destination`                                   |
+| --------------------- | ------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `sidebar_navigation`  | `nav_click` where `source` = `sidebar`      | `request` → `requests`, `send` → `payments`, `swap` → `exchange`, `contacts` → `address-book`; `dashboard`, `members`, `settings` unchanged |
+| `dashboard_cta_click` | `nav_click` where `source` = `dashboard`    | `receive` → `deposit`, `send` → `payments`, `swap` → `exchange`                     |
+
+Destination values are not normalised across surfaces: the same page is `payments` from the sidebar but `send` from the mobile menu, and `address-book` from the sidebar but `contacts` from the bottom nav.
 
 ---
 
@@ -351,6 +358,20 @@ User submits a token swap proposal.
 | `receive_token_symbol` | string | Token being received |
 
 **Source:** [nt-fe/app/(treasury)/[treasuryId]/exchange/page.tsx](<../nt-fe/app/(treasury)/[treasuryId]/exchange/page.tsx>)
+
+---
+
+### `confidential_move_assets_submitted`
+
+User submits a move of an asset between public and confidential balances on a confidential treasury.
+
+| Property       | Type   | Description                               |
+| -------------- | ------ | ----------------------------------------- |
+| `treasury_id`  | string | Treasury ID                               |
+| `token_symbol` | string | Token being moved                         |
+| `residency`    | string | Residency of the source asset being moved |
+
+**Source:** [nt-fe/app/(treasury)/[treasuryId]/move-assets/page.tsx](<../nt-fe/app/(treasury)/[treasuryId]/move-assets/page.tsx>)
 
 ---
 
