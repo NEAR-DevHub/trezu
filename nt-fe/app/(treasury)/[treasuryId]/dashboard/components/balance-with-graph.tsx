@@ -883,6 +883,7 @@ export default function BalanceWithGraph({
                         <SelectTrigger
                             size="sm"
                             className="w-[92px] border-0 shadow-none focus:ring-0"
+                            data-testid="chart-period-trigger-mobile"
                         >
                             <SelectValue />
                         </SelectTrigger>

@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
 
 // Mock WebHID API and Ledger device responses - this gets prepended to ledger-executor.js
 const mockWebHID = `
@@ -203,7 +203,7 @@ const mockWebHID = `
 
 `;
 
-test("Ledger login flow", async ({ page, context }) => {
+test("Ledger login flow", async ({ page, context, loginPage, startPage }) => {
     // Increase timeout for this test due to pauses for video recording
     test.setTimeout(120000);
     // Capture console logs from the iframe
@@ -385,26 +385,24 @@ test("Ledger login flow", async ({ page, context }) => {
     });
 
     // Navigate to onboarding entry page
-    await page.goto("/create");
+    await startPage.gotoCreate();
     await page.waitForTimeout(1500); // Pause to show the initial page
 
     // Click Sign In from onboarding card footer (routes to /login?context=onboarding)
-    await page.getByRole("button", { name: /sign in/i }).click();
+    await loginPage.openWalletPicker();
     await page.waitForTimeout(1000); // Pause to show the button
 
-    await expect(page.getByText("Choose how to sign in")).toBeVisible();
+    await expect(loginPage.chooseSignInText()).toBeVisible();
     await page.waitForTimeout(1500); // Pause to show wallet connection page
 
     // Verify Ledger option is visible in available options and click it
-    const ledgerOption = page.getByRole("button", { name: "Ledger" });
+    const ledgerOption = loginPage.walletOption("Ledger");
     await expect(ledgerOption).toBeVisible();
     await ledgerOption.click();
     await page.waitForTimeout(1500);
 
     // Wait for the iframe to load
-    const iframe = page
-        .frameLocator('iframe[sandbox*="allow-scripts"]')
-        .first();
+    const iframe = loginPage.executorFrame();
 
     // The Ledger executor now auto-triggers device connection on load:
     //   requestDevice() → mock returns device → GET_APP_AND_VERSION → "Select Derivation Path"
@@ -450,7 +448,7 @@ test("Ledger login flow", async ({ page, context }) => {
 
     // Wait for login to complete
     await page.waitForTimeout(2000);
-    await expect(page.getByText("Choose how to sign in")).not.toBeVisible();
+    await expect(loginPage.chooseSignInText()).not.toBeVisible();
 
     // Pause at the end to clearly show the successful login result
     await page.waitForTimeout(3000);
