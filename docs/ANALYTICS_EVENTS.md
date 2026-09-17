@@ -152,6 +152,31 @@ These may still exist in old PostHog data but are no longer emitted:
 
 ---
 
+## Navigation
+
+### `nav_click`
+
+User navigates between product areas from a nav surface or a shortcut button. One event, distinguished by `source`; `destination` values depend on the surface.
+
+| Property      | Type   | Description                                                                 |
+| ------------- | ------ | --------------------------------------------------------------------------- |
+| `destination` | string | Where the user is going; see the table below for the values each surface sends |
+| `source`      | string | The surface clicked; see below                                              |
+| `treasury_id` | string | Treasury ID                                                                 |
+
+| `source`               | `destination` values                                                                | Source file                                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `sidebar`              | `dashboard`, `requests`, `payments`, `exchange`, `address-book`, `members`, `settings` | [nt-fe/components/sidebar.tsx](../nt-fe/components/sidebar.tsx)                                   |
+| `mobile-bottom-nav`    | `dashboard`, `requests`, `contacts`                                                 | [nt-fe/components/mobile-shell/mobile-bottom-nav.tsx](../nt-fe/components/mobile-shell/mobile-bottom-nav.tsx) |
+| `mobile-menu`          | `send`, `swap`, `members`, `settings`                                               | [nt-fe/components/mobile-shell/mobile-menu-sheet.tsx](../nt-fe/components/mobile-shell/mobile-menu-sheet.tsx) |
+| `dashboard`            | `deposit`, `payments`, `exchange` (the Receive / Send / Swap buttons)               | [balance-with-graph.tsx](<../nt-fe/app/(treasury)/[treasuryId]/dashboard/components/balance-with-graph.tsx>), [fund-account-empty.tsx](<../nt-fe/app/(treasury)/[treasuryId]/dashboard/components/fund-account-empty.tsx>) |
+| `dashboard-assets`     | `payments`, `exchange` (Send / Swap on an asset row)                                | [nt-fe/components/asset-row-action-menu.tsx](../nt-fe/components/asset-row-action-menu.tsx), [mobile-asset-action-sheet.tsx](../nt-fe/components/mobile-shell/mobile-asset-action-sheet.tsx) |
+| `members-action-sheet` | `payments` (Send to a member)                                                       | [members/page.tsx](<../nt-fe/app/(treasury)/[treasuryId]/members/page.tsx>)                       |
+
+The sheet names the sidebar case `sidebar_navigation` and the dashboard buttons `dashboard_cta_click`; both map to `nav_click` filtered by `source`. Note the surfaces are not normalised: the same page is `payments` from the sidebar but `send` from the mobile menu, and `address-book` versus `contacts`.
+
+---
+
 ## Treasury Settings
 
 ### `treasury_settings_updated`
@@ -407,49 +432,49 @@ User clicks "Generate" on the full export page.
 
 ## Product Tracking Sheet Events (added 2026-09-17)
 
-The events below implement the product analytics sheet ("Sign in Creation" … "Members" tabs). These use the sheet's `snake_case` names as-is. Earlier events that the sheet lists under a different name (`wallet_selected`, `treasury_created`, `nav_click`, `bulk_payments_click`) keep their original names and semantics, now in `snake_case`. Every event carries `treasury_id` where a treasury is in scope.
+The events below implement the product analytics sheet ("Sign in Creation" … "Members" tabs). These use the sheet's `snake_case` names as-is. Earlier events that the sheet lists under a different name (`wallet_selected`, `treasury_created`, `nav_click`, `bulk_payments_click`) keep their original names and semantics, now in `snake_case`. Every event below carries `treasury_id`, listed first in its Properties cell.
 
 ### Navigation
 
 | Event                 | Properties                                                                                                             | Source                                                                     |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| `user_menu_click`     | `menu_type`: `my_account` \| `language` \| `help_support` \| `terms_of_service` \| `privacy_policy`; `source`: `sidebar` \| `mobile-user-sheet` | `components/sidebar-profile-menu.tsx`, `components/mobile-shell/mobile-user-sheet.tsx` |
-| `treasury_menu_click` | `menu_type`: `manage_treasuries` \| `create_treasury`                                                                  | `components/treasury-selector.tsx`                                         |
+| `user_menu_click`     | `treasury_id`; `menu_type`: `my_account` \| `language` \| `help_support` \| `terms_of_service` \| `privacy_policy`; `source`: `sidebar` \| `mobile-user-sheet` | `components/sidebar-profile-menu.tsx`, `components/mobile-shell/mobile-user-sheet.tsx` |
+| `treasury_menu_click` | `treasury_id`; `menu_type`: `manage_treasuries` \| `create_treasury` | `components/treasury-selector.tsx`                                         |
 
 ### Dashboard
 
 | Event                           | Properties                                                                                          | Source                                                        |
 | ------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| `chart_filter`                  | `filter_type`: `token` (+ `token_symbol`, `all` for the reset) \| `time_period` (+ `time_value`: `1W`/`1M`/`3M`/`1Y`) | `dashboard/components/balance-with-graph.tsx`                 |
-| `recent_transactions_view_more` | –                                                                                                   | `features/activity/components/recent-activity-card.tsx`       |
-| `transactions_search`           | `action`: `search_used` (fires when a non-empty tx hash is searched)                                | `dashboard/activity/page.tsx`                                 |
-| `transactions_filter_applied`   | `filter_type`: `created_date` \| `token` \| `from` \| `to`                                          | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
-| `transactions_tab_click`        | `tab_type`: `all` \| `send` \| `received` \| `swap`                                                 | `dashboard/activity/page.tsx`                                 |
-| `pending_request_action`        | `interaction_type`: `approve` \| `reject` \| `view_details`; `proposal_id`                          | `features/proposals/components/pending-requests/index.tsx`    |
-| `pending_requests_view_all`     | –                                                                                                   | `features/proposals/components/pending-requests/index.tsx`    |
-| `receive_cta`                   | `button_type`: `copy` \| `share`                                                                    | `dashboard/components/deposit/deposit-address-card.tsx`       |
+| `chart_filter`                  | `treasury_id`; `filter_type`: `token` (+ `token_symbol`, `all` for the reset) \| `time_period` (+ `time_value`: `1W`/`1M`/`3M`/`1Y`) | `dashboard/components/balance-with-graph.tsx`                 |
+| `recent_transactions_view_more` | `treasury_id` | `features/activity/components/recent-activity-card.tsx`       |
+| `transactions_search`           | `treasury_id`; `action`: `search_used` (fires when a non-empty tx hash is searched) | `dashboard/activity/page.tsx`                                 |
+| `transactions_filter_applied`   | `treasury_id`; `filter_type`: `created_date` \| `token` \| `from` \| `to` | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
+| `transactions_tab_click`        | `treasury_id`; `tab_type`: `all` \| `send` \| `received` \| `swap` | `dashboard/activity/page.tsx`                                 |
+| `pending_request_action`        | `treasury_id`; `interaction_type`: `approve` \| `reject` \| `view_details`; `proposal_id`. Fires on click, before the vote modal; `proposal_voted` is the completion. | `features/proposals/components/pending-requests/index.tsx`    |
+| `pending_requests_view_all`     | `treasury_id` | `features/proposals/components/pending-requests/index.tsx`    |
+| `receive_cta`                   | `treasury_id`; `button_type`: `copy` \| `share` | `dashboard/components/deposit/deposit-address-card.tsx`       |
 
 ### Requests
 
 | Event                     | Properties                                                                                                     | Source                                                                  |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `requests_search`         | `action`: `search_used`                                                                                        | `requests/page.tsx`                                                     |
-| `requests_filter_applied` | `filter_type`: `proposal_types` \| `created_date` \| `recipients` \| `token` \| `proposers` \| `approvers` \| `my_vote` | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
-| `requests_tab_click`      | `tab_type`: `all` \| `pending` \| `executed` \| `rejected` \| `expired` \| `failed`                            | `requests/page.tsx`                                                     |
-| `bulk_approve`            | `interaction_type`: `approve` \| `reject`; `requests_count`                                                    | `features/proposals/components/proposals-table.tsx`                     |
+| `requests_search`         | `treasury_id`; `action`: `search_used` | `requests/page.tsx`                                                     |
+| `requests_filter_applied` | `treasury_id`; `filter_type`: `proposal_types` \| `created_date` \| `recipients` \| `token` \| `proposers` \| `approvers` \| `my_vote` | `features/proposals/hooks/use-filter-params.ts` (via `filterEventName`) |
+| `requests_tab_click`      | `treasury_id`; `tab_type`: `all` \| `pending` \| `executed` \| `rejected` \| `expired` \| `failed` | `requests/page.tsx`                                                     |
+| `bulk_approve`            | `treasury_id`; `interaction_type`: `approve` \| `reject`; `requests_count`. Fires on click, before the vote modal; `proposal_voted` is the completion. | `features/proposals/components/proposals-table.tsx`                     |
 
 ### Send
 
 | Event                    | Properties                                    | Source                                                  |
 | ------------------------ | --------------------------------------------- | ------------------------------------------------------- |
-| `bulk_payment_data_type` | `data_type`: `upload_file` \| `provide_data`  | `payments/bulk-payment/components/upload-data-step.tsx` |
+| `bulk_payment_data_type` | `treasury_id`; `data_type`: `upload_file` \| `provide_data` | `payments/bulk-payment/components/upload-data-step.tsx` |
 
 ### Swap
 
 | Event         | Properties | Source                           |
 | ------------- | ---------- | -------------------------------- |
-| `sell_max`    | –          | `exchange/components/step1.tsx`  |
-| `receive_max` | –          | `exchange/components/step1.tsx`  |
+| `sell_max`    | `treasury_id` | `exchange/components/step1.tsx`  |
+| `receive_max` | `treasury_id` | `exchange/components/step1.tsx`  |
 
 ### Contacts and Members
 
@@ -457,9 +482,9 @@ The events below implement the product analytics sheet ("Sign in Creation" … "
 
 | Event             | Properties                                                                                          | Source                                        |
 | ----------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------- |
-| `table_cta_click` | `page`; `cta_button`: `add_contact` \| `import` \| `export` (contacts), `add_manually` \| `invite_member` (members) | `address-book/page.tsx`, `members/page.tsx`   |
-| `contact_action`  | `contact_action`: `send` \| `delete`                                                                | `address-book/page.tsx`                       |
-| `member_action`   | `members_action`: `edit` \| `delete`                                                                | `members/page.tsx`                            |
-| `bulk_action`     | `page`; `interaction_type`: `export` \| `delete` (contacts), `edit` \| `delete` (members); `count`  | `address-book/page.tsx`, `members/page.tsx`   |
+| `table_cta_click` | `treasury_id`; `page`; `cta_button`: `add_contact` \| `import` \| `export` (contacts), `add_manually` \| `invite_member` (members) | `address-book/page.tsx`, `members/page.tsx`   |
+| `contact_action`  | `treasury_id`; `contact_action`: `send` \| `delete` | `address-book/page.tsx`                       |
+| `member_action`   | `treasury_id`; `members_action`: `edit` \| `delete` | `members/page.tsx`                            |
+| `bulk_action`     | `treasury_id`; `page`; `interaction_type`: `export` \| `delete` (contacts), `edit` \| `delete` (members); `count`. `delete` fires before the confirm dialog; members completion is `member_delete_submitted`, contacts has no completion event. | `address-book/page.tsx`, `members/page.tsx`   |
 
 ---
