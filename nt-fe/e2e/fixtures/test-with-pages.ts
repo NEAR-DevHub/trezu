@@ -10,6 +10,7 @@ import { DashboardPage } from "../pages/dashboard.page";
 import { DepositPage } from "../pages/deposit.page";
 import { ExchangePage } from "../pages/exchange.page";
 import { LoginPage } from "../pages/login.page";
+import { PaymentsPage } from "../pages/payments.page";
 import { RequestsPage } from "../pages/requests.page";
 import { StartPage } from "../pages/start.page";
 import { TestDappPage } from "../pages/test-dapp.page";
@@ -25,6 +26,7 @@ interface PageObjectFixtures {
     loginPage: LoginPage;
     walletPopupPage: WalletPopupPage;
     testDappPage: TestDappPage;
+    paymentsPage: PaymentsPage;
 }
 
 export const test = base.extend<PageObjectFixtures>({
@@ -54,6 +56,9 @@ export const test = base.extend<PageObjectFixtures>({
     },
     testDappPage: async ({ page }, use) => {
         await use(new TestDappPage(page));
+    },
+    paymentsPage: async ({ page }, use) => {
+        await use(new PaymentsPage(page));
     },
 });
 

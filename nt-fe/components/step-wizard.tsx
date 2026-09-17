@@ -1,9 +1,10 @@
-import { useRef } from "react";
-import type { ReactNode } from "react";
-import { Button } from "./button";
 import { ArrowLeftIcon, Loader2 } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
+import { useRef } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "./button";
 
 export interface StepProps {
     handleBack?: () => void;
@@ -165,6 +166,7 @@ export function StepperHeader({
     handleBack,
     backDisabled = false,
 }: HandleBackWithTitleProps) {
+    const t = useTranslations("common");
     return (
         <div className="flex items-center gap-2">
             {handleBack && (
@@ -174,6 +176,7 @@ export function StepperHeader({
                     type="button"
                     onClick={handleBack}
                     disabled={backDisabled}
+                    aria-label={t("back")}
                 >
                     {<ArrowLeftIcon className="size-4" />}
                 </Button>
