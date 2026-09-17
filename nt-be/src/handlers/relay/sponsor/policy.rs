@@ -4,10 +4,11 @@
 //!   onboarded before [`SPONSORSHIP_CUTOFF`] keep the legacy bond-based allowance;
 //!   newer ones are limited to 1 yoctoNEAR (their proposal bonds are zero).
 //! - For Sputnik DAOs the relayer tops up the DAO contract's balance to cover the
-//!   on-chain storage a NEW proposal occupies — i.e. for `add_proposal` only.
-//!   `act_proposal` (voting) does not grow the DAO contract's storage, so it gets
-//!   no top-up. This is unrelated to NEP-141 `storage_deposit` registrations, which
-//!   the sponsor pays separately (see [`crate::handlers::relay::effects::registrations`]).
+//!   on-chain storage the relay adds: a new proposal's args for `add_proposal`, a
+//!   flat allowance per `act_proposal` (each vote writes the voter into the
+//!   proposal's vote map and role counters). This is unrelated to NEP-141
+//!   `storage_deposit` registrations, which the sponsor pays separately (see
+//!   [`crate::handlers::relay::effects::registrations`]).
 
 use std::sync::Arc;
 
@@ -132,9 +133,9 @@ pub async fn enforce_deposit_limit(
     Ok(())
 }
 
-/// Top up the DAO contract's balance to cover the storage a NEW proposal occupies,
-/// before the `add_proposal` executes. Only call this for relays that add a proposal
-/// — `act_proposal` does not grow DAO storage.
+/// Top up the DAO contract's balance to cover the storage this relay adds (a new
+/// proposal, or the vote entries of `act_proposal`), before the relayed call
+/// executes.
 ///
 /// `proposal_storage_cost` is already derived server-side and clamped to the cap by
 /// [`proposal_storage_cost`], so there is no client value to validate here.
