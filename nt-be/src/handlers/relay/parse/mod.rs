@@ -207,10 +207,11 @@ pub struct ParsedRelay {
     pub operation: RelayOperation,
     /// Total NEAR attached across the sponsored calls (proposal bonds).
     pub attached_deposit: NearToken,
-    /// Server-derived estimate of the DAO-contract storage (bytes) that this relay's
-    /// `add_proposal` calls occupy — measured from the actual proposal args we
-    /// received, never from a client-supplied number. Zero for vote-only relays.
-    /// Used to size (and cap) the sponsor storage top-up.
+    /// Server-derived estimate of the DAO-contract storage (bytes) this relay
+    /// occupies — `add_proposal` measured from the actual proposal args we
+    /// received, plus a flat allowance per `act_proposal` (a vote writes the
+    /// voter into the proposal's vote map and role counters) — never from a
+    /// client-supplied number. Used to size (and cap) the sponsor storage top-up.
     pub proposal_storage_bytes: u128,
 }
 
@@ -219,6 +220,10 @@ pub struct ParsedRelay {
 /// estimate is derived server-side (a client can't inflate the top-up) and
 /// clamped to a hard maximum before any NEAR is fronted.
 const PROPOSAL_STORAGE_BASE_BYTES: u128 = 64;
+/// Flat per-vote allowance. Measured on mainnet: 18–20 bytes for a further
+/// vote of a role, 80–85 bytes for a role's first vote (its `vote_counts`
+/// entry is created too).
+const VOTE_STORAGE_BYTES: u128 = 128;
 
 /// The `proposal` argument of `add_proposal`. `kind` is kept as raw JSON because the
 /// relay does not authorize on it — DAO permissions are enforced on-chain and via
@@ -241,8 +246,7 @@ pub struct ActProposal {
 }
 
 impl RelayOperation {
-    /// Whether this relay adds proposals. Only `add_proposal` grows the DAO
-    /// contract's storage, so only then does the relayer top up its balance.
+    /// Whether this relay adds proposals.
     pub fn is_add_proposals(&self) -> bool {
         matches!(self, RelayOperation::AddProposals(_))
     }
@@ -410,7 +414,10 @@ fn validate_calls(
                     .saturating_add(call.args.len() as u128);
                 add_proposals.push(parse_add_proposal(&call)?);
             }
-            "act_proposal" => votes.push(parse_act_proposal(&call)?),
+            "act_proposal" => {
+                proposal_storage_bytes = proposal_storage_bytes.saturating_add(VOTE_STORAGE_BYTES);
+                votes.push(parse_act_proposal(&call)?);
+            }
             other => {
                 return Err(format!(
                     "Unsupported relayed method '{}' (only add_proposal/act_proposal are sponsored)",
@@ -530,7 +537,8 @@ mod tests {
     #[test]
     fn derives_storage_bytes_from_proposal_and_ignores_client() {
         // A larger proposal payload yields a larger derived storage estimate, and a
-        // vote-only relay derives zero. Neither reads any client-provided value.
+        // vote-only relay derives a flat allowance per vote. Neither reads any
+        // client-provided value.
         let small = validate_calls(&acc(TREASURY), vec![add_call(TREASURY, transfer_kind(), 0)])
             .unwrap()
             .2;
@@ -548,11 +556,14 @@ mod tests {
 
         let votes = validate_calls(
             &acc(TREASURY),
-            vec![act_call(TREASURY, 1, "VoteApprove", None)],
+            vec![
+                act_call(TREASURY, 1, "VoteApprove", None),
+                act_call(TREASURY, 2, "VoteReject", None),
+            ],
         )
         .unwrap()
         .2;
-        assert_eq!(votes, 0, "vote-only relays occupy no new proposal storage");
+        assert_eq!(votes, 2 * VOTE_STORAGE_BYTES, "flat allowance per vote");
     }
 
     #[test]

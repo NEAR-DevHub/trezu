@@ -37,6 +37,9 @@ pub struct TokenBalanceResponse {
     pub token_id: String,
     pub balance: U128,
     pub locked_balance: Option<U128>,
+    /// Chain total minus the storage lock and execution headroom: the most
+    /// the account can send regardless of who owns it (NEAR only).
+    pub releasable_balance: Option<U128>,
     pub decimals: u8,
 }
 
@@ -405,6 +408,7 @@ async fn apply_ledger_balances(
     state: &Arc<AppState>,
     account: &AccountId,
     tokens: &mut [(SimplifiedToken, U128)],
+    near_releasable: Option<u128>,
 ) -> Result<(), (StatusCode, String)> {
     use crate::handlers::balance_changes::public_list;
     use crate::handlers::public_history::charts::repository::load_chart_readiness;
@@ -470,10 +474,12 @@ async fn apply_ledger_balances(
             };
             raw
         };
-        if matches!(token.residency, TokenResidency::Near)
-            && raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear()
-        {
-            raw = 0;
+        if matches!(token.residency, TokenResidency::Near) {
+            raw = match near_releasable {
+                Some(releasable) => ledger_near_spendable(raw, releasable),
+                None if raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() => 0,
+                None => raw,
+            };
         }
 
         token.balance = Balance::Standard {
@@ -533,12 +539,26 @@ async fn load_confidential_ledger_balances(
     Ok(Some(balances))
 }
 
+/// Storage the DAO still has to grow between a payment proposal and its
+/// execution: each finalizing vote appends ~85 bytes (measured on mainnet), and
+/// the lock check runs after the transfer is debited. 0.01 NEAR covers ~11
+/// votes, so a MAX payment approved by a full council still clears the lock.
+pub const NEAR_EXECUTION_HEADROOM: NearToken = NearToken::from_millinear(10);
+
+/// The most NEAR a payment can move: chain total minus the storage lock, less
+/// the headroom the approving votes will consume.
+pub fn releasable_near_balance(total: u128, storage_locked: u128) -> u128 {
+    total.saturating_sub(storage_locked.saturating_add(NEAR_EXECUTION_HEADROOM.as_yoctonear()))
+}
+
 /// Fetch NEAR balance for an account
 /// User-owned spendable NEAR: chain total minus whichever is larger of the
-/// storage lock and the sponsor-fronted NEAR (`monitored_accounts.paid_near`),
-/// floored to zero below the display minimum.
+/// storage lock (plus execution headroom) and the sponsor-fronted NEAR
+/// (`monitored_accounts.paid_near`), floored to zero below the display minimum.
 pub fn spendable_near_balance(total: u128, storage_locked: u128, paid_near: u128) -> u128 {
-    let available_raw = total.saturating_sub(storage_locked.max(paid_near));
+    let available_raw = total
+        .saturating_sub(paid_near)
+        .min(releasable_near_balance(total, storage_locked));
     if available_raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
         0
     } else {
@@ -593,7 +613,23 @@ fn near_balance_response(
         token_id: "near".to_string(),
         balance: spendable_near_balance(total, storage_locked, paid_near).into(),
         locked_balance: Some(storage_locked.into()),
+        releasable_balance: Some(releasable_near_balance(total, storage_locked).into()),
         decimals: 24,
+    }
+}
+
+/// Ledger-served NEAR capped at what the chain can release. Imported DAOs
+/// hold their contract binary and pre-Trezu proposal history in storage the
+/// sponsor never paid for; the ledger correctly counts that NEAR as
+/// user-owned, but a transfer of it fails with `LackBalanceForState`. The cap
+/// applies only here at read time, so for such DAOs the dashboard sits below
+/// the chart's latest point by the lock — accepted.
+pub fn ledger_near_spendable(ledger_raw: u128, releasable: u128) -> u128 {
+    let capped = ledger_raw.min(releasable);
+    if capped < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
+        0
+    } else {
+        capped
     }
 }
 
@@ -1062,6 +1098,10 @@ pub async fn compute_user_assets(
         ));
     }
 
+    let near_releasable = near_balance
+        .as_ref()
+        .and_then(|near_bal| near_bal.releasable_balance.as_ref())
+        .map(|releasable| releasable.0);
     if let Some(near_bal) = near_balance {
         all_simplified_tokens.push((
             SimplifiedToken {
@@ -1095,7 +1135,7 @@ pub async fn compute_user_assets(
     // chart's latest point shows; live reads stay only for never-verified
     // treasuries.
     if matches!(scope, AssetsScope::Public) {
-        apply_ledger_balances(state, account, &mut all_simplified_tokens).await?;
+        apply_ledger_balances(state, account, &mut all_simplified_tokens, near_releasable).await?;
     }
 
     // Sort combined list by balance (highest first)
@@ -1261,12 +1301,43 @@ mod tests {
 
     #[test]
     fn storage_lock_wins_when_larger_than_paid_near() {
-        assert_eq!(spendable_near_balance(10 * NEAR, 4 * NEAR, NEAR), 6 * NEAR);
+        // The lock binds, so the execution headroom is taken off as well.
+        assert_eq!(
+            spendable_near_balance(10 * NEAR, 4 * NEAR, NEAR),
+            6 * NEAR - NEAR_EXECUTION_HEADROOM.as_yoctonear()
+        );
+    }
+
+    #[test]
+    fn releasable_leaves_headroom_for_approving_votes() {
+        // unified-test-1: 1.907931 total, 52,546 bytes locked. The proposal
+        // that moved exactly total − lock failed by 10 bytes once the 85-byte
+        // vote entry landed; the headroom keeps MAX below that line.
+        let total = 1_907_931_000_000_000_000_000_000;
+        let lock = 52_546 * 10_u128.pow(19);
+        let releasable = releasable_near_balance(total, lock);
+        assert!(total - releasable - lock >= 85 * 10_u128.pow(19));
+        assert_eq!(
+            releasable,
+            total - lock - NEAR_EXECUTION_HEADROOM.as_yoctonear()
+        );
     }
 
     #[test]
     fn dust_below_display_minimum_is_zero() {
         assert_eq!(spendable_near_balance(3 * NEAR + 1_000, NEAR, 3 * NEAR), 0);
+    }
+
+    #[test]
+    fn ledger_near_is_capped_at_chain_releasable() {
+        // braindao-treasury: ledger user-owned 6.000, chain 6.143 with 6.024
+        // locked → 0.119 releasable wins.
+        let releasable = 6_143_000_000_000_000_000_000_000 - 6_024_000_000_000_000_000_000_000;
+        assert_eq!(ledger_near_spendable(6 * NEAR, releasable), releasable);
+        // Trezu-native DAO: the ledger figure is below the chain bound and wins.
+        assert_eq!(ledger_near_spendable(10 * NEAR, 12 * NEAR), 10 * NEAR);
+        // Capped dust displays as zero.
+        assert_eq!(ledger_near_spendable(6 * NEAR, 1_000), 0);
     }
 
     #[test]
