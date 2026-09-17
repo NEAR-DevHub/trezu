@@ -1,6 +1,8 @@
 # Trezu — Test Strategy
 
-**Version:** 1.0 · **Date:** 2026-07-08 · **Owner:** QA
+**Version:** 1.1 · **Date:** 2026-09-15 · **Owner:** QA · see [Changelog](#changelog) for revision history
+
+**Read this when:** onboarding, planning automation/roadmap work, or the quarterly strategy review. For day-to-day test execution (what to click before a release), use [MANUAL_REGRESSION_CHECKLIST.md](MANUAL_REGRESSION_CHECKLIST.md) instead — that file has its own Quick Start section.
 **Scope:** Trezu platform — `nt-be` (Rust/Axum backend), `nt-fe` (Next.js frontend), `contracts/` (NEAR WASM), `nt-cli`, sandbox and CI.
 
 ---
@@ -33,23 +35,23 @@ Test depth and CI gating strictness scale with tier: P0 areas get the densest au
 
 ---
 
-## 3. Current State (Baseline, July 2026)
+## 3. Current State (Baseline, September 2026 — originally July 2026, see [Changelog](#changelog))
 
 | Layer | What exists | In CI? |
 |-------|-------------|--------|
-| Backend unit tests | ~359 in-crate tests across ~70 modules in `nt-be/src/` | ✅ `backend-tests.yml` |
-| Backend integration | 27 test files / ~84 cases in `nt-be/tests/` (balance collection, staking rewards, notifications, RPC failover, confidential monitoring, …) | ✅ `backend-tests.yml` |
-| `bulk-payment` contract | 16 unit + 11 sandbox integration tests | ✅ `bulk-payment-test.yml` |
+| Backend unit tests | ~645 in-crate tests across ~130 modules in `nt-be/src/` | ✅ `backend-tests.yml` |
+| Backend integration | 31 test files / ~89 cases in `nt-be/tests/` (balance collection, staking rewards, notifications, RPC failover, confidential monitoring, …) | ✅ `backend-tests.yml` |
+| `bulk-payment` contract | 21 unit + 11 sandbox integration tests | ✅ `bulk-payment-test.yml` |
 | `confidential-bulk-payment` contract | 9 unit + 6 integration tests (mock MPC) | ❌ **no workflow** |
-| Frontend unit (Bun test) | 9 files / ~115 cases (proposal-template DSL, bulk-payment CSV parsing, config gating) | ❌ **not wired to CI** |
-| Playwright E2E | 10 specs / ~67 cases (onboarding tour, wallet flows, custom templates, requests page, charts, confidential deposit) — Chromium only, 1 worker in CI | ✅ `frontend-e2e.yml` |
+| Frontend unit (Bun test) | 29 files / ~274 cases (proposal-template DSL, bulk-payment CSV parsing, config gating, amount-format/intents-routing helpers) | ✅ `frontend-build.yml` (`bun run test`) |
+| Playwright E2E | 12 specs / ~67 cases (onboarding tour, wallet flows incl. Passkey, custom templates, requests page, charts, confidential deposit, exchange amount formatting) — Chromium only, 1 worker in CI | ✅ `frontend-e2e.yml` |
 | Bulk-payment JS E2E | 4 flow scripts in `e2e-tests/bulk-payment/` | ⚠️ only 1 of 4 in CI |
 | `nt-cli` | 12 tests | ❌ not in CI |
 | Coverage tooling | None | — |
 | Performance / load | None | — |
 
-**Strengths:** mature backend integration suite with recorded RPC fixtures; a full local sandbox (NEAR node + backend + Postgres + indexer, `sandbox/`) enabling realistic E2E; strong written testing conventions.
-**Weaknesses:** frontend unit tests and two whole components (confidential contract, CLI) are untested in CI; no coverage visibility; E2E skips most money flows (payments, exchange, members, settings); single browser; no non-functional testing.
+**Strengths:** mature backend integration suite with recorded RPC fixtures; a full local sandbox (NEAR node + backend + Postgres + indexer, `sandbox/`) enabling realistic E2E; strong written testing conventions; frontend unit tests now gate every PR (`frontend-build.yml`).
+**Weaknesses:** two whole components (confidential-bulk-payment contract, `nt-cli`) are still untested in CI; no coverage visibility; E2E skips most money flows (payments, exchange, members, settings); single browser; no non-functional testing.
 
 ---
 
@@ -71,7 +73,7 @@ Backend integration tests in `nt-be/tests/` are the primary safety net. Conventi
 - **RPC through the cache proxy** — new tests that hit NEAR RPC require re-recording fixtures with `nt-be/scripts/record-rpc-fixtures.sh`; a `502 Cache miss` in CI means fixtures are stale.
 - **`#[sqlx::test]`** for isolated per-test databases.
 
-Priority expansion targets (see roadmap §8): relay authorization matrix, subscription/credit enforcement, export credit decrement, bulk-payment failure paths.
+Priority expansion targets (see roadmap §10): relay authorization matrix, subscription/credit enforcement, export credit decrement, bulk-payment failure paths.
 
 ### 4.3 Contract tests (on-chain)
 
@@ -135,7 +137,7 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 | Rust fmt + clippy (`-D warnings`) | `backend-tests.yml` | ✅ |
 | Backend unit + integration tests | `backend-tests.yml` | ✅ |
 | Frontend build, Biome format, i18n check | `frontend-build.yml` | ✅ |
-| **Frontend unit tests (`bun test`)** | `frontend-build.yml` | △ add `test` script + CI step |
+| Frontend unit tests (`bun test`) | `frontend-build.yml` | ✅ |
 | Playwright E2E (sandbox) | `frontend-e2e.yml` | ✅ |
 | `bulk-payment` contract tests | `bulk-payment-test.yml` | ✅ |
 | **`confidential-bulk-payment` contract tests** | new workflow | △ |
@@ -184,7 +186,7 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 ## 10. Roadmap
 
 ### Quick wins (1–2 weeks)
-1. Add `"test": "bun test"` to `nt-fe/package.json` and a step in `frontend-build.yml` — ~115 existing tests start gating PRs at near-zero cost.
+1. ~~Add `"test": "bun test"` to `nt-fe/package.json` and a step in `frontend-build.yml`~~ ✅ **Done** (see [Changelog](#changelog)) — frontend unit tests now gate every PR.
 2. New workflow for `confidential-bulk-payment` contract tests (copy `bulk-payment-test.yml`).
 3. Switch `bulk-payment-e2e.yml` to `npm run test:all`.
 4. Add `nt-cli` tests to CI.
@@ -210,3 +212,12 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 - **QA + security reviewer** jointly sign off changes touching signing keys, relay authorization, or fee calculation.
 
 **Review cadence:** this document is revisited quarterly or when a major component ships (e.g., live billing via Stripe/PingPay, which is currently deferred — see `docs/AI_SUBSCRIPTION_GUIDE.md`).
+
+---
+
+## Changelog
+
+| Version | Date | Change |
+|---------|------|--------|
+| 1.1 | 2026-09-15 | Refreshed §3 baseline against actual repo state: frontend unit tests are now wired into `frontend-build.yml` (29 files / ~274 cases, up from 9/~115) — closed roadmap quick-win #1; Playwright grew to 12 specs (added Passkey login, exchange amount-formatting); backend integration grew to 31 files; `bulk-payment` contract unit tests grew to 21. `confidential-bulk-payment` and `nt-cli` CI gaps confirmed still open. Fixed a broken cross-reference in §4.2 ("roadmap §8" → "roadmap §10", Roadmap is §10 not §8). |
+| 1.0 | 2026-07-08 | Initial version. |
