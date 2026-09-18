@@ -100,6 +100,11 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::public_dashboard::get_public_dashboard_aum),
         )
         .route("/api/app-events", get(handlers::events::app_events))
+        // Landing page early-access form (public, syncs to Attio)
+        .route(
+            "/api/early-access",
+            post(handlers::early_access::submit_early_access),
+        )
         // Balance changes endpoint
         .route(
             "/api/balance-changes",

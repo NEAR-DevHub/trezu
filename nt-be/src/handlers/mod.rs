@@ -4,6 +4,7 @@ pub mod balance_changes;
 pub mod bulkpayment;
 pub mod chains;
 pub mod dao;
+pub mod early_access;
 pub mod events;
 pub mod intents;
 pub mod lookup;

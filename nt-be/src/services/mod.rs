@@ -1,5 +1,6 @@
 //! Services module for external integrations and business logic
 
+pub mod attio;
 pub mod coingecko;
 pub mod confidential_credentials;
 pub mod dao_sync;

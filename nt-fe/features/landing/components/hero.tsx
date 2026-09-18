@@ -2,7 +2,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { APP_DOCS_URL } from "@/constants/config";
 import { cn } from "@/lib/utils";
-import { EARLY_ACCESS_HREF, NAV_LINKS, PROOF_STATS } from "../content";
+import { NAV_LINKS, PROOF_STATS } from "../content";
+import { EarlyAccessButton } from "./early-access";
 import { NearBusinessWordmark } from "./landing-icons";
 import { Reveal } from "./reveal";
 import { SectionLink } from "./section-link";
@@ -17,26 +18,6 @@ export const GUTTER = "px-6 md:px-12 xl:px-[120px]";
  * the whole hero is above the fold. Under reduced-motion only the fade plays.
  */
 const REVEAL = "animate-landing-rise motion-reduce:animate-landing-fade";
-
-export function EarlyAccessButton({
-    className,
-    ...props
-}: Omit<React.ComponentProps<typeof Link>, "href">) {
-    return (
-        <Link
-            href={EARLY_ACCESS_HREF}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-full bg-landing-green font-medium leading-none text-landing-ink transition-colors hover:bg-[#00c97f]",
-                className,
-            )}
-            {...props}
-        >
-            Request Early Access
-        </Link>
-    );
-}
 
 export function LandingNav() {
     return (
