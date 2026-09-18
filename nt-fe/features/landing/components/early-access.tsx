@@ -286,15 +286,18 @@ function EarlyAccessForm({
 
     if (status === "sent") {
         return (
-            <p
+            // The form it replaces held the focus, so a screen reader is left
+            // pointing at nothing — announce the confirmation instead.
+            <output
+                aria-live="polite"
                 className={cn(
                     BLOCK_GAP,
-                    "text-base leading-snug text-landing-grey",
+                    "block text-base leading-snug text-landing-grey",
                 )}
             >
                 Thanks — your request is in. We&apos;ll get in touch at the
                 email address you gave us.
-            </p>
+            </output>
         );
     }
 
@@ -436,7 +439,10 @@ function Consent({ id }: { id: string }) {
                 type="checkbox"
                 name="consent"
                 required
-                className="peer size-4 cursor-pointer appearance-none rounded-[3px] border border-landing-green bg-transparent checked:bg-landing-green"
+                // `appearance-none` takes the browser's focus ring with it,
+                // and this is the one control a keyboard user must find to
+                // enable the submit button.
+                className="peer size-4 cursor-pointer appearance-none rounded-[3px] border border-landing-green bg-transparent checked:bg-landing-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-ink"
             />
             <svg
                 aria-hidden="true"
