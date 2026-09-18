@@ -898,7 +898,10 @@ export default function BalanceWithGraph({
                     </Select>
                 )}
             </div>
-            <div className={cn(isConfidential ? "hidden" : "")}>
+            <div
+                className={cn(isConfidential ? "hidden" : "")}
+                data-testid="balance-chart"
+            >
                 {isLoading ||
                 isHistoryRefreshing ||
                 (isFetching && chartData.data.length === 0) ? (

@@ -163,8 +163,11 @@ test.describe("Dashboard chart collapses today into Now (issue #1659)", () => {
         await dashboardPage.chart.waitForRendered();
 
         // Recharts draws no path segment for a lone point, so the tick label
-        // and the absent empty state are the evidence that it charted.
+        // and the absent empty state are the evidence that it charted. Other
+        // dashboard widgets share the empty-state copy, so scope to the chart.
         await expectLabels(dashboardPage, ["Now"]);
-        await expect(page.getByText("Nothing to show yet")).toHaveCount(0);
+        await expect(
+            page.getByTestId("balance-chart").getByText("Nothing to show yet"),
+        ).toHaveCount(0);
     });
 });
