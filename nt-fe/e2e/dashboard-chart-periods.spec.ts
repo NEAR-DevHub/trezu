@@ -321,10 +321,11 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             const pointCount = await dashboardPage.chart.getDataPointCount();
 
             console.log(
-                `[${period}] Rendered data points: ${pointCount}, expected: ~${EXPECTED_POINTS[period] + 1} (data + "Now")`,
+                `[${period}] Rendered data points: ${pointCount}, expected: ~${EXPECTED_POINTS[period] + 1} (past days + "Now")`,
             );
 
-            // The chart should render approximately EXPECTED_POINTS + 1 (for "Now")
+            // The chart renders the fixture's past-day buckets plus "Now";
+            // buckets on the current day are collapsed into "Now".
             // Allow some tolerance since Recharts may optimize the path
             const expectedMin = EXPECTED_POINTS[period];
             expect(

@@ -45,6 +45,7 @@ import type { ChartInterval, TreasuryAsset } from "@/lib/api";
 import { totalBalance } from "@/lib/balance";
 import { getBalanceHistoryTokenIds } from "@/lib/balance-history-token-ids";
 import Big from "@/lib/big";
+import { precedesLocalDay } from "@/lib/chart-history-points";
 import {
     getDashboardBalanceView,
     getDashboardBreakdownItems,
@@ -278,6 +279,10 @@ export default function BalanceWithGraph({
         if (!balanceChartData) {
             return { data: [], showUSD: true };
         }
+        // Buckets on the request's own day are charted once, as "Now".
+        const chartEndTime = new Date(
+            frozenChartParams.current?.endTime ?? Date.now(),
+        );
 
         if (selectedToken === "all") {
             // Aggregate USD values across all tokens
@@ -305,6 +310,9 @@ export default function BalanceWithGraph({
             }
 
             const data = Array.from(timeMap.entries())
+                .filter(([timestamp]) =>
+                    precedesLocalDay(timestamp, chartEndTime),
+                )
                 .sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
@@ -323,7 +331,7 @@ export default function BalanceWithGraph({
                     usdValue: usdValue,
                 }));
 
-            if (data.length > 0) {
+            if (timeMap.size > 0) {
                 // Only include tokens whose history token IDs have price data
                 const tokenIdsWithPrices = new Set(
                     Object.entries(balanceChartData)
@@ -393,6 +401,9 @@ export default function BalanceWithGraph({
                 (v) => v.hasUSD,
             );
             const data = Array.from(timeMap.entries())
+                .filter(([timestamp]) =>
+                    precedesLocalDay(timestamp, chartEndTime),
+                )
                 .sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
@@ -411,7 +422,7 @@ export default function BalanceWithGraph({
                     usdValue: hasUSD ? usdValue : undefined,
                     balanceValue: balanceValue,
                 }));
-            if (data.length > 0) {
+            if (timeMap.size > 0) {
                 const groupTokens = selectedTokenGroup?.tokens ?? [];
                 const selectedTokenIdsWithPrices = new Set(
                     Object.entries(balanceChartData)
