@@ -15,6 +15,7 @@ import { extractProposalData } from "./proposal-extractors";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { PUBLIC_TO_CONFIDENTIAL_ACTION } from "@/constants/proposal-actions";
 import { isIntentsDepositKind } from "@/lib/near-proposal-builders";
+import { hasOmniMarker } from "@/features/omni/envelope";
 
 const BULK_PAYMENT_CONTRACT_ID =
     process.env.NEXT_PUBLIC_BULK_PAYMENT_CONTRACT_ID || "bulkpayment.near";
@@ -253,6 +254,14 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
         case "transfer":
             return "Payment Request";
         case "call": {
+            // omni-cli-rs chain-signature proposals also call v1.signer, so
+            // they must be recognised before the confidential branch. The
+            // envelope marker alone routes to the omni card; the card then
+            // verifies receiver/actions and shows a red banner if they are
+            // not a plain MPC sign request.
+            if (hasOmniMarker(proposal.description)) {
+                return "Omni Chain Signature";
+            }
             const proposalAction = decodeProposalDescription(
                 "proposal action",
                 proposal.description,

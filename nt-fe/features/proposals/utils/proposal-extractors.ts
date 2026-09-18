@@ -42,6 +42,8 @@ import type {
     VestingSchedule,
     VoteData,
 } from "../types/index";
+import { getNearNetwork } from "@/features/omni/network";
+import { extractOmniProposalData } from "@/features/omni/verify";
 import { extractConfidentialBulkDestinationAssetId } from "./confidential-bulk-utils";
 import { getProposalUIKind } from "./proposal-utils";
 
@@ -1026,6 +1028,9 @@ export function extractProposalData(
             break;
         case "Confidential Request":
             data = extractConfidentialRequestData(proposal, treasuryId);
+            break;
+        case "Omni Chain Signature":
+            data = extractOmniProposalData(proposal, getNearNetwork());
             break;
         case "Move to Confidential":
             data = extractMoveToConfidentialData(proposal);
