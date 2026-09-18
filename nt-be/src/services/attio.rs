@@ -91,6 +91,21 @@ pub enum AttioError {
     UnexpectedResponse(&'static str),
 }
 
+impl AttioError {
+    /// Transport failures, 429s and 5xxs may well come out differently next
+    /// time; every other status means the request itself is wrong and
+    /// resending it cannot help.
+    fn is_retryable(&self) -> bool {
+        match self {
+            Self::Transport(_) => true,
+            Self::Status { status, .. } => {
+                *status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
+            }
+            Self::UnexpectedResponse(_) => false,
+        }
+    }
+}
+
 impl std::fmt::Display for AttioError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -132,10 +147,32 @@ impl AttioClient {
         lead: &EarlyAccessLead,
     ) -> Result<(), AttioError> {
         let record_id = self.upsert_person(lead).await?;
-        if self.is_already_on_list(&record_id).await {
-            return Ok(());
+
+        // The create below is the one call we cannot simply resend: Attio has
+        // no idempotency key for list entries, so a create that landed but
+        // whose response we never saw would otherwise be repeated as a second
+        // row. Hence the check runs before *every* attempt, not just the
+        // first — it also covers the ordinary case of someone applying twice.
+        let mut attempt = 0;
+        loop {
+            if self.is_already_on_list(&record_id).await {
+                tracing::info!(%record_id, "already on the Attio early access list");
+                return Ok(());
+            }
+
+            let error = match self.add_to_list(&record_id).await {
+                Ok(()) => return Ok(()),
+                Err(error) if error.is_retryable() => error,
+                Err(error) => return Err(error),
+            };
+
+            let Some(delay) = RETRY_BACKOFF.get(attempt) else {
+                return Err(error);
+            };
+            tracing::warn!(%record_id, attempt, "Attio list entry failed, retrying: {error}");
+            tokio::time::sleep(*delay).await;
+            attempt += 1;
         }
-        self.add_to_list(&record_id).await
     }
 
     /// Matching on `email_addresses` makes this idempotent: the same person
@@ -155,11 +192,9 @@ impl AttioClient {
             .ok_or(AttioError::UnexpectedResponse("no data.id.record_id"))
     }
 
-    /// Creating a list entry is not idempotent, so a resubmission — or one of
-    /// our own retries landing after a write that actually succeeded — would
-    /// otherwise put the same person on the list twice. Best-effort on
-    /// purpose: if the lookup itself fails we add the entry anyway, because a
-    /// duplicate row is a much cheaper mistake than a dropped lead.
+    /// Best-effort on purpose: if the lookup itself fails we add the entry
+    /// anyway, because a duplicate row is a much cheaper mistake than a
+    /// dropped lead.
     async fn is_already_on_list(&self, record_id: &str) -> bool {
         let path = format!("/v2/lists/{}/entries/query", self.list_id);
         let body = json!({ "filter": { "parent_record_id": record_id }, "limit": 1 });
@@ -175,6 +210,8 @@ impl AttioClient {
         }
     }
 
+    /// One attempt only — retrying is the caller's business, because it has to
+    /// re-check the list first.
     async fn add_to_list(&self, record_id: &str) -> Result<(), AttioError> {
         let path = format!("/v2/lists/{}/entries", self.list_id);
         let body = json!({
@@ -185,47 +222,54 @@ impl AttioClient {
             }
         });
 
-        self.send(Method::POST, &path, &body).await.map(|_| ())
+        self.send_once(Method::POST, &path, &body).await.map(|_| ())
     }
 
-    /// One Attio call under the retry policy: transport errors, 429s and 5xxs
-    /// get [`RETRY_BACKOFF`]; every other status fails immediately, because a
-    /// 4xx means the payload is wrong and resending it cannot help.
+    /// An Attio call under the retry policy, for the requests that are safe to
+    /// repeat blindly.
     async fn send(&self, method: Method, path: &str, body: &Value) -> Result<Value, AttioError> {
-        let url = format!("{}{path}", self.base_url);
         let mut attempt = 0;
 
         loop {
-            let error = match self
-                .http
-                .request(method.clone(), &url)
-                .bearer_auth(&self.api_key)
-                .json(body)
-                .send()
-                .await
-            {
-                Ok(response) if response.status().is_success() => {
-                    return response.json().await.map_err(AttioError::Transport);
-                }
-                Ok(response) => {
-                    let status = response.status();
-                    let body = response.text().await.unwrap_or_default();
-                    let error = AttioError::Status { status, body };
-                    if status != StatusCode::TOO_MANY_REQUESTS && !status.is_server_error() {
-                        return Err(error);
-                    }
-                    error
-                }
-                Err(error) => AttioError::Transport(error),
+            let error = match self.send_once(method.clone(), path, body).await {
+                Ok(response) => return Ok(response),
+                Err(error) if error.is_retryable() => error,
+                Err(error) => return Err(error),
             };
 
             let Some(delay) = RETRY_BACKOFF.get(attempt) else {
                 return Err(error);
             };
-            tracing::warn!(%url, attempt, "Attio call failed, retrying: {error}");
+            tracing::warn!(path, attempt, "Attio call failed, retrying: {error}");
             tokio::time::sleep(*delay).await;
             attempt += 1;
         }
+    }
+
+    /// A single Attio call, with no retrying of its own.
+    async fn send_once(
+        &self,
+        method: Method,
+        path: &str,
+        body: &Value,
+    ) -> Result<Value, AttioError> {
+        let response = self
+            .http
+            .request(method, format!("{}{path}", self.base_url))
+            .bearer_auth(&self.api_key)
+            .json(body)
+            .send()
+            .await
+            .map_err(AttioError::Transport)?;
+
+        if !response.status().is_success() {
+            return Err(AttioError::Status {
+                status: response.status(),
+                body: response.text().await.unwrap_or_default(),
+            });
+        }
+
+        response.json().await.map_err(AttioError::Transport)
     }
 }
 
@@ -395,6 +439,48 @@ mod tests {
             .capture_early_access_lead(&lead())
             .await
             .expect("capture should succeed");
+    }
+
+    #[tokio::test]
+    async fn a_list_entry_lost_to_a_failed_response_is_not_created_twice() {
+        // Attio applied the create but answered 502, so our retry has to
+        // notice the entry is already there rather than add a second one.
+        let server = MockServer::start().await;
+
+        Mock::given(method("PUT"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": { "id": { "record_id": "rec_1" } }
+            })))
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/v2/lists/early-access/entries/query"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
+            .up_to_n_times(1)
+            .expect(1)
+            .mount(&server)
+            .await;
+        Mock::given(method("POST"))
+            .and(path("/v2/lists/early-access/entries/query"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+                "data": [{ "id": { "entry_id": "ent_1" } }]
+            })))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        Mock::given(method("POST"))
+            .and(path("/v2/lists/early-access/entries"))
+            .respond_with(ResponseTemplate::new(502))
+            .expect(1)
+            .mount(&server)
+            .await;
+
+        client(&server)
+            .capture_early_access_lead(&lead())
+            .await
+            .expect("the entry Attio already has counts as success");
     }
 
     #[tokio::test]
