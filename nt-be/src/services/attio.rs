@@ -312,7 +312,9 @@ fn person_values(lead: &EarlyAccessLead) -> Value {
 
 /// Attio's personal-name attribute wants the parts separately. The form asks
 /// for one line, so the first space is the split — everything after it is the
-/// last name, which keeps multi-part surnames intact.
+/// last name, which keeps multi-part surnames intact. A single word leaves the
+/// surname empty: guessing one would write a name into the CRM that nobody
+/// gave us, and `full_name` already carries what the visitor actually typed.
 fn split_name(name: &str) -> Value {
     let name = name.trim();
     let (first, last) = name.split_once(' ').unwrap_or((name, ""));
@@ -369,6 +371,15 @@ mod tests {
         assert!(values.get(slug::TELEGRAM).is_none());
         assert!(values.get(slug::REFERRAL_SOURCE).is_none());
         assert!(values.get(slug::REFERRER).is_none());
+    }
+
+    #[test]
+    fn a_one_word_name_leaves_the_surname_empty() {
+        let name = split_name("Prince");
+
+        assert_eq!(name["first_name"], "Prince");
+        assert_eq!(name["last_name"], "");
+        assert_eq!(name["full_name"], "Prince");
     }
 
     #[tokio::test]
