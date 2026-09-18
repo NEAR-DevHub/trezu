@@ -1048,6 +1048,10 @@ export async function submitWhitelistRequest(
 /**
  * Campaign tags read off the landing page's own URL. Every field is optional:
  * the backend drops the ones that are absent rather than writing them blank.
+ *
+ * Deliberately coarse — `referrer` is a bare host and `landingPage` a bare
+ * path. These are stored as CRM free text, so neither may carry a querystring
+ * or fragment the visitor did not knowingly disclose.
  */
 export interface EarlyAccessAttribution {
     utmSource?: string;

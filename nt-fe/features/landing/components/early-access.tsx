@@ -61,9 +61,25 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
     );
 }
 
+/** Long enough for any real campaign tag, short enough not to be a payload. */
+const MAX_ATTRIBUTION_LENGTH = 256;
+
+function capped(value: string | undefined) {
+    return value?.slice(0, MAX_ATTRIBUTION_LENGTH) || undefined;
+}
+
+/**
+ * Only the parts of the URL this page chose. The full href and the raw
+ * referrer are deliberately never sent: both routinely carry a querystring or
+ * fragment the visitor has no idea they are handing over — an OAuth `code`, a
+ * password-reset `token`, a CRM's `utm_email` — and everything here is stored
+ * verbatim as CRM free text and passes through our logs and Sentry on the way.
+ * The named `utm_*` keys are the only query values we read, and even those are
+ * length-capped because they are attacker-supplied strings.
+ */
 function readAttribution(): EarlyAccessAttribution {
     const params = new URLSearchParams(window.location.search);
-    const tag = (key: string) => params.get(key) ?? undefined;
+    const tag = (key: string) => capped(params.get(key) ?? undefined);
 
     return {
         utmSource: tag("utm_source"),
@@ -71,9 +87,25 @@ function readAttribution(): EarlyAccessAttribution {
         utmCampaign: tag("utm_campaign"),
         utmTerm: tag("utm_term"),
         utmContent: tag("utm_content"),
-        referrer: document.referrer || undefined,
-        landingPage: window.location.href,
+        referrer: readReferrer(),
+        // Path only — no search, and no hash, which is where implicit OAuth
+        // flows put their tokens.
+        landingPage: capped(window.location.pathname),
     };
+}
+
+/** Which site sent them, not which page of it and not with what attached. */
+function readReferrer() {
+    if (!document.referrer) return undefined;
+
+    try {
+        const referrer = new URL(document.referrer);
+        // Our own pages say nothing about where the visitor came from.
+        if (referrer.origin === window.location.origin) return undefined;
+        return capped(referrer.host);
+    } catch {
+        return undefined;
+    }
 }
 
 /** The landing's primary CTA, in the nav, the hero and the closing block. */
