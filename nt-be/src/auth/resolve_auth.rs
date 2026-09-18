@@ -10,6 +10,7 @@
 //! accounts without the method fall back to NEP-413 signature verification with
 //! the purpose bound into the recipient as `"<PURPOSE>@<recipient>"`.
 
+use crate::utils::contract_read_error::{is_method_not_found, is_unknown_account};
 use crate::utils::jsonrpc::create_rpc_client;
 use base64::Engine;
 use near_api::NetworkConfig;
@@ -420,31 +421,4 @@ fn parse_ed25519_signature(s: &str) -> Result<near_crypto::Signature, String> {
     }
     near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &raw)
         .map_err(|e| format!("invalid signature: {e}"))
-}
-
-/// NEP-641 §"NEP-413 fallback": detect "the method does not exist" / "no
-/// contract deployed" so we fall back to NEP-413 — but not on other errors,
-/// which could mask real bugs in a deployed wallet contract.
-fn is_method_not_found(probe: &str) -> bool {
-    let p = probe.to_lowercase();
-    // contract has no such method
-    p.contains("methodresolveerror")
-        || p.contains("method not found")
-        || p.contains("methodnotfound")
-        || p.contains("methodnamemismatch")
-        || p.contains("methodutf8error")
-        // no contract code is deployed on the account
-        || p.contains("codedoesnotexist")
-        || p.contains("nocontractcode")
-        || p.contains("contractcodenotfound")
-        || p.contains("no contract code")
-}
-
-/// Detect the "account does not exist (yet)" RPC error so the caller can retry.
-fn is_unknown_account(probe: &str) -> bool {
-    let p = probe.to_lowercase();
-    p.contains("unknown_account")
-        || p.contains("unknownaccount")
-        || p.contains("does not exist while viewing")
-        || p.contains("account_does_not_exist")
 }

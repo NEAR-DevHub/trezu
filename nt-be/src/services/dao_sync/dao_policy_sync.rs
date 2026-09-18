@@ -9,6 +9,8 @@ use sqlx::PgPool;
 use std::collections::HashSet;
 use std::time::Duration;
 
+use crate::utils::contract_read_error::is_method_not_found;
+
 /// Max DAOs to process per cycle
 const MAX_DAOS_PER_CYCLE: i64 = 50;
 
@@ -110,10 +112,7 @@ pub async fn process_stale_daos(
 
 /// Check if an error is permanent (contract is incompatible)
 fn is_permanent_error(error: &str) -> bool {
-    error.contains("Cannot deserialize")
-        || error.contains("Borsh")
-        || error.contains("MethodNotFound")
-        || error.contains("CodeDoesNotExist")
+    error.contains("Cannot deserialize") || error.contains("Borsh") || is_method_not_found(error)
 }
 
 /// Mark a DAO as having failed sync
