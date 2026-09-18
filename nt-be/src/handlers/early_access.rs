@@ -3,16 +3,43 @@
 //! Public and unauthenticated: the browser posts here rather than to Attio so
 //! the API key stays server-side.
 
-use std::sync::Arc;
+use std::num::NonZeroU32;
+use std::sync::{Arc, LazyLock};
 
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::State,
+    http::{HeaderMap, StatusCode},
+};
+use governor::{DefaultKeyedRateLimiter, Quota, RateLimiter as Governor};
 use serde::Deserialize;
 
 use crate::{
     AppState,
     error_event::ErrorCode,
     services::attio::{AttioClient, Attribution, EarlyAccessLead},
+    utils::rate_limiter::RateLimiter,
 };
+
+/// Someone filling the form in earnest may retype an address and try again;
+/// past a handful a minute it is not a person applying for early access.
+const PER_CLIENT_PER_MINUTE: u32 = 5;
+
+/// The client key comes out of `X-Forwarded-For`, which the client itself
+/// supplies, so the per-client bucket can be walked around by rotating the
+/// header. This second, unkeyed bucket is the backstop: whatever the header
+/// claims, it bounds what the endpoint can cost us in Attio calls overall.
+const OVERALL_PER_MINUTE: u32 = 60;
+
+static PER_CLIENT: LazyLock<DefaultKeyedRateLimiter<String>> = LazyLock::new(|| {
+    Governor::keyed(Quota::per_minute(
+        NonZeroU32::new(PER_CLIENT_PER_MINUTE).expect("the quota is a non-zero literal"),
+    ))
+});
+
+static OVERALL: LazyLock<RateLimiter> = LazyLock::new(|| {
+    RateLimiter::per_minute("early_access", OVERALL_PER_MINUTE, OVERALL_PER_MINUTE)
+});
 
 /// Mirrors the form. Only name, company, email and consent are required — the
 /// rest of the fields are optional in the UI too.
@@ -32,8 +59,21 @@ pub struct EarlyAccessRequest {
 
 pub async fn submit_early_access(
     State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
     Json(payload): Json<EarlyAccessRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
+    // Public, unauthenticated, and every accepted submission spends two Attio
+    // calls, so the endpoint is worth throttling before it is worth parsing.
+    // Keys stop being tracked once their bucket has refilled.
+    PER_CLIENT.retain_recent();
+    let throttled = PER_CLIENT.check_key(&client_key(&headers)).is_err() || !OVERALL.try_acquire();
+    if throttled {
+        return Err((
+            StatusCode::TOO_MANY_REQUESTS,
+            "Too many requests. Please try again in a minute.".to_string(),
+        ));
+    }
+
     let lead = validate(payload).map_err(|message| (StatusCode::BAD_REQUEST, message))?;
 
     // Missing credentials drop every lead, so this fails loudly rather than
@@ -59,6 +99,21 @@ pub async fn submit_early_access(
         })?;
 
     Ok(StatusCode::NO_CONTENT)
+}
+
+/// The first hop of `X-Forwarded-For` is the address our proxy saw the request
+/// come from. It is trivially spoofed, which is what [`OVERALL`] is for — it is
+/// used here only to keep one abusive source from being everyone's problem.
+/// Requests without the header share a single bucket.
+fn client_key(headers: &HeaderMap) -> String {
+    headers
+        .get("x-forwarded-for")
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(',').next())
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .unwrap_or("unknown")
+        .to_string()
 }
 
 /// Trims every field and drops the ones that came through empty, so the
@@ -115,6 +170,20 @@ mod tests {
             consent: true,
             attribution: Attribution::default(),
         }
+    }
+
+    #[test]
+    fn the_client_key_is_the_first_forwarded_hop() {
+        let key = |value: &str| {
+            let mut headers = HeaderMap::new();
+            headers.insert("x-forwarded-for", value.parse().expect("valid header"));
+            client_key(&headers)
+        };
+
+        assert_eq!(key("203.0.113.7, 70.41.3.18"), "203.0.113.7");
+        assert_eq!(key(" 203.0.113.7 "), "203.0.113.7");
+        assert_eq!(key(""), "unknown");
+        assert_eq!(client_key(&HeaderMap::new()), "unknown");
     }
 
     #[test]
