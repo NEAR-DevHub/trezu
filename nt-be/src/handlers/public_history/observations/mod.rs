@@ -35,6 +35,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::AppState;
 use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::contract_read_error::is_block_unavailable;
 
 const DAILY_HORIZON_DAYS: i64 = 90;
 const WEEKLY_HORIZON_WEEKS: i64 = 53;
@@ -579,19 +580,6 @@ async fn fetch_block_at_or_below(
         }
     }
     Ok(None)
-}
-
-/// Only the RPC's own "this height has no block" signals. A skipped height on
-/// the archival endpoint answers `HANDLER_ERROR / UNKNOWN_BLOCK` with
-/// "DB Not Found Error: BLOCK HEIGHT …" (verified live); a garbage-collected
-/// block on a non-archival node names itself. Anything else — a 422 from a
-/// malformed request, a transport failure — must surface as an error so the
-/// boundary backs off instead of being written off as skipped.
-fn is_block_unavailable(message: &str) -> bool {
-    message.contains("UNKNOWN_BLOCK")
-        || message.contains("UnknownBlock")
-        || message.contains("DB Not Found")
-        || message.contains("GarbageCollectedBlock")
 }
 
 pub(super) async fn latest_known_block(

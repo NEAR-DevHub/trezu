@@ -1,6 +1,7 @@
 pub mod admin_auth;
 pub mod base64json;
 pub mod cache;
+pub mod contract_read_error;
 pub mod datetime;
 pub mod env;
 pub mod jsonrpc;

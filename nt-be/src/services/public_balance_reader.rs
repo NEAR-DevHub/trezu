@@ -12,23 +12,18 @@ pub use crate::handlers::balance_changes::history::{
     BalanceSnapshot, ChartMeta, ChartResponse, ChartStatus, Interval,
 };
 pub use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::contract_read_error::{is_method_not_found, is_unknown_account};
 
 pub fn is_proven_nonexistence(message: &str) -> bool {
-    message.contains("UnknownAccount")
-        || message.contains("UNKNOWN_ACCOUNT")
-        || message.contains("does not exist while viewing")
-        || message.contains("Contract account does not exist")
+    is_unknown_account(message) || message.contains("Contract account does not exist")
 }
 
 fn is_definitive_non_staking_contract(message: &str) -> bool {
-    let lower = message.to_ascii_lowercase();
-    lower.contains("methodresolveerror(methodnotfound)")
-        || lower.contains("methodnotfound")
-        || lower.contains("method not found")
-        || lower.contains("codedoesnotexist")
-        || lower.contains("contract code does not exist")
-        || lower.contains("contract account does not exist")
-        || lower.contains("unknownaccount")
+    is_method_not_found(message)
+        || is_unknown_account(message)
+        || message
+            .to_ascii_lowercase()
+            .contains("contract account does not exist")
 }
 
 /// Validate that a candidate implements the staking-pool balance interface at

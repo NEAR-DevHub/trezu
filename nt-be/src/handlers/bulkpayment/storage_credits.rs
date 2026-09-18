@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::AppState;
+use crate::utils::contract_read_error::ContractReadError;
 
 #[derive(Deserialize)]
 pub struct StorageCreditsQuery {
@@ -48,13 +49,13 @@ pub async fn get_storage_credits(
             error: None,
         })),
         Err(e) => {
-            tracing::error!("Failed to get storage credits for {}: {}", account_id, e);
+            let (status, message) = ContractReadError::from(e).into_http("view_storage_credits");
             Err((
-                StatusCode::INTERNAL_SERVER_ERROR,
+                status,
                 Json(StorageCreditsResponse {
                     success: false,
                     credits: None,
-                    error: Some(format!("Failed to fetch storage credits: {}", e)),
+                    error: Some(format!("Failed to fetch storage credits: {}", message)),
                 }),
             ))
         }
