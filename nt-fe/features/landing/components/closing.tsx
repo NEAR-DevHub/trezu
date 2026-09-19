@@ -15,7 +15,7 @@ import {
     TERMS_OF_SERVICE_HREF,
 } from "@/constants/config";
 import { CONTACT_HREF, FAQ_ITEMS } from "../content";
-import { EarlyAccessButton } from "./hero";
+import { EarlyAccessButton } from "./early-access";
 import { NearBusinessWordmark } from "./landing-icons";
 import { Reveal } from "./reveal";
 

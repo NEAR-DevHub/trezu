@@ -83,6 +83,12 @@ pub struct EnvVars {
     /// Fine-scoped GitHub token with read access to the private
     /// `defuse-frontend-monorepos` repo (near.com catalog watch).
     pub nearcom_catalog_github_token: Option<String>,
+    /// Attio CRM, where the landing page's early-access form lands. Both are
+    /// required: with either missing the form rejects every submission with a
+    /// 500 rather than quietly dropping the lead.
+    pub attio_api_key: Option<String>,
+    pub attio_early_access_list_id: Option<String>,
+    pub attio_api_base_url: String, // Override for testing
 }
 
 fn parse_csv_set(key: &str) -> HashSet<String> {
@@ -278,6 +284,14 @@ impl Default for EnvVars {
             nearcom_catalog_github_token: std::env::var("NEARCOM_CATALOG_GITHUB_TOKEN")
                 .ok()
                 .filter(|s| !s.is_empty()),
+            attio_api_key: std::env::var("ATTIO_API_KEY")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            attio_early_access_list_id: std::env::var("ATTIO_EARLY_ACCESS_LIST_ID")
+                .ok()
+                .filter(|s| !s.is_empty()),
+            attio_api_base_url: std::env::var("ATTIO_API_BASE_URL")
+                .unwrap_or_else(|_| "https://api.attio.com".to_string()),
         }
     }
 }

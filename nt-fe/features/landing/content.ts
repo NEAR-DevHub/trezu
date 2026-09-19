@@ -4,10 +4,24 @@ import { APP_DOCS_URL } from "@/constants/config";
 // file, so it lives here instead of the i18n catalogue (which would force
 // twelve translations of every headline).
 
-// The private-beta waitlist form. External, so every link to it opens in a
-// new tab.
-export const EARLY_ACCESS_HREF =
-    "https://airtable.com/app5IOgKsH6H3RVp1/pagQscnz5uBKiHxc7/form";
+// The private-beta waitlist form, rendered in-page by `EarlyAccessModal`.
+// Both selects are single-choice, so the option lists live here next to the
+// rest of the landing copy. The wording has to match the select options on the
+// Attio attribute exactly — Attio rejects a value it does not already offer.
+export const BUSINESS_TYPE_OPTIONS = [
+    "Market Maker",
+    "Foundation",
+    "Treasury",
+    "Web3 Business",
+    "Other",
+] as const;
+
+export const REFERRAL_SOURCE_OPTIONS = [
+    "Word of Mouth",
+    "NEAR Intents Team",
+    "Social Media",
+    "Other",
+] as const;
 
 export const CONTACT_HREF = "mailto:hello@near.org?subject=NEAR%20Business";
 

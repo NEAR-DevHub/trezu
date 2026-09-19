@@ -10,6 +10,7 @@ import {
     MultichainHeader,
     TreasuryStatement,
 } from "./control";
+import { EarlyAccessProvider } from "./early-access";
 import { Hero, LandingNav, ProofGrid } from "./hero";
 import { Comparison, Pricing } from "./pricing";
 
@@ -19,29 +20,31 @@ import { Comparison, Pricing } from "./pricing";
  */
 export function LandingPage() {
     return (
-        <div
-            className={cn(
-                geistMono.variable,
-                "overflow-x-clip bg-landing-paper font-landing text-landing-ink antialiased",
-            )}
-        >
-            <LandingNav />
-            <main>
-                <Hero />
-                <ProofGrid />
-                <Confidential />
-                <ControlSplit />
-                <Capabilities />
-                <MultichainHeader />
-                <Multichain />
-                <TreasuryStatement />
-                <CustodyTruth />
-                <Comparison />
-                <Pricing />
-                <WorksWith />
-                <Faq />
-            </main>
-            <Footer />
-        </div>
+        <EarlyAccessProvider>
+            <div
+                className={cn(
+                    geistMono.variable,
+                    "overflow-x-clip bg-landing-paper font-landing text-landing-ink antialiased",
+                )}
+            >
+                <LandingNav />
+                <main>
+                    <Hero />
+                    <ProofGrid />
+                    <Confidential />
+                    <ControlSplit />
+                    <Capabilities />
+                    <MultichainHeader />
+                    <Multichain />
+                    <TreasuryStatement />
+                    <CustodyTruth />
+                    <Comparison />
+                    <Pricing />
+                    <WorksWith />
+                    <Faq />
+                </main>
+                <Footer />
+            </div>
+        </EarlyAccessProvider>
     );
 }

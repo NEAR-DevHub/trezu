@@ -1,0 +1,572 @@
+"use client";
+
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { isAxiosError } from "axios";
+import Image from "next/image";
+import Link from "next/link";
+import {
+    createContext,
+    type FormEvent,
+    type ReactNode,
+    useCallback,
+    useContext,
+    useEffect,
+    useId,
+    useState,
+} from "react";
+import { PRIVACY_POLICY_HREF } from "@/constants/config";
+import {
+    type EarlyAccessAttribution,
+    submitEarlyAccessRequest,
+} from "@/lib/api";
+import { cn } from "@/lib/utils";
+import { BUSINESS_TYPE_OPTIONS, REFERRAL_SOURCE_OPTIONS } from "../content";
+import { NearMark } from "./landing-icons";
+
+const EarlyAccessContext = createContext<(() => void) | null>(null);
+
+/**
+ * Opens the early-access form. Every CTA on the landing — the nav button, the
+ * hero button and the pricing footnote — shares one modal instance, so the
+ * state lives on the provider rather than on each trigger.
+ */
+export function useRequestEarlyAccess() {
+    const open = useContext(EarlyAccessContext);
+    if (!open) {
+        throw new Error(
+            "useRequestEarlyAccess must be used inside <EarlyAccessProvider>",
+        );
+    }
+    return open;
+}
+
+export function EarlyAccessProvider({ children }: { children: ReactNode }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const open = useCallback(() => setIsOpen(true), []);
+    const [attribution, setAttribution] = useState<EarlyAccessAttribution>({});
+
+    // Read on mount rather than on submit: a visitor who steps out to the
+    // privacy policy and back would otherwise arrive with the campaign tags
+    // and the original referrer already gone.
+    useEffect(() => setAttribution(readAttribution()), []);
+
+    return (
+        <EarlyAccessContext.Provider value={open}>
+            {children}
+            <EarlyAccessModal
+                open={isOpen}
+                onOpenChange={setIsOpen}
+                attribution={attribution}
+            />
+        </EarlyAccessContext.Provider>
+    );
+}
+
+/** Long enough for any real campaign tag, short enough not to be a payload. */
+const MAX_ATTRIBUTION_LENGTH = 256;
+
+function capped(value: string | undefined) {
+    return value?.slice(0, MAX_ATTRIBUTION_LENGTH) || undefined;
+}
+
+/**
+ * Only the parts of the URL this page chose. The full href and the raw
+ * referrer are deliberately never sent: both routinely carry a querystring or
+ * fragment the visitor has no idea they are handing over — an OAuth `code`, a
+ * password-reset `token`, a CRM's `utm_email` — and everything here is stored
+ * verbatim as CRM free text and passes through our logs and Sentry on the way.
+ * The named `utm_*` keys are the only query values we read, and even those are
+ * length-capped because they are attacker-supplied strings.
+ */
+function readAttribution(): EarlyAccessAttribution {
+    const params = new URLSearchParams(window.location.search);
+    const tag = (key: string) => capped(params.get(key) ?? undefined);
+
+    return {
+        utmSource: tag("utm_source"),
+        utmMedium: tag("utm_medium"),
+        utmCampaign: tag("utm_campaign"),
+        utmTerm: tag("utm_term"),
+        utmContent: tag("utm_content"),
+        referrer: readReferrer(),
+        // Path only — no search, and no hash, which is where implicit OAuth
+        // flows put their tokens.
+        landingPage: capped(window.location.pathname),
+    };
+}
+
+/** Which site sent them, not which page of it and not with what attached. */
+function readReferrer() {
+    if (!document.referrer) return undefined;
+
+    try {
+        const referrer = new URL(document.referrer);
+        // Our own pages say nothing about where the visitor came from.
+        if (referrer.origin === window.location.origin) return undefined;
+        return capped(referrer.host);
+    } catch {
+        return undefined;
+    }
+}
+
+/** The landing's primary CTA, in the nav, the hero and the closing block. */
+export function EarlyAccessButton({
+    className,
+    ...props
+}: Omit<React.ComponentProps<"button">, "children" | "onClick" | "type">) {
+    const requestEarlyAccess = useRequestEarlyAccess();
+
+    return (
+        <button
+            type="button"
+            onClick={requestEarlyAccess}
+            className={cn(
+                "inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-full bg-landing-green font-medium leading-none text-landing-ink transition-colors hover:bg-[#00c97f]",
+                className,
+            )}
+            {...props}
+        >
+            Request Early Access
+        </button>
+    );
+}
+
+/** The same trigger set inline in a sentence, where the CTA reads as a link. */
+export function EarlyAccessLink({
+    children,
+    className,
+}: {
+    children: ReactNode;
+    className?: string;
+}) {
+    const requestEarlyAccess = useRequestEarlyAccess();
+
+    return (
+        <button
+            type="button"
+            onClick={requestEarlyAccess}
+            className={className}
+        >
+            {children}
+        </button>
+    );
+}
+
+/**
+ * Nine stacked rows make the form the tallest thing in the modal, and a 16:9
+ * laptop leaves it around 600px of viewport once browser chrome is out. So the
+ * vertical rhythm is measured in `dvh` between a floor and the design's own
+ * value: full spacing wherever there is room for it, tightened just enough
+ * below that to keep the whole form on screen instead of behind a scrollbar.
+ * Horizontal metrics are untouched — only height is ever in short supply.
+ */
+const FIELD_HEIGHT = "h-[clamp(2.375rem,5.4dvh,3rem)]";
+const ROW_GAP = "gap-[clamp(0.75rem,2.4dvh,1.5rem)]";
+const BLOCK_GAP = "mt-[clamp(0.875rem,2.6dvh,1.75rem)]";
+// Same value, spelled out again: Tailwind reads class names out of the source
+// text, so a variant cannot be prefixed onto one at runtime.
+const BLOCK_GAP_LG = "lg:mt-[clamp(0.875rem,2.6dvh,1.75rem)]";
+const COLUMN_PADDING = "py-[clamp(1.25rem,3.6dvh,2.5rem)]";
+
+/** Underlined fields, per the design: a single hairline under each one, no box
+ *  and no inset, so the text of a field starts on the same margin as the copy
+ *  above it. Transparent, so the field picks up whichever card background the
+ *  breakpoint is using. */
+const FIELD = cn(
+    FIELD_HEIGHT,
+    "w-full rounded-none border-0 border-b border-landing-grey-light bg-transparent text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey-light focus:border-landing-ink",
+);
+
+function EarlyAccessModal({
+    open,
+    onOpenChange,
+    attribution,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    attribution: EarlyAccessAttribution;
+}) {
+    const titleId = useId();
+
+    return (
+        <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+            <DialogPrimitive.Portal>
+                <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-landing-ink/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0" />
+                {/* The portal escapes the landing wrapper, so the palette and
+                    the display font have to be re-declared here. */}
+                <DialogPrimitive.Content
+                    aria-labelledby={titleId}
+                    className={cn(
+                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1320px]",
+                        "rounded-2xl bg-white font-landing text-landing-ink antialiased shadow-2xl",
+                        // No card padding: the photograph runs to the card's
+                        // own rounded edge, which `overflow-y-auto` clips it to.
+                        "lg:bg-landing-paper",
+                        "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
+                    )}
+                >
+                    {/* The picture's column is the fixed one: it has to stay wide
+                        enough for the line over it to break after "should be",
+                        so a narrow viewport takes it out of the form instead. */}
+                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0">
+                        <div
+                            className={cn(
+                                "flex flex-col px-6 sm:px-10 lg:px-16 lg:pr-20",
+                                COLUMN_PADDING,
+                            )}
+                        >
+                            <NearMark className="hidden size-6 lg:block" />
+                            <DialogPrimitive.Title
+                                id={titleId}
+                                className={cn(
+                                    "text-[28px] font-medium leading-[1.15] tracking-[-0.5px] sm:text-[32px] lg:text-2xl lg:tracking-[-0.25px]",
+                                    BLOCK_GAP_LG,
+                                )}
+                            >
+                                NEAR Business Early Access
+                            </DialogPrimitive.Title>
+                            <PrivacyNotice />
+                            <EarlyAccessForm attribution={attribution} />
+                        </div>
+                        {/* The tallest thing in the modal — phones drop it
+                            rather than scroll past it. The photograph is the
+                            backdrop for the line, which is set as real text, so
+                            the picture itself has nothing to describe. */}
+                        <div className="relative hidden lg:block">
+                            <Image
+                                src="/landing/early-access.jpg"
+                                alt=""
+                                fill
+                                className="object-cover"
+                                unoptimized
+                            />
+                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333] opacity-50">
+                                Your treasury should be your business.
+                            </p>
+                        </div>
+                    </div>
+                </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
+    );
+}
+
+/**
+ * What used to be a consent tickbox the visitor had to tick. The design turned
+ * it into a notice: submitting the form is the act, and this says what the
+ * submission will be used for. The remaining tickbox is the marketing opt-in,
+ * which is genuinely optional.
+ */
+function PrivacyNotice() {
+    return (
+        <div
+            className={cn(BLOCK_GAP, "text-xs leading-[1.35] text-landing-ink")}
+        >
+            <p className="font-medium">Privacy Notice.</p>
+            <p>
+                Intents Technology Ltd will use the information you provide to
+                assess and respond to your early-access request and to
+                administer our relationship with you. For more information about
+                how we use and protect personal information, see our{" "}
+                <Link
+                    href={PRIVACY_POLICY_HREF}
+                    target="_blank"
+                    className="text-landing-link underline underline-offset-2"
+                >
+                    privacy policy
+                </Link>
+                .
+            </p>
+        </div>
+    );
+}
+
+/**
+ * Telegram is the only answer a visitor may skip, and the marketing opt-in is
+ * a choice rather than an answer, so every other field is `required`. That
+ * makes "is the form complete" exactly the browser's own validity check — one
+ * flag off `checkValidity()` rather than a piece of state per input. The
+ * dialog unmounts its content on close, which resets the fields, this flag and
+ * the submission state together.
+ */
+function EarlyAccessForm({
+    attribution,
+}: {
+    attribution: EarlyAccessAttribution;
+}) {
+    const optInId = useId();
+    const [isComplete, setIsComplete] = useState(false);
+    const [status, setStatus] = useState<
+        "idle" | "submitting" | "failed" | "throttled" | "sent"
+    >("idle");
+    // Clearing remounts the form rather than walking it: the two selects hold
+    // their own state for the greyed placeholder, which a native reset of the
+    // DOM would leave behind.
+    const [generation, setGeneration] = useState(0);
+
+    function clear() {
+        setGeneration((generation) => generation + 1);
+        setIsComplete(false);
+        setStatus("idle");
+    }
+
+    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+        event.preventDefault();
+        const fields = new FormData(event.currentTarget);
+        const value = (field: string) => String(fields.get(field) ?? "").trim();
+
+        setStatus("submitting");
+        try {
+            await submitEarlyAccessRequest({
+                name: value("name"),
+                company: value("company"),
+                email: value("email"),
+                telegram: value("telegram") || undefined,
+                businessType: value("businessType"),
+                referralSource: value("referralSource"),
+                marketingOptIn: fields.has("marketingOptIn"),
+                attribution,
+            });
+            setStatus("sent");
+        } catch (error) {
+            // A throttled visitor gets the backend's own answer: the generic
+            // "try again" reads as an invitation to do so at once, which only
+            // confirms the bucket. Anything else is already on its way to
+            // Sentry — `submitEarlyAccessRequest` goes through the shared
+            // client, whose interceptor reports 5xx and network failures.
+            setStatus(
+                isAxiosError(error) && error.response?.status === 429
+                    ? "throttled"
+                    : "failed",
+            );
+        }
+    }
+
+    if (status === "sent") {
+        return (
+            // The form it replaces held the focus, so a screen reader is left
+            // pointing at nothing — announce the confirmation instead.
+            <output
+                aria-live="polite"
+                className={cn(
+                    BLOCK_GAP,
+                    "block text-base leading-snug text-landing-grey",
+                )}
+            >
+                Thanks — your request is in. We&apos;ll get in touch at the
+                email address you gave us.
+            </output>
+        );
+    }
+
+    return (
+        // Fields are uncontrolled: `FormData` reads them on submit, and the
+        // dialog throws them away on close.
+        <form
+            key={generation}
+            onSubmit={handleSubmit}
+            onReset={clear}
+            onChange={(event) =>
+                setIsComplete(event.currentTarget.checkValidity())
+            }
+            className={cn("flex flex-col", BLOCK_GAP, ROW_GAP)}
+        >
+            <div className={cn("grid sm:grid-cols-2", ROW_GAP)}>
+                <input
+                    name="name"
+                    autoComplete="name"
+                    placeholder="Name"
+                    required
+                    className={FIELD}
+                />
+                <input
+                    name="company"
+                    autoComplete="organization"
+                    placeholder="Company"
+                    required
+                    className={FIELD}
+                />
+            </div>
+            <input
+                type="email"
+                name="email"
+                autoComplete="email"
+                placeholder="Email"
+                required
+                className={FIELD}
+            />
+            <input name="telegram" placeholder="Telegram" className={FIELD} />
+            <SelectField
+                name="businessType"
+                placeholder="Vertical / Type of Business"
+                options={BUSINESS_TYPE_OPTIONS}
+            />
+            <SelectField
+                name="referralSource"
+                placeholder="How did you hear about NEAR Business?"
+                options={REFERRAL_SOURCE_OPTIONS}
+            />
+            <div className="flex items-start gap-3">
+                <MarketingOptIn id={optInId} />
+                <label
+                    htmlFor={optInId}
+                    className="text-xs leading-[1.35] text-landing-ink"
+                >
+                    I would like to receive marketing emails about near.com for
+                    Business and related products and services from Intents
+                    Technology Ltd or on its behalf. I can unsubscribe at any
+                    time.
+                </label>
+            </div>
+            {/* Clear form and the failure notice share the button's row rather
+                than taking one each, so neither costs the form its fit. */}
+            <div className="mt-1 flex items-center justify-end gap-4">
+                <button
+                    type="reset"
+                    className="mr-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-landing-link hover:underline"
+                >
+                    <ResetGlyph />
+                    Clear form
+                </button>
+                {(status === "failed" || status === "throttled") && (
+                    <p
+                        role="alert"
+                        className="text-xs leading-[1.35] text-[#c8412f]"
+                    >
+                        {status === "throttled"
+                            ? "Too many requests. Please try again in a minute."
+                            : "Something went wrong. Please try again."}
+                    </p>
+                )}
+                <button
+                    type="submit"
+                    disabled={!isComplete || status === "submitting"}
+                    className="shrink-0 cursor-pointer rounded-full bg-landing-green px-4 py-3 text-base font-medium leading-none text-landing-ink transition-colors enabled:hover:bg-[#00c97f] disabled:cursor-not-allowed disabled:bg-landing-mist disabled:text-landing-grey-light"
+                >
+                    {status === "submitting" ? "Submitting…" : "Submit"}
+                </button>
+            </div>
+        </form>
+    );
+}
+
+/**
+ * Native `<select>` rather than the app's Radix one: the landing carries its
+ * own palette, and a portalled listbox would need all of it restated. The
+ * placeholder stays in the list as an empty option, which `required` treats as
+ * "nothing chosen"; the value is tracked so it can be greyed the way the text
+ * fields grey theirs.
+ */
+function SelectField({
+    name,
+    placeholder,
+    options,
+}: {
+    name: string;
+    placeholder: string;
+    options: readonly string[];
+}) {
+    const [value, setValue] = useState("");
+
+    return (
+        <div className="relative">
+            <select
+                name={name}
+                value={value}
+                onChange={(event) => setValue(event.target.value)}
+                aria-label={placeholder}
+                required
+                className={cn(
+                    FIELD,
+                    // Native selects clip rather than wrap, so the long
+                    // referral placeholder drops a size on narrow phones.
+                    "cursor-pointer appearance-none pr-6 max-sm:text-[13px]",
+                    !value && "text-landing-grey-light",
+                )}
+            >
+                <option value="">{placeholder}</option>
+                {options.map((option) => (
+                    <option key={option} value={option}>
+                        {option}
+                    </option>
+                ))}
+            </select>
+            <ChevronGlyph className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" />
+        </div>
+    );
+}
+
+/** Green hairline square with a tick, per the design — the themed app
+ *  checkbox would drag in the dashboard palette. */
+function MarketingOptIn({ id }: { id: string }) {
+    return (
+        <span className="relative mt-px inline-flex shrink-0">
+            <input
+                id={id}
+                type="checkbox"
+                name="marketingOptIn"
+                // `appearance-none` takes the browser's focus ring with it.
+                className="peer size-[18px] cursor-pointer appearance-none rounded-[3px] border border-landing-green bg-transparent checked:bg-landing-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-ink"
+            />
+            <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                fill="none"
+                className="pointer-events-none absolute inset-0 hidden size-[18px] text-landing-ink peer-checked:block"
+            >
+                <path
+                    d="M4 8.4 6.8 11 12 5.5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </svg>
+        </span>
+    );
+}
+
+/** The counter-clockwise arrow the design puts against "Clear form". */
+function ResetGlyph() {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="size-3.5"
+        >
+            <path
+                d="M3 8a5 5 0 1 1 1.6 3.67"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+            />
+            <path
+                d="M3 4.5V8h3.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
+function ChevronGlyph({ className }: { className?: string }) {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            className={cn("size-4", className)}
+        >
+            <path
+                d="m3.5 6 4.5 4.5L12.5 6"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}

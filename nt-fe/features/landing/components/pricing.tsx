@@ -1,12 +1,7 @@
-import Link from "next/link";
 import { cn } from "@/lib/utils";
-import {
-    COMPARISON_ROWS,
-    EARLY_ACCESS_HREF,
-    INCLUDED_FEATURES,
-    PRICING_CELLS,
-} from "../content";
+import { COMPARISON_ROWS, INCLUDED_FEATURES, PRICING_CELLS } from "../content";
 import { Tag } from "./confidential";
+import { EarlyAccessLink } from "./early-access";
 import { GUTTER } from "./hero";
 import {
     CheckCircleIcon,
@@ -197,14 +192,9 @@ export function Pricing() {
                 <Reveal>
                     <p className="mt-12 text-center text-base leading-normal text-landing-grey lg:mt-16">
                         Enterprise or custom volume?{" "}
-                        <Link
-                            href={EARLY_ACCESS_HREF}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-landing-ink underline underline-offset-4"
-                        >
+                        <EarlyAccessLink className="cursor-pointer font-medium text-landing-ink underline underline-offset-4">
                             Request early access
-                        </Link>
+                        </EarlyAccessLink>
                     </p>
                 </Reveal>
             </div>

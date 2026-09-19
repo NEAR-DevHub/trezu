@@ -651,6 +651,9 @@
     --color-landing-mist: #dde4e2;
     --color-landing-grey: #5f6565;
     --color-landing-grey-light: #a5a5a5;
+    /* The one blue on the page: links inside the early-access form's legal
+       copy, which have to read as links rather than as emphasis. */
+    --color-landing-link: #175cdb;
     --font-landing: "PP Neue Montreal", var(--font-figtree), var(--font-sans);
     --font-landing-mono:
         "PP Neue Montreal Mono", var(--font-geist-mono), var(--font-mono);
