@@ -4,7 +4,7 @@
 //! the API key stays server-side.
 
 use std::num::NonZeroU32;
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, Once};
 
 use axum::{
     Json,
@@ -36,6 +36,9 @@ static PER_CLIENT: LazyLock<DefaultKeyedRateLimiter<String>> = LazyLock::new(|| 
         NonZeroU32::new(PER_CLIENT_PER_MINUTE).expect("the quota is a non-zero literal"),
     ))
 });
+
+/// Guards the credentials alert so a misconfigured deploy pages once.
+static MISCONFIGURATION_ALERT: Once = Once::new();
 
 static OVERALL: LazyLock<RateLimiter> = LazyLock::new(|| {
     RateLimiter::per_minute("early_access", OVERALL_PER_MINUTE, OVERALL_PER_MINUTE)
@@ -84,7 +87,11 @@ pub async fn submit_early_access(
     // answering 2xx to a submission that went nowhere: the visitor is told to
     // try again, and the alert says whose problem it is.
     let Some(attio) = AttioClient::from_env(state.http_client.clone(), &state.env_vars) else {
-        crate::error_event!(ErrorCode::AttioNotConfigured);
+        // Once per process, not once per request. The credentials are read at
+        // startup, so a misconfigured deploy is one standing fact rather than
+        // news each time somebody submits — and this is a P1, which at the
+        // endpoint's own ceiling would otherwise page 60 times a minute.
+        MISCONFIGURATION_ALERT.call_once(|| crate::error_event!(ErrorCode::AttioNotConfigured));
         return Err((
             StatusCode::INTERNAL_SERVER_ERROR,
             "Could not record your request.".to_string(),
