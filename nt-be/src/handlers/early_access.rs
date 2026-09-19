@@ -41,8 +41,9 @@ static OVERALL: LazyLock<RateLimiter> = LazyLock::new(|| {
     RateLimiter::per_minute("early_access", OVERALL_PER_MINUTE, OVERALL_PER_MINUTE)
 });
 
-/// Mirrors the form. Only name, company, email and consent are required — the
-/// rest of the fields are optional in the UI too.
+/// Mirrors the form, where Telegram is the only field a visitor may skip. The
+/// required ones still arrive as `Option` so a missing key is reported as
+/// "Company is required" rather than as an unreadable body.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EarlyAccessRequest {
@@ -149,8 +150,14 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
         company: required("Company", payload.company)?,
         email,
         telegram: optional(payload.telegram),
-        business_type: optional(payload.business_type),
-        referral_source: optional(payload.referral_source),
+        business_type: required(
+            "Vertical / type of business",
+            payload.business_type.unwrap_or_default(),
+        )?,
+        referral_source: required(
+            "How you heard about NEAR Business",
+            payload.referral_source.unwrap_or_default(),
+        )?,
         attribution: payload.attribution,
     })
 }
@@ -165,8 +172,8 @@ mod tests {
             company: "Analytical Engines".to_string(),
             email: "ada@example.com".to_string(),
             telegram: Some("  ".to_string()),
-            business_type: None,
-            referral_source: None,
+            business_type: Some("Treasury".to_string()),
+            referral_source: Some("Word of Mouth".to_string()),
             consent: true,
             attribution: Attribution::default(),
         }
@@ -204,6 +211,8 @@ mod tests {
             ("name", |r| r.name = "   ".to_string()),
             ("company", |r| r.company = String::new()),
             ("email", |r| r.email = "ada.example.com".to_string()),
+            ("business type", |r| r.business_type = None),
+            ("referral source", |r| r.referral_source = None),
         ] {
             let mut payload = request();
             mutate(&mut payload);

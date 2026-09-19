@@ -60,9 +60,10 @@ pub struct EarlyAccessLead {
     pub name: String,
     pub company: String,
     pub email: String,
+    /// The only answer the form lets a visitor skip.
     pub telegram: Option<String>,
-    pub business_type: Option<String>,
-    pub referral_source: Option<String>,
+    pub business_type: String,
+    pub referral_source: String,
     pub attribution: Attribution,
 }
 
@@ -278,6 +279,11 @@ fn person_values(lead: &EarlyAccessLead) -> Value {
     values.insert(slug::NAME.to_owned(), json!([split_name(&lead.name)]));
     values.insert(slug::EMAIL_ADDRESSES.to_owned(), json!([lead.email]));
     values.insert(slug::COMPANY.to_owned(), json!(lead.company));
+    values.insert(slug::BUSINESS_TYPE.to_owned(), json!(lead.business_type));
+    values.insert(
+        slug::REFERRAL_SOURCE.to_owned(),
+        json!(lead.referral_source),
+    );
     values.insert(slug::CONSENT.to_owned(), json!(true));
     values.insert(slug::LEAD_SOURCE.to_owned(), json!(LEAD_SOURCE));
     values.insert(
@@ -288,8 +294,6 @@ fn person_values(lead: &EarlyAccessLead) -> Value {
     let attribution = &lead.attribution;
     let optional = [
         (slug::TELEGRAM, &lead.telegram),
-        (slug::BUSINESS_TYPE, &lead.business_type),
-        (slug::REFERRAL_SOURCE, &lead.referral_source),
         (slug::UTM_SOURCE, &attribution.utm_source),
         (slug::UTM_MEDIUM, &attribution.utm_medium),
         (slug::UTM_CAMPAIGN, &attribution.utm_campaign),
@@ -339,8 +343,8 @@ mod tests {
             company: "Analytical Engines".to_string(),
             email: "ada@example.com".to_string(),
             telegram: Some("   ".to_string()),
-            business_type: Some("DAO".to_string()),
-            referral_source: None,
+            business_type: "Treasury".to_string(),
+            referral_source: "Word of Mouth".to_string(),
             attribution: Attribution {
                 utm_source: Some("x".to_string()),
                 ..Default::default()
@@ -365,11 +369,11 @@ mod tests {
         assert_eq!(values[slug::NAME][0]["last_name"], "Van Lovelace");
         assert_eq!(values[slug::NAME][0]["full_name"], "Ada Van Lovelace");
         assert_eq!(values[slug::EMAIL_ADDRESSES][0], "ada@example.com");
-        assert_eq!(values[slug::BUSINESS_TYPE], "DAO");
+        assert_eq!(values[slug::BUSINESS_TYPE], "Treasury");
+        assert_eq!(values[slug::REFERRAL_SOURCE], "Word of Mouth");
         assert_eq!(values[slug::UTM_SOURCE], "x");
         // Whitespace-only and absent optionals are both left out.
         assert!(values.get(slug::TELEGRAM).is_none());
-        assert!(values.get(slug::REFERRAL_SOURCE).is_none());
         assert!(values.get(slug::REFERRER).is_none());
     }
 

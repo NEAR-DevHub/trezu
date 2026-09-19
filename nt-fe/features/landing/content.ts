@@ -6,24 +6,20 @@ import { APP_DOCS_URL } from "@/constants/config";
 
 // The private-beta waitlist form, rendered in-page by `EarlyAccessModal`.
 // Both selects are single-choice, so the option lists live here next to the
-// rest of the landing copy.
+// rest of the landing copy. The wording has to match the select options on the
+// Attio attribute exactly — Attio rejects a value it does not already offer.
 export const BUSINESS_TYPE_OPTIONS = [
-    "DAO",
-    "Protocol or foundation",
-    "Fund or asset manager",
-    "Exchange or market maker",
-    "Payments or fintech",
-    "Web3 startup",
+    "Market Maker",
+    "Foundation",
+    "Treasury",
+    "Web3 Business",
     "Other",
 ] as const;
 
 export const REFERRAL_SOURCE_OPTIONS = [
-    "X (Twitter)",
-    "LinkedIn",
-    "Telegram",
-    "A friend or colleague",
-    "An event or conference",
-    "Search engine",
+    "Word of Mouth",
+    "NEAR Intents Team",
+    "Social Media",
     "Other",
 ] as const;
 

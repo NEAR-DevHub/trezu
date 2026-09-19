@@ -1067,9 +1067,10 @@ export interface EarlyAccessRequestBody {
     name: string;
     company: string;
     email: string;
+    /** The only field the form lets a visitor skip. */
     telegram?: string;
-    businessType?: string;
-    referralSource?: string;
+    businessType: string;
+    referralSource: string;
     consent: boolean;
     attribution?: EarlyAccessAttribution;
 }

@@ -171,7 +171,7 @@ const COLUMN_PADDING = "py-[clamp(1.25rem,3.6dvh,2.5rem)]";
  *  picks up whichever card background the breakpoint is using. */
 const FIELD = cn(
     FIELD_HEIGHT,
-    "w-full rounded-xl border border-landing-grey-light bg-transparent px-5 text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey focus:border-landing-ink",
+    "w-full rounded-xl border border-landing-grey-light bg-transparent px-5 text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey-light focus:border-landing-ink",
 );
 
 function EarlyAccessModal({
@@ -244,9 +244,8 @@ function EarlyAccessModal({
 }
 
 /**
- * Name, email, company and consent are required; Telegram and both selects are
- * not. That makes "is the form complete" exactly the browser's own validity
- * check — one flag off `checkValidity()` rather than a piece of state per
+ * Telegram is the only optional field, so everything else is `required`. That
+ * makes "is the form complete" exactly the browser's own validity check — one flag off `checkValidity()` rather than a piece of state per
  * input. The dialog unmounts its content on close, which resets the fields,
  * this flag and the submission state together.
  */
@@ -273,8 +272,8 @@ function EarlyAccessForm({
                 company: value("company"),
                 email: value("email"),
                 telegram: value("telegram") || undefined,
-                businessType: value("businessType") || undefined,
-                referralSource: value("referralSource") || undefined,
+                businessType: value("businessType"),
+                referralSource: value("referralSource"),
                 consent: fields.has("consent"),
                 attribution,
             });
@@ -336,12 +335,12 @@ function EarlyAccessForm({
             <input name="telegram" placeholder="Telegram" className={FIELD} />
             <SelectField
                 name="businessType"
-                placeholder="Type of Business"
+                placeholder="Vertical / Type of Business"
                 options={BUSINESS_TYPE_OPTIONS}
             />
             <SelectField
                 name="referralSource"
-                placeholder="How did you hear about Near Business?"
+                placeholder="How did you hear about NEAR Business?"
                 options={REFERRAL_SOURCE_OPTIONS}
             />
             <div className="flex items-start gap-3">
@@ -387,9 +386,10 @@ function EarlyAccessForm({
 
 /**
  * Native `<select>` rather than the app's Radix one: the landing carries its
- * own palette, and a portalled listbox would need all of it restated. Both
- * selects are optional, so the empty option stays selectable — the value is
- * tracked only to grey the placeholder the way the text fields grey theirs.
+ * own palette, and a portalled listbox would need all of it restated. The
+ * placeholder stays in the list as an empty option, which `required` treats as
+ * "nothing chosen"; the value is tracked so it can be greyed the way the text
+ * fields grey theirs.
  */
 function SelectField({
     name,
@@ -409,12 +409,13 @@ function SelectField({
                 value={value}
                 onChange={(event) => setValue(event.target.value)}
                 aria-label={placeholder}
+                required
                 className={cn(
                     FIELD,
                     // Native selects clip rather than wrap, so the long
                     // referral placeholder drops a size on narrow phones.
                     "cursor-pointer appearance-none pr-11 max-sm:text-[13px]",
-                    !value && "text-landing-grey",
+                    !value && "text-landing-grey-light",
                 )}
             >
                 <option value="">{placeholder}</option>
