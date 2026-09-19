@@ -196,7 +196,7 @@ function EarlyAccessModal({
                 <DialogPrimitive.Content
                     aria-labelledby={titleId}
                     className={cn(
-                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1180px]",
+                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1320px]",
                         "rounded-2xl bg-white font-landing text-landing-ink antialiased shadow-2xl",
                         // No card padding: the photograph runs to the card's
                         // own rounded edge, which `overflow-y-auto` clips it to.
@@ -204,7 +204,10 @@ function EarlyAccessModal({
                         "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
                     )}
                 >
-                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,556px)] lg:gap-0">
+                    {/* The picture's column is the fixed one: it has to stay wide
+                        enough for the line over it to break after "should be",
+                        so a narrow viewport takes it out of the form instead. */}
+                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0">
                         <div
                             className={cn(
                                 "flex flex-col px-6 sm:px-10 lg:px-16 lg:pr-20",
@@ -233,11 +236,11 @@ function EarlyAccessModal({
                                 src="/landing/early-access.jpg"
                                 alt=""
                                 fill
-                                sizes="556px"
+                                sizes="680px"
                                 quality={90}
                                 className="object-cover"
                             />
-                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-landing-grey-light">
+                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333]">
                                 Your treasury should be your business.
                             </p>
                         </div>
