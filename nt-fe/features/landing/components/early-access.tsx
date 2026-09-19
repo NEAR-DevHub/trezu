@@ -225,16 +225,21 @@ function EarlyAccessModal({
                             <EarlyAccessForm attribution={attribution} />
                         </div>
                         {/* The tallest thing in the modal — phones drop it
-                            rather than scroll past it. The line is set into the
-                            picture, so it needs describing rather than hiding. */}
+                            rather than scroll past it. The photograph is the
+                            backdrop for the line, which is set as real text, so
+                            the picture itself has nothing to describe. */}
                         <div className="relative hidden lg:block">
                             <Image
                                 src="/landing/early-access.jpg"
-                                alt="Your treasury should be your business."
+                                alt=""
                                 fill
                                 sizes="556px"
+                                quality={90}
                                 className="object-cover"
                             />
+                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-landing-grey-light">
+                                Your treasury should be your business.
+                            </p>
                         </div>
                     </div>
                 </DialogPrimitive.Content>
