@@ -236,11 +236,10 @@ function EarlyAccessModal({
                                 src="/landing/early-access.jpg"
                                 alt=""
                                 fill
-                                sizes="680px"
-                                quality={90}
                                 className="object-cover"
+                                unoptimized
                             />
-                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333]">
+                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333] opacity-50">
                                 Your treasury should be your business.
                             </p>
                         </div>
