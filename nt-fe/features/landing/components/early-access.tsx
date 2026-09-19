@@ -1,6 +1,7 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { isAxiosError } from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -296,7 +297,7 @@ function EarlyAccessForm({
     const optInId = useId();
     const [isComplete, setIsComplete] = useState(false);
     const [status, setStatus] = useState<
-        "idle" | "submitting" | "failed" | "sent"
+        "idle" | "submitting" | "failed" | "throttled" | "sent"
     >("idle");
     // Clearing remounts the form rather than walking it: the two selects hold
     // their own state for the greyed placeholder, which a native reset of the
@@ -327,8 +328,17 @@ function EarlyAccessForm({
                 attribution,
             });
             setStatus("sent");
-        } catch {
-            setStatus("failed");
+        } catch (error) {
+            // A throttled visitor gets the backend's own answer: the generic
+            // "try again" reads as an invitation to do so at once, which only
+            // confirms the bucket. Anything else is already on its way to
+            // Sentry — `submitEarlyAccessRequest` goes through the shared
+            // client, whose interceptor reports 5xx and network failures.
+            setStatus(
+                isAxiosError(error) && error.response?.status === 429
+                    ? "throttled"
+                    : "failed",
+            );
         }
     }
 
@@ -418,12 +428,14 @@ function EarlyAccessForm({
                     <ResetGlyph />
                     Clear form
                 </button>
-                {status === "failed" && (
+                {(status === "failed" || status === "throttled") && (
                     <p
                         role="alert"
                         className="text-xs leading-[1.35] text-[#c8412f]"
                     >
-                        Something went wrong. Please try again.
+                        {status === "throttled"
+                            ? "Too many requests. Please try again in a minute."
+                            : "Something went wrong. Please try again."}
                     </p>
                 )}
                 <button
