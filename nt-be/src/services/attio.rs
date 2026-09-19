@@ -45,9 +45,11 @@ mod slug {
 /// the landing page stay separable from every other way people reach Attio.
 const LEAD_SOURCE: &str = "Near Business early access form";
 
-/// Retry schedule for calls that could still succeed. Three retries, and the
-/// handler is holding a browser request open for all of them, so the total
-/// worst case stays under four seconds.
+/// Retry schedule for calls that could still succeed: three retries, 3.5s of
+/// sleeps. [`AttioClient::capture_early_access_lead`] stacks two of these — the
+/// person upsert, then the list entry — so a sustained Attio outage spends ~7s
+/// sleeping plus however long the round trips themselves take, all of it with a
+/// browser request held open. The route's timeout is what actually bounds that.
 const RETRY_BACKOFF: [Duration; 3] = [
     Duration::from_millis(500),
     Duration::from_secs(1),

@@ -5,9 +5,16 @@ use axum::{
     routing::{delete, get, post, put},
 };
 use serde_json::{Value, json};
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
+use tower_http::timeout::TimeoutLayer;
 
 use crate::{AppState, auth, handlers};
+
+/// Comfortably past the ~7s of retry backoff a lead capture can spend, so an
+/// Attio blip still gets its retries, while a sustained outage stops holding
+/// connections open for as long as it feels like. Answered as a 504 to match
+/// the 502 the handler gives for an Attio failure it did hear back from.
+const EARLY_ACCESS_TIMEOUT: Duration = Duration::from_secs(10);
 
 mod balance_changes;
 pub use balance_changes::{
@@ -100,10 +107,17 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             get(handlers::public_dashboard::get_public_dashboard_aum),
         )
         .route("/api/app-events", get(handlers::events::app_events))
-        // Landing page early-access form (public, syncs to Attio)
+        // Landing page early-access form (public, syncs to Attio). Capturing a
+        // lead retries Attio twice over, so a sustained outage there would
+        // otherwise hold this connection open for the length of both backoffs.
+        // The work is idempotent, so a timed-out submission is safe to resend.
         .route(
             "/api/early-access",
-            post(handlers::early_access::submit_early_access),
+            post(handlers::early_access::submit_early_access)
+                .layer(TimeoutLayer::with_status_code(
+                    StatusCode::GATEWAY_TIMEOUT,
+                    EARLY_ACCESS_TIMEOUT,
+                )),
         )
         // Balance changes endpoint
         .route(
