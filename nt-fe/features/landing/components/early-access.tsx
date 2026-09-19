@@ -196,30 +196,26 @@ function EarlyAccessModal({
                 <DialogPrimitive.Content
                     aria-labelledby={titleId}
                     className={cn(
-                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1068px]",
+                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1180px]",
                         "rounded-2xl bg-white font-landing text-landing-ink antialiased shadow-2xl",
-                        "lg:bg-landing-paper lg:p-[clamp(0.625rem,1.7dvh,1rem)]",
+                        // No card padding: the photograph runs to the card's
+                        // own rounded edge, which `overflow-y-auto` clips it to.
+                        "lg:bg-landing-paper",
                         "duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
                     )}
                 >
-                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,504px)] lg:gap-0">
+                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,556px)] lg:gap-0">
                         <div
                             className={cn(
-                                "relative flex flex-col px-6 sm:px-10 lg:px-12 lg:pr-16",
+                                "flex flex-col px-6 sm:px-10 lg:px-16 lg:pr-20",
                                 COLUMN_PADDING,
                             )}
                         >
-                            <DialogPrimitive.Close
-                                aria-label="Close"
-                                className="absolute right-5 top-5 rounded-full p-1 text-landing-ink transition-colors hover:bg-landing-ink/5 sm:right-8 sm:top-8 lg:right-8 lg:top-[clamp(1.25rem,3.6dvh,2.5rem)]"
-                            >
-                                <CloseGlyph />
-                            </DialogPrimitive.Close>
                             <NearMark className="hidden size-6 lg:block" />
                             <DialogPrimitive.Title
                                 id={titleId}
                                 className={cn(
-                                    "pr-10 text-[28px] font-medium leading-[1.15] tracking-[-0.5px] sm:text-[32px] lg:text-2xl lg:tracking-[-0.25px]",
+                                    "text-[28px] font-medium leading-[1.15] tracking-[-0.5px] sm:text-[32px] lg:text-2xl lg:tracking-[-0.25px]",
                                     BLOCK_GAP_LG,
                                 )}
                             >
@@ -228,15 +224,16 @@ function EarlyAccessModal({
                             <PrivacyNotice />
                             <EarlyAccessForm attribution={attribution} />
                         </div>
-                        {/* Decorative, and the tallest thing in the modal —
-                            phones drop it rather than scroll past it. */}
+                        {/* The tallest thing in the modal — phones drop it
+                            rather than scroll past it. The line is set into the
+                            picture, so it needs describing rather than hiding. */}
                         <div className="relative hidden lg:block">
                             <Image
                                 src="/landing/early-access.jpg"
-                                alt=""
+                                alt="Your treasury should be your business."
                                 fill
-                                sizes="504px"
-                                className="rounded-xl object-cover"
+                                sizes="556px"
+                                className="object-cover"
                             />
                         </div>
                     </div>
@@ -266,7 +263,7 @@ function PrivacyNotice() {
                 <Link
                     href={PRIVACY_POLICY_HREF}
                     target="_blank"
-                    className="underline underline-offset-2 hover:text-landing-grey"
+                    className="text-landing-link underline underline-offset-2"
                 >
                     privacy policy
                 </Link>
@@ -294,6 +291,16 @@ function EarlyAccessForm({
     const [status, setStatus] = useState<
         "idle" | "submitting" | "failed" | "sent"
     >("idle");
+    // Clearing remounts the form rather than walking it: the two selects hold
+    // their own state for the greyed placeholder, which a native reset of the
+    // DOM would leave behind.
+    const [generation, setGeneration] = useState(0);
+
+    function clear() {
+        setGeneration((generation) => generation + 1);
+        setIsComplete(false);
+        setStatus("idle");
+    }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
@@ -339,7 +346,9 @@ function EarlyAccessForm({
         // Fields are uncontrolled: `FormData` reads them on submit, and the
         // dialog throws them away on close.
         <form
+            key={generation}
             onSubmit={handleSubmit}
+            onReset={clear}
             onChange={(event) =>
                 setIsComplete(event.currentTarget.checkValidity())
             }
@@ -392,13 +401,20 @@ function EarlyAccessForm({
                     time.
                 </label>
             </div>
-            {/* The failure notice shares the button's row rather than taking
-                one of its own, so a retry never costs the form its fit. */}
+            {/* Clear form and the failure notice share the button's row rather
+                than taking one each, so neither costs the form its fit. */}
             <div className="mt-1 flex items-center justify-end gap-4">
+                <button
+                    type="reset"
+                    className="mr-auto inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-xs text-landing-link hover:underline"
+                >
+                    <ResetGlyph />
+                    Clear form
+                </button>
                 {status === "failed" && (
                     <p
                         role="alert"
-                        className="mr-auto text-xs leading-[1.35] text-[#c8412f]"
+                        className="text-xs leading-[1.35] text-[#c8412f]"
                     >
                         Something went wrong. Please try again.
                     </p>
@@ -491,6 +507,32 @@ function MarketingOptIn({ id }: { id: string }) {
     );
 }
 
+/** The counter-clockwise arrow the design puts against "Clear form". */
+function ResetGlyph() {
+    return (
+        <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="size-3.5"
+        >
+            <path
+                d="M3 8a5 5 0 1 1 1.6 3.67"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+            />
+            <path
+                d="M3 4.5V8h3.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+        </svg>
+    );
+}
+
 function ChevronGlyph({ className }: { className?: string }) {
     return (
         <svg
@@ -505,24 +547,6 @@ function ChevronGlyph({ className }: { className?: string }) {
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
-            />
-        </svg>
-    );
-}
-
-function CloseGlyph() {
-    return (
-        <svg
-            aria-hidden="true"
-            viewBox="0 0 16 16"
-            fill="none"
-            className="size-4"
-        >
-            <path
-                d="m3 3 10 10M13 3 3 13"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
             />
         </svg>
     );
