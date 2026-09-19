@@ -13,7 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/input";
 import { DateTimePicker } from "@/components/ui/datepicker";
-import { endOfDay, format, isSameDay, startOfDay } from "date-fns";
+import { endOfDay, format, isSameDay, parseISO, startOfDay } from "date-fns";
 import { OperationSelect } from "@/components/operation-select";
 import { TokenSelectPopover } from "@/components/token-select-popover";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -472,17 +472,17 @@ function FilterPill({
             try {
                 const { from, to } = (filterData as any).dateRange;
                 if (!from && !to) return tF("all");
-                if (from && to && !isSameDay(new Date(from), new Date(to))) {
+                if (from && to && !isSameDay(parseISO(from), parseISO(to))) {
                     return (
                         <span className="font-medium text-sm">
-                            {format(new Date(from), "MMM d, yyyy")} -{" "}
-                            {format(new Date(to), "MMM d, yyyy")}
+                            {format(parseISO(from), "MMM d, yyyy")} -{" "}
+                            {format(parseISO(to), "MMM d, yyyy")}
                         </span>
                     );
                 } else if (from) {
                     return (
                         <span className="font-medium text-sm">
-                            {format(new Date(from), "MMM d, yyyy")}
+                            {format(parseISO(from), "MMM d, yyyy")}
                         </span>
                     );
                 }
@@ -811,10 +811,10 @@ function CreatedDateFilterContent({
                 dateRange: parsed.dateRange
                     ? {
                           from: parsed.dateRange.from
-                              ? new Date(parsed.dateRange.from)
+                              ? parseISO(parsed.dateRange.from)
                               : undefined,
                           to: parsed.dateRange.to
-                              ? new Date(parsed.dateRange.to)
+                              ? parseISO(parsed.dateRange.to)
                               : undefined,
                       }
                     : {
@@ -822,12 +822,18 @@ function CreatedDateFilterContent({
                           to: undefined,
                       },
             }),
+            // Serialize as local calendar-day strings (not `.toISOString()`,
+            // which shifts the date across midnight for any non-UTC timezone).
             serializeData: (op, d) => ({
                 operation: op,
                 dateRange: d.dateRange
                     ? {
-                          from: d.dateRange.from?.toISOString(),
-                          to: d.dateRange.to?.toISOString(),
+                          from: d.dateRange.from
+                              ? format(d.dateRange.from, "yyyy-MM-dd")
+                              : undefined,
+                          to: d.dateRange.to
+                              ? format(d.dateRange.to, "yyyy-MM-dd")
+                              : undefined,
                       }
                     : undefined,
             }),
