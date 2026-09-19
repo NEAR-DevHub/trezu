@@ -53,7 +53,10 @@ pub struct EarlyAccessRequest {
     pub telegram: Option<String>,
     pub business_type: Option<String>,
     pub referral_source: Option<String>,
-    pub consent: bool,
+    /// The marketing tickbox. Privacy is a notice on the form rather than a
+    /// choice, so there is nothing to withhold and nothing to enforce here.
+    #[serde(default)]
+    pub marketing_opt_in: bool,
     #[serde(default)]
     pub attribution: Attribution,
 }
@@ -120,10 +123,6 @@ fn client_key(headers: &HeaderMap) -> String {
 /// Trims every field and drops the ones that came through empty, so the
 /// difference between "skipped" and "typed spaces" never reaches Attio.
 fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
-    if !payload.consent {
-        return Err("Consent to the privacy policy is required".to_string());
-    }
-
     let required = |label: &str, value: String| {
         let value = value.trim().to_string();
         if value.is_empty() {
@@ -158,6 +157,7 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
             "How you heard about NEAR Business",
             payload.referral_source.unwrap_or_default(),
         )?,
+        marketing_opt_in: payload.marketing_opt_in,
         attribution: payload.attribution,
     })
 }
@@ -174,7 +174,7 @@ mod tests {
             telegram: Some("  ".to_string()),
             business_type: Some("Treasury".to_string()),
             referral_source: Some("Word of Mouth".to_string()),
-            consent: true,
+            marketing_opt_in: true,
             attribution: Attribution::default(),
         }
     }
@@ -202,13 +202,12 @@ mod tests {
     }
 
     #[test]
-    fn consent_and_the_required_fields_are_enforced() {
+    fn every_field_but_telegram_is_required() {
         for (label, mutate) in [
             (
-                "consent",
-                (|r: &mut EarlyAccessRequest| r.consent = false) as fn(&mut _),
+                "name",
+                (|r: &mut EarlyAccessRequest| r.name = "   ".to_string()) as fn(&mut _),
             ),
-            ("name", |r| r.name = "   ".to_string()),
             ("company", |r| r.company = String::new()),
             ("email", |r| r.email = "ada.example.com".to_string()),
             ("business type", |r| r.business_type = None),

@@ -29,7 +29,7 @@ mod slug {
     pub const TELEGRAM: &str = "telegram";
     pub const BUSINESS_TYPE: &str = "business_type";
     pub const REFERRAL_SOURCE: &str = "referral_source";
-    pub const CONSENT: &str = "privacy_policy_consent";
+    pub const MARKETING_OPT_IN: &str = "marketing_opt_in";
     pub const LEAD_SOURCE: &str = "lead_source";
     pub const SUBMITTED_AT: &str = "submitted_at";
     pub const UTM_SOURCE: &str = "utm_source";
@@ -64,6 +64,7 @@ pub struct EarlyAccessLead {
     pub telegram: Option<String>,
     pub business_type: String,
     pub referral_source: String,
+    pub marketing_opt_in: bool,
     pub attribution: Attribution,
 }
 
@@ -284,7 +285,10 @@ fn person_values(lead: &EarlyAccessLead) -> Value {
         slug::REFERRAL_SOURCE.to_owned(),
         json!(lead.referral_source),
     );
-    values.insert(slug::CONSENT.to_owned(), json!(true));
+    values.insert(
+        slug::MARKETING_OPT_IN.to_owned(),
+        json!(lead.marketing_opt_in),
+    );
     values.insert(slug::LEAD_SOURCE.to_owned(), json!(LEAD_SOURCE));
     values.insert(
         slug::SUBMITTED_AT.to_owned(),
@@ -345,6 +349,7 @@ mod tests {
             telegram: Some("   ".to_string()),
             business_type: "Treasury".to_string(),
             referral_source: "Word of Mouth".to_string(),
+            marketing_opt_in: true,
             attribution: Attribution {
                 utm_source: Some("x".to_string()),
                 ..Default::default()
@@ -371,6 +376,7 @@ mod tests {
         assert_eq!(values[slug::EMAIL_ADDRESSES][0], "ada@example.com");
         assert_eq!(values[slug::BUSINESS_TYPE], "Treasury");
         assert_eq!(values[slug::REFERRAL_SOURCE], "Word of Mouth");
+        assert_eq!(values[slug::MARKETING_OPT_IN], true);
         assert_eq!(values[slug::UTM_SOURCE], "x");
         // Whitespace-only and absent optionals are both left out.
         assert!(values.get(slug::TELEGRAM).is_none());

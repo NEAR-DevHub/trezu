@@ -1071,7 +1071,8 @@ export interface EarlyAccessRequestBody {
     telegram?: string;
     businessType: string;
     referralSource: string;
-    consent: boolean;
+    /** The marketing tickbox. Privacy is a notice on the form, not a choice. */
+    marketingOptIn: boolean;
     attribution?: EarlyAccessAttribution;
 }
 

@@ -167,11 +167,13 @@ const BLOCK_GAP = "mt-[clamp(0.875rem,2.6dvh,1.75rem)]";
 const BLOCK_GAP_LG = "lg:mt-[clamp(0.875rem,2.6dvh,1.75rem)]";
 const COLUMN_PADDING = "py-[clamp(1.25rem,3.6dvh,2.5rem)]";
 
-/** 420x48 fields from the design: 1px hairline, transparent so the field
- *  picks up whichever card background the breakpoint is using. */
+/** Underlined fields, per the design: a single hairline under each one, no box
+ *  and no inset, so the text of a field starts on the same margin as the copy
+ *  above it. Transparent, so the field picks up whichever card background the
+ *  breakpoint is using. */
 const FIELD = cn(
     FIELD_HEIGHT,
-    "w-full rounded-xl border border-landing-grey-light bg-transparent px-5 text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey-light focus:border-landing-ink",
+    "w-full rounded-none border-0 border-b border-landing-grey-light bg-transparent text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey-light focus:border-landing-ink",
 );
 
 function EarlyAccessModal({
@@ -221,8 +223,9 @@ function EarlyAccessModal({
                                     BLOCK_GAP_LG,
                                 )}
                             >
-                                Request Early Access
+                                NEAR Business Early Access
                             </DialogPrimitive.Title>
+                            <PrivacyNotice />
                             <EarlyAccessForm attribution={attribution} />
                         </div>
                         {/* Decorative, and the tallest thing in the modal —
@@ -244,17 +247,49 @@ function EarlyAccessModal({
 }
 
 /**
- * Telegram is the only optional field, so everything else is `required`. That
- * makes "is the form complete" exactly the browser's own validity check — one flag off `checkValidity()` rather than a piece of state per
- * input. The dialog unmounts its content on close, which resets the fields,
- * this flag and the submission state together.
+ * What used to be a consent tickbox the visitor had to tick. The design turned
+ * it into a notice: submitting the form is the act, and this says what the
+ * submission will be used for. The remaining tickbox is the marketing opt-in,
+ * which is genuinely optional.
+ */
+function PrivacyNotice() {
+    return (
+        <div
+            className={cn(BLOCK_GAP, "text-xs leading-[1.35] text-landing-ink")}
+        >
+            <p className="font-medium">Privacy Notice.</p>
+            <p>
+                Intents Technology Ltd will use the information you provide to
+                assess and respond to your early-access request and to
+                administer our relationship with you. For more information about
+                how we use and protect personal information, see our{" "}
+                <Link
+                    href={PRIVACY_POLICY_HREF}
+                    target="_blank"
+                    className="underline underline-offset-2 hover:text-landing-grey"
+                >
+                    privacy policy
+                </Link>
+                .
+            </p>
+        </div>
+    );
+}
+
+/**
+ * Telegram is the only answer a visitor may skip, and the marketing opt-in is
+ * a choice rather than an answer, so every other field is `required`. That
+ * makes "is the form complete" exactly the browser's own validity check — one
+ * flag off `checkValidity()` rather than a piece of state per input. The
+ * dialog unmounts its content on close, which resets the fields, this flag and
+ * the submission state together.
  */
 function EarlyAccessForm({
     attribution,
 }: {
     attribution: EarlyAccessAttribution;
 }) {
-    const consentId = useId();
+    const optInId = useId();
     const [isComplete, setIsComplete] = useState(false);
     const [status, setStatus] = useState<
         "idle" | "submitting" | "failed" | "sent"
@@ -274,7 +309,7 @@ function EarlyAccessForm({
                 telegram: value("telegram") || undefined,
                 businessType: value("businessType"),
                 referralSource: value("referralSource"),
-                consent: fields.has("consent"),
+                marketingOptIn: fields.has("marketingOptIn"),
                 attribution,
             });
             setStatus("sent");
@@ -310,20 +345,22 @@ function EarlyAccessForm({
             }
             className={cn("flex flex-col", BLOCK_GAP, ROW_GAP)}
         >
-            <input
-                name="name"
-                autoComplete="name"
-                placeholder="Name"
-                required
-                className={FIELD}
-            />
-            <input
-                name="company"
-                autoComplete="organization"
-                placeholder="Company"
-                required
-                className={FIELD}
-            />
+            <div className={cn("grid sm:grid-cols-2", ROW_GAP)}>
+                <input
+                    name="name"
+                    autoComplete="name"
+                    placeholder="Name"
+                    required
+                    className={FIELD}
+                />
+                <input
+                    name="company"
+                    autoComplete="organization"
+                    placeholder="Company"
+                    required
+                    className={FIELD}
+                />
+            </div>
             <input
                 type="email"
                 name="email"
@@ -344,21 +381,15 @@ function EarlyAccessForm({
                 options={REFERRAL_SOURCE_OPTIONS}
             />
             <div className="flex items-start gap-3">
-                <Consent id={consentId} />
+                <MarketingOptIn id={optInId} />
                 <label
-                    htmlFor={consentId}
-                    className="text-xs leading-[1.35] text-landing-grey"
+                    htmlFor={optInId}
+                    className="text-xs leading-[1.35] text-landing-ink"
                 >
-                    I agree to the{" "}
-                    <Link
-                        href={PRIVACY_POLICY_HREF}
-                        target="_blank"
-                        className="underline underline-offset-2 hover:text-landing-ink"
-                    >
-                        Privacy Policy
-                    </Link>{" "}
-                    and consent to the processing of my personal data in
-                    accordance with applicable data protection regulations.
+                    I would like to receive marketing emails about near.com for
+                    Business and related products and services from Intents
+                    Technology Ltd or on its behalf. I can unsubscribe at any
+                    time.
                 </label>
             </div>
             {/* The failure notice shares the button's row rather than taking
@@ -414,7 +445,7 @@ function SelectField({
                     FIELD,
                     // Native selects clip rather than wrap, so the long
                     // referral placeholder drops a size on narrow phones.
-                    "cursor-pointer appearance-none pr-11 max-sm:text-[13px]",
+                    "cursor-pointer appearance-none pr-6 max-sm:text-[13px]",
                     !value && "text-landing-grey-light",
                 )}
             >
@@ -425,31 +456,28 @@ function SelectField({
                     </option>
                 ))}
             </select>
-            <ChevronGlyph className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2" />
+            <ChevronGlyph className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" />
         </div>
     );
 }
 
 /** Green hairline square with a tick, per the design — the themed app
  *  checkbox would drag in the dashboard palette. */
-function Consent({ id }: { id: string }) {
+function MarketingOptIn({ id }: { id: string }) {
     return (
-        <span className="relative mt-0.5 inline-flex shrink-0">
+        <span className="relative mt-px inline-flex shrink-0">
             <input
                 id={id}
                 type="checkbox"
-                name="consent"
-                required
-                // `appearance-none` takes the browser's focus ring with it,
-                // and this is the one control a keyboard user must find to
-                // enable the submit button.
-                className="peer size-4 cursor-pointer appearance-none rounded-[3px] border border-landing-green bg-transparent checked:bg-landing-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-ink"
+                name="marketingOptIn"
+                // `appearance-none` takes the browser's focus ring with it.
+                className="peer size-[18px] cursor-pointer appearance-none rounded-[3px] border border-landing-green bg-transparent checked:bg-landing-green focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-landing-ink"
             />
             <svg
                 aria-hidden="true"
                 viewBox="0 0 16 16"
                 fill="none"
-                className="pointer-events-none absolute inset-0 hidden size-4 text-landing-ink peer-checked:block"
+                className="pointer-events-none absolute inset-0 hidden size-[18px] text-landing-ink peer-checked:block"
             >
                 <path
                     d="M4 8.4 6.8 11 12 5.5"
