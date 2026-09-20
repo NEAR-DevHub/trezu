@@ -90,16 +90,15 @@ describe("getDashboardBucketVisibility", () => {
             unstaked: number;
         }[],
     ): TreasuryAsset {
-        const NEAR_24 = Big(10).pow(24);
         // Aggregate top-level staking totals from the pool rows so the
         // generated asset matches what `transformBalance` would produce for
         // a real "staked" row arriving from the backend.
         const stakedBalance = pools.reduce(
-            (acc, p) => acc.add(NEAR_24.mul(p.staked)),
+            (acc, p) => acc.add(NEAR.mul(p.staked)),
             Big(0),
         );
         const unstakedBalance = pools.reduce(
-            (acc, p) => acc.add(NEAR_24.mul(p.unstaked)),
+            (acc, p) => acc.add(NEAR.mul(p.unstaked)),
             Big(0),
         );
         return {
@@ -122,8 +121,8 @@ describe("getDashboardBucketVisibility", () => {
                     canWithdraw: false,
                     pools: pools.map((p) => ({
                         poolId: p.poolId,
-                        stakedBalance: NEAR_24.mul(p.staked),
-                        unstakedBalance: NEAR_24.mul(p.unstaked),
+                        stakedBalance: NEAR.mul(p.staked),
+                        unstakedBalance: NEAR.mul(p.unstaked),
                         canWithdraw: false,
                     })),
                 },
