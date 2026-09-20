@@ -393,8 +393,10 @@ function buildMobileModalData(
         (n) =>
             ((n.residency === "Staked" &&
                 n.balance.type === "Staked" &&
-                n.balance.staking.pools.some((pool) =>
-                    pool.stakedBalance.gt(0),
+                n.balance.staking.pools.some(
+                    (pool) =>
+                        pool.stakedBalance.gt(0) ||
+                        pool.unstakedBalance.gt(0),
                 )) ||
                 (n.balance.type === "Vested" &&
                     n.balance.lockup.staked.gt(0))) &&
@@ -411,7 +413,11 @@ function buildMobileModalData(
     const earningPoolRows = earningNetworks.flatMap((network, networkIdx) => {
         if (network.balance.type === "Staked") {
             return network.balance.staking.pools
-                .filter((pool) => pool.stakedBalance.gt(0))
+                .filter(
+                    (pool) =>
+                        pool.stakedBalance.gt(0) ||
+                        pool.unstakedBalance.gt(0),
+                )
                 .map((pool, poolIdx) => {
                     const poolTotal = pool.stakedBalance.add(
                         pool.unstakedBalance,
@@ -1902,8 +1908,10 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                 (n) =>
                                     ((n.residency === "Staked" &&
                                         n.balance.type === "Staked" &&
-                                        n.balance.staking.pools.some((pool) =>
-                                            pool.stakedBalance.gt(0),
+                                        n.balance.staking.pools.some(
+                                            (pool) =>
+                                                pool.stakedBalance.gt(0) ||
+                                                pool.unstakedBalance.gt(0),
                                         )) ||
                                         (n.balance.type === "Vested" &&
                                             n.balance.lockup.staked.gt(0))) &&

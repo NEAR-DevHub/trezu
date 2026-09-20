@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
-import { getDashboardBalanceView } from "./dashboard-balance-view";
+import {
+    getDashboardBalanceView,
+    getDashboardBucketVisibility,
+} from "./dashboard-balance-view";
 
 const NEAR = Big(10).pow(24);
 
@@ -76,5 +79,98 @@ describe("getDashboardBalanceView", () => {
         expect(
             view.availableUsd + view.lockedUsd + view.earningUsd,
         ).toBeCloseTo(view.totalUsd, 6);
+    });
+});
+
+describe("getDashboardBucketVisibility", () => {
+    function stakedAsset(pools: {
+        poolId: string;
+        staked: number;
+        unstaked: number;
+    }[]): TreasuryAsset {
+        const NEAR_24 = Big(10).pow(24);
+        // Aggregate top-level staking totals from the pool rows so the
+        // generated asset matches what `transformBalance` would produce for
+        // a real "staked" row arriving from the backend.
+        const stakedBalance = pools.reduce(
+            (acc, p) => acc.add(NEAR_24.mul(p.staked)),
+            Big(0),
+        );
+        const unstakedBalance = pools.reduce(
+            (acc, p) => acc.add(NEAR_24.mul(p.unstaked)),
+            Big(0),
+        );
+        return {
+            id: "near",
+            residency: "Staked",
+            network: "near",
+            chainName: "NEAR",
+            symbol: "NEAR",
+            decimals: 24,
+            price: 2,
+            name: "NEAR",
+            icon: "",
+            balanceUSD: 0,
+            weight: 0,
+            balance: {
+                type: "Staked",
+                staking: {
+                    stakedBalance,
+                    unstakedBalance,
+                    canWithdraw: false,
+                    pools: pools.map((p) => ({
+                        poolId: p.poolId,
+                        stakedBalance: NEAR_24.mul(p.staked),
+                        unstakedBalance: NEAR_24.mul(p.unstaked),
+                        canWithdraw: false,
+                    })),
+                },
+            },
+        };
+    }
+
+    test("Staked with only unstaked pool funds still shows the earning tab", () => {
+        // This is the exact PR scenario: tokens are deposited into a staking
+        // pool but not staked (e.g. pending withdrawal), so the only non-zero
+        // field on the pool is `unstakedBalance`.
+        const visibility = getDashboardBucketVisibility([
+            stakedAsset([
+                { poolId: "astro-stakers.poolv1.near", staked: 0, unstaked: 5 },
+            ]),
+        ]);
+
+        expect(visibility.showEarning).toBe(true);
+        expect(visibility.showLocked).toBe(false);
+    });
+
+    test("Staked with a positive stakedBalance still shows the earning tab", () => {
+        // Regression guard: widening the predicate to include unstaked
+        // balances must not drop the original positive-staked case.
+        const visibility = getDashboardBucketVisibility([
+            stakedAsset([
+                {
+                    poolId: "astro-stakers.poolv1.near",
+                    staked: 10,
+                    unstaked: 0,
+                },
+            ]),
+        ]);
+
+        expect(visibility.showEarning).toBe(true);
+    });
+
+    test("Staked with an empty pool hides the earning tab", () => {
+        const visibility = getDashboardBucketVisibility([
+            stakedAsset([
+                {
+                    poolId: "astro-stakers.poolv1.near",
+                    staked: 0,
+                    unstaked: 0,
+                },
+            ]),
+        ]);
+
+        expect(visibility.showEarning).toBe(false);
+        expect(visibility.showLocked).toBe(false);
     });
 });
