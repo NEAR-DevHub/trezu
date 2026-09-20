@@ -50,7 +50,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { TreasuryAsset } from "@/lib/api";
-import { availableBalance, lockedBalance } from "@/lib/balance";
+import { availableBalance, hasPoolFunds, lockedBalance } from "@/lib/balance";
 import Big from "@/lib/big";
 import { getDashboardBucketVisibility } from "@/lib/dashboard-balance-view";
 import { buildTokenQueryParam } from "@/lib/token-query-param";
@@ -393,11 +393,7 @@ function buildMobileModalData(
         (n) =>
             ((n.residency === "Staked" &&
                 n.balance.type === "Staked" &&
-                n.balance.staking.pools.some(
-                    (pool) =>
-                        pool.stakedBalance.gt(0) ||
-                        pool.unstakedBalance.gt(0),
-                )) ||
+                n.balance.staking.pools.some(hasPoolFunds)) ||
                 (n.balance.type === "Vested" &&
                     n.balance.lockup.staked.gt(0))) &&
             networkEarningRaw(n).gt(0),
@@ -413,11 +409,7 @@ function buildMobileModalData(
     const earningPoolRows = earningNetworks.flatMap((network, networkIdx) => {
         if (network.balance.type === "Staked") {
             return network.balance.staking.pools
-                .filter(
-                    (pool) =>
-                        pool.stakedBalance.gt(0) ||
-                        pool.unstakedBalance.gt(0),
-                )
+                .filter(hasPoolFunds)
                 .map((pool, poolIdx) => {
                     const poolTotal = pool.stakedBalance.add(
                         pool.unstakedBalance,
@@ -1909,9 +1901,7 @@ export function AssetsTable({ aggregatedTokens }: Props) {
                                     ((n.residency === "Staked" &&
                                         n.balance.type === "Staked" &&
                                         n.balance.staking.pools.some(
-                                            (pool) =>
-                                                pool.stakedBalance.gt(0) ||
-                                                pool.unstakedBalance.gt(0),
+                                            hasPoolFunds,
                                         )) ||
                                         (n.balance.type === "Vested" &&
                                             n.balance.lockup.staked.gt(0))) &&

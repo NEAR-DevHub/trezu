@@ -83,11 +83,13 @@ describe("getDashboardBalanceView", () => {
 });
 
 describe("getDashboardBucketVisibility", () => {
-    function stakedAsset(pools: {
-        poolId: string;
-        staked: number;
-        unstaked: number;
-    }[]): TreasuryAsset {
+    function stakedAsset(
+        pools: {
+            poolId: string;
+            staked: number;
+            unstaked: number;
+        }[],
+    ): TreasuryAsset {
         const NEAR_24 = Big(10).pow(24);
         // Aggregate top-level staking totals from the pool rows so the
         // generated asset matches what `transformBalance` would produce for

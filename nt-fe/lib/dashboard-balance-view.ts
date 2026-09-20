@@ -1,5 +1,6 @@
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
+import { hasPoolFunds } from "@/lib/balance";
 
 export interface DashboardBalanceView {
     totalUsd: number;
@@ -83,10 +84,10 @@ export function getDashboardBucketVisibility(
         // - in staking pools (Staked balances), or
         // - in lockup staking (Vested balances with staked > 0).
         if (token.balance.type === "Staked") {
-            const hasPoolStaked = token.balance.staking.pools.some((pool) =>
-                pool.stakedBalance.gt(0) || pool.unstakedBalance.gt(0),
-            );
-            showEarning = showEarning || (earningRaw.gt(0) && hasPoolStaked);
+            showEarning =
+                showEarning ||
+                (earningRaw.gt(0) &&
+                    token.balance.staking.pools.some(hasPoolFunds));
         } else if (token.balance.type === "Vested") {
             showEarning = showEarning || earningRaw.gt(0);
         }
