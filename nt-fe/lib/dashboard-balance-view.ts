@@ -84,7 +84,7 @@ export function getDashboardBucketVisibility(
         // - in lockup staking (Vested balances with staked > 0).
         if (token.balance.type === "Staked") {
             const hasPoolStaked = token.balance.staking.pools.some((pool) =>
-                pool.stakedBalance.gt(0),
+                pool.stakedBalance.gt(0) || pool.unstakedBalance.gt(0),
             );
             showEarning = showEarning || (earningRaw.gt(0) && hasPoolStaked);
         } else if (token.balance.type === "Vested") {
