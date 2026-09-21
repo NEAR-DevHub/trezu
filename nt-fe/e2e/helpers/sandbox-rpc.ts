@@ -175,8 +175,8 @@ async function signAndSend(
     // finalized-block read that hasn't caught up yet, so block here until the
     // tx is final — same one-shot mechanism approveProposal already uses
     // below for cross-contract receipts, just with a higher wait_until.
-    const txHash = (txResult as { transaction?: { hash?: string } })
-        .transaction?.hash;
+    const txHash = (txResult as { transaction?: { hash?: string } }).transaction
+        ?.hash;
     if (txHash) {
         await fetch(SANDBOX_RPC, {
             method: "POST",
