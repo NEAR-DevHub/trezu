@@ -220,12 +220,58 @@ fn is_missing_resource_panic(panic_msg: &str) -> bool {
     panic_msg.contains("ERR_NO_PROPOSAL") || panic_msg.contains("ERR_NO_BOUNTY")
 }
 
+/// The panic message out of a Debug-formatted `GuestPanic`. The message is a
+/// quoted string, so inner quotes and backslashes arrive escaped, and an outer
+/// Debug pass may have escaped the whole thing again.
 fn guest_panic_message(message: &str) -> Option<String> {
     let (_, rest) = message.split_once("GuestPanic")?;
     let (_, rest) = rest.split_once("panic_msg:")?;
-    let rest = rest.trim_start().trim_start_matches(['\\', '"']);
-    let end = rest.find(['\\', '"']).unwrap_or(rest.len());
-    Some(rest[..end].trim().to_string())
+    let mut rest = rest.trim_start().to_string();
+    for _ in 0..MAX_DEBUG_ESCAPE_LAYERS {
+        if !rest.starts_with('\\') {
+            break;
+        }
+        rest = unescape_debug(&rest);
+    }
+    let Some(quoted) = rest.strip_prefix('"') else {
+        return Some(rest.trim_end_matches([' ', '}', ')']).to_string());
+    };
+
+    let mut end = quoted.len();
+    let mut escaped = false;
+    for (index, c) in quoted.char_indices() {
+        match c {
+            _ if escaped => escaped = false,
+            '\\' => escaped = true,
+            '"' => {
+                end = index;
+                break;
+            }
+            _ => {}
+        }
+    }
+    Some(unescape_debug(&quoted[..end]).trim().to_string())
+}
+
+const MAX_DEBUG_ESCAPE_LAYERS: usize = 3;
+
+fn unescape_debug(escaped: &str) -> String {
+    let mut unescaped = String::with_capacity(escaped.len());
+    let mut chars = escaped.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            unescaped.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => unescaped.push('\n'),
+            Some('t') => unescaped.push('\t'),
+            Some('r') => unescaped.push('\r'),
+            Some(other) => unescaped.push(other),
+            None => unescaped.push('\\'),
+        }
+    }
+    unescaped
 }
 
 #[cfg(test)]
@@ -421,6 +467,44 @@ mod tests {
             ContractReadError::from_message("connection reset by peer".to_string()),
             ContractReadError::Rpc(_)
         ));
+    }
+
+    fn vm_error_with_panic(panic_msg: &str) -> String {
+        format!(
+            "wasm execution failed with error: HostError(GuestPanic {{ panic_msg: {panic_msg:?} }})"
+        )
+    }
+
+    #[test]
+    fn guest_panic_message_keeps_quotes_and_backslashes() {
+        for panic_msg in [
+            "panicked at 'ERR_NO_PROPOSAL', sputnikdao2/src/views.rs:102:49",
+            "panicked at \"ERR_NO_PROPOSAL\", src/views.rs:10:5",
+            "called `Result::unwrap()` on an `Err` value: \"bad state\" ERR_NO_PROPOSAL",
+            "path C:\\dir ERR_NO_BOUNTY",
+            "trailing backslash \\",
+        ] {
+            assert_eq!(
+                guest_panic_message(&vm_error_with_panic(panic_msg)).as_deref(),
+                Some(panic_msg)
+            );
+        }
+    }
+
+    #[test]
+    fn guest_panic_message_survives_an_outer_debug_pass() {
+        let panic_msg = "panicked at \"ERR_NO_PROPOSAL\", src/views.rs:10:5";
+        let re_escaped = format!("{:?}", vm_error_with_panic(panic_msg));
+        assert_eq!(guest_panic_message(&re_escaped).as_deref(), Some(panic_msg));
+    }
+
+    #[test]
+    fn quoted_missing_resource_panic_is_still_404() {
+        let error = ContractReadError::from_message(vm_error_with_panic(
+            "panicked at \"ERR_NO_PROPOSAL\", src/views.rs:10:5",
+        ));
+        assert!(matches!(error, ContractReadError::ResourceNotFound(_)));
+        assert_eq!(error.status_and_message().0, StatusCode::NOT_FOUND);
     }
 
     #[test]
