@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 
 use serde_json::json;
 
@@ -10,7 +10,7 @@ use crate::{
             self, POST_TO_APP_CALLBACK_PREFIX, StatusIncident, admin_page_url, oh_dear_status_url,
         },
         notifications,
-        oh_dear::{self, OhDearStatus, SUPPORTED_SERVICES},
+        oh_dear::{self, NEAR_INTENTS_STATUS_CHECK, OhDearStatus, SUPPORTED_SERVICES},
     },
     handlers::warnings::db,
 };
@@ -44,6 +44,22 @@ async fn load_active_incident(
     .bind(service)
     .bind(check_name)
     .fetch_optional(pool)
+    .await
+}
+
+async fn load_active_incidents_for_service(
+    pool: &sqlx::PgPool,
+    service: &str,
+) -> Result<Vec<StatusIncident>, sqlx::Error> {
+    sqlx::query_as::<_, StatusIncident>(&format!(
+        r#"
+        SELECT {INCIDENT_COLUMNS}
+        FROM status_incidents
+        WHERE service = $1 AND recovered_at IS NULL
+        "#
+    ))
+    .bind(service)
+    .fetch_all(pool)
     .await
 }
 
@@ -380,166 +396,294 @@ pub async fn check_linked_posts_resolved(state: &Arc<AppState>) {
 }
 
 async fn process_service(state: &Arc<AppState>, service: &str) {
+    if service == "near-intents" {
+        process_near_intents(state).await;
+        return;
+    }
+
     let check = oh_dear::run_service_check(state, service).await;
     let Some(check) = check else {
         return;
     };
 
     let check_name = check.name.as_str();
-    let unhealthy = oh_dear::is_unhealthy_for_monitor(service, &check.status);
+    if oh_dear::is_unhealthy_for_monitor(service, &check.status) {
+        apply_incident_unhealthy(
+            state,
+            service,
+            check_name,
+            incident_status(&check.status),
+            &check.notification_message,
+        )
+        .await;
+    } else {
+        let outcome = apply_incident_healthy(state, service, check_name).await;
+        if outcome.recovered {
+            cleanup_service_after_recovery(state, service, check_name, outcome.had_ops_alert).await;
+        }
+    }
+}
 
-    if unhealthy {
-        let status = incident_status(&check.status);
-        let incident = match load_active_incident(&state.db_pool, service, check_name).await {
-            Ok(incident) => incident,
-            Err(e) => {
-                tracing::error!("[status-monitor] Failed to load incident for {service}: {e}");
-                return;
+async fn process_near_intents(state: &Arc<AppState>) {
+    match oh_dear::fetch_intents_posts(state).await {
+        Ok(posts) => {
+            let now = chrono::Utc::now().timestamp_millis();
+            let active = oh_dear::actionable_intents_posts(posts, now);
+            let mut active_names = HashSet::new();
+
+            for post in &active {
+                let Some(id) = post.id.as_deref() else {
+                    continue;
+                };
+                let check_name = oh_dear::intents_incident_check_name(id);
+                active_names.insert(check_name.clone());
+                apply_incident_unhealthy(
+                    state,
+                    "near-intents",
+                    &check_name,
+                    "failed",
+                    &oh_dear::intents_post_notification(post),
+                )
+                .await;
             }
-        };
 
-        let incident = match incident {
-            Some(existing) => {
-                match touch_incident_failure(&state.db_pool, existing.id, status).await {
-                    Ok(updated) => updated,
+            let open = match load_active_incidents_for_service(&state.db_pool, "near-intents").await
+            {
+                Ok(open) => open,
+                Err(e) => {
+                    tracing::error!("[status-monitor] Failed to load near-intents incidents: {e}");
+                    return;
+                }
+            };
+
+            let mut recovered_any = false;
+            for incident in &open {
+                if active_names.contains(&incident.check_name) {
+                    continue;
+                }
+                let outcome =
+                    apply_incident_healthy(state, "near-intents", &incident.check_name).await;
+                if outcome.recovered {
+                    recovered_any = true;
+                    if outcome.had_ops_alert {
+                        send_health_recovery_telegram(state, "near-intents", &incident.check_name)
+                            .await;
+                    }
+                }
+            }
+
+            let still_open =
+                match load_active_incidents_for_service(&state.db_pool, "near-intents").await {
+                    Ok(open) => open,
                     Err(e) => {
                         tracing::error!(
-                            "[status-monitor] Failed to update incident {}: {e}",
-                            existing.id
+                            "[status-monitor] Failed to reload near-intents incidents: {e}"
                         );
                         return;
                     }
-                }
-            }
-            None => match open_incident(&state.db_pool, service, check_name, status).await {
-                Ok(incident) => incident,
-                Err(e) => {
-                    tracing::error!("[status-monitor] Failed to open incident for {service}: {e}");
-                    return;
-                }
-            },
-        };
-
-        // Wait for consecutive failures before notifying (filters brief blips).
-        let alert_after = config::alert_after_failures(service);
-        if incident.telegram_message_id.is_none() {
-            if incident.consecutive_failures < alert_after {
-                tracing::debug!(
-                    "[status-monitor] {service} unhealthy ({}/{} consecutive); holding ops alert",
-                    incident.consecutive_failures,
-                    alert_after
-                );
-            } else {
-                let text = notifications::format_health_check_alert(
-                    service,
-                    check_name,
-                    status,
-                    &check.notification_message,
-                );
-                let callback_data = fallbacks::supports_fallback_button(service)
-                    .then(|| format!("{POST_TO_APP_CALLBACK_PREFIX}{service}"));
-                let admin_url = admin_page_url();
-                let check_url = oh_dear_status_url(service);
-
-                match state
-                    .telegram_client
-                    .send_ops_alert_with_buttons(
-                        &text,
-                        &admin_url,
-                        Some(&check_url),
-                        callback_data.as_deref(),
-                    )
-                    .await
-                {
-                    Ok(message_id) if message_id > 0 => {
-                        tracing::info!(
-                            "[status-monitor] Sent ops alert for {service} after {} failures (telegram message {message_id})",
-                            incident.consecutive_failures
-                        );
-                        if let Err(e) =
-                            set_incident_telegram_message(&state.db_pool, incident.id, message_id)
-                                .await
-                        {
-                            tracing::error!(
-                                "[status-monitor] Failed to persist telegram message id for incident {}: {e}",
-                                incident.id
-                            );
-                        }
-                    }
-                    Ok(_) => {}
-                    Err(e) => {
-                        tracing::error!(
-                            "[status-monitor] Failed to send ops alert for {service}: {e}"
-                        );
-                    }
-                }
+                };
+            if recovered_any && still_open.is_empty() {
+                cleanup_service_after_recovery(
+                    state,
+                    "near-intents",
+                    NEAR_INTENTS_STATUS_CHECK,
+                    false,
+                )
+                .await;
             }
         }
-    } else {
-        let incident = match load_active_incident(&state.db_pool, service, check_name).await {
-            Ok(incident) => incident,
-            Err(e) => {
-                tracing::error!("[status-monitor] Failed to load incident for {service}: {e}");
-                return;
-            }
-        };
+        Err(e) => {
+            tracing::error!("[status-monitor] Failed to fetch Shield status: {e}");
+            apply_incident_unhealthy(
+                state,
+                "near-intents",
+                NEAR_INTENTS_STATUS_CHECK,
+                "failed",
+                "NEAR Intents status API could not be reached",
+            )
+            .await;
+        }
+    }
+}
 
-        let Some(incident) = incident else {
+async fn apply_incident_unhealthy(
+    state: &Arc<AppState>,
+    service: &str,
+    check_name: &str,
+    status: &str,
+    notification_message: &str,
+) {
+    let incident = match load_active_incident(&state.db_pool, service, check_name).await {
+        Ok(incident) => incident,
+        Err(e) => {
+            tracing::error!("[status-monitor] Failed to load incident for {service}: {e}");
             return;
-        };
+        }
+    };
 
-        let incident = match touch_incident_success(&state.db_pool, incident.id).await {
+    let incident = match incident {
+        Some(existing) => match touch_incident_failure(&state.db_pool, existing.id, status).await {
             Ok(updated) => updated,
             Err(e) => {
                 tracing::error!(
-                    "[status-monitor] Failed to record success for incident {}: {e}",
-                    incident.id
+                    "[status-monitor] Failed to update incident {}: {e}",
+                    existing.id
                 );
                 return;
             }
-        };
+        },
+        None => match open_incident(&state.db_pool, service, check_name, status).await {
+            Ok(incident) => incident,
+            Err(e) => {
+                tracing::error!("[status-monitor] Failed to open incident for {service}: {e}");
+                return;
+            }
+        },
+    };
 
-        // Require consecutive successes before recovering (stops alert↔recover flaps).
-        if incident.consecutive_successes < RECOVER_AFTER_SUCCESSES {
+    // Wait for consecutive failures before notifying (filters brief blips).
+    let alert_after = config::alert_after_failures(service);
+    if incident.telegram_message_id.is_none() {
+        if incident.consecutive_failures < alert_after {
             tracing::debug!(
-                "[status-monitor] {service} healthy ({}/{} consecutive); holding incident open",
-                incident.consecutive_successes,
-                RECOVER_AFTER_SUCCESSES
+                "[status-monitor] {service}/{check_name} unhealthy ({}/{} consecutive); holding ops alert",
+                incident.consecutive_failures,
+                alert_after
             );
-            return;
-        }
+        } else {
+            let text = notifications::format_health_check_alert(
+                service,
+                check_name,
+                status,
+                notification_message,
+            );
+            let callback_data = fallbacks::supports_fallback_button(service)
+                .then(|| format!("{POST_TO_APP_CALLBACK_PREFIX}{service}"));
+            let admin_url = admin_page_url();
+            let check_url = oh_dear_status_url(service);
 
-        if let Err(e) = recover_incident(&state.db_pool, incident.id).await {
+            match state
+                .telegram_client
+                .send_ops_alert_with_buttons(
+                    &text,
+                    &admin_url,
+                    Some(&check_url),
+                    callback_data.as_deref(),
+                )
+                .await
+            {
+                Ok(message_id) if message_id > 0 => {
+                    tracing::info!(
+                        "[status-monitor] Sent ops alert for {service}/{check_name} after {} failures (telegram message {message_id})",
+                        incident.consecutive_failures
+                    );
+                    if let Err(e) =
+                        set_incident_telegram_message(&state.db_pool, incident.id, message_id).await
+                    {
+                        tracing::error!(
+                            "[status-monitor] Failed to persist telegram message id for incident {}: {e}",
+                            incident.id
+                        );
+                    }
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    tracing::error!(
+                        "[status-monitor] Failed to send ops alert for {service}/{check_name}: {e}"
+                    );
+                }
+            }
+        }
+    }
+}
+
+struct HealthyOutcome {
+    recovered: bool,
+    had_ops_alert: bool,
+}
+
+async fn apply_incident_healthy(
+    state: &Arc<AppState>,
+    service: &str,
+    check_name: &str,
+) -> HealthyOutcome {
+    let none = HealthyOutcome {
+        recovered: false,
+        had_ops_alert: false,
+    };
+
+    let incident = match load_active_incident(&state.db_pool, service, check_name).await {
+        Ok(incident) => incident,
+        Err(e) => {
+            tracing::error!("[status-monitor] Failed to load incident for {service}: {e}");
+            return none;
+        }
+    };
+
+    let Some(incident) = incident else {
+        return none;
+    };
+
+    let incident = match touch_incident_success(&state.db_pool, incident.id).await {
+        Ok(updated) => updated,
+        Err(e) => {
             tracing::error!(
-                "[status-monitor] Failed to recover incident {}: {e}",
+                "[status-monitor] Failed to record success for incident {}: {e}",
                 incident.id
             );
-            return;
+            return none;
         }
+    };
 
-        delete_linked_warnings(state, service).await;
+    // Require consecutive successes before recovering (stops alert↔recover flaps).
+    if incident.consecutive_successes < RECOVER_AFTER_SUCCESSES {
+        tracing::debug!(
+            "[status-monitor] {service}/{check_name} healthy ({}/{} consecutive); holding incident open",
+            incident.consecutive_successes,
+            RECOVER_AFTER_SUCCESSES
+        );
+        return none;
+    }
 
-        // Only notify recovery when we previously alerted ops about the outage.
-        let had_ops_alert = incident.telegram_message_id.is_some();
+    if let Err(e) = recover_incident(&state.db_pool, incident.id).await {
+        tracing::error!(
+            "[status-monitor] Failed to recover incident {}: {e}",
+            incident.id
+        );
+        return none;
+    }
 
-        match fallbacks::delete_fallback(state, service).await {
-            Ok(Some(recovery)) => {
-                tracing::info!(
-                    "[status-monitor] Recovered {service}; deleted linked fallback warning(s)"
-                );
-                send_recovery_telegram(state, &recovery).await;
+    HealthyOutcome {
+        recovered: true,
+        had_ops_alert: incident.telegram_message_id.is_some(),
+    }
+}
+
+async fn cleanup_service_after_recovery(
+    state: &Arc<AppState>,
+    service: &str,
+    check_name: &str,
+    had_ops_alert: bool,
+) {
+    delete_linked_warnings(state, service).await;
+
+    match fallbacks::delete_fallback(state, service).await {
+        Ok(Some(recovery)) => {
+            tracing::info!(
+                "[status-monitor] Recovered {service}; deleted linked fallback warning(s)"
+            );
+            send_recovery_telegram(state, &recovery).await;
+        }
+        Ok(None) => {
+            tracing::info!("[status-monitor] Recovered {service}");
+            if had_ops_alert {
+                send_health_recovery_telegram(state, service, check_name).await;
             }
-            Ok(None) => {
-                tracing::info!("[status-monitor] Recovered {service}");
-                if had_ops_alert {
-                    send_health_recovery_telegram(state, service, check_name).await;
-                }
-            }
-            Err(e) => {
-                tracing::error!("[status-monitor] Failed to delete fallback for {service}: {e}");
-                if had_ops_alert {
-                    send_health_recovery_telegram(state, service, check_name).await;
-                }
+        }
+        Err(e) => {
+            tracing::error!("[status-monitor] Failed to delete fallback for {service}: {e}");
+            if had_ops_alert {
+                send_health_recovery_telegram(state, service, check_name).await;
             }
         }
     }
@@ -683,5 +827,157 @@ pub async fn run_monitor_cycle(state: &Arc<AppState>) -> Result<(), String> {
             Ok(())
         }
         Err(e) => Err(format!("stale auto-fallback cleanup failed: {e}")),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::{Value, json};
+    use sqlx::PgPool;
+    use wiremock::{
+        Mock, MockServer, ResponseTemplate,
+        matchers::{method, path},
+    };
+
+    async fn state_with_shield(pool: PgPool, status_url: String) -> Arc<AppState> {
+        dotenvy::from_filename(".env").ok();
+        dotenvy::from_filename(".env.test").ok();
+        let mut env_vars = crate::utils::env::EnvVars::default();
+        env_vars.near_intents_status_api_url = status_url;
+        Arc::new(
+            AppState::builder()
+                .db_pool(pool)
+                .env_vars(env_vars)
+                .build()
+                .await
+                .expect("failed to build test state"),
+        )
+    }
+
+    fn shield_body(incidents: Vec<Value>) -> Value {
+        json!({
+            "activeIncidentCount": incidents.len(),
+            "activeIncidents": incidents,
+            "recentlyResolved": []
+        })
+    }
+
+    async fn mount_shield(server: &MockServer, incidents: Vec<Value>) {
+        Mock::given(method("GET"))
+            .and(path("/public/status"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(shield_body(incidents)))
+            .mount(server)
+            .await;
+    }
+
+    async fn active_check_names(pool: &PgPool) -> Vec<String> {
+        sqlx::query_scalar(
+            r#"
+            SELECT check_name
+            FROM status_incidents
+            WHERE service = 'near-intents' AND recovered_at IS NULL
+            ORDER BY check_name
+            "#,
+        )
+        .fetch_all(pool)
+        .await
+        .expect("load active check names")
+    }
+
+    fn ton_incident() -> Value {
+        json!({
+            "id": "ton-1",
+            "scopeType": "chain",
+            "scopeValue": "ton",
+            "status": "active"
+        })
+    }
+
+    fn zec_incident() -> Value {
+        json!({
+            "id": "zec-1",
+            "scopeType": "chain",
+            "scopeValue": "zec",
+            "status": "active"
+        })
+    }
+
+    #[sqlx::test]
+    async fn near_intents_opens_a_row_per_shield_incident(pool: PgPool) {
+        let server = MockServer::start().await;
+        mount_shield(&server, vec![ton_incident(), zec_incident()]).await;
+        let state =
+            state_with_shield(pool.clone(), format!("{}/public/status", server.uri())).await;
+
+        process_service(&state, "near-intents").await;
+
+        assert_eq!(
+            active_check_names(&pool).await,
+            vec![
+                "near-intents.status:ton-1".to_string(),
+                "near-intents.status:zec-1".to_string(),
+            ]
+        );
+    }
+
+    #[sqlx::test]
+    async fn near_intents_recovers_only_the_resolved_incident(pool: PgPool) {
+        let server = MockServer::start().await;
+        mount_shield(&server, vec![ton_incident(), zec_incident()]).await;
+        let state =
+            state_with_shield(pool.clone(), format!("{}/public/status", server.uri())).await;
+
+        process_service(&state, "near-intents").await;
+        assert_eq!(active_check_names(&pool).await.len(), 2);
+
+        server.reset().await;
+        mount_shield(&server, vec![zec_incident()]).await;
+
+        process_service(&state, "near-intents").await;
+        assert_eq!(
+            active_check_names(&pool).await,
+            vec![
+                "near-intents.status:ton-1".to_string(),
+                "near-intents.status:zec-1".to_string(),
+            ],
+            "first healthy cycle holds TON open"
+        );
+
+        process_service(&state, "near-intents").await;
+        assert_eq!(
+            active_check_names(&pool).await,
+            vec!["near-intents.status:zec-1".to_string()]
+        );
+    }
+
+    #[sqlx::test]
+    async fn near_intents_api_failure_opens_rollup_without_dropping_posts(pool: PgPool) {
+        let server = MockServer::start().await;
+        mount_shield(&server, vec![ton_incident()]).await;
+        let state =
+            state_with_shield(pool.clone(), format!("{}/public/status", server.uri())).await;
+
+        process_service(&state, "near-intents").await;
+        assert_eq!(
+            active_check_names(&pool).await,
+            vec!["near-intents.status:ton-1".to_string()]
+        );
+
+        server.reset().await;
+        Mock::given(method("GET"))
+            .and(path("/public/status"))
+            .respond_with(ResponseTemplate::new(500))
+            .mount(&server)
+            .await;
+
+        process_service(&state, "near-intents").await;
+        assert_eq!(
+            active_check_names(&pool).await,
+            vec![
+                "near-intents.status".to_string(),
+                "near-intents.status:ton-1".to_string(),
+            ]
+        );
     }
 }
