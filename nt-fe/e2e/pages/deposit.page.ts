@@ -90,6 +90,7 @@ export class DepositPage extends BasePage {
             timeout: 10_000,
         });
         await this.assetOption(name).first().click();
+        await this.waitForDialogToClose();
     }
 
     /** Opens the network picker and selects the given option. */
@@ -99,6 +100,23 @@ export class DepositPage extends BasePage {
             timeout: 10_000,
         });
         await this.networkOption(name).first().click();
+        await this.waitForDialogToClose();
+    }
+
+    /**
+     * Wait for the selector sheet to fully detach after picking an option.
+     *
+     * Radix marks the dialog `data-state="closed"` before its exit animation
+     * finishes, and the still-mounted overlay/content can intercept pointer
+     * events (or leave the next target detached mid-remount) for that
+     * ~200ms window. Waiting for full detachment avoids racing a click right
+     * after selection into that window.
+     */
+    private async waitForDialogToClose(): Promise<void> {
+        await this.page
+            .locator('[role="dialog"]')
+            .first()
+            .waitFor({ state: "detached", timeout: 10_000 });
     }
 
     /** Ticks the acknowledgement checkbox and clicks the CTA once it enables — shared by the public-wallet "Generate Address" and confidential "Show address" sub-flows. */
