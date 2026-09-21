@@ -179,6 +179,7 @@ pub enum ErrorCode {
     ProposalMirrorFailed,
     BulkWorkerReadFailed,
     ConfigInvalidTolerance,
+    ContractReadFailed,
 }
 
 impl ErrorCode {
@@ -701,6 +702,13 @@ impl ErrorCode {
                 dependency: None,
                 title: "startup / parse verification tolerance / invalid value — using zero",
             },
+            C::ContractReadFailed => EventSpec {
+                code: "CONTRACT_READ_FAILED",
+                priority: P::P3,
+                surface: S::UserRead,
+                dependency: Some(D::NearRpc),
+                title: "user read / contract view call / RPC failure, unavailable block, unexpected panic or undecodable response",
+            },
         }
     }
 
@@ -778,6 +786,7 @@ impl ErrorCode {
         ErrorCode::ProposalMirrorFailed,
         ErrorCode::BulkWorkerReadFailed,
         ErrorCode::ConfigInvalidTolerance,
+        ErrorCode::ContractReadFailed,
     ];
 }
 

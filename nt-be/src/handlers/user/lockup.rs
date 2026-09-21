@@ -19,7 +19,10 @@ use sha2::Digest;
 use crate::{
     AppState,
     constants::LOCKUP_CONTRACT_ID,
-    utils::cache::{CacheKey, CacheTier},
+    utils::{
+        cache::{CacheKey, CacheTier},
+        contract_read_error::ContractReadError,
+    },
 };
 
 /// Derives the lockup account ID from an owner account ID using SHA256 hash
@@ -120,9 +123,7 @@ pub async fn fetch_lockup_contract(
                 .data)
         })
         .await;
-    if let Err((_, error)) = &result
-        && error.contains("UnknownAccount")
-    {
+    if let Err((StatusCode::NOT_FOUND, _)) = &result {
         return Ok(None);
     }
     let result = result?;
@@ -256,12 +257,7 @@ pub async fn fetch_lockup_balance_of_account(
             )
             .fetch_from(&network)
             .await
-            .map_err(|e| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("fetch_lockup_balance_of_account: {}", e),
-                )
-            })
+            .map_err(|e| ContractReadError::from(e).into_http("lockup_balance"))
             .map(Some)
         })
         .await
