@@ -235,6 +235,23 @@
     }
 }
 
+/* Branded loading indicator: the three dots under the NEAR mark fade in and
+   out in sequence (see `near-loader.tsx`, which staggers `animation-delay`). */
+@theme {
+    --animate-loading-dot: loading-dot 1.4s ease-in-out infinite;
+
+    @keyframes loading-dot {
+        0%,
+        60%,
+        100% {
+            opacity: 0.2;
+        }
+        30% {
+            opacity: 1;
+        }
+    }
+}
+
 @utility step-label {
     background-image: linear-gradient(
         to right,
