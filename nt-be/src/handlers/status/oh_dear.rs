@@ -35,7 +35,6 @@ pub const SUPPORTED_SERVICES: &[&str] = &[
 ];
 const NEAR_STATUS_UP: &str = "up";
 const INTENTS_POST_INCIDENT: &str = "incident";
-const INTENTS_POST_MAINTENANCE: &str = "maintenance";
 
 const BACKEND_DATABASE_CHECK: CheckDefinition = CheckDefinition {
     name: "backend.database",
@@ -258,20 +257,32 @@ impl From<ShieldStatusResponse> for IntentsStatusResponse {
 
 impl From<ShieldIncident> for IntentsStatusPost {
     fn from(incident: ShieldIncident) -> Self {
+        let incident_id = incident.id.as_deref();
         Self {
             id: incident.id.clone(),
             title: shield_incident_title(&incident),
             post_type: INTENTS_POST_INCIDENT.to_string(),
-            starts_at: parse_iso_millis(incident.created_at.as_deref()),
-            ends_at: parse_iso_millis(incident.resolved_at.as_deref()),
+            starts_at: parse_iso_millis(incident.created_at.as_deref(), "createdAt", incident_id),
+            ends_at: parse_iso_millis(incident.resolved_at.as_deref(), "resolvedAt", incident_id),
         }
     }
 }
 
-fn parse_iso_millis(value: Option<&str>) -> Option<i64> {
-    DateTime::parse_from_rfc3339(value?)
-        .ok()
-        .map(|time| time.timestamp_millis())
+fn parse_iso_millis(value: Option<&str>, field: &str, incident_id: Option<&str>) -> Option<i64> {
+    let raw = value?;
+    match DateTime::parse_from_rfc3339(raw) {
+        Ok(time) => Some(time.timestamp_millis()),
+        Err(error) => {
+            tracing::warn!(
+                incident_id = incident_id.unwrap_or_default(),
+                field,
+                value = raw,
+                error = %error,
+                "Shield incident timestamp could not be parsed"
+            );
+            None
+        }
+    }
 }
 
 fn shield_incident_title(incident: &ShieldIncident) -> String {
@@ -389,9 +400,9 @@ pub async fn run_service_check(state: &AppState, service: &str) -> Option<OhDear
 
 /// Whether the status-monitor should treat a check result as an incident.
 ///
-/// Soft `warning` is only actionable for `near-intents` (maintenance). Other
-/// services' warnings (e.g. near-protocol summary, near-rpc syncing/stale) are
-/// treated as healthy so they do not open incidents or page Telegram.
+/// Soft `warning` is only actionable for `near-intents`. Other services'
+/// warnings (e.g. near-protocol summary, near-rpc syncing/stale) are treated as
+/// healthy so they do not open incidents or page Telegram.
 pub fn is_unhealthy_for_monitor(service: &str, status: &OhDearStatus) -> bool {
     match status {
         OhDearStatus::Failed | OhDearStatus::Crashed => true,
@@ -1041,10 +1052,7 @@ fn map_exchange_quote_status(body: Value, duration_ms: u128, route: &str) -> OhD
 }
 
 /// Whether a NEAR Intents status post should surface in health checks / status API.
-///
-/// Includes scheduled (not-yet-started) maintenance so ops are notified when a
-/// window is announced, not only when it begins. Posts with `ends_at` in the past
-/// are excluded.
+/// Posts with `ends_at` in the past are excluded.
 pub fn is_relevant_intents_post(ends_at: Option<i64>, now_ms: i64) -> bool {
     match ends_at {
         Some(end) => now_ms <= end,
@@ -1058,13 +1066,7 @@ pub fn intents_incident_check_name(post_id: &str) -> String {
 }
 
 pub fn intents_post_notification(post: &IntentsStatusPost) -> String {
-    match post.post_type.as_str() {
-        INTENTS_POST_INCIDENT => format!("NEAR Intents has an active incident: {}", post.title),
-        INTENTS_POST_MAINTENANCE => {
-            format!("NEAR Intents has active maintenance: {}", post.title)
-        }
-        _ => format!("NEAR Intents status: {}", post.title),
-    }
+    format!("NEAR Intents has an active incident: {}", post.title)
 }
 
 pub fn actionable_intents_posts(
@@ -1101,32 +1103,6 @@ fn map_near_intents_status(
                 "post_type": incident.post_type,
                 "title": incident.title,
                 "titles": titles
-            }),
-        );
-    }
-
-    if let Some(maintenance) = active_posts
-        .iter()
-        .find(|post| post.post_type == INTENTS_POST_MAINTENANCE)
-    {
-        let upcoming = maintenance.starts_at.is_some_and(|start| now < start);
-        let (notification, summary) = if upcoming {
-            (
-                "NEAR Intents has scheduled maintenance",
-                "Maintenance scheduled",
-            )
-        } else {
-            ("NEAR Intents has active maintenance", "Maintenance active")
-        };
-        return NEAR_INTENTS_CHECK.warning(
-            notification,
-            summary,
-            json!({
-                "duration_ms": duration_ms,
-                "post_type": maintenance.post_type,
-                "title": maintenance.title,
-                "starts_at": maintenance.starts_at,
-                "ends_at": maintenance.ends_at
             }),
         );
     }
@@ -1787,6 +1763,18 @@ mod tests {
             resolved_at: None,
         };
         assert_eq!(shield_incident_title(&incident), "STARKNET chain all");
+    }
+
+    #[test]
+    fn parse_iso_millis_returns_none_for_malformed_timestamps() {
+        assert_eq!(
+            parse_iso_millis(Some("not-a-date"), "resolvedAt", Some("ton-1")),
+            None
+        );
+        assert_eq!(
+            parse_iso_millis(Some("2026-09-18T14:37:49.902Z"), "createdAt", Some("ton-1")),
+            Some(1_789_741_069_902)
+        );
     }
 
     #[test]

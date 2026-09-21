@@ -12,7 +12,6 @@ use crate::{
 pub struct SystemStatusPost {
     pub id: String,
     pub title: String,
-    pub message: String,
     pub post_type: String,
 }
 
@@ -40,8 +39,7 @@ pub async fn get_system_status(
                     .into_iter()
                     .map(|post| SystemStatusPost {
                         id: post.id.unwrap_or_default(),
-                        title: post.title.clone(),
-                        message: post.title,
+                        title: post.title,
                         post_type: post.post_type,
                     })
                     .collect(),
