@@ -423,6 +423,7 @@
             "transaction": "עסקה",
             "from": "מאת",
             "to": "אל",
+            "notes": "הערות",
             "transactionHash": "גיבוב עסקה",
             "hashTooltip": "מזהה ייחודי (גיבוב) של עסקה זו",
             "processing": "מעבד"
@@ -471,7 +472,8 @@
             "bulkTitle": "פרטי העברה מרוכזת",
             "toRecipients": "אל {count} נמענים",
             "showRecipients": "הצג נמענים",
-            "hideRecipients": "הסתר נמענים"
+            "hideRecipients": "הסתר נמענים",
+            "notes": "הערות"
         },
         "refresh": {
             "ariaLabel": "רענון היסטוריה חסויה",

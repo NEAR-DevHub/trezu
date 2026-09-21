@@ -13,6 +13,7 @@ import {
     CELL_PADDING,
     HASH_COLUMN_CLASS,
     HEAD_CLASS,
+    NOTES_COLUMN_CLASS,
     TableSheet,
 } from "./activity-table-layout";
 
@@ -70,7 +71,7 @@ function DesktopCellContent({ columnIndex }: { columnIndex: number }) {
 export function ActivityTableSkeleton() {
     return (
         <div className="space-y-2">
-            {/* Mobile: the five columns collapse into a badge + two stacked lines. */}
+            {/* Mobile: the desktop columns collapse into a badge + two stacked lines. */}
             <div className="flex flex-col py-4 md:hidden">
                 {Array.from({ length: MOBILE_ROWS }).map((_, index) => (
                     <div
@@ -101,6 +102,7 @@ export function ActivityTableSkeleton() {
                                 {CELL_PADDING.map((padding, columnIndex) => {
                                     const isLastColumn =
                                         columnIndex === CELL_PADDING.length - 1;
+                                    const isNotesColumn = columnIndex === 4;
 
                                     return (
                                         <TableHead
@@ -109,6 +111,8 @@ export function ActivityTableSkeleton() {
                                             className={cn(
                                                 HEAD_CLASS,
                                                 padding,
+                                                isNotesColumn &&
+                                                    NOTES_COLUMN_CLASS,
                                                 isLastColumn &&
                                                     HASH_COLUMN_CLASS,
                                             )}

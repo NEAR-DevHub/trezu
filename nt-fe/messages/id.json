@@ -423,6 +423,7 @@
             "transaction": "Transaksi",
             "from": "Dari",
             "to": "Ke",
+            "notes": "Catatan",
             "transactionHash": "Hash transaksi",
             "hashTooltip": "Pengenal unik (hash) dari transaksi ini",
             "processing": "Memproses"
@@ -471,7 +472,8 @@
             "bulkTitle": "Detail Transfer Massal",
             "toRecipients": "Ke {count} penerima",
             "showRecipients": "Tampilkan penerima",
-            "hideRecipients": "Sembunyikan penerima"
+            "hideRecipients": "Sembunyikan penerima",
+            "notes": "Catatan"
         },
         "refresh": {
             "ariaLabel": "Segarkan riwayat rahasia",

@@ -57,6 +57,7 @@ struct ConfidentialBalanceChangeRow {
     proposal_id: Option<i64>,
     quote_deposit_address: Option<String>,
     quote_metadata: Option<serde_json::Value>,
+    notes: Option<String>,
 }
 
 impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for ConfidentialBalanceChangeRow {
@@ -96,6 +97,7 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for ConfidentialBalanceChangeRow {
             proposal_id: row.try_get("proposal_id")?,
             quote_deposit_address: row.try_get("quote_deposit_address")?,
             quote_metadata: row.try_get("quote_metadata")?,
+            notes: row.try_get("notes")?,
         })
     }
 }
@@ -237,6 +239,33 @@ fn build_filtered_legs_query(
                         LIMIT 1
                     )
                 ) AS quote_metadata,
+                COALESCE(
+                    (
+                        SELECT NULLIF(BTRIM(ci.notes), '')
+                        FROM confidential_intents ci
+                        WHERE ci.dao_id = gold_treasury_ledger_events.dao_id
+                          AND ci.proposal_id = gold_treasury_ledger_events.proposal_id
+                          AND ci.notes IS NOT NULL
+                          AND BTRIM(ci.notes) <> ''
+                        ORDER BY ci.id DESC
+                        LIMIT 1
+                    ),
+                    (
+                        SELECT NULLIF(BTRIM(ci.notes), '')
+                        FROM confidential_intents ci
+                        WHERE ci.history_event_id = CASE
+                            WHEN gold_treasury_ledger_events.gold_event_key
+                                ~ '^confidential:[0-9]+$'
+                            THEN split_part(
+                                gold_treasury_ledger_events.gold_event_key, ':', 2
+                            )::bigint
+                        END
+                          AND ci.notes IS NOT NULL
+                          AND BTRIM(ci.notes) <> ''
+                        ORDER BY ci.id DESC
+                        LIMIT 1
+                    )
+                ) AS notes,
                 COALESCE(proposal_executed_at, event_time) AS event_time_display,
                 CASE
                     WHEN transaction_type = 'sent' THEN token_out
@@ -288,6 +317,7 @@ fn build_filtered_legs_query(
                 event_time, created_at, proposal_id,
                 quote_deposit_address,
                 quote_metadata,
+                notes,
                 event_time_display
             FROM legs
             WHERE 1 = 1
@@ -580,6 +610,7 @@ struct LegRow {
     created_at: DateTime<Utc>,
     proposal_id: Option<i64>,
     quote_deposit_address: Option<String>,
+    notes: Option<String>,
     has_app_fee: Option<bool>,
     usd_value: Option<BigDecimal>,
     action_kind: String,
@@ -619,6 +650,7 @@ impl LegRow {
             proposal_id,
             quote_deposit_address,
             quote_metadata,
+            notes,
         } = row;
         let has_app_fee = stored_has_app_fee(quote_metadata.as_ref());
 
@@ -648,6 +680,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    notes,
                     has_app_fee,
                     usd_value: amount_out_usd,
                     action_kind: "ConfidentialSend".to_string(),
@@ -689,6 +722,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    notes,
                     has_app_fee,
                     usd_value: amount_in_usd,
                     action_kind: "ConfidentialDeposit".to_string(),
@@ -726,6 +760,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    notes,
                     has_app_fee,
                     usd_value: amount_in_usd.clone(),
                     action_kind: "ConfidentialExchange".to_string(),
@@ -775,6 +810,7 @@ impl LegRow {
             proposal_id: self.proposal_id,
             quote_deposit_address: self.quote_deposit_address.clone(),
             has_app_fee: self.has_app_fee,
+            notes: self.notes.clone(),
         }
     }
 

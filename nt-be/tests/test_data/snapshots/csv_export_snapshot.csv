@@ -1,4 +1,4 @@
-date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id
+date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id,notes
 2025-12-24,07:32:06 UTC,out,webassemblymusic-treasury.sputnik-dao.near,arizcredits.near,NEAR,near,0.0999455423958487,26.569424128999608199999975,1.486677426804372,0.14858678178962761,,GzH88AWfDr64KFWRhs54ssCfG1qSwZcDmWrRhcxtfc3Q
 2025-12-24,07:32:05 UTC,out,webassemblymusic-treasury.sputnik-dao.near,webassemblymusic-treasury.sputnik-dao.near,ARIZ,arizcredits.near,0.1,2.5000,,,,9VZewnkJcDPFvxgASNKas17DC1u8fhkPaCfVNuZdCZjq
 2025-12-24,07:32:05 UTC,in,petersalomonsen.near,webassemblymusic-treasury.sputnik-dao.near,NEAR,near,0.0000747011741096,26.669369671395456899999975,1.486677426804372,0.00011105654930452552,,4k8fzeY5VkQmRsseapsPBA2mNReroXdjQVpvHkhWURt1

@@ -423,6 +423,7 @@
             "transaction": "Transacción",
             "from": "De",
             "to": "A",
+            "notes": "Notas",
             "transactionHash": "Hash de transacción",
             "hashTooltip": "Identificador único (hash) de esta transacción",
             "processing": "Procesando"
@@ -471,7 +472,8 @@
             "bulkTitle": "Detalles de la transferencia masiva",
             "toRecipients": "A {count} destinatarios",
             "showRecipients": "Mostrar destinatarios",
-            "hideRecipients": "Ocultar destinatarios"
+            "hideRecipients": "Ocultar destinatarios",
+            "notes": "Notas"
         },
         "refresh": {
             "ariaLabel": "Actualizar historial confidencial",

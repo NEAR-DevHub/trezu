@@ -699,6 +699,7 @@ impl LegRow {
             proposal_id: self.proposal_id,
             quote_deposit_address: None,
             has_app_fee: None,
+            notes: None,
         }
     }
 

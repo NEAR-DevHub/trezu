@@ -423,6 +423,7 @@
             "transaction": "Giao dịch",
             "from": "Từ",
             "to": "Đến",
+            "notes": "Ghi chú",
             "transactionHash": "Hash giao dịch",
             "hashTooltip": "Định danh duy nhất (hash) của giao dịch này",
             "processing": "Đang xử lý"
@@ -471,7 +472,8 @@
             "bulkTitle": "Chi tiết chuyển hàng loạt",
             "toRecipients": "Đến {count} người nhận",
             "showRecipients": "Hiện người nhận",
-            "hideRecipients": "Ẩn người nhận"
+            "hideRecipients": "Ẩn người nhận",
+            "notes": "Ghi chú"
         },
         "refresh": {
             "ariaLabel": "Làm mới lịch sử bảo mật",

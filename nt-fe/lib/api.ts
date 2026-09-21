@@ -319,6 +319,8 @@ export interface RecentActivity {
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;
+    /** Proposer's comment (`memo`/`comment` on create); stored as `notes`. */
+    notes?: string | null;
 }
 
 export interface RecentActivityResponse {

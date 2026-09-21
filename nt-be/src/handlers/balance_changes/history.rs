@@ -907,6 +907,15 @@ fn build_export_query(
     }
 }
 
+/// Quote a CSV field when it contains a comma, quote, or newline.
+fn csv_field(value: &str) -> String {
+    if value.contains([',', '"', '\n', '\r']) {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
+    }
+}
+
 /// Accounting-friendly export record structure
 #[derive(Debug, Clone)]
 struct ExportRecord {
@@ -923,6 +932,7 @@ struct ExportRecord {
     value_usd: Option<f64>,
     transaction_hash: String,
     receipt_id: String,
+    notes: String,
 }
 
 /// USD value of a balance change, preferring the value computed at quote time.
@@ -1013,6 +1023,7 @@ fn transform_to_export_records(
                 value_usd,
                 transaction_hash,
                 receipt_id,
+                notes: change.notes.unwrap_or_default(),
             }
         })
         .collect()
@@ -1040,7 +1051,7 @@ async fn generate_csv(
     let mut csv = String::new();
 
     // Header (accounting-friendly format)
-    csv.push_str("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id\n");
+    csv.push_str("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id,notes\n");
 
     // Rows
     for record in records {
@@ -1048,7 +1059,7 @@ async fn generate_csv(
         let value_str = record.value_usd.map(|v| v.to_string()).unwrap_or_default();
 
         csv.push_str(&format!(
-            "{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
+            "{},{},{},{},{},{},{},{},{},{},{},{},{},{}\n",
             record.date,
             record.time,
             record.direction,
@@ -1061,7 +1072,8 @@ async fn generate_csv(
             price_str,
             value_str,
             record.transaction_hash,
-            record.receipt_id
+            record.receipt_id,
+            csv_field(&record.notes)
         ));
     }
 
@@ -1105,6 +1117,7 @@ async fn generate_json(
                 "value_usd": record.value_usd,
                 "transaction_hash": record.transaction_hash,
                 "receipt_id": record.receipt_id,
+                "notes": record.notes,
             })
         })
         .collect();
@@ -1156,6 +1169,7 @@ async fn generate_xlsx(
         "Value USD",
         "Transaction Hash",
         "Receipt ID",
+        "Notes",
     ];
 
     for (col, header) in headers.iter().enumerate() {
@@ -1188,6 +1202,7 @@ async fn generate_xlsx(
 
         worksheet.write(row, 11, record.transaction_hash)?;
         worksheet.write(row, 12, record.receipt_id)?;
+        worksheet.write(row, 13, record.notes)?;
     }
 
     // Auto-fit columns
@@ -1251,6 +1266,50 @@ async fn validate_export_date_range(
 mod tests {
     use super::*;
     use chrono::TimeZone;
+
+    #[test]
+    fn csv_field_quotes_commas_and_embedded_quotes() {
+        assert_eq!(csv_field("rent"), "rent");
+        assert_eq!(csv_field("payroll, Q3"), "\"payroll, Q3\"");
+        assert_eq!(csv_field("says \"hi\""), "\"says \"\"hi\"\"\"");
+    }
+
+    #[test]
+    fn export_record_copies_proposal_notes() {
+        let mut change = EnrichedBalanceChange {
+            id: 1,
+            account_id: "dao.near".to_string(),
+            block_height: 1,
+            block_time: Utc.with_ymd_and_hms(2026, 9, 21, 8, 0, 0).unwrap(),
+            token_id: "near".to_string(),
+            receipt_id: vec!["receipt".to_string()],
+            transaction_hashes: vec!["tx".to_string()],
+            counterparty: Some("alice.near".to_string()),
+            signer_id: Some("dao.near".to_string()),
+            receiver_id: Some("alice.near".to_string()),
+            amount: "-1".parse().unwrap(),
+            balance_before: "10".parse().unwrap(),
+            balance_after: "9".parse().unwrap(),
+            created_at: Utc.with_ymd_and_hms(2026, 9, 21, 8, 0, 0).unwrap(),
+            token_metadata: Some(TokenMetadata::create_near_metadata(None, None)),
+            swap: None,
+            action_kind: None,
+            method_name: None,
+            actions: None,
+            usd_value: None,
+            proposal_id: Some(7),
+            quote_deposit_address: None,
+            has_app_fee: None,
+            notes: Some("payroll Q3".to_string()),
+        };
+
+        let records = transform_to_export_records(vec![change.clone()], "dao.near");
+        assert_eq!(records[0].notes, "payroll Q3");
+
+        change.notes = None;
+        let records = transform_to_export_records(vec![change], "dao.near");
+        assert_eq!(records[0].notes, "");
+    }
 
     #[test]
     fn start_bound_uses_requested_start_when_inside_plan_window() {
@@ -1727,6 +1786,8 @@ pub struct RecentActivity {
     pub action_kind: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub method_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
 }
 
 /// `BalanceChangesQuery` carries a single lower time bound, but the plan
@@ -2240,6 +2301,7 @@ pub async fn get_recent_activity(
                 swap,
                 action_kind: change.action_kind,
                 method_name: change.method_name,
+                notes: change.notes,
             })
         })
         .collect::<Vec<_>>();

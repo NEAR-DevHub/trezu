@@ -168,6 +168,7 @@ export default function ExchangePage() {
                     standard: "nep413",
                     signerId: selectedTreasury,
                     quoteMetadata,
+                    notes: data.comment?.trim() || undefined,
                 });
 
                 const confidentialResult = buildConfidentialProposal({

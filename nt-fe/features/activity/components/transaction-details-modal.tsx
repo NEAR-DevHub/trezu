@@ -4,6 +4,7 @@ import {
     ArrowDown02Icon,
     ArrowRight01Icon,
     Contact01Icon,
+    File01Icon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -54,6 +55,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hidesSwapExplorerLink,
     isProposalMethodCall,
     useGetFromAccount,
 } from "../utils/history-utils";
@@ -462,6 +464,14 @@ function useDetailItems(
         ),
     });
 
+    const notes = activity.notes?.trim();
+    if (notes) {
+        items.push({
+            label: t("notes"),
+            value: notes,
+        });
+    }
+
     // Only governance calls surface their method/contract — a bulk transfer is
     // a FunctionCall too, but `ft_transfer_call` on the bulk payment contract
     // is protocol plumbing, not something the sender needs to read.
@@ -481,9 +491,10 @@ function useDetailItems(
     }
 
     if (
-        activity.transactionHashes?.length ||
-        activity.receiptIds?.length ||
-        activity.quoteDepositAddress
+        !hidesSwapExplorerLink(activity, isConfidential) &&
+        (activity.transactionHashes?.length ||
+            activity.receiptIds?.length ||
+            activity.quoteDepositAddress)
     ) {
         items.push({
             label: t(TRANSACTION_LABEL_KEYS[variant]),
@@ -970,6 +981,33 @@ function SwapBody({
     );
 }
 
+function ViewPdfReceiptButton({
+    treasuryId,
+    proposalId,
+}: {
+    treasuryId: string;
+    proposalId: number;
+}) {
+    const tReceipt = useTranslations("receiptPage");
+
+    return (
+        <Button
+            asChild
+            variant="secondary"
+            className="h-9 w-full rounded-[8px] font-medium sm:rounded-[8px] max-sm:rounded-xl max-sm:bg-muted max-sm:text-foreground"
+        >
+            <Link
+                href={`/${treasuryId}/requests/${proposalId}/receipt`}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <Icon icon={File01Icon} />
+                {tReceipt("pdfReceipt")}
+            </Link>
+        </Button>
+    );
+}
+
 function ViewLinkedRequestButton({
     treasuryId,
     proposalId,
@@ -980,21 +1018,45 @@ function ViewLinkedRequestButton({
     const t = useTranslations("activity.details");
 
     return (
-        <ModalSection>
-            <Button
-                asChild
-                variant="secondary"
-                className="h-9 w-full rounded-[8px] font-medium sm:rounded-[8px] max-sm:rounded-xl max-sm:bg-muted max-sm:text-foreground"
+        <Button
+            asChild
+            variant="secondary"
+            className="h-9 w-full rounded-[8px] font-medium sm:rounded-[8px] max-sm:rounded-xl max-sm:bg-muted max-sm:text-foreground"
+        >
+            <Link
+                href={`/${treasuryId}/requests/${proposalId}`}
+                target="_blank"
+                rel="noopener noreferrer"
             >
-                <Link
-                    href={`/${treasuryId}/requests/${proposalId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    {t("linkedRequest")}
-                    <Icon icon={ArrowRight01Icon} />
-                </Link>
-            </Button>
+                {t("linkedRequest")}
+                <Icon icon={ArrowRight01Icon} />
+            </Link>
+        </Button>
+    );
+}
+
+function ActivityRequestActions({
+    treasuryId,
+    activity,
+}: {
+    treasuryId: string;
+    activity: RecentActivity;
+}) {
+    const { isConfidential } = useTreasury();
+    if (activity.proposalId == null) return null;
+
+    return (
+        <ModalSection className="gap-2">
+            {hidesSwapExplorerLink(activity, isConfidential) ? (
+                <ViewPdfReceiptButton
+                    treasuryId={treasuryId}
+                    proposalId={activity.proposalId}
+                />
+            ) : null}
+            <ViewLinkedRequestButton
+                treasuryId={treasuryId}
+                proposalId={activity.proposalId}
+            />
         </ModalSection>
     );
 }
@@ -1064,12 +1126,10 @@ function SendDetailsDialog({
                 <SendBody activity={activity} treasuryId={treasuryId} />
             )}
 
-            {activity.proposalId != null ? (
-                <ViewLinkedRequestButton
-                    treasuryId={treasuryId}
-                    proposalId={activity.proposalId}
-                />
-            ) : null}
+            <ActivityRequestActions
+                treasuryId={treasuryId}
+                activity={activity}
+            />
         </TransferDialog>
     );
 }
@@ -1104,12 +1164,10 @@ export function TransactionDetailsModal({
             >
                 {compactBody}
 
-                {activity.proposalId != null ? (
-                    <ViewLinkedRequestButton
-                        treasuryId={treasuryId}
-                        proposalId={activity.proposalId}
-                    />
-                ) : null}
+                <ActivityRequestActions
+                    treasuryId={treasuryId}
+                    activity={activity}
+                />
             </TransferDialog>
         );
     }
@@ -1152,12 +1210,10 @@ export function TransactionDetailsModal({
 
                 <DetailsSection activity={activity} variant={variant} />
 
-                {activity.proposalId != null ? (
-                    <ViewLinkedRequestButton
-                        treasuryId={treasuryId}
-                        proposalId={activity.proposalId}
-                    />
-                ) : null}
+                <ActivityRequestActions
+                    treasuryId={treasuryId}
+                    activity={activity}
+                />
             </DialogContent>
         </Dialog>
     );

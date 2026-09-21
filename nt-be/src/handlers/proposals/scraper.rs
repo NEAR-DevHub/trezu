@@ -486,6 +486,22 @@ pub fn extract_from_description(desc: &str, key: &str) -> Option<String> {
     None
 }
 
+/// User-facing note from a proposal description.
+///
+/// Create-request forms collect this as `memo` (payments) or `comment`
+/// (swaps); `encodeToMarkdown` stores it under `notes`. Swap descriptions
+/// always append an execution-deadline reminder when the proposer left no
+/// comment — drop that so history shows only a real note.
+pub fn user_notes_from_description(description: &str) -> Option<String> {
+    let notes = extract_from_description(description, "notes")
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())?;
+    if notes.starts_with("**Must be executed before") {
+        return None;
+    }
+    Some(notes)
+}
+
 fn get_current_time_nanos() -> U64 {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1480,6 +1496,36 @@ mod tests {
         for kind in [extra_action, wrap_mismatch, bad_args, zero, transfer] {
             assert_eq!(PublicToConfidentialCall::from_kind(&kind), None);
         }
+    }
+
+    #[test]
+    fn user_notes_reads_memo_encoded_as_notes() {
+        let description = "* Proposal Action: payment-transfer <br>* Notes: treasury payment via intents <br>* Recipient: alice.near";
+        assert_eq!(
+            user_notes_from_description(description).as_deref(),
+            Some("treasury payment via intents")
+        );
+    }
+
+    #[test]
+    fn user_notes_ignores_title() {
+        let description = "* Title: Payroll <br>* Notes: rent for Q3";
+        assert_eq!(
+            user_notes_from_description(description).as_deref(),
+            Some("rent for Q3")
+        );
+    }
+
+    #[test]
+    fn user_notes_keeps_swap_comment_and_drops_execution_reminder() {
+        let with_comment = "* Proposal Action: asset-exchange <br>* Notes: Rebalance USDC\n\n**Must be executed before 2026-03-24T12:51:30.813Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token Out Address: nep141:usdt.near";
+        assert_eq!(
+            user_notes_from_description(with_comment).as_deref(),
+            Some("Rebalance USDC")
+        );
+
+        let reminder_only = "* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-24T12:51:30.813Z** for transferring tokens to 1Click's deposit address for swap execution.";
+        assert_eq!(user_notes_from_description(reminder_only), None);
     }
 
     /// Regression test: `BatchPayment.recipient` was previously typed as `AccountId`,

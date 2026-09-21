@@ -561,7 +561,7 @@ async fn test_csv_export_with_real_data() {
 
     // Verify CSV structure (new accounting-friendly headers)
     assert!(
-        csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id"),
+        csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id,notes"),
         "CSV should have proper accounting-friendly headers"
     );
 

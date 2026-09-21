@@ -35,6 +35,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hidesSwapExplorerLink,
     useGetActivityLabel,
     useGetActivitySubLabel,
     useGetFromAccount,
@@ -52,6 +53,7 @@ import {
     CELL_PADDING,
     HASH_COLUMN_CLASS,
     HEAD_CLASS,
+    NOTES_COLUMN_CLASS,
     TableSheet,
 } from "./activity-table-layout";
 import { ActivityTableSkeleton } from "./activity-table-skeleton";
@@ -130,6 +132,23 @@ function SwapTransactionCell({
     );
 }
 
+function NotesCell({ notes }: { notes?: string | null }) {
+    const trimmed = notes?.trim();
+    if (!trimmed) {
+        return (
+            <span className="text-sm font-medium text-muted-foreground">—</span>
+        );
+    }
+
+    return (
+        <Tooltip content={trimmed}>
+            <span className="block truncate text-sm font-medium text-general-foreground">
+                {trimmed}
+            </span>
+        </Tooltip>
+    );
+}
+
 export function ActivityTable({
     activities,
     isLoading,
@@ -185,7 +204,7 @@ export function ActivityTable({
 
     return (
         <div className="space-y-2">
-            {/* Mobile: the five columns collapse into a badge + two stacked lines. */}
+            {/* Mobile: the desktop columns collapse into a badge + two stacked lines. */}
             <div className="flex flex-col py-4 md:hidden">
                 {activities.map((activity) => {
                     const status = getActivityStatus(activity);
@@ -262,8 +281,17 @@ export function ActivityTable({
                                 <TableHead
                                     className={cn(
                                         HEAD_CLASS,
-                                        HASH_COLUMN_CLASS,
+                                        NOTES_COLUMN_CLASS,
                                         CELL_PADDING[4],
+                                    )}
+                                >
+                                    {t("table.notes")}
+                                </TableHead>
+                                <TableHead
+                                    className={cn(
+                                        HEAD_CLASS,
+                                        HASH_COLUMN_CLASS,
+                                        CELL_PADDING[5],
                                     )}
                                 >
                                     <span className="flex items-center justify-end gap-2">
@@ -478,25 +506,40 @@ export function ActivityTable({
                                                 isLastRow,
                                             )}
                                         >
+                                            <NotesCell notes={activity.notes} />
+                                        </TableCell>
+                                        <TableCell
+                                            className={bodyCellClassName(
+                                                5,
+                                                isFirstRow,
+                                                isLastRow,
+                                            )}
+                                        >
                                             <div className="flex items-center justify-end gap-1">
-                                                <TransactionHashCell
-                                                    transactionHashes={
-                                                        activity.transactionHashes
-                                                    }
-                                                    receiptIds={
-                                                        activity.receiptIds
-                                                    }
-                                                    chainName={
-                                                        activity.tokenMetadata
-                                                            ?.chainName
-                                                    }
-                                                    depositAddress={
-                                                        activity.quoteDepositAddress
-                                                    }
-                                                    isConfidential={
-                                                        isConfidential
-                                                    }
-                                                />
+                                                {!hidesSwapExplorerLink(
+                                                    activity,
+                                                    isConfidential,
+                                                ) && (
+                                                    <TransactionHashCell
+                                                        transactionHashes={
+                                                            activity.transactionHashes
+                                                        }
+                                                        receiptIds={
+                                                            activity.receiptIds
+                                                        }
+                                                        chainName={
+                                                            activity
+                                                                .tokenMetadata
+                                                                ?.chainName
+                                                        }
+                                                        depositAddress={
+                                                            activity.quoteDepositAddress
+                                                        }
+                                                        isConfidential={
+                                                            isConfidential
+                                                        }
+                                                    />
+                                                )}
                                                 <Button
                                                     type="button"
                                                     variant="ghost"

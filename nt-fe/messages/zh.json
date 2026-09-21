@@ -423,6 +423,7 @@
             "transaction": "交易",
             "from": "发送方",
             "to": "接收方",
+            "notes": "备注",
             "transactionHash": "交易哈希",
             "hashTooltip": "此交易的唯一标识符(哈希)",
             "processing": "处理中"
@@ -471,7 +472,8 @@
             "bulkTitle": "批量转账详情",
             "toRecipients": "发送给 {count} 位收款人",
             "showRecipients": "显示收款人",
-            "hideRecipients": "隐藏收款人"
+            "hideRecipients": "隐藏收款人",
+            "notes": "备注"
         },
         "refresh": {
             "ariaLabel": "刷新机密历史记录",

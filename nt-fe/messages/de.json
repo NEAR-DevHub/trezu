@@ -423,6 +423,7 @@
             "transaction": "Transaktion",
             "from": "Von",
             "to": "An",
+            "notes": "Notizen",
             "transactionHash": "Transaktions-Hash",
             "hashTooltip": "Eindeutige Kennung (Hash) dieser Transaktion",
             "processing": "In Bearbeitung"
@@ -471,7 +472,8 @@
             "bulkTitle": "Details der Sammelüberweisung",
             "toRecipients": "An {count} Empfänger",
             "showRecipients": "Empfänger anzeigen",
-            "hideRecipients": "Empfänger ausblenden"
+            "hideRecipients": "Empfänger ausblenden",
+            "notes": "Notizen"
         },
         "refresh": {
             "ariaLabel": "Vertraulichen Verlauf aktualisieren",

@@ -227,6 +227,7 @@ export interface SwapRequestData {
      * Missing on older proposals, which always charged a fee.
      */
     hasAppFee?: boolean;
+    notes?: string;
 }
 
 /**
