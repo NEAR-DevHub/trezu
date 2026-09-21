@@ -3,9 +3,11 @@
 import {
     ArrowRight01Icon,
     Clock01Icon,
+    File01Icon,
     HelpCircleIcon,
     LoaderCircleIcon,
 } from "@hugeicons/core-free-icons";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Address } from "@/components/address";
@@ -77,6 +79,31 @@ function isInteractiveTarget(target: EventTarget | null) {
     return target instanceof HTMLElement && !!target.closest("a, button");
 }
 
+function PdfReceiptCell({
+    treasuryId,
+    proposalId,
+}: {
+    treasuryId: string;
+    proposalId: number;
+}) {
+    const tReceipt = useTranslations("receiptPage");
+
+    return (
+        <Link
+            href={`/${treasuryId}/requests/${proposalId}/receipt`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-medium text-foreground"
+        >
+            <Icon
+                icon={File01Icon}
+                className="size-5 shrink-0 text-muted-foreground"
+            />
+            {tReceipt("pdfReceipt")}
+        </Link>
+    );
+}
+
 function SwapTransactionCell({
     swap,
 }: {
@@ -134,11 +161,7 @@ function SwapTransactionCell({
 
 function NotesCell({ notes }: { notes?: string | null }) {
     const trimmed = notes?.trim();
-    if (!trimmed) {
-        return (
-            <span className="text-sm font-medium text-muted-foreground">—</span>
-        );
-    }
+    if (!trimmed) return null;
 
     return (
         <Tooltip content={trimmed}>
@@ -516,10 +539,19 @@ export function ActivityTable({
                                             )}
                                         >
                                             <div className="flex items-center justify-end gap-1">
-                                                {!hidesSwapExplorerLink(
+                                                {hidesSwapExplorerLink(
                                                     activity,
                                                     isConfidential,
-                                                ) && (
+                                                ) &&
+                                                activity.proposalId != null &&
+                                                treasuryId ? (
+                                                    <PdfReceiptCell
+                                                        treasuryId={treasuryId}
+                                                        proposalId={
+                                                            activity.proposalId
+                                                        }
+                                                    />
+                                                ) : (
                                                     <TransactionHashCell
                                                         transactionHashes={
                                                             activity.transactionHashes

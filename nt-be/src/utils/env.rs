@@ -232,9 +232,7 @@ impl Default for EnvVars {
             near_status_page_json_url: std::env::var("NEAR_STATUS_PAGE_JSON_URL")
                 .unwrap_or_else(|_| "https://status.near.org/json".to_string()),
             near_intents_status_api_url: std::env::var("NEAR_INTENTS_STATUS_API_URL")
-                .unwrap_or_else(|_| {
-                    "https://status.near-intents.org/api/posts?is_featured=true".to_string()
-                }),
+                .unwrap_or_else(|_| "https://shield.chaindefuser.com/public/status".to_string()),
             // JWT configuration
             jwt_secret: std::env::var("JWT_SECRET").expect("JWT_SECRET is not set"),
             jwt_expiry_hours: std::env::var("JWT_EXPIRY_HOURS")

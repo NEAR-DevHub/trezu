@@ -55,8 +55,10 @@ const EXCHANGE_QUOTE_CHECK: CheckDefinition = CheckDefinition {
     notification_subject: "Quote API",
     short_subject: "Quote",
 };
+pub const NEAR_INTENTS_STATUS_CHECK: &str = "near-intents.status";
+
 const NEAR_INTENTS_CHECK: CheckDefinition = CheckDefinition {
-    name: "near-intents.status",
+    name: NEAR_INTENTS_STATUS_CHECK,
     label: "NEAR Intents",
     notification_subject: "NEAR Intents status API",
     short_subject: "Status",
@@ -208,7 +210,7 @@ struct NearStatusMonitor {
     status: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct IntentsStatusResponse {
     pub posts: Vec<IntentsStatusPost>,
 }
@@ -220,6 +222,87 @@ pub struct IntentsStatusPost {
     pub post_type: String,
     pub starts_at: Option<i64>,
     pub ends_at: Option<i64>,
+}
+
+/// Payload from `GET https://shield.chaindefuser.com/public/status`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShieldStatusResponse {
+    #[serde(default)]
+    active_incidents: Vec<ShieldIncident>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShieldIncident {
+    id: Option<String>,
+    scope_type: Option<String>,
+    scope_value: Option<String>,
+    direction: Option<String>,
+    public_description: Option<String>,
+    created_at: Option<String>,
+    resolved_at: Option<String>,
+}
+
+impl From<ShieldStatusResponse> for IntentsStatusResponse {
+    fn from(status: ShieldStatusResponse) -> Self {
+        Self {
+            posts: status
+                .active_incidents
+                .into_iter()
+                .map(IntentsStatusPost::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<ShieldIncident> for IntentsStatusPost {
+    fn from(incident: ShieldIncident) -> Self {
+        Self {
+            id: incident.id.clone(),
+            title: shield_incident_title(&incident),
+            post_type: INTENTS_POST_INCIDENT.to_string(),
+            starts_at: parse_iso_millis(incident.created_at.as_deref()),
+            ends_at: parse_iso_millis(incident.resolved_at.as_deref()),
+        }
+    }
+}
+
+fn parse_iso_millis(value: Option<&str>) -> Option<i64> {
+    DateTime::parse_from_rfc3339(value?)
+        .ok()
+        .map(|time| time.timestamp_millis())
+}
+
+fn shield_incident_title(incident: &ShieldIncident) -> String {
+    if let Some(description) = incident
+        .public_description
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return description.to_string();
+    }
+
+    let mut parts = Vec::new();
+    if let Some(value) = incident
+        .scope_value
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
+        parts.push(value.to_uppercase());
+    }
+    if let Some(scope_type) = incident.scope_type.as_deref() {
+        parts.push(scope_type.replace('_', " "));
+    }
+    if let Some(direction) = incident.direction.as_deref() {
+        parts.push(direction.to_string());
+    }
+    if parts.is_empty() {
+        "Shield incident".to_string()
+    } else {
+        parts.join(" ")
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -511,11 +594,12 @@ async fn fetch_intents_response(
         .get(&state.env_vars.near_intents_status_api_url);
 
     let started = Instant::now();
-    let result = send_json_check::<IntentsStatusResponse>(
+    let result = send_json_check::<ShieldStatusResponse>(
         request,
         Duration::from_secs(config.http_timeout_seconds),
     )
-    .await;
+    .await
+    .map(IntentsStatusResponse::from);
     (result, started.elapsed().as_millis())
 }
 
@@ -968,28 +1052,55 @@ pub fn is_relevant_intents_post(ends_at: Option<i64>, now_ms: i64) -> bool {
     }
 }
 
+/// One `status_incidents.check_name` per Shield incident so each page separately.
+pub fn intents_incident_check_name(post_id: &str) -> String {
+    format!("{NEAR_INTENTS_STATUS_CHECK}:{post_id}")
+}
+
+pub fn intents_post_notification(post: &IntentsStatusPost) -> String {
+    match post.post_type.as_str() {
+        INTENTS_POST_INCIDENT => format!("NEAR Intents has an active incident: {}", post.title),
+        INTENTS_POST_MAINTENANCE => {
+            format!("NEAR Intents has active maintenance: {}", post.title)
+        }
+        _ => format!("NEAR Intents status: {}", post.title),
+    }
+}
+
+pub fn actionable_intents_posts(
+    posts: Vec<IntentsStatusPost>,
+    now_ms: i64,
+) -> Vec<IntentsStatusPost> {
+    posts
+        .into_iter()
+        .filter(|post| is_relevant_intents_post(post.ends_at, now_ms))
+        .filter(|post| post.id.as_deref().is_some_and(|id| !id.is_empty()))
+        .collect()
+}
+
 fn map_near_intents_status(
     status_page: IntentsStatusResponse,
     duration_ms: u128,
 ) -> OhDearCheckResult {
     let now = Utc::now().timestamp_millis();
-    let active_posts: Vec<_> = status_page
-        .posts
-        .into_iter()
-        .filter(|post| is_relevant_intents_post(post.ends_at, now))
-        .collect();
+    let active_posts = actionable_intents_posts(status_page.posts, now);
 
     if let Some(incident) = active_posts
         .iter()
         .find(|post| post.post_type == INTENTS_POST_INCIDENT)
     {
+        let titles: Vec<&str> = active_posts
+            .iter()
+            .map(|post| post.title.as_str())
+            .collect();
         return NEAR_INTENTS_CHECK.failed(
-            "NEAR Intents has an active incident",
+            &intents_post_notification(incident),
             "Incident active",
             json!({
                 "duration_ms": duration_ms,
                 "post_type": incident.post_type,
-                "title": incident.title
+                "title": incident.title,
+                "titles": titles
             }),
         );
     }
@@ -1244,7 +1355,7 @@ impl CheckDefinition {
     }
 }
 
-/// Fetch the current posts from the NEAR Intents status API.
+/// Fetch active Shield incidents, mapped to status posts.
 /// Used by the monitor for post-level linked warning resolution and by the admin endpoint.
 pub async fn fetch_intents_posts(state: &AppState) -> Result<Vec<IntentsStatusPost>, String> {
     match fetch_intents_response(state).await.0 {
@@ -1556,101 +1667,27 @@ mod tests {
         assert_check(&json, "near-protocol.status-page", "failed");
     }
 
-    #[tokio::test]
-    async fn near_intents_endpoint_maps_maintenance_to_warning() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": 0,
-                        "ends_at": null
-                    }
-                ]
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+    fn shield_status_body(active: Vec<Value>, resolved: Vec<Value>) -> Value {
+        json!({
+            "activeIncidentCount": active.len(),
+            "activeIncidents": active,
+            "recentlyResolved": resolved
         })
-        .await;
-        let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
-
-        assert_check(&json, "near-intents.status", "warning");
-        assert_eq!(
-            json["checkResults"][0]["shortSummary"],
-            "Maintenance active"
-        );
     }
 
     #[tokio::test]
-    async fn near_intents_endpoint_maps_scheduled_maintenance_to_warning() {
+    async fn near_intents_endpoint_maps_empty_shield_status_to_ok() {
         let mock_server = MockServer::start().await;
-        let now = Utc::now().timestamp_millis();
-        let starts_at = now + 86_400_000; // tomorrow
-        let ends_at = starts_at + 3_600_000;
         Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "PWRA2AY",
-                        "title": "zCash Bridge Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": starts_at,
-                        "ends_at": ends_at
-                    }
-                ]
-            })))
+            .and(path("/public/status"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(shield_status_body(vec![], vec![])),
+            )
             .mount(&mock_server)
             .await;
 
         let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
-        })
-        .await;
-        let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
-
-        assert_check(&json, "near-intents.status", "warning");
-        assert_eq!(
-            json["checkResults"][0]["shortSummary"],
-            "Maintenance scheduled"
-        );
-        assert!(
-            json["checkResults"][0]["notificationMessage"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("scheduled maintenance")
-        );
-    }
-
-    #[tokio::test]
-    async fn near_intents_endpoint_ignores_expired_maintenance() {
-        let mock_server = MockServer::start().await;
-        let now = Utc::now().timestamp_millis();
-        Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Past Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": now - 7_200_000,
-                        "ends_at": now - 3_600_000
-                    }
-                ]
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+            env.near_intents_status_api_url = format!("{}/public/status", mock_server.uri());
         })
         .await;
         let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
@@ -1659,31 +1696,97 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn near_intents_endpoint_maps_incident_to_failed() {
+    async fn near_intents_endpoint_ignores_resolved_shield_incidents() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Incident",
-                        "post_type": "incident",
-                        "starts_at": 0,
-                        "ends_at": null
-                    }
-                ]
-            })))
+            .and(path("/public/status"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(shield_status_body(
+                vec![],
+                vec![json!({
+                    "id": "62de923f-ff3d-4abd-88a7-9def8878ba0a",
+                    "scopeType": "chain",
+                    "scopeValue": "zec",
+                    "createdAt": "2026-09-18T15:13:32.118Z",
+                    "resolvedAt": "2026-09-18T15:44:19.721Z"
+                })],
+            )))
             .mount(&mock_server)
             .await;
 
         let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+            env.near_intents_status_api_url = format!("{}/public/status", mock_server.uri());
+        })
+        .await;
+        let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
+
+        assert_check(&json, "near-intents.status", "ok");
+    }
+
+    #[tokio::test]
+    async fn near_intents_endpoint_maps_shield_incident_to_failed() {
+        let mock_server = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path("/public/status"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(shield_status_body(
+                vec![json!({
+                    "id": "92f92e48-9e74-41aa-9b0f-e8d0da5fc000",
+                    "scopeType": "chain",
+                    "scopeValue": "ton",
+                    "status": "active",
+                    "createdAt": "2026-09-18T14:37:49.902Z",
+                    "updatedAt": "2026-09-18T14:37:49.902Z"
+                })],
+                vec![],
+            )))
+            .mount(&mock_server)
+            .await;
+
+        let state = test_state(|env| {
+            env.near_intents_status_api_url = format!("{}/public/status", mock_server.uri());
         })
         .await;
         let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
 
         assert_check(&json, "near-intents.status", "failed");
+        assert_eq!(json["checkResults"][0]["shortSummary"], "Incident active");
+        assert!(
+            json["checkResults"][0]["notificationMessage"]
+                .as_str()
+                .unwrap_or_default()
+                .contains("TON chain")
+        );
+        assert_eq!(json["checkResults"][0]["meta"]["title"], "TON chain");
+    }
+
+    #[test]
+    fn shield_incident_title_prefers_public_description() {
+        let incident = ShieldIncident {
+            id: Some("1".to_string()),
+            scope_type: Some("chain".to_string()),
+            scope_value: Some("eth".to_string()),
+            direction: Some("withdraw".to_string()),
+            public_description: Some("ETH withdrawals are delayed".to_string()),
+            created_at: None,
+            resolved_at: None,
+        };
+        assert_eq!(
+            shield_incident_title(&incident),
+            "ETH withdrawals are delayed"
+        );
+    }
+
+    #[test]
+    fn shield_incident_title_falls_back_to_scope() {
+        let incident = ShieldIncident {
+            id: Some("1".to_string()),
+            scope_type: Some("chain_all".to_string()),
+            scope_value: Some("starknet".to_string()),
+            direction: None,
+            public_description: None,
+            created_at: None,
+            resolved_at: None,
+        };
+        assert_eq!(shield_incident_title(&incident), "STARKNET chain all");
     }
 
     #[test]
@@ -1693,6 +1796,18 @@ mod tests {
         assert!(is_relevant_intents_post(Some(now), now));
         assert!(!is_relevant_intents_post(Some(now - 1), now));
         assert!(is_relevant_intents_post(None, now));
+    }
+
+    #[test]
+    fn intents_incident_check_name_is_unique_per_post() {
+        assert_eq!(
+            intents_incident_check_name("ton-1"),
+            "near-intents.status:ton-1"
+        );
+        assert_ne!(
+            intents_incident_check_name("ton-1"),
+            intents_incident_check_name("zec-1")
+        );
     }
 
     #[tokio::test]
