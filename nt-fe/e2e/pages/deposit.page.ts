@@ -113,8 +113,12 @@ export class DepositPage extends BasePage {
      * after selection into that window.
      */
     private async waitForDialogToClose(): Promise<void> {
+        // Scoped to our Radix dialog wrapper's own data-slot, not the bare
+        // role="dialog" selector — that also matches the Gleap AI-assistant
+        // widget, which sits permanently hidden in the DOM and never
+        // detaches, hanging this wait forever.
         await this.page
-            .locator('[role="dialog"]')
+            .locator('[data-slot="dialog-content"]')
             .first()
             .waitFor({ state: "detached", timeout: 10_000 });
     }
