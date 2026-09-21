@@ -464,14 +464,6 @@ function useDetailItems(
         ),
     });
 
-    const notes = activity.notes?.trim();
-    if (notes) {
-        items.push({
-            label: t("notes"),
-            value: notes,
-        });
-    }
-
     // Only governance calls surface their method/contract — a bulk transfer is
     // a FunctionCall too, but `ft_transfer_call` on the bulk payment contract
     // is protocol plumbing, not something the sender needs to read.
@@ -514,6 +506,23 @@ function useDetailItems(
     return items;
 }
 
+function NotesBlock({ notes }: { notes?: string | null }) {
+    const t = useTranslations("activity.details");
+    const trimmed = notes?.trim();
+    if (!trimmed) return null;
+
+    return (
+        <div className="flex w-full flex-col gap-1 py-1">
+            <p className="text-sm font-medium text-muted-foreground">
+                {t("notes")}
+            </p>
+            <p className="text-sm font-semibold break-words text-foreground">
+                {trimmed}
+            </p>
+        </div>
+    );
+}
+
 function DetailsSection({
     activity,
     variant,
@@ -526,15 +535,23 @@ function DetailsSection({
     return (
         <ModalSection className="rounded-t-[12px]">
             <InfoDisplay hideSeparator items={items} className="w-full" />
+            <NotesBlock notes={activity.notes} />
         </ModalSection>
     );
 }
 
 /**
  * Label / value rows for the deposit, send, bulk and swap dialogs: muted
- * label on the left, the value right-aligned and emphasised.
+ * label on the left, the value right-aligned and emphasised. Notes sit
+ * under their label so a long memo can wrap.
  */
-function DetailRows({ items }: { items: InfoItem[] }) {
+function DetailRows({
+    items,
+    notes,
+}: {
+    items: InfoItem[];
+    notes?: string | null;
+}) {
     return (
         <div className="flex w-full flex-col gap-2">
             {items.map((item) => (
@@ -550,6 +567,7 @@ function DetailRows({ items }: { items: InfoItem[] }) {
                     </div>
                 </div>
             ))}
+            <NotesBlock notes={notes} />
         </div>
     );
 }
@@ -695,7 +713,7 @@ function DepositBody({
 
             <Separator className="bg-general-border" />
 
-            <DetailRows items={items} />
+            <DetailRows items={items} notes={activity.notes} />
         </div>
     );
 }
@@ -742,7 +760,7 @@ function SendBody({
 
             <Separator className="bg-general-border" />
 
-            <DetailRows items={items} />
+            <DetailRows items={items} notes={activity.notes} />
         </div>
     );
 }
@@ -882,7 +900,7 @@ function BulkSendBody({
 
             <Separator className="bg-general-border" />
 
-            <DetailRows items={items} />
+            <DetailRows items={items} notes={activity.notes} />
         </div>
     );
 }
@@ -976,7 +994,7 @@ function SwapBody({
 
             <Separator className="bg-general-border" />
 
-            <DetailRows items={items} />
+            <DetailRows items={items} notes={activity.notes} />
         </div>
     );
 }

@@ -1771,9 +1771,13 @@ mod tests {
             parse_iso_millis(Some("not-a-date"), "resolvedAt", Some("ton-1")),
             None
         );
+    }
+
+    #[test]
+    fn parse_iso_millis_parses_valid_timestamps() {
         assert_eq!(
             parse_iso_millis(Some("2026-09-18T14:37:49.902Z"), "createdAt", Some("ton-1")),
-            Some(1_789_741_069_902)
+            Some(1_789_742_269_902)
         );
     }
 
