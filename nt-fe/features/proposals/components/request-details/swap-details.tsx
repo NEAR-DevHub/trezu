@@ -179,7 +179,7 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                 )}
                 {data.notes && (
                     <DetailRow
-                        label={t("note")}
+                        label={t("notes")}
                         align="start"
                         value={data.notes}
                     />
