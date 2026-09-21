@@ -16,6 +16,7 @@ import SignClient from "@walletconnect/sign-client";
 import axios from "axios";
 import Logo from "@/components/icons/logo";
 import { LoadingScreen } from "@/components/loading-screen";
+import { NearLoader } from "@/components/near-loader";
 import { ensurePasskeyWallet } from "@/lib/passkey-wallet";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import { TransferExpanded } from "@/features/proposals/components/expanded-view/transfer-expanded";
@@ -673,7 +674,7 @@ function WalletPageContent() {
                 <div className="p-6">
                     {step === "loading" && (
                         <div className="text-center py-8">
-                            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                            <NearLoader className="mb-4" />
                             <p className="text-muted-foreground">
                                 {tW("loading")}
                             </p>
@@ -704,7 +705,7 @@ function WalletPageContent() {
 
                     {step === "connect" && accountId && (
                         <div className="text-center py-8">
-                            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                            <NearLoader className="mb-4" />
                             <p className="text-sm text-muted-foreground">
                                 {tW.rich("connectedAs", {
                                     account: accountId,
@@ -843,7 +844,7 @@ function WalletPageContent() {
 
                     {step === "processing" && (
                         <div className="text-center py-8">
-                            <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4" />
+                            <NearLoader className="mb-4" />
                             <p className="text-muted-foreground">
                                 {tW("creatingProposal")}
                             </p>
