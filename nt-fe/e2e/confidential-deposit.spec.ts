@@ -13,13 +13,13 @@
  * route level since the sandbox doesn't include a bridge RPC mock.
  * All other backend calls go to the real sandbox.
  */
-import { test, expect } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
+import { ensureTreasury } from "./helpers/create-treasury";
 import {
     registerMockWalletRoutes,
     seedMockWalletAccount,
 } from "./helpers/mock-wallet";
 import { createAccount, transferNear } from "./helpers/sandbox-rpc";
-import { ensureTreasury } from "./helpers/create-treasury";
 
 const DAO_ID = "confdeposit.sputnik-dao.near";
 const ACCOUNT_ID = "confdeposit.near";
@@ -126,6 +126,8 @@ async function setupSandbox(): Promise<string> {
 test("Confidential deposit — dashboard deposit page flow", async ({
     page,
     context,
+    dashboardPage,
+    depositPage,
 }) => {
     test.setTimeout(180_000);
 
@@ -230,11 +232,11 @@ test("Confidential deposit — dashboard deposit page flow", async ({
         console.log(`[PAGE ERROR] ${err.message}`);
     });
 
-    await page.goto(`/${DAO_ID}`);
+    await dashboardPage.gotoPlain(DAO_ID);
     await seedMockWalletAccount(page, ACCOUNT_ID, "evaluate");
-    await page.goto(`/${DAO_ID}`);
+    await dashboardPage.gotoPlain(DAO_ID);
 
-    const depositButton = page.locator("#dashboard-step1");
+    const depositButton = dashboardPage.stepTarget(1);
     await expect(depositButton).toBeVisible({ timeout: 15_000 });
     await expect(depositButton).toContainText("Deposit");
 
@@ -243,100 +245,61 @@ test("Confidential deposit — dashboard deposit page flow", async ({
         timeout: 10_000,
     });
 
-    await expect(page.getByText("Deposit", { exact: true })).toBeVisible({
-        timeout: 10_000,
-    });
+    await expect(depositPage.heading()).toBeVisible({ timeout: 10_000 });
 
     // Source cards appear first for confidential treasuries
-    const publicSource = page.getByTestId("deposit-source-public_wallet");
-    const confidentialSource = page.getByTestId(
-        "deposit-source-confidential_user",
-    );
+    const publicSource = depositPage.publicWalletSource();
+    const confidentialSource = depositPage.confidentialUserSource();
     await expect(publicSource).toBeVisible({ timeout: 10_000 });
     await expect(confidentialSource).toBeVisible({ timeout: 10_000 });
 
-    await expect(
-        page.getByText("Select asset and network to see deposit address"),
-    ).toBeVisible();
+    await expect(depositPage.selectPrompt()).toBeVisible();
 
-    const assetSelectButton = page.getByTestId("deposit-asset-selector");
-    await expect(assetSelectButton).toBeVisible({ timeout: 10_000 });
-    await assetSelectButton.click();
-    await expect(
-        page.getByRole("heading", { name: "Select Asset" }),
-    ).toBeVisible({ timeout: 10_000 });
-    await page
-        .getByRole("button", { name: /USD Coin/i })
-        .first()
-        .click();
-
-    const networkSelectButton = page.getByTestId("deposit-network-selector");
-    await expect(networkSelectButton).toBeVisible({ timeout: 10_000 });
-    await networkSelectButton.click();
-    await expect(
-        page.getByRole("heading", { name: "Select Network" }),
-    ).toBeVisible({ timeout: 10_000 });
-    await page.getByRole("button", { name: "Near Protocol" }).first().click();
+    await depositPage.selectAsset(/USD Coin/i);
+    await depositPage.selectNetwork("Near Protocol");
 
     // Address must NOT be fetched until Generate Address is clicked
     expect(depositAddressRequested).toBe(false);
 
-    await expect(page.getByTestId("deposit-ack-checkbox")).toBeVisible({
-        timeout: 10_000,
+    await depositPage.acknowledgeAndContinue();
+
+    await expect(depositPage.oneTimeAddressText()).toBeVisible({
+        timeout: 15_000,
     });
-    const generateButton = page.getByTestId("deposit-ack-cta");
-    await expect(generateButton).toBeDisabled();
 
-    await page.getByTestId("deposit-ack-checkbox").click();
-    await expect(generateButton).toBeEnabled();
-    await generateButton.click();
-
-    await expect(
-        page.getByText(/One-time deposit address/i).first(),
-    ).toBeVisible({ timeout: 15_000 });
-
-    const publicAddressElement = page.locator("code").first();
+    const publicAddressElement = depositPage.addressCode();
     await expect(publicAddressElement).toBeVisible({ timeout: 10_000 });
     const publicAddressText = await publicAddressElement.textContent();
     expect(publicAddressText).toContain(MOCK_DEPOSIT_ADDRESS.slice(0, 6));
     expect(publicAddressText).not.toContain(DAO_ID);
     expect(depositAddressRequested).toBe(true);
 
-    await expect(page.getByText(/Expires in/i)).toBeVisible();
+    await expect(depositPage.expiresInText()).toBeVisible();
 
     // Back to select, then switch to confidential user source
-    await page.getByTestId("deposit-back-button").click();
+    await depositPage.backButton().click();
     await expect(confidentialSource).toBeVisible({ timeout: 10_000 });
     await confidentialSource.click();
 
-    await expect(page.getByTestId("deposit-ack-checkbox")).toBeVisible({
+    await depositPage.acknowledgeAndContinue();
+
+    await expect(depositPage.confidentialOriginTrezu()).toBeVisible({
         timeout: 10_000,
     });
-    const showAddressButton = page.getByTestId("deposit-ack-cta");
-    await expect(showAddressButton).toBeDisabled();
-    await page.getByTestId("deposit-ack-checkbox").click();
-    await expect(showAddressButton).toBeEnabled();
-    await showAddressButton.click();
+    await expect(depositPage.confidentialOriginNearcom()).toBeVisible();
 
-    await expect(page.getByTestId("deposit-origin-trezu")).toBeVisible({
-        timeout: 10_000,
-    });
-    await expect(page.getByTestId("deposit-origin-nearcom")).toBeVisible();
-
-    const confidentialAddressElement = page.locator("code").first();
+    const confidentialAddressElement = depositPage.addressCode();
     await expect(confidentialAddressElement).toBeVisible({ timeout: 10_000 });
     expect(await confidentialAddressElement.textContent()).toContain(DAO_ID);
 
-    await expect(page.locator("svg").first()).toBeVisible();
+    await expect(depositPage.qrCodeIcon()).toBeVisible();
 
     // Verify "Other" asset is not available on public-wallet path
-    await page.getByTestId("deposit-back-button").click();
+    await depositPage.backButton().click();
     await publicSource.click();
-    const selectedAssetButton = page.getByTestId("deposit-asset-selector");
-    await expect(selectedAssetButton).toBeVisible({ timeout: 10_000 });
-    await selectedAssetButton.click();
-    await expect(
-        page.getByRole("heading", { name: "Select Asset" }),
-    ).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("button", { name: /^Other$/i })).toHaveCount(0);
+    await depositPage.assetSelectorButton().click();
+    await expect(depositPage.selectAssetHeading()).toBeVisible({
+        timeout: 10_000,
+    });
+    await expect(depositPage.assetOption(/^Other$/i)).toHaveCount(0);
 });

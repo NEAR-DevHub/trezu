@@ -19,6 +19,7 @@ use std::str::FromStr;
 
 use crate::handlers::balance_changes::counterparty::convert_raw_to_decimal;
 use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::contract_read_error::{is_block_unavailable, is_method_not_found};
 
 /// NEAR mainnet epoch length in blocks (~12 hours)
 pub const EPOCH_LENGTH_BLOCKS: u64 = 43_200;
@@ -130,9 +131,8 @@ pub async fn get_staking_balance_at_block(
             Err(error) => {
                 let message = error.to_string();
                 let block_unavailable = message.contains("422")
-                    || message.contains("UnknownBlock")
-                    || message.contains("GarbageCollectedBlock")
-                    || message.contains("MethodNotFound")
+                    || is_block_unavailable(&message)
+                    || is_method_not_found(&message)
                     || message.contains("doesn't exist");
                 if !block_unavailable || offset == MAX_PREVIOUS_BLOCK_ATTEMPTS {
                     return Err(error);

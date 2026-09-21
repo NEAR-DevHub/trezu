@@ -9,6 +9,7 @@ use crate::{
     AppState,
     utils::{
         cache::{CacheKey, CacheTier},
+        contract_read_error::ContractReadError,
         serde::{
             opt_u32_from_string_or_number, opt_u64_from_string_or_number,
             opt_u128_string_from_string_or_number,
@@ -95,13 +96,7 @@ pub(crate) async fn fetch_ft_lockup_instance_ids(
                 .read_only::<Vec<(String, String)>>()
                 .fetch_from(&state_clone.network)
                 .await
-                .map_err(|e| {
-                    tracing::warn!("get_instances failed: {}", e);
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to fetch FT lockup instances".to_string(),
-                    )
-                })?;
+                .map_err(|e| ContractReadError::from(e).into_http("ft_lockup.get_instances"))?;
 
             let ids = instances
                 .data
@@ -141,17 +136,7 @@ pub(crate) async fn fetch_ft_lockup_instance_accounts(
                 .read_only::<Vec<FtLockupListedAccount>>()
                 .fetch_from(&state_clone.network)
                 .await
-                .map_err(|e| {
-                    tracing::warn!(
-                        "list_accounts failed for instance={}: {}",
-                        instance_id_owned,
-                        e
-                    );
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to fetch FT lockup accounts".to_string(),
-                    )
-                })?;
+                .map_err(|e| ContractReadError::from(e).into_http("ft_lockup.list_accounts"))?;
 
             let account_ids = accounts
                 .data
@@ -247,17 +232,7 @@ pub(crate) async fn fetch_ft_lockup_contract_metadata(
                 .read_only::<FtLockupContractMetadata>()
                 .fetch_from(&state_clone.network)
                 .await
-                .map_err(|e| {
-                    tracing::warn!(
-                        "contract_metadata failed for instance={}: {}",
-                        instance_id_owned,
-                        e
-                    );
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        "Failed to fetch FT lockup metadata".to_string(),
-                    )
-                })?;
+                .map_err(|e| ContractReadError::from(e).into_http("ft_lockup.contract_metadata"))?;
 
             Ok::<_, (StatusCode, String)>(metadata.data)
         })

@@ -45,6 +45,7 @@ import type { ChartInterval, TreasuryAsset } from "@/lib/api";
 import { totalBalance } from "@/lib/balance";
 import { getBalanceHistoryTokenIds } from "@/lib/balance-history-token-ids";
 import Big from "@/lib/big";
+import { precedesLocalDay } from "@/lib/chart-history-points";
 import {
     getDashboardBalanceView,
     getDashboardBreakdownItems,
@@ -278,6 +279,10 @@ export default function BalanceWithGraph({
         if (!balanceChartData) {
             return { data: [], showUSD: true };
         }
+        // Buckets on the request's own day are charted once, as "Now".
+        const chartEndTime = new Date(
+            frozenChartParams.current?.endTime ?? Date.now(),
+        );
 
         if (selectedToken === "all") {
             // Aggregate USD values across all tokens
@@ -305,6 +310,9 @@ export default function BalanceWithGraph({
             }
 
             const data = Array.from(timeMap.entries())
+                .filter(([timestamp]) =>
+                    precedesLocalDay(timestamp, chartEndTime),
+                )
                 .sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
@@ -323,7 +331,7 @@ export default function BalanceWithGraph({
                     usdValue: usdValue,
                 }));
 
-            if (data.length > 0) {
+            if (timeMap.size > 0) {
                 // Only include tokens whose history token IDs have price data
                 const tokenIdsWithPrices = new Set(
                     Object.entries(balanceChartData)
@@ -335,18 +343,10 @@ export default function BalanceWithGraph({
                         .map(([tokenId]) => tokenId),
                 );
                 const nowBalanceUSD = groupedTokens
-                    .filter(
-                        (group) =>
-                            group.tokens.some(
-                                (t) => t.residency !== "Lockup",
-                            ) &&
-                            group.tokenIds.some((id) =>
-                                tokenIdsWithPrices.has(id),
-                            ),
+                    .filter((group) =>
+                        group.tokenIds.some((id) => tokenIdsWithPrices.has(id)),
                     )
-                    .flatMap((group) =>
-                        group.tokens.filter((t) => t.residency !== "Lockup"),
-                    )
+                    .flatMap((group) => group.tokens)
                     .reduce((sum, t) => sum + t.balanceUSD, 0);
                 data.push({
                     name: t("chartNow"),
@@ -401,6 +401,9 @@ export default function BalanceWithGraph({
                 (v) => v.hasUSD,
             );
             const data = Array.from(timeMap.entries())
+                .filter(([timestamp]) =>
+                    precedesLocalDay(timestamp, chartEndTime),
+                )
                 .sort(
                     (a, b) =>
                         new Date(a[0]).getTime() - new Date(b[0]).getTime(),
@@ -419,10 +422,8 @@ export default function BalanceWithGraph({
                     usdValue: hasUSD ? usdValue : undefined,
                     balanceValue: balanceValue,
                 }));
-            if (data.length > 0) {
-                const nonLockupTokens = (
-                    selectedTokenGroup?.tokens ?? []
-                ).filter((t) => t.residency !== "Lockup");
+            if (timeMap.size > 0) {
+                const groupTokens = selectedTokenGroup?.tokens ?? [];
                 const selectedTokenIdsWithPrices = new Set(
                     Object.entries(balanceChartData)
                         .filter(
@@ -437,9 +438,9 @@ export default function BalanceWithGraph({
                         selectedTokenIdsWithPrices.has(id),
                     ) ?? false;
                 const nowUSD = hasHistoricalPrices
-                    ? nonLockupTokens.reduce((sum, t) => sum + t.balanceUSD, 0)
+                    ? groupTokens.reduce((sum, t) => sum + t.balanceUSD, 0)
                     : undefined;
-                const nowBalance = nonLockupTokens
+                const nowBalance = groupTokens
                     .reduce(
                         (sum, t) =>
                             sum.add(
@@ -883,6 +884,7 @@ export default function BalanceWithGraph({
                         <SelectTrigger
                             size="sm"
                             className="w-[92px] border-0 shadow-none focus:ring-0"
+                            data-testid="chart-period-trigger-mobile"
                         >
                             <SelectValue />
                         </SelectTrigger>
@@ -896,7 +898,10 @@ export default function BalanceWithGraph({
                     </Select>
                 )}
             </div>
-            <div className={cn(isConfidential ? "hidden" : "")}>
+            <div
+                className={cn(isConfidential ? "hidden" : "")}
+                data-testid="balance-chart"
+            >
                 {isLoading ||
                 isHistoryRefreshing ||
                 (isFetching && chartData.data.length === 0) ? (

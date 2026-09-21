@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     AuthButtonWithProposal,
     useNoVoteMessage,
@@ -21,8 +21,11 @@ import { StepIcon } from "@/components/step-icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/components/user";
 import { SlotWarning } from "@/components/warning-message";
-import type { PaymentRequestData } from "@/features/proposals/types/index";
+import { OmniStatusBanner } from "@/features/omni/components/omni-status-banner";
+import type { OmniProposalData } from "@/features/omni/types";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
+import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
+import type { PaymentRequestData } from "@/features/proposals/types/index";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
 import {
     getEffectiveExpiryMs,
@@ -44,15 +47,14 @@ import {
 } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
-import { isNearComPaymentRoute } from "@/lib/intents-network";
-import { getApproversAndThreshold } from "@/lib/config-utils";
-import type { Proposal } from "@/lib/proposals-api";
 import { getTransactionExplorerLink } from "@/lib/blockchain-utils";
+import { getApproversAndThreshold } from "@/lib/config-utils";
+import { isNearComPaymentRoute } from "@/lib/intents-network";
+import type { Proposal } from "@/lib/proposals-api";
 import { nanosToMs } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
 import { NotEnoughBalance } from "../../not-enough-balance";
-import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
 import { UserVote } from "../../user-vote";
 import { VotingDurationImpactModal } from "../../voting-duration-impact-modal";
 
@@ -223,13 +225,13 @@ function ExecutedSection({
                 {statusIcon}
                 <div className="flex flex-col gap-0">
                     <p className="text-sm font-semibold">{statusText}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <div className="text-xs text-muted-foreground">
                         {isDateLoading ? (
                             <Skeleton className="h-4 w-36" />
                         ) : (
                             displayDateText
                         )}
-                    </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -294,6 +296,16 @@ export function ProposalSidebar({
     const isPaymentProposal =
         proposalType === "Payment Request" || isMoveToConfidential;
     const isConfidentialRequest = proposalType === "Confidential Request";
+    // Chain-signature requests carry their verification verdict next to the
+    // vote controls so a MISMATCH cannot be missed. Sync data only.
+    const omniData = useMemo(
+        () =>
+            proposalType === "Omni Chain Signature"
+                ? (extractProposalData(proposal, treasuryId)
+                      .data as OmniProposalData)
+                : null,
+        [proposalType, proposal, treasuryId],
+    );
     const isBatchPaymentProposal = proposalType === "Batch Payment Request";
     const isConfidentialRequestProposal =
         proposalType === "Confidential Request";
@@ -638,6 +650,17 @@ export function ProposalSidebar({
             {isPending && (
                 <NotEnoughBalance
                     insufficientBalanceInfo={insufficientBalanceInfo}
+                />
+            )}
+
+            {/* Chain-signature verification verdict, right above the vote buttons */}
+            {omniData && (
+                <OmniStatusBanner
+                    verification={omniData.verification}
+                    dao={treasuryId ?? ""}
+                    proposalId={proposal.id}
+                    network={omniData.network}
+                    compact
                 />
             )}
 

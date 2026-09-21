@@ -65,6 +65,33 @@ The `proxy-server.js` provides a simple HTTP proxy that:
 PROXY_PORT=9000 BACKEND_PROXY_TARGET=https://api.trezu.app bun run proxy
 ```
 
+### Viewing a testnet DAO locally (omni chain-signature proposals)
+
+The production backend is mainnet-only. To open a NEAR **testnet** DAO in the UI
+without building `nt-be`, run the dev-only mock backend, which serves proposals,
+policy and config straight from testnet RPC view calls and forwards every other
+`/api` route to the real backend:
+
+```bash
+bun run testnet:mock
+```
+
+then in a second terminal:
+
+```bash
+NEXT_PUBLIC_NEAR_NETWORK=testnet \
+NEXT_PUBLIC_NEAR_RPC_URL=https://rpc.testnet.fastnear.com \
+NEXT_PUBLIC_BACKEND_API_BASE=http://127.0.0.1:8889 \
+bun run dev
+```
+
+and open `http://localhost:3000/<dao>.sputnik-v2.testnet/requests`. Use
+`127.0.0.1`, not `localhost`, for `NEXT_PUBLIC_BACKEND_API_BASE`: Next's
+server-side fetch may resolve `localhost` to `::1`. Options: `MOCK_PORT`,
+`MOCK_NEAR_RPC_URL`, `MOCK_FORWARD_TARGET` (see
+`scripts/testnet-mock-backend.mjs`). Execution-transaction links, assets and
+activity stay empty for testnet DAOs (no indexer).
+
 ## Scripts
 
 - `bun run dev` - Start development server
@@ -73,6 +100,7 @@ PROXY_PORT=9000 BACKEND_PROXY_TARGET=https://api.trezu.app bun run proxy
 - `bun run build:ledger` - Build Ledger wallet only
 - `bun run start` - Start production server
 - `bun run proxy` - Start CORS proxy server
+- `bun run testnet:mock` - Dev-only mock backend for viewing a NEAR testnet DAO
 - `bun run lint` - Run Biome linter
 - `bun run format` - Format code with Biome
 - `bun run test:e2e` - Run Playwright E2E tests

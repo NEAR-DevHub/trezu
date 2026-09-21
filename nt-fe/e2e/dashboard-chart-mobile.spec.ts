@@ -1,8 +1,9 @@
-import { test, expect, Page, Route } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
+import { ChartComponent } from "./components/chart.component";
 import FINAL_ASSETS from "./fixtures/assets.json";
+import { expect, test } from "./fixtures/test-with-pages";
 
 const TREASURY_ID = "webassemblymusic-treasury.sputnik-dao.near";
-const DASHBOARD_URL = `/${TREASURY_ID}`;
 
 // Use mobile viewport to reproduce the overlap issue
 test.use({
@@ -105,54 +106,26 @@ async function setupMocks(page: Page) {
 
 test("dashboard chart x-axis labels should not overlap on mobile with 3M period", async ({
     page,
+    dashboardPage,
 }) => {
     test.setTimeout(60_000);
 
     await setupMocks(page);
-    await page.goto(DASHBOARD_URL);
+    await dashboardPage.gotoPlain(TREASURY_ID);
 
     // Wait for the chart to render with default period (1W)
-    const chartContainer = page.locator("[data-slot='chart']").first();
-    await chartContainer
-        .locator("svg")
-        .first()
-        .waitFor({ state: "visible", timeout: 15_000 });
+    await dashboardPage.chart.waitForRendered();
 
     // On mobile, the time period selector is a <select> dropdown (md:hidden variant)
-    // Select "3M" period using the mobile dropdown
-    const periodDropdown = page
-        .locator(".md\\:hidden")
-        .locator('button[role="combobox"]')
-        .last();
-    await periodDropdown.click();
-    await page.getByRole("option").filter({ hasText: "3M" }).click();
+    await dashboardPage.chart.selectMobilePeriod("3M");
 
     // Wait for chart to re-render with 3M data
-    await chartContainer
-        .locator("svg")
-        .first()
-        .waitFor({ state: "visible", timeout: 10_000 });
+    await dashboardPage.chart.waitForRendered(10_000);
     // Give recharts time to fully render the axis labels
     await page.waitForTimeout(1000);
 
     // Collect bounding boxes of all x-axis tick labels
-    // Recharts renders x-axis ticks as <text> elements inside a <g> with class "recharts-xAxis"
-    const tickBoundingBoxes = await page.evaluate(() => {
-        const xAxisGroup = document.querySelector(".recharts-xAxis");
-        if (!xAxisGroup) return [];
-
-        const ticks = xAxisGroup.querySelectorAll(
-            ".recharts-cartesian-axis-tick text",
-        );
-        return Array.from(ticks).map((tick) => {
-            const rect = tick.getBoundingClientRect();
-            return {
-                left: rect.left,
-                right: rect.right,
-                text: tick.textContent || "",
-            };
-        });
-    });
+    const tickBoundingBoxes = await dashboardPage.chart.getXAxisLabels();
 
     // Verify we actually have tick labels rendered
     expect(tickBoundingBoxes.length).toBeGreaterThan(0);
@@ -163,23 +136,7 @@ test("dashboard chart x-axis labels should not overlap on mobile with 3M period"
 
     // Check for overlapping labels: each label's left edge should be
     // to the right of (or equal to) the previous label's right edge
-    const overlaps: Array<{
-        label1: string;
-        label2: string;
-        overlapPx: number;
-    }> = [];
-    for (let i = 1; i < tickBoundingBoxes.length; i++) {
-        const prev = tickBoundingBoxes[i - 1];
-        const curr = tickBoundingBoxes[i];
-        const overlapPx = prev.right - curr.left;
-        if (overlapPx > 1) {
-            overlaps.push({
-                label1: prev.text,
-                label2: curr.text,
-                overlapPx: Math.round(overlapPx),
-            });
-        }
-    }
+    const overlaps = ChartComponent.findOverlaps(tickBoundingBoxes);
 
     if (overlaps.length > 0) {
         console.log("Overlapping labels detected:", overlaps);
@@ -205,6 +162,7 @@ test("dashboard chart x-axis labels should not overlap on mobile with 3M period"
 
 test("dashboard chart x-axis labels should not overlap on desktop with 3M period", async ({
     page,
+    dashboardPage,
 }) => {
     test.setTimeout(60_000);
 
@@ -212,44 +170,21 @@ test("dashboard chart x-axis labels should not overlap on desktop with 3M period
     await page.setViewportSize({ width: 1280, height: 800 });
 
     await setupMocks(page);
-    await page.goto(DASHBOARD_URL);
+    await dashboardPage.gotoPlain(TREASURY_ID);
 
     // Wait for the chart to render
-    const chartContainer = page.locator("[data-slot='chart']").first();
-    await chartContainer
-        .locator("svg")
-        .first()
-        .waitFor({ state: "visible", timeout: 15_000 });
+    await dashboardPage.chart.waitForRendered();
 
     // On desktop, the time period selector is a dropdown (hidden on mobile):
     // open the trigger, then pick "3M" from the portaled menu.
-    await page.getByTestId("chart-period-trigger").click();
-    await page.getByTestId("chart-period-option-3M").click();
+    await dashboardPage.chart.selectDesktopPeriod("3M");
 
     // Wait for chart to re-render with 3M data
-    await chartContainer
-        .locator("svg")
-        .first()
-        .waitFor({ state: "visible", timeout: 10_000 });
+    await dashboardPage.chart.waitForRendered(10_000);
     await page.waitForTimeout(1000);
 
     // Collect bounding boxes of all x-axis tick labels
-    const tickBoundingBoxes = await page.evaluate(() => {
-        const xAxisGroup = document.querySelector(".recharts-xAxis");
-        if (!xAxisGroup) return [];
-
-        const ticks = xAxisGroup.querySelectorAll(
-            ".recharts-cartesian-axis-tick text",
-        );
-        return Array.from(ticks).map((tick) => {
-            const rect = tick.getBoundingClientRect();
-            return {
-                left: rect.left,
-                right: rect.right,
-                text: tick.textContent || "",
-            };
-        });
-    });
+    const tickBoundingBoxes = await dashboardPage.chart.getXAxisLabels();
 
     expect(tickBoundingBoxes.length).toBeGreaterThan(0);
     console.log(
@@ -262,23 +197,7 @@ test("dashboard chart x-axis labels should not overlap on desktop with 3M period
         fullPage: false,
     });
 
-    const overlaps: Array<{
-        label1: string;
-        label2: string;
-        overlapPx: number;
-    }> = [];
-    for (let i = 1; i < tickBoundingBoxes.length; i++) {
-        const prev = tickBoundingBoxes[i - 1];
-        const curr = tickBoundingBoxes[i];
-        const overlapPx = prev.right - curr.left;
-        if (overlapPx > 1) {
-            overlaps.push({
-                label1: prev.text,
-                label2: curr.text,
-                overlapPx: Math.round(overlapPx),
-            });
-        }
-    }
+    const overlaps = ChartComponent.findOverlaps(tickBoundingBoxes);
 
     if (overlaps.length > 0) {
         console.log("Overlapping labels detected:", overlaps);

@@ -1,0 +1,87 @@
+import { BasePage } from "./base.page";
+
+/**
+ * The standalone `/wallet` popup page external dApps open for `sign_in` /
+ * `sign_transactions`. It has no nav chrome of its own — every state is a
+ * step rendered in place, addressed here by its distinguishing text/button.
+ */
+export class WalletPopupPage extends BasePage {
+    async goto(params: Record<string, string>): Promise<void> {
+        const query = new URLSearchParams(params).toString();
+        await this.page.goto(`/wallet?${query}`);
+    }
+
+    connectWalletButton() {
+        return this.page.getByRole("button", { name: "Connect Wallet" });
+    }
+
+    parseErrorText() {
+        return this.page.getByText("Failed to parse the transaction request");
+    }
+
+    tryAgainButton() {
+        return this.page.getByRole("button", { name: "Try again" });
+    }
+
+    whatToDoNextText() {
+        return this.page.getByText("What To Do Next");
+    }
+
+    /** The checklist's link to a specific DAO proposal, e.g. "treasury.sputnik-dao.near — Proposal #42". */
+    proposalLinkText(daoId: string, proposalId: number) {
+        return this.page.getByText(`${daoId} — Proposal #${proposalId}`);
+    }
+
+    openTrezuToApproveButton() {
+        return this.page.getByRole("button", { name: "Open Trezu to Approve" });
+    }
+
+    doneText() {
+        return this.page.getByText("You can close this window.");
+    }
+
+    notYetIndexedText() {
+        return this.page.getByText(/not yet indexed/);
+    }
+
+    rejectedText(proposalId: number) {
+        return this.page.getByText(`Proposal #${proposalId} was rejected`);
+    }
+
+    chooseTreasuryText() {
+        return this.page.getByText("Choose which treasury you want to use");
+    }
+
+    /**
+     * A treasury row in the sign_in picker — a real `<button>` whose accessible
+     * name concatenates its display name and daoId, so a plain `getByRole`
+     * substring match against either alone can't be made `exact`. Scope
+     * instead to a button containing a descendant with that *exact* text
+     * (display name or daoId are each their own leaf element) — same
+     * precision as `exact: true` without breaking on the concatenated name.
+     */
+    treasuryRow(text: string) {
+        return this.page
+            .getByRole("button")
+            .filter({ has: this.page.getByText(text, { exact: true }) });
+    }
+
+    treasuryConnectedText() {
+        return this.page.getByText("Treasury connected");
+    }
+
+    /** The confirm-transactions step's heading, shown once the popup auto-selects a signer DAO. */
+    createProposalHeading() {
+        return this.page.getByText("Create Proposal");
+    }
+
+    /** Any text in the proposal preview (recipient, acting-as DAO, …) — recipient and daoId each render in their own leaf element, so exact match is safe and precludes one substring-matching into another. */
+    previewText(text: string) {
+        return this.page.getByText(text, { exact: true }).first();
+    }
+
+    /** Messages the page has posted to `window.opener` (captured via an init script mock). */
+    async capturedMessages(): Promise<unknown[]> {
+        return this.page.evaluate(() => (window as any).__walletMessages);
+    }
+}
