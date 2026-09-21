@@ -79,6 +79,15 @@ function findLockupToken(
     );
 }
 
+// Unstaked NEAR still held by the staking pool is not in the lockup account,
+// so a lockup `transfer` cannot spend it until it is withdrawn.
+function liquidBalance(balance: TreasuryAsset["balance"]): Big {
+    const available = availableBalance(balance);
+    if (balance.type !== "Vested") return available;
+    const liquid = available.sub(balance.lockup.unstakedBalance);
+    return liquid.gt(0) ? liquid : Big(0);
+}
+
 function stakingMeta(token: TreasuryAsset | undefined): {
     symbol?: string;
     network?: string;
@@ -289,7 +298,7 @@ export function getProposalFundingAvailability(
 
     return {
         required: Big(requiredFunds.amount || "0"),
-        available: availableBalance(token.balance),
+        available: liquidBalance(token.balance),
         kind: "liquid",
         tokenId: requiredFunds.tokenId,
         tokenSymbol: token.symbol,

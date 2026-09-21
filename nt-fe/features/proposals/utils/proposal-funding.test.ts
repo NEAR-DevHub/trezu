@@ -145,16 +145,20 @@ function nearAsset(balance: TreasuryAsset["balance"]): TreasuryAsset {
     };
 }
 
-function lockupAsset(total: string, unvested: string): TreasuryAsset {
+function lockupAsset(
+    total: string,
+    unvested: string,
+    pool: { staked?: string; unstaked?: string } = {},
+): TreasuryAsset {
     return nearAsset({
         type: "Vested",
         lockup: {
             total: Big(total),
             totalAllocated: Big(total),
             unvested: Big(unvested),
-            staked: Big(0),
+            staked: Big(pool.staked ?? "0"),
             storageLocked: Big(0),
-            unstakedBalance: Big(0),
+            unstakedBalance: Big(pool.unstaked ?? "0"),
             canWithdraw: false,
         },
     });
@@ -214,6 +218,23 @@ describe("lockup transfer funding", () => {
 
         expect(funding!.available.toFixed()).toBe(amount);
         expect(isFundingInsufficient(funding!)).toBe(false);
+    });
+
+    it("excludes NEAR still held by the staking pool", () => {
+        const funding = getProposalFundingAvailability(
+            lockupTransferProposal(amount),
+            [
+                lockupAsset("752169000000000000000000000000", "0", {
+                    staked: "635843000000000000000000000000",
+                    unstaked: "100000000000000000000000000000",
+                }),
+            ],
+        );
+
+        expect(funding!.available.toFixed()).toBe(
+            "16326000000000000000000000000",
+        );
+        expect(isFundingInsufficient(funding!)).toBe(true);
     });
 
     it("is insufficient when the lockup is still unvested", () => {
