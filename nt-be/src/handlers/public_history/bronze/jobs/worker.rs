@@ -1194,7 +1194,10 @@ mod supervisor_tests {
                         .fetch_optional(&pool)
                         .await
                         .expect("worker registration query");
-                if storage_name.as_deref() == Some("TrezuSteadyPostgresStorage") {
+                if storage_name
+                    .as_deref()
+                    .is_some_and(|name| name.starts_with("TrezuSteadyPostgresStorage"))
+                {
                     break;
                 }
                 tokio::time::sleep(Duration::from_millis(10)).await;

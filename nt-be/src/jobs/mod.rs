@@ -427,21 +427,14 @@ macro_rules! register_cron_worker {
         match $monitor {
             Some(monitor) => {
                 let state = $state.clone();
-                let pool = $state.db_pool.clone();
-                let wake_hub = $wake_hub.clone();
+                let steady = SteadyPostgresStorage::new(&$state.db_pool, &spec, $wake_hub);
                 let handler_timeout = spec.handler_timeout;
                 let concurrency = spec.concurrency;
                 // `register` takes a factory `Fn(attempt) -> Worker`: the Monitor
-                // calls it to (re)build the worker. The storage is constructed
-                // inside the factory so every attempt starts with its own
-                // registration-owner state; a clone of the predecessor's storage
-                // would inherit its owner token and keep a dead worker's
-                // heartbeat fresh while the replacement is still unable to
-                // register.
+                // calls it to (re)build the worker, so a restart gets a fresh
+                // backend/connection.
                 Some(monitor.register(move |attempt| {
                     let restart_delay = platform::worker_restart_delay(attempt);
-                    let steady = SteadyPostgresStorage::new(&pool, &spec, &wake_hub)
-                        .with_startup_delay(restart_delay);
                     if !restart_delay.is_zero() {
                         tracing::warn!(
                             worker = $name,
@@ -451,7 +444,10 @@ macro_rules! register_cron_worker {
                         );
                     }
                     WorkerBuilder::new($name)
-                        .backend(CronStream::new(schedule.clone()).pipe_to(steady))
+                        .backend(
+                            CronStream::new(schedule.clone())
+                                .pipe_to(steady.clone().with_startup_delay(restart_delay)),
+                        )
                         .data(state.clone())
                         // Bounds a hung handler so it cannot hold this queue's
                         // sole concurrency slot forever.
@@ -529,9 +525,9 @@ pub(crate) fn restart_cron_worker(
     }
     let error = err.to_string();
     if error.contains("WORKER_ALREADY_EXISTS") {
-        // A predecessor still holds this stable worker id (deploy overlap, or a
-        // dead worker's registration lock not yet reclaimable). Expected to
-        // clear on its own; retry with backoff at WARN.
+        // Another process registered this stable worker id and its heartbeat
+        // is still fresh (leadership handover). Expected to clear on its own;
+        // retry with backoff at WARN.
         tracing::warn!(
             worker,
             error,
@@ -1424,7 +1420,7 @@ mod tests {
 
     /// End-to-end through the real apalis Monitor: a cron worker that keeps
     /// stopping for no reason must be rebuilt every time, re-register under
-    /// its stable id despite the dead incarnation's advisory lock, and keep
+    /// its stable id despite the dead incarnation's fresh heartbeat, and keep
     /// ticking. Shutdown must still end the Monitor promptly.
     #[sqlx::test(migrations = "./migrations")]
     async fn cron_worker_is_rebuilt_after_unexpected_stops(pool: sqlx::PgPool) {
@@ -1465,16 +1461,15 @@ mod tests {
         let monitor = super::job_monitor(shutdown.clone()).register({
             let runs = runs.clone();
             let rebuilds = rebuilds.clone();
-            let pool = pool.clone();
+            let steady = SteadyPostgresStorage::new(&pool, &spec, &JobWakeHub::default());
             move |attempt| {
                 rebuilds.fetch_max(attempt, Ordering::SeqCst);
                 let restart_delay = super::platform::worker_restart_delay(attempt);
-                // Fresh storage per attempt, exactly like `register_cron_worker!`.
-                let steady = SteadyPostgresStorage::new(&pool, &spec, &JobWakeHub::default())
-                    .with_keep_alive(Duration::from_secs(1))
-                    .with_startup_delay(restart_delay);
                 WorkerBuilder::new(QUEUE)
-                    .backend(CronStream::new(schedule.clone()).pipe_to(steady))
+                    .backend(
+                        CronStream::new(schedule.clone())
+                            .pipe_to(steady.clone().with_startup_delay(restart_delay)),
+                    )
                     .data(runs.clone())
                     .build(flaky_tick)
             }
