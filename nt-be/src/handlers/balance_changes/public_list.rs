@@ -48,6 +48,7 @@ struct PublicGoldRow {
     status: String,
     quote_metadata: Option<Value>,
     quote_deposit_address: Option<String>,
+    notes: Option<String>,
     created_at: DateTime<Utc>,
 }
 
@@ -80,6 +81,7 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for PublicGoldRow {
             status: row.try_get("status")?,
             quote_metadata: row.try_get("quote_metadata")?,
             quote_deposit_address: row.try_get("quote_deposit_address")?,
+            notes: row.try_get("notes")?,
             created_at: row.try_get("created_at")?,
         })
     }
@@ -440,6 +442,12 @@ pub async fn fetch_balance_change_legs(
                 WHERE proposal.dao_id = gold_treasury_ledger_events.dao_id
                   AND proposal.proposal_id = gold_treasury_ledger_events.proposal_id
             ) AS quote_deposit_address,
+            (
+                SELECT proposal.notes
+                FROM dao_proposals proposal
+                WHERE proposal.dao_id = gold_treasury_ledger_events.dao_id
+                  AND proposal.proposal_id = gold_treasury_ledger_events.proposal_id
+            ) AS notes,
             created_at
         FROM gold_treasury_ledger_events
         "#,
@@ -501,6 +509,7 @@ struct LegRow {
     created_at: DateTime<Utc>,
     proposal_id: Option<i64>,
     quote_deposit_address: Option<String>,
+    notes: Option<String>,
     has_app_fee: Option<bool>,
     usd_value: Option<BigDecimal>,
     action_kind: String,
@@ -573,6 +582,7 @@ impl LegRow {
                         created_at: row.created_at,
                         proposal_id: row.proposal_id,
                         quote_deposit_address: row.quote_deposit_address.clone(),
+                        notes: row.notes.clone(),
                         has_app_fee: Self::has_app_fee(&row),
                         usd_value: row.amount_in_usd.clone(),
                         action_kind: "PublicDeposit".to_string(),
@@ -633,6 +643,7 @@ impl LegRow {
                         created_at: row.created_at,
                         proposal_id: row.proposal_id,
                         quote_deposit_address: row.quote_deposit_address.clone(),
+                        notes: row.notes.clone(),
                         has_app_fee: Self::has_app_fee(&row),
                         usd_value: row.amount_out_usd.clone(),
                         action_kind,
@@ -695,6 +706,7 @@ impl LegRow {
             created_at: row.created_at,
             proposal_id: row.proposal_id,
             quote_deposit_address: row.quote_deposit_address.clone(),
+            notes: row.notes.clone(),
             has_app_fee: Self::has_app_fee(&row),
             usd_value: row
                 .amount_out_usd
@@ -749,6 +761,7 @@ impl LegRow {
             proposal_id: self.proposal_id,
             quote_deposit_address: self.quote_deposit_address.clone(),
             has_app_fee: self.has_app_fee,
+            notes: self.notes.clone(),
         }
     }
 
@@ -818,6 +831,7 @@ mod tests {
             status: "success".to_string(),
             quote_metadata: None,
             quote_deposit_address: None,
+            notes: None,
             created_at: ts(),
         }
     }
@@ -857,6 +871,20 @@ mod tests {
         assert_eq!(legs[0].balance_before, decimal("9"));
         assert_eq!(legs[0].balance_after, decimal("5"));
         assert_eq!(legs[0].counterparty.as_deref(), Some("bob.near"));
+    }
+
+    #[test]
+    fn sent_carries_proposal_notes_to_enriched() {
+        let mut row = base_row("sent");
+        row.token_out = Some("nep141:usdc.near".to_string());
+        row.amount_out = Some(decimal("4"));
+        row.notes = Some("payroll Q3".to_string());
+
+        let legs = LegRow::from_gold(row);
+        assert_eq!(legs[0].notes.as_deref(), Some("payroll Q3"));
+
+        let enriched = legs[0].to_enriched(&HashMap::new());
+        assert_eq!(enriched.notes.as_deref(), Some("payroll Q3"));
     }
 
     #[test]

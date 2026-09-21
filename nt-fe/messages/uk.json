@@ -423,6 +423,7 @@
             "transaction": "Транзакція",
             "from": "Від",
             "to": "До",
+            "notes": "Нотатки",
             "transactionHash": "Хеш транзакції",
             "hashTooltip": "Унікальний ідентифікатор (хеш) цієї транзакції",
             "processing": "Обробка"
@@ -471,7 +472,8 @@
             "bulkTitle": "Деталі масового переказу",
             "toRecipients": "До {count} отримувачів",
             "showRecipients": "Показати отримувачів",
-            "hideRecipients": "Сховати отримувачів"
+            "hideRecipients": "Сховати отримувачів",
+            "notes": "Нотатки"
         },
         "refresh": {
             "ariaLabel": "Оновити конфіденційну історію",

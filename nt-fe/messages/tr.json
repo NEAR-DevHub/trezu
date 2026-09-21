@@ -423,6 +423,7 @@
             "transaction": "İşlem",
             "from": "Kimden",
             "to": "Kime",
+            "notes": "Notlar",
             "transactionHash": "İşlem hash'i",
             "hashTooltip": "Bu işlemin benzersiz tanımlayıcısı (hash)",
             "processing": "İşleniyor"
@@ -471,7 +472,8 @@
             "bulkTitle": "Toplu Transfer Ayrıntıları",
             "toRecipients": "{count} alıcıya",
             "showRecipients": "Alıcıları göster",
-            "hideRecipients": "Alıcıları gizle"
+            "hideRecipients": "Alıcıları gizle",
+            "notes": "Notlar"
         },
         "refresh": {
             "ariaLabel": "Gizli geçmişi yenile",

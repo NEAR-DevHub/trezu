@@ -177,6 +177,13 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                         }
                     />
                 )}
+                {data.notes && (
+                    <DetailRow
+                        label={t("notes")}
+                        align="start"
+                        value={data.notes}
+                    />
+                )}
             </DetailsCard>
         </>
     );

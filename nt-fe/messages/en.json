@@ -421,6 +421,7 @@
             "transaction": "Transaction",
             "from": "From",
             "to": "To",
+            "notes": "Notes",
             "transactionHash": "Transaction hash",
             "hashTooltip": "Unique identifier (hash) of this transaction",
             "processing": "Processing"
@@ -469,7 +470,8 @@
             "bulkTitle": "Bulk transfer details",
             "toRecipients": "To {count} recipients",
             "showRecipients": "Show recipients",
-            "hideRecipients": "Hide recipients"
+            "hideRecipients": "Hide recipients",
+            "notes": "Notes"
         },
         "refresh": {
             "ariaLabel": "Refresh confidential history",

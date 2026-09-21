@@ -154,6 +154,10 @@ pub struct EnrichedBalanceChange {
     /// swaps, which always charged an app fee.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_app_fee: Option<bool>,
+    /// Proposer's comment from the create-request form (`memo`/`comment`),
+    /// stored as `notes` on the proposal description.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
 }
 
 /// The backing store selected for one balance-history request.
@@ -633,6 +637,7 @@ async fn fetch_legacy_balance_changes(
                 proposal_id: None,
                 quote_deposit_address: None,
                 has_app_fee: None,
+                notes: None,
             }
         })
         .collect();

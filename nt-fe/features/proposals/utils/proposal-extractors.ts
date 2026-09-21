@@ -46,6 +46,20 @@ import type {
 import { extractConfidentialBulkDestinationAssetId } from "./confidential-bulk-utils";
 import { getProposalUIKind } from "./proposal-utils";
 
+/**
+ * User-authored notes from a proposal description. Swap markdown always
+ * appends an execution-deadline reminder; drop that so request details
+ * show only a real comment.
+ */
+function userNotesFromDescription(description: string): string | undefined {
+    const notes = decodeProposalDescription("notes", description)?.trim();
+    if (!notes) return undefined;
+    if (notes.startsWith("**Must be executed before")) return undefined;
+    const reminderAt = notes.indexOf("\n\n**Must be executed before");
+    const user = reminderAt === -1 ? notes : notes.slice(0, reminderAt).trim();
+    return user || undefined;
+}
+
 function normalizeTimeEstimateSeconds(value?: string): string | undefined {
     if (!value) return undefined;
     const trimmed = value.trim();
@@ -618,6 +632,7 @@ export function extractExchangeRequestData(
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
         hasAppFee,
+        notes: userNotesFromDescription(proposal.description),
     };
 }
 
@@ -657,6 +672,7 @@ export function extractNearWrapSwapRequestData(
         destinationNetwork: NEAR_NETWORK_ID,
         sourceNetwork: NEAR_NETWORK_ID,
         hasAppFee: false,
+        notes: userNotesFromDescription(proposal.description),
     };
 }
 
@@ -975,6 +991,7 @@ export function extractConfidentialRequestData(
                     ).toString(),
                     quoteDeadline: quoteRequest.deadline,
                     hasAppFee: quoteHasAppFee(quoteRequest),
+                    notes: meta.notes,
                 } as SwapRequestData,
             };
             title = "Swap";

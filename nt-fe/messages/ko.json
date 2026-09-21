@@ -423,6 +423,7 @@
             "transaction": "트랜잭션",
             "from": "보낸 사람",
             "to": "받는 사람",
+            "notes": "메모",
             "transactionHash": "트랜잭션 해시",
             "hashTooltip": "이 트랜잭션의 고유 식별자(해시)",
             "processing": "처리 중"
@@ -471,7 +472,8 @@
             "bulkTitle": "대량 전송 세부 정보",
             "toRecipients": "{count}명의 수신자에게",
             "showRecipients": "수신자 표시",
-            "hideRecipients": "수신자 숨기기"
+            "hideRecipients": "수신자 숨기기",
+            "notes": "메모"
         },
         "refresh": {
             "ariaLabel": "기밀 기록 새로 고침",
