@@ -123,3 +123,106 @@ describe("getProposalFundingAvailability", () => {
         expect(isFundingInsufficient(funding!)).toBe(true);
     });
 });
+
+const LOCKUP_ID = "791396a1dacfb6e3ecb37f0648664d07c08980a9.lockup.near";
+const DAO_ID = "braindao-treasury.sputnik-dao.near";
+
+function nearAsset(balance: TreasuryAsset["balance"]): TreasuryAsset {
+    return {
+        id: "near",
+        residency: balance.type === "Vested" ? "Lockup" : "Near",
+        lockupAccountId: balance.type === "Vested" ? LOCKUP_ID : undefined,
+        network: "near",
+        chainName: "NEAR",
+        symbol: "NEAR",
+        balance,
+        decimals: 24,
+        price: 2,
+        name: "NEAR",
+        icon: "",
+        balanceUSD: 0,
+        weight: 0,
+    };
+}
+
+function lockupAsset(total: string, unvested: string): TreasuryAsset {
+    return nearAsset({
+        type: "Vested",
+        lockup: {
+            total: Big(total),
+            totalAllocated: Big(total),
+            unvested: Big(unvested),
+            staked: Big(0),
+            storageLocked: Big(0),
+            unstakedBalance: Big(0),
+            canWithdraw: false,
+        },
+    });
+}
+
+function lockupTransferProposal(amount: string): Proposal {
+    return {
+        id: 96,
+        proposer: "alice.near",
+        description: `Proposal from external dApp: transfer on ${LOCKUP_ID}`,
+        kind: {
+            FunctionCall: {
+                receiver_id: LOCKUP_ID,
+                actions: [
+                    {
+                        method_name: "transfer",
+                        args: btoa(
+                            JSON.stringify({ amount, receiver_id: DAO_ID }),
+                        ),
+                        deposit: "0",
+                        gas: "50000000000000",
+                    },
+                ],
+            },
+        },
+        status: "InProgress",
+        vote_counts: {},
+        votes: {},
+        submission_time: "1",
+        last_actions_log: null,
+    };
+}
+
+describe("lockup transfer funding", () => {
+    const amount = "16326002740000000000000000000";
+
+    it("resolves the token as native NEAR", () => {
+        const funding = getProposalFundingAvailability(
+            lockupTransferProposal(amount),
+            [lockupAsset(amount, "0")],
+        );
+
+        expect(funding!.tokenId).toBe("near");
+        expect(funding!.tokenSymbol).toBe("NEAR");
+    });
+
+    it("checks the lockup balance, not the DAO wallet", () => {
+        const tokens = [
+            nearAsset({ type: "Standard", total: Big("1"), locked: Big(0) }),
+            lockupAsset(amount, "0"),
+        ];
+
+        const funding = getProposalFundingAvailability(
+            lockupTransferProposal(amount),
+            tokens,
+        );
+
+        expect(funding!.available.toFixed()).toBe(amount);
+        expect(isFundingInsufficient(funding!)).toBe(false);
+    });
+
+    it("is insufficient when the lockup is still unvested", () => {
+        const funding = getProposalFundingAvailability(
+            lockupTransferProposal(amount),
+            [lockupAsset(amount, amount)],
+        );
+
+        expect(funding!.available.toFixed()).toBe("0");
+        expect(isFundingInsufficient(funding!)).toBe(true);
+    });
+});
