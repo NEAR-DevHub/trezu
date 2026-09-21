@@ -79,6 +79,51 @@ export async function createAccount(
     ]);
 }
 
+/**
+ * Poll until `accountId`'s access key is visible at "final" finality.
+ *
+ * `broadcast_tx_commit` (used by `createAccount`/`signAndSend`) only waits for
+ * the transaction to execute, not for finality. The backend's NEP-641 login
+ * resolver checks access keys against the finalized block, so logging in
+ * immediately after creating a fresh account races the AddKey transaction's
+ * finalization and fails with "access key without FullAccess permission".
+ */
+export async function waitForFinalAccessKey(
+    accountId: string,
+    publicKey: string = GENESIS_KEY_PAIR.getPublicKey().toString(),
+    timeoutMs: number = 15_000,
+): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+        const resp = await fetch(SANDBOX_RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "query",
+                params: {
+                    request_type: "view_access_key",
+                    finality: "final",
+                    account_id: accountId,
+                    public_key: publicKey,
+                },
+            }),
+        });
+        const data = (await resp.json()) as {
+            result?: { nonce: number };
+            error?: unknown;
+        };
+        if (data.result?.nonce !== undefined) {
+            return;
+        }
+        await new Promise((r) => setTimeout(r, 300));
+    }
+    throw new Error(
+        `Timed out waiting for final access key ${publicKey} on ${accountId}`,
+    );
+}
+
 /** Transfer NEAR from one account to another */
 export async function transferNear(
     senderId: string,
