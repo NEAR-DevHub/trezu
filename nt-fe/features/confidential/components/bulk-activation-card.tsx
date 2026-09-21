@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { wasShownToUser } from "@/lib/app-error";
 import { hasPermission } from "@/lib/config-utils";
 import { useNear } from "@/stores/near-store";
 import { useBulkActivation } from "../hooks/use-bulk-activation";
@@ -131,9 +132,7 @@ export function BulkActivationCard() {
             refetch();
         } catch (error) {
             console.error("Bulk activation failed", error);
-            toast.error(
-                error instanceof Error ? error.message : t("activationFailed"),
-            );
+            if (!wasShownToUser(error)) toast.error(t("activationFailed"));
             isSubmittingRef.current = false;
             setIsSubmitting(false);
         }

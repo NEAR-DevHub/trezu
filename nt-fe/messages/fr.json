@@ -2445,8 +2445,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Veuillez connecter le portefeuille et accepter les conditions pour continuer.",
         "transactionNotApproved": "La transaction n'a pas été approuvée dans votre portefeuille.",
-        "failedSubmitVote": "Échec de la soumission du vote",
-        "failedSubmitVotes": "Échec de la soumission des votes",
         "viewRequest": "Voir la demande",
         "proposalRemoved": "Votre proposition a été supprimée",
         "voteSubmitted": "Votre vote a été soumis",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "Trop de décimales pour ce jeton",
             "exceedsBalance": "Le montant dépasse le solde public",
             "failed": "Impossible de préparer la demande de déplacement. Veuillez réessayer."
+        }
+    },
+    "errors": {
+        "errorId": "ID d'erreur : TRZ-{id}",
+        "viewRequests": "Voir les demandes",
+        "viewOnExplorer": "Voir dans l'explorateur",
+        "feeCovered": "Les frais de réseau ont été pris en charge par Trezu.",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu est temporairement indisponible",
+                "body": "Nous n'arrivons pas à joindre nos serveurs pour le moment. Vos fonds sont en sécurité : ils restent dans votre trésorerie on-chain, pas chez Trezu. Réessayez dans quelques minutes."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu ne peut pas prendre en charge les frais de cette action",
+                "body": "Cette trésorerie a utilisé toutes les transactions sponsorisées de son forfait, rien n'a donc été envoyé. Passez à un forfait supérieur pour continuer."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Vous ne pouvez pas effectuer cette action",
+                "body": "Votre rôle dans cette trésorerie ne le permet pas. Rien n'a été envoyé."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Cette demande n'a pas pu être soumise",
+                "body": "Un élément de la demande n'a pas été accepté, rien n'a donc été envoyé. Actualisez la page et réessayez. Si cela se reproduit, contactez le support avec l'ID d'erreur ci-dessous."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "La transaction n'a pas été envoyée",
+                "body": "Le réseau NEAR ne répond pas pour le moment. Aucun fonds n'a été déplacé. Réessayez dans une minute."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Nous ne pouvons pas encore confirmer votre transaction",
+                "body": "Elle peut encore aboutir. Vérifiez vos demandes avant de réessayer afin de ne pas l'envoyer deux fois."
+            },
+            "TX_FAILED": {
+                "title": "La transaction a échoué"
+            },
+            "WALLET_REJECTED": {
+                "title": "La transaction n'a pas été approuvée",
+                "body": "Vous avez refusé la demande dans votre portefeuille. Rien n'a été envoyé."
+            },
+            "WALLET_FAILED": {
+                "title": "Votre portefeuille n'a pas pu signer cette transaction",
+                "body": "Rien n'a été envoyé. Réessayez et, si l'échec persiste, reconnectez ou mettez à jour votre portefeuille."
+            },
+            "UNEXPECTED": {
+                "title": "Un problème est survenu de notre côté",
+                "body": "Nous avons été avertis et nous nous en occupons. Si cela se reproduit, contactez le support avec l'ID d'erreur ci-dessous."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "La trésorerie n'a pas un solde suffisant pour ce paiement.",
+            "REQUEST_EXPIRED": "Cette demande a expiré avant d'être approuvée.",
+            "REQUEST_NOT_ACTIVE": "Cette demande n'est plus ouverte au vote.",
+            "ALREADY_VOTED": "Vous avez déjà voté sur cette demande.",
+            "RECIPIENT_NOT_REGISTERED": "Le compte du destinataire n'est pas encore configuré pour recevoir ce jeton.",
+            "INSUFFICIENT_PERMISSIONS": "Votre rôle dans cette trésorerie ne permet pas d'effectuer cette action.",
+            "OUT_OF_GAS": "La transaction a manqué de gas avant de pouvoir se terminer.",
+            "UNKNOWN": "La blockchain a rejeté cette transaction. Consultez les détails dans l'explorateur."
         }
     }
 }

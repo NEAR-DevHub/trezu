@@ -12,10 +12,12 @@ import posthog from "posthog-js";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
-import { getNearStoreMessages } from "@/i18n/store-messages";
+import { getAppErrorCopy, getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
+import { markShownToUser, toAppError } from "@/lib/app-error";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -25,6 +27,7 @@ import {
     getAuthMe,
 } from "@/lib/auth-api";
 import Big from "@/lib/big";
+import { getExplorerTxUrl } from "@/lib/blockchain-utils";
 import {
     getKindFromProposal,
     type ProposalPermissionKind,
@@ -268,6 +271,43 @@ const isFullyAuthenticated = (state: NearStore): boolean => {
         !!state.walletAccountId
     );
 };
+
+/**
+ * Tell the user why their action failed. Declining in the wallet keeps its
+ * own message; every other failure gets copy chosen by the backend's error
+ * code, plus the one action that helps (explorer link, or the requests list
+ * when the outcome is still unknown).
+ */
+function showActionError(error: unknown, treasuryId: string): void {
+    const appError = toAppError(error);
+    markShownToUser(error);
+    if (appError.code === "WALLET_REJECTED") {
+        toast.error(getNearStoreMessages().transactionNotApproved);
+        return;
+    }
+    trackEvent("transaction_failed", {
+        code: appError.code,
+        funds_state: appError.fundsState,
+        reason: appError.reason,
+    });
+
+    const copy = getAppErrorCopy(appError);
+    const actionUrl =
+        appError.code === "TX_FAILED" && appError.txHash
+            ? getExplorerTxUrl(NEAR_NETWORK_ID, appError.txHash)
+            : `/${treasuryId}/requests?tab=InProgress`;
+    toast.error(copy.title, {
+        description: [copy.body, copy.errorId].filter(Boolean).join(" "),
+        duration: 15000,
+        action:
+            copy.actionLabel && actionUrl
+                ? {
+                      label: copy.actionLabel,
+                      onClick: () => window.open(actionUrl),
+                  }
+                : undefined,
+    });
+}
 
 export const useNearStore = create<NearStore>((set, get) => ({
     // Wallet state
@@ -655,11 +695,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 i === 0 ? proposalType : undefined,
                 i === 0 ? addressBookPayment : undefined,
             );
-            if (!relayResult.success) {
-                throw new Error(
-                    relayResult.error || "Failed to relay delegate action",
-                );
-            }
             if (relayResult.proposalIds) {
                 proposalIds.push(...relayResult.proposalIds);
             }
@@ -738,7 +773,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             } else {
                 console.error("Failed to create proposal:", error);
             }
-            toast.error(getNearStoreMessages().transactionNotApproved);
+            showActionError(error, params.treasuryId);
             throw error;
         }
     },
@@ -819,11 +854,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             } else {
                 console.error("Failed to vote proposals:", error);
             }
-            toast.error(
-                votes.length > 1
-                    ? getNearStoreMessages().failedSubmitVotes
-                    : getNearStoreMessages().failedSubmitVote,
-            );
+            showActionError(error, treasuryId);
             throw error;
         }
     },

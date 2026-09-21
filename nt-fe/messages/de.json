@@ -2445,8 +2445,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Bitte verbinden Sie Ihre Wallet und akzeptieren Sie die Bedingungen, um fortzufahren.",
         "transactionNotApproved": "Die Transaktion wurde in Ihrer Wallet nicht genehmigt.",
-        "failedSubmitVote": "Übermittlung der Stimme fehlgeschlagen",
-        "failedSubmitVotes": "Übermittlung der Stimmen fehlgeschlagen",
         "viewRequest": "Anfrage anzeigen",
         "proposalRemoved": "Ihr Vorschlag wurde entfernt",
         "voteSubmitted": "Ihre Stimme wurde übermittelt",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "Zu viele Dezimalstellen für diesen Token",
             "exceedsBalance": "Betrag übersteigt das öffentliche Guthaben",
             "failed": "Verschiebungsanfrage konnte nicht vorbereitet werden. Bitte erneut versuchen."
+        }
+    },
+    "errors": {
+        "errorId": "Fehler-ID: TRZ-{id}",
+        "viewRequests": "Anfragen ansehen",
+        "viewOnExplorer": "Im Explorer ansehen",
+        "feeCovered": "Die Netzwerkgebühr wurde von Trezu übernommen.",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu ist vorübergehend nicht verfügbar",
+                "body": "Wir können unsere Server gerade nicht erreichen. Ihre Gelder sind sicher: Sie bleiben on-chain in Ihrer Treasury, nicht bei Trezu. Versuchen Sie es in ein paar Minuten erneut."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu kann die Gebühr für diese Aktion nicht übernehmen",
+                "body": "Diese Treasury hat alle gesponserten Transaktionen ihres Plans aufgebraucht, daher wurde nichts gesendet. Führen Sie ein Upgrade des Plans durch, um fortzufahren."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Sie können diese Aktion nicht ausführen",
+                "body": "Ihre Rolle in dieser Treasury erlaubt das nicht. Es wurde nichts gesendet."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Diese Anfrage konnte nicht übermittelt werden",
+                "body": "Etwas an der Anfrage wurde nicht akzeptiert, daher wurde nichts gesendet. Laden Sie die Seite neu und versuchen Sie es erneut. Wenn das weiterhin passiert, wenden Sie sich mit der untenstehenden Fehler-ID an den Support."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "Transaktion wurde nicht gesendet",
+                "body": "Das NEAR-Netzwerk antwortet gerade nicht. Es wurden keine Gelder bewegt. Versuchen Sie es in einer Minute erneut."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Wir können Ihre Transaktion noch nicht bestätigen",
+                "body": "Sie kann noch durchgehen. Prüfen Sie Ihre Anfragen, bevor Sie es erneut versuchen, damit Sie sie nicht doppelt senden."
+            },
+            "TX_FAILED": {
+                "title": "Transaktion fehlgeschlagen"
+            },
+            "WALLET_REJECTED": {
+                "title": "Transaktion wurde nicht genehmigt",
+                "body": "Sie haben die Anfrage in Ihrer Wallet abgelehnt. Es wurde nichts gesendet."
+            },
+            "WALLET_FAILED": {
+                "title": "Ihre Wallet konnte diese Transaktion nicht signieren",
+                "body": "Es wurde nichts gesendet. Versuchen Sie es erneut. Wenn es weiterhin fehlschlägt, verbinden Sie Ihre Wallet neu oder aktualisieren Sie sie."
+            },
+            "UNEXPECTED": {
+                "title": "Auf unserer Seite ist etwas schiefgelaufen",
+                "body": "Wir wurden benachrichtigt und kümmern uns darum. Wenn das weiterhin passiert, wenden Sie sich mit der untenstehenden Fehler-ID an den Support."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "Die Treasury hat nicht genug Guthaben für diese Zahlung.",
+            "REQUEST_EXPIRED": "Diese Anfrage ist abgelaufen, bevor sie genehmigt wurde.",
+            "REQUEST_NOT_ACTIVE": "Diese Anfrage ist nicht mehr zur Abstimmung offen.",
+            "ALREADY_VOTED": "Sie haben bereits über diese Anfrage abgestimmt.",
+            "RECIPIENT_NOT_REGISTERED": "Das Konto des Empfängers ist noch nicht für den Empfang dieses Tokens eingerichtet.",
+            "INSUFFICIENT_PERMISSIONS": "Ihre Rolle in dieser Treasury kann diese Aktion nicht ausführen.",
+            "OUT_OF_GAS": "Der Transaktion ging das Gas aus, bevor sie abgeschlossen werden konnte.",
+            "UNKNOWN": "Die Blockchain hat diese Transaktion abgelehnt. Details finden Sie im Explorer."
         }
     }
 }

@@ -2445,8 +2445,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Conecta la cartera y acepta los términos para continuar.",
         "transactionNotApproved": "La transacción no fue aprobada en tu cartera.",
-        "failedSubmitVote": "No se pudo enviar el voto",
-        "failedSubmitVotes": "No se pudieron enviar los votos",
         "viewRequest": "Ver solicitud",
         "proposalRemoved": "Tu propuesta ha sido eliminada",
         "voteSubmitted": "Tu voto ha sido enviado",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "Demasiados decimales para este token",
             "exceedsBalance": "El importe supera el saldo público",
             "failed": "No se pudo preparar la solicitud de traslado. Inténtalo de nuevo."
+        }
+    },
+    "errors": {
+        "errorId": "ID de error: TRZ-{id}",
+        "viewRequests": "Ver solicitudes",
+        "viewOnExplorer": "Ver en el explorador",
+        "feeCovered": "Trezu cubrió la comisión de red.",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu no está disponible temporalmente",
+                "body": "No podemos conectar con nuestros servidores en este momento. Tus fondos están seguros: permanecen en tu tesorería on-chain, no en Trezu. Inténtalo de nuevo en unos minutos."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu no puede cubrir la comisión de esta acción",
+                "body": "Esta tesorería ha agotado las transacciones patrocinadas de su plan, por lo que no se envió nada. Mejora el plan para continuar."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "No puedes realizar esta acción",
+                "body": "Tu rol en esta tesorería no lo permite. No se envió nada."
+            },
+            "REQUEST_REJECTED": {
+                "title": "No se pudo enviar esta solicitud",
+                "body": "Algo en la solicitud no fue aceptado, por lo que no se envió nada. Actualiza la página e inténtalo de nuevo. Si sigue ocurriendo, contacta con soporte con el ID de error que aparece abajo."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "La transacción no se envió",
+                "body": "La red NEAR no responde en este momento. No se movieron fondos. Inténtalo de nuevo en un minuto."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Aún no podemos confirmar tu transacción",
+                "body": "Es posible que todavía se procese. Revisa tus solicitudes antes de volver a intentarlo para no enviarla dos veces."
+            },
+            "TX_FAILED": {
+                "title": "La transacción falló"
+            },
+            "WALLET_REJECTED": {
+                "title": "La transacción no fue aprobada",
+                "body": "Rechazaste la solicitud en tu billetera. No se envió nada."
+            },
+            "WALLET_FAILED": {
+                "title": "Tu billetera no pudo firmar esta transacción",
+                "body": "No se envió nada. Inténtalo de nuevo y, si sigue fallando, vuelve a conectar o actualiza tu billetera."
+            },
+            "UNEXPECTED": {
+                "title": "Algo salió mal de nuestro lado",
+                "body": "Hemos sido notificados y lo estamos revisando. Si sigue ocurriendo, contacta con soporte con el ID de error que aparece abajo."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "La tesorería no tiene saldo suficiente para este pago.",
+            "REQUEST_EXPIRED": "Esta solicitud expiró antes de ser aprobada.",
+            "REQUEST_NOT_ACTIVE": "Esta solicitud ya no está abierta a votación.",
+            "ALREADY_VOTED": "Ya votaste en esta solicitud.",
+            "RECIPIENT_NOT_REGISTERED": "La cuenta del destinatario aún no está configurada para recibir este token.",
+            "INSUFFICIENT_PERMISSIONS": "Tu rol en esta tesorería no puede realizar esta acción.",
+            "OUT_OF_GAS": "La transacción se quedó sin gas antes de terminar.",
+            "UNKNOWN": "La blockchain rechazó esta transacción. Consulta los detalles en el explorador."
         }
     }
 }

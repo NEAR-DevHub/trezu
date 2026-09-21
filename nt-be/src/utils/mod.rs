@@ -1,4 +1,5 @@
 pub mod admin_auth;
+pub mod api_error;
 pub mod base64json;
 pub mod cache;
 pub mod contract_read_error;

@@ -2428,8 +2428,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Vui lòng kết nối ví và chấp nhận các điều khoản để tiếp tục.",
         "transactionNotApproved": "Giao dịch đã không được phê duyệt trong ví của bạn.",
-        "failedSubmitVote": "Không thể gửi phiếu",
-        "failedSubmitVotes": "Không thể gửi các phiếu",
         "viewRequest": "Xem yêu cầu",
         "proposalRemoved": "Đề xuất của bạn đã được xóa",
         "voteSubmitted": "Phiếu của bạn đã được gửi",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "Quá nhiều chữ số thập phân cho token này",
             "exceedsBalance": "Số tiền vượt quá số dư công khai",
             "failed": "Không thể chuẩn bị yêu cầu chuyển. Vui lòng thử lại."
+        }
+    },
+    "errors": {
+        "errorId": "Mã lỗi: TRZ-{id}",
+        "viewRequests": "Xem yêu cầu",
+        "viewOnExplorer": "Xem trên explorer",
+        "feeCovered": "Phí mạng đã được Trezu chi trả.",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu tạm thời không khả dụng",
+                "body": "Hiện chúng tôi không thể kết nối tới máy chủ. Tiền của bạn vẫn an toàn: chúng nằm trong kho quỹ on-chain của bạn, không phải ở Trezu. Hãy thử lại sau vài phút."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu không thể chi trả phí cho thao tác này",
+                "body": "Kho quỹ này đã dùng hết số giao dịch được tài trợ trong gói, nên chưa có gì được gửi đi. Hãy nâng cấp gói để tiếp tục."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Bạn không thể thực hiện thao tác này",
+                "body": "Vai trò của bạn trong kho quỹ này không cho phép. Chưa có gì được gửi đi."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Không thể gửi yêu cầu này",
+                "body": "Có nội dung trong yêu cầu không được chấp nhận, nên chưa có gì được gửi đi. Hãy tải lại trang và thử lại. Nếu vẫn tiếp diễn, hãy liên hệ hỗ trợ kèm mã lỗi bên dưới."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "Giao dịch chưa được gửi",
+                "body": "Mạng NEAR hiện không phản hồi. Không có khoản tiền nào bị di chuyển. Hãy thử lại sau một phút."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Chúng tôi chưa thể xác nhận giao dịch của bạn",
+                "body": "Giao dịch vẫn có thể được thực hiện. Hãy kiểm tra các yêu cầu của bạn trước khi thử lại để không gửi hai lần."
+            },
+            "TX_FAILED": {
+                "title": "Giao dịch thất bại"
+            },
+            "WALLET_REJECTED": {
+                "title": "Giao dịch chưa được chấp thuận",
+                "body": "Bạn đã từ chối yêu cầu trong ví. Chưa có gì được gửi đi."
+            },
+            "WALLET_FAILED": {
+                "title": "Ví của bạn không thể ký giao dịch này",
+                "body": "Chưa có gì được gửi đi. Hãy thử lại, và nếu vẫn lỗi, hãy kết nối lại hoặc cập nhật ví."
+            },
+            "UNEXPECTED": {
+                "title": "Đã xảy ra sự cố ở phía chúng tôi",
+                "body": "Chúng tôi đã nhận được thông báo và đang xử lý. Nếu vẫn tiếp diễn, hãy liên hệ hỗ trợ kèm mã lỗi bên dưới."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "Kho quỹ không đủ số dư cho khoản thanh toán này.",
+            "REQUEST_EXPIRED": "Yêu cầu này đã hết hạn trước khi được chấp thuận.",
+            "REQUEST_NOT_ACTIVE": "Yêu cầu này không còn mở để bỏ phiếu.",
+            "ALREADY_VOTED": "Bạn đã bỏ phiếu cho yêu cầu này rồi.",
+            "RECIPIENT_NOT_REGISTERED": "Tài khoản người nhận chưa được thiết lập để nhận token này.",
+            "INSUFFICIENT_PERMISSIONS": "Vai trò của bạn trong kho quỹ này không thể thực hiện thao tác này.",
+            "OUT_OF_GAS": "Giao dịch đã hết gas trước khi hoàn tất.",
+            "UNKNOWN": "Blockchain đã từ chối giao dịch này. Xem chi tiết trên explorer."
         }
     }
 }

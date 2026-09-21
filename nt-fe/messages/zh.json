@@ -2428,8 +2428,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "请连接钱包并接受条款以继续。",
         "transactionNotApproved": "交易未在您的钱包中获批。",
-        "failedSubmitVote": "提交投票失败",
-        "failedSubmitVotes": "提交投票失败",
         "viewRequest": "查看请求",
         "proposalRemoved": "您的提案已被移除",
         "voteSubmitted": "您的投票已提交",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "该代币的小数位数过多",
             "exceedsBalance": "金额超过公开余额",
             "failed": "无法准备转移请求。请重试。"
+        }
+    },
+    "errors": {
+        "errorId": "错误 ID：TRZ-{id}",
+        "viewRequests": "查看请求",
+        "viewOnExplorer": "在浏览器中查看",
+        "feeCovered": "网络费用已由 Trezu 承担。",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu 暂时不可用",
+                "body": "我们目前无法连接到服务器。您的资金是安全的：它们保留在您链上的金库中，而不是在 Trezu。请几分钟后重试。"
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu 无法为此操作承担费用",
+                "body": "该金库已用完套餐中的全部赞助交易，因此没有发送任何内容。请升级套餐以继续。"
+            },
+            "NOT_AUTHORIZED": {
+                "title": "您无法执行此操作",
+                "body": "您在该金库中的角色不允许此操作。没有发送任何内容。"
+            },
+            "REQUEST_REJECTED": {
+                "title": "无法提交此请求",
+                "body": "请求中的某些内容未被接受，因此没有发送任何内容。请刷新页面后重试。如果问题持续出现，请提供下方的错误 ID 联系支持团队。"
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "交易未发送",
+                "body": "NEAR 网络目前没有响应。没有资金被转移。请一分钟后重试。"
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "我们暂时无法确认您的交易",
+                "body": "交易仍有可能成功。重试之前请先查看您的请求，以免重复发送。"
+            },
+            "TX_FAILED": {
+                "title": "交易失败"
+            },
+            "WALLET_REJECTED": {
+                "title": "交易未获批准",
+                "body": "您在钱包中拒绝了该请求。没有发送任何内容。"
+            },
+            "WALLET_FAILED": {
+                "title": "您的钱包无法签署此交易",
+                "body": "没有发送任何内容。请重试;如果仍然失败，请重新连接或更新您的钱包。"
+            },
+            "UNEXPECTED": {
+                "title": "我们这边出了点问题",
+                "body": "我们已收到通知并正在处理。如果问题持续出现，请提供下方的错误 ID 联系支持团队。"
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "金库余额不足，无法完成此笔付款。",
+            "REQUEST_EXPIRED": "该请求在获批前已过期。",
+            "REQUEST_NOT_ACTIVE": "该请求已不再开放投票。",
+            "ALREADY_VOTED": "您已对该请求投过票。",
+            "RECIPIENT_NOT_REGISTERED": "收款方账户尚未设置为可接收此代币。",
+            "INSUFFICIENT_PERMISSIONS": "您在该金库中的角色无法执行此操作。",
+            "OUT_OF_GAS": "交易在完成前耗尽了 gas。",
+            "UNKNOWN": "区块链拒绝了此交易。请在浏览器中查看详情。"
         }
     }
 }

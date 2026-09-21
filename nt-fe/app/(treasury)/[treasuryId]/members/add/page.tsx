@@ -29,6 +29,7 @@ import { MemberReviewStep } from "../components/member-review-step";
 import { useDisabledMemberRoles } from "../hooks/use-disabled-member-roles";
 import { useMemberPolicyGate } from "../hooks/use-member-policy-gate";
 import { applyMemberRolesToPolicy } from "../utils/policy-helpers";
+import { wasShownToUser } from "@/lib/app-error";
 
 export default function AddMemberPage() {
     const t = useTranslations("pages.members");
@@ -310,7 +311,9 @@ export default function AddMemberPage() {
             router.push(`/${treasuryId}/members`);
         } catch (error) {
             reportError(error, "Failed to add members");
-            toast.error(tMembers("policy.createProposalFailed"));
+            if (!wasShownToUser(error)) {
+                toast.error(tMembers("policy.createProposalFailed"));
+            }
         }
     }, [
         policy,

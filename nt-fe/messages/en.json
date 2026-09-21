@@ -2445,8 +2445,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Please connect wallet and accept terms to continue.",
         "transactionNotApproved": "Transaction wasn't approved in your wallet.",
-        "failedSubmitVote": "Failed to submit vote",
-        "failedSubmitVotes": "Failed to submit votes",
         "viewRequest": "View Request",
         "proposalRemoved": "Your proposal has been removed",
         "voteSubmitted": "Your vote has been submitted",
@@ -2962,6 +2960,63 @@
             "tooManyDecimals": "Too many decimal places for this token",
             "exceedsBalance": "Amount exceeds the public balance",
             "failed": "Could not prepare the move request. Please try again."
+        }
+    },
+    "errors": {
+        "errorId": "Error ID: TRZ-{id}",
+        "viewRequests": "View requests",
+        "viewOnExplorer": "View on explorer",
+        "feeCovered": "The network fee was covered by Trezu.",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu is temporarily unavailable",
+                "body": "We can't reach our servers right now. Your funds are safe: they stay in your treasury on-chain, not with Trezu. Try again in a few minutes."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu can't cover the fee for this action",
+                "body": "This treasury has used all the sponsored transactions on its plan, so nothing was sent. Upgrade the plan to continue."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "You can't perform this action",
+                "body": "Your role in this treasury doesn't allow it. Nothing was sent."
+            },
+            "REQUEST_REJECTED": {
+                "title": "This request couldn't be submitted",
+                "body": "Something in the request wasn't accepted, so nothing was sent. Refresh the page and try again. If it keeps happening, contact support with the Error ID below."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "Transaction wasn't sent",
+                "body": "The NEAR network isn't responding right now. No funds were moved. Try again in a minute."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "We can't confirm your transaction yet",
+                "body": "It may still go through. Check your requests before trying again so you don't send it twice."
+            },
+            "TX_FAILED": {
+                "title": "Transaction failed"
+            },
+            "WALLET_REJECTED": {
+                "title": "Transaction wasn't approved",
+                "body": "You declined the request in your wallet. Nothing was sent."
+            },
+            "WALLET_FAILED": {
+                "title": "Your wallet couldn't sign this transaction",
+                "body": "Nothing was sent. Try again, and if it keeps failing, reconnect or update your wallet."
+            },
+            "UNEXPECTED": {
+                "title": "Something went wrong on our side",
+                "body": "We've been notified and are looking into it. If this keeps happening, contact support with the Error ID below."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "The treasury doesn't have enough balance for this payment.",
+            "REQUEST_EXPIRED": "This request expired before it was approved.",
+            "REQUEST_NOT_ACTIVE": "This request is no longer open for voting.",
+            "ALREADY_VOTED": "You've already voted on this request.",
+            "RECIPIENT_NOT_REGISTERED": "The recipient's account isn't set up to receive this token yet.",
+            "INSUFFICIENT_PERMISSIONS": "Your role in this treasury can't perform this action.",
+            "OUT_OF_GAS": "The transaction ran out of gas before it could finish.",
+            "UNKNOWN": "The blockchain rejected this transaction. See details on the explorer."
         }
     }
 }
