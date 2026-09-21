@@ -197,7 +197,7 @@ function isIntentWithdrawProposal(proposal: Proposal): boolean {
     return false;
 }
 
-function isLookupTransferProposal(proposal: Proposal): boolean {
+export function isLookupTransferProposal(proposal: Proposal): boolean {
     if (!("FunctionCall" in proposal.kind)) return false;
     const functionCall = proposal.kind.FunctionCall;
     return (
