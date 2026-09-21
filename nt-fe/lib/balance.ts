@@ -60,6 +60,14 @@ export type BalanceRaw =
     | { Staked: StakingBalanceRaw }
     | { Vested: LockupBalanceRaw };
 
+/** True when a staking pool is holding any non-zero principal — either
+ *  staked or just deposited awaiting action (e.g. pending withdrawal).
+ *  Centralizes the dual-balance check so the dashboard visibility, mobile
+ *  modal, and assets-table drill-down all agree on what "earning" means. */
+export function hasPoolFunds(pool: StakingPoolAccountInfo): boolean {
+    return pool.stakedBalance.gt(0) || pool.unstakedBalance.gt(0);
+}
+
 export function transformBalance(raw: BalanceRaw): {
     balance: Balance;
     total: Big;
