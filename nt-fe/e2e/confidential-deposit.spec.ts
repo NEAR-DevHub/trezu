@@ -19,11 +19,7 @@ import {
     registerMockWalletRoutes,
     seedMockWalletAccount,
 } from "./helpers/mock-wallet";
-import {
-    createAccount,
-    transferNear,
-    waitForFinalAccessKey,
-} from "./helpers/sandbox-rpc";
+import { createAccount, transferNear } from "./helpers/sandbox-rpc";
 
 const DAO_ID = "confdeposit.sputnik-dao.near";
 const ACCOUNT_ID = "confdeposit.near";
@@ -98,11 +94,6 @@ async function setupSandbox(): Promise<string> {
     } catch {
         // May already exist
     }
-
-    // ensureTreasury logs in as ACCOUNT_ID right below; broadcast_tx_commit
-    // above only guarantees the AddKey tx executed, not that it's final, and
-    // the backend's login resolver checks access keys at the final block.
-    await waitForFinalAccessKey(ACCOUNT_ID);
 
     await ensureTreasury({
         name: "Confidential Deposit Test",
