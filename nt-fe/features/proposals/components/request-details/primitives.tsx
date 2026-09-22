@@ -77,7 +77,12 @@ export function DetailRow({
                     </Tooltip>
                 )}
             </div>
-            <div className="min-w-0 text-right text-sm font-semibold text-foreground">
+            <div
+                className={cn(
+                    "min-w-0 text-right text-sm font-semibold text-foreground",
+                    align === "start" && "whitespace-pre-wrap break-all",
+                )}
+            >
                 {value}
             </div>
         </div>

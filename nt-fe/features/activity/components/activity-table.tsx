@@ -168,11 +168,9 @@ function NotesCell({ notes }: { notes?: string | null }) {
     if (!trimmed) return null;
 
     return (
-        <Tooltip content={trimmed}>
-            <span className="block truncate text-sm font-medium text-general-foreground">
-                {trimmed}
-            </span>
-        </Tooltip>
+        <span className="block min-w-0 whitespace-pre-wrap break-all text-sm font-medium text-general-foreground">
+            {trimmed}
+        </span>
     );
 }
 
@@ -528,10 +526,14 @@ export function ActivityTable({
                                             )}
                                         </TableCell>
                                         <TableCell
-                                            className={bodyCellClassName(
-                                                4,
-                                                isFirstRow,
-                                                isLastRow,
+                                            className={cn(
+                                                bodyCellClassName(
+                                                    4,
+                                                    isFirstRow,
+                                                    isLastRow,
+                                                ),
+                                                NOTES_COLUMN_CLASS,
+                                                "whitespace-normal",
                                             )}
                                         >
                                             <NotesCell notes={activity.notes} />
