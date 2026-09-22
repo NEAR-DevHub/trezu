@@ -107,9 +107,10 @@ function extractFTTransferData(
                 (a) => a.method_name === "near_deposit",
             );
             return {
-                tokenId: hasNearDeposit
-                    ? NEAR_NETWORK_ID
-                    : functionCall.receiver_id,
+                tokenId:
+                    hasNearDeposit || action.method_name === "transfer"
+                        ? NEAR_NETWORK_ID
+                        : functionCall.receiver_id,
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
             };
