@@ -25,6 +25,17 @@ interface ExchangeSettingsModalProps {
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0];
 
+function sanitizeSlippageInput(value: string): string {
+    const digitsAndDots = value.replace(/[^0-9.]/g, "");
+    const firstDotIndex = digitsAndDots.indexOf(".");
+    const singleDot =
+        firstDotIndex === -1
+            ? digitsAndDots
+            : digitsAndDots.slice(0, firstDotIndex + 1) +
+              digitsAndDots.slice(firstDotIndex + 1).replace(/\./g, "");
+    return singleDot.replace(/^0+(?=\d)/, "");
+}
+
 function buildSettingsFormSchema(messages: { slippageRange: string }) {
     return z.object({
         slippageTolerance: z
@@ -65,6 +76,12 @@ export function ExchangeSettingsModal({
     const isCustom = form.watch("isCustom");
     const currentSlippage = form.watch("slippageTolerance");
 
+    const [customInputText, setCustomInputText] = useState<string>(() =>
+        !SLIPPAGE_PRESETS.includes(slippageTolerance) && slippageTolerance
+            ? String(slippageTolerance)
+            : "",
+    );
+
     const handleSlippagePreset = (value: number) => {
         form.setValue("slippageTolerance", value);
         form.setValue("isCustom", false);
@@ -73,6 +90,11 @@ export function ExchangeSettingsModal({
 
     const handleCustomClick = () => {
         form.setValue("isCustom", true);
+        setCustomInputText(
+            !SLIPPAGE_PRESETS.includes(currentSlippage) && currentSlippage
+                ? String(currentSlippage)
+                : "",
+        );
     };
 
     const onSubmit = (data: SettingsFormValues) => {
@@ -154,28 +176,31 @@ export function ExchangeSettingsModal({
                                     render={({ field, fieldState }) => (
                                         <div className="relative">
                                             <input
-                                                type="number"
-                                                value={field.value || ""}
+                                                type="text"
+                                                inputMode="decimal"
+                                                value={customInputText}
                                                 onChange={(e) => {
-                                                    const value =
-                                                        e.target.value.replace(
-                                                            /^0+(?=\d)/,
-                                                            "",
+                                                    const sanitized =
+                                                        sanitizeSlippageInput(
+                                                            e.target.value,
                                                         );
-                                                    if (value === "") {
+                                                    setCustomInputText(
+                                                        sanitized,
+                                                    );
+                                                    if (
+                                                        sanitized === "" ||
+                                                        sanitized === "."
+                                                    ) {
                                                         field.onChange(0);
                                                     } else {
                                                         field.onChange(
-                                                            Number(value),
+                                                            Number(sanitized),
                                                         );
                                                     }
                                                 }}
                                                 placeholder={t(
                                                     "customPlaceholder",
                                                 )}
-                                                step="0.01"
-                                                min="0.01"
-                                                max="100"
                                                 className="w-full px-4 py-3 text-sm bg-background border rounded-lg outline-none focus:ring-2 focus:ring-ring placeholder:text-muted-foreground"
                                             />
                                             {fieldState.error && (
