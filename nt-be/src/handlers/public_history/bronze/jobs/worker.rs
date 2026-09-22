@@ -118,6 +118,7 @@ pub(crate) fn public_history_queue_specs() -> Vec<QueueSpec> {
             job_concurrency(),
             crate::jobs::job_timeout(),
         )
+        .with_worker_id(PUBLIC_HISTORY_LATEST_WORKER)
         .with_notify()
         .with_backlog_alert_after(Duration::from_secs(120)),
         QueueSpec::queue(
@@ -125,12 +126,14 @@ pub(crate) fn public_history_queue_specs() -> Vec<QueueSpec> {
             READINESS_JOB_CONCURRENCY,
             crate::jobs::job_timeout(),
         )
+        .with_worker_id(PUBLIC_HISTORY_READINESS_WORKER)
         .with_notify(),
         QueueSpec::queue(
             PUBLIC_HISTORY_BACKFILL_NAMESPACE,
             BACKFILL_JOB_CONCURRENCY,
             crate::jobs::job_timeout(),
-        ),
+        )
+        .with_worker_id(PUBLIC_HISTORY_BACKFILL_WORKER),
     ]
 }
 
@@ -1191,7 +1194,10 @@ mod supervisor_tests {
                         .fetch_optional(&pool)
                         .await
                         .expect("worker registration query");
-                if storage_name.as_deref() == Some("TrezuSteadyPostgresStorage") {
+                if storage_name
+                    .as_deref()
+                    .is_some_and(|name| name.starts_with("TrezuSteadyPostgresStorage"))
+                {
                     break;
                 }
                 tokio::time::sleep(Duration::from_millis(10)).await;
