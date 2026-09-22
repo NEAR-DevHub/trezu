@@ -29,11 +29,11 @@ use super::{
     retry_backoff,
 };
 use crate::AppState;
-use crate::utils::transport::with_transport_retry;
 use crate::handlers::user::lockup::derive_lockup_account_id;
 use crate::services::public_balance_reader::{
     LockupReadingAtBlock, get_lockup_reading_at_block, is_proven_nonexistence,
 };
+use crate::utils::transport::with_transport_retry;
 
 /// A lockup can be created after the first probe; `absent` is re-checked at
 /// this cadence so a new lockup enters history instead of staying invisible.

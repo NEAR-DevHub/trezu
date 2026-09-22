@@ -140,13 +140,14 @@ pub async fn get_lockup_reading_at_block(
         get_lockup_staking_pool_at_block(network, lockup_account_id, block_height).await?;
     let pool_total = match &pool_account_id {
         Some(pool) => {
-            let result = crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
-                network,
-                lockup_account_id,
-                pool,
-                block_height,
-            )
-            .await;
+            let result =
+                crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
+                    network,
+                    lockup_account_id,
+                    pool,
+                    block_height,
+                )
+                .await;
             match result {
                 Ok(balance) => balance,
                 Err(error) if is_proven_nonexistence(&error.to_string()) => BigDecimal::from(0),
