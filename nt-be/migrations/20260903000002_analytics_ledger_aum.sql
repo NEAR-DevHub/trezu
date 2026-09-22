@@ -145,7 +145,7 @@ ledger_month_assets AS (
     ORDER BY tm.account_id, tm.month_start, p.asset, p.point_month DESC
 ),
 -- Raw ledger asset id -> tokens registry row, mirroring the Rust
--- canonicalize_token_id: NEAR native and staking pools price as wrap.near,
+-- canonicalize_token_id: NEAR native, staking pools and lockups price as wrap.near,
 -- intents-held assets strip the custodian prefix, HOT omni assets gain the
 -- nep245 custodian, bare contract ids gain nep141.
 ledger_asset_tokens AS (
@@ -153,7 +153,8 @@ ledger_asset_tokens AS (
     FROM (SELECT DISTINCT asset FROM ledger_balance_points) la
     JOIN tokens t
       ON t.token_id = CASE
-            WHEN la.asset = 'near' OR left(la.asset, 8) = 'staking:' THEN 'nep141:wrap.near'
+            WHEN la.asset = 'near' OR left(la.asset, 8) = 'staking:' OR left(la.asset, 7) = 'lockup:'
+                THEN 'nep141:wrap.near'
             WHEN left(la.asset, 13) = 'intents.near:' THEN
                 CASE
                     WHEN left(substr(la.asset, 14), 7) IN ('nep141:', 'nep245:', '1cs_v1:')
