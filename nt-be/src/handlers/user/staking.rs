@@ -534,8 +534,9 @@ mod tests {
         )
         .await
         .unwrap_err();
-        assert_eq!(error.0, StatusCode::INTERNAL_SERVER_ERROR);
-        assert!(error.1.contains("z-failed.poolv1.near"));
+        // Upstream RPC failures surface as 502 via ContractReadError; the
+        // whole call fails rather than returning the ready pool alone.
+        assert_eq!(error.0, StatusCode::BAD_GATEWAY);
     }
 
     #[tokio::test]
