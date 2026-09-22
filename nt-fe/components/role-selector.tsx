@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckIcon } from "@hugeicons/core-free-icons";
+import { CheckIcon, Key01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import * as React from "react";
 import { Icon } from "@/components/icon";
@@ -13,7 +13,6 @@ import {
 } from "@/components/modal";
 import { NameFieldButton } from "@/components/name-field";
 import { ScrollContainer } from "@/components/scroll-container";
-import { EmptySelectorIcon } from "@/components/selector-field";
 import { SelectorOptionRow } from "@/components/selector-option-row";
 import { cn } from "@/lib/utils";
 import { shouldPreventMobileDialogAutoFocus } from "@/lib/wallet-address-input-props";
@@ -158,7 +157,7 @@ export function RoleSelector({
         <>
             {triggerVariant === "field" ? (
                 <NameFieldButton
-                    leading={<EmptySelectorIcon />}
+                    icon={Key01Icon}
                     invalid={invalid}
                     empty={selectedRoles.length === 0}
                     className={className}

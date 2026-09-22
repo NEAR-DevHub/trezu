@@ -137,7 +137,10 @@ export function NameFieldButton({
             type="button"
             className={cn(
                 nameFieldShellClassName,
-                invalid ? "border-destructive" : "border-general-border",
+                "transition-colors",
+                invalid
+                    ? "border-destructive"
+                    : "border-general-border hover:border-general-unofficial-border-4 focus-visible:border-general-unofficial-border-4",
                 className,
             )}
             {...props}

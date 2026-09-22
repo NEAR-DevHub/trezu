@@ -524,11 +524,11 @@ export default function MembersPage() {
                         {skeletonRows.map((rowId) => (
                             <div
                                 key={rowId}
-                                className="rounded-2xl border border-general-border bg-card p-4"
+                                className="rounded-3xl border border-general-border bg-card p-4"
                             >
                                 <div className="flex flex-col gap-2">
                                     <div className="flex items-center gap-3">
-                                        <Skeleton className="size-8 shrink-0 rounded-lg bg-general-bg-secondary" />
+                                        <Skeleton className="size-9 shrink-0 rounded-lg bg-general-bg-secondary" />
                                         <div className="flex min-w-0 flex-1 flex-col gap-2">
                                             <Skeleton className="h-4 w-28 bg-general-bg-secondary" />
                                             <Skeleton className="h-3 w-36 bg-general-bg-secondary" />
@@ -627,7 +627,7 @@ export default function MembersPage() {
                                 handleOpenMemberSheet(member);
                             }}
                             className={cn(
-                                "w-full rounded-2xl border border-general-border bg-card p-4 text-left",
+                                "w-full rounded-3xl border border-general-border bg-card p-4 text-left",
                                 selected && "bg-general-tertiary",
                             )}
                         >
@@ -651,7 +651,7 @@ export default function MembersPage() {
                                         size="md"
                                         variant="avatar"
                                         withLink={false}
-                                        avatarClassName="rounded-lg"
+                                        avatarClassName="size-9 rounded-lg"
                                     />
                                     <div className="min-w-0 flex-1">
                                         <User

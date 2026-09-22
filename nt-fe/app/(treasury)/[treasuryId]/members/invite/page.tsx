@@ -222,7 +222,7 @@ export default function InviteMemberPage() {
                         >
                             <Icon
                                 icon={ReloadIcon}
-                                className="h-[0.78213rem] w-[0.679rem] text-general-unofficial-ghost-foreground"
+                                className="h-[0.82rem] w-[0.82rem] text-general-unofficial-ghost-foreground"
                             />
                             {isGenerating
                                 ? tInvite("generatingNewLink")

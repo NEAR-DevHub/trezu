@@ -584,6 +584,7 @@ function TokenAmountBlock({ activity }: { activity: RecentActivity }) {
             <TokenDisplay
                 symbol={token.symbol}
                 icon={token.icon}
+                chainIcons={token.chainIcons}
                 iconSize="3xl"
             />
             <div className="flex min-w-0 flex-col">
@@ -923,6 +924,7 @@ function SwapAmountRow({
             <TokenDisplay
                 symbol={token.symbol}
                 icon={token.icon}
+                chainIcons={token.chainIcons}
                 iconSize="3xl"
             />
             <div className="flex min-w-0 flex-col">
