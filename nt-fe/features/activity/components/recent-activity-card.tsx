@@ -34,7 +34,7 @@ import {
     RowStatus,
     SwapAmount,
 } from "./activity-row";
-import { ActivityGlyph, ActivityRowIcon } from "./activity-row-icon";
+import { ActivityRowIcon, ActivityTokenBadge } from "./activity-row-icon";
 import { useIsHistoryRefreshing } from "./history-refresh-indicator";
 import { TransactionDetailsModal } from "./transaction-details-modal";
 
@@ -366,11 +366,7 @@ export function RecentActivity() {
         return (
             <ActivityRow
                 key={`single-${activity.id}`}
-                icon={
-                    <ActivityRowIcon>
-                        <ActivityGlyph activity={activity} />
-                    </ActivityRowIcon>
-                }
+                icon={<ActivityTokenBadge activity={activity} />}
                 label={getActivityType(activity)}
                 subLabel={getActivityFrom(activity)}
                 amount={

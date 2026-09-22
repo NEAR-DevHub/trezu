@@ -99,6 +99,7 @@ export function SendDetails({ data }: { data: PaymentRequestData }) {
                     <TokenDisplay
                         symbol={tokenData.symbol}
                         icon={tokenData.icon ?? ""}
+                        chainIcons={tokenData.chainIcons}
                         iconSize="lg"
                         className="size-7"
                     />

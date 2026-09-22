@@ -10,6 +10,7 @@ import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { useQuoteByDepositAddress } from "@/hooks/use-proposals";
 import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
 import { decimalOrNull } from "@/lib/amount-format";
+import type { ChainIcons } from "@/lib/api";
 import type Big from "@/lib/big";
 import {
     EXCHANGE_FEE_PERCENTAGE,
@@ -111,12 +112,14 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                     usdValue={usdIn}
                     symbol={tokenIn?.symbol}
                     icon={tokenIn?.icon}
+                    chainIcons={tokenIn?.chainIcons}
                 />
                 <SwapSide
                     amount={amountOut}
                     usdValue={usdOut}
                     symbol={tokenOut?.symbol}
                     icon={tokenOut?.icon}
+                    chainIcons={tokenOut?.chainIcons}
                 />
                 <div className="-translate-x-1/2 -translate-y-1/2 absolute left-1/2 top-1/2 flex size-10 items-center justify-center rounded-lg border border-general-border bg-card">
                     <Icon
@@ -195,18 +198,25 @@ function SwapSide({
     usdValue,
     symbol,
     icon,
+    chainIcons,
 }: {
     amount: Big | null;
     usdValue: number | null;
     symbol: string | undefined;
     icon: string | undefined;
+    chainIcons?: ChainIcons;
 }) {
     const isMasked = useIsBalanceMasked();
 
     return (
         <DetailsCard className="flex items-center gap-2.5 rounded-3xl px-4 py-5">
             {symbol ? (
-                <TokenDisplay symbol={symbol} icon={icon ?? ""} iconSize="xl" />
+                <TokenDisplay
+                    symbol={symbol}
+                    icon={icon ?? ""}
+                    chainIcons={chainIcons}
+                    iconSize="xl"
+                />
             ) : (
                 <Skeleton className="size-9 shrink-0 rounded-full" />
             )}

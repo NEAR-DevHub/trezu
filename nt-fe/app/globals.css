@@ -411,7 +411,7 @@
     --general-foreground: rgb(255, 255, 255);
     --general-muted-foreground: rgb(82, 82, 82);
     --general-secondary-foreground: rgb(161, 161, 161);
-    --general-border: rgba(64, 64, 64);
+    --general-border: rgba(38, 38, 38);
     --input: rgb(52, 52, 52);
     --ring: rgb(0, 236, 151);
     --chart-1: rgb(112, 255, 205);

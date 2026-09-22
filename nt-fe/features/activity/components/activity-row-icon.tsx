@@ -7,6 +7,8 @@ import {
 } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 import { Icon } from "@/components/icon";
+import { TokenDisplay } from "@/components/token-display-with-network";
+import { SwapTokenPair } from "@/components/token-pair";
 import type { RecentActivity } from "@/lib/api";
 
 /**
@@ -19,6 +21,30 @@ export function ActivityRowIcon({ children }: { children: ReactNode }) {
         <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-general-border bg-general-secondary text-muted-foreground">
             {children}
         </div>
+    );
+}
+
+/**
+ * Leading mark for compact activity rows. A swap stays a plain token pair;
+ * a single token carries its network badge.
+ */
+export function ActivityTokenBadge({ activity }: { activity: RecentActivity }) {
+    if (activity.swap) {
+        return (
+            <SwapTokenPair
+                sent={activity.swap.sentTokenMetadata}
+                received={activity.swap.receivedTokenMetadata}
+            />
+        );
+    }
+
+    return (
+        <TokenDisplay
+            symbol={activity.tokenMetadata.symbol}
+            icon={activity.tokenMetadata.icon || ""}
+            chainIcons={activity.tokenMetadata.chainIcons}
+            iconSize="xl"
+        />
     );
 }
 

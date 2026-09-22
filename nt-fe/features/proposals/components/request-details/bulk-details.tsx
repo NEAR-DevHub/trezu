@@ -84,6 +84,7 @@ export function BulkDetails({ data }: { data: ConfidentialBulkData }) {
                     <TokenDisplay
                         symbol={tokenData.symbol}
                         icon={tokenData.icon ?? ""}
+                        chainIcons={tokenData.chainIcons}
                         iconSize="lg"
                         className="size-7"
                     />
@@ -275,6 +276,7 @@ function Recipient({
                             <TokenDisplay
                                 symbol={token.symbol}
                                 icon={token.icon ?? ""}
+                                chainIcons={token.chainIcons}
                                 iconSize="md"
                                 className="mt-0.5"
                             />

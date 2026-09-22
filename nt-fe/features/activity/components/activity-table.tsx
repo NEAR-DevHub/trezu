@@ -49,7 +49,11 @@ import {
     RowStatus,
     SwapAmount,
 } from "./activity-row";
-import { ActivityGlyph, ActivityRowIcon } from "./activity-row-icon";
+import {
+    ActivityGlyph,
+    ActivityRowIcon,
+    ActivityTokenBadge,
+} from "./activity-row-icon";
 import {
     bodyCellClassName,
     CELL_PADDING,
@@ -236,11 +240,7 @@ export function ActivityTable({
                     return (
                         <ActivityRow
                             key={activity.id}
-                            icon={
-                                <ActivityRowIcon>
-                                    <ActivityGlyph activity={activity} />
-                                </ActivityRowIcon>
-                            }
+                            icon={<ActivityTokenBadge activity={activity} />}
                             label={getActivityLabel(activity)}
                             subLabel={getActivitySubLabel(activity, treasuryId)}
                             amount={
@@ -433,6 +433,11 @@ export function ActivityTable({
                                                             activity
                                                                 .tokenMetadata
                                                                 .icon || ""
+                                                        }
+                                                        chainIcons={
+                                                            activity
+                                                                .tokenMetadata
+                                                                .chainIcons
                                                         }
                                                         iconSize="xl"
                                                     />
