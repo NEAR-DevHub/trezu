@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 use crate::handlers::balance_changes::counterparty::convert_raw_to_decimal;
 use crate::handlers::balance_changes::utils::with_transport_retry;
+use crate::utils::contract_read_error::is_unknown_account;
 
 /// Query NEAR native token balance at a specific block height, converted to human-readable format
 ///
@@ -51,7 +52,7 @@ pub async fn get_balance_at_block(
         Err(e) => {
             let err_str = e.to_string();
             // Account doesn't exist at this block - balance is 0
-            if err_str.contains("UnknownAccount") {
+            if is_unknown_account(&err_str) {
                 tracing::debug!(
                     "Account {} does not exist at block {} - returning balance 0",
                     account_id,

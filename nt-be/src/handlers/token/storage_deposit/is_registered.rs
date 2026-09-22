@@ -9,7 +9,10 @@ use std::sync::Arc;
 
 use crate::{
     AppState,
-    utils::cache::{CacheKey, CacheTier},
+    utils::{
+        cache::{CacheKey, CacheTier},
+        contract_read_error::ContractReadError,
+    },
 };
 
 #[derive(Debug, Deserialize)]
@@ -32,7 +35,7 @@ pub(crate) async fn check_storage_deposit(
     state: &Arc<AppState>,
     account_id: AccountId,
     token_id: AccountId,
-) -> Result<bool, String> {
+) -> Result<bool, (StatusCode, String)> {
     if token_id == "near" || token_id == "NEAR" {
         return Ok(true);
     }
@@ -50,19 +53,12 @@ pub(crate) async fn check_storage_deposit(
                 .view_account_storage(account_id.clone())
                 .fetch_from(&state.network)
                 .await
-                .map_err(|e| {
-                    eprintln!(
-                        "Error fetching storage deposit with account_id: {} and token_id: {}: {e}",
-                        account_id, token_id,
-                    );
-                    e.to_string()
-                })?
+                .map_err(|e| ContractReadError::from(e).into_http("storage_balance_of"))?
                 .data;
 
-            Ok::<_, String>(storage_deposit.is_some())
+            Ok::<_, (StatusCode, String)>(storage_deposit.is_some())
         })
         .await
-        .map_err(|(_, e)| e)
 }
 
 pub async fn is_storage_deposit_registered(
@@ -75,7 +71,6 @@ pub async fn is_storage_deposit_registered(
     check_storage_deposit(&state, account_id, token_id)
         .await
         .map(Json)
-        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))
 }
 
 /// Request body for batch storage deposit check
@@ -114,10 +109,12 @@ pub async fn get_batch_storage_deposit_is_registered(
                     token_id: token_id.to_string(),
                     is_registered,
                 }),
-                Err(e) => {
-                    eprintln!(
+                Err((_, message)) => {
+                    tracing::warn!(
                         "Error checking storage deposit for {} / {}: {}",
-                        account_id, token_id, e
+                        account_id,
+                        token_id,
+                        message
                     );
                     None
                 }

@@ -381,14 +381,14 @@ async fn register_one(state: &Arc<AppState>, registration: &Registration) -> Res
     match check_storage_deposit(state, account_id.clone(), token_id.clone()).await {
         Ok(true) => return Ok(false),
         Ok(false) => {}
-        Err(e) => {
+        Err((_, message)) => {
             // Couldn't verify — attempt anyway; storage_deposit refunds if
             // the account turns out to be already registered.
             tracing::warn!(
                 "registration check failed for {} on {}: {}",
                 account_id,
                 token_id,
-                e
+                message
             );
         }
     }

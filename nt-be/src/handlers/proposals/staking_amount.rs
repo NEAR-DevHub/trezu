@@ -15,6 +15,7 @@ use crate::handlers::proposals::tx::{
     TransactionQueryParams, find_proposal_execution_transaction_inner,
 };
 use crate::utils::cache::{CacheKey, CacheTier};
+use crate::utils::contract_read_error::ContractReadError;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
@@ -122,13 +123,7 @@ pub async fn get_proposal_staking_amount(
                 .fetch_from(&state_clone.archival_network)
                 .await
                 .map_err(|e| {
-                    (
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!(
-                            "Archival RPC failed for pool {} at block {}: {}",
-                            pool_id, query_block, e
-                        ),
-                    )
+                    ContractReadError::from(e).into_http("staking_pool.get_account@block")
                 })?;
 
             let amount = match method_clone.as_str() {
@@ -192,12 +187,7 @@ async fn resolve_pool_and_account(
             .read_only::<Option<AccountId>>()
             .fetch_from(&state.network)
             .await
-            .map_err(|e| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to query lockup pool: {}", e),
-                )
-            })?
+            .map_err(|e| ContractReadError::from(e).into_http("get_staking_pool_account_id"))?
             .data;
         let pool = pool.ok_or((
             StatusCode::NOT_FOUND,

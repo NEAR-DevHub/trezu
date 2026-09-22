@@ -1,9 +1,12 @@
 use axum::http::StatusCode;
 use moka::future::Cache as MokaCache;
 use near_api::errors::QueryError;
+use near_openapi_types::RpcQueryError;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fmt::Display;
+
+use crate::utils::contract_read_error::ContractReadError;
 
 /// Cache tier types for different data characteristics
 #[derive(Debug, Clone, Copy)]
@@ -211,25 +214,22 @@ impl Cache {
     /// # Returns
     /// * `Ok(T)` with the deserialized data on success
     /// * `Err((StatusCode, String))` on error
-    pub async fn cached_contract_call<F, T, E>(
+    pub async fn cached_contract_call<F, T>(
         &self,
         tier: CacheTier,
         cache_key: String,
         fetch_fn: F,
     ) -> Result<T, (StatusCode, String)>
     where
-        E: Display + Send + Sync + std::fmt::Debug,
-        F: std::future::Future<Output = Result<T, QueryError<E>>>,
+        F: std::future::Future<Output = Result<T, QueryError<RpcQueryError>>>,
         T: Serialize + for<'de> Deserialize<'de>,
     {
         let cache = self.get_cache(tier);
+        let call = cache_key.clone();
         cached(cache, cache_key, async move {
-            fetch_fn.await.map_err(|e| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Contract call error: {}", e),
-                )
-            })
+            fetch_fn
+                .await
+                .map_err(|e| ContractReadError::from(e).into_http(&call))
         })
         .await
     }
