@@ -516,7 +516,7 @@ function NotesBlock({ notes }: { notes?: string | null }) {
             <p className="text-sm font-medium text-muted-foreground">
                 {t("notes")}
             </p>
-            <p className="text-sm font-semibold break-words text-foreground">
+            <p className="whitespace-pre-wrap break-all text-sm font-semibold text-foreground">
                 {trimmed}
             </p>
         </div>

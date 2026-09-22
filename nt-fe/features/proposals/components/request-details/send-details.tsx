@@ -176,7 +176,9 @@ export function SendDetails({ data }: { data: PaymentRequestData }) {
                                     target="_blank"
                                     className="flex items-start justify-end gap-2"
                                 >
-                                    <span>{data.notes}</span>
+                                    <span className="min-w-0 whitespace-pre-wrap break-all">
+                                        {data.notes}
+                                    </span>
                                     <Icon
                                         icon={ArrowUpRight01Icon}
                                         className="mt-0.5 shrink-0"

@@ -30,7 +30,7 @@ export function bodyCellClassName(
     isLastRow: boolean,
 ) {
     return cn(
-        "h-[66px]",
+        "min-h-[66px]",
         sheetCellClassName({
             isFirstRow,
             isLastRow,
