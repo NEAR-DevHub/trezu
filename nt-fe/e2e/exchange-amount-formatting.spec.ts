@@ -1,4 +1,5 @@
-import { expect, type Page, test } from "@playwright/test";
+import type { Page } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
 import {
     maybeFulfillMockWalletRequest,
     seedMockWalletAccount,
@@ -176,23 +177,24 @@ for (const viewport of [
 ] as const) {
     test(`keeps grouped quote displays out of exchange data on ${viewport.name}`, async ({
         page,
+        exchangePage,
     }) => {
         await page.setViewportSize(viewport);
         await setupExchangeMocks(page);
         const pageErrors: Error[] = [];
         page.on("pageerror", (error) => pageErrors.push(error));
 
-        await page.goto(`/${TREASURY_ID}/exchange`);
+        await exchangePage.goto(TREASURY_ID);
 
-        const amountInputs = page.locator('input[inputmode="decimal"]');
+        const amountInputs = exchangePage.amountInputs();
         await expect(amountInputs).toHaveCount(2, { timeout: 15_000 });
         await amountInputs.first().fill("0.05");
         await expect(amountInputs.nth(1)).toHaveValue("5000", {
             timeout: 15_000,
         });
 
-        await page.getByRole("button", { name: /^Review Exchange$/i }).click();
-        await expect(page.getByText("5,000 ETH", { exact: true })).toBeVisible({
+        await exchangePage.reviewExchangeButton().click();
+        await expect(exchangePage.reviewedAmountText("5,000 ETH")).toBeVisible({
             timeout: 15_000,
         });
         const unexpectedPageErrors = pageErrors.filter(

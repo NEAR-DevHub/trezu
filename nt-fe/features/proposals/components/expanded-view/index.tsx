@@ -42,6 +42,8 @@ import {
     VoteExpanded,
 } from "./governance-expanded";
 import { ConfidentialRequestExpanded } from "./confidential-request-expanded";
+import { OmniExpanded } from "@/features/omni/components/omni-expanded";
+import type { OmniProposalData } from "@/features/omni/types";
 import { BatchPaymentRequestExpanded } from "./batch-payment-expanded";
 import { useNear } from "@/stores/near-store";
 import { getProposalStatus } from "../../utils/proposal-utils";
@@ -63,9 +65,22 @@ function ExpandedViewInternal({
 }: InternalExpandedViewProps) {
     const t = useTranslations("proposals.expanded");
     const { type, data } = extractProposalData(proposal, treasuryId);
-    const { isExecuted } = useRequestDisplayContext()!;
+    const { isExecuted, isPending } = useRequestDisplayContext()!;
 
     switch (type) {
+        case "Omni Chain Signature": {
+            const omniData = data as OmniProposalData;
+            return (
+                <OmniExpanded
+                    proposal={proposal}
+                    data={omniData}
+                    policy={policy}
+                    treasuryId={treasuryId}
+                    isPending={isPending}
+                    isExecuted={isExecuted}
+                />
+            );
+        }
         case "Payment Request":
         case "Move to Confidential": {
             const paymentData = data as PaymentRequestData;

@@ -5,7 +5,10 @@ import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import type { Proposal } from "@/lib/proposals-api";
 import type { StakingData } from "../types/index";
 import { extractProposalData } from "./proposal-extractors";
-import { getProposalRequiredFunds } from "./proposal-utils";
+import {
+    getProposalRequiredFunds,
+    isLookupTransferProposal,
+} from "./proposal-utils";
 
 export type FundingBalanceKind =
     | "liquid"
@@ -60,6 +63,29 @@ function findNearTokenById(
     // FT lockup rows share the same contractId but cannot fund ft_transfer /
     // payment proposals. Prefer the liquid wallet row when both exist.
     return matches.find((t) => !t.lockupInstanceId) ?? matches[0];
+}
+
+// A lockup `transfer` is funded by the lockup contract, not the DAO wallet.
+function findLockupToken(
+    tokens: TreasuryAsset[],
+    proposal: Proposal,
+): TreasuryAsset | undefined {
+    if (!("FunctionCall" in proposal.kind)) return undefined;
+    const lockupId = proposal.kind.FunctionCall.receiver_id;
+    return tokens.find(
+        (t) =>
+            t.balance.type === "Vested" &&
+            (!t.lockupAccountId || t.lockupAccountId === lockupId),
+    );
+}
+
+// Unstaked NEAR still held by the staking pool is not in the lockup account,
+// so a lockup `transfer` cannot spend it until it is withdrawn.
+function liquidBalance(balance: TreasuryAsset["balance"]): Big {
+    const available = availableBalance(balance);
+    if (balance.type !== "Vested") return available;
+    const liquid = available.sub(balance.lockup.unstakedBalance);
+    return liquid.gt(0) ? liquid : Big(0);
 }
 
 function stakingMeta(token: TreasuryAsset | undefined): {
@@ -256,7 +282,9 @@ export function getProposalFundingAvailability(
         return getStakingFundingAvailability(tokens, data as StakingData);
     }
 
-    const token = findNearTokenById(tokens, requiredFunds.tokenId);
+    const token = isLookupTransferProposal(proposal)
+        ? findLockupToken(tokens, proposal)
+        : findNearTokenById(tokens, requiredFunds.tokenId);
 
     if (!token) {
         return {
@@ -270,7 +298,7 @@ export function getProposalFundingAvailability(
 
     return {
         required: Big(requiredFunds.amount || "0"),
-        available: availableBalance(token.balance),
+        available: liquidBalance(token.balance),
         kind: "liquid",
         tokenId: requiredFunds.tokenId,
         tokenSymbol: token.symbol,

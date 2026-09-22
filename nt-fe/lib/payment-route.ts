@@ -18,6 +18,24 @@ export type PaymentTokenClassification = {
     tokenForIntentsQuote: Token;
 };
 
+/** `"recipient"` = EXACT_OUTPUT; `"total"` = EXACT_INPUT (fees included). */
+export type PaymentIntentsAmountMode = "recipient" | "total";
+
+/**
+ * Typed amount → recipient gets that exact amount (EXACT_OUTPUT).
+ * Max → spend the full source balance, fees included (EXACT_INPUT).
+ *
+ * Do not gate Max on `isIntentsCrossChainToken`. That helper is false for
+ * NEAR-network intents tokens (USDC, wNEAR), which still have 1Click fees —
+ * treating Max as EXACT_OUTPUT adds the fee on top of the full balance and
+ * falsely reports insufficient funds.
+ */
+export function paymentIntentsAmountModeForInput(
+    source: "typed" | "max",
+): PaymentIntentsAmountMode {
+    return source === "max" ? "total" : "recipient";
+}
+
 /** Bare account for proposals / 1Click. Eth-implicit 0x… is lowercased. */
 export function normalizePaymentRecipient(address: string): string {
     const bare = stripNearComAddressPrefix(address.trim());

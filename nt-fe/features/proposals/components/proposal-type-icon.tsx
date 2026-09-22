@@ -13,6 +13,7 @@ import {
     Award,
     Vote,
     Factory,
+    Link2,
 } from "lucide-react";
 import { Proposal } from "@/lib/proposals-api";
 import { getProposalUIKind } from "../utils/proposal-utils";
@@ -67,6 +68,12 @@ export function ProposalTypeIcon({
             }
         case "Move to Confidential":
             return <TreasuryTypeIcon type="confidential" />;
+        case "Omni Chain Signature":
+            return (
+                <div className="flex h-8 w-8 items-center justify-center rounded-full dark:bg-violet-500/10 bg-violet-100">
+                    <Link2 className="size-5 shrink-0 dark:text-violet-300 text-violet-800" />
+                </div>
+            );
         case "Function Call":
             return (
                 <div className="flex h-8 w-8 items-center justify-center rounded-full dark:bg-blue-500/10 bg-blue-100">

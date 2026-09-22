@@ -1,5 +1,6 @@
 import type { TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
+import { hasPoolFunds } from "@/lib/balance";
 
 export interface DashboardBalanceView {
     totalUsd: number;
@@ -54,12 +55,17 @@ function getTokenBucketRaw(token: TreasuryAsset): {
         totalRaw = staked.add(unstaked);
         earningRaw = staked.add(unstaked);
     } else if (token.balance.type === "Vested") {
+        // Product rule for lockup rows: Earning is what the lockup has
+        // staked, and everything else inside the lockup (unvested, the
+        // storage reserve, vested-but-not-withdrawn liquid NEAR, pending
+        // unstakes) is Locked, because none of it is spendable by the
+        // treasury until it is withdrawn. Available is always zero. Locked is
+        // defined as the remainder on purpose so the three buckets sum to the
+        // backend's LockupBalance.total whatever the lockup's internal shape.
         const lockup = token.balance.lockup;
-        const staked = lockup.staked;
-        const nonStakedLocked = lockup.unvested.sub(staked);
         totalRaw = lockup.total;
-        earningRaw = staked;
-        lockedRaw = clampNonNegative(nonStakedLocked).add(lockup.storageLocked);
+        earningRaw = lockup.staked;
+        lockedRaw = clampNonNegative(totalRaw.sub(earningRaw));
     }
 
     return { totalRaw, availableRaw, lockedRaw, earningRaw };
@@ -78,10 +84,10 @@ export function getDashboardBucketVisibility(
         // - in staking pools (Staked balances), or
         // - in lockup staking (Vested balances with staked > 0).
         if (token.balance.type === "Staked") {
-            const hasPoolStaked = token.balance.staking.pools.some((pool) =>
-                pool.stakedBalance.gt(0),
-            );
-            showEarning = showEarning || (earningRaw.gt(0) && hasPoolStaked);
+            showEarning =
+                showEarning ||
+                (earningRaw.gt(0) &&
+                    token.balance.staking.pools.some(hasPoolFunds));
         } else if (token.balance.type === "Vested") {
             showEarning = showEarning || earningRaw.gt(0);
         }

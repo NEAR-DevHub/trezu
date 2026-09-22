@@ -18,6 +18,7 @@ use near_api::{AccountId, Contract, NetworkConfig, Reference};
 use std::str::FromStr;
 
 use crate::services::counterparties::convert_raw_to_decimal;
+use crate::utils::contract_read_error::{is_block_unavailable, is_method_not_found};
 use crate::utils::transport::with_transport_retry;
 
 /// NEAR mainnet epoch length in blocks (~12 hours)
@@ -130,9 +131,8 @@ pub async fn get_staking_balance_at_block(
             Err(error) => {
                 let message = error.to_string();
                 let block_unavailable = message.contains("422")
-                    || message.contains("UnknownBlock")
-                    || message.contains("GarbageCollectedBlock")
-                    || message.contains("MethodNotFound")
+                    || is_block_unavailable(&message)
+                    || is_method_not_found(&message)
                     || message.contains("doesn't exist");
                 if !block_unavailable || offset == MAX_PREVIOUS_BLOCK_ATTEMPTS {
                     return Err(error);
