@@ -33,6 +33,7 @@ import {
     type RecipientDraft,
     type AddressBookEntry,
     persistAddressBookAddress,
+    formatAddressBookDisplayAddress,
 } from "@/features/address-book";
 import { useChains } from "@/features/address-book/chains";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -377,7 +378,7 @@ function RecipientsView({
         if (!treasuryId) return;
         router.push(
             buildPaymentsDeepLink(treasuryId, {
-                address: entry.address,
+                address: formatAddressBookDisplayAddress(entry),
                 name: entry.name,
                 networks: entry.networks,
             }),
