@@ -241,8 +241,10 @@ test("Confidential deposit — dashboard deposit page flow", async ({
     await expect(depositButton).toContainText("Deposit");
 
     await depositButton.click();
+    // The deposit route is compiled on-demand by the Next.js dev server on its
+    // first hit in a run; that cold compile can outlast a 10s navigation wait.
     await expect(page).toHaveURL(new RegExp(`/${DAO_ID}/dashboard/deposit`), {
-        timeout: 10_000,
+        timeout: 30_000,
     });
 
     await expect(depositPage.heading()).toBeVisible({ timeout: 10_000 });
