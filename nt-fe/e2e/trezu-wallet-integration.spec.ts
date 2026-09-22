@@ -22,13 +22,15 @@
  * seeded localStorage).
  */
 
-import { test, expect, BrowserContext, Page } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
+import { expect, test } from "./fixtures/test-with-pages";
 import {
     registerMockWalletRoutes,
     seedMockWalletAccount,
 } from "./helpers/mock-wallet";
+import { WalletPopupPage } from "./pages/wallet-popup.page";
 
 const TEST_DAPP_HTML = fs.readFileSync(
     path.join(__dirname, "test-dapp.html"),
@@ -44,7 +46,6 @@ const SIGNED_IN_ACCOUNT = "alice.near";
 
 const PROPOSAL_ID = 42;
 const TX_HASH = "7HBqrPAEtBVR5dRHKqtpFBgJqwWnmjXDDvQ3NEAR1abc";
-const DUMMY_DAPP_URL = "/test-dapp.html";
 
 /** submission_time in nanoseconds (2025-02-18T00:00:00Z). */
 const SUBMISSION_TIME_NS = "1739836800000000000";
@@ -152,23 +153,6 @@ async function seedWalletAccount(page: Page, accountId: string) {
     await seedMockWalletAccount(page, accountId, "evaluate");
 }
 
-/**
- * Simulate the dApp already being in the "connected" state (sign_in done).
- * Sets connectedAs on the page and enables the transaction buttons.
- */
-async function simulateConnected(page: Page, daoId: string) {
-    await page.evaluate((dao) => {
-        (window as any).connectedAs = dao;
-        const btns = ["transfer-btn", "ftcall-btn"];
-        for (const id of btns) {
-            const el = document.getElementById(id) as HTMLButtonElement | null;
-            if (el) el.disabled = false;
-        }
-        const status = document.getElementById("status");
-        if (status) status.textContent = "Status: Connected as " + dao;
-    }, daoId);
-}
-
 /* ------------------------------------------------------------------ */
 /* Test 1: sign_in roundtrip                                            */
 /* ------------------------------------------------------------------ */
@@ -177,46 +161,44 @@ test.describe("sign_in: connect via Trezu Wallet popup", () => {
     test("user selects treasury → dApp receives DAO account as signed-in accountId", async ({
         page,
         context,
+        testDappPage,
     }) => {
         test.setTimeout(60_000);
 
         await mockBackendRoutes(context);
-        await page.goto(DUMMY_DAPP_URL);
+        await testDappPage.goto();
 
         // Seed mock wallet account — localStorage is shared across same-origin pages,
         // so the wallet popup will also see this and skip the "Connect Wallet" step.
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
 
         const popupPromise = context.waitForEvent("page");
-        await page.click("#connect-btn");
+        await testDappPage.connectButton().click();
         const popup = await popupPromise;
+        const walletPopup = new WalletPopupPage(popup);
 
         // Wallet popup should reach the select-treasury step
-        await popup.waitForSelector("text=Choose which treasury", {
+        await expect(walletPopup.chooseTreasuryText()).toBeVisible({
             timeout: 15_000,
         });
 
         // Click the treasury
-        await popup.click(`button:has-text("${DAO_ID}")`);
+        await walletPopup.treasuryRow(DAO_ID).click();
 
         // Popup shows done confirmation
-        await popup.waitForSelector("text=Treasury connected", {
+        await expect(walletPopup.treasuryConnectedText()).toBeVisible({
             timeout: 8_000,
         });
 
         // dApp received trezu:result with the DAO account
-        const msg = await page
-            .waitForFunction(() => (window as any).__lastMessage, {
-                timeout: 5_000,
-            })
-            .then((h) => h.jsonValue());
+        const msg = await testDappPage.waitForLastMessage();
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "success",
             accountId: DAO_ID,
         });
 
-        await expect(page.locator("#status")).toContainText(
+        await expect(testDappPage.statusText()).toContainText(
             `Connected as ${DAO_ID}`,
         );
     });
@@ -230,36 +212,38 @@ test.describe("sign_transactions: Transfer NEAR proposal preview", () => {
     test("wallet popup shows Transfer proposal; closing the popup fails the dApp promise", async ({
         page,
         context,
+        testDappPage,
     }) => {
         test.setTimeout(60_000);
 
         await mockBackendRoutes(context);
-        await page.goto(DUMMY_DAPP_URL);
+        await testDappPage.goto();
 
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
-        await simulateConnected(page, DAO_ID);
+        await testDappPage.simulateConnected(DAO_ID);
 
         // Click "Transfer 1 NEAR to alice.near"
         const popupPromise = context.waitForEvent("page");
-        await page.click("#transfer-btn");
+        await testDappPage.transferButton().click();
         const popup = await popupPromise;
+        const walletPopup = new WalletPopupPage(popup);
 
         // The wallet popup auto-selects the DAO (signerId matches) and
         // shows the confirm-transactions step.
-        await popup.waitForSelector("text=Create Proposal", {
+        await expect(walletPopup.createProposalHeading()).toBeVisible({
             timeout: 15_000,
         });
 
         // Verify the proposal preview shows the correct recipient
-        await expect(popup.locator("text=alice.near").first()).toBeVisible();
+        await expect(walletPopup.previewText("alice.near")).toBeVisible();
 
         // Acting-as block shows the selected DAO
-        await expect(popup.locator(`text=${DAO_ID}`).first()).toBeVisible();
+        await expect(walletPopup.previewText(DAO_ID)).toBeVisible();
 
         // Closing the popup without signing → dApp promise rejects
         await popup.close();
 
-        await expect(page.locator("#status")).toContainText(
+        await expect(testDappPage.statusText()).toContainText(
             "Popup was closed",
             { timeout: 5_000 },
         );
@@ -274,33 +258,35 @@ test.describe("sign_transactions: FunctionCall (ft_transfer) proposal preview", 
     test("wallet popup shows the ft_transfer recipient; closing the popup fails the dApp promise", async ({
         page,
         context,
+        testDappPage,
     }) => {
         test.setTimeout(60_000);
 
         await mockBackendRoutes(context);
-        await page.goto(DUMMY_DAPP_URL);
+        await testDappPage.goto();
 
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
-        await simulateConnected(page, DAO_ID);
+        await testDappPage.simulateConnected(DAO_ID);
 
         const popupPromise = context.waitForEvent("page");
-        await page.click("#ftcall-btn");
+        await testDappPage.ftCallButton().click();
         const popup = await popupPromise;
+        const walletPopup = new WalletPopupPage(popup);
 
-        await popup.waitForSelector("text=Create Proposal", {
+        await expect(walletPopup.createProposalHeading()).toBeVisible({
             timeout: 15_000,
         });
 
         // The wallet renders the recipient from ft_transfer args (receiver_id),
         // not from the raw function name.
-        await expect(popup.locator("text=alice.near").first()).toBeVisible();
+        await expect(walletPopup.previewText("alice.near")).toBeVisible();
 
         // Acting-as block shows the selected DAO
-        await expect(popup.locator(`text=${DAO_ID}`).first()).toBeVisible();
+        await expect(walletPopup.previewText(DAO_ID)).toBeVisible();
 
         await popup.close();
 
-        await expect(page.locator("#status")).toContainText(
+        await expect(testDappPage.statusText()).toContainText(
             "Popup was closed",
             { timeout: 5_000 },
         );
@@ -324,45 +310,27 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
     test("approval poll sends transactionHashes to dApp opener automatically", async ({
         page,
         context,
+        testDappPage,
     }) => {
         test.setTimeout(60_000);
 
         await mockBackendRoutes(context);
-        await page.goto(DUMMY_DAPP_URL);
+        await testDappPage.goto();
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
 
         // Open the wallet popup from the dApp page so window.opener is set.
         // Use waiting-approval URL params to skip the signing step.
         const popupPromise = context.waitForEvent("page");
-        await page.evaluate(
-            ({ daoId, proposalId }) => {
-                const url = new URL("/wallet", window.location.origin);
-                url.searchParams.set("action", "sign_transactions");
-                url.searchParams.set("network", "mainnet");
-                url.searchParams.set("daoId", daoId);
-                url.searchParams.set("proposalIds", String(proposalId));
-                window.open(
-                    url.toString(),
-                    "TrezuWallet",
-                    "width=520,height=700",
-                );
-            },
-            { daoId: DAO_ID, proposalId: PROPOSAL_ID },
-        );
+        await testDappPage.openWalletPopupForApproval(DAO_ID, PROPOSAL_ID);
         const popup = await popupPromise;
+        const walletPopup = new WalletPopupPage(popup);
 
         // The proposal API is mocked as Approved with an indexed tx, so the
         // immediate poll advances straight to the done step.
-        await popup.waitForSelector("text=You can close this window.", {
-            timeout: 10_000,
-        });
+        await expect(walletPopup.doneText()).toBeVisible({ timeout: 10_000 });
 
         // dApp received the trezu:result with the transaction hash
-        const msg = await page
-            .waitForFunction(() => (window as any).__lastMessage, {
-                timeout: 5_000,
-            })
-            .then((h) => h.jsonValue());
+        const msg = await testDappPage.waitForLastMessage();
         expect(msg).toMatchObject({
             type: "trezu:result",
             status: "success",
@@ -373,6 +341,7 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
     test("InProgress status keeps the checklist open without notifying the dApp", async ({
         page,
         context,
+        testDappPage,
     }) => {
         test.setTimeout(60_000);
 
@@ -399,40 +368,27 @@ test.describe("waiting-approval: after DAO votes Approve, dApp receives tx hash"
             },
         );
 
-        await page.goto(DUMMY_DAPP_URL);
+        await testDappPage.goto();
         await seedWalletAccount(page, SIGNED_IN_ACCOUNT);
 
         const popupPromise = context.waitForEvent("page");
-        await page.evaluate(
-            ({ daoId, proposalId }) => {
-                const url = new URL("/wallet", window.location.origin);
-                url.searchParams.set("action", "sign_transactions");
-                url.searchParams.set("network", "mainnet");
-                url.searchParams.set("daoId", daoId);
-                url.searchParams.set("proposalIds", String(proposalId));
-                window.open(
-                    url.toString(),
-                    "TrezuWallet",
-                    "width=520,height=700",
-                );
-            },
-            { daoId: DAO_ID, proposalId: PROPOSAL_ID },
-        );
+        await testDappPage.openWalletPopupForApproval(DAO_ID, PROPOSAL_ID);
         const popup = await popupPromise;
+        const walletPopup = new WalletPopupPage(popup);
 
         // Shows the approval checklist with the proposal link
-        await popup.waitForSelector("text=What To Do Next", {
+        await expect(walletPopup.whatToDoNextText()).toBeVisible({
             timeout: 10_000,
         });
         await expect(
-            popup.locator(`text=${DAO_ID} — Proposal #${PROPOSAL_ID}`),
+            walletPopup.proposalLinkText(DAO_ID, PROPOSAL_ID),
         ).toBeVisible();
 
         // The immediate poll found InProgress — the popup stays open and the
         // dApp has not received any message.
         await popup.waitForTimeout(1_000);
-        await popup.waitForSelector("text=What To Do Next");
-        const msg = await page.evaluate(() => (window as any).__lastMessage);
+        await expect(walletPopup.whatToDoNextText()).toBeVisible();
+        const msg = await testDappPage.lastMessage();
         expect(msg).toBeUndefined();
     });
 });

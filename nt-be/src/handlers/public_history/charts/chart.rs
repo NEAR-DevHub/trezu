@@ -49,6 +49,11 @@ fn confidential_stored_asset_id(requested: &str) -> &str {
     requested.strip_prefix(INTENTS_PREFIX).unwrap_or(requested)
 }
 
+/// Two missed daily observation boundaries: the observation workers' fresh
+/// window, so the two thresholds cannot drift apart.
+const OBSERVATION_STALE_AFTER: chrono::Duration =
+    chrono::Duration::days(crate::handlers::public_history::observations::FRESH_WINDOW_DAYS);
+
 fn chart_interval(interval: &Interval) -> Result<SnapshotGridInterval, (StatusCode, String)> {
     match interval {
         Interval::Daily => Ok(SnapshotGridInterval::Daily),
@@ -88,9 +93,10 @@ struct BucketPrices {
     grid: HashMap<(String, DateTime<Utc>), BigDecimal>,
 }
 
-/// Staking series are denominated in NEAR; price them from the native feed.
+/// Staking and lockup series are denominated in NEAR; price them from the
+/// native feed.
 fn price_asset(asset: &str) -> &str {
-    if asset.starts_with("staking:") {
+    if asset.starts_with("staking:") || asset.starts_with("lockup:") {
         "near"
     } else {
         asset
@@ -204,7 +210,7 @@ pub async fn build_public_chart_response(
     // backfill + projection, and never revokes), or a validated staking pool
     // still backfilling. A verified ledger keeps serving through recompute
     // windows — the response degrades to Stale, never to empty.
-    if !readiness.verification_passed || !readiness.staking_ready {
+    if !readiness.verification_passed || !readiness.staking_ready || !readiness.lockup_ready {
         return Ok(unavailable_response(&readiness));
     }
 
@@ -232,12 +238,25 @@ pub async fn build_public_chart_response(
 
     let data = priced_chart_series(state.as_ref(), points, &buckets, chart_asset_id).await;
 
-    let status =
-        if !readiness.projection_ready || readiness.gold_dirty || readiness.head_check_failed {
-            ChartStatus::Stale
-        } else {
-            ChartStatus::Ok
-        };
+    // Completed observation series keep serving, but an overdue daily
+    // reading (two missed boundaries) would carry a stale staked or lockup
+    // balance forward silently — surface it as Stale instead.
+    let observations_overdue = [
+        readiness.staking_last_observed_at,
+        readiness.lockup_last_observed_at,
+    ]
+    .into_iter()
+    .flatten()
+    .any(|observed_at| Utc::now() - observed_at > OBSERVATION_STALE_AFTER);
+    let status = if !readiness.projection_ready
+        || readiness.gold_dirty
+        || readiness.head_check_failed
+        || observations_overdue
+    {
+        ChartStatus::Stale
+    } else {
+        ChartStatus::Ok
+    };
     Ok(ChartResponse {
         data,
         last_synced_at: readiness.projection_ready_at,

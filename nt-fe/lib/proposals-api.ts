@@ -630,6 +630,12 @@ export async function getProposalTransaction(
         });
         return response.data;
     } catch (error) {
+        // 404 is the backend's normal answer while NearBlocks has not indexed
+        // the execution yet (or never will, for non-mainnet DAOs); the caller
+        // polls, so this is not an error worth logging.
+        if (isAxiosErrorWithStatus(error, 404)) {
+            return null;
+        }
         console.error(
             `Error getting transaction for proposal ${daoId}/${proposal.id}`,
             error,

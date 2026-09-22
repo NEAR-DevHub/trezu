@@ -95,6 +95,12 @@ pub struct JobHealth {
     pub start_latency_p95_secs: Option<f64>,
     pub start_latency_max_secs: Option<f64>,
     pub reclaims_last_hour: i64,
+    /// Heartbeat of the apalis worker consuming this queue (`QueueSpec::worker_id`).
+    /// `None` when no worker has ever registered.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worker_last_seen_at: Option<DateTime<Utc>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub worker_heartbeat_age_secs: Option<i64>,
     pub stale: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub failure_mode: Option<&'static str>,
@@ -136,12 +142,26 @@ fn cron_staleness_threshold(interval_secs: u64) -> Duration {
     Duration::from_secs(interval_secs * 2 + 600)
 }
 
+/// A worker whose heartbeat is older than this is dead: apalis refreshes
+/// `apalis.workers.last_seen` every 30s while the worker runs, and a rebuilt
+/// worker re-registers under the same id within a couple of minutes.
+fn worker_dead_threshold() -> Duration {
+    Duration::from_secs(env_u64("JOB_WORKER_DEAD_SECONDS", 300).max(1))
+}
+
 /// Builds the health snapshot for every registered queue from `apalis.jobs`.
 pub async fn evaluate(pool: &PgPool) -> Result<Vec<JobHealth>, sqlx::Error> {
     let Some((installed_at, specs)) = REGISTRY.get() else {
         return Ok(Vec::new());
     };
+    evaluate_registry(pool, *installed_at, specs).await
+}
 
+pub(crate) async fn evaluate_registry(
+    pool: &PgPool,
+    installed_at: DateTime<Utc>,
+    specs: &[QueueSpec],
+) -> Result<Vec<JobHealth>, sqlx::Error> {
     let job_types = specs
         .iter()
         .map(|spec| spec.queue.to_owned())
@@ -218,6 +238,19 @@ pub async fn evaluate(pool: &PgPool) -> Result<Vec<JobHealth>, sqlx::Error> {
     .fetch_all(pool)
     .await?;
 
+    let worker_ids = specs
+        .iter()
+        .map(|spec| spec.worker_id.to_owned())
+        .collect::<Vec<_>>();
+    let heartbeats: Vec<(String, Option<DateTime<Utc>>)> =
+        sqlx::query_as("SELECT id, last_seen FROM apalis.workers WHERE id = ANY($1::text[])")
+            .bind(&worker_ids)
+            .fetch_all(pool)
+            .await?;
+    let heartbeat_by_worker: HashMap<String, Option<DateTime<Utc>>> =
+        heartbeats.into_iter().collect();
+    let worker_dead_after_secs = worker_dead_threshold().as_secs() as i64;
+
     let mut by_queue: HashMap<String, QueueAgg> = aggregates
         .into_iter()
         .map(|agg| (agg.job_type.clone(), agg))
@@ -260,7 +293,7 @@ pub async fn evaluate(pool: &PgPool) -> Result<Vec<JobHealth>, sqlx::Error> {
 
             let progress_failure = match spec.kind {
                 QueueKind::Cron { interval_secs } => {
-                    let baseline = last_success_at.unwrap_or(*installed_at).max(*installed_at);
+                    let baseline = last_success_at.unwrap_or(installed_at).max(installed_at);
                     let threshold = cron_staleness_threshold(interval_secs);
                     let age = (now - baseline).num_seconds();
                     (age > threshold.as_secs() as i64).then(|| {
@@ -275,7 +308,29 @@ pub async fn evaluate(pool: &PgPool) -> Result<Vec<JobHealth>, sqlx::Error> {
                 QueueKind::Queue => None,
             };
 
-            let failure = if oldest_queued_secs
+            let worker_last_seen_at = heartbeat_by_worker
+                .get(spec.worker_id)
+                .copied()
+                .flatten();
+            let worker_heartbeat_age_secs = worker_last_seen_at.map(|t| (now - t).num_seconds());
+            // No heartbeat row at all counts as dead only once the process has
+            // had long enough to register its workers.
+            let worker_dead = match worker_heartbeat_age_secs {
+                Some(age) => age > worker_dead_after_secs,
+                None => (now - installed_at).num_seconds() > worker_dead_after_secs,
+            };
+
+            let failure = if worker_dead {
+                Some((
+                    "worker_dead",
+                    match worker_heartbeat_age_secs {
+                        Some(age) => format!(
+                            "worker heartbeat is {age}s old (dead after {worker_dead_after_secs}s)"
+                        ),
+                        None => "worker never registered".to_string(),
+                    },
+                ))
+            } else if oldest_queued_secs
                 .is_some_and(|age| age > spec.reclaim.queued_after.as_secs() as i64)
             {
                 Some((
@@ -361,6 +416,8 @@ pub async fn evaluate(pool: &PgPool) -> Result<Vec<JobHealth>, sqlx::Error> {
                 start_latency_p95_secs: agg.as_ref().and_then(|a| a.start_latency_p95_secs),
                 start_latency_max_secs: agg.as_ref().and_then(|a| a.start_latency_max_secs),
                 reclaims_last_hour,
+                worker_last_seen_at,
+                worker_heartbeat_age_secs,
                 stale,
                 failure_mode,
                 reason,
@@ -526,10 +583,12 @@ fn env_u64(var: &str, default: u64) -> u64 {
 ///
 /// This runs as a plain background task, independent of the apalis Monitor, so
 /// it keeps working when the workers don't. After a startup grace period, it
-/// checks every minute whether a large fraction of queues have gone stale (or
-/// the DB is unreachable) for several consecutive checks; if so it emits an
+/// checks every minute whether a large fraction of queues have gone stale, any
+/// registered worker's heartbeat is dead (`JOB_WORKER_DEAD_SECONDS`, 300), or
+/// the DB is unreachable, for several consecutive checks; if so it emits an
 /// ERROR (→ Sentry) and **exits the process** so the orchestrator restarts it
-/// clean — the only reliable way to unpark workers stuck on dead connections.
+/// clean — the only reliable way to unpark workers stuck on dead connections
+/// or to replace a worker the Monitor could not rebuild.
 ///
 /// Guards against restart loops: a startup grace period (healthy queues need
 /// time to record their first success), and a required run of consecutive bad
@@ -555,7 +614,22 @@ pub async fn run_liveness_monitor(pool: PgPool) {
             Ok(report) if !report.is_empty() => {
                 let total = report.len();
                 let stale = report.iter().filter(|job| job.stale).count();
-                if is_systemic_stall(stale, total, stale_fraction) {
+                let dead: Vec<&str> = report
+                    .iter()
+                    .filter(|job| job.failure_mode == Some("worker_dead"))
+                    .map(|job| job.queue.as_str())
+                    .collect();
+                if !dead.is_empty() {
+                    // A single dead worker starves its queue for good (the
+                    // Monitor rebuild is the first line of defence; this is
+                    // the backstop when re-registration never succeeds).
+                    tracing::warn!(
+                        workers = ?dead,
+                        consecutive = consecutive + 1,
+                        "job worker heartbeat dead"
+                    );
+                    Some(format!("dead worker heartbeat: {}", dead.join(",")))
+                } else if is_systemic_stall(stale, total, stale_fraction) {
                     tracing::warn!(
                         stale,
                         total,
@@ -706,6 +780,63 @@ mod tests {
         let report = evaluate(&pool).await?;
         assert_eq!(report[0].failure_mode, Some("wake"));
         assert_eq!(report[0].available_slots, 1);
+        Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn dead_worker_heartbeat_marks_queue_stale(pool: PgPool) -> Result<(), sqlx::Error> {
+        crate::jobs::setup_apalis(&pool).await?;
+        let specs = vec![QueueSpec::cron(
+            "dead-worker-test",
+            1,
+            1,
+            Duration::from_secs(30),
+        )];
+        sqlx::query(
+            r#"
+            INSERT INTO apalis.workers (id, worker_type, storage_name, layers, last_seen)
+            VALUES ('dead-worker-test', 'dead-worker-test', 'test', '', NOW() - INTERVAL '10 minutes')
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+
+        let report = evaluate_registry(&pool, Utc::now(), &specs).await?;
+        assert_eq!(report.len(), 1);
+        assert_eq!(report[0].failure_mode, Some("worker_dead"));
+        assert!(report[0].stale);
+        assert!(
+            report[0]
+                .worker_heartbeat_age_secs
+                .is_some_and(|age| age >= 600)
+        );
+
+        sqlx::query("UPDATE apalis.workers SET last_seen = NOW() WHERE id = 'dead-worker-test'")
+            .execute(&pool)
+            .await?;
+        let report = evaluate_registry(&pool, Utc::now(), &specs).await?;
+        assert_eq!(report[0].failure_mode, None);
+        assert!(!report[0].stale);
+        assert!(
+            report[0]
+                .worker_heartbeat_age_secs
+                .is_some_and(|age| age < 60)
+        );
+
+        // A queue whose worker never registered is dead only once the process
+        // has been up longer than the threshold.
+        let specs = vec![QueueSpec::cron(
+            "never-registered",
+            1,
+            1,
+            Duration::from_secs(30),
+        )];
+        let report = evaluate_registry(&pool, Utc::now(), &specs).await?;
+        assert_eq!(report[0].failure_mode, None);
+        assert_eq!(report[0].worker_last_seen_at, None);
+        let long_ago = Utc::now() - chrono::Duration::seconds(3600);
+        let report = evaluate_registry(&pool, long_ago, &specs).await?;
+        assert_eq!(report[0].failure_mode, Some("worker_dead"));
         Ok(())
     }
 }

@@ -87,6 +87,8 @@ export interface TreasuryAsset {
     id: string;
     contractId?: string;
     lockupInstanceId?: string;
+    /** NEAR lockup contract account for Lockup rows (balance-history series id). */
+    lockupAccountId?: string;
     ftLockupSchedule?: FtLockupSchedule;
     residency: TokenResidency;
     network: string;
@@ -111,6 +113,7 @@ interface TreasuryAssetRaw {
     id: string;
     contractId?: string;
     lockupInstanceId?: string;
+    lockupAccountId?: string;
     ftLockupSchedule?: FtLockupSchedule;
     residency: TokenResidency;
     network: string;
@@ -180,6 +183,7 @@ export function transformTreasuryAssets(
             id: token.id,
             contractId: token.contractId,
             lockupInstanceId: token.lockupInstanceId,
+            lockupAccountId: token.lockupAccountId,
             ftLockupSchedule: token.ftLockupSchedule,
             residency: token.residency,
             network: token.network,

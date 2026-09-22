@@ -13,7 +13,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     AppState,
     handlers::user::lockup::StakingPoolAccount,
-    utils::cache::{CacheKey, CacheTier},
+    utils::{
+        cache::{CacheKey, CacheTier},
+        contract_read_error::ContractReadError,
+    },
 };
 
 /// API response from FastNear and NearTreasury staking pool APIs
@@ -140,15 +143,7 @@ async fn fetch_staking_validator_details(
                 .read_only::<RewardFeeFraction>()
                 .fetch_from(&state_clone.network)
                 .await
-                .map_err(|e| {
-                    (
-                        StatusCode::BAD_GATEWAY,
-                        format!(
-                            "Failed to fetch validator fee fraction from pool {}: {}",
-                            pool_id_clone, e
-                        ),
-                    )
-                })?
+                .map_err(|e| ContractReadError::from(e).into_http("get_reward_fee_fraction"))?
                 .data;
             let fee_percent = if fee.denominator == 0 {
                 None
@@ -319,16 +314,7 @@ async fn fetch_staking_pool_balance(
         .read_only::<StakingPoolAccount>()
         .fetch_from(network)
         .await
-        .map_err(|e| {
-            eprintln!(
-                "Error fetching staking balance from pool {}: {}",
-                pool_id, e
-            );
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to fetch staking balance from {}", pool_id),
-            )
-        })?;
+        .map_err(|e| ContractReadError::from(e).into_http("staking_pool.get_account"))?;
 
     Ok(StakingPoolAccountInfo {
         pool_id: pool_id.to_string(),

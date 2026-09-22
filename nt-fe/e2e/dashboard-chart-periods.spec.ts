@@ -1,9 +1,10 @@
-import { test, expect, Page, Route } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 import ROMAKQA_ASSETS from "./fixtures/romakqa-assets.json";
-import CHART_1W from "./fixtures/romakqa-chart-1w.json";
 import CHART_1M from "./fixtures/romakqa-chart-1m.json";
-import CHART_3M from "./fixtures/romakqa-chart-3m.json";
+import CHART_1W from "./fixtures/romakqa-chart-1w.json";
 import CHART_1Y from "./fixtures/romakqa-chart-1y.json";
+import CHART_3M from "./fixtures/romakqa-chart-3m.json";
+import { expect, test } from "./fixtures/test-with-pages";
 
 /**
  * Reproduces GitHub issue #228:
@@ -17,7 +18,6 @@ import CHART_1Y from "./fixtures/romakqa-chart-1y.json";
  */
 
 const TREASURY_ID = "romakqatesting.sputnik-dao.near";
-const DASHBOARD_URL = `/${TREASURY_ID}`;
 
 test.use({ locale: "en-US" });
 
@@ -135,69 +135,6 @@ async function setupMocks(page: Page) {
 }
 
 /**
- * Select a time period from the desktop dropdown. The trigger shows the
- * currently selected period; the other options live in a portaled menu that
- * must be opened first.
- */
-async function selectDesktopPeriod(page: Page, period: string) {
-    await page.getByTestId("chart-period-trigger").click();
-    await page.getByTestId(`chart-period-option-${period}`).click();
-}
-
-/**
- * Collect x-axis tick labels from the rendered chart.
- * Returns an array of { text, left, right } for each visible tick label.
- */
-async function getXAxisLabels(
-    page: Page,
-): Promise<Array<{ text: string; left: number; right: number }>> {
-    return page.evaluate(() => {
-        const xAxisGroup = document.querySelector(".recharts-xAxis");
-        if (!xAxisGroup) return [];
-
-        const ticks = xAxisGroup.querySelectorAll(
-            ".recharts-cartesian-axis-tick text",
-        );
-        return Array.from(ticks).map((tick) => {
-            const rect = tick.getBoundingClientRect();
-            return {
-                text: tick.textContent || "",
-                left: rect.left,
-                right: rect.right,
-            };
-        });
-    });
-}
-
-/**
- * Count the number of data points rendered in the chart's area path.
- * Recharts renders one SVG path for the area, and the number of line
- * commands (L) + the initial move (M) gives the data point count.
- */
-async function getChartDataPointCount(page: Page): Promise<number> {
-    return page.evaluate(() => {
-        // Recharts area chart renders a path with class "recharts-area-curve"
-        const path = document.querySelector(
-            ".recharts-area-area path, .recharts-area .recharts-area-curve",
-        );
-        if (!path) return 0;
-
-        const d = path.getAttribute("d");
-        if (!d) return 0;
-
-        // Count M (moveto) + L (lineto) + C (curveto, which connects points).
-        // For monotone curve type, Recharts uses C (cubic bezier) commands.
-        // Each data point generates one C command (except the first which is M).
-        const moveCount = (d.match(/M/g) || []).length;
-        const curveCount = (d.match(/C/g) || []).length;
-        const lineCount = (d.match(/L/g) || []).length;
-
-        // Total data points = initial move + subsequent curves/lines
-        return moveCount + curveCount + lineCount;
-    });
-}
-
-/**
  * Parse a date label like "Nov 23", "11/23/2025", "Mar '25", or "Now"
  * into a Date object relative to a reference date.
  */
@@ -259,27 +196,24 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
     for (const period of ["3M", "1Y"] as const) {
         test(`${period} chart should have data points covering the full period`, async ({
             page,
+            dashboardPage,
         }) => {
             test.setTimeout(60_000);
 
             await setupMocks(page);
-            await page.goto(DASHBOARD_URL);
+            await dashboardPage.gotoPlain(TREASURY_ID);
 
             // Wait for chart to render with default period (1W)
-            const chartContainer = page.locator("[data-slot='chart']").first();
-            await chartContainer
-                .locator("svg")
-                .first()
-                .waitFor({ state: "visible", timeout: 15_000 });
+            await dashboardPage.chart.waitForRendered();
 
             // Select the target time period via the desktop dropdown
-            await selectDesktopPeriod(page, period);
+            await dashboardPage.chart.selectDesktopPeriod(period);
 
             // Wait for chart to re-render with new period data
             await page.waitForTimeout(2000);
 
             // Collect x-axis labels
-            const labels = await getXAxisLabels(page);
+            const labels = await dashboardPage.chart.getXAxisLabels();
             expect(labels.length).toBeGreaterThan(0);
 
             console.log(
@@ -369,31 +303,29 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
 
     test("all periods should render the correct number of data points in the chart path", async ({
         page,
+        dashboardPage,
     }) => {
         test.setTimeout(90_000);
 
         await setupMocks(page);
-        await page.goto(DASHBOARD_URL);
+        await dashboardPage.gotoPlain(TREASURY_ID);
 
-        const chartContainer = page.locator("[data-slot='chart']").first();
-        await chartContainer
-            .locator("svg")
-            .first()
-            .waitFor({ state: "visible", timeout: 15_000 });
+        await dashboardPage.chart.waitForRendered();
 
         for (const period of ["1W", "1M", "3M", "1Y"] as const) {
             // Select period via the desktop dropdown
-            await selectDesktopPeriod(page, period);
+            await dashboardPage.chart.selectDesktopPeriod(period);
             await page.waitForTimeout(2000);
 
             // Count rendered data points in the SVG path
-            const pointCount = await getChartDataPointCount(page);
+            const pointCount = await dashboardPage.chart.getDataPointCount();
 
             console.log(
-                `[${period}] Rendered data points: ${pointCount}, expected: ~${EXPECTED_POINTS[period] + 1} (data + "Now")`,
+                `[${period}] Rendered data points: ${pointCount}, expected: ~${EXPECTED_POINTS[period] + 1} (past days + "Now")`,
             );
 
-            // The chart should render approximately EXPECTED_POINTS + 1 (for "Now")
+            // The chart renders the fixture's past-day buckets plus "Now";
+            // buckets on the current day are collapsed into "Now".
             // Allow some tolerance since Recharts may optimize the path
             const expectedMin = EXPECTED_POINTS[period];
             expect(

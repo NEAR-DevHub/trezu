@@ -92,13 +92,14 @@ pub async fn relay_delegate_action(
         proposal_storage_bytes,
     } = access::authorize(&state, &auth_user, parsed, treasury_record).await?;
 
-    // 4. Bound the attached deposit and size the DAO-storage compensation. Only
-    //    `add_proposal` grows DAO storage, so `act_proposal`-only relays (votes) get no
-    //    top-up. The storage figure is derived server-side from the parsed proposal and
-    //    clamped to the cap by `proposal_storage_cost` — the client's `storageBytes` is
-    //    never trusted. Both `enforce_deposit_limit` and the reservation below are pure
-    //    validation/bookkeeping that complete BEFORE any sponsor NEAR moves.
-    let compensate_proposal_storage = operation.is_add_proposals();
+    // 4. Bound the attached deposit and size the DAO-storage compensation: measured
+    //    proposal args for `add_proposal`, a flat allowance per `act_proposal` (a vote
+    //    writes the voter into the proposal). The storage figure is derived
+    //    server-side and clamped to the cap by `proposal_storage_cost` — the client's
+    //    `storageBytes` is never trusted. Both `enforce_deposit_limit` and the
+    //    reservation below are pure validation/bookkeeping that complete BEFORE any
+    //    sponsor NEAR moves.
+    let compensate_proposal_storage = proposal_storage_bytes > 0;
     let proposal_storage_cost = if compensate_proposal_storage {
         policy::proposal_storage_cost(proposal_storage_bytes)
     } else {
@@ -122,8 +123,8 @@ pub async fn relay_delegate_action(
     let credit_reservation =
         accounting::reserve_gas_credit(&state.db_pool, &treasury_id, plan_type).await?;
 
-    // 6. Compensate the DAO contract for the new proposal's storage. This is the first
-    //    step that moves sponsor NEAR; a failure refunds the reserved credit.
+    // 6. Compensate the DAO contract for the storage this relay adds. This is the
+    //    first step that moves sponsor NEAR; a failure refunds the reserved credit.
     if compensate_proposal_storage
         && let Err(top_up_error) =
             policy::top_up_proposal_storage(&state, &treasury_id, proposal_storage_cost).await

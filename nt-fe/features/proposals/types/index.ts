@@ -2,6 +2,7 @@ import { ProposalPermissionKind } from "@/lib/config-utils";
 import { Proposal } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import type { OmniProposalData } from "@/features/omni/types";
 
 /**
  * UI representation of proposal kinds
@@ -26,6 +27,7 @@ export type ProposalUIKind =
     | "Bounty"
     | "Vote"
     | "Factory Info Update"
+    | "Omni Chain Signature"
     | "Unsupported";
 
 /**
@@ -365,6 +367,7 @@ export interface ProposalTypeDataMap {
     Bounty: BountyData;
     Vote: VoteData;
     "Factory Info Update": FactoryInfoUpdateData;
+    "Omni Chain Signature": OmniProposalData;
     Unsupported: UnknownData;
 }
 
@@ -402,4 +405,5 @@ export type AnyProposalData =
     | BountyData
     | VoteData
     | FactoryInfoUpdateData
+    | OmniProposalData
     | UnknownData;

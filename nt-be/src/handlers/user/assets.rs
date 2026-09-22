@@ -1,7 +1,7 @@
 use crate::{
     handlers::user::{
         ft_lockups::{FtLockupPosition, fetch_ft_lockup_positions},
-        lockup::{LockupBalance, fetch_lockup_balance_of_account},
+        lockup::{LockupBalance, derive_lockup_account_id, fetch_lockup_balance_of_account},
         staking::{StakingBalance, fetch_staking_balances, fetch_staking_balances_for_pools},
     },
     utils::{
@@ -40,6 +40,9 @@ pub struct TokenBalanceResponse {
     pub token_id: String,
     pub balance: U128,
     pub locked_balance: Option<U128>,
+    /// Chain total minus the storage lock and execution headroom: the most
+    /// the account can send regardless of who owns it (NEAR only).
+    pub releasable_balance: Option<U128>,
     pub decimals: u8,
 }
 
@@ -117,6 +120,10 @@ pub struct SimplifiedToken {
     pub contract_id: Option<String>,
     /// FT lockup instance contract ID (one token can have multiple lockup sessions).
     pub lockup_instance_id: Option<String>,
+    /// NEAR lockup contract account for `Lockup` rows; the id of the
+    /// `lockup:{account}` balance-history series.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lockup_account_id: Option<String>,
     /// Optional schedule metadata for FT lockup session rows.
     pub ft_lockup_schedule: Option<FtLockupSchedule>,
     pub residency: TokenResidency,
@@ -366,6 +373,7 @@ fn build_intents_tokens(
                     id: unified_id,
                     contract_id: Some(token_id),
                     lockup_instance_id: None,
+                    lockup_account_id: None,
                     ft_lockup_schedule: None,
                     decimals: metadata.decimals,
                     balance: Balance::Standard {
@@ -512,6 +520,7 @@ impl PublicLedgerHeads {
         account: &AccountId,
         metadata_map: &HashMap<String, TokenMetadataResponse>,
         staking_balance: Option<StakingBalance>,
+        chain_near: (u128, u128),
     ) -> AssetBalanceInputs {
         use crate::handlers::public_history::silver::models::decimal_denominator;
 
@@ -550,14 +559,21 @@ impl PublicLedgerHeads {
             intents_balances.push((token_id, raw.to_string()));
         }
 
+        // The ledger head is capped at what the chain can actually release
+        // (storage lock + vote headroom), see `ledger_near_spendable`.
+        let (chain_total, storage_locked) = chain_near;
+        let releasable = releasable_near_balance(chain_total, storage_locked);
         let near_balance = self.near.and_then(|value| {
-            let raw = to_raw(&value, NEAR_DECIMALS)
-                .filter(|raw| *raw >= MIN_NEAR_DISPLAY_BALANCE.as_yoctonear())?;
+            let raw = ledger_near_spendable(to_raw(&value, NEAR_DECIMALS)?, releasable);
+            if raw == 0 {
+                return None;
+            }
             Some(TokenBalanceResponse {
                 account_id: account.to_string(),
                 token_id: "near".to_string(),
                 balance: raw.into(),
-                locked_balance: None,
+                locked_balance: Some(storage_locked.into()),
+                releasable_balance: Some(releasable.into()),
                 decimals: NEAR_DECIMALS,
             })
         });
@@ -623,21 +639,38 @@ async fn load_public_ledger_inputs(
     } else {
         fetch_tokens_metadata_enriched(state, &metadata_ids, false).await
     };
-    let staking_balance =
-        fetch_staking_balances_for_pools(&state.network, account, &heads.staking_pool_ids).await?;
+    let (staking_balance, chain_near) = tokio::try_join!(
+        fetch_staking_balances_for_pools(&state.network, account, &heads.staking_pool_ids),
+        fetch_chain_near_balance(state, account)
+    )?;
     Ok(Some(heads.into_inputs(
         account,
         &metadata_map,
         staking_balance,
+        chain_near,
     )))
+}
+
+/// Storage the DAO still has to grow between a payment proposal and its
+/// execution: each finalizing vote appends ~85 bytes (measured on mainnet), and
+/// the lock check runs after the transfer is debited. 0.01 NEAR covers ~11
+/// votes, so a MAX payment approved by a full council still clears the lock.
+pub const NEAR_EXECUTION_HEADROOM: NearToken = NearToken::from_millinear(10);
+
+/// The most NEAR a payment can move: chain total minus the storage lock, less
+/// the headroom the approving votes will consume.
+pub fn releasable_near_balance(total: u128, storage_locked: u128) -> u128 {
+    total.saturating_sub(storage_locked.saturating_add(NEAR_EXECUTION_HEADROOM.as_yoctonear()))
 }
 
 /// Fetch NEAR balance for an account
 /// User-owned spendable NEAR: chain total minus whichever is larger of the
-/// storage lock and the sponsor-fronted NEAR (`monitored_accounts.paid_near`),
-/// floored to zero below the display minimum.
+/// storage lock (plus execution headroom) and the sponsor-fronted NEAR
+/// (`monitored_accounts.paid_near`), floored to zero below the display minimum.
 pub fn spendable_near_balance(total: u128, storage_locked: u128, paid_near: u128) -> u128 {
-    let available_raw = total.saturating_sub(storage_locked.max(paid_near));
+    let available_raw = total
+        .saturating_sub(paid_near)
+        .min(releasable_near_balance(total, storage_locked));
     if available_raw < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
         0
     } else {
@@ -692,7 +725,23 @@ fn near_balance_response(
         token_id: "near".to_string(),
         balance: spendable_near_balance(total, storage_locked, paid_near).into(),
         locked_balance: Some(storage_locked.into()),
+        releasable_balance: Some(releasable_near_balance(total, storage_locked).into()),
         decimals: 24,
+    }
+}
+
+/// Ledger-served NEAR capped at what the chain can release. Imported DAOs
+/// hold their contract binary and pre-Trezu proposal history in storage the
+/// sponsor never paid for; the ledger correctly counts that NEAR as
+/// user-owned, but a transfer of it fails with `LackBalanceForState`. The cap
+/// applies only here at read time, so for such DAOs the dashboard sits below
+/// the chart's latest point by the lock — accepted.
+pub fn ledger_near_spendable(ledger_raw: u128, releasable: u128) -> u128 {
+    let capped = ledger_raw.min(releasable);
+    if capped < MIN_NEAR_DISPLAY_BALANCE.as_yoctonear() {
+        0
+    } else {
+        capped
     }
 }
 
@@ -780,7 +829,7 @@ async fn load_asset_balances(
         });
     }
 
-    if matches!(scope, AssetsScope::Public)
+    let inputs = if matches!(scope, AssetsScope::Public)
         && let Some(mut inputs) = load_public_ledger_inputs(state, account).await?
     {
         // Lockups aren't ledger-tracked; retain their RPC reads.
@@ -790,10 +839,25 @@ async fn load_asset_balances(
         )?;
         inputs.lockup_balance = lockup;
         inputs.ft_lockup_positions = ft_lockups;
-        return Ok(inputs);
+        inputs
+    } else {
+        load_live_public_balances(state, account, scope).await?
+    };
+
+    // A lockup that appeared after history discovery settled `absent`
+    // would otherwise stay out of the chart until the daily recheck.
+    if inputs.lockup_balance.is_some()
+        && let Err(error) =
+            crate::handlers::public_history::observations::lockup::nudge_discovery_if_absent(
+                &state.db_pool,
+                account.as_str(),
+            )
+            .await
+    {
+        tracing::warn!(account_id = %account, %error, "lockup discovery nudge failed");
     }
 
-    load_live_public_balances(state, account, scope).await
+    Ok(inputs)
 }
 
 async fn load_live_public_balances(
@@ -1000,6 +1064,7 @@ pub async fn compute_user_assets(
                     id: unified_id,
                     contract_id: Some(token_id),
                     lockup_instance_id: None,
+                    lockup_account_id: None,
                     ft_lockup_schedule: None,
                     decimals: token_meta.decimals,
                     balance: Balance::Standard {
@@ -1081,6 +1146,7 @@ pub async fn compute_user_assets(
                 id: unified_id,
                 contract_id: Some(position.token_account_id),
                 lockup_instance_id: Some(position.instance_id),
+                lockup_account_id: None,
                 ft_lockup_schedule: Some(FtLockupSchedule {
                     start_timestamp: position.start_timestamp,
                     round_interval: position.session_interval,
@@ -1119,6 +1185,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: Some(derive_lockup_account_id(account).to_string()),
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Vested(lockup),
@@ -1149,6 +1216,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: None,
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Staked(staking),
@@ -1174,6 +1242,7 @@ pub async fn compute_user_assets(
                 id: "near".to_string(),
                 contract_id: None,
                 lockup_instance_id: None,
+                lockup_account_id: None,
                 ft_lockup_schedule: None,
                 decimals: near_token_meta.decimals,
                 balance: Balance::Standard {
@@ -1312,6 +1381,9 @@ mod tests {
 
     const NEAR: u128 = 1_000_000_000_000_000_000_000_000;
 
+    /// Chain balance with no storage lock: the ledger head is never capped.
+    const UNLOCKED_CHAIN: (u128, u128) = (1_000 * NEAR, 0);
+
     fn decimal(value: &str) -> BigDecimal {
         BigDecimal::from_str(value).unwrap()
     }
@@ -1400,7 +1472,7 @@ mod tests {
             ("usdt.tether-token.near".to_string(), decimal("42")),
             ("no-metadata.near".to_string(), decimal("7")),
         ]));
-        let inputs = heads.into_inputs(&account, &metadata_map, None);
+        let inputs = heads.into_inputs(&account, &metadata_map, None, UNLOCKED_CHAIN);
 
         assert_eq!(
             inputs.ft_balances,
@@ -1460,7 +1532,8 @@ mod tests {
                 can_withdraw: true,
             }],
         };
-        let inputs = heads.into_inputs(&account, &HashMap::new(), Some(rpc_balance));
+        let inputs =
+            heads.into_inputs(&account, &HashMap::new(), Some(rpc_balance), UNLOCKED_CHAIN);
         let staking = inputs.staking_balance.unwrap();
         assert_eq!(staking.staked_balance, NearToken::from_near(2));
         assert_eq!(staking.unstaked_balance, NearToken::from_near(3));
@@ -1475,8 +1548,26 @@ mod tests {
         let account: AccountId = "test.sputnik-dao.near".parse().unwrap();
         let heads =
             PublicLedgerHeads::partition(HashMap::from([("near".to_string(), decimal("0.0005"))]));
-        let inputs = heads.into_inputs(&account, &HashMap::new(), None);
+        let inputs = heads.into_inputs(&account, &HashMap::new(), None, UNLOCKED_CHAIN);
         assert!(inputs.near_balance.is_none());
+    }
+
+    #[test]
+    fn ledger_near_is_capped_at_chain_releasable_in_inputs() {
+        let account: AccountId = "test.sputnik-dao.near".parse().unwrap();
+        let heads =
+            PublicLedgerHeads::partition(HashMap::from([("near".to_string(), decimal("6"))]));
+        let total = 6_143 * NEAR / 1_000;
+        let locked = 6_024 * NEAR / 1_000;
+        let inputs = heads.into_inputs(&account, &HashMap::new(), None, (total, locked));
+        let near_balance = inputs.near_balance.expect("near balance");
+        let releasable = releasable_near_balance(total, locked);
+        assert_eq!(near_balance.balance, U128::from(releasable));
+        assert_eq!(near_balance.locked_balance, Some(U128::from(locked)));
+        assert_eq!(
+            near_balance.releasable_balance,
+            Some(U128::from(releasable))
+        );
     }
 
     fn token(residency: TokenResidency, lockup_instance_id: Option<&str>) -> SimplifiedToken {
@@ -1484,6 +1575,7 @@ mod tests {
             id: "t".to_string(),
             contract_id: None,
             lockup_instance_id: lockup_instance_id.map(str::to_string),
+            lockup_account_id: None,
             ft_lockup_schedule: None,
             residency,
             network: "near".to_string(),
@@ -1560,12 +1652,43 @@ mod tests {
 
     #[test]
     fn storage_lock_wins_when_larger_than_paid_near() {
-        assert_eq!(spendable_near_balance(10 * NEAR, 4 * NEAR, NEAR), 6 * NEAR);
+        // The lock binds, so the execution headroom is taken off as well.
+        assert_eq!(
+            spendable_near_balance(10 * NEAR, 4 * NEAR, NEAR),
+            6 * NEAR - NEAR_EXECUTION_HEADROOM.as_yoctonear()
+        );
+    }
+
+    #[test]
+    fn releasable_leaves_headroom_for_approving_votes() {
+        // unified-test-1: 1.907931 total, 52,546 bytes locked. The proposal
+        // that moved exactly total − lock failed by 10 bytes once the 85-byte
+        // vote entry landed; the headroom keeps MAX below that line.
+        let total = 1_907_931_000_000_000_000_000_000;
+        let lock = 52_546 * 10_u128.pow(19);
+        let releasable = releasable_near_balance(total, lock);
+        assert!(total - releasable - lock >= 85 * 10_u128.pow(19));
+        assert_eq!(
+            releasable,
+            total - lock - NEAR_EXECUTION_HEADROOM.as_yoctonear()
+        );
     }
 
     #[test]
     fn dust_below_display_minimum_is_zero() {
         assert_eq!(spendable_near_balance(3 * NEAR + 1_000, NEAR, 3 * NEAR), 0);
+    }
+
+    #[test]
+    fn ledger_near_is_capped_at_chain_releasable() {
+        // braindao-treasury: ledger user-owned 6.000, chain 6.143 with 6.024
+        // locked → 0.119 releasable wins.
+        let releasable = 6_143_000_000_000_000_000_000_000 - 6_024_000_000_000_000_000_000_000;
+        assert_eq!(ledger_near_spendable(6 * NEAR, releasable), releasable);
+        // Trezu-native DAO: the ledger figure is below the chain bound and wins.
+        assert_eq!(ledger_near_spendable(10 * NEAR, 12 * NEAR), 10 * NEAR);
+        // Capped dust displays as zero.
+        assert_eq!(ledger_near_spendable(6 * NEAR, 1_000), 0);
     }
 
     #[test]

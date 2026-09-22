@@ -8,6 +8,7 @@ use near_api::{AccountId, NetworkConfig, Reference, Tokens};
 use std::str::FromStr;
 
 use crate::services::counterparties::convert_raw_to_decimal;
+use crate::utils::contract_read_error::is_unknown_account;
 use crate::utils::transport::with_transport_retry;
 
 /// Query NEAR native token balance at a specific block height, converted to human-readable format
@@ -51,7 +52,7 @@ pub async fn get_balance_at_block(
         Err(e) => {
             let err_str = e.to_string();
             // Account doesn't exist at this block - balance is 0
-            if err_str.contains("UnknownAccount") {
+            if is_unknown_account(&err_str) {
                 tracing::debug!(
                     "Account {} does not exist at block {} - returning balance 0",
                     account_id,

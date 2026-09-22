@@ -205,6 +205,7 @@ export function TemplateEditor({
                 <LargeInput
                     borderless
                     aria-label={t("editor.nameLabel")}
+                    data-testid="template-name-input"
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     onBlur={() => setNameTouched(true)}
@@ -238,6 +239,7 @@ export function TemplateEditor({
                         borderless
                         rows={16}
                         className="font-mono text-xs"
+                        data-testid="template-manifest-textarea"
                         value={manifestText}
                         onChange={(event) => {
                             setManifestText(event.target.value);

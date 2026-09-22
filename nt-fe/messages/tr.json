@@ -899,6 +899,267 @@
             "modalBodyVote": "Bu oyu kullanmak için cüzdanınızda yeterli NEAR token'ı yok. Oy kullanmak en az <amount>{required} NEAR</amount> bakiye gerektirir. Lütfen cüzdanınıza NEAR ekleyin ve tekrar deneyin.",
             "modalBodyProposal": "Bu talebi oluşturmak için cüzdanınızda yeterli NEAR token'ı yok. Talep oluşturmak en az <amount>{required} NEAR</amount> bakiye gerektirir. Lütfen cüzdanınıza NEAR ekleyin ve tekrar deneyin.",
             "gotIt": "Anladım"
+        },
+        "omni": {
+            "unknown": "Unknown",
+            "openInExplorer": "Open in explorer",
+            "notPlainSignRequest": "NOT a plain chain-signature request",
+            "header": {
+                "noIntent": "(no intent)",
+                "chainWithId": "{name} · chain id {chainId}",
+                "nearNetwork": "NEAR {network}",
+                "path": "path {path}"
+            },
+            "status": {
+                "verified": "VERIFIED",
+                "mismatch": "MISMATCH / DO NOT APPROVE",
+                "unverified": "UNVERIFIED"
+            },
+            "statusDescription": {
+                "verified": "The MPC signing payload was recomputed from the transaction shown below and matches the proposal byte-for-byte.",
+                "mismatch": "The MPC would sign something other than what this request shows. Do not approve.",
+                "unverified": "This transaction could not be recomputed in the browser. Verify it with the omni CLI before approving."
+            },
+            "unverifiedReason": {
+                "envelope": "The description is not a valid omni envelope ({detail}).",
+                "unsupported-family": "The chain family \"{detail}\" is not supported in the browser.",
+                "unsupported-shape": "Unsupported unsigned_tx shape ({detail}).",
+                "invalid-field": "Invalid unsigned_tx field: {detail}.",
+                "family-not-verifiable": "The \"{detail}\" family has no browser verifier. The exact MPC payload is shown below.",
+                "unknown-chain": "The chain key \"{detail}\" is not in the omni registry, so the network could not be confirmed.",
+                "contract-creation": "Contract creation (empty `to`) is not supported in the browser. Verify with the omni CLI.",
+                "unsupported-envelope-version": "Envelope version {detail} is not supported by this reviewer (only version 1). Verify with the omni CLI."
+            },
+            "envelopeError": {
+                "not-json": "The description is not valid JSON.",
+                "not-object": "The description is not a JSON object.",
+                "missing-omni-marker": "The description has no omni marker.",
+                "missing-fields": "The envelope is missing fields: {fields}.",
+                "too-large": "The envelope exceeds 16 KB ({size} bytes) and was not parsed."
+            },
+            "acting": {
+                "title": "Acting account",
+                "account": "Derived address",
+                "controlledBy": "controlled by",
+                "loading": "Resolving the derived account…",
+                "unavailable": "Derived account unavailable",
+                "tonNote": "TON wallet address depends on the wallet contract; the ed25519 public key is shown.",
+                "retry": "Retry"
+            },
+            "transaction": {
+                "title": "Transaction"
+            },
+            "evm": {
+                "to": "To",
+                "value": "Value",
+                "nonce": "Nonce",
+                "gasLimit": "Gas limit",
+                "maxFeePerGas": "Max fee per gas",
+                "priorityFee": "Priority fee",
+                "maxGasCost": "Max gas cost",
+                "maxGasCostInfo": "gas_limit × max_fee_per_gas. Unused fees are refunded.",
+                "calldata": "Calldata",
+                "noCalldata": "(none)",
+                "bytes": "{count} bytes",
+                "selector": "Selector",
+                "decodedVia": "Decoded via {source}",
+                "abiLoading": "Looking up a verified ABI…",
+                "abiUnavailable": "No verified ABI found for this contract; raw calldata shown.",
+                "abiLookupFailed": "ABI lookup unavailable; raw calldata shown.",
+                "contractCreation": "Contract creation",
+                "targetNoCode": "The target address has no code: this calldata would be sent to a plain account (EOA). Check the address.",
+                "abiSourcifyDown": "Verified ABI lookup unavailable; names come from the built-in selector table."
+            },
+            "svm": {
+                "feePayer": "Fee payer",
+                "recentBlockhash": "Recent blockhash",
+                "messageVersion": "Message version",
+                "instructions": "Instructions",
+                "instructionCount": "{count, plural, one {# instruction} other {# instructions}}",
+                "program": "Program",
+                "nonceAdvance": "Durable nonce advance",
+                "signer": "signer",
+                "writable": "writable",
+                "readonly": "read-only",
+                "data": "Data",
+                "lookupTable": "from lookup table",
+                "systemTransfer": "Transfer {amount} {symbol} from {from} to {to}",
+                "splTransfer": "SPL token transfer of {amount} from {source} to {destination}",
+                "signatureCountWarning": "This message requires {count} signatures, but only the MPC key signs a DAO proposal. It can never be completed.",
+                "nonceCurrent": "Durable nonce is current: the nonce account still holds this blockhash.",
+                "nonceAdvanced": "Durable nonce already advanced: the nonce account holds a different value. This transaction can never land.",
+                "nonceAccountMissing": "Nonce account not found on-chain.",
+                "nonceUnavailable": "on-chain nonce lookup unavailable"
+            },
+            "utxo": {
+                "inputs": "Inputs",
+                "outputs": "Outputs",
+                "fee": "Fee",
+                "version": "Version",
+                "lockTime": "Lock time",
+                "senderPublicKey": "Sender public key",
+                "unknownScript": "Unknown script",
+                "change": "change",
+                "feeRate": "{rate} sat/vB over ~{vbytes} vB",
+                "negativeFee": "Outputs exceed inputs: this transaction can never be mined."
+            },
+            "generic": {
+                "sender": "Sender",
+                "senderPublicKey": "Sender public key",
+                "sequenceNumber": "Sequence number",
+                "function": "Function",
+                "typeArgs": "Type arguments",
+                "args": "Arguments",
+                "payload": "Payload",
+                "maxGas": "Max gas",
+                "gasUnitPrice": "Gas unit price",
+                "gasBudget": "Gas budget",
+                "gasPrice": "Gas price",
+                "gasPayment": "Gas payment",
+                "expiry": "Expires",
+                "chainId": "Chain id",
+                "inputs": "Inputs",
+                "commands": "Commands",
+                "kind": "Kind",
+                "walletVersion": "Wallet version",
+                "workchain": "Workchain",
+                "walletId": "Wallet id",
+                "seqno": "Seqno",
+                "messages": "Messages",
+                "to": "To",
+                "value": "Value",
+                "deploy": "Deploy wallet",
+                "rawFields": "All fields"
+            },
+            "verification": {
+                "title": "Verification"
+            },
+            "checks": {
+                "proposalSigns": "proposal signs",
+                "envelopeNeeds": "envelope needs",
+                "receiver": {
+                    "pass": "Receiver is the MPC signer contract ({expected})",
+                    "fail": "Receiver is {actual}, expected the MPC signer contract {expected}",
+                    "skip": "Receiver not checked"
+                },
+                "methods": {
+                    "pass": "{count, plural, one {# action} other {# actions}}, all plain sign calls",
+                    "fail": "Not all actions are plain sign calls ({offending})",
+                    "skip": "Actions not checked"
+                },
+                "path": {
+                    "pass": "Derivation path matches the envelope ({expected})",
+                    "fail": "Action #{index} signs with derivation path \"{actual}\", but the envelope says \"{expected}\". A DIFFERENT foreign account would sign.",
+                    "skip": "Derivation path not checked (no valid envelope)"
+                },
+                "domain": {
+                    "pass": "Key domain matches the {family} family ({expected})",
+                    "fail": "Action #{index} uses key domain {actual}, but the {family} family signs with domain {expected}",
+                    "skip": "Key domain not checked (unknown family \"{family}\")"
+                },
+                "chain-id": {
+                    "pass": "Chain matches the omni registry ({chain})",
+                    "fail": "unsigned_tx targets {actual}, but \"{chain}\" on this NEAR network expects {expected}. The envelope claims one network but the bytes target another.",
+                    "skip": "Chain \"{chain}\" is not in the omni registry"
+                },
+                "payload-count": {
+                    "pass": "Signature count matches ({expected})",
+                    "fail": "The envelope's transaction needs {expected} signature(s), but the proposal requests {actual}",
+                    "skip": "Signature count not checked"
+                },
+                "payload-bytes": {
+                    "pass": "Signing payload(s) match the envelope byte-for-byte",
+                    "fail": "Payload #{index} does NOT match the envelope's transaction",
+                    "skip": "Signing payload not recomputed in the browser"
+                },
+                "sender": {
+                    "pass": "Envelope sender matches the derived account",
+                    "fail": "Envelope sender {sender} does NOT match the derived account {derived}",
+                    "skip": "Envelope sender not checked (MPC lookup unavailable)",
+                    "pending": "Checking the envelope sender against the derived account…"
+                }
+            },
+            "staleness": {
+                "assumesNonce": "Assumes nonce {nonce}",
+                "currentNonce": "current on-chain nonce {nonce}",
+                "nonceLoading": "fetching on-chain nonce…",
+                "nonceUnavailable": "on-chain nonce unavailable",
+                "nonceUsed": "Nonce {nonce} is already used on-chain. This transaction can no longer be broadcast.",
+                "nonceAhead": "Nonce {nonce} is ahead of the account's next nonce {current}. It will not be mined until the gap is filled.",
+                "duplicateNonce": "Another open request ({ids}) for the same account and chain also uses nonce {nonce}. Only one of them can be broadcast.",
+                "nonceCurrent": "Nonce {nonce} is the account's next nonce."
+            },
+            "cli": {
+                "verifyHint": "Verify with the omni CLI:",
+                "broadcastTitle": "Broadcast",
+                "broadcastHint": "Approved. Broadcast the signed transaction with the omni CLI:",
+                "executionTx": "Open the execution transaction",
+                "broadcastVoterNote": "Replace the voter-account placeholder with the account that cast the deciding vote (it signed the NEAR transaction above)."
+            },
+            "raw": {
+                "title": "Raw data",
+                "envelope": "Envelope JSON",
+                "signArgs": "Decoded sign args (action {index})",
+                "argsDecodeError": "Action args are not base64 JSON.",
+                "payload": "MPC payload",
+                "builderVersion": "builder",
+                "sizeBytes": "{size} bytes",
+                "copied": "Copied to clipboard"
+            },
+            "cell": {
+                "to": "to {to}"
+            },
+            "aptos": {
+                "action": "Action",
+                "aptTransfer": "Transfer {amount} {symbol} to {to}",
+                "coinTransfer": "Transfer {amount} raw units of {coinType} to {to}",
+                "faTransfer": "Transfer {amount} raw units of fungible asset {metadata} to {to}",
+                "argCount": "{count, plural, one {# argument} other {# arguments}}",
+                "maxGas": "Max gas cost",
+                "maxGasInfo": "max_gas_amount × gas_unit_price. Unused gas is refunded.",
+                "expired": "EXPIRED",
+                "expiresIn": "expires in {days, plural, =0 {less than a day} one {# day} other {# days}}",
+                "expiredWarning": "This transaction has expired and can no longer be broadcast.",
+                "assumesSequence": "Assumes sequence number {sequence}",
+                "currentSequence": "current on-chain sequence number {sequence}",
+                "sequenceLoading": "fetching on-chain sequence number…",
+                "sequenceUnavailable": "on-chain sequence number unavailable",
+                "sequenceUsed": "Sequence number {sequence} is already used on-chain. This transaction can no longer be broadcast.",
+                "sequenceAhead": "Sequence number {sequence} is ahead of the account's next sequence number {current}."
+            },
+            "ton": {
+                "messages": "Messages",
+                "messageCount": "{count, plural, one {# message} other {# messages}}",
+                "bounceable": "bounceable",
+                "nonBounceable": "non-bounceable",
+                "mode": "mode {mode}",
+                "nonBounceableForm": "non-bounceable form",
+                "body": "Body",
+                "noBody": "none",
+                "comment": "text comment",
+                "binaryBody": "binary body, {bits} bits, {refs} refs",
+                "total": "Total value",
+                "wallet": "Wallet",
+                "walletId": "wallet id",
+                "seqno": "Seqno",
+                "validUntil": "Valid until",
+                "deploy": "Deploys wallet",
+                "deployYes": "yes (first transaction, StateInit attached)",
+                "deployNo": "no",
+                "walletAddress": "Wallet address",
+                "expiredWarning": "This message has expired (valid_until is in the past) and will be rejected by the network.",
+                "deployRedundant": "deploy is set but seqno is not 0: the wallet is already deployed, the StateInit is redundant.",
+                "deployMissing": "seqno is 0 but deploy is not set: if the wallet is not deployed yet this message will bounce."
+            },
+            "sui": {
+                "transfer": "Transfer {amount} {symbol} to {to}",
+                "commandCount": "{count, plural, one {# command} other {# commands}}",
+                "gasPriceMist": "gas price {price} MIST",
+                "gasMayBeStale": "gas coin version may be stale",
+                "gasOwner": "Gas owner",
+                "sharedObjects": "This transaction touches shared objects; review the Move call carefully.",
+                "sponsoredGas": "Gas owner differs from the sender: the sponsor would have to co-sign and nobody holds that key. This transaction cannot be completed by the MPC alone."
+            }
         }
     },
     "members": {
@@ -1554,6 +1815,7 @@
         "connectWallet": "Cüzdan Bağla",
         "connecting": "Bağlanıyor...",
         "connectedAs": "<strong>{account}</strong> olarak bağlanıldı",
+        "switchAccount": "Değil misiniz? Hesap değiştir",
         "loadingTreasuries": "Hazineler yükleniyor...",
         "selectSignIn": "{app, select, unknown {Kullanmak istediğiniz hazineyi seçin.} other {{app} içinde kullanmak istediğiniz hazineyi seçin.}}",
         "selectSignTx": "Üzerinde öneri oluşturmak için bir hazine seçin:",
@@ -1903,6 +2165,7 @@
         "Bounty": "Ödül",
         "Vote": "Oy",
         "Factory Info Update": "Fabrika Bilgisi Güncellemesi",
+        "Omni Chain Signature": "Chain Signature",
         "Unsupported": "Desteklenmiyor"
     },
     "paymentFormSection": {
