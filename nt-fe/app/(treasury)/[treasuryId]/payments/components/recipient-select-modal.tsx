@@ -294,7 +294,7 @@ export function RecipientSelectModal({
                             )}
                         >
                             {showInvalidError ? (
-                                <p className="px-1 text-left text-sm text-destructive">
+                                <p className="px-4 text-left text-sm text-destructive">
                                     {t("invalidAddress")}
                                 </p>
                             ) : null}
@@ -302,7 +302,7 @@ export function RecipientSelectModal({
                             {showTypedAddressRow ? (
                                 <button
                                     type="button"
-                                    className="flex w-full items-center gap-3 rounded-xl px-2 py-2.5 text-left hover:bg-muted"
+                                    className="mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-xl px-2 py-2.5 text-left hover:bg-muted"
                                     onClick={() =>
                                         handlePickAddress(draft.trim())
                                     }
@@ -316,7 +316,7 @@ export function RecipientSelectModal({
 
                             {hasMatchingContacts ? (
                                 <>
-                                    <div className="flex items-center gap-2 px-1 text-sm font-medium leading-normal text-general-secondary-foreground">
+                                    <div className="flex items-center gap-2 px-4 text-sm font-medium leading-normal text-general-secondary-foreground">
                                         <Icon
                                             icon={IdCardIcon}
                                             className="size-4"
@@ -332,7 +332,7 @@ export function RecipientSelectModal({
                                                 <button
                                                     key={entry.id}
                                                     type="button"
-                                                    className="flex w-full items-center justify-between gap-2 rounded-xl px-2 py-2.5 text-left hover:bg-muted"
+                                                    className="mx-2 flex w-[calc(100%-1rem)] items-center justify-between gap-2 rounded-xl px-2 py-2.5 text-left hover:bg-muted"
                                                     onClick={() =>
                                                         handlePickAddress(
                                                             formatAddressBookDisplayAddress(
