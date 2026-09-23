@@ -6,21 +6,25 @@ import { APP_DOCS_URL } from "@/constants/config";
 
 // The private-beta waitlist form, rendered in-page by `EarlyAccessModal`.
 // Both selects are single-choice, so the option lists live here next to the
-// rest of the landing copy. The wording has to match the select options on the
-// Attio attribute exactly — Attio rejects a value it does not already offer.
+// rest of the landing copy. Both attributes are free text on the Attio side,
+// so these are the answers we suggest rather than the only ones it accepts.
+
+/** The escape hatch on both selects: picking it asks for the answer instead. */
+export const OTHER_OPTION = "Other";
+
 export const BUSINESS_TYPE_OPTIONS = [
     "Market Maker",
     "Foundation",
     "Treasury",
     "Web3 Business",
-    "Other",
+    OTHER_OPTION,
 ] as const;
 
 export const REFERRAL_SOURCE_OPTIONS = [
     "Word of Mouth",
     "NEAR Intents Team",
     "Social Media",
-    "Other",
+    OTHER_OPTION,
 ] as const;
 
 export const CONTACT_HREF = "mailto:hello@near.org?subject=NEAR%20Business";
