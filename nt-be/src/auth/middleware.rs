@@ -59,19 +59,54 @@ impl AuthUser {
         })
     }
 
-    fn role_has_action_permission(role: &Value, action_name: &str) -> bool {
-        role.get("permissions")
-            .and_then(Value::as_array)
-            .map(|permissions| {
-                permissions.iter().any(|permission| {
-                    permission
-                        .as_str()
-                        .and_then(|permission| permission.split(':').nth(1))
-                        .map(|action| action == action_name || action == "*")
-                        .unwrap_or(false)
-                })
-            })
+    fn role_permission_strings(role: &Value) -> Option<&Vec<Value>> {
+        role.get("permissions").and_then(Value::as_array)
+    }
+
+    fn permission_grants_action(permission: &Value, action_name: &str) -> bool {
+        permission
+            .as_str()
+            .and_then(|permission| permission.split(':').nth(1))
+            .map(|action| action == action_name || action == "*")
             .unwrap_or(false)
+    }
+
+    /// True when one proposal-kind prefix has `AddProposal`, `VoteApprove`, and `VoteReject`
+    /// together. The prefix can be anything (`policy`, `call`, `*`, …). A wildcard action
+    /// (`{kind}:*`) is handled separately by [`Self::permission_grants_action`].
+    fn has_add_approve_reject_for_a_kind(permissions: &[Value]) -> bool {
+        let mut flags: std::collections::HashMap<&str, u8> = std::collections::HashMap::new();
+        for permission in permissions {
+            let Some(permission) = permission.as_str() else {
+                continue;
+            };
+            let Some((kind, action)) = permission.split_once(':') else {
+                continue;
+            };
+            let bit = match action {
+                "AddProposal" => 1,
+                "VoteApprove" => 2,
+                "VoteReject" => 4,
+                _ => continue,
+            };
+            let entry = flags.entry(kind).or_insert(0);
+            *entry |= bit;
+            if *entry == 7 {
+                return true;
+            }
+        }
+        false
+    }
+
+    fn role_has_action_permission(role: &Value, action_name: &str) -> bool {
+        let Some(permissions) = Self::role_permission_strings(role) else {
+            return false;
+        };
+
+        permissions
+            .iter()
+            .any(|permission| Self::permission_grants_action(permission, action_name))
+            || Self::has_add_approve_reject_for_a_kind(permissions)
     }
 
     fn role_applies_to_account(role: &Value, account_id: &AccountIdRef) -> bool {
@@ -352,6 +387,49 @@ mod tests {
                 .verify_can_perform_action_with_policy(&admin, &dao, "AddProposal")
                 .is_ok(),
             "a *:* permission must grant any action"
+        );
+
+        // Any proposal kind grants ChangePolicy when that same kind has AddProposal, VoteApprove,
+        // and VoteReject together. A missing action, or the three split across kinds, does not.
+        for kind in ["policy", "call", "*"] {
+            let permissions = [
+                format!("{kind}:AddProposal"),
+                format!("{kind}:VoteApprove"),
+                format!("{kind}:VoteReject"),
+            ];
+            let permission_refs: Vec<&str> = permissions.iter().map(String::as_str).collect();
+            let council = policy_granting("alice.near", &permission_refs);
+            for action in ["ChangePolicy", "VoteRemove"] {
+                assert!(
+                    alice
+                        .verify_can_perform_action_with_policy(&council, &dao, action)
+                        .is_ok(),
+                    "{kind} with AddProposal + VoteApprove + VoteReject must grant {action}",
+                    kind = kind,
+                    action = action,
+                );
+            }
+        }
+        let partial = policy_granting("alice.near", &["policy:AddProposal", "policy:VoteApprove"]);
+        assert!(
+            alice
+                .verify_can_perform_action_with_policy(&partial, &dao, "ChangePolicy")
+                .is_err(),
+            "two of the three kind actions must not grant ChangePolicy"
+        );
+        let split = policy_granting(
+            "alice.near",
+            &[
+                "policy:AddProposal",
+                "call:VoteApprove",
+                "config:VoteReject",
+            ],
+        );
+        assert!(
+            alice
+                .verify_can_perform_action_with_policy(&split, &dao, "ChangePolicy")
+                .is_err(),
+            "the three actions must share one proposal kind"
         );
     }
 

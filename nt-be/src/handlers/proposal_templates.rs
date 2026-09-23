@@ -448,8 +448,8 @@ pub async fn delete_proposal_template(
 ) -> Result<StatusCode, (StatusCode, String)> {
     // Member-gated first (see `create_proposal_template`), then the admin action. Deletion is
     // destructive and removes a template other members rely on, so it stays admin-only:
-    // `ChangePolicy`. With the action-only permission matcher this resolves to roles holding a
-    // wildcard-action permission (`policy:*`, `config:*`, `*:*`) — i.e. governance, not Requestors.
+    // `ChangePolicy`. That matches a wildcard action (`{kind}:*`) or any proposal kind that has
+    // `AddProposal`, `VoteApprove`, and `VoteReject` together — governance, not a plain Requestor.
     auth_user
         .verify_dao_member_for_http(&state.db_pool, &dao_id)
         .await?;

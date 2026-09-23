@@ -40,10 +40,15 @@ function policyWith(
     };
 }
 
+function kindGovernance(kind: string): string[] {
+    return ["AddProposal", "VoteApprove", "VoteReject"].map(
+        (action) => `${kind}:${action}`,
+    );
+}
+
 describe("canChangePolicy (admin / template-delete gate)", () => {
-    // Mirrors nt-be's action-only matcher: true iff a role holds a permission whose action is
-    // `ChangePolicy` or the wildcard `*`. For real DAOs that means a wildcard-action (governance)
-    // role — never a plain Requestor.
+    // Mirrors nt-be: a wildcard action (`{kind}:*`), or any proposal kind that has AddProposal,
+    // VoteApprove, and VoteReject together. Two of the three, or the three split across kinds, fail.
     it("grants on wildcard-action governance roles (policy:*, config:*, *:*)", () => {
         expect(canChangePolicy(policyWith(["policy:*"]), ACCOUNT)).toBe(true);
         expect(canChangePolicy(policyWith(["config:*"]), ACCOUNT)).toBe(true);
@@ -54,6 +59,36 @@ describe("canChangePolicy (admin / template-delete gate)", () => {
         expect(canChangePolicy(policyWith(["*:ChangePolicy"]), ACCOUNT)).toBe(
             true,
         );
+    });
+
+    it("grants when any proposal kind has AddProposal, VoteApprove, and VoteReject together", () => {
+        for (const kind of ["policy", "call", "config", "*"]) {
+            const policy = policyWith(kindGovernance(kind));
+            expect(canChangePolicy(policy, ACCOUNT)).toBe(true);
+            // The trio satisfies every action check, not only ChangePolicy.
+            expect(hasActionPermission(policy, ACCOUNT, "VoteRemove")).toBe(
+                true,
+            );
+        }
+    });
+
+    it("denies when the three actions are incomplete or split across kinds", () => {
+        expect(
+            canChangePolicy(
+                policyWith(["policy:AddProposal", "policy:VoteApprove"]),
+                ACCOUNT,
+            ),
+        ).toBe(false);
+        expect(
+            canChangePolicy(
+                policyWith([
+                    "policy:AddProposal",
+                    "call:VoteApprove",
+                    "config:VoteReject",
+                ]),
+                ACCOUNT,
+            ),
+        ).toBe(false);
     });
 
     it("denies a Requestor — AddProposal (even *:AddProposal) is not admin", () => {
