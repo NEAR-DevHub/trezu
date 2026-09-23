@@ -1,6 +1,7 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as SelectPrimitive from "@radix-ui/react-select";
 import { isAxiosError } from "axios";
 import Image from "next/image";
 import Link from "next/link";
@@ -187,6 +188,8 @@ function EarlyAccessModal({
     attribution: EarlyAccessAttribution;
 }) {
     const titleId = useId();
+    // The card doubles as the boundary the open dropdowns are kept inside of.
+    const [card, setCard] = useState<HTMLDivElement | null>(null);
 
     return (
         <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -195,6 +198,7 @@ function EarlyAccessModal({
                 {/* The portal escapes the landing wrapper, so the palette and
                     the display font have to be re-declared here. */}
                 <DialogPrimitive.Content
+                    ref={setCard}
                     aria-labelledby={titleId}
                     className={cn(
                         "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1320px]",
@@ -208,7 +212,15 @@ function EarlyAccessModal({
                     {/* The picture's column is the fixed one: it has to stay wide
                         enough for the line over it to break after "should be",
                         so a narrow viewport takes it out of the form instead. */}
-                    <div className="lg:grid lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0">
+                    {/* A floor as well as the card's ceiling: the form is
+                        shorter than the room a laptop has for it, and an open
+                        dropdown needs somewhere to hang. Without it the card
+                        ends just under the last row, and the list — which the
+                        card's own `-translate` keeps captive — puts the whole
+                        modal on a scrollbar as it opens. It sits on the grid
+                        rather than the card so the photograph stretches to it
+                        instead of leaving a band under itself. */}
+                    <div className="lg:grid lg:min-h-[min(48rem,calc(100dvh-2rem))] lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0">
                         <div
                             className={cn(
                                 "flex flex-col px-6 sm:px-10 lg:px-16 lg:pr-20",
@@ -226,7 +238,10 @@ function EarlyAccessModal({
                                 NEAR Business Early Access
                             </DialogPrimitive.Title>
                             <PrivacyNotice />
-                            <EarlyAccessForm attribution={attribution} />
+                            <EarlyAccessForm
+                                attribution={attribution}
+                                card={card}
+                            />
                         </div>
                         {/* The tallest thing in the modal — phones drop it
                             rather than scroll past it. The photograph is the
@@ -291,8 +306,10 @@ function PrivacyNotice() {
  */
 function EarlyAccessForm({
     attribution,
+    card,
 }: {
     attribution: EarlyAccessAttribution;
+    card: HTMLElement | null;
 }) {
     const optInId = useId();
     const [isComplete, setIsComplete] = useState(false);
@@ -400,11 +417,13 @@ function EarlyAccessForm({
                 name="businessType"
                 placeholder="Vertical / Type of Business"
                 options={BUSINESS_TYPE_OPTIONS}
+                card={card}
             />
             <SelectField
                 name="referralSource"
                 placeholder="How did you hear about NEAR Business?"
                 options={REFERRAL_SOURCE_OPTIONS}
+                card={card}
             />
             <div className="flex items-start gap-3">
                 <MarketingOptIn id={optInId} />
@@ -451,47 +470,94 @@ function EarlyAccessForm({
 }
 
 /**
- * Native `<select>` rather than the app's Radix one: the landing carries its
- * own palette, and a portalled listbox would need all of it restated. The
- * placeholder stays in the list as an empty option, which `required` treats as
- * "nothing chosen"; the value is tracked so it can be greyed the way the text
- * fields grey theirs.
+ * The design draws its own listbox — a green-outlined trigger with the options
+ * attached underneath it — which a native `<select>` cannot do: the open list
+ * belongs to the OS. So the visible control is Radix's, while the value still
+ * leaves through a real `<select>`: Radix renders a hidden one under the same
+ * `name`, carrying `required`, so `FormData` and the form's own
+ * `checkValidity()` keep working exactly as they do for the text fields. That
+ * hidden control is what a failed native validation points at, hence the
+ * `relative` wrapper around the whole field: it is the positioning context the
+ * browser measures, so the message lands on this row rather than on the card.
  */
 function SelectField({
     name,
     placeholder,
     options,
+    card,
 }: {
     name: string;
     placeholder: string;
     options: readonly string[];
+    card: HTMLElement | null;
 }) {
-    const [value, setValue] = useState("");
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
         <div className="relative">
-            <select
+            <SelectPrimitive.Root
                 name={name}
-                value={value}
-                onChange={(event) => setValue(event.target.value)}
-                aria-label={placeholder}
                 required
-                className={cn(
-                    FIELD,
-                    // Native selects clip rather than wrap, so the long
-                    // referral placeholder drops a size on narrow phones.
-                    "cursor-pointer appearance-none pr-6 max-sm:text-[13px]",
-                    !value && "text-landing-grey-light",
-                )}
+                open={isOpen}
+                onOpenChange={setIsOpen}
             >
-                <option value="">{placeholder}</option>
-                {options.map((option) => (
-                    <option key={option} value={option}>
-                        {option}
-                    </option>
-                ))}
-            </select>
-            <ChevronGlyph className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2" />
+                <SelectPrimitive.Trigger
+                    aria-label={placeholder}
+                    className={cn(
+                        FIELD_HEIGHT,
+                        "flex w-full cursor-pointer items-center justify-between gap-2 bg-transparent text-left text-base leading-none text-landing-ink outline-none data-[placeholder]:text-landing-grey-light",
+                        // The trigger closes back into the same hairline the
+                        // text fields wear; open, it becomes the design's
+                        // outlined box, which insets its own text.
+                        isOpen
+                            ? "rounded border-2 border-landing-green px-4"
+                            : "border-0 border-b border-landing-grey-light transition-colors focus-visible:border-landing-ink",
+                        // The referral placeholder is longer than a phone's
+                        // field, so it drops a size rather than truncating.
+                        "max-sm:text-[13px]",
+                    )}
+                >
+                    <SelectPrimitive.Value
+                        placeholder={placeholder}
+                        className="min-w-0 truncate"
+                    />
+                    <SelectPrimitive.Icon asChild>
+                        <ChevronGlyph className="shrink-0 text-landing-ink" />
+                    </SelectPrimitive.Icon>
+                </SelectPrimitive.Trigger>
+                {/* Not portalled: inside the dialog the list inherits the
+                    landing's palette and font instead of restating them. */}
+                <SelectPrimitive.Content
+                    position="popper"
+                    sideOffset={0}
+                    // The card, not the viewport, is what the list has to fit
+                    // inside: it is the scroll container, so a list that hangs
+                    // past its bottom edge is a scrollbar on the whole modal.
+                    // Bounded here, the list flips or shortens itself instead.
+                    collisionBoundary={card}
+                    collisionPadding={8}
+                    // Four rows and half of the next: enough of the list to
+                    // read at a glance, short enough to hang inside the card,
+                    // and the half row is what says the rest is below. Cut on
+                    // a row's midline rather than at its edge, which would
+                    // leave a sliver that reads as a rendering fault.
+                    className="z-50 max-h-[min(13rem,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-landing-mist bg-white lg:bg-landing-paper"
+                >
+                    <SelectPrimitive.Viewport className="py-1">
+                        {options.map((option) => (
+                            <SelectPrimitive.Item
+                                key={option}
+                                value={option}
+                                className="flex h-11 cursor-pointer select-none items-center px-4 text-base leading-none text-landing-ink outline-none data-[highlighted]:bg-landing-mist/60 max-sm:text-[13px]"
+                            >
+                                <SelectPrimitive.ItemText>
+                                    {option}
+                                </SelectPrimitive.ItemText>
+                            </SelectPrimitive.Item>
+                        ))}
+                    </SelectPrimitive.Viewport>
+                </SelectPrimitive.Content>
+            </SelectPrimitive.Root>
         </div>
     );
 }
