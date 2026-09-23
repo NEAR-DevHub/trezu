@@ -46,9 +46,14 @@ export class RequestsPage extends BasePage {
         return this.page.getByRole("button", { name: new RegExp(`^${label}`) });
     }
 
-    /** A checkbox option inside an open checkbox filter popover (e.g. "No Voted"). */
+    /**
+     * An option inside the open checkbox filter popover (e.g. "No Voted").
+     * Targets the option text inside its <label>, so clicking toggles the
+     * checkbox; scoped to the popover because the same words also appear
+     * in tabs and status pills.
+     */
     filterCheckbox(label: string) {
-        return this.page.getByRole("checkbox", { name: label, exact: true });
+        return this.page.getByRole("dialog").getByText(label, { exact: true });
     }
 
     /** Table row for a proposal, matched on its "#<id>" cell. */

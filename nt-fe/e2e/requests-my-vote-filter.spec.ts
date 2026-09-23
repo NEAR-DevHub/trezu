@@ -94,6 +94,9 @@ async function selectMyVoteStatuses(
     await requestsPage.filterToggle().click();
     await requestsPage.addFilterButton().click();
     await requestsPage.addFilterOption(MY_VOTE).click();
+    // Adding the filter only creates an empty "My Vote Status: ALL" pill;
+    // its options popover opens on click.
+    await requestsPage.filterPill(MY_VOTE).click();
     for (const status of statuses) {
         await requestsPage.filterCheckbox(status).click();
     }
