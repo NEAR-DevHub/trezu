@@ -13,7 +13,11 @@
  */
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/test-with-pages";
-import { registerMockWalletRoutes } from "./helpers/mock-wallet";
+import { buildExecutedProposalsResponse } from "./fixtures/treasury-mock-data";
+import {
+    registerMockWalletRoutes,
+    seedMockWalletAccount,
+} from "./helpers/mock-wallet";
 import {
     addProposal,
     transferNear,
@@ -83,6 +87,12 @@ test.describe("Requests – My Vote Status filter (#1546) – UI + request", () 
                 accountId: ACCOUNT_ID,
                 treasuryId: TREASURY_ID,
                 treasuryName: "Requests E2E Test Treasury",
+                // Non-empty list: with zero proposals the page renders the
+                // "Create your first request" empty state and no filter toolbar.
+                proposals: buildExecutedProposalsResponse(
+                    TREASURY_ID,
+                    ACCOUNT_ID,
+                ),
             });
             // Registered after the installer, so it runs first; fallback()
             // hands the request on to the installer's mock response.
@@ -269,6 +279,9 @@ test.describe("Requests – My Vote Status filter (#1546) – real backend", () 
             });
         }
         await registerMockWalletRoutes(context);
+        // The my_vote filter needs the signed-in wallet account; without it
+        // the page shows "Connect Wallet" and silently drops the filter.
+        await seedMockWalletAccount(page, ACCOUNT_ID, "init");
     }
 
     /**
