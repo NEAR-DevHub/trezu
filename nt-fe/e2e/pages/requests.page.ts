@@ -27,7 +27,9 @@ export class RequestsPage extends BasePage {
 
     /** Toolbar button that expands/collapses the filter bar ("Filter" / "Filter (active)"). */
     filterToggle() {
-        return this.page.getByRole("button", { name: /^filter( \(active\))?$/i });
+        return this.page.getByRole("button", {
+            name: /^filter( \(active\))?$/i,
+        });
     }
 
     addFilterButton() {

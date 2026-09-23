@@ -165,8 +165,18 @@ test.describe("Requests – My Vote Status filter (#1546) – real backend", () 
         ids.approved = await makeTransfer("approved");
         ids.rejected = await makeTransfer("rejected");
         ids.noVote = await makeTransfer("no-vote");
-        await voteOnProposal(ACCOUNT_ID, TREASURY_ID, ids.approved, "VoteApprove");
-        await voteOnProposal(ACCOUNT_ID, TREASURY_ID, ids.rejected, "VoteReject");
+        await voteOnProposal(
+            ACCOUNT_ID,
+            TREASURY_ID,
+            ids.approved,
+            "VoteApprove",
+        );
+        await voteOnProposal(
+            ACCOUNT_ID,
+            TREASURY_ID,
+            ids.rejected,
+            "VoteReject",
+        );
 
         // Precondition guard: the backend must already report each vote with
         // a single-status query, so a failure below is about combining
