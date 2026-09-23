@@ -168,9 +168,16 @@ function NotesCell({ notes }: { notes?: string | null }) {
     if (!trimmed) return null;
 
     return (
-        <span className="block min-w-0 whitespace-pre-wrap break-all text-sm font-medium text-general-foreground">
-            {trimmed}
-        </span>
+        <Tooltip
+            content={trimmed}
+            contentProps={{ className: "max-w-72 whitespace-pre-wrap" }}
+        >
+            <span className="inline-block w-full max-w-full">
+                <span className="line-clamp-2 text-sm font-medium text-general-foreground">
+                    {trimmed}
+                </span>
+            </span>
+        </Tooltip>
     );
 }
 
@@ -533,7 +540,7 @@ export function ActivityTable({
                                                     isLastRow,
                                                 ),
                                                 NOTES_COLUMN_CLASS,
-                                                "whitespace-normal",
+                                                "overflow-hidden whitespace-normal",
                                             )}
                                         >
                                             <NotesCell notes={activity.notes} />

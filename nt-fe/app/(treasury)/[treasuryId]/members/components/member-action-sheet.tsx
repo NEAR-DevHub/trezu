@@ -7,7 +7,13 @@ import { AuthButton } from "@/components/auth-button";
 import { CopyButton } from "@/components/copy-button";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
-import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    mobileInsetSheetClassName,
+} from "@/components/modal";
+import { cn } from "@/lib/utils";
 import { FormattedDate } from "@/components/formatted-date";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/components/user";
@@ -18,7 +24,7 @@ interface Member {
 }
 
 const ACTION_CLASS =
-    "h-10 flex-1 bg-general-bg-secondary px-5 text-base font-semibold text-general-secondary-foreground shadow-none hover:bg-general-bg-secondary/80";
+    "h-10 min-w-0 w-auto flex-1 overflow-hidden rounded-2xl bg-general-bg-secondary px-5 text-base font-semibold text-general-secondary-foreground shadow-none hover:bg-general-bg-secondary/80";
 
 const SECTION_LABEL_CLASS =
     "text-sm font-semibold leading-normal text-general-secondary-foreground";
@@ -69,7 +75,7 @@ export function MemberActionSheet({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className="gap-6"
+                className={cn(mobileInsetSheetClassName, "gap-6")}
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <SheetHandle />
