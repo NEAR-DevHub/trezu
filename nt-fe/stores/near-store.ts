@@ -12,7 +12,6 @@ import posthog from "posthog-js";
 import { toast } from "sonner";
 import { create } from "zustand";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
-import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getAppErrorCopy, getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
@@ -27,7 +26,6 @@ import {
     getAuthMe,
 } from "@/lib/auth-api";
 import Big from "@/lib/big";
-import { getExplorerTxUrl } from "@/lib/blockchain-utils";
 import {
     getKindFromProposal,
     type ProposalPermissionKind,
@@ -275,8 +273,7 @@ const isFullyAuthenticated = (state: NearStore): boolean => {
 /**
  * Tell the user why their action failed. Declining in the wallet keeps its
  * own message; every other failure gets copy chosen by the backend's error
- * code, plus the one action that helps (explorer link, or the requests list
- * when the outcome is still unknown).
+ * code, plus a link to the requests list when the outcome is still unknown.
  */
 function showActionError(error: unknown, treasuryId: string): void {
     const appError = toAppError(error);
@@ -292,12 +289,15 @@ function showActionError(error: unknown, treasuryId: string): void {
     });
 
     const copy = getAppErrorCopy(appError);
-    const actionUrl =
-        appError.code === "TX_FAILED" && appError.txHash
-            ? getExplorerTxUrl(NEAR_NETWORK_ID, appError.txHash)
-            : `/${treasuryId}/requests?tab=InProgress`;
+    const actionUrl = `/${treasuryId}/requests?tab=InProgress`;
+    if (appError.requestId) {
+        console.error(
+            `Action failed (request ${appError.requestId})`,
+            appError,
+        );
+    }
     toast.error(copy.title, {
-        description: [copy.body, copy.errorId].filter(Boolean).join(" "),
+        description: copy.body,
         duration: 15000,
         action:
             copy.actionLabel && actionUrl

@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "Mã lỗi: TRZ-{id}",
         "viewRequests": "Xem yêu cầu",
-        "viewOnExplorer": "Xem trên explorer",
-        "feeCovered": "Phí mạng đã được Trezu chi trả.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu tạm thời không khả dụng",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "Không thể gửi yêu cầu này",
-                "body": "Có nội dung trong yêu cầu không được chấp nhận, nên chưa có gì được gửi đi. Hãy tải lại trang và thử lại. Nếu vẫn tiếp diễn, hãy liên hệ hỗ trợ kèm mã lỗi bên dưới."
+                "body": "Có nội dung trong yêu cầu không được chấp nhận, nên chưa có gì được gửi đi. Hãy tải lại trang và thử lại."
             },
             "RPC_UNAVAILABLE": {
                 "title": "Giao dịch chưa được gửi",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Đã xảy ra sự cố ở phía chúng tôi",
-                "body": "Chúng tôi đã nhận được thông báo và đang xử lý. Nếu vẫn tiếp diễn, hãy liên hệ hỗ trợ kèm mã lỗi bên dưới."
+                "body": "Chúng tôi đã nhận được thông báo và đang xử lý."
             }
         },
         "reasons": {

@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "ID do erro: TRZ-{id}",
         "viewRequests": "Ver solicitações",
-        "viewOnExplorer": "Ver no explorador",
-        "feeCovered": "A taxa de rede foi coberta pela Trezu.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "A Trezu está temporariamente indisponível",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "Não foi possível enviar esta solicitação",
-                "body": "Algo na solicitação não foi aceito, então nada foi enviado. Atualize a página e tente novamente. Se continuar acontecendo, fale com o suporte informando o ID do erro abaixo."
+                "body": "Algo na solicitação não foi aceito, então nada foi enviado. Atualize a página e tente novamente."
             },
             "RPC_UNAVAILABLE": {
                 "title": "A transação não foi enviada",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Algo deu errado do nosso lado",
-                "body": "Fomos notificados e estamos investigando. Se continuar acontecendo, fale com o suporte informando o ID do erro abaixo."
+                "body": "Fomos notificados e estamos investigando."
             }
         },
         "reasons": {

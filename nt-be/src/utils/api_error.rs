@@ -66,6 +66,7 @@ impl TxFailureReason {
         } else if has(&[
             "NotEnoughBalance",
             "LackBalanceForState",
+            "Exceeded the account balance",
             "not enough balance",
             "doesn't have enough balance",
             "ERR_NOT_ENOUGH_BALANCE",
@@ -276,6 +277,11 @@ mod tests {
             ),
             (
                 "ActionError { kind: LackBalanceForState { account_id: .. } }",
+                TxFailureReason::InsufficientBalance,
+            ),
+            (
+                // A DAO approving a transfer larger than its balance.
+                "FunctionCallError(ExecutionError(\"Exceeded the account balance.\"))",
                 TxFailureReason::InsufficientBalance,
             ),
             (

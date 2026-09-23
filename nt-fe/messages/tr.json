@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "Hata Kimliği: TRZ-{id}",
         "viewRequests": "İstekleri görüntüle",
-        "viewOnExplorer": "Gezginde görüntüle",
-        "feeCovered": "Ağ ücreti Trezu tarafından karşılandı.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu geçici olarak kullanılamıyor",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "Bu istek gönderilemedi",
-                "body": "İstekteki bir şey kabul edilmedi, bu yüzden hiçbir şey gönderilmedi. Sayfayı yenileyip tekrar deneyin. Sorun devam ederse aşağıdaki Hata Kimliği ile destekle iletişime geçin."
+                "body": "İstekteki bir şey kabul edilmedi, bu yüzden hiçbir şey gönderilmedi. Sayfayı yenileyip tekrar deneyin."
             },
             "RPC_UNAVAILABLE": {
                 "title": "İşlem gönderilmedi",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Bizim tarafımızda bir sorun oluştu",
-                "body": "Bilgilendirildik ve inceliyoruz. Sorun devam ederse aşağıdaki Hata Kimliği ile destekle iletişime geçin."
+                "body": "Bilgilendirildik ve inceliyoruz."
             }
         },
         "reasons": {

@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "ID de error: TRZ-{id}",
         "viewRequests": "Ver solicitudes",
-        "viewOnExplorer": "Ver en el explorador",
-        "feeCovered": "Trezu cubrió la comisión de red.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu no está disponible temporalmente",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "No se pudo enviar esta solicitud",
-                "body": "Algo en la solicitud no fue aceptado, por lo que no se envió nada. Actualiza la página e inténtalo de nuevo. Si sigue ocurriendo, contacta con soporte con el ID de error que aparece abajo."
+                "body": "Algo en la solicitud no fue aceptado, por lo que no se envió nada. Actualiza la página e inténtalo de nuevo."
             },
             "RPC_UNAVAILABLE": {
                 "title": "La transacción no se envió",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Algo salió mal de nuestro lado",
-                "body": "Hemos sido notificados y lo estamos revisando. Si sigue ocurriendo, contacta con soporte con el ID de error que aparece abajo."
+                "body": "Hemos sido notificados y lo estamos revisando."
             }
         },
         "reasons": {

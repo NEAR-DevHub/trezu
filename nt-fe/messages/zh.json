@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "错误 ID：TRZ-{id}",
         "viewRequests": "查看请求",
-        "viewOnExplorer": "在浏览器中查看",
-        "feeCovered": "网络费用已由 Trezu 承担。",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu 暂时不可用",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "无法提交此请求",
-                "body": "请求中的某些内容未被接受，因此没有发送任何内容。请刷新页面后重试。如果问题持续出现，请提供下方的错误 ID 联系支持团队。"
+                "body": "请求中的某些内容未被接受，因此没有发送任何内容。请刷新页面后重试。"
             },
             "RPC_UNAVAILABLE": {
                 "title": "交易未发送",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "我们这边出了点问题",
-                "body": "我们已收到通知并正在处理。如果问题持续出现，请提供下方的错误 ID 联系支持团队。"
+                "body": "我们已收到通知并正在处理。"
             }
         },
         "reasons": {

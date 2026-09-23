@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "ID Error: TRZ-{id}",
         "viewRequests": "Lihat permintaan",
-        "viewOnExplorer": "Lihat di explorer",
-        "feeCovered": "Biaya jaringan ditanggung oleh Trezu.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu sedang tidak tersedia untuk sementara",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "Permintaan ini tidak dapat dikirim",
-                "body": "Ada bagian dari permintaan yang tidak diterima, jadi tidak ada yang dikirim. Muat ulang halaman dan coba lagi. Jika terus terjadi, hubungi dukungan dengan ID Error di bawah."
+                "body": "Ada bagian dari permintaan yang tidak diterima, jadi tidak ada yang dikirim. Muat ulang halaman dan coba lagi."
             },
             "RPC_UNAVAILABLE": {
                 "title": "Transaksi tidak terkirim",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Terjadi kesalahan di pihak kami",
-                "body": "Kami telah diberi tahu dan sedang menyelidikinya. Jika terus terjadi, hubungi dukungan dengan ID Error di bawah."
+                "body": "Kami telah diberi tahu dan sedang menyelidikinya."
             }
         },
         "reasons": {

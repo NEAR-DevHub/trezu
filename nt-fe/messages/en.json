@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "Error ID: TRZ-{id}",
         "viewRequests": "View requests",
-        "viewOnExplorer": "View on explorer",
-        "feeCovered": "The network fee was covered by Trezu.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu is temporarily unavailable",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "This request couldn't be submitted",
-                "body": "Something in the request wasn't accepted, so nothing was sent. Refresh the page and try again. If it keeps happening, contact support with the Error ID below."
+                "body": "Something in the request wasn't accepted, so nothing was sent. Refresh the page and try again."
             },
             "RPC_UNAVAILABLE": {
                 "title": "Transaction wasn't sent",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Something went wrong on our side",
-                "body": "We've been notified and are looking into it. If this keeps happening, contact support with the Error ID below."
+                "body": "We've been notified and are looking into it."
             }
         },
         "reasons": {

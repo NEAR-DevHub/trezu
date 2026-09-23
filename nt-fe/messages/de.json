@@ -2963,10 +2963,7 @@
         }
     },
     "errors": {
-        "errorId": "Fehler-ID: TRZ-{id}",
         "viewRequests": "Anfragen ansehen",
-        "viewOnExplorer": "Im Explorer ansehen",
-        "feeCovered": "Die Netzwerkgebühr wurde von Trezu übernommen.",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu ist vorübergehend nicht verfügbar",
@@ -2982,7 +2979,7 @@
             },
             "REQUEST_REJECTED": {
                 "title": "Diese Anfrage konnte nicht übermittelt werden",
-                "body": "Etwas an der Anfrage wurde nicht akzeptiert, daher wurde nichts gesendet. Laden Sie die Seite neu und versuchen Sie es erneut. Wenn das weiterhin passiert, wenden Sie sich mit der untenstehenden Fehler-ID an den Support."
+                "body": "Etwas an der Anfrage wurde nicht akzeptiert, daher wurde nichts gesendet. Laden Sie die Seite neu und versuchen Sie es erneut."
             },
             "RPC_UNAVAILABLE": {
                 "title": "Transaktion wurde nicht gesendet",
@@ -3005,7 +3002,7 @@
             },
             "UNEXPECTED": {
                 "title": "Auf unserer Seite ist etwas schiefgelaufen",
-                "body": "Wir wurden benachrichtigt und kümmern uns darum. Wenn das weiterhin passiert, wenden Sie sich mit der untenstehenden Fehler-ID an den Support."
+                "body": "Wir wurden benachrichtigt und kümmern uns darum."
             }
         },
         "reasons": {
