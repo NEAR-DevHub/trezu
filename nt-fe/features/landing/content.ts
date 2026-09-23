@@ -4,6 +4,14 @@ import { APP_DOCS_URL } from "@/constants/config";
 // file, so it lives here instead of the i18n catalogue (which would force
 // twelve translations of every headline).
 
+/**
+ * The private-beta waitlist form as it still works for everyone outside the
+ * `show_redesigned_modal` flag. External, so every link to it opens in a new
+ * tab.
+ */
+export const EARLY_ACCESS_HREF =
+    "https://airtable.com/app5IOgKsH6H3RVp1/pagQscnz5uBKiHxc7/form";
+
 // The private-beta waitlist form, rendered in-page by `EarlyAccessModal`.
 // Both selects are single-choice, so the option lists live here next to the
 // rest of the landing copy. Both attributes are free text on the Attio side,

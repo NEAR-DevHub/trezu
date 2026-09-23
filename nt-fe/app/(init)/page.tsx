@@ -2,8 +2,12 @@ import { cookies } from "next/headers";
 import { NearInitializer } from "@/components/near-initializer";
 import { LandingGate } from "@/features/landing/components/landing-gate";
 import { LandingPage } from "@/features/landing/components/landing-page";
+import {
+    REDESIGNED_MODAL_QUERY,
+    showsRedesignedModal,
+} from "@/features/landing/redesigned-modal";
 import { SESSION_HINT_COOKIE } from "@/lib/session-hint";
-import { WELCOME_QUERY, isWelcomeEntry } from "@/lib/welcome-entry";
+import { isWelcomeEntry, WELCOME_QUERY } from "@/lib/welcome-entry";
 
 export default async function Page({
     searchParams,
@@ -21,7 +25,11 @@ export default async function Page({
                 hasSessionHint={hasSessionHint}
                 stayOnLanding={isWelcomeEntry(params[WELCOME_QUERY])}
             >
-                <LandingPage />
+                <LandingPage
+                    showRedesignedModal={showsRedesignedModal(
+                        params[REDESIGNED_MODAL_QUERY],
+                    )}
+                />
             </LandingGate>
         </>
     );

@@ -13,6 +13,7 @@ import {
     useContext,
     useEffect,
     useId,
+    useMemo,
     useState,
 } from "react";
 import { PRIVACY_POLICY_HREF } from "@/constants/config";
@@ -23,29 +24,47 @@ import {
 import { cn } from "@/lib/utils";
 import {
     BUSINESS_TYPE_OPTIONS,
+    EARLY_ACCESS_HREF,
     OTHER_OPTION,
     REFERRAL_SOURCE_OPTIONS,
 } from "../content";
 import { NearMark } from "./landing-icons";
 
-const EarlyAccessContext = createContext<(() => void) | null>(null);
+/**
+ * Where "Request Early Access" leads. Behind the `show_redesigned_modal` flag
+ * it opens the in-page form; without it the CTAs are plain links to the
+ * Airtable form, exactly as they were before the redesign.
+ */
+type EarlyAccessCta =
+    | { kind: "modal"; open: () => void }
+    | { kind: "external"; href: string };
+
+const EarlyAccessContext = createContext<EarlyAccessCta | null>(null);
 
 /**
- * Opens the early-access form. Every CTA on the landing — the nav button, the
- * hero button and the pricing footnote — shares one modal instance, so the
- * state lives on the provider rather than on each trigger.
+ * How to request early access from here. Every CTA on the landing — the nav
+ * button, the hero button and the pricing footnote — shares one modal
+ * instance, so the state lives on the provider rather than on each trigger.
  */
-export function useRequestEarlyAccess() {
-    const open = useContext(EarlyAccessContext);
-    if (!open) {
+export function useEarlyAccessCta() {
+    const cta = useContext(EarlyAccessContext);
+    if (!cta) {
         throw new Error(
-            "useRequestEarlyAccess must be used inside <EarlyAccessProvider>",
+            "useEarlyAccessCta must be used inside <EarlyAccessProvider>",
         );
     }
-    return open;
+    return cta;
 }
 
-export function EarlyAccessProvider({ children }: { children: ReactNode }) {
+export function EarlyAccessProvider({
+    showRedesignedModal = false,
+    children,
+}: {
+    /** Set from `?show_redesigned_modal=true` on the landing. Off everywhere
+     *  else, including the legal pages, which carry the same CTAs. */
+    showRedesignedModal?: boolean;
+    children: ReactNode;
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const open = useCallback(() => setIsOpen(true), []);
     const [attribution, setAttribution] = useState<EarlyAccessAttribution>({});
@@ -55,14 +74,24 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
     // and the original referrer already gone.
     useEffect(() => setAttribution(readAttribution()), []);
 
+    const cta = useMemo<EarlyAccessCta>(
+        () =>
+            showRedesignedModal
+                ? { kind: "modal", open }
+                : { kind: "external", href: EARLY_ACCESS_HREF },
+        [showRedesignedModal, open],
+    );
+
     return (
-        <EarlyAccessContext.Provider value={open}>
+        <EarlyAccessContext.Provider value={cta}>
             {children}
-            <EarlyAccessModal
-                open={isOpen}
-                onOpenChange={setIsOpen}
-                attribution={attribution}
-            />
+            {showRedesignedModal && (
+                <EarlyAccessModal
+                    open={isOpen}
+                    onOpenChange={setIsOpen}
+                    attribution={attribution}
+                />
+            )}
         </EarlyAccessContext.Provider>
     );
 }
@@ -119,28 +148,25 @@ function readReferrer() {
 }
 
 /** The landing's primary CTA, in the nav, the hero and the closing block. */
-export function EarlyAccessButton({
-    className,
-    ...props
-}: Omit<React.ComponentProps<"button">, "children" | "onClick" | "type">) {
-    const requestEarlyAccess = useRequestEarlyAccess();
-
+export function EarlyAccessButton({ className }: { className?: string }) {
     return (
-        <button
-            type="button"
-            onClick={requestEarlyAccess}
+        <EarlyAccessLink
             className={cn(
                 "inline-flex cursor-pointer items-center justify-center whitespace-nowrap rounded-full bg-landing-green font-medium leading-none text-landing-ink transition-colors hover:bg-[#00c97f]",
                 className,
             )}
-            {...props}
         >
             Request Early Access
-        </button>
+        </EarlyAccessLink>
     );
 }
 
-/** The same trigger set inline in a sentence, where the CTA reads as a link. */
+/**
+ * The trigger itself, used bare where the CTA reads as a link inside a
+ * sentence. A real anchor while the flag is off, so the Airtable form keeps
+ * opening in a new tab on middle-click and on "open in new window" too; a
+ * button once the in-page modal is what the CTA actually does.
+ */
 export function EarlyAccessLink({
     children,
     className,
@@ -148,14 +174,23 @@ export function EarlyAccessLink({
     children: ReactNode;
     className?: string;
 }) {
-    const requestEarlyAccess = useRequestEarlyAccess();
+    const cta = useEarlyAccessCta();
+
+    if (cta.kind === "external") {
+        return (
+            <Link
+                href={cta.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={className}
+            >
+                {children}
+            </Link>
+        );
+    }
 
     return (
-        <button
-            type="button"
-            onClick={requestEarlyAccess}
-            className={className}
-        >
+        <button type="button" onClick={cta.open} className={className}>
             {children}
         </button>
     );
