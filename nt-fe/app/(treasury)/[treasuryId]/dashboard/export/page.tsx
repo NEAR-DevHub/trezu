@@ -1221,7 +1221,7 @@ export default function ExportActivityPage() {
                                             variant={
                                                 exportCreditsRemaining === 0
                                                     ? "default"
-                                                    : "secondary"
+                                                    : "muted"
                                             }
                                             className="px-2! py-3!"
                                             size="sm"

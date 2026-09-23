@@ -74,9 +74,7 @@ export function BulkPaymentCreditsDisplay({
                         {t("moreFlexibility")}
                     </span>
                     <Button
-                        variant={
-                            creditsAvailable === 0 ? "default" : "secondary"
-                        }
+                        variant={creditsAvailable === 0 ? "default" : "muted"}
                         className="px-3"
                         size="sm"
                         onClick={() => {

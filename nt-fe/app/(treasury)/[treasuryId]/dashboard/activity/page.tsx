@@ -400,7 +400,7 @@ export default function ActivityPage() {
                 search
             />
             <Button
-                variant="secondary"
+                variant="muted"
                 size="icon"
                 className={cn(
                     FILTERS_BUTTON_CLASS,

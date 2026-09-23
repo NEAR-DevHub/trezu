@@ -234,7 +234,7 @@ export function RecipientQrScanner({
 
             <Button
                 type="button"
-                variant="secondary"
+                variant="muted"
                 className="h-11 w-full shrink-0 gap-2 rounded-2xl text-sm font-bold text-general-secondary-foreground"
                 onClick={onBack}
             >

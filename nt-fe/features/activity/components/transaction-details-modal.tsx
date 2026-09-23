@@ -863,7 +863,7 @@ function BulkSendBody({
                     action={
                         <Button
                             type="button"
-                            variant="secondary"
+                            variant="muted"
                             size="icon"
                             aria-label={t(
                                 showRecipients
@@ -1014,7 +1014,8 @@ function ViewPdfReceiptButton({
         <Button
             asChild
             variant="secondary"
-            className="h-9 w-full rounded-[8px] font-medium sm:rounded-[8px] max-sm:rounded-xl max-sm:bg-muted max-sm:text-foreground"
+            size="sm"
+            className="w-full rounded-[8px] max-sm:rounded-xl"
         >
             <Link
                 href={`/${treasuryId}/requests/${proposalId}/receipt`}
@@ -1041,7 +1042,8 @@ function ViewLinkedRequestButton({
         <Button
             asChild
             variant="secondary"
-            className="h-9 w-full rounded-[8px] font-medium sm:rounded-[8px] max-sm:rounded-xl max-sm:bg-muted max-sm:text-foreground"
+            size="sm"
+            className="w-full rounded-[8px] max-sm:rounded-xl"
         >
             <Link
                 href={`/${treasuryId}/requests/${proposalId}`}

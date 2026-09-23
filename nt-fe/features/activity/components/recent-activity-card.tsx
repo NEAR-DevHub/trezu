@@ -455,7 +455,6 @@ export function RecentActivity() {
                             >
                                 <Button
                                     variant="secondary"
-                                    className="bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20"
                                     size={isMobile ? "icon-sm" : "sm"}
                                 >
                                     {!isMobile && (

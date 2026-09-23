@@ -33,7 +33,7 @@ export function ThresholdStepper({
         <div className={cn("flex items-center gap-4", className)}>
             <Button
                 type="button"
-                variant="neutral"
+                variant="secondary"
                 size="icon-sm"
                 aria-label={t("decrease")}
                 disabled={disabled || value <= 1}
@@ -46,7 +46,7 @@ export function ThresholdStepper({
             </span>
             <Button
                 type="button"
-                variant="neutral"
+                variant="secondary"
                 size="icon-sm"
                 aria-label={t("increase")}
                 disabled={disabled || value >= memberCount}

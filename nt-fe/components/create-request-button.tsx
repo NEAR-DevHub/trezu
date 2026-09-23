@@ -1,7 +1,5 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/button";
 import { useTranslations } from "next-intl";
 import { useNear } from "@/stores/near-store";
@@ -73,7 +71,6 @@ export function CreateRequestButton({
 
     const isDisabled =
         disabled ||
-        isSubmitting ||
         !isAuthorized ||
         !accountId ||
         !hasSponsoredTransactions ||
@@ -84,27 +81,20 @@ export function CreateRequestButton({
             type={type}
             onClick={onClick}
             className={className}
+            loading={isSubmitting}
             disabled={isDisabled}
         >
-            {isSubmitting ? (
-                <>
-                    <Icon
-                        icon={LoaderCircleIcon}
-                        className="mr-2 animate-spin"
-                    />
-                    {loadingMessage ?? idleMessage ?? tCreate("idle")}
-                </>
-            ) : proposalBlocked ? (
-                tCreate("paused")
-            ) : !accountId ? (
-                tAuth("noWallet")
-            ) : !hasSponsoredTransactions ? (
-                tAuth("noSponsoredTransactions")
-            ) : !isAuthorized ? (
-                tCreate("noPermission")
-            ) : (
-                (idleMessage ?? tCreate("idle"))
-            )}
+            {isSubmitting
+                ? (loadingMessage ?? idleMessage ?? tCreate("idle"))
+                : proposalBlocked
+                  ? tCreate("paused")
+                  : !accountId
+                    ? tAuth("noWallet")
+                    : !hasSponsoredTransactions
+                      ? tAuth("noSponsoredTransactions")
+                      : !isAuthorized
+                        ? tCreate("noPermission")
+                        : (idleMessage ?? tCreate("idle"))}
         </Button>
     );
 

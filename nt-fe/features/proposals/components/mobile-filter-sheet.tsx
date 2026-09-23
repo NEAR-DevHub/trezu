@@ -239,7 +239,7 @@ export function MobileFilterSheet({
                             })}
                             <div className="p-3">
                                 <Button
-                                    variant="secondary"
+                                    variant="muted"
                                     className="h-10 w-full rounded-lg font-bold text-general-secondary-foreground text-sm"
                                     disabled={setOptionIds.length === 0}
                                     onClick={resetFilters}

@@ -956,7 +956,7 @@ export default function MembersPage() {
                 <Button
                     id="members-pending-btn"
                     type="button"
-                    variant="pill"
+                    variant="secondary"
                     className={headerActionClassName}
                     onClick={() =>
                         router.push(`/${treasuryId}/requests?tab=InProgress`)
@@ -1317,7 +1317,9 @@ export default function MembersPage() {
                                 balanceCheck={{
                                     withProposalBond: true,
                                 }}
-                                variant="neutral"
+                                variant="secondary"
+                                // 44px, to match the destructive sibling.
+                                size="lg"
                                 onClick={handleBulkEdit}
                                 disabled={isMemberActionsDisabled}
                                 tooltip={memberActionsDisabledReason}

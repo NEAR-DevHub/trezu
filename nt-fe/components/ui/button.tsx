@@ -20,15 +20,19 @@ const buttonVariants = cva(
                     "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
                 outline:
                     "border bg-background shadow-xs hover:bg-foreground/10 dark:bg-input/30 dark:border-input dark:hover:bg-foreground/20",
+                // The design system's secondary button: borderless grey surface
+                // with a grey label that darkens to near-black on hover. Always
+                // 14px/700, whatever the size. Disabled keeps the resting label
+                // colour — only the base `disabled:opacity-50` fades it.
                 secondary:
-                    "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+                    "bg-gray-125 text-sm text-gray-500 hover:text-gray-900 disabled:text-gray-500 dark:bg-white/10 dark:text-gray-400 dark:hover:text-gray-100 dark:disabled:text-gray-400",
+                // Legacy generic grey button, kept because ~30 call sites layer
+                // their own surface/label colours on top of it. Prefer
+                // `secondary` for anything new.
+                muted: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
                 ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
                 link: "text-primary underline-offset-4 hover:underline",
                 pill: "rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20",
-                // Same neutral surface as `pill`, minus the capsule: the
-                // dashboard section headers use a 12px radius (`--radius`).
-                neutral:
-                    "bg-[#F2F2F2] text-gray-500 hover:bg-gray-200 hover:text-gray-700 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20",
                 unstyled: "",
             },
             size: {
@@ -36,11 +40,20 @@ const buttonVariants = cva(
                 sm: "h-9 gap-1.5 px-3.5 text-sm has-[>svg]:px-3",
                 lg: "h-12 px-6 has-[>svg]:px-5",
                 xl: "h-13 px-5 gap-2.5",
+                mini: "h-7 gap-1 px-2.5 text-sm has-[>svg]:px-2",
                 icon: "size-11",
                 "icon-sm": "size-9",
                 "icon-lg": "size-12",
             },
         },
+        // The secondary button ships its own height scale (mini 28 / sm 36 /
+        // default 40 / lg 44 / xl 52). It diverges from the shared scale at
+        // `default` and `lg` only, so those two are patched here rather than
+        // globally — retuning the shared sizes would move every other button.
+        compoundVariants: [
+            { variant: "secondary", size: "default", className: "h-10" },
+            { variant: "secondary", size: "lg", className: "h-11" },
+        ],
         defaultVariants: {
             variant: "default",
             size: "default",

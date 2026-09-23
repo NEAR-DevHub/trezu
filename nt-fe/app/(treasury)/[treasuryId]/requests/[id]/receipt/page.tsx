@@ -175,7 +175,7 @@ function ReceiptPageShell({
                     {showCopyLink && (
                         <CopyButton
                             text={receiptUrl}
-                            variant="secondary"
+                            variant="muted"
                             size="sm"
                             iconClassName="size-4"
                         >

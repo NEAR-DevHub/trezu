@@ -52,8 +52,7 @@ import { SendDetails } from "./send-details";
 import { SwapDetails } from "./swap-details";
 
 /** The design's neutral action button — 40px tall, grey, 12px radius. */
-export const REQUEST_ACTION_BUTTON_CLASS =
-    "h-10 w-full text-sm bg-general-bg-secondary text-general-secondary-foreground hover:bg-general-bg-secondary/80";
+export const REQUEST_ACTION_BUTTON_CLASS = "w-full";
 /**
  * Action controls split their row evenly. The stretch lives on the container
  * because `AuthButtonWithProposal` wraps its button in a span of its own.

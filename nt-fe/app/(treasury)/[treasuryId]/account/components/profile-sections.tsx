@@ -250,7 +250,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                     <div className="flex items-center gap-2">
                         <Button
                             type="button"
-                            variant="neutral"
+                            variant="secondary"
                             className="h-10 px-4 text-sm leading-none"
                             onClick={() => fileInputRef.current?.click()}
                             disabled={busy}
@@ -266,7 +266,7 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                         {avatarUrl && (
                             <Button
                                 type="button"
-                                variant="neutral"
+                                variant="secondary"
                                 className="h-10 px-4 text-sm leading-none"
                                 onClick={handleRemoveAvatar}
                                 disabled={busy}

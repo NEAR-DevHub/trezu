@@ -780,7 +780,7 @@ export function TreasuryOnboardingPage({
 
                         <div className="flex w-full flex-col items-center gap-3">
                             <WaitlistActionButton
-                                variant="secondary"
+                                variant="muted"
                                 onClick={() => router.push(APP_ACTIVE_TREASURY)}
                             >
                                 {tLanding("waitlistSeeDemo")}

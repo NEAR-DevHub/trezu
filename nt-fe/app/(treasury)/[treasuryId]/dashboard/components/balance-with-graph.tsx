@@ -69,7 +69,6 @@ const TIME_PERIODS: TimePeriod[] = ["1W", "1M", "3M", "1Y"];
 
 // Chart filter chrome, per design: grey 12px-radius pills, and floating
 // white menus with no border and a soft shadow.
-const FILTER_PILL_CLASS = "h-10 rounded-lg text-[15px] font-semibold";
 const FILTER_MENU_CLASS =
     "rounded-2xl border-0 p-1.5 shadow-[0_16px_40px_-12px_rgb(0_0_0/0.25)]";
 const FILTER_MENU_ITEM_CLASS =
@@ -662,13 +661,9 @@ export default function BalanceWithGraph({
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        variant="pill"
-                                        size="sm"
+                                        variant="secondary"
                                         disabled={isLoadingTokens || isLoading}
-                                        className={cn(
-                                            FILTER_PILL_CLASS,
-                                            "justify-between",
-                                        )}
+                                        className="justify-between"
                                         data-testid="chart-token-trigger"
                                     >
                                         {selectedToken === "all" ? (
@@ -779,13 +774,9 @@ export default function BalanceWithGraph({
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button
-                                        variant="pill"
-                                        size="sm"
+                                        variant="secondary"
                                         disabled={isLoadingTokens || isLoading}
-                                        className={cn(
-                                            FILTER_PILL_CLASS,
-                                            "w-fit justify-between gap-1.5",
-                                        )}
+                                        className="w-fit justify-between gap-1.5"
                                         data-testid="chart-period-trigger"
                                     >
                                         <span>
@@ -834,7 +825,7 @@ export default function BalanceWithGraph({
                             </DropdownMenu>
                         </div>
                     )}
-                    <HistoryRefreshButton className="h-10 w-10 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20" />
+                    <HistoryRefreshButton className="size-10" />
                 </div>
                 {showBreakdown && isNarrow && (
                     <div className="mt-4 space-y-3 border-t border-border/70 pt-3">

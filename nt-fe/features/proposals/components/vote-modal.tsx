@@ -1,5 +1,3 @@
-import { Icon } from "@/components/icon";
-import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/button";
@@ -185,23 +183,14 @@ export function VoteModal({
                                         : "default"
                                 }
                                 onClick={handleVote}
-                                disabled={
-                                    isSubmitting ||
-                                    voteSlotBlocked ||
-                                    approveBlocked
-                                }
+                                loading={isSubmitting}
+                                disabled={voteSlotBlocked || approveBlocked}
                             >
                                 {voteSlotBlocked || approveBlocked
                                     ? tCreate("brieflyUnavailable")
                                     : vote === "Remove"
                                       ? t("remove")
                                       : t("confirm")}
-                                {isSubmitting && (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                )}
                             </Button>
                         </span>
                     </Tooltip>

@@ -58,7 +58,7 @@ export function CreateBanner({ disabled = false }: { disabled?: boolean }) {
                 <p className="text-xs">{t("description")}</p>
             </div>
             <Button
-                variant="secondary"
+                variant="muted"
                 size="sm"
                 className="w-full bg-card text-card-foreground hover:bg-card/80"
                 onClick={() => router.push(createTreasuryRoute)}

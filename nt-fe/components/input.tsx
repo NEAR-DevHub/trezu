@@ -181,7 +181,7 @@ export function ResponsiveInput({
             {/* Mobile: collapsed icon button */}
             {!isOpen && (
                 <Button
-                    variant="secondary"
+                    variant="muted"
                     size="icon"
                     aria-label={t("openSearch")}
                     className={cn("flex md:hidden", buttonClassName)}
@@ -215,7 +215,7 @@ export function ResponsiveInput({
                     />
                     {mobileCloseButton && (
                         <Button
-                            variant="secondary"
+                            variant="muted"
                             size="icon"
                             aria-label={t("closeSearch")}
                             className={cn("shrink-0", buttonClassName)}
