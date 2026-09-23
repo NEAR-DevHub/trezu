@@ -11,6 +11,58 @@ export class RequestsPage extends BasePage {
         await proposalsResp;
     }
 
+    /** Requests list on a given tab (`All`, `InProgress`, `Approved`, …), optionally with filter params (e.g. `my_vote`). */
+    async gotoWithParams(
+        treasuryId: string,
+        params: Record<string, string>,
+    ): Promise<void> {
+        const authResp = waitForResponseIncludes(this.page, "/auth/me");
+        const proposalsResp = waitForResponseIncludes(this.page, "/proposals/");
+        await this.page.goto(
+            `/${treasuryId}/requests?${new URLSearchParams(params).toString()}`,
+        );
+        await authResp;
+        await proposalsResp;
+    }
+
+    /** Toolbar button that expands/collapses the filter bar ("Filter" / "Filter (active)"). */
+    filterToggle() {
+        return this.page.getByRole("button", {
+            name: /^filter( \(active\))?$/i,
+        });
+    }
+
+    addFilterButton() {
+        return this.page.getByRole("button", { name: "Add Filter" });
+    }
+
+    /** An entry in the "Add Filter" popover, e.g. "My Vote Status". */
+    addFilterOption(label: string) {
+        return this.page.getByRole("button", { name: label, exact: true });
+    }
+
+    /** The active filter pill, e.g. "My Vote Status: Approved, No Voted". Clicking it reopens its popover. */
+    filterPill(label: string) {
+        return this.page.getByRole("button", { name: new RegExp(`^${label}`) });
+    }
+
+    /**
+     * An option inside the open checkbox filter popover (e.g. "No Voted").
+     * Targets the option text inside its <label>, so clicking toggles the
+     * checkbox; scoped to the popover because the same words also appear
+     * in tabs and status pills.
+     */
+    filterCheckbox(label: string) {
+        return this.page.getByRole("dialog").getByText(label, { exact: true });
+    }
+
+    /** Table row for a proposal, matched on its "#<id>" cell. */
+    proposalRow(proposalId: number) {
+        return this.main
+            .getByRole("row")
+            .filter({ hasText: new RegExp(`#${proposalId}(?!\\d)`) });
+    }
+
     /** The dashboard also renders Send/Exchange CTAs (inside the onboarding progress widget) — used by the CTA-overlap-with-onboarding test. */
     async gotoDashboard(treasuryId: string): Promise<void> {
         const authResp = waitForResponseIncludes(this.page, "/auth/me");
