@@ -268,7 +268,10 @@ function EarlyAccessModal({
                             >
                                 NEAR Business Early Access
                             </DialogPrimitive.Title>
-                            <PrivacyNotice />
+                            {/* It says what submitting the form will do, so
+                                it belongs with the form and not with the
+                                confirmation that the form is gone. */}
+                            {!isSent && <PrivacyNotice />}
                             <EarlyAccessForm
                                 attribution={attribution}
                                 card={card}
