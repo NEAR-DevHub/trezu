@@ -130,7 +130,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 <Link
                     href={data.url}
                     target="_blank"
-                    className="flex items-center gap-5"
+                    className="flex items-start gap-5"
                 >
                     {notes}{" "}
                     <Icon icon={ArrowUpRight01Icon} className="shrink-0" />{" "}
@@ -138,7 +138,7 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
             ) : (
                 notes
             );
-        infoItems.push({ label: t("notes"), value: content });
+        infoItems.push({ label: t("notes"), value: content, stacked: true });
     }
 
     const expandableItems: InfoItem[] = [];
