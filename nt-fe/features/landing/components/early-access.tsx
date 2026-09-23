@@ -21,7 +21,11 @@ import {
     submitEarlyAccessRequest,
 } from "@/lib/api";
 import { cn } from "@/lib/utils";
-import { BUSINESS_TYPE_OPTIONS, REFERRAL_SOURCE_OPTIONS } from "../content";
+import {
+    BUSINESS_TYPE_OPTIONS,
+    OTHER_OPTION,
+    REFERRAL_SOURCE_OPTIONS,
+} from "../content";
 import { NearMark } from "./landing-icons";
 
 const EarlyAccessContext = createContext<(() => void) | null>(null);
@@ -65,6 +69,10 @@ export function EarlyAccessProvider({ children }: { children: ReactNode }) {
 
 /** Long enough for any real campaign tag, short enough not to be a payload. */
 const MAX_ATTRIBUTION_LENGTH = 256;
+
+/** Long enough to name a vertical or a conference, short enough to read as a
+ *  CRM value rather than as a paragraph. */
+const MAX_OTHER_LENGTH = 100;
 
 function capped(value: string | undefined) {
     return value?.slice(0, MAX_ATTRIBUTION_LENGTH) || undefined;
@@ -190,6 +198,20 @@ function EarlyAccessModal({
     const titleId = useId();
     // The card doubles as the boundary the open dropdowns are kept inside of.
     const [card, setCard] = useState<HTMLDivElement | null>(null);
+    // Sent, the card is its own confirmation: no photograph, and none of the
+    // room the form and its dropdowns needed.
+    const [isSent, setIsSent] = useState(false);
+
+    // Reopening is a fresh request, so the flag goes as `open` comes back up.
+    // Dropped during the render that raises it rather than from an effect,
+    // which would show the new form inside the narrow card for a frame first;
+    // and on the way up rather than down, which would put the photograph back
+    // behind the confirmation as the modal fades out.
+    const [wasOpen, setWasOpen] = useState(open);
+    if (wasOpen !== open) {
+        setWasOpen(open);
+        if (open) setIsSent(false);
+    }
 
     return (
         <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
@@ -201,7 +223,10 @@ function EarlyAccessModal({
                     ref={setCard}
                     aria-labelledby={titleId}
                     className={cn(
-                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto lg:max-w-[1320px]",
+                        "fixed left-1/2 top-1/2 z-50 max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] max-w-[560px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto",
+                        // The wide card is the photograph's; the confirmation
+                        // keeps the width a phone gives it at every size.
+                        !isSent && "lg:max-w-[1320px]",
                         "rounded-2xl bg-white font-landing text-landing-ink antialiased shadow-2xl",
                         // No card padding: the photograph runs to the card's
                         // own rounded edge, which `overflow-y-auto` clips it to.
@@ -220,10 +245,16 @@ function EarlyAccessModal({
                         modal on a scrollbar as it opens. It sits on the grid
                         rather than the card so the photograph stretches to it
                         instead of leaving a band under itself. */}
-                    <div className="lg:grid lg:min-h-[min(48rem,calc(100dvh-2rem))] lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0">
+                    <div
+                        className={cn(
+                            !isSent &&
+                                "lg:grid lg:min-h-[min(48rem,calc(100dvh-2rem))] lg:grid-cols-[1fr_minmax(0,680px)] lg:gap-0",
+                        )}
+                    >
                         <div
                             className={cn(
-                                "flex flex-col px-6 sm:px-10 lg:px-16 lg:pr-20",
+                                "flex flex-col px-6 sm:px-10",
+                                !isSent && "lg:px-16 lg:pr-20",
                                 COLUMN_PADDING,
                             )}
                         >
@@ -241,24 +272,29 @@ function EarlyAccessModal({
                             <EarlyAccessForm
                                 attribution={attribution}
                                 card={card}
+                                onSent={() => setIsSent(true)}
                             />
                         </div>
                         {/* The tallest thing in the modal — phones drop it
-                            rather than scroll past it. The photograph is the
-                            backdrop for the line, which is set as real text, so
-                            the picture itself has nothing to describe. */}
-                        <div className="relative hidden lg:block">
-                            <Image
-                                src="/landing/early-access.jpg"
-                                alt=""
-                                fill
-                                className="object-cover"
-                                unoptimized
-                            />
-                            <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333] opacity-50">
-                                Your treasury should be your business.
-                            </p>
-                        </div>
+                            rather than scroll past it, and so does the
+                            confirmation, which has nothing left to sell. The
+                            photograph is the backdrop for the line, which is
+                            set as real text, so the picture itself has nothing
+                            to describe. */}
+                        {!isSent && (
+                            <div className="relative hidden lg:block">
+                                <Image
+                                    src="/landing/early-access.jpg"
+                                    alt=""
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                />
+                                <p className="absolute inset-x-8 top-1/2 -translate-y-1/2 text-center text-[60px] font-normal leading-[1.12] text-[#333333] opacity-50">
+                                    Your treasury should be your business.
+                                </p>
+                            </div>
+                        )}
                     </div>
                 </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
@@ -307,12 +343,23 @@ function PrivacyNotice() {
 function EarlyAccessForm({
     attribution,
     card,
+    onSent,
 }: {
     attribution: EarlyAccessAttribution;
     card: HTMLElement | null;
+    /** Raised once, so the card can shed the photograph it was sized for. */
+    onSent: () => void;
 }) {
     const optInId = useId();
     const [isComplete, setIsComplete] = useState(false);
+    // The selects stay uncontrolled — `FormData` still reads them off the
+    // hidden native ones. This only mirrors what is picked, so each row knows
+    // whether it has to ask for a free-text answer. `isComplete` survives the
+    // extra field for free: Radix raises the select's change event from an
+    // effect, so the row has already re-rendered by the time the form below
+    // re-reads its own validity.
+    const [businessType, setBusinessType] = useState<string | null>(null);
+    const [referralSource, setReferralSource] = useState<string | null>(null);
     const [status, setStatus] = useState<
         "idle" | "submitting" | "failed" | "throttled" | "sent"
     >("idle");
@@ -325,12 +372,21 @@ function EarlyAccessForm({
         setGeneration((generation) => generation + 1);
         setIsComplete(false);
         setStatus("idle");
+        setBusinessType(null);
+        setReferralSource(null);
     }
 
     async function handleSubmit(event: FormEvent<HTMLFormElement>) {
         event.preventDefault();
         const fields = new FormData(event.currentTarget);
         const value = (field: string) => String(fields.get(field) ?? "").trim();
+        // "Other" is the prompt, not the answer: what the visitor typed beside
+        // it is what the CRM records. Both attributes are free text over there,
+        // so the answer goes into the existing one rather than beside it.
+        const answer = (field: "businessType" | "referralSource") =>
+            value(field) === OTHER_OPTION
+                ? value(`${field}Other`)
+                : value(field);
 
         setStatus("submitting");
         try {
@@ -339,12 +395,13 @@ function EarlyAccessForm({
                 company: value("company"),
                 email: value("email"),
                 telegram: value("telegram") || undefined,
-                businessType: value("businessType"),
-                referralSource: value("referralSource"),
+                businessType: answer("businessType"),
+                referralSource: answer("referralSource"),
                 marketingOptIn: fields.has("marketingOptIn"),
                 attribution,
             });
             setStatus("sent");
+            onSent();
         } catch (error) {
             // A throttled visitor gets the backend's own answer: the generic
             // "try again" reads as an invitation to do so at once, which only
@@ -416,13 +473,19 @@ function EarlyAccessForm({
             <SelectField
                 name="businessType"
                 placeholder="Vertical / Type of Business"
+                otherPlaceholder="Other Type of Business"
                 options={BUSINESS_TYPE_OPTIONS}
+                value={businessType}
+                onValueChange={setBusinessType}
                 card={card}
             />
             <SelectField
                 name="referralSource"
                 placeholder="How did you hear about NEAR Business?"
+                otherPlaceholder="Other Referral Source"
                 options={REFERRAL_SOURCE_OPTIONS}
+                value={referralSource}
+                onValueChange={setReferralSource}
                 card={card}
             />
             <div className="flex items-start gap-3">
@@ -479,85 +542,113 @@ function EarlyAccessForm({
  * hidden control is what a failed native validation points at, hence the
  * `relative` wrapper around the whole field: it is the positioning context the
  * browser measures, so the message lands on this row rather than on the card.
+ *
+ * Picking `OTHER_OPTION` asks for the answer instead, in a field beside the
+ * select rather than under it: the form is already as tall as a laptop can
+ * take, so the row splits rather than the column growing by one.
  */
 function SelectField({
     name,
     placeholder,
+    otherPlaceholder,
     options,
+    value,
+    onValueChange,
     card,
 }: {
     name: string;
     placeholder: string;
+    /** What to call the free-text answer `OTHER_OPTION` asks for. */
+    otherPlaceholder: string;
     options: readonly string[];
+    value: string | null;
+    onValueChange: (value: string) => void;
     card: HTMLElement | null;
 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const isOther = value === OTHER_OPTION;
 
     return (
-        <div className="relative">
-            <SelectPrimitive.Root
-                name={name}
-                required
-                open={isOpen}
-                onOpenChange={setIsOpen}
-            >
-                <SelectPrimitive.Trigger
-                    aria-label={placeholder}
-                    className={cn(
-                        FIELD_HEIGHT,
-                        "flex w-full cursor-pointer items-center justify-between gap-2 bg-transparent text-left text-base leading-none text-landing-ink outline-none data-[placeholder]:text-landing-grey-light",
-                        // The trigger closes back into the same hairline the
-                        // text fields wear; open, it becomes the design's
-                        // outlined box, which insets its own text.
-                        isOpen
-                            ? "rounded border-2 border-landing-green px-4"
-                            : "border-0 border-b border-landing-grey-light transition-colors focus-visible:border-landing-ink",
-                        // The referral placeholder is longer than a phone's
-                        // field, so it drops a size rather than truncating.
-                        "max-sm:text-[13px]",
-                    )}
+        <div className={cn("grid", ROW_GAP, isOther && "sm:grid-cols-2")}>
+            <div className="relative">
+                <SelectPrimitive.Root
+                    name={name}
+                    required
+                    onValueChange={onValueChange}
+                    open={isOpen}
+                    onOpenChange={setIsOpen}
                 >
-                    <SelectPrimitive.Value
-                        placeholder={placeholder}
-                        className="min-w-0 truncate"
-                    />
-                    <SelectPrimitive.Icon asChild>
-                        <ChevronGlyph className="shrink-0 text-landing-ink" />
-                    </SelectPrimitive.Icon>
-                </SelectPrimitive.Trigger>
-                {/* Not portalled: inside the dialog the list inherits the
-                    landing's palette and font instead of restating them. */}
-                <SelectPrimitive.Content
-                    position="popper"
-                    sideOffset={0}
-                    // The card, not the viewport, is what the list has to fit
-                    // inside: it is the scroll container, so a list that hangs
-                    // past its bottom edge is a scrollbar on the whole modal.
-                    // Bounded here, the list flips or shortens itself instead.
-                    collisionBoundary={card}
-                    collisionPadding={8}
-                    // Four rows and half of the next: enough of the list to
-                    // read at a glance, short enough to hang inside the card,
-                    // and the half row is what says the rest is below. Cut on
-                    // a row's midline rather than at its edge, which would
-                    // leave a sliver that reads as a rendering fault.
-                    className="z-50 max-h-[min(13rem,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-landing-mist bg-white lg:bg-landing-paper"
-                >
-                    <SelectPrimitive.Viewport className="py-1">
-                        {options.map((option) => (
-                            <SelectPrimitive.Item
-                                key={option}
-                                value={option}
-                                className="flex h-11 cursor-pointer select-none items-center px-4 text-base leading-none text-landing-ink outline-none data-[highlighted]:bg-landing-mist/60 max-sm:text-[13px]"
-                            >
-                                <SelectPrimitive.ItemText>
-                                    {option}
-                                </SelectPrimitive.ItemText>
-                            </SelectPrimitive.Item>
-                        ))}
-                    </SelectPrimitive.Viewport>
-                </SelectPrimitive.Content>
-            </SelectPrimitive.Root>
+                    <SelectPrimitive.Trigger
+                        aria-label={placeholder}
+                        className={cn(
+                            FIELD_HEIGHT,
+                            "flex w-full cursor-pointer items-center justify-between gap-2 bg-transparent text-left text-base leading-none text-landing-ink outline-none data-[placeholder]:text-landing-grey-light",
+                            // The trigger closes back into the same hairline the
+                            // text fields wear; open, it becomes the design's
+                            // outlined box, which insets its own text.
+                            isOpen
+                                ? "rounded border-2 border-landing-green px-4"
+                                : "border-0 border-b border-landing-grey-light transition-colors focus-visible:border-landing-ink",
+                            // The referral placeholder is longer than a phone's
+                            // field, so it drops a size rather than truncating.
+                            "max-sm:text-[13px]",
+                        )}
+                    >
+                        <SelectPrimitive.Value
+                            placeholder={placeholder}
+                            className="min-w-0 truncate"
+                        />
+                        <SelectPrimitive.Icon asChild>
+                            <ChevronGlyph className="shrink-0 text-landing-ink" />
+                        </SelectPrimitive.Icon>
+                    </SelectPrimitive.Trigger>
+                    {/* Not portalled: inside the dialog the list inherits
+                        the landing's palette and font instead of restating
+                        them. */}
+                    <SelectPrimitive.Content
+                        position="popper"
+                        sideOffset={0}
+                        // The card, not the viewport, is what the list has to fit
+                        // inside: it is the scroll container, so a list that hangs
+                        // past its bottom edge is a scrollbar on the whole modal.
+                        // Bounded here, the list flips or shortens itself instead.
+                        collisionBoundary={card}
+                        collisionPadding={8}
+                        // Four rows and half of the next: enough of the list to
+                        // read at a glance, short enough to hang inside the card,
+                        // and the half row is what says the rest is below. Cut on
+                        // a row's midline rather than at its edge, which would
+                        // leave a sliver that reads as a rendering fault.
+                        className="z-50 max-h-[min(13rem,var(--radix-select-content-available-height))] w-[var(--radix-select-trigger-width)] overflow-hidden rounded border border-landing-mist bg-white lg:bg-landing-paper"
+                    >
+                        <SelectPrimitive.Viewport className="py-1">
+                            {options.map((option) => (
+                                <SelectPrimitive.Item
+                                    key={option}
+                                    value={option}
+                                    className="flex h-11 cursor-pointer select-none items-center px-4 text-base leading-none text-landing-ink outline-none data-[highlighted]:bg-landing-mist/60 max-sm:text-[13px]"
+                                >
+                                    <SelectPrimitive.ItemText>
+                                        {option}
+                                    </SelectPrimitive.ItemText>
+                                </SelectPrimitive.Item>
+                            ))}
+                        </SelectPrimitive.Viewport>
+                    </SelectPrimitive.Content>
+                </SelectPrimitive.Root>
+            </div>
+            {isOther && (
+                <input
+                    name={`${name}Other`}
+                    aria-label={otherPlaceholder}
+                    placeholder={otherPlaceholder}
+                    required
+                    // The answer becomes a line of CRM free text, so it is capped
+                    // at about what one of those holds rather than left open.
+                    maxLength={MAX_OTHER_LENGTH}
+                    className={cn(FIELD, "max-sm:text-[13px]")}
+                />
+            )}
         </div>
     );
 }

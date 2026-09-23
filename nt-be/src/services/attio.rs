@@ -21,7 +21,9 @@ use crate::utils::env::EnvVars;
 ///
 /// Each one must already exist in the workspace with a matching type: Attio
 /// rejects the entire write when a slug is unknown, and rejects a select value
-/// that is not character-for-character one of that attribute's options.
+/// that is not character-for-character one of that attribute's options. Which
+/// is why `business_type` and `referral_source` are text rather than select —
+/// the form's "Other" lets a visitor answer either one in their own words.
 mod slug {
     pub const NAME: &str = "name";
     pub const EMAIL_ADDRESSES: &str = "email_addresses";
