@@ -77,7 +77,7 @@ function AddressBookEmptyState({
                 <AuthButton
                     permissionKind="any"
                     permissionAction=""
-                    variant="secondary"
+                    variant="muted"
                     className="gap-1 shrink w-full"
                     onClick={onImport}
                 >
@@ -435,7 +435,7 @@ function RecipientsView({
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
-                                variant="secondary"
+                                variant="muted"
                                 size={isMobile ? "icon" : "default"}
                                 disabled={exportEntries.isPending}
                                 onClick={handleExport}
@@ -505,7 +505,7 @@ function RecipientsView({
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
-                                variant="secondary"
+                                variant="muted"
                                 className={cn(
                                     "gap-1.5",
                                     mobileSearchActive && "hidden sm:flex",
@@ -531,7 +531,7 @@ function RecipientsView({
                             <AuthButton
                                 permissionKind="any"
                                 permissionAction=""
-                                variant="secondary"
+                                variant="muted"
                                 className={cn(
                                     "gap-1.5",
                                     mobileSearchActive && "hidden sm:flex",

@@ -272,7 +272,7 @@ function ConnectPageInner() {
                                 </code>
                                 <CopyButton
                                     text="/connect"
-                                    variant="secondary"
+                                    variant="muted"
                                     size="sm"
                                 >
                                     {tTg("copy")}

@@ -523,7 +523,7 @@ export default function PaySharePage() {
                                         text={getAbsoluteTransferUrl(
                                             currentSharePath,
                                         )}
-                                        variant="secondary"
+                                        variant="muted"
                                         className="h-11 w-full gap-2 rounded-2xl bg-general-bg-secondary text-base font-bold leading-4 text-muted-foreground hover:bg-general-bg-secondary/80"
                                         data-testid="deposit-copy-link"
                                     >

@@ -52,44 +52,45 @@
     --color-green-900: oklch(0.4338 0.0912 162.98); /* #076042 */
     --color-green-950: oklch(0.298 0.0641 163.3); /* #003724 */
 
-    --color-red-50: oklch(96.9% 0.015 12.422);
-    --color-red-100: oklch(94.1% 0.03 12.58);
-    --color-red-200: oklch(89.2% 0.058 10.001);
-    --color-red-300: oklch(81% 0.117 11.638);
-    --color-red-400: oklch(71.2% 0.194 13.428);
-    --color-red-500: oklch(64.5% 0.246 16.439);
-    --color-red-600: oklch(58.6% 0.253 17.585);
-    --color-red-700: oklch(51.4% 0.222 16.935);
-    --color-red-800: oklch(45.5% 0.188 13.697);
-    --color-red-900: oklch(41% 0.159 10.272);
-    --color-red-950: oklch(27.1% 0.105 12.094);
+    --color-red-50: oklch(96.9% 0.015 12.422); /* #FFF1F2 */
+    --color-red-100: oklch(94.1% 0.03 12.58); /* #FFE4E6 */
+    --color-red-200: oklch(89.2% 0.058 10.001); /* #FFCCD3 */
+    --color-red-300: oklch(81% 0.117 11.638); /* #FFA1AD */
+    --color-red-400: oklch(71.2% 0.194 13.428); /* #FF637E */
+    --color-red-500: oklch(64.5% 0.246 16.439); /* #FF2056 */
+    --color-red-600: oklch(58.6% 0.253 17.585); /* #EC003F */
+    --color-red-700: oklch(51.4% 0.222 16.935); /* #C70036 */
+    --color-red-800: oklch(45.5% 0.188 13.697); /* #A50036 */
+    --color-red-900: oklch(41% 0.159 10.272); /* #8B0836 */
+    --color-red-950: oklch(27.1% 0.105 12.094); /* #4D0218 */
 
-    --color-yellow-50: oklch(0.987 0.022 95.277);
-    --color-yellow-100: oklch(0.962 0.059 95.617);
-    --color-yellow-200: oklch(0.924 0.12 95.746);
-    --color-yellow-300: oklch(0.879 0.169 91.605);
-    --color-yellow-400: oklch(0.828 0.189 84.429);
-    --color-yellow-500: oklch(0.769 0.188 70.08);
-    --color-yellow-600: oklch(0.666 0.179 58.318);
-    --color-yellow-700: oklch(0.555 0.163 48.998);
-    --color-yellow-800: oklch(0.473 0.137 46.201);
-    --color-yellow-900: oklch(0.414 0.112 45.904);
-    --color-yellow-950: oklch(0.279 0.077 45.635);
+    --color-yellow-50: oklch(0.987 0.022 95.277); /* #FFFBEB */
+    --color-yellow-100: oklch(0.962 0.059 95.617); /* #FEF3C6 */
+    --color-yellow-200: oklch(0.924 0.12 95.746); /* #FEE685 */
+    --color-yellow-300: oklch(0.879 0.169 91.605); /* #FFD230 */
+    --color-yellow-400: oklch(0.828 0.189 84.429); /* #FFB900 */
+    --color-yellow-500: oklch(0.769 0.188 70.08); /* #FE9A00 */
+    --color-yellow-600: oklch(0.666 0.179 58.318); /* #E17100 */
+    --color-yellow-700: oklch(0.555 0.163 48.998); /* #BB4D00 */
+    --color-yellow-800: oklch(0.473 0.137 46.201); /* #973C00 */
+    --color-yellow-900: oklch(0.414 0.112 45.904); /* #7B3306 */
+    --color-yellow-950: oklch(0.279 0.077 45.635); /* #461901 */
 
-    --color-gray-25: oklch(0.9911 0 0);
-    --color-gray-50: oklch(0.985 0 0);
-    --color-gray-100: oklch(0.97 0 0);
-    --color-gray-150: oklch(0.946 0 0);
-    --color-gray-200: oklch(0.922 0 0);
-    --color-gray-300: oklch(0.87 0 0);
-    --color-gray-400: oklch(0.708 0 0);
-    --color-gray-500: oklch(0.556 0 0);
-    --color-gray-600: oklch(0.439 0 0);
-    --color-gray-700: oklch(0.371 0 0);
-    --color-gray-800: oklch(0.269 0 0);
-    --color-gray-850: oklch(0.239 0 0);
-    --color-gray-900: oklch(0.205 0 0);
-    --color-gray-950: oklch(0.145 0 0);
+    --color-gray-25: oklch(0.9911 0 0); /* #FCFCFC */
+    --color-gray-50: oklch(0.985 0 0); /* #FAFAFA */
+    --color-gray-100: oklch(0.97 0 0); /* #F5F5F5 */
+    --color-gray-125: oklch(0.9612 0 0); /* #F2F2F2 */
+    --color-gray-150: oklch(0.946 0 0); /* #EDEDED */
+    --color-gray-200: oklch(0.922 0 0); /* #E5E5E5 */
+    --color-gray-300: oklch(0.87 0 0); /* #D4D4D4 */
+    --color-gray-400: oklch(0.708 0 0); /* #A1A1A1 */
+    --color-gray-500: oklch(0.556 0 0); /* #737373 */
+    --color-gray-600: oklch(0.439 0 0); /* #525252 */
+    --color-gray-700: oklch(0.371 0 0); /* #404040 */
+    --color-gray-800: oklch(0.269 0 0); /* #262626 */
+    --color-gray-850: oklch(0.239 0 0); /* #1F1F1F */
+    --color-gray-900: oklch(0.205 0 0); /* #171717 */
+    --color-gray-950: oklch(0.145 0 0); /* #0A0A0A */
 }
 
 /* Icon hover choreography for the sidebar rail. Each nav row is a `group`, so
@@ -266,99 +267,99 @@
 }
 
 :root {
-    --background: rgb(245, 245, 245);
-    --page-bg: rgb(245, 245, 245);
-    --foreground: rgb(10, 10, 10);
-    --card: rgb(255, 255, 255);
-    --card-foreground: rgb(25, 25, 26);
-    --popover: rgb(255, 255, 255);
-    --popover-foreground: rgb(25, 25, 26);
-    --primary: rgb(25, 25, 26);
-    --primary-foreground: rgb(250, 250, 250);
-    --secondary: rgb(245, 245, 245);
-    --secondary-foreground: rgb(10, 10, 10);
-    --muted: rgb(245, 245, 245);
-    --muted-foreground: rgb(115, 115, 115);
-    --accent: rgb(245, 245, 245);
-    --accent-foreground: rgb(10, 10, 10);
-    --destructive: rgb(207, 0, 28);
-    --destructive-foreground: rgb(255, 255, 255);
-    --border: rgb(245, 245, 245);
-    --general-foreground: rgb(23, 23, 23);
-    --general-muted-foreground: rgb(161, 161, 161);
-    --general-secondary-foreground: rgb(115, 115, 115);
-    --general-border: rgba(229, 229, 229);
-    --input: rgb(229, 229, 229);
-    --ring: rgb(0, 192, 118);
-    --general-unofficial-border: rgba(212, 212, 212);
-    --general-unofficial-ghost: rgba(255, 255, 255, 0);
-    --general-unofficial-ghost-foreground: rgba(64, 64, 64);
-    --general-unofficial-accent: rgba(229, 229, 229);
-    --general-unofficial-accent-0: rgba(250, 250, 250);
-    --general-success-background-faded: rgb(240, 255, 249);
-    --general-success-border: rgb(213, 255, 240);
-    --general-success-foreground: rgb(0, 150, 96);
-    --general-orange-background: rgb(255, 237, 213);
-    --general-orange-background-faded: rgb(255, 247, 237);
-    --general-orange-border: rgb(255, 237, 213);
-    --general-orange-foreground: rgb(194, 65, 12);
-    --general-orange-solid: rgb(255, 105, 0);
-    --general-destructive-background-faded: rgb(254, 242, 242);
-    --general-destructive-border: rgb(255, 228, 230);
-    --general-destructive-foreground: rgb(220, 38, 38);
-    --general-error-icon: rgb(255, 32, 86);
-    --general-error-foreground: rgb(236, 0, 63);
-    --general-info-background-faded: rgba(239, 246, 255);
-    --general-info-border: rgb(191, 219, 254);
-    --general-info-foreground: rgb(29, 78, 216);
-    --general-info-icon: rgb(37, 99, 235);
-    --general-indigo-foreground: rgba(79, 70, 229, 1);
-    --general-indigo-background-faded: rgba(238, 242, 255, 1);
-    --general-indigo-border: rgba(224, 231, 255, 1);
-    --general-warning-background-faded: rgb(254, 252, 232);
-    --general-warning-border: rgb(254, 240, 138);
-    --general-warning-foreground: rgb(161, 98, 7);
-    --general-amber-background-faded: rgb(255, 251, 235);
-    --general-amber-border: rgb(254, 243, 198);
-    --general-amber-foreground: rgb(151, 60, 0);
-    --general-rose-background-faded: rgb(255, 241, 242);
-    --general-rose-border: rgb(255, 228, 230);
-    --general-rose-foreground: rgb(236, 0, 63);
-    --general-blue-background-faded: rgb(239, 246, 255);
-    --general-blue-border: rgb(219, 234, 254);
-    --general-blue-foreground: rgb(20, 71, 230);
-    --general-pink-background-faded: rgb(253, 242, 248);
-    --general-pink-border: rgb(252, 231, 243);
-    --general-pink-foreground: rgb(190, 24, 93);
-    --general-tertiary: rgb(250, 250, 250);
-    --general-bg-tertiary: rgb(250, 250, 250);
-    --chart-area-fill: rgb(2, 7, 6);
-    --general-unofficial-border-2: rgb(229, 229, 229);
-    --general-unofficial-border-3: rgb(212, 212, 212);
-    --general-unofficial-border-4: rgb(161, 161, 161);
-    --general-unofficial-border-5: rgb(115, 115, 115);
-    --general-secondary: rgb(245, 245, 245);
-    --general-bg-primary: rgb(23, 23, 23);
-    --general-bg-secondary: rgb(242, 242, 242);
-    --general-unofficial-ghost-hover: rgba(0, 0, 0, 0.05);
-    --onboarding-primary: rgb(0, 150, 96);
-    --brand-blue: rgb(0, 150, 96);
+    --background: rgb(245, 245, 245); /* #F5F5F5 */
+    --page-bg: rgb(245, 245, 245); /* #F5F5F5 */
+    --foreground: rgb(10, 10, 10); /* #0A0A0A */
+    --card: rgb(255, 255, 255); /* #FFFFFF */
+    --card-foreground: rgb(25, 25, 26); /* #19191A */
+    --popover: rgb(255, 255, 255); /* #FFFFFF */
+    --popover-foreground: rgb(25, 25, 26); /* #19191A */
+    --primary: rgb(25, 25, 26); /* #19191A */
+    --primary-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --secondary: rgb(245, 245, 245); /* #F5F5F5 */
+    --secondary-foreground: rgb(10, 10, 10); /* #0A0A0A */
+    --muted: rgb(245, 245, 245); /* #F5F5F5 */
+    --muted-foreground: rgb(115, 115, 115); /* #737373 */
+    --accent: rgb(245, 245, 245); /* #F5F5F5 */
+    --accent-foreground: rgb(10, 10, 10); /* #0A0A0A */
+    --destructive: rgb(207, 0, 28); /* #CF001C */
+    --destructive-foreground: rgb(255, 255, 255); /* #FFFFFF */
+    --border: rgb(245, 245, 245); /* #F5F5F5 */
+    --general-foreground: rgb(23, 23, 23); /* #171717 */
+    --general-muted-foreground: rgb(161, 161, 161); /* #A1A1A1 */
+    --general-secondary-foreground: rgb(115, 115, 115); /* #737373 */
+    --general-border: rgba(229, 229, 229); /* #E5E5E5 */
+    --input: rgb(229, 229, 229); /* #E5E5E5 */
+    --ring: rgb(0, 192, 118); /* #00C076 */
+    --general-unofficial-border: rgba(212, 212, 212); /* #D4D4D4 */
+    --general-unofficial-ghost: rgba(255, 255, 255, 0); /* #FFFFFF @ 0% alpha */
+    --general-unofficial-ghost-foreground: rgba(64, 64, 64); /* #404040 */
+    --general-unofficial-accent: rgba(229, 229, 229); /* #E5E5E5 */
+    --general-unofficial-accent-0: rgba(250, 250, 250); /* #FAFAFA */
+    --general-success-background-faded: rgb(240, 255, 249); /* #F0FFF9 */
+    --general-success-border: rgb(213, 255, 240); /* #D5FFF0 */
+    --general-success-foreground: rgb(0, 150, 96); /* #009660 */
+    --general-orange-background: rgb(255, 237, 213); /* #FFEDD5 */
+    --general-orange-background-faded: rgb(255, 247, 237); /* #FFF7ED */
+    --general-orange-border: rgb(255, 237, 213); /* #FFEDD5 */
+    --general-orange-foreground: rgb(194, 65, 12); /* #C2410C */
+    --general-orange-solid: rgb(255, 105, 0); /* #FF6900 */
+    --general-destructive-background-faded: rgb(254, 242, 242); /* #FEF2F2 */
+    --general-destructive-border: rgb(255, 228, 230); /* #FFE4E6 */
+    --general-destructive-foreground: rgb(220, 38, 38); /* #DC2626 */
+    --general-error-icon: rgb(255, 32, 86); /* #FF2056 */
+    --general-error-foreground: rgb(236, 0, 63); /* #EC003F */
+    --general-info-background-faded: rgba(239, 246, 255); /* #EFF6FF */
+    --general-info-border: rgb(191, 219, 254); /* #BFDBFE */
+    --general-info-foreground: rgb(29, 78, 216); /* #1D4ED8 */
+    --general-info-icon: rgb(37, 99, 235); /* #2563EB */
+    --general-indigo-foreground: rgba(79, 70, 229, 1); /* #4F46E5 */
+    --general-indigo-background-faded: rgba(238, 242, 255, 1); /* #EEF2FF */
+    --general-indigo-border: rgba(224, 231, 255, 1); /* #E0E7FF */
+    --general-warning-background-faded: rgb(254, 252, 232); /* #FEFCE8 */
+    --general-warning-border: rgb(254, 240, 138); /* #FEF08A */
+    --general-warning-foreground: rgb(161, 98, 7); /* #A16207 */
+    --general-amber-background-faded: rgb(255, 251, 235); /* #FFFBEB */
+    --general-amber-border: rgb(254, 243, 198); /* #FEF3C6 */
+    --general-amber-foreground: rgb(151, 60, 0); /* #973C00 */
+    --general-rose-background-faded: rgb(255, 241, 242); /* #FFF1F2 */
+    --general-rose-border: rgb(255, 228, 230); /* #FFE4E6 */
+    --general-rose-foreground: rgb(236, 0, 63); /* #EC003F */
+    --general-blue-background-faded: rgb(239, 246, 255); /* #EFF6FF */
+    --general-blue-border: rgb(219, 234, 254); /* #DBEAFE */
+    --general-blue-foreground: rgb(20, 71, 230); /* #1447E6 */
+    --general-pink-background-faded: rgb(253, 242, 248); /* #FDF2F8 */
+    --general-pink-border: rgb(252, 231, 243); /* #FCE7F3 */
+    --general-pink-foreground: rgb(190, 24, 93); /* #BE185D */
+    --general-tertiary: rgb(250, 250, 250); /* #FAFAFA */
+    --general-bg-tertiary: rgb(250, 250, 250); /* #FAFAFA */
+    --chart-area-fill: rgb(2, 7, 6); /* #020706 */
+    --general-unofficial-border-2: rgb(229, 229, 229); /* #E5E5E5 */
+    --general-unofficial-border-3: rgb(212, 212, 212); /* #D4D4D4 */
+    --general-unofficial-border-4: rgb(161, 161, 161); /* #A1A1A1 */
+    --general-unofficial-border-5: rgb(115, 115, 115); /* #737373 */
+    --general-secondary: rgb(245, 245, 245); /* #F5F5F5 */
+    --general-bg-primary: rgb(23, 23, 23); /* #171717 */
+    --general-bg-secondary: rgb(242, 242, 242); /* #F2F2F2 */
+    --general-unofficial-ghost-hover: rgba(0, 0, 0, 0.05); /* #000000 @ 5% alpha */
+    --onboarding-primary: rgb(0, 150, 96); /* #009660 */
+    --brand-blue: rgb(0, 150, 96); /* #009660 */
     /* Browser text-selection blue used for search match highlighting */
-    --search-match-highlight: rgb(147, 197, 253);
-    --general-unofficial-outline: rgba(255, 255, 255, 0.1);
-    --chart-1: rgb(164, 246, 204);
-    --chart-2: rgb(106, 235, 178);
-    --chart-3: rgb(10, 191, 122);
-    --chart-4: rgb(0, 161, 103);
-    --chart-5: rgb(0, 124, 83);
-    --sidebar: rgb(250, 250, 250);
-    --sidebar-foreground: rgb(25, 25, 26);
-    --sidebar-primary: rgb(242, 242, 242);
-    --sidebar-primary-foreground: rgb(250, 250, 250);
-    --sidebar-accent: rgb(245, 245, 245);
-    --sidebar-accent-foreground: rgb(15, 23, 42);
-    --sidebar-border: rgb(229, 229, 229);
-    --sidebar-ring: rgb(161, 161, 161);
+    --search-match-highlight: rgb(147, 197, 253); /* #93C5FD */
+    --general-unofficial-outline: rgba(255, 255, 255, 0.1); /* #FFFFFF @ 10% alpha */
+    --chart-1: rgb(164, 246, 204); /* #A4F6CC */
+    --chart-2: rgb(106, 235, 178); /* #6AEBB2 */
+    --chart-3: rgb(10, 191, 122); /* #0ABF7A */
+    --chart-4: rgb(0, 161, 103); /* #00A167 */
+    --chart-5: rgb(0, 124, 83); /* #007C53 */
+    --sidebar: rgb(250, 250, 250); /* #FAFAFA */
+    --sidebar-foreground: rgb(25, 25, 26); /* #19191A */
+    --sidebar-primary: rgb(242, 242, 242); /* #F2F2F2 */
+    --sidebar-primary-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --sidebar-accent: rgb(245, 245, 245); /* #F5F5F5 */
+    --sidebar-accent-foreground: rgb(15, 23, 42); /* #0F172A */
+    --sidebar-border: rgb(229, 229, 229); /* #E5E5E5 */
+    --sidebar-ring: rgb(161, 161, 161); /* #A1A1A1 */
     --font-sans:
         ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -371,7 +372,7 @@
     --shadow-blur: 0px;
     --shadow-spread: 0px;
     --shadow-opacity: 0;
-    --shadow-color: oklch(0 0 0);
+    --shadow-color: oklch(0 0 0); /* #000000 */
     --shadow-2xs: 0 0px 0px 0px hsl(0 0% 0% / 0);
     --shadow-xs: 0 0px 0px 0px hsl(0 0% 0% / 0);
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
@@ -388,100 +389,100 @@
 }
 
 .dark {
-    --background: rgb(15, 15, 16);
-    --page-bg: rgb(15, 15, 16);
-    --foreground: rgb(250, 250, 250);
-    --card: rgb(25, 25, 26);
-    --card-foreground: rgb(250, 250, 250);
-    --popover: rgb(38, 38, 38);
-    --popover-foreground: rgb(250, 250, 250);
+    --background: rgb(15, 15, 16); /* #0F0F10 */
+    --page-bg: rgb(15, 15, 16); /* #0F0F10 */
+    --foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --card: rgb(25, 25, 26); /* #19191A */
+    --card-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --popover: rgb(38, 38, 38); /* #262626 */
+    --popover-foreground: rgb(250, 250, 250); /* #FAFAFA */
     /* Primary buttons are white in the dark theme. Kept as a token pair so a
        call site never forces the surface without its label colour. */
-    --primary: rgb(255, 255, 255);
-    --primary-foreground: rgb(25, 25, 26);
-    --secondary: rgb(38, 38, 38);
-    --secondary-foreground: rgb(250, 250, 250);
-    --muted: rgb(38, 38, 38);
-    --muted-foreground: rgb(161, 161, 161);
-    --accent: rgb(64, 64, 64);
-    --accent-foreground: rgb(250, 250, 250);
-    --destructive: rgb(255, 101, 104);
-    --destructive-foreground: rgb(250, 250, 250);
-    --border: rgb(40, 40, 40);
-    --general-foreground: rgb(255, 255, 255);
-    --general-muted-foreground: rgb(82, 82, 82);
-    --general-secondary-foreground: rgb(161, 161, 161);
-    --general-border: rgba(38, 38, 38);
-    --input: rgb(52, 52, 52);
-    --ring: rgb(0, 236, 151);
-    --chart-1: rgb(112, 255, 205);
-    --chart-2: rgb(43, 253, 177);
-    --chart-3: rgb(0, 236, 151);
-    --chart-4: rgb(0, 192, 118);
-    --chart-5: rgb(0, 150, 96);
-    --chart-area-fill: rgb(243, 243, 243);
-    --sidebar: rgb(25, 25, 26);
-    --sidebar-foreground: rgb(250, 250, 250);
-    --sidebar-primary: rgb(0, 236, 151);
-    --sidebar-primary-foreground: rgb(250, 250, 250);
-    --sidebar-accent: rgb(38, 38, 38);
-    --sidebar-accent-foreground: rgb(250, 250, 250);
-    --sidebar-border: rgb(30, 30, 30);
-    --sidebar-ring: rgb(82, 82, 82);
-    --general-success-background-faded: rgba(0, 192, 118, 0.15);
-    --general-success-border: rgb(7, 96, 66);
-    --general-success-foreground: rgba(0, 236, 151, 1);
-    --general-destructive-background-faded: rgb(69, 10, 10);
-    --general-destructive-border: rgb(127, 29, 29);
-    --general-destructive-foreground: rgb(220, 38, 38);
-    --general-error-icon: rgb(255, 32, 86);
-    --general-error-foreground: rgb(236, 0, 63);
-    --general-orange-background: rgb(124, 45, 18);
-    --general-orange-background-faded: rgb(67, 20, 7);
-    --general-orange-border: rgb(124, 45, 18);
-    --general-orange-foreground: rgb(249, 115, 22);
-    --general-orange-solid: rgb(249, 115, 22);
-    --general-info-background-faded: rgba(23, 37, 84);
-    --general-info-border: rgb(30, 58, 138);
-    --general-info-foreground: rgb(147, 197, 253);
-    --general-info-icon: rgb(96, 165, 250);
-    --general-indigo-foreground: rgba(129, 140, 248, 1);
-    --general-indigo-background-faded: rgba(30, 27, 75, 1);
-    --general-indigo-border: rgba(49, 46, 129, 1);
-    --general-warning-background-faded: rgb(66, 32, 6);
-    --general-warning-border: rgb(113, 63, 18);
-    --general-warning-foreground: rgb(250, 204, 21);
-    --general-amber-background-faded: rgb(66, 32, 6);
-    --general-amber-border: rgb(113, 63, 18);
-    --general-amber-foreground: rgb(250, 204, 21);
-    --general-rose-background-faded: rgb(69, 10, 10);
-    --general-rose-border: rgb(127, 29, 29);
-    --general-rose-foreground: rgb(220, 38, 38);
-    --general-blue-background-faded: rgb(23, 37, 84);
-    --general-blue-border: rgb(30, 58, 138);
-    --general-blue-foreground: rgb(147, 197, 253);
-    --general-pink-background-faded: rgb(80, 7, 36);
-    --general-pink-border: rgb(131, 24, 67);
-    --general-pink-foreground: rgb(249, 168, 212);
-    --general-tertiary: rgb(31, 31, 31);
-    --general-bg-tertiary: rgb(31, 31, 31);
-    --general-unofficial-border: rgba(64, 64, 64);
-    --general-unofficial-ghost: rgba(255, 255, 255, 0);
-    --general-unofficial-ghost-foreground: rgba(229, 229, 229);
-    --general-unofficial-accent: rgba(38, 38, 38);
-    --general-unofficial-accent-0: rgba(23, 23, 23);
-    --general-unofficial-border-2: rgb(38, 38, 38);
-    --general-unofficial-border-3: rgb(64, 64, 64);
-    --general-unofficial-border-4: rgb(82, 82, 82);
-    --general-unofficial-border-5: rgb(115, 115, 115);
-    --general-secondary: rgba(38, 38, 38);
-    --general-bg-primary: rgb(255, 255, 255);
-    --general-bg-secondary: rgb(38, 38, 38);
-    --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1);
-    --onboarding-primary: rgb(0, 150, 96);
-    --brand-blue: rgb(0, 150, 96);
-    --search-match-highlight: rgb(30, 64, 175);
-    --general-unofficial-outline: rgba(255, 255, 255, 0.05);
+    --primary: rgb(255, 255, 255); /* #FFFFFF */
+    --primary-foreground: rgb(25, 25, 26); /* #19191A */
+    --secondary: rgb(38, 38, 38); /* #262626 */
+    --secondary-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --muted: rgb(38, 38, 38); /* #262626 */
+    --muted-foreground: rgb(161, 161, 161); /* #A1A1A1 */
+    --accent: rgb(64, 64, 64); /* #404040 */
+    --accent-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --destructive: rgb(255, 101, 104); /* #FF6568 */
+    --destructive-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --border: rgb(40, 40, 40); /* #282828 */
+    --general-foreground: rgb(255, 255, 255); /* #FFFFFF */
+    --general-muted-foreground: rgb(82, 82, 82); /* #525252 */
+    --general-secondary-foreground: rgb(161, 161, 161); /* #A1A1A1 */
+    --general-border: rgba(38, 38, 38); /* #262626 */
+    --input: rgb(52, 52, 52); /* #343434 */
+    --ring: rgb(0, 236, 151); /* #00EC97 */
+    --chart-1: rgb(112, 255, 205); /* #70FFCD */
+    --chart-2: rgb(43, 253, 177); /* #2BFDB1 */
+    --chart-3: rgb(0, 236, 151); /* #00EC97 */
+    --chart-4: rgb(0, 192, 118); /* #00C076 */
+    --chart-5: rgb(0, 150, 96); /* #009660 */
+    --chart-area-fill: rgb(243, 243, 243); /* #F3F3F3 */
+    --sidebar: rgb(25, 25, 26); /* #19191A */
+    --sidebar-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --sidebar-primary: rgb(0, 236, 151); /* #00EC97 */
+    --sidebar-primary-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --sidebar-accent: rgb(38, 38, 38); /* #262626 */
+    --sidebar-accent-foreground: rgb(250, 250, 250); /* #FAFAFA */
+    --sidebar-border: rgb(30, 30, 30); /* #1E1E1E */
+    --sidebar-ring: rgb(82, 82, 82); /* #525252 */
+    --general-success-background-faded: rgba(0, 192, 118, 0.15); /* #00C076 @ 15% alpha */
+    --general-success-border: rgb(7, 96, 66); /* #076042 */
+    --general-success-foreground: rgba(0, 236, 151, 1); /* #00EC97 */
+    --general-destructive-background-faded: rgb(69, 10, 10); /* #450A0A */
+    --general-destructive-border: rgb(127, 29, 29); /* #7F1D1D */
+    --general-destructive-foreground: rgb(220, 38, 38); /* #DC2626 */
+    --general-error-icon: rgb(255, 32, 86); /* #FF2056 */
+    --general-error-foreground: rgb(236, 0, 63); /* #EC003F */
+    --general-orange-background: rgb(124, 45, 18); /* #7C2D12 */
+    --general-orange-background-faded: rgb(67, 20, 7); /* #431407 */
+    --general-orange-border: rgb(124, 45, 18); /* #7C2D12 */
+    --general-orange-foreground: rgb(249, 115, 22); /* #F97316 */
+    --general-orange-solid: rgb(249, 115, 22); /* #F97316 */
+    --general-info-background-faded: rgba(23, 37, 84); /* #172554 */
+    --general-info-border: rgb(30, 58, 138); /* #1E3A8A */
+    --general-info-foreground: rgb(147, 197, 253); /* #93C5FD */
+    --general-info-icon: rgb(96, 165, 250); /* #60A5FA */
+    --general-indigo-foreground: rgba(129, 140, 248, 1); /* #818CF8 */
+    --general-indigo-background-faded: rgba(30, 27, 75, 1); /* #1E1B4B */
+    --general-indigo-border: rgba(49, 46, 129, 1); /* #312E81 */
+    --general-warning-background-faded: rgb(66, 32, 6); /* #422006 */
+    --general-warning-border: rgb(113, 63, 18); /* #713F12 */
+    --general-warning-foreground: rgb(250, 204, 21); /* #FACC15 */
+    --general-amber-background-faded: rgb(66, 32, 6); /* #422006 */
+    --general-amber-border: rgb(113, 63, 18); /* #713F12 */
+    --general-amber-foreground: rgb(250, 204, 21); /* #FACC15 */
+    --general-rose-background-faded: rgb(69, 10, 10); /* #450A0A */
+    --general-rose-border: rgb(127, 29, 29); /* #7F1D1D */
+    --general-rose-foreground: rgb(220, 38, 38); /* #DC2626 */
+    --general-blue-background-faded: rgb(23, 37, 84); /* #172554 */
+    --general-blue-border: rgb(30, 58, 138); /* #1E3A8A */
+    --general-blue-foreground: rgb(147, 197, 253); /* #93C5FD */
+    --general-pink-background-faded: rgb(80, 7, 36); /* #500724 */
+    --general-pink-border: rgb(131, 24, 67); /* #831843 */
+    --general-pink-foreground: rgb(249, 168, 212); /* #F9A8D4 */
+    --general-tertiary: rgb(31, 31, 31); /* #1F1F1F */
+    --general-bg-tertiary: rgb(31, 31, 31); /* #1F1F1F */
+    --general-unofficial-border: rgba(64, 64, 64); /* #404040 */
+    --general-unofficial-ghost: rgba(255, 255, 255, 0); /* #FFFFFF @ 0% alpha */
+    --general-unofficial-ghost-foreground: rgba(229, 229, 229); /* #E5E5E5 */
+    --general-unofficial-accent: rgba(38, 38, 38); /* #262626 */
+    --general-unofficial-accent-0: rgba(23, 23, 23); /* #171717 */
+    --general-unofficial-border-2: rgb(38, 38, 38); /* #262626 */
+    --general-unofficial-border-3: rgb(64, 64, 64); /* #404040 */
+    --general-unofficial-border-4: rgb(82, 82, 82); /* #525252 */
+    --general-unofficial-border-5: rgb(115, 115, 115); /* #737373 */
+    --general-secondary: rgba(38, 38, 38); /* #262626 */
+    --general-bg-primary: rgb(255, 255, 255); /* #FFFFFF */
+    --general-bg-secondary: rgb(38, 38, 38); /* #262626 */
+    --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1); /* #FFFFFF @ 10% alpha */
+    --onboarding-primary: rgb(0, 150, 96); /* #009660 */
+    --brand-blue: rgb(0, 150, 96); /* #009660 */
+    --search-match-highlight: rgb(30, 64, 175); /* #1E40AF */
+    --general-unofficial-outline: rgba(255, 255, 255, 0.05); /* #FFFFFF @ 5% alpha */
     --font-sans:
         ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
@@ -494,7 +495,7 @@
     --shadow-blur: 0px;
     --shadow-spread: 0px;
     --shadow-opacity: 0;
-    --shadow-color: oklch(0 0 0);
+    --shadow-color: oklch(0 0 0); /* #000000 */
     --shadow-2xs: 0 0px 0px 0px hsl(0 0% 0% / 0);
     --shadow-xs: 0 0px 0px 0px hsl(0 0% 0% / 0);
     --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
@@ -512,34 +513,34 @@
 .force-light-theme {
     color-scheme: light;
     /* Core surface/text tokens used by receipt print cards */
-    --background: rgb(245, 245, 245);
-    --foreground: rgb(10, 10, 10);
-    --card: rgb(255, 255, 255);
-    --card-foreground: rgb(25, 25, 26);
+    --background: rgb(245, 245, 245); /* #F5F5F5 */
+    --foreground: rgb(10, 10, 10); /* #0A0A0A */
+    --card: rgb(255, 255, 255); /* #FFFFFF */
+    --card-foreground: rgb(25, 25, 26); /* #19191A */
 
     /* Semantic utility tokens used inside the receipt card */
-    --secondary: rgb(245, 245, 245);
-    --secondary-foreground: rgb(10, 10, 10);
-    --muted: rgb(245, 245, 245);
-    --muted-foreground: rgb(115, 115, 115);
-    --accent: rgb(229, 229, 229);
-    --accent-foreground: rgb(64, 64, 64);
+    --secondary: rgb(245, 245, 245); /* #F5F5F5 */
+    --secondary-foreground: rgb(10, 10, 10); /* #0A0A0A */
+    --muted: rgb(245, 245, 245); /* #F5F5F5 */
+    --muted-foreground: rgb(115, 115, 115); /* #737373 */
+    --accent: rgb(229, 229, 229); /* #E5E5E5 */
+    --accent-foreground: rgb(64, 64, 64); /* #404040 */
     /* Skeletons use accent-0; keep the light-theme value in forced light cards. */
-    --general-unofficial-accent-0: rgba(250, 250, 250);
-    --general-bg-primary: rgb(23, 23, 23);
-    --general-bg-secondary: rgb(242, 242, 242);
-    --general-bg-tertiary: rgb(250, 250, 250);
-    --border: rgba(229, 229, 229);
-    --general-border: rgba(229, 229, 229);
-    --input: rgb(229, 229, 229);
-    --ring: rgb(161, 161, 161);
+    --general-unofficial-accent-0: rgba(250, 250, 250); /* #FAFAFA */
+    --general-bg-primary: rgb(23, 23, 23); /* #171717 */
+    --general-bg-secondary: rgb(242, 242, 242); /* #F2F2F2 */
+    --general-bg-tertiary: rgb(250, 250, 250); /* #FAFAFA */
+    --border: rgba(229, 229, 229); /* #E5E5E5 */
+    --general-border: rgba(229, 229, 229); /* #E5E5E5 */
+    --input: rgb(229, 229, 229); /* #E5E5E5 */
+    --ring: rgb(161, 161, 161); /* #A1A1A1 */
 
     /* Status pill colors (Executed) */
-    --general-success-background-faded: rgb(240, 255, 249);
-    --general-success-border: rgb(213, 255, 240);
-    --general-success-foreground: rgb(0, 150, 96);
-    --general-error-icon: rgb(255, 32, 86);
-    --general-error-foreground: rgb(236, 0, 63);
+    --general-success-background-faded: rgb(240, 255, 249); /* #F0FFF9 */
+    --general-success-border: rgb(213, 255, 240); /* #D5FFF0 */
+    --general-success-foreground: rgb(0, 150, 96); /* #009660 */
+    --general-error-icon: rgb(255, 32, 86); /* #FF2056 */
+    --general-error-foreground: rgb(236, 0, 63); /* #EC003F */
 }
 
 @theme inline {
@@ -893,10 +894,10 @@ body[data-onboarding-tour="info-box-dismissed"]
     --card-card: #171717;
     /* Toast chrome is always the dark card; title/action stay light. */
     --general-foreground: #fff;
-    --general-unofficial-ghost: rgba(255, 255, 255, 0);
-    --general-unofficial-ghost-foreground: rgba(229, 229, 229, 1);
-    --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1);
-    --general-success-foreground: rgba(0, 236, 151, 1);
+    --general-unofficial-ghost: rgba(255, 255, 255, 0); /* #FFFFFF @ 0% alpha */
+    --general-unofficial-ghost-foreground: rgba(229, 229, 229, 1); /* #E5E5E5 */
+    --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1); /* #FFFFFF @ 10% alpha */
+    --general-success-foreground: rgba(0, 236, 151, 1); /* #00EC97 */
     font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 

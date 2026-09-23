@@ -196,7 +196,7 @@ export function ProposalFilters({
     return (
         <div className={cn("flex items-center gap-2", className)}>
             <Button
-                variant="secondary"
+                variant="muted"
                 size="sm"
                 onClick={resetFilters}
                 className={cn(FILTER_BUTTON_CLASS, FILTER_BUTTON_SURFACE_CLASS)}
@@ -558,7 +558,7 @@ function FilterPill({
             <Popover open={isOpen} onOpenChange={setIsOpen}>
                 <PopoverTrigger asChild>
                     <Button
-                        variant="secondary"
+                        variant="muted"
                         size="sm"
                         className={cn(
                             FILTER_BUTTON_CLASS,

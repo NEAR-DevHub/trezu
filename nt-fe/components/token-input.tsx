@@ -560,7 +560,7 @@ export function TokenInput<
                                 <Button
                                     type="button"
                                     variant="secondary"
-                                    className="shrink-0 bg-muted-foreground/10 px-3 text-sm font-bold leading-3.5 text-general-secondary-foreground hover:bg-muted-foreground/20"
+                                    className="shrink-0 px-3"
                                     size="sm"
                                     onClick={handleMaxClick}
                                 >

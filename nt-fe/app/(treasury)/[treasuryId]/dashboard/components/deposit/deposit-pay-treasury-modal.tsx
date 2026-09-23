@@ -70,11 +70,7 @@ export function DepositPayTreasuryModal({
                             <p className="text-sm text-muted-foreground">
                                 {t("noMemberTreasuries")}
                             </p>
-                            <Button
-                                asChild
-                                variant="secondary"
-                                className="w-full"
-                            >
+                            <Button asChild variant="muted" className="w-full">
                                 <Link href={CREATE_HREF}>
                                     {t("createTreasury")}
                                 </Link>

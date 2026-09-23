@@ -420,13 +420,14 @@ export default function RequestsPage() {
                 variant="secondary"
                 size="icon"
                 className={cn(
-                    ICON_BUTTON_CLASS,
+                    "size-10 rounded-lg",
                     "md:h-10 md:w-auto md:gap-2 md:px-4 md:text-sm",
                     isMobileSearchOpen && "hidden md:inline-flex",
-                    // Active state is the design's gray-900 (#171717) surface.
-                    hasActiveFilters
-                        ? "bg-general-foreground text-background hover:bg-general-foreground/90"
-                        : "text-muted-foreground",
+                    // Active state inverts onto the design's gray-900 (#171717)
+                    // surface — which is white in the dark theme — so both of the
+                    // variant's hover label colours have to be cancelled.
+                    hasActiveFilters &&
+                        "bg-general-foreground text-background hover:bg-general-foreground/90 hover:text-background dark:text-background dark:hover:text-background",
                 )}
                 // A popover row of filter pills has nowhere to go on a phone,
                 // so mobile drills into the same filters through a sheet.

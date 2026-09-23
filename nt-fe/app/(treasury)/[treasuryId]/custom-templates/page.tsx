@@ -321,7 +321,7 @@ export default function CustomTemplatesIndexPage() {
                                 <GatedButton
                                     allowed={canAuthor}
                                     tooltip={tAuth("noPermission")}
-                                    variant="secondary"
+                                    variant="muted"
                                     onClick={() => go("/create")}
                                 >
                                     <Icon icon={Add01Icon} />{" "}

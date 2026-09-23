@@ -222,6 +222,7 @@ export function PendingRequestItem({
                                 <AuthButtonWithProposal
                                     proposalKind={proposal.kind}
                                     variant="secondary"
+                                    size="sm"
                                     className="flex gap-1 w-full"
                                     onClick={(e) => {
                                         e.preventDefault();
@@ -245,6 +246,7 @@ export function PendingRequestItem({
                                     <span className="w-full">
                                         <Button
                                             variant="default"
+                                            size="sm"
                                             className="flex gap-1 w-full"
                                             onClick={(e) => {
                                                 e.preventDefault();
@@ -263,6 +265,7 @@ export function PendingRequestItem({
                                     <AuthButtonWithProposal
                                         proposalKind={proposal.kind}
                                         variant="default"
+                                        size="sm"
                                         className="flex gap-1 w-full"
                                         onClick={(e) => {
                                             e.preventDefault();
@@ -386,7 +389,7 @@ export function PendingRequests() {
                                 })
                             }
                         >
-                            <Button variant="neutral" size="sm">
+                            <Button variant="secondary" size="sm">
                                 <span className="font-bold text-[14px] leading-none">
                                     {t("viewAll")}
                                 </span>

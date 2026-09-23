@@ -130,7 +130,7 @@ function TreasuryRow({
             {isGuest && <GuestBadge />}
             {isGuest && onRemove && (
                 <Button
-                    variant="neutral"
+                    variant="secondary"
                     size="icon-sm"
                     className={ROW_ICON_BUTTON_CLASS}
                     tooltipContent={
@@ -145,7 +145,7 @@ function TreasuryRow({
                 </Button>
             )}
             <Button
-                variant="neutral"
+                variant="secondary"
                 size="icon-sm"
                 className={ROW_ICON_BUTTON_CLASS}
                 tooltipContent={tM("tooltips.viewTreasury")}
@@ -157,7 +157,7 @@ function TreasuryRow({
             </Button>
             {variant === "active" && onHide && (
                 <Button
-                    variant="neutral"
+                    variant="secondary"
                     size="icon-sm"
                     className={ROW_ICON_BUTTON_CLASS}
                     tooltipContent={
@@ -173,7 +173,7 @@ function TreasuryRow({
             )}
             {variant === "hidden" && onUnhide && (
                 <Button
-                    variant="neutral"
+                    variant="secondary"
                     size="icon-sm"
                     className={ROW_ICON_BUTTON_CLASS}
                     tooltipContent={tM("tooltips.showInList")}

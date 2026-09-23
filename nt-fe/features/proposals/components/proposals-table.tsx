@@ -486,6 +486,7 @@ export function ProposalsTable({
                         <div className="flex items-center gap-2">
                             <Button
                                 variant="secondary"
+                                size="sm"
                                 onClick={() => handleBulkVote("Reject")}
                                 disabled={rejectSlot.blocked}
                                 tooltipContent={rejectSlot.blockedTooltip}
@@ -496,6 +497,7 @@ export function ProposalsTable({
 
                             <Button
                                 variant="default"
+                                size="sm"
                                 tooltipContent={
                                     approveSlot.blockedTooltip ??
                                     (allSelectedHaveInsufficientBalance

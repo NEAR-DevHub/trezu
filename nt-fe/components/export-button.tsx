@@ -25,7 +25,7 @@ export function ExportButton() {
 
     return (
         <Button
-            variant="secondary"
+            variant="muted"
             onClick={handleClick}
             className="md:h-10 md:gap-2 md:rounded-xl md:px-4"
             size={isMobile ? "icon" : "default"}

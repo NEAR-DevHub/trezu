@@ -1478,7 +1478,7 @@ export default function PaymentsPage() {
     const bulkPaymentsButton = (
         <Link href={`/${treasuryId}/payments/bulk-payment`}>
             <Button
-                variant="secondary"
+                variant="muted"
                 size="icon"
                 className="size-10 rounded-lg bg-general-bg-secondary text-muted-foreground hover:bg-general-bg-secondary/80 hover:text-general-foreground lg:h-10 lg:w-auto lg:gap-2 lg:px-4 lg:text-sm"
                 id="payments-bulk-btn"
