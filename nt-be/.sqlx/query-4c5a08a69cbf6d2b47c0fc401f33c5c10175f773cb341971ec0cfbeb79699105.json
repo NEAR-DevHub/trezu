@@ -1,0 +1,20 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*) as \"count!\"\n            FROM dao_members\n            WHERE dao_id = 'guest-remove.sputnik-dao.near' AND account_id = 'alice.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "4c5a08a69cbf6d2b47c0fc401f33c5c10175f773cb341971ec0cfbeb79699105"
+}

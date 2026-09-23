@@ -738,7 +738,7 @@ export interface SwapQuoteResponse {
 
 export interface TokenPriceAtTimestampResponse {
     priceUsd: number | null;
-    source: "exact_timestamp" | "daily_eod";
+    source: "token_prices";
 }
 
 export type ReceiptMetric = "generated" | "print";

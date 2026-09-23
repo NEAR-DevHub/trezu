@@ -16,11 +16,11 @@ use crate::{
     AppState,
     auth::AuthUser,
     constants::TREASURY_FACTORY_CONTRACT_ID,
-    handlers::balance_changes::utils::is_transport_error,
     services::{
         RegistrationMode, mark_testing_if_needed, register_new_dao_and_wait,
         register_or_refresh_monitored_account, should_mark_testing,
     },
+    utils::transport::is_transport_error,
 };
 
 use super::confidential_setup;

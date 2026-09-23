@@ -16,7 +16,7 @@ use near_primitives::hash::CryptoHash;
 use serde_json::Value;
 
 use crate::AppState;
-use crate::handlers::balance_changes::block_info::get_transaction;
+use crate::services::chain_balances::block_info::get_transaction;
 
 /// Final execution outcome of a transaction, in the same shape as the NEAR
 /// `tx` RPC method's result, so the connector can hand it to wallet-selector

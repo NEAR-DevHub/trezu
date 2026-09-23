@@ -31,18 +31,18 @@ use chrono::{DateTime, Utc};
 use near_api::{Chain, NetworkConfig, Reference};
 use sqlx::PgPool;
 
-use crate::handlers::balance_changes::balance::{
-    ft as ft_balance, intents as intents_balance, near as near_balance,
-};
-use crate::handlers::balance_changes::counterparty::ensure_ft_metadata;
-use crate::handlers::balance_changes::token_discovery::{
-    fetch_fastnear_ft_tokens, snapshot_intents_tokens,
-};
-use crate::handlers::balance_changes::utils::{block_timestamp_to_datetime, with_transport_retry};
 use crate::handlers::public_history::bronze::store::PublicHistorySource;
 use crate::handlers::public_history::gold::unified::sync_hidden_ledger_rows;
 use crate::handlers::public_history::silver::models::{PublicAsset, PublicTokenStandard};
 use crate::handlers::public_history::silver::normalize::canonical_nep245_token_id;
+use crate::services::chain_balances::token_discovery::{
+    fetch_fastnear_ft_tokens, snapshot_intents_tokens,
+};
+use crate::services::chain_balances::{
+    ft as ft_balance, intents as intents_balance, near as near_balance,
+};
+use crate::services::counterparties::ensure_ft_metadata;
+use crate::utils::transport::{block_timestamp_to_datetime, with_transport_retry};
 
 pub type ClampError = Box<dyn std::error::Error + Send + Sync>;
 

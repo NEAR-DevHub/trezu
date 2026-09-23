@@ -410,12 +410,9 @@ async fn apply_ledger_balances(
     tokens: &mut [(SimplifiedToken, U128)],
     near_releasable: Option<u128>,
 ) -> Result<(), (StatusCode, String)> {
-    use crate::handlers::balance_changes::public_list;
     use crate::handlers::public_history::charts::repository::load_chart_readiness;
+    use crate::handlers::public_history::public_list;
 
-    if !state.env_vars.unified_gold_ledger_reads {
-        return Ok(());
-    }
     let readiness = load_chart_readiness(&state.db_pool, account.as_str())
         .await
         .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
@@ -503,7 +500,7 @@ async fn load_confidential_ledger_balances(
     use bigdecimal::Zero;
 
     use crate::constants::intents_tokens::get_defuse_tokens_map;
-    use crate::handlers::balance_changes::confidential_list;
+    use crate::handlers::public_history::confidential_list;
     use crate::handlers::public_history::silver::models::decimal_denominator;
 
     let ledger = confidential_list::load_prior_balances(
@@ -714,13 +711,8 @@ pub async fn compute_user_assets(
     if scope.is_confidential() {
         // The unified ledger is authoritative once rows exist — its heads were
         // verified against 1Click at projection time. Live 1Click reads remain
-        // for DAOs with no ledger rows yet, and for the legacy path while
-        // UNIFIED_GOLD_LEDGER_READS is off.
-        let ledger_balances = if state.env_vars.unified_gold_ledger_reads {
-            load_confidential_ledger_balances(state, account).await?
-        } else {
-            None
-        };
+        // for DAOs with no ledger rows yet.
+        let ledger_balances = load_confidential_ledger_balances(state, account).await?;
         intents_balances = match ledger_balances {
             Some(ledger_balances) => ledger_balances,
             None => fetch_confidential_balances(state, account).await?.balances,

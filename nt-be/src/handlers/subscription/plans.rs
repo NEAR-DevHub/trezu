@@ -107,19 +107,24 @@ pub async fn calculate_monthly_outbound_volume(
         .checked_add_months(Months::new(1))
         .unwrap_or_default();
 
-    // Query outgoing amounts grouped by token for the specified month
+    // Outgoing amounts grouped by token for the month, from the unified gold
+    // ledger: payments plus the sent leg of exchanges (matching the legacy
+    // "every negative movement" semantics). Hidden rows (sponsor top-ups,
+    // wraps) are excluded by history_visible; amounts are decimal-adjusted.
     let outbound_amounts = sqlx::query_as!(
         TokenOutboundAmount,
         r#"
-        SELECT token_id as "token_id!", ABS(SUM(amount)) as "total_amount!"
-        FROM balance_changes
-        WHERE account_id = $1
-          AND amount < 0
-          AND counterparty NOT IN ('SNAPSHOT', 'STAKING_SNAPSHOT', 'NOT_REGISTERED')
-          AND block_time >= $2
-          AND block_time < $3
-          AND token_id IS NOT NULL
-        GROUP BY token_id
+        SELECT token_out as "token_id!", SUM(amount_out) as "total_amount!"
+        FROM gold_treasury_ledger_events
+        WHERE dao_id = $1
+          AND status = 'success'
+          AND history_visible
+          AND transaction_type IN ('sent', 'exchange')
+          AND token_out IS NOT NULL
+          AND amount_out IS NOT NULL
+          AND event_time >= $2
+          AND event_time < $3
+        GROUP BY token_out
         "#,
         account_id.to_string(),
         DateTime::<Utc>::from_naive_utc_and_offset(start_date, Utc::now().offset().to_owned()),

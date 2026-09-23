@@ -12,12 +12,9 @@ use crate::handlers::intents::confidential::types::ConfidentialTxType;
 pub(crate) type BronzeRow = BronzeProjectionRow;
 
 /// Replayed confidential history event, mapped onto the unified ledger by
-/// `convert::unified_bind_from_event` and dual-written to the legacy
-/// `gold_confidential_history_events` while `UNIFIED_GOLD_LEDGER_READS`
-/// can still be turned off.
+/// `convert::unified_bind_from_event`.
 pub(crate) struct GoldHistoryEvent {
     pub(crate) history_event_id: i64,
-    pub(crate) intent_id: Option<i32>,
     pub(crate) dao_id: AccountId,
     pub(crate) transaction_type: ConfidentialTxType,
     pub(crate) origin_asset: Option<String>,
@@ -33,12 +30,8 @@ pub(crate) struct GoldHistoryEvent {
     pub(crate) destination_balance_after: Option<BigDecimal>,
     /// Leg destination: who received funds on the outbound leg.
     pub(crate) recipient: String,
-    /// Refund destination when a swap/deposit fails.
-    pub(crate) refund_to: String,
     /// Counterparty on the inbound leg (deposit sender / exchange source).
     pub(crate) counterparty: String,
-    pub(crate) deposit_address: String,
-    pub(crate) deposit_memo: Option<String>,
     pub(crate) proposal_execution_block_height: Option<i64>,
     pub(crate) proposal_executed_at: Option<DateTime<Utc>>,
     pub(crate) proposal_execution_transaction_hash: Option<String>,
@@ -110,14 +103,12 @@ pub(crate) struct BronzeProjectionRow {
     pub(crate) account_id: String,
     pub(crate) created_at_external: DateTime<Utc>,
     pub(crate) deposit_address: String,
-    pub(crate) deposit_memo: Option<String>,
     pub(crate) deposit_type: String,
     pub(crate) recipient_type: Option<String>,
     pub(crate) recipient: Option<String>,
     pub(crate) origin_asset: Option<String>,
     pub(crate) destination_asset: String,
     pub(crate) raw_payload: Value,
-    pub(crate) intent_id: Option<i32>,
     pub(crate) proposal_id: Option<i64>,
     pub(crate) proposal_created_at: Option<DateTime<Utc>>,
     pub(crate) proposal_executed_at: Option<DateTime<Utc>>,
