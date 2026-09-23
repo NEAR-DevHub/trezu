@@ -19,6 +19,9 @@ export interface InfoItem {
     info?: string;
     afterValue?: React.ReactNode;
     subItem?: boolean;
+    /** For prose (a note): the label keeps a line of its own and the value
+     * runs full width underneath it rather than being pushed to the right. */
+    stacked?: boolean;
 
     style?: "default" | "secondary";
 }
@@ -96,7 +99,14 @@ export function InfoDisplay({
                         item.subItem && "pl-5",
                     )}
                 >
-                    <div className="flex justify-between items-center flex-wrap gap-2 gap-y-1">
+                    <div
+                        className={cn(
+                            "flex flex-wrap gap-2 gap-y-1",
+                            item.stacked
+                                ? "flex-col items-start"
+                                : "items-center justify-between",
+                        )}
+                    >
                         <div className="flex items-center gap-1">
                             <p className="text-sm text-muted-foreground">
                                 {item.label}
@@ -110,7 +120,13 @@ export function InfoDisplay({
                                 </Tooltip>
                             )}
                         </div>
-                        <div className="text-sm font-medium text-wrap">
+                        <div
+                            className={cn(
+                                "text-sm font-medium text-wrap",
+                                item.stacked &&
+                                    "w-full min-w-0 whitespace-pre-wrap break-all",
+                            )}
+                        >
                             {item.value}
                         </div>
                     </div>

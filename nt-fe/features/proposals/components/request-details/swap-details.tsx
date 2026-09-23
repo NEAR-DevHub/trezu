@@ -23,7 +23,7 @@ import {
 import type { SwapRequestData } from "../../types/index";
 import { resolveSwapDetailAmounts } from "../../utils/swap-detail-amounts";
 import { useRequestDisplayContext } from "../expanded-view/common/request-display-context";
-import { DetailRow, DetailsCard } from "./primitives";
+import { DetailNotes, DetailRow, DetailsCard } from "./primitives";
 
 /**
  * The body of the details sheet for an Exchange request: the two sides of the
@@ -181,11 +181,7 @@ export function SwapDetails({ data }: { data: SwapRequestData }) {
                     />
                 )}
                 {data.notes && (
-                    <DetailRow
-                        label={t("notes")}
-                        align="start"
-                        value={data.notes}
-                    />
+                    <DetailNotes label={t("notes")}>{data.notes}</DetailNotes>
                 )}
             </DetailsCard>
         </>

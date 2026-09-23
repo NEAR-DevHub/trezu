@@ -27,7 +27,12 @@ import {
     mapConfidentialBulkRecipientPayment,
     sumConfidentialBulkNetworkFee,
 } from "../../utils/confidential-bulk-utils";
-import { DetailRow, DetailsCard, RequestParty } from "./primitives";
+import {
+    DetailNotes,
+    DetailRow,
+    DetailsCard,
+    RequestParty,
+} from "./primitives";
 
 type TokenData = ReturnType<typeof useToken>["data"];
 
@@ -153,11 +158,7 @@ export function BulkDetails({ data }: { data: ConfidentialBulkData }) {
                 />
 
                 {data.notes && (
-                    <DetailRow
-                        label={t("note")}
-                        align="start"
-                        value={data.notes}
-                    />
+                    <DetailNotes label={t("note")}>{data.notes}</DetailNotes>
                 )}
             </DetailsCard>
         </>

@@ -76,6 +76,7 @@ export function StakingExpanded({
         infoItems.push({
             label: t("notes"),
             value: <span>{data.notes}</span>,
+            stacked: true,
         });
     }
 

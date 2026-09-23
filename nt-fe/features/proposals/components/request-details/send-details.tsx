@@ -19,7 +19,12 @@ import {
 import { useDestinationNetworkMeta } from "../../hooks/use-destination-network-meta";
 import type { PaymentRequestData } from "../../types/index";
 import { useRequestDisplayContext } from "../expanded-view/common/request-display-context";
-import { DetailRow, DetailsCard, RequestParty } from "./primitives";
+import {
+    DetailNotes,
+    DetailRow,
+    DetailsCard,
+    RequestParty,
+} from "./primitives";
 
 /**
  * The body of the details sheet for a Send request: what is being paid at the
@@ -166,29 +171,23 @@ export function SendDetails({ data }: { data: PaymentRequestData }) {
                     />
                 )}
                 {data.notes && (
-                    <DetailRow
-                        label={t("note")}
-                        align="start"
-                        value={
-                            data.url ? (
-                                <Link
-                                    href={data.url}
-                                    target="_blank"
-                                    className="flex items-start justify-end gap-2"
-                                >
-                                    <span className="min-w-0 whitespace-pre-wrap break-all">
-                                        {data.notes}
-                                    </span>
-                                    <Icon
-                                        icon={ArrowUpRight01Icon}
-                                        className="mt-0.5 shrink-0"
-                                    />
-                                </Link>
-                            ) : (
-                                data.notes
-                            )
-                        }
-                    />
+                    <DetailNotes label={t("note")}>
+                        {data.url ? (
+                            <Link
+                                href={data.url}
+                                target="_blank"
+                                className="flex items-start gap-2"
+                            >
+                                <span className="min-w-0">{data.notes}</span>
+                                <Icon
+                                    icon={ArrowUpRight01Icon}
+                                    className="mt-0.5 shrink-0"
+                                />
+                            </Link>
+                        ) : (
+                            data.notes
+                        )}
+                    </DetailNotes>
                 )}
             </DetailsCard>
         </>

@@ -44,7 +44,7 @@ export function DetailsCard({
 
 /**
  * Label on the left, value pushed to the right. `align` is for values that run
- * to several lines (a note), where the label should sit on the first one.
+ * to several lines, where the label should sit on the first one.
  */
 export function DetailRow({
     label,
@@ -77,13 +77,31 @@ export function DetailRow({
                     </Tooltip>
                 )}
             </div>
-            <div
-                className={cn(
-                    "min-w-0 text-right text-sm font-semibold text-foreground",
-                    align === "start" && "whitespace-pre-wrap break-all",
-                )}
-            >
+            <div className="min-w-0 text-right text-sm font-semibold text-foreground">
                 {value}
+            </div>
+        </div>
+    );
+}
+
+/**
+ * A note reads as prose, not as a value: the label keeps a line of its own and
+ * the text runs the full width of the card underneath it, however long it is.
+ */
+export function DetailNotes({
+    label,
+    children,
+}: {
+    label: string;
+    children: ReactNode;
+}) {
+    return (
+        <div className="flex w-full flex-col gap-1 py-2">
+            <span className="text-sm font-medium text-general-secondary-foreground">
+                {label}
+            </span>
+            <div className="min-w-0 whitespace-pre-wrap break-all text-sm font-semibold text-foreground">
+                {children}
             </div>
         </div>
     );
