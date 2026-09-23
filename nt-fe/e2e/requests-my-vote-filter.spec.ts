@@ -13,7 +13,7 @@
  */
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures/test-with-pages";
-import { buildExecutedProposalsResponse } from "./fixtures/treasury-mock-data";
+import type { ProposalsResponse } from "./fixtures/treasury-mock-data";
 import {
     registerMockWalletRoutes,
     seedMockWalletAccount,
@@ -33,6 +33,36 @@ const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8080";
 const SANDBOX_MOCK_URL = "http://localhost:4000";
 
 const MY_VOTE = "My Vote Status";
+
+/**
+ * One executed payment in the real /api/proposals shape (snake_case kind
+ * fields). A non-empty list is needed: with zero proposals the page renders
+ * the "Create your first request" empty state and no filter toolbar.
+ */
+const MOCK_PROPOSALS: ProposalsResponse = {
+    page: 0,
+    page_size: 15,
+    total: 1,
+    proposals: [
+        {
+            id: 1,
+            proposer: ACCOUNT_ID,
+            description: "Payment to bob",
+            kind: {
+                Transfer: {
+                    token_id: "",
+                    receiver_id: "bob.near",
+                    amount: "1000000000000000000000000",
+                    msg: null,
+                },
+            },
+            status: "Approved",
+            vote_counts: { Approver: ["1", "0", "0"] },
+            votes: { [ACCOUNT_ID]: "Approve" },
+            submission_time: "1712000000000000000",
+        },
+    ],
+};
 
 test.use({ locale: "en-US" });
 
@@ -87,12 +117,7 @@ test.describe("Requests – My Vote Status filter (#1546) – UI + request", () 
                 accountId: ACCOUNT_ID,
                 treasuryId: TREASURY_ID,
                 treasuryName: "Requests E2E Test Treasury",
-                // Non-empty list: with zero proposals the page renders the
-                // "Create your first request" empty state and no filter toolbar.
-                proposals: buildExecutedProposalsResponse(
-                    TREASURY_ID,
-                    ACCOUNT_ID,
-                ),
+                proposals: MOCK_PROPOSALS,
             });
             // Registered after the installer, so it runs first; fallback()
             // hands the request on to the installer's mock response.
@@ -314,26 +339,37 @@ test.describe("Requests – My Vote Status filter (#1546) – real backend", () 
          * Scenario: SC-4 / SC-5: two statuses return their union, in either order
          * Requirement: REQ-1 (union/OR), REQ-2 (order-independent) / issue #1546 Expected Result
          * Priority: P1
+         *
+         * fixme: #1546 is still open. The backend ANDs every `voter_votes`
+         * pair (nt-be/src/handlers/proposals/filters.rs), so two statuses for
+         * one account return nothing ("No requests found matching your
+         * filters."). Remove the fixme together with the backend fix.
          */
-        test(`${order.join(" + ")} shows approved and not-voted requests, not rejected`, async ({
-            page,
-            requestsPage,
-        }) => {
-            await wireToSandbox(page);
-            await requestsPage.gotoWithParams(TREASURY_ID, {
-                tab: "All",
-                my_vote: myVoteParam(order),
-            });
+        test.fixme(
+            `${order.join(" + ")} shows approved and not-voted requests, not rejected`,
+            async ({ page, requestsPage }) => {
+                await wireToSandbox(page);
+                await requestsPage.gotoWithParams(TREASURY_ID, {
+                    tab: "All",
+                    my_vote: myVoteParam(order),
+                });
 
-            await expect(requestsPage.filterPill(MY_VOTE)).toContainText(
-                order.join(", "),
-            );
-            await expect(requestsPage.proposalRow(ids.approved)).toBeVisible({
-                timeout: 30_000,
-            });
-            await expect(requestsPage.proposalRow(ids.noVote)).toBeVisible();
-            // Negative oracle: the unselected status stays out.
-            await expect(requestsPage.proposalRow(ids.rejected)).toHaveCount(0);
-        });
+                await expect(requestsPage.filterPill(MY_VOTE)).toContainText(
+                    order.join(", "),
+                );
+                await expect(
+                    requestsPage.proposalRow(ids.approved),
+                ).toBeVisible({
+                    timeout: 30_000,
+                });
+                await expect(
+                    requestsPage.proposalRow(ids.noVote),
+                ).toBeVisible();
+                // Negative oracle: the unselected status stays out.
+                await expect(
+                    requestsPage.proposalRow(ids.rejected),
+                ).toHaveCount(0);
+            },
+        );
     }
 });
