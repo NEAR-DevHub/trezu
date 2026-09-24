@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "기기의 생체 인식 또는 비밀번호로 로그인하세요",
             "web3WalletsSeparator": "Web3 지갑",
             "selectOtherWallet": "다른 지갑 선택",
+            "connectFailed": "로그인하지 못했습니다",
             "back": "뒤로"
         },
         "unexpectedError": "예기치 않은 오류가 발생했습니다",

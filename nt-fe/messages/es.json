@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "Inicia sesión con la biometría o el código de tu dispositivo",
             "web3WalletsSeparator": "Monederos Web3",
             "selectOtherWallet": "Elegir otra wallet",
+            "connectFailed": "No pudimos iniciar tu sesión",
             "back": "Atrás"
         },
         "unexpectedError": "Se produjo un error inesperado",

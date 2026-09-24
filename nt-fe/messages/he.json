@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "היכנסו באמצעות זיהוי ביומטרי או קוד המכשיר",
             "web3WalletsSeparator": "ארנקי Web3",
             "selectOtherWallet": "בחירת ארנק אחר",
+            "connectFailed": "לא הצלחנו לחבר אותך",
             "back": "חזרה"
         },
         "unexpectedError": "אירעה שגיאה בלתי צפויה",

@@ -1478,6 +1478,7 @@
             "passkeyCardSubtitle": "Đăng nhập bằng sinh trắc học hoặc mật mã của thiết bị",
             "web3WalletsSeparator": "Ví Web3",
             "selectOtherWallet": "Chọn ví khác",
+            "connectFailed": "Chúng tôi không thể đăng nhập cho bạn",
             "back": "Quay lại"
         },
         "unexpectedError": "Đã xảy ra lỗi không mong muốn",

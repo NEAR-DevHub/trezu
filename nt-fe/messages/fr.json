@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "Connectez-vous avec la biométrie ou le code de votre appareil",
             "web3WalletsSeparator": "Portefeuilles Web3",
             "selectOtherWallet": "Choisir un autre wallet",
+            "connectFailed": "Connexion impossible",
             "back": "Retour"
         },
         "unexpectedError": "Une erreur inattendue s'est produite",

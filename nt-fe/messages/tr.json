@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "Cihazınızın biyometriği veya parolasıyla oturum açın",
             "web3WalletsSeparator": "Web3 cüzdanları",
             "selectOtherWallet": "Başka cüzdan seç",
+            "connectFailed": "Oturum açamadık",
             "back": "Geri"
         },
         "unexpectedError": "Beklenmedik bir hata oluştu",
