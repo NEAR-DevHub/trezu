@@ -191,8 +191,7 @@
             "title": "Cài đặt"
         },
         "addressBook": {
-            "title": "Sổ địa chỉ",
-            "description": "Quản lý người nhận đã lưu của bạn"
+            "title": "Sổ địa chỉ"
         },
         "payments": {
             "title": "Thanh toan",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "Đã chọn {count, plural, =0 {không có người nhận nào} other {# người nhận}}",
         "sectionHeading": "Người nhận",
         "privacyNote": "Các địa chỉ đã lưu là riêng tư và chỉ đội của bạn nhìn thấy.",
+        "contactsCount": "{count, plural, other {# người nhận}}",
         "searchPlaceholder": "Tìm người nhận theo tên",
         "searchPlaceholderShort": "Tìm kiếm",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ của bạn. Quay lại để tải lên một danh sách khác hoặc xóa các bản trùng lặp khỏi đợt xem lại này.",
             "someDuplicates": "{duplicates} người nhận trùng lặp trên tổng số {total} người nhận. Tiếp tục để chỉ tải lên những người nhận mới.",
             "duplicated": "Trùng lặp",
+            "contactNumber": "Người nhận {number}",
             "notePlaceholder": "Thêm ghi chú để giúp xác định người nhận này (ví dụ: thanh toán cho nhà thầu, phân phối vesting).",
             "skipDuplicates": "Bỏ qua bản trùng lặp và chỉ nhập những bản mới.",
             "allDuplicatesTooltip": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ, nên không có gì mới để nhập.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Xóa người nhận",
+            "body": "Thao tác này sẽ xóa <bold>{names}</bold> khỏi danh bạ của bạn. Bạn có thể thêm lại bất cứ lúc nào.",
             "bulk": "Thao tác này sẽ xóa <bold>{count, plural, other {# người nhận}}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại bất kỳ lúc nào.",
             "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Địa chỉ người nhận",
             "network": "Mạng",
             "networkInfo": "Các mạng tương thích với địa chỉ này",
+            "enterName": "Nhập tên",
+            "enterAddress": "Nhập địa chỉ",
+            "note": "Ghi chú",
+            "clearName": "Xóa tên",
+            "clearAddress": "Xóa địa chỉ",
+            "clearNote": "Xóa ghi chú",
+            "saveContact": "Lưu người nhận",
             "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
             "selectNetwork": "Chọn mạng",
             "selectNetworksTitle": "Chọn các mạng",
@@ -1729,7 +1738,10 @@
         "orDragDrop": "hoặc kéo và thả",
         "maxFileSize": "tối đa 1 tệp lên đến {maxSize} MB, chỉ chấp nhận tệp CSV",
         "noFilePrompt": "Không có tệp để tải lên?",
-        "downloadTemplate": "Tải xuống mẫu"
+        "downloadTemplate": "Tải xuống mẫu",
+        "pleaseUploadCsv": "Vui lòng tải lên một tệp CSV",
+        "fileSizeLimit": "Kích thước tệp phải nhỏ hơn 1.5 MB",
+        "removeFile": "Xóa tệp"
     },
     "tokenSelect": {
         "selectToken": "Chọn token",
@@ -1879,10 +1891,12 @@
         "selectEntry": "Chọn {name}",
         "recipient": "Người nhận",
         "network": "Mạng",
+        "networks": "Mạng",
         "addedBy": "Được thêm bởi",
         "note": "Ghi chú",
         "added": "Đã thêm",
         "remove": "Xóa",
+        "noResults": "Không có người nhận nào khớp với tìm kiếm của bạn.",
         "send": "Gửi"
     },
     "publicDashboard": {

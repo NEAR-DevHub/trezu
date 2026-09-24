@@ -191,8 +191,7 @@
             "title": "设置"
         },
         "addressBook": {
-            "title": "地址簿",
-            "description": "管理已保存的收款人"
+            "title": "地址簿"
         },
         "payments": {
             "title": "付款",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "已选择 {count, plural, =0 {无收款人} other {# 个收款人}}",
         "sectionHeading": "收款人",
         "privacyNote": "已保存的地址保持私密,仅对您的团队可见。",
+        "contactsCount": "{count, plural, other {# 个收款人}}",
         "searchPlaceholder": "按名称搜索收款人",
         "searchPlaceholderShort": "搜索",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "所有导入的收款人在您的地址簿中已存在。请返回上传其他列表,或在此审核中移除重复项。",
             "someDuplicates": "{total} 个收款人中有 {duplicates} 个重复。继续将仅上传新的收款人。",
             "duplicated": "已重复",
+            "contactNumber": "收款人 {number}",
             "notePlaceholder": "添加备注以便识别此收款人(例如承包商付款、归属分发)。",
             "skipDuplicates": "跳过重复项,仅导入新收款人。",
             "allDuplicatesTooltip": "所有导入的收款人均已在您的地址簿中,因此没有新的可导入项。",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "移除收款人",
+            "body": "这将从您的联系人中移除 <bold>{names}</bold>。您可以随时再次添加。",
             "bulk": "这将从您的地址簿中移除 <bold>{count, plural, other {# 个收款人}}</bold>。您可以随时再次添加。",
             "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。"
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "收款人地址",
             "network": "网络",
             "networkInfo": "与此地址兼容的网络",
+            "enterName": "输入姓名",
+            "enterAddress": "输入地址",
+            "note": "备注",
+            "clearName": "清除姓名",
+            "clearAddress": "清除地址",
+            "clearNote": "清除备注",
+            "saveContact": "保存收款人",
             "enterAddressFirst": "请先输入收款人地址",
             "selectNetwork": "选择网络",
             "selectNetworksTitle": "选择网络",
@@ -1729,7 +1738,10 @@
         "orDragDrop": "或拖放至此",
         "maxFileSize": "最多 1 个文件,最大 {maxSize} MB,仅限 CSV 文件",
         "noFilePrompt": "没有文件可上传?",
-        "downloadTemplate": "下载模板"
+        "downloadTemplate": "下载模板",
+        "pleaseUploadCsv": "请上传 CSV 文件",
+        "fileSizeLimit": "文件大小必须小于 1.5 MB",
+        "removeFile": "移除文件"
     },
     "tokenSelect": {
         "selectToken": "选择代币",
@@ -1879,10 +1891,12 @@
         "selectEntry": "选择 {name}",
         "recipient": "收款人",
         "network": "网络",
+        "networks": "网络",
         "addedBy": "添加者",
         "note": "备注",
         "added": "已添加",
         "remove": "移除",
+        "noResults": "没有符合搜索的收款人。",
         "send": "发送"
     },
     "publicDashboard": {

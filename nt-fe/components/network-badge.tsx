@@ -16,8 +16,9 @@ const networkBadgeVariants = cva(
             variant: {
                 default: "bg-card text-foreground px-2 py-0.5",
                 ghost: "text-secondary-foreground px-2 py-0.5",
-                secondary:
-                    "bg-secondary/50 text-secondary-foreground px-2 py-0.5",
+                secondary: "rounded-sm bg-general-bg-secondary p-1.5!",
+                outline:
+                    "rounded-sm border border-general-border bg-general-bg-secondary p-1.5!",
             },
             size: {
                 lg: "text-xl md:px-3 p-1",
@@ -75,7 +76,13 @@ export function NetworkBadge({
                 />
             )}
             {!iconOnly && (
-                <span className={cn(getNetworkDisplayCaseClass(name))}>
+                <span
+                    className={cn(
+                        getNetworkDisplayCaseClass(name),
+                        (variant === "outline" || variant === "secondary") &&
+                            "text-general-secondary-foreground",
+                    )}
+                >
                     {displayName}
                 </span>
             )}

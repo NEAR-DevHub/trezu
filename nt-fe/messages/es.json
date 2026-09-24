@@ -191,8 +191,7 @@
             "title": "Configuración"
         },
         "addressBook": {
-            "title": "Libreta de direcciones",
-            "description": "Gestiona tus destinatarios guardados"
+            "title": "Libreta de direcciones"
         },
         "payments": {
             "title": "Pagos",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {ningún destinatario} one {# destinatario} other {# destinatarios}} seleccionado(s)",
         "sectionHeading": "Destinatarios",
         "privacyNote": "Las direcciones guardadas son privadas y visibles solo para tu equipo.",
+        "contactsCount": "{count, plural, one {# destinatario} other {# destinatarios}}",
         "searchPlaceholder": "Buscar destinatario por nombre",
         "searchPlaceholderShort": "Buscar",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "Todos los destinatarios importados ya existen en tu libreta de direcciones. Vuelve atrás para subir otra lista o elimina duplicados desde esta revisión.",
             "someDuplicates": "{duplicates} destinatarios duplicados de {total} totales. Continúa para subir solo los nuevos.",
             "duplicated": "Duplicado",
+            "contactNumber": "Destinatario {number}",
             "notePlaceholder": "Añade una nota para identificar a este destinatario (p. ej. pago a contratista, distribución de vesting).",
             "skipDuplicates": "Omitir duplicados e importar solo los nuevos.",
             "allDuplicatesTooltip": "Todos los destinatarios importados ya están en tu libreta de direcciones, así que no hay nada nuevo que importar.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Eliminar destinatario",
+            "body": "Esto eliminará <bold>{names}</bold> de tus contactos. Puedes añadirlos de nuevo en cualquier momento.",
             "bulk": "Esto eliminará <bold>{count, plural, one {# destinatario} other {# destinatarios}}</bold> de tu libreta de direcciones. Puedes añadirlos de nuevo cuando quieras.",
             "single": "Esto eliminará <bold>{name}</bold> de tu libreta de direcciones. Puedes añadir este destinatario de nuevo cuando quieras."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Dirección del destinatario",
             "network": "Red",
             "networkInfo": "Redes compatibles con esta dirección",
+            "enterName": "Introducir nombre",
+            "enterAddress": "Introducir dirección",
+            "note": "Nota",
+            "clearName": "Borrar nombre",
+            "clearAddress": "Borrar dirección",
+            "clearNote": "Borrar nota",
+            "saveContact": "Guardar destinatario",
             "enterAddressFirst": "Introduce primero la dirección del destinatario",
             "selectNetwork": "Seleccionar red",
             "selectNetworksTitle": "Seleccionar redes",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "o arrastrar y soltar",
         "maxFileSize": "máximo 1 archivo de hasta {maxSize} MB, solo CSV",
         "noFilePrompt": "¿No tienes un archivo que subir?",
-        "downloadTemplate": "Descargar plantilla"
+        "downloadTemplate": "Descargar plantilla",
+        "pleaseUploadCsv": "Sube un archivo CSV",
+        "fileSizeLimit": "El tamaño del archivo debe ser inferior a 1,5 MB",
+        "removeFile": "Eliminar archivo"
     },
     "tokenSelect": {
         "selectToken": "Seleccionar token",
@@ -1896,10 +1908,12 @@
         "selectEntry": "Seleccionar {name}",
         "recipient": "Destinatario",
         "network": "Red",
+        "networks": "Redes",
         "addedBy": "Añadido por",
         "note": "Nota",
         "added": "Añadido",
         "remove": "Eliminar",
+        "noResults": "Ningún destinatario coincide con tu búsqueda.",
         "send": "Enviar"
     },
     "publicDashboard": {

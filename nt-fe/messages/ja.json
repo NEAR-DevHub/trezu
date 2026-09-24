@@ -191,8 +191,7 @@
             "title": "設定"
         },
         "addressBook": {
-            "title": "アドレス帳",
-            "description": "保存した受取人を管理"
+            "title": "アドレス帳"
         },
         "payments": {
             "title": "支払い",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {受取人が選択されていません} other {# 人の受取人を選択中}}",
         "sectionHeading": "受取人",
         "privacyNote": "保存されたアドレスは非公開で、チームのみが閲覧できます。",
+        "contactsCount": "{count, plural, other {# 人の受取人}}",
         "searchPlaceholder": "名前で受取人を検索",
         "searchPlaceholderShort": "検索",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "インポートされたすべての受取人はすでにアドレス帳に存在します。戻って別のリストをアップロードするか、このレビューから重複を削除してください。",
             "someDuplicates": "合計{total}人中{duplicates}人が重複しています。続行すると新しい受取人のみがインポートされます。",
             "duplicated": "重複",
+            "contactNumber": "受取人 {number}",
             "notePlaceholder": "この受取人を識別するためのメモを追加(例: 業務委託支払い、ベスティング配布)。",
             "skipDuplicates": "重複をスキップして新しいもののみインポートします。",
             "allDuplicatesTooltip": "インポートされたすべての受取人はすでにアドレス帳にあるため、新しくインポートするものはありません。",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "受取人を削除",
+            "body": "アドレス帳から<bold>{names}</bold>を削除します。いつでも再度追加できます。",
             "bulk": "アドレス帳から<bold>{count, plural, other {# 人の受取人}}</bold>を削除します。いつでも再度追加できます。",
             "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。"
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "受取人のアドレス",
             "network": "ネットワーク",
             "networkInfo": "このアドレスと互換性のあるネットワーク",
+            "enterName": "名前を入力",
+            "enterAddress": "アドレスを入力",
+            "note": "メモ",
+            "clearName": "名前をクリア",
+            "clearAddress": "アドレスをクリア",
+            "clearNote": "メモをクリア",
+            "saveContact": "受取人を保存",
             "enterAddressFirst": "先に受取人アドレスを入力してください",
             "selectNetwork": "ネットワークを選択",
             "selectNetworksTitle": "ネットワークを選択",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "またはドラッグ&ドロップ",
         "maxFileSize": "最大1ファイル、{maxSize}MBまで、CSVファイルのみ",
         "noFilePrompt": "アップロードするファイルがない場合は?",
-        "downloadTemplate": "テンプレートをダウンロード"
+        "downloadTemplate": "テンプレートをダウンロード",
+        "pleaseUploadCsv": "CSVファイルをアップロードしてください",
+        "fileSizeLimit": "ファイルサイズは1.5MB未満である必要があります",
+        "removeFile": "ファイルを削除"
     },
     "tokenSelect": {
         "selectToken": "トークンを選択",
@@ -1896,10 +1908,12 @@
         "selectEntry": "{name}を選択",
         "recipient": "受取人",
         "network": "ネットワーク",
+        "networks": "ネットワーク",
         "addedBy": "追加者",
         "note": "メモ",
         "added": "追加日",
         "remove": "削除",
+        "noResults": "検索に一致する受取人はいません。",
         "send": "送金"
     },
     "publicDashboard": {
