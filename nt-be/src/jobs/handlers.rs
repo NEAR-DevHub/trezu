@@ -460,7 +460,7 @@ pub async fn notifications(_t: Tick, state: Data<Arc<AppState>>) -> Result<Strin
     }
 }
 
-/// Low-balance ops alerts for sponsor accounts.
+/// Low-balance Telegram alerts for operational NEAR accounts.
 pub async fn sponsor_balance_monitor(
     _t: Tick,
     state: Data<Arc<AppState>>,
