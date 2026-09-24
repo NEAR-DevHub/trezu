@@ -108,7 +108,7 @@ export function ContactActionSheet({
                         </div>
                     </SheetSection>
                     {entryChains.length > 0 ? (
-                        <SheetSection label={t("networks")}>
+                        <SheetSection label={t("network")}>
                             <NetworkList
                                 chains={entryChains}
                                 maxVisible={entryChains.length}
