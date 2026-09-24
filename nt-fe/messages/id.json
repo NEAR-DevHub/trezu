@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "Masuk dengan biometrik atau kode sandi perangkat Anda",
             "web3WalletsSeparator": "Dompet Web3",
             "selectOtherWallet": "Pilih wallet lain",
+            "connectFailed": "Kami tidak dapat memproses masuk Anda",
             "back": "Kembali"
         },
         "unexpectedError": "Terjadi kesalahan tak terduga",

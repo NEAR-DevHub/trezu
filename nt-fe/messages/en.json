@@ -1493,6 +1493,7 @@
             "passkeyCardSubtitle": "Use your device biometrics or passcode to sign in",
             "web3WalletsSeparator": "Web3 wallets",
             "selectOtherWallet": "Select other wallet",
+            "connectFailed": "We couldn't sign you in",
             "back": "Back"
         },
         "unexpectedError": "An unexpected error occurred",

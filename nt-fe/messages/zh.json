@@ -1478,6 +1478,7 @@
             "passkeyCardSubtitle": "使用设备的生物识别或密码登录",
             "web3WalletsSeparator": "Web3 钱包",
             "selectOtherWallet": "选择其他钱包",
+            "connectFailed": "无法为您登录",
             "back": "返回"
         },
         "unexpectedError": "发生意外错误",

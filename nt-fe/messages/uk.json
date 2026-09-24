@@ -1478,6 +1478,7 @@
             "passkeyCardSubtitle": "Увійдіть за допомогою біометрії або коду доступу пристрою",
             "web3WalletsSeparator": "Web3-гаманці",
             "selectOtherWallet": "Обрати інший гаманець",
+            "connectFailed": "Не вдалося увійти",
             "back": "Назад"
         },
         "unexpectedError": "Сталася неочікувана помилка",

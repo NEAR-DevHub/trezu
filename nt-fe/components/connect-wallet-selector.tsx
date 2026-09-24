@@ -1,12 +1,14 @@
 "use client";
 import { Icon } from "@/components/icon";
 import {
+    Alert01Icon,
     ArrowLeft01Icon,
     CheckIcon,
     Wallet01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Alert, AlertDescription } from "@/components/alert";
 import { SlotWarning } from "@/components/warning-message";
 import { Button } from "@/components/button";
 import { FingerAccessIcon } from "@/components/icons/finger-access";
@@ -96,6 +98,32 @@ function WalletOptionIcon({
                 />
             ))}
         </div>
+    );
+}
+
+/**
+ * Surfaces a failed connect attempt on the sign-in screen.
+ *
+ * Without this the wallet's own popup just closes and the user is left staring
+ * at the untouched sign-in screen with no idea what went wrong — the failure
+ * mode looks identical to "nothing happened". The wallet's message is shown
+ * verbatim underneath: it is what explains *why* (passkey cancelled, on-chain
+ * account setup failed, backend rejected the authorization, ...).
+ */
+function ConnectFailureAlert({ error }: { error: string | null }) {
+    const t = useTranslations("createTreasury");
+    if (!error) return null;
+
+    return (
+        <Alert variant="destructive" className="items-start gap-2 rounded-2xl">
+            <Icon icon={Alert01Icon} className="mt-0.5 shrink-0" />
+            <AlertDescription className="flex flex-col gap-1">
+                <span className="font-medium">
+                    {t("walletSelector.connectFailed")}
+                </span>
+                <span className="text-xs break-words opacity-80">{error}</span>
+            </AlertDescription>
+        </Alert>
     );
 }
 
@@ -428,6 +456,7 @@ export function ConnectWalletSelector({
                     </div>
                 </div>
                 <SlotWarning slot="login" />
+                <ConnectFailureAlert error={authError} />
                 {showOnboardingHints && (
                     <div className="flex items-start gap-2">
                         <div className="bg-general-success-background-faded rounded-full size-7 sm:size-6 flex items-center justify-center p-1 sm:p-0">
@@ -517,6 +546,7 @@ export function ConnectWalletSelector({
                         </DialogHeader>
                         <div className="flex flex-col gap-2 px-5 pt-2 pb-5">
                             <SlotWarning slot="login" />
+                            <ConnectFailureAlert error={authError} />
                             <div className="grid grid-cols-2 gap-2">
                                 {walletPickerChoices.map((wallet) => {
                                     const isOfflineBlocked =

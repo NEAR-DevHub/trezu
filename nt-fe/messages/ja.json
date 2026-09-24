@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "デバイスの生体認証またはパスコードでサインイン",
             "web3WalletsSeparator": "Web3ウォレット",
             "selectOtherWallet": "別のウォレットを選択",
+            "connectFailed": "サインインできませんでした",
             "back": "戻る"
         },
         "unexpectedError": "予期しないエラーが発生しました",

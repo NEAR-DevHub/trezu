@@ -1495,6 +1495,7 @@
             "passkeyCardSubtitle": "Melde dich mit der Biometrie oder dem Code deines Geräts an",
             "web3WalletsSeparator": "Web3-Wallets",
             "selectOtherWallet": "Andere Wallet wählen",
+            "connectFailed": "Anmeldung fehlgeschlagen",
             "back": "Zurück"
         },
         "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
