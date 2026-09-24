@@ -721,7 +721,9 @@
             "insufficientBalance": "Las solicitudes <highlight>{ids}</highlight> no se pueden aprobar por saldo insuficiente. Tu aprobación solo se aplicará al resto de solicitudes.",
             "approveBlockedBulk": "{count, plural, one {# solicitud seleccionada no puede aprobarse ahora — deselecciónala para continuar.} other {# solicitudes seleccionadas no pueden aprobarse ahora — deselecciónalas para continuar.}}",
             "remove": "Eliminar",
-            "confirm": "Confirmar"
+            "preparingRemove": "Preparando la eliminación",
+            "confirm": "Confirmar",
+            "preparingVote": "Preparando tu voto"
         },
         "expanded": {
             "recipient": "Destinatario",

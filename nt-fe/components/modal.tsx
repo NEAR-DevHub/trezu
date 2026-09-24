@@ -22,21 +22,62 @@ import { useUiStore } from "@/stores/ui-store";
 // body siblings, so clicks on the connector UI don't register. Instead of
 // fighting Radix, we temporarily close any open Dialog while the connector
 // popup is visible, then reopen it when the popup closes.
+//
+// "Visible" means `display`, not mere presence: near-connect appends the popup
+// root the instant it starts *building* the wallet iframe — fetching the
+// executor, waking the device, reading an access key — and only flips
+// `display` to `block` once the wallet has something to show. On a hardware
+// wallet that gap runs for seconds, so treating the appended-but-hidden root
+// as "open" tore our own dialog down long before anything replaced it, which
+// read as "nothing happened" and had people voting a second time.
 const connectorListeners = new Set<(v: boolean) => void>();
 let connectorVisible = false;
 let connectorObserverStarted = false;
 
+function isConnectorPopupVisible() {
+    const popups = document.querySelectorAll<HTMLElement>(
+        ".hot-connector-popup",
+    );
+    // More than one root can be mounted at a time: near-connect leaves a
+    // closing popup in the DOM for its exit transition while the next one is
+    // already being built.
+    return Array.from(popups).some((popup) => popup.style.display !== "none");
+}
+
 function startConnectorObserver() {
     if (connectorObserverStarted || typeof document === "undefined") return;
     connectorObserverStarted = true;
-    const check = () => {
-        const visible = !!document.querySelector(".hot-connector-popup");
+
+    const publish = () => {
+        const visible = isConnectorPopupVisible();
         if (visible === connectorVisible) return;
         connectorVisible = visible;
         connectorListeners.forEach((l) => l(visible));
     };
-    check();
-    new MutationObserver(check).observe(document.body, {
+
+    // near-connect shows and hides a popup by flipping `display` on a root
+    // that's already mounted, which a childList observer never sees — so each
+    // root gets its own attribute observer as it appears. Scoping it to the
+    // roots (rather than `subtree: true` on the body) keeps this off the path
+    // of every other style change in the app.
+    const popupObserver = new MutationObserver(publish);
+    const observedPopups = new WeakSet<HTMLElement>();
+    const syncPopups = () => {
+        for (const popup of document.querySelectorAll<HTMLElement>(
+            ".hot-connector-popup",
+        )) {
+            if (observedPopups.has(popup)) continue;
+            observedPopups.add(popup);
+            popupObserver.observe(popup, {
+                attributes: true,
+                attributeFilter: ["style"],
+            });
+        }
+        publish();
+    };
+
+    syncPopups();
+    new MutationObserver(syncPopups).observe(document.body, {
         childList: true,
         subtree: false,
     });

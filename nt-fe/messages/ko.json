@@ -721,7 +721,9 @@
             "insufficientBalance": "잔액 부족으로 인해 요청 <highlight>{ids}</highlight>은(는) 승인할 수 없습니다. 승인은 나머지 요청에만 적용됩니다.",
             "approveBlockedBulk": "{count, plural, one {선택한 요청 #개를 지금 승인할 수 없습니다. 계속하려면 선택을 해제하세요.} other {선택한 요청 #개를 지금 승인할 수 없습니다. 계속하려면 선택을 해제하세요.}}",
             "remove": "제거",
-            "confirm": "확인"
+            "preparingRemove": "삭제를 준비하는 중",
+            "confirm": "확인",
+            "preparingVote": "투표를 준비하는 중"
         },
         "expanded": {
             "recipient": "수신자",

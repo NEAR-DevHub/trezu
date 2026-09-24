@@ -721,7 +721,9 @@
             "insufficientBalance": "Anfragen <highlight>{ids}</highlight> können wegen unzureichenden Guthabens nicht genehmigt werden. Ihre Genehmigung gilt nur für die verbleibenden Anfragen.",
             "approveBlockedBulk": "{count, plural, one {# ausgewählte Anfrage kann derzeit nicht genehmigt werden — heben Sie die Auswahl auf, um fortzufahren.} other {# ausgewählte Anfragen können derzeit nicht genehmigt werden — heben Sie die Auswahl auf, um fortzufahren.}}",
             "remove": "Entfernen",
-            "confirm": "Bestätigen"
+            "preparingRemove": "Entfernen wird vorbereitet",
+            "confirm": "Bestätigen",
+            "preparingVote": "Abstimmung wird vorbereitet"
         },
         "expanded": {
             "recipient": "Empfänger",

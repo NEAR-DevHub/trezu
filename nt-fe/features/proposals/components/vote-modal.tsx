@@ -68,6 +68,11 @@ export function VoteModal({
         (warning) => warning.slot,
     );
 
+    // The dialog deliberately stays up for the whole of `voteProposals` — the
+    // wallet needs seconds to prepare and hand over the transaction, and a
+    // hardware wallet has nothing on screen until it does. `onClose` in the
+    // `finally` only ever lands after the wallet is done with us; the connector
+    // popup taking over closes the dialog on its own (see `components/modal`).
     const handleVote = async () => {
         setIsSubmitting(true);
         const insufficientSet = new Set(insufficientBalanceProposalIds ?? []);
@@ -188,9 +193,13 @@ export function VoteModal({
                             >
                                 {voteSlotBlocked || approveBlocked
                                     ? tCreate("brieflyUnavailable")
-                                    : vote === "Remove"
-                                      ? t("remove")
-                                      : t("confirm")}
+                                    : isSubmitting
+                                      ? vote === "Remove"
+                                          ? t("preparingRemove")
+                                          : t("preparingVote")
+                                      : vote === "Remove"
+                                        ? t("remove")
+                                        : t("confirm")}
                             </Button>
                         </span>
                     </Tooltip>
