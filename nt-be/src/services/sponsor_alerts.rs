@@ -1,16 +1,31 @@
+use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
-use near_api::{NearToken, Tokens};
+use near_api::{AccountId, NearToken, Tokens};
 use tokio::sync::RwLock;
 
 use crate::{AppState, constants::ALERT_LOW_BALANCE_THRESHOLD, utils::telegram::TelegramClient};
 
 const ALERT_COOLDOWN: Duration = Duration::from_secs(3600);
 
-static LAST_ALERT_SENT_AT: LazyLock<RwLock<Option<Instant>>> = LazyLock::new(|| RwLock::new(None));
+/// Passkey executor relayer. Its full-access key ships in the public executor
+/// and pays gas for every passkey wallet transaction. Mainnet only.
+const PASSKEY_SPONSOR_ACCOUNT_ID: &str = "helper.trezu.near";
+/// Open passkey phonebook. Its function-call key pays gas for `register`.
+const PASSKEY_REGISTRY_ACCOUNT_ID: &str = "passkeys-registry.near";
 
-/// Returns true when liquid balance is below the sponsor low-balance threshold.
+static LAST_ALERT_SENT_AT: LazyLock<RwLock<HashMap<String, Instant>>> =
+    LazyLock::new(|| RwLock::new(HashMap::new()));
+
+/// An operational account whose liquid NEAR we page on.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct WatchedAccount {
+    pub label: &'static str,
+    pub account_id: AccountId,
+}
+
+/// Returns true when liquid balance is below the low-balance threshold.
 pub(crate) fn is_balance_low(liquid: NearToken) -> bool {
     liquid < ALERT_LOW_BALANCE_THRESHOLD
 }
@@ -23,17 +38,80 @@ pub(crate) fn cooldown_allows_alert(last_sent: Option<Instant>, now: Instant) ->
     }
 }
 
-pub(crate) fn format_low_balance_message(account_id: &str, liquid: NearToken) -> String {
+/// Accounts this process should page for.
+///
+/// The signer and the bulk-payment contract are this deployment's own
+/// spenders. Passkey accounts are shared mainnet relayers (the executor is
+/// mainnet-only), so sandbox and testnet deployments skip them.
+pub(crate) fn accounts_to_watch(
+    signer_id: &AccountId,
+    bulk_payment_contract_id: &AccountId,
+    include_passkeys: bool,
+) -> Vec<WatchedAccount> {
+    let mut accounts = Vec::new();
+    push_unique(
+        &mut accounts,
+        WatchedAccount {
+            label: "Sponsor",
+            account_id: signer_id.clone(),
+        },
+    );
+    push_unique(
+        &mut accounts,
+        WatchedAccount {
+            label: "Bulk payment",
+            account_id: bulk_payment_contract_id.clone(),
+        },
+    );
+    if include_passkeys {
+        push_unique(
+            &mut accounts,
+            WatchedAccount {
+                label: "Passkey sponsor",
+                account_id: PASSKEY_SPONSOR_ACCOUNT_ID
+                    .parse()
+                    .expect("passkey sponsor account id"),
+            },
+        );
+        push_unique(
+            &mut accounts,
+            WatchedAccount {
+                label: "Passkey registry",
+                account_id: PASSKEY_REGISTRY_ACCOUNT_ID
+                    .parse()
+                    .expect("passkey registry account id"),
+            },
+        );
+    }
+    accounts
+}
+
+fn push_unique(accounts: &mut Vec<WatchedAccount>, account: WatchedAccount) {
+    if accounts
+        .iter()
+        .any(|existing| existing.account_id == account.account_id)
+    {
+        return;
+    }
+    accounts.push(account);
+}
+
+pub(crate) fn format_low_balance_message(
+    label: &str,
+    account_id: &str,
+    liquid: NearToken,
+) -> String {
     format!(
-        "⚠️ Sponsor balance low\nAccount: {}\nLiquid: {} (threshold: {})",
-        account_id, liquid, ALERT_LOW_BALANCE_THRESHOLD,
+        "⚠️ {} balance low\nAccount: {}\nLiquid: {} (threshold: {})",
+        label, account_id, liquid, ALERT_LOW_BALANCE_THRESHOLD,
     )
 }
 
-pub async fn fetch_sponsor_liquid_balance(
+pub async fn fetch_liquid_balance(
     state: &AppState,
+    account_id: &AccountId,
 ) -> Result<NearToken, Box<dyn std::error::Error + Send + Sync>> {
-    let balance = Tokens::account(state.signer_id.clone())
+    let balance = Tokens::account(account_id.clone())
         .near_balance()
         .fetch_from(&state.network)
         .await?;
@@ -51,27 +129,75 @@ pub async fn run_sponsor_monitor_cycle(
     telegram_client: &TelegramClient,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let now = Instant::now();
-    let last_sent = *LAST_ALERT_SENT_AT.read().await;
-    if !cooldown_allows_alert(last_sent, now) {
-        return Ok(());
-    }
-
-    let liquid = fetch_sponsor_liquid_balance(state).await?;
-    if !is_balance_low(liquid) {
-        return Ok(());
-    }
-
-    let message = format_low_balance_message(state.signer_id.as_str(), liquid);
-    telegram_client.send_message(&message).await?;
-
-    *LAST_ALERT_SENT_AT.write().await = Some(now);
-    tracing::warn!(
-        "Sent low-balance alert for {} (liquid: {})",
-        state.signer_id,
-        liquid,
+    let include_passkeys = state.network.network_name == "mainnet";
+    let accounts = accounts_to_watch(
+        &state.signer_id,
+        &state.bulk_payment_contract_id,
+        include_passkeys,
     );
 
-    Ok(())
+    let mut first_error: Option<Box<dyn std::error::Error + Send + Sync>> = None;
+    for account in accounts {
+        let last_sent = LAST_ALERT_SENT_AT
+            .read()
+            .await
+            .get(account.account_id.as_str())
+            .copied();
+        if !cooldown_allows_alert(last_sent, now) {
+            continue;
+        }
+
+        let liquid = match fetch_liquid_balance(state, &account.account_id).await {
+            Ok(liquid) => liquid,
+            Err(e) => {
+                tracing::error!(
+                    "Failed to fetch liquid balance for {} ({}): {}",
+                    account.label,
+                    account.account_id,
+                    e,
+                );
+                if first_error.is_none() {
+                    first_error = Some(e);
+                }
+                continue;
+            }
+        };
+
+        if !is_balance_low(liquid) {
+            continue;
+        }
+
+        let message =
+            format_low_balance_message(account.label, account.account_id.as_str(), liquid);
+        if let Err(e) = telegram_client.send_message(&message).await {
+            tracing::error!(
+                "Failed to send low-balance alert for {} ({}): {}",
+                account.label,
+                account.account_id,
+                e,
+            );
+            if first_error.is_none() {
+                first_error = Some(e);
+            }
+            continue;
+        }
+
+        LAST_ALERT_SENT_AT
+            .write()
+            .await
+            .insert(account.account_id.to_string(), now);
+        tracing::warn!(
+            "Sent low-balance alert for {} ({}) (liquid: {})",
+            account.label,
+            account.account_id,
+            liquid,
+        );
+    }
+
+    match first_error {
+        Some(e) => Err(e),
+        None => Ok(()),
+    }
 }
 
 #[cfg(test)]
@@ -106,9 +232,57 @@ mod tests {
 
     #[test]
     fn format_low_balance_message_includes_account_and_amounts() {
-        let msg = format_low_balance_message("sponsor.trezu.near", NearToken::from_near(3));
+        let msg =
+            format_low_balance_message("Sponsor", "sponsor.trezu.near", NearToken::from_near(3));
+        assert!(msg.contains("Sponsor"));
         assert!(msg.contains("sponsor.trezu.near"));
         assert!(msg.contains(&NearToken::from_near(3).to_string()));
         assert!(msg.contains(&ALERT_LOW_BALANCE_THRESHOLD.to_string()));
+    }
+
+    fn account(id: &str) -> AccountId {
+        id.parse().expect("account id")
+    }
+
+    #[test]
+    fn accounts_to_watch_includes_signer_and_bulk_payment() {
+        let accounts = accounts_to_watch(
+            &account("sponsor.trezu.near"),
+            &account("bulkpayment.near"),
+            false,
+        );
+        assert_eq!(
+            accounts,
+            vec![
+                WatchedAccount {
+                    label: "Sponsor",
+                    account_id: account("sponsor.trezu.near"),
+                },
+                WatchedAccount {
+                    label: "Bulk payment",
+                    account_id: account("bulkpayment.near"),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn accounts_to_watch_dedupes_shared_account() {
+        let sandbox = account("sandbox");
+        let accounts = accounts_to_watch(&sandbox, &sandbox, false);
+        assert_eq!(accounts.len(), 1);
+        assert_eq!(accounts[0].label, "Sponsor");
+    }
+
+    #[test]
+    fn accounts_to_watch_adds_passkey_accounts_on_mainnet() {
+        let accounts = accounts_to_watch(
+            &account("sponsor.trezu.near"),
+            &account("bulkpayment.near"),
+            true,
+        );
+        let ids: Vec<&str> = accounts.iter().map(|a| a.account_id.as_str()).collect();
+        assert!(ids.contains(&"helper.trezu.near"));
+        assert!(ids.contains(&"passkeys-registry.near"));
     }
 }
