@@ -102,10 +102,12 @@ function NoteCell({ note }: { note?: string }) {
     return (
         <Tooltip
             content={trimmed}
-            contentProps={{ className: "max-w-72 whitespace-pre-wrap" }}
+            contentProps={{
+                className: "w-auto max-w-72 whitespace-pre-wrap wrap-anywhere",
+            }}
         >
             <span className="inline-block w-full max-w-full">
-                <span className="line-clamp-2 text-sm font-medium text-general-foreground">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-general-foreground">
                     {trimmed}
                 </span>
             </span>
