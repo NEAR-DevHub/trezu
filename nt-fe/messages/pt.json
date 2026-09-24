@@ -191,8 +191,7 @@
             "title": "Configurações"
         },
         "addressBook": {
-            "title": "Catálogo de endereços",
-            "description": "Gerencie seus destinatários salvos"
+            "title": "Catálogo de endereços"
         },
         "payments": {
             "title": "Pagamentos",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {nenhum destinatário} one {# destinatário} other {# destinatários}} selecionado",
         "sectionHeading": "Destinatários",
         "privacyNote": "Os endereços salvos são privados e visíveis apenas para sua equipe.",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "searchPlaceholder": "Buscar destinatário por nome",
         "searchPlaceholderShort": "Buscar",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "Todos os destinatários importados já existem no seu catálogo de endereços. Volte para enviar uma lista diferente ou remova duplicatas desta revisão.",
             "someDuplicates": "{duplicates} destinatários duplicados de {total} destinatários no total. Continue para importar apenas os novos destinatários.",
             "duplicated": "Duplicado",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "Adicione uma nota para ajudar a identificar este destinatário (ex.: pagamento de prestador, distribuição de vesting).",
             "skipDuplicates": "Ignorar duplicatas e importar apenas os novos.",
             "allDuplicatesTooltip": "Todos os destinatários importados já estão no seu catálogo de endereços, então não há nada novo para importar.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Remover destinatário",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "Isso removerá <bold>{count, plural, one {# destinatário} other {# destinatários}}</bold> do seu catálogo de endereços. Você pode adicioná-los novamente a qualquer momento.",
             "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Endereço do destinatário",
             "network": "Rede",
             "networkInfo": "Redes compatíveis com este endereço",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "enterAddressFirst": "Insira primeiro o endereço do destinatário",
             "selectNetwork": "Selecionar rede",
             "selectNetworksTitle": "Selecionar redes",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "ou arraste e solte",
         "maxFileSize": "máx. 1 arquivo de até {maxSize} MB, somente arquivo CSV",
         "noFilePrompt": "Não tem um arquivo para enviar?",
-        "downloadTemplate": "Baixar um modelo"
+        "downloadTemplate": "Baixar um modelo",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "Selecionar token",
@@ -1896,10 +1908,12 @@
         "selectEntry": "Selecionar {name}",
         "recipient": "Destinatário",
         "network": "Rede",
+        "networks": "Networks",
         "addedBy": "Adicionado por",
         "note": "Nota",
         "added": "Adicionado",
         "remove": "Remover",
+        "noResults": "No contacts match your search.",
         "send": "Enviar"
     },
     "publicDashboard": {

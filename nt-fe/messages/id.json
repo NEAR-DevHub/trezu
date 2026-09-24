@@ -191,8 +191,7 @@
             "title": "Pengaturan"
         },
         "addressBook": {
-            "title": "Buku Alamat",
-            "description": "Kelola penerima yang Anda simpan"
+            "title": "Buku Alamat"
         },
         "payments": {
             "title": "Pembayaran",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {tidak ada penerima} other {# penerima}} dipilih",
         "sectionHeading": "Penerima",
         "privacyNote": "Alamat yang disimpan bersifat pribadi dan hanya terlihat oleh tim Anda.",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "searchPlaceholder": "Cari penerima berdasarkan nama",
         "searchPlaceholderShort": "Cari",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "Semua penerima yang diimpor sudah ada di buku alamat Anda. Kembali untuk mengunggah daftar berbeda atau hapus duplikat dari tinjauan ini.",
             "someDuplicates": "{duplicates} penerima duplikat dari total {total} penerima. Lanjutkan untuk mengunggah hanya penerima baru.",
             "duplicated": "Duplikat",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "Tambahkan catatan untuk membantu mengidentifikasi penerima ini (mis. pembayaran kontraktor, distribusi vesting).",
             "skipDuplicates": "Lewati duplikat dan hanya impor yang baru.",
             "allDuplicatesTooltip": "Semua penerima yang diimpor sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk diimpor.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Hapus Penerima",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "Ini akan menghapus <bold>{count, plural, other {# penerima}}</bold> dari buku alamat Anda. Anda dapat menambahkannya lagi kapan saja.",
             "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Alamat Penerima",
             "network": "Jaringan",
             "networkInfo": "Jaringan yang kompatibel dengan alamat ini",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
             "selectNetwork": "Pilih jaringan",
             "selectNetworksTitle": "Pilih Jaringan",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "atau seret dan lepas",
         "maxFileSize": "maks 1 file hingga {maxSize} MB, hanya file CSV",
         "noFilePrompt": "Tidak punya file untuk diunggah?",
-        "downloadTemplate": "Unduh templat"
+        "downloadTemplate": "Unduh templat",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "Pilih token",
@@ -1896,10 +1908,12 @@
         "selectEntry": "Pilih {name}",
         "recipient": "Penerima",
         "network": "Jaringan",
+        "networks": "Networks",
         "addedBy": "Ditambahkan Oleh",
         "note": "Catatan",
         "added": "Ditambahkan",
         "remove": "Hapus",
+        "noResults": "No contacts match your search.",
         "send": "Kirim"
     },
     "publicDashboard": {

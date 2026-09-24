@@ -195,8 +195,7 @@
             "description": "Manage your personal profile and settings"
         },
         "addressBook": {
-            "title": "Address book",
-            "description": "Manage your saved recipients"
+            "title": "Contacts"
         },
         "payments": {
             "title": "Send",
@@ -1104,25 +1103,27 @@
         }
     },
     "addressBook": {
-        "emptyTitle": "Add your first recipient",
-        "emptyDescription": "Save frequently used addresses for faster, error-free payouts. Your contacts stay private and visible only to your team.",
+        "emptyTitle": "Add your first contact",
+        "emptyDescription": "Add recipients to create payments faster",
         "import": "Import",
-        "addRecipient": "Add recipient",
+        "addRecipient": "Add contact",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "recipientsHeading": "Recipients",
-        "recipientsSelected": "{count, plural, =0 {no recipients} one {# recipient} other {# recipients}} selected",
+        "recipientsSelected": "{count, plural, one {# contact} other {# contacts}} selected",
         "sectionHeading": "Recipients",
         "privacyNote": "Saved addresses are private and visible only to your team.",
-        "searchPlaceholder": "Search recipient by name",
+        "searchPlaceholder": "Search contact by name",
         "searchPlaceholderShort": "Search",
         "review": {
-            "header": "Review Details",
-            "youAreAdding": "You're adding",
-            "newRecipients": "{count, plural, =0 {No new recipients} one {# new recipient} other {# new recipients}}",
+            "header": "Review contacts",
+            "youAreAdding": "You are adding",
+            "newRecipients": "{count, plural, =0 {No new contacts} one {# new contact} other {# new contacts}}",
             "onNetworks": "on {count, plural, one {# network} other {# networks}}",
             "recipients": "Recipients",
-            "allDuplicates": "All imported recipients already exist in your address book. Go back to upload a different list or remove duplicates from this review.",
-            "someDuplicates": "{duplicates} duplicated recipients out of {total} total recipients. Continue to upload only the new recipients.",
+            "allDuplicates": "All imported recipients already exist in your address book. Continue to upload only the new contacts.",
+            "someDuplicates": "The file contains {total} contacts, but {duplicates} are duplicates. Continue to upload only the new contacts.",
             "duplicated": "Duplicated",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "Add a note to help identify this recipient (e.g. contractor payment, vesting distribution).",
             "skipDuplicates": "Skip duplicates and import only new ones.",
             "allDuplicatesTooltip": "All imported recipients are already in your address book, so there is nothing new to import.",
@@ -1132,7 +1133,8 @@
             "addRecipientsButton": "{count, plural, one {Add recipient} other {Add recipients}}"
         },
         "removeDialog": {
-            "title": "Remove recipient",
+            "title": "Remove {count, plural, one {contact} other {contacts}}?",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "This will remove <bold>{count, plural, one {# recipient} other {# recipients}}</bold> from your address book. You can add them again anytime.",
             "single": "This will remove <bold>{name}</bold> from your address book. You can add this recipient again anytime."
         },
@@ -1140,14 +1142,21 @@
             "title": "Import recipients",
             "description": "Upload a list of recipient addresses to your address book.",
             "foundSummary": "Found {count, plural, one {# recipient} other {# recipients}} on {networkCount, plural, one {# network} other {# networks}}",
-            "uploadPrompt": "Upload or paste recipient data",
+            "uploadPrompt": "Upload file or provide data to continue",
             "fixErrors": "Fix errors to continue",
             "continueReview": "Continue to review"
         },
         "form": {
             "editRecipient": "Edit recipient",
-            "addRecipient": "Add recipient",
+            "addRecipient": "Add contact",
             "import": "Import",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "recipientName": "Recipient Name",
             "namePlaceholder": "Alice",
             "recipientAddress": "Recipient Address",
@@ -1161,7 +1170,7 @@
             "edit": "Edit",
             "remove": "Remove",
             "incomplete": "Incomplete",
-            "addAnother": "Add another recipient",
+            "addAnother": "Add another contact",
             "fillAllTooltip": "You must fill out all fields to add a recipient.",
             "reviewDetails": "Review details",
             "reviewTooltip": "All recipients must be complete before reviewing.",
@@ -1744,7 +1753,10 @@
         "orDragDrop": "or drag and drop",
         "maxFileSize": "max 1 file up to {maxSize} MB, CSV file only",
         "noFilePrompt": "Don't have a file to upload?",
-        "downloadTemplate": "Download a template"
+        "downloadTemplate": "Download a template",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "Select token",
@@ -1890,10 +1902,12 @@
     "addressBookTable": {
         "emptyTitle": "No recipients yet",
         "emptyDescription": "Add recipients to this address book for faster payouts.",
-        "selectAll": "Select all recipients",
+        "selectAll": "Select all contacts",
         "selectEntry": "Select {name}",
-        "recipient": "Recipient",
+        "noResults": "No contacts match your search.",
+        "recipient": "Contact",
         "network": "Network",
+        "networks": "Networks",
         "addedBy": "Added by",
         "note": "Note",
         "added": "Added",

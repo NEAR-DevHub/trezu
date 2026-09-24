@@ -5,8 +5,7 @@ import {
     Add01Icon,
     Delete01Icon,
     FileDownIcon,
-    FileUploadIcon,
-    LoaderCircleIcon,
+    FileUpIcon,
 } from "@hugeicons/core-free-icons";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -18,7 +17,9 @@ import { cn } from "@/lib/utils";
 import { PageCard } from "@/components/card";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import { AuthButton } from "@/components/auth-button";
+import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
+import { MobilePageHeading } from "@/components/mobile-page-heading";
 import {
     AddRecipientInput,
     buildFormSchema,
@@ -28,6 +29,11 @@ import { RECIPIENT_NAME_MAX_LENGTH } from "@/features/address-book/types";
 import { Form } from "@/components/ui/form";
 import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
 import { AddressBookTable } from "@/features/address-book/components/address-book-table";
+import {
+    ContactsEmptyBackdrop,
+    ContactsTableSkeleton,
+} from "@/features/address-book/components/address-book-skeleton";
+import { ContactActionSheet } from "@/features/address-book/components/contact-action-sheet";
 import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
 import {
     ImportUploadStep,
@@ -44,18 +50,16 @@ import {
 } from "@/features/address-book";
 import { useChains } from "@/features/address-book/chains";
 import { useTreasury } from "@/hooks/use-treasury";
-import { TableSkeleton } from "@/components/table-skeleton";
 import { ResponsiveInput } from "@/components/input";
-import { NumberBadge } from "@/components/number-badge";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
 import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
-import { StepperHeader } from "@/components/step-wizard";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
+
+const TOOLBAR_BUTTON_CLASS = "h-10 gap-2 rounded-lg text-sm";
 
 function AddressBookEmptyState({
     onAdd,
@@ -66,33 +70,33 @@ function AddressBookEmptyState({
 }) {
     const tAb = useTranslations("addressBook");
     return (
-        <PageCard className="py-[100px] flex flex-col items-center justify-center w-full h-fit gap-4">
-            <EmptyState
-                icon={FileUploadIcon}
-                title={tAb("emptyTitle")}
-                description={tAb("emptyDescription")}
-                className="py-0"
-            />
-            <div className="flex gap-3 w-full max-w-[300px]">
-                <AuthButton
-                    permissionKind="any"
-                    permissionAction=""
-                    variant="muted"
-                    className="gap-1 shrink w-full"
-                    onClick={onImport}
-                >
-                    <Icon icon={FileUploadIcon} /> {tAb("import")}
-                </AuthButton>
-                <AuthButton
-                    permissionKind="any"
-                    permissionAction=""
-                    className="gap-1 shrink w-full"
-                    onClick={onAdd}
-                >
-                    <Icon icon={Add01Icon} /> {tAb("addRecipient")}
-                </AuthButton>
-            </div>
-        </PageCard>
+        <EmptyState
+            title={tAb("emptyTitle")}
+            description={tAb("emptyDescription")}
+            skeleton={<ContactsEmptyBackdrop />}
+            className="gap-4 py-0"
+            actions={
+                <div className="flex items-center gap-2">
+                    <AuthButton
+                        permissionKind="any"
+                        permissionAction=""
+                        variant="secondary"
+                        className={TOOLBAR_BUTTON_CLASS}
+                        onClick={onImport}
+                    >
+                        <Icon icon={FileDownIcon} /> {tAb("import")}
+                    </AuthButton>
+                    <AuthButton
+                        permissionKind="any"
+                        permissionAction=""
+                        className={TOOLBAR_BUTTON_CLASS}
+                        onClick={onAdd}
+                    >
+                        <Icon icon={Add01Icon} /> {tAb("addRecipient")}
+                    </AuthButton>
+                </div>
+            }
+        />
     );
 }
 
@@ -105,6 +109,7 @@ function RecipientFlow({
     onDone,
     onCancel,
     onImport,
+    hideHeader = false,
 }: {
     mode: "add" | "import";
     initialRecipient?: RecipientDraft | null;
@@ -112,12 +117,15 @@ function RecipientFlow({
     onDone: () => void;
     onCancel: () => void;
     onImport: () => void;
+    /** Title and import live in the page header. */
+    hideHeader?: boolean;
 }) {
     const { treasuryId } = useTreasury();
     const tValidation = useTranslations("recipientForm.validation");
     const [step, setStep] = useState(0);
     const [activeIndex, setActiveIndex] = useState(0);
     const [importNotes, setImportNotes] = useState<Record<number, string>>({});
+    const [manualNotes, setManualNotes] = useState<Record<number, string>>({});
     const createEntries = useCreateAddressBookEntries(treasuryId);
     const defaultValues = useMemo(
         () => ({
@@ -152,14 +160,26 @@ function RecipientFlow({
         setStep(0);
         setActiveIndex(0);
         setImportNotes({});
+        setManualNotes({});
     }, [defaultValues, form]);
 
     // Manual add: filter empty rows → review
-    const handleManualReview = () => {
-        const filled = form
-            .getValues()
-            .recipients.filter((r) => r.name.trim() || r.address.trim());
+    const handleManualReview = (notes: Record<number, string> = {}) => {
+        const filled: FormValues["recipients"] = [];
+        const nextNotes: Record<number, string> = {};
+        form.getValues().recipients.forEach((recipient, index) => {
+            if (
+                !recipient.name.trim() ||
+                !recipient.address.trim() ||
+                recipient.networks.length === 0
+            ) {
+                return;
+            }
+            nextNotes[filled.length] = notes[index] ?? "";
+            filled.push(recipient);
+        });
         form.reset({ recipients: filled });
+        setManualNotes(nextNotes);
         setStep(1);
     };
 
@@ -182,63 +202,63 @@ function RecipientFlow({
 
     const recipients = form.watch("recipients");
 
-    return (
-        <PageCard className="w-full max-w-[600px] mx-auto flex flex-col gap-4 p-4">
-            <Form {...form}>
-                {step === 0 ? (
-                    mode === "add" ? (
-                        <AddRecipientInput
-                            control={form.control}
-                            activeIndex={activeIndex}
-                            setActiveIndex={setActiveIndex}
-                            handleBack={onCancel}
-                            onReview={handleManualReview}
-                            onImport={onImport}
-                        />
-                    ) : (
-                        <ImportUploadStep
-                            handleBack={onCancel}
-                            onReview={handleImportReview}
-                        />
-                    )
-                ) : (
-                    <ReviewRecipients
-                        handleBack={() => setStep(0)}
+    const flow = (
+        <Form {...form}>
+            {step === 0 ? (
+                mode === "add" ? (
+                    <AddRecipientInput
                         control={form.control}
-                        existingEntries={existingEntries}
-                        isSubmitting={createEntries.isPending}
-                        initialNotes={
-                            mode === "import" ? importNotes : undefined
-                        }
-                        onSubmit={async (notes, includedIndexes) => {
-                            // Empty indexes is unreachable while ReviewRecipients
-                            // disables submit when canSubmit is false (all duplicates
-                            // + skip). Keep the guard; toast lives on mutateAsync [].
-                            if (!treasuryId || includedIndexes.length === 0) {
-                                onDone();
-                                return;
-                            }
-                            await createEntries.mutateAsync({
-                                daoId: treasuryId,
-                                entries: includedIndexes.map((index) => {
-                                    const recipient = recipients[index];
-
-                                    return {
-                                        name: recipient.name,
-                                        networks: recipient.networks,
-                                        address:
-                                            persistAddressBookAddress(
-                                                recipient,
-                                            ),
-                                        note: notes[index] || undefined,
-                                    };
-                                }),
-                            });
-                            onDone();
-                        }}
+                        activeIndex={activeIndex}
+                        setActiveIndex={setActiveIndex}
+                        handleBack={onCancel}
+                        onReview={handleManualReview}
+                        onImport={onImport}
+                        hideHeader={hideHeader}
                     />
-                )}
-            </Form>
+                ) : (
+                    <ImportUploadStep onReview={handleImportReview} />
+                )
+            ) : (
+                <ReviewRecipients
+                    handleBack={() => setStep(0)}
+                    control={form.control}
+                    existingEntries={existingEntries}
+                    isSubmitting={createEntries.isPending}
+                    initialNotes={mode === "import" ? importNotes : manualNotes}
+                    onSubmit={async (notes, includedIndexes) => {
+                        // Empty indexes is unreachable while ReviewRecipients
+                        // disables submit when canSubmit is false (all duplicates
+                        // + skip). Keep the guard; toast lives on mutateAsync [].
+                        if (!treasuryId || includedIndexes.length === 0) {
+                            onDone();
+                            return;
+                        }
+                        await createEntries.mutateAsync({
+                            daoId: treasuryId,
+                            entries: includedIndexes.map((index) => {
+                                const recipient = recipients[index];
+
+                                return {
+                                    name: recipient.name,
+                                    networks: recipient.networks,
+                                    address:
+                                        persistAddressBookAddress(recipient),
+                                    note: notes[index] || undefined,
+                                };
+                            }),
+                        });
+                        onDone();
+                    }}
+                />
+            )}
+        </Form>
+    );
+
+    if (hideHeader) return flow;
+
+    return (
+        <PageCard className="mx-auto flex w-full max-w-150 flex-col gap-4 p-4">
+            {flow}
         </PageCard>
     );
 }
@@ -248,13 +268,7 @@ function RecipientFlow({
 const SEARCH_DEBOUNCE_MS = 300;
 const ADDRESS_BOOK_PAGE_SIZE = 20;
 
-function RecipientsView({
-    onAdd,
-    onImport,
-}: {
-    onAdd: () => void;
-    onImport: () => void;
-}) {
+function RecipientsView({ onAdd }: { onAdd: () => void }) {
     const tAb = useTranslations("addressBook");
     const tCommon = useTranslations("common");
     const { treasuryId } = useTreasury();
@@ -268,17 +282,24 @@ function RecipientsView({
     const [search, setSearch] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [isMobileSelectMode, setIsMobileSelectMode] = useState(false);
     const [mobileSearchActive, setMobileSearchActive] = useState(false);
-    const [entryToDelete, setEntryToDelete] = useState<AddressBookEntry | null>(
+    const [entriesToDelete, setEntriesToDelete] = useState<AddressBookEntry[]>(
+        [],
+    );
+    const [sheetEntry, setSheetEntry] = useState<AddressBookEntry | null>(
         null,
     );
-    const [bulkDeleteCount, setBulkDeleteCount] = useState(0);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const isMobile = useMediaQuery("(max-width: 640px)");
     const page = Math.max(
         0,
         Number.parseInt(searchParams.get("page") || "0", 10) || 0,
     );
+
+    const exitMobileSelectMode = useCallback(() => {
+        setIsMobileSelectMode(false);
+        setSelectedIds(new Set());
+    }, []);
 
     const handleSearchChange = useCallback((value: string) => {
         setSearch(value);
@@ -351,7 +372,7 @@ function RecipientsView({
             contact_action: "delete",
             treasury_id: treasuryId,
         });
-        setEntryToDelete(entry);
+        setEntriesToDelete([entry]);
     }
 
     function handleRemoveSelected() {
@@ -361,28 +382,25 @@ function RecipientsView({
             count: selectedIds.size,
             treasury_id: treasuryId,
         });
-        setBulkDeleteCount(selectedIds.size);
+        setEntriesToDelete(
+            recipientEntries.filter((entry) => selectedIds.has(entry.id)),
+        );
     }
 
     async function handleConfirmDelete() {
-        if (bulkDeleteCount > 0) {
-            await deleteEntries.mutateAsync([...selectedIds]);
-            setSelectedIds(new Set());
-            setBulkDeleteCount(0);
-        } else if (entryToDelete) {
-            await deleteEntries.mutateAsync([entryToDelete.id]);
-            setSelectedIds((prev) => {
-                const next = new Set(prev);
-                next.delete(entryToDelete.id);
-                return next;
-            });
-            setEntryToDelete(null);
-        }
+        const ids = entriesToDelete.map((entry) => entry.id);
+        if (ids.length === 0) return;
+        await deleteEntries.mutateAsync(ids);
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            for (const id of ids) next.delete(id);
+            return next;
+        });
+        setEntriesToDelete([]);
     }
 
     function handleCloseDialog() {
-        setEntryToDelete(null);
-        setBulkDeleteCount(0);
+        setEntriesToDelete([]);
     }
 
     async function handleExport() {
@@ -420,175 +438,182 @@ function RecipientsView({
         );
     }
 
-    return (
-        <PageCard className="p-0 gap-0">
-            {/* Header */}
-            <div className="flex flex-row items-center justify-between gap-3 sm:gap-4 py-3.5 px-8 border-b">
-                {hasSelection ? (
-                    <>
-                        <span className="font-semibold text-base">
-                            {tAb("recipientsSelected", {
-                                count: selectedIds.size,
-                            })}
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <AuthButton
-                                permissionKind="any"
-                                permissionAction=""
-                                variant="muted"
-                                size={isMobile ? "icon" : "default"}
-                                disabled={exportEntries.isPending}
-                                onClick={handleExport}
-                            >
-                                {exportEntries.isPending ? (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                ) : (
-                                    <Icon icon={FileDownIcon} />
-                                )}
-                                <span className="hidden sm:inline">
-                                    {exportEntries.isPending
-                                        ? tCommon("exporting")
-                                        : tCommon("export")}
-                                </span>
-                            </AuthButton>
-                            <AuthButton
-                                permissionKind="any"
-                                permissionAction=""
-                                variant="outline-destructive"
-                                size={isMobile ? "icon" : "default"}
-                                disabled={deleteEntries.isPending}
-                                onClick={() => handleRemoveSelected()}
-                            >
-                                <Icon icon={Delete01Icon} />
-                                <span className="hidden sm:flex">
-                                    {tCommon("remove")}
-                                </span>
-                            </AuthButton>
-                        </div>
-                    </>
-                ) : (
-                    <div className="flex items-center justify-between w-full gap-3">
-                        <div className="flex flex-col gap-0 w-full max-w-md">
-                            <div className="flex items-center gap-3 w-fit lg:pt-1">
-                                <StepperHeader
-                                    title={tAb("recipientsHeading")}
-                                />
-                                {recipientEntries.length > 0 && (
-                                    <NumberBadge
-                                        number={recipientEntries.length}
-                                        variant="secondary"
-                                    />
-                                )}
-                            </div>
-                            <p className="text-xs text-muted-foreground hidden min-w-0 lg:block">
-                                {tAb("privacyNote")}
-                            </p>
-                        </div>
-                        <div className="flex items-center gap-2 justify-end min-w-0 w-fit shrink-0">
-                            <ResponsiveInput
-                                type="text"
-                                placeholder={tAb("searchPlaceholder")}
-                                mobilePlaceholder={tAb(
-                                    "searchPlaceholderShort",
-                                )}
-                                className="w-52 min-w-0"
-                                search
-                                value={search}
-                                onChange={(e) =>
-                                    handleSearchChange(e.target.value)
-                                }
-                                onSearchActiveChange={setMobileSearchActive}
-                            />
-                            <AuthButton
-                                permissionKind="any"
-                                permissionAction=""
-                                variant="muted"
-                                className={cn(
-                                    "gap-1.5",
-                                    mobileSearchActive && "hidden sm:flex",
-                                )}
-                                size={isMobile ? "icon" : "default"}
-                                disabled={exportEntries.isPending}
-                                onClick={handleExport}
-                            >
-                                {exportEntries.isPending ? (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                ) : (
-                                    <Icon icon={FileDownIcon} />
-                                )}
-                                <span className="hidden sm:inline">
-                                    {exportEntries.isPending
-                                        ? tCommon("exporting")
-                                        : tCommon("export")}
-                                </span>
-                            </AuthButton>
-                            <AuthButton
-                                permissionKind="any"
-                                permissionAction=""
-                                variant="muted"
-                                className={cn(
-                                    "gap-1.5",
-                                    mobileSearchActive && "hidden sm:flex",
-                                )}
-                                size={isMobile ? "icon" : "default"}
-                                onClick={onImport}
-                            >
-                                <Icon icon={FileUploadIcon} />
-                                <span className="hidden sm:inline">
-                                    {tAb("import")}
-                                </span>
-                            </AuthButton>
-                            <AuthButton
-                                permissionKind="any"
-                                permissionAction=""
-                                className={cn(
-                                    "gap-1.5",
-                                    mobileSearchActive && "hidden sm:flex",
-                                )}
-                                size={isMobile ? "icon" : "default"}
-                                onClick={onAdd}
-                            >
-                                <Icon icon={Add01Icon} />
-                                <span className="hidden sm:inline">
-                                    {tAb("addRecipient")}
-                                </span>
-                            </AuthButton>
-                        </div>
-                    </div>
-                )}
-            </div>
+    const toolbarButtonClass = cn(
+        TOOLBAR_BUTTON_CLASS,
+        "size-10 px-0 sm:h-10 sm:w-auto sm:px-4",
+        mobileSearchActive && "hidden sm:inline-flex",
+    );
 
-            {/* Table */}
-            {isLoading && !entries ? (
-                <TableSkeleton rows={6} columns={7} />
+    if (isLoading && !entries) {
+        return <ContactsTableSkeleton />;
+    }
+
+    return (
+        <div className="flex flex-col gap-5">
+            {hasSelection ? (
+                <div className="flex items-center justify-between gap-4">
+                    <span className="hidden text-xl font-semibold leading-[1.2] tracking-[-0.025rem] text-general-secondary-foreground md:block">
+                        {tAb("recipientsSelected", {
+                            count: selectedIds.size,
+                        })}
+                    </span>
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-lg font-semibold text-foreground md:hidden"
+                        onClick={exitMobileSelectMode}
+                    >
+                        {tCommon("cancel")}
+                    </Button>
+                    <div className="flex items-center gap-2">
+                        <AuthButton
+                            permissionKind="any"
+                            permissionAction=""
+                            variant="secondary"
+                            className={toolbarButtonClass}
+                            loading={exportEntries.isPending}
+                            onClick={handleExport}
+                        >
+                            {exportEntries.isPending ? null : (
+                                <Icon icon={FileUpIcon} />
+                            )}
+                            <span className="hidden sm:inline">
+                                {exportEntries.isPending
+                                    ? tCommon("exporting")
+                                    : tCommon("export")}
+                            </span>
+                        </AuthButton>
+                        <AuthButton
+                            permissionKind="any"
+                            permissionAction=""
+                            variant="outline-destructive"
+                            className={toolbarButtonClass}
+                            disabled={deleteEntries.isPending}
+                            onClick={() => handleRemoveSelected()}
+                        >
+                            <Icon icon={Delete01Icon} />
+                            <span className="hidden sm:inline">
+                                {tCommon("remove")}
+                            </span>
+                        </AuthButton>
+                    </div>
+                </div>
             ) : (
-                <AddressBookTable
-                    entries={paginatedEntries}
-                    selectedIds={selectedIds}
-                    onSelectionChange={setSelectedIds}
-                    onDelete={handleDelete}
-                    onSend={handleSend}
-                    searchQuery={debouncedSearch}
-                    pageIndex={pageIndex}
-                    pageSize={ADDRESS_BOOK_PAGE_SIZE}
-                    total={filtered.length}
-                    onPageChange={updatePage}
-                />
+                <div className="flex items-center justify-between gap-4">
+                    <p className="hidden text-xl font-semibold leading-[1.2] tracking-[-0.025rem] text-general-secondary-foreground md:block">
+                        {tAb("contactsCount", {
+                            count: recipientEntries.length,
+                        })}
+                    </p>
+                    {!mobileSearchActive && (
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="rounded-lg font-semibold text-foreground md:hidden"
+                            onClick={() =>
+                                isMobileSelectMode
+                                    ? exitMobileSelectMode()
+                                    : setIsMobileSelectMode(true)
+                            }
+                        >
+                            {isMobileSelectMode
+                                ? tCommon("cancel")
+                                : tCommon("select")}
+                        </Button>
+                    )}
+                    <div
+                        className={cn(
+                            "flex items-center justify-end gap-2",
+                            mobileSearchActive ? "w-full" : "ml-auto",
+                        )}
+                    >
+                        <ResponsiveInput
+                            type="text"
+                            placeholder={tAb("searchPlaceholder")}
+                            mobilePlaceholder={tAb("searchPlaceholderShort")}
+                            className="h-10 md:w-72.5 md:shrink-0"
+                            buttonClassName="size-10 rounded-lg bg-general-bg-secondary hover:bg-general-bg-secondary/80"
+                            mobileCloseButton
+                            inputClassName="rounded-lg border border-general-border bg-card! hover:bg-card! pl-9 text-sm placeholder:font-medium placeholder:text-sm placeholder:text-general-muted-foreground dark:placeholder:text-muted-foreground focus-visible:border-general-border focus-visible:ring-0"
+                            searchIconClassName="left-2 size-5 text-general-muted-foreground dark:text-muted-foreground"
+                            search
+                            value={search}
+                            onChange={(e) => handleSearchChange(e.target.value)}
+                            onSearchActiveChange={setMobileSearchActive}
+                        />
+                        <AuthButton
+                            permissionKind="any"
+                            permissionAction=""
+                            variant="secondary"
+                            className={toolbarButtonClass}
+                            loading={exportEntries.isPending}
+                            onClick={handleExport}
+                        >
+                            {exportEntries.isPending ? null : (
+                                <Icon icon={FileUpIcon} />
+                            )}
+                            <span className="hidden sm:inline">
+                                {exportEntries.isPending
+                                    ? tCommon("exporting")
+                                    : tCommon("export")}
+                            </span>
+                        </AuthButton>
+                        <AuthButton
+                            permissionKind="any"
+                            permissionAction=""
+                            className={toolbarButtonClass}
+                            onClick={onAdd}
+                        >
+                            <Icon icon={Add01Icon} />
+                            <span className="hidden sm:inline">
+                                {tAb("addRecipient")}
+                            </span>
+                        </AuthButton>
+                    </div>
+                </div>
             )}
 
+            <AddressBookTable
+                entries={paginatedEntries}
+                selectedIds={selectedIds}
+                onSelectionChange={setSelectedIds}
+                onDelete={handleDelete}
+                onSend={handleSend}
+                onOpen={setSheetEntry}
+                isMobileSelectMode={isMobileSelectMode}
+                searchQuery={debouncedSearch}
+                pageIndex={pageIndex}
+                pageSize={ADDRESS_BOOK_PAGE_SIZE}
+                total={filtered.length}
+                onPageChange={updatePage}
+            />
+
+            <ContactActionSheet
+                entry={sheetEntry}
+                open={!!sheetEntry}
+                onOpenChange={(open) => {
+                    if (!open) setSheetEntry(null);
+                }}
+                onSend={() => {
+                    if (!sheetEntry) return;
+                    const entry = sheetEntry;
+                    setSheetEntry(null);
+                    handleSend(entry);
+                }}
+                onRemove={() => {
+                    if (!sheetEntry) return;
+                    const entry = sheetEntry;
+                    setSheetEntry(null);
+                    handleDelete(entry);
+                }}
+            />
+
             <RemoveRecipientDialog
-                entry={entryToDelete}
-                count={bulkDeleteCount}
+                entries={entriesToDelete}
                 onConfirm={handleConfirmDelete}
                 onClose={handleCloseDialog}
             />
-        </PageCard>
+        </div>
     );
 }
 
@@ -596,6 +621,7 @@ function RecipientsView({
 
 export default function AddressBookPage() {
     const t = useTranslations("pages.addressBook");
+    const tAb = useTranslations("addressBook");
     const { treasuryId } = useTreasury();
     const pathname = usePathname();
     const router = useRouter();
@@ -683,8 +709,68 @@ export default function AddressBookPage() {
         clearPrefillParams();
     }, [clearPrefillParams]);
 
+    if (flowMode === "import") {
+        return (
+            <PageComponentLayout
+                title={tAb("addRecipient")}
+                backButton={handleCloseFlow}
+                hideMobileShellControls
+                reserveHeaderSpace
+            >
+                <div className="mx-auto w-full max-w-lg">
+                    <RecipientFlow
+                        mode="import"
+                        hideHeader
+                        existingEntries={entries ?? []}
+                        onDone={handleCloseFlow}
+                        onCancel={handleCloseFlow}
+                        onImport={handleImport}
+                    />
+                </div>
+            </PageComponentLayout>
+        );
+    }
+
+    if (flowMode === "add") {
+        return (
+            <PageComponentLayout
+                title={tAb("addRecipient")}
+                backButton={handleCloseFlow}
+                hideMobileShellControls
+                reserveHeaderSpace
+                headerActions={
+                    <AuthButton
+                        permissionKind="any"
+                        permissionAction=""
+                        variant="secondary"
+                        className="h-10 gap-2 rounded-lg text-sm"
+                        onClick={handleImport}
+                    >
+                        <Icon icon={FileDownIcon} />
+                        {tAb("import")}
+                    </AuthButton>
+                }
+            >
+                <div className="mx-auto w-full max-w-lg">
+                    <RecipientFlow
+                        mode="add"
+                        hideHeader
+                        initialRecipient={initialRecipient}
+                        existingEntries={entries ?? []}
+                        onDone={handleCloseFlow}
+                        onCancel={handleCloseFlow}
+                        onImport={handleImport}
+                    />
+                </div>
+            </PageComponentLayout>
+        );
+    }
+
     return (
-        <PageComponentLayout title={t("title")} description={t("description")}>
+        <PageComponentLayout title={t("title")}>
+            {flowMode ? null : (
+                <MobilePageHeading>{t("title")}</MobilePageHeading>
+            )}
             {flowMode ? (
                 <RecipientFlow
                     mode={flowMode}
@@ -695,7 +781,7 @@ export default function AddressBookPage() {
                     onImport={handleImport}
                 />
             ) : isLoading || hasEntries ? (
-                <RecipientsView onAdd={handleAdd} onImport={handleImport} />
+                <RecipientsView onAdd={handleAdd} />
             ) : (
                 <AddressBookEmptyState
                     onAdd={handleAdd}

@@ -191,8 +191,7 @@
             "title": "Ayarlar"
         },
         "addressBook": {
-            "title": "Adres Defteri",
-            "description": "Kayıtlı alıcılarınızı yönetin"
+            "title": "Adres Defteri"
         },
         "payments": {
             "title": "Odemeler",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {alıcı yok} one {# alıcı} other {# alıcı}} seçildi",
         "sectionHeading": "Alıcılar",
         "privacyNote": "Kayıtlı adresler gizlidir ve yalnızca ekibinize görünür.",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "searchPlaceholder": "Alıcıyı ada göre ara",
         "searchPlaceholderShort": "Ara",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "İçe aktarılan tüm alıcılar adres defterinizde zaten var. Farklı bir liste yüklemek için geri dönün veya bu incelemeden tekrarları kaldırın.",
             "someDuplicates": "Toplam {total} alıcıdan {duplicates} tanesi tekrarlanmış. Yalnızca yeni alıcıları yüklemek için devam edin.",
             "duplicated": "Tekrarlandı",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "Bu alıcıyı tanımlamaya yardımcı olacak bir not ekleyin (örn. yüklenici ödemesi, vesting dağıtımı).",
             "skipDuplicates": "Tekrarları atla ve yalnızca yenileri içe aktar.",
             "allDuplicatesTooltip": "İçe aktarılan tüm alıcılar zaten adres defterinizde, bu nedenle içe aktarılacak yeni bir şey yok.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Alıcıyı Kaldır",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "Bu, adres defterinizden <bold>{count, plural, one {# alıcıyı} other {# alıcıyı}}</bold> kaldıracak. Onları istediğiniz zaman tekrar ekleyebilirsiniz.",
             "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Alıcı Adresi",
             "network": "Ağ",
             "networkInfo": "Bu adresle uyumlu ağlar",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "enterAddressFirst": "Önce alıcı adresini girin",
             "selectNetwork": "Ağ seçin",
             "selectNetworksTitle": "Ağları Seçin",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "veya sürükleyip bırakın",
         "maxFileSize": "en fazla 1 dosya, {maxSize} MB'a kadar, yalnızca CSV dosyası",
         "noFilePrompt": "Yüklenecek dosyanız yok mu?",
-        "downloadTemplate": "Şablon indir"
+        "downloadTemplate": "Şablon indir",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "Token seç",
@@ -1896,10 +1908,12 @@
         "selectEntry": "{name} kişisini seç",
         "recipient": "Alıcı",
         "network": "Ağ",
+        "networks": "Networks",
         "addedBy": "Ekleyen",
         "note": "Not",
         "added": "Eklendi",
         "remove": "Kaldır",
+        "noResults": "No contacts match your search.",
         "send": "Gönder"
     },
     "publicDashboard": {

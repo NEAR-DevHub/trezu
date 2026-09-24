@@ -191,8 +191,7 @@
             "title": "설정"
         },
         "addressBook": {
-            "title": "주소록",
-            "description": "저장된 수신자 관리"
+            "title": "주소록"
         },
         "payments": {
             "title": "결제",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {수신자 없음} other {수신자 #명}} 선택됨",
         "sectionHeading": "수신자",
         "privacyNote": "저장된 주소는 비공개이며 팀에게만 표시됩니다.",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "searchPlaceholder": "이름으로 수신자 검색",
         "searchPlaceholderShort": "검색",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "가져온 모든 수신자가 이미 주소록에 있습니다. 다른 목록을 업로드하려면 뒤로 가거나 이 검토에서 중복을 제거하세요.",
             "someDuplicates": "총 {total}명의 수신자 중 {duplicates}명이 중복됩니다. 새 수신자만 업로드하려면 계속하세요.",
             "duplicated": "중복됨",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "이 수신자를 식별하는 데 도움이 되는 메모를 추가하세요 (예: 계약자 결제, 베스팅 분배).",
             "skipDuplicates": "중복을 건너뛰고 새로운 항목만 가져오기.",
             "allDuplicatesTooltip": "가져온 모든 수신자가 이미 주소록에 있으므로 새로 가져올 항목이 없습니다.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "수신자 제거",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "주소록에서 <bold>{count, plural, other {수신자 #명}}</bold>을(를) 제거합니다. 언제든지 다시 추가할 수 있습니다.",
             "single": "주소록에서 <bold>{name}</bold>을(를) 제거합니다. 언제든지 이 수신자를 다시 추가할 수 있습니다."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "수신자 주소",
             "network": "네트워크",
             "networkInfo": "이 주소와 호환되는 네트워크",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "enterAddressFirst": "먼저 수신자 주소를 입력하세요",
             "selectNetwork": "네트워크 선택",
             "selectNetworksTitle": "네트워크 선택",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "또는 드래그 앤 드롭",
         "maxFileSize": "최대 1개 파일, {maxSize} MB까지, CSV 파일만 가능",
         "noFilePrompt": "업로드할 파일이 없으신가요?",
-        "downloadTemplate": "템플릿 다운로드"
+        "downloadTemplate": "템플릿 다운로드",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "토큰 선택",
@@ -1896,10 +1908,12 @@
         "selectEntry": "{name} 선택",
         "recipient": "수신자",
         "network": "네트워크",
+        "networks": "Networks",
         "addedBy": "추가자",
         "note": "메모",
         "added": "추가됨",
         "remove": "제거",
+        "noResults": "No contacts match your search.",
         "send": "보내기"
     },
     "publicDashboard": {

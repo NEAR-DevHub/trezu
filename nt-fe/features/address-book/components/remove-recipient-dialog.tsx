@@ -2,27 +2,27 @@
 
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { Button } from "@/components/button";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    mobileInsetSheetClassName,
 } from "@/components/modal";
-import { Button } from "@/components/button";
+import { cn } from "@/lib/utils";
 import type { AddressBookEntry } from "../types";
 
 interface RemoveRecipientDialogProps {
-    entry: AddressBookEntry | null;
-    count?: number;
+    entries: AddressBookEntry[];
     onConfirm: () => Promise<void>;
     onClose: () => void;
 }
 
 export function RemoveRecipientDialog({
-    entry,
-    count,
+    entries,
     onConfirm,
     onClose,
 }: RemoveRecipientDialogProps) {
@@ -30,49 +30,54 @@ export function RemoveRecipientDialog({
     const tCommon = useTranslations("common");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const isBulk = typeof count === "number" && entry === null && count > 0;
-    const isOpen = isBulk ? count > 0 : entry !== null;
-
-    async function handleConfirm() {
+    const handleConfirm = async () => {
         setIsSubmitting(true);
         try {
             await onConfirm();
         } finally {
             setIsSubmitting(false);
         }
-    }
+    };
+
+    const names = entries
+        .map((entry) => entry.name.trim())
+        .filter(Boolean)
+        .join(", ");
 
     return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-md gap-4">
-                <DialogHeader>
-                    <DialogTitle>{t("title")}</DialogTitle>
-                </DialogHeader>
-                <DialogDescription>
-                    {isBulk
-                        ? t.rich("bulk", {
-                              count: count ?? 0,
-                              bold: (chunks) => (
-                                  <span className="font-semibold">
-                                      {chunks}
-                                  </span>
-                              ),
-                          })
-                        : t.rich("single", {
-                              name: entry?.name ?? "",
-                              bold: (chunks) => (
-                                  <span className="font-semibold">
-                                      {chunks}
-                                  </span>
-                              ),
-                          })}
-                </DialogDescription>
-                <DialogFooter>
+        <Dialog
+            open={entries.length > 0}
+            onOpenChange={(open) => !open && onClose()}
+        >
+            <DialogContent
+                className={cn(
+                    mobileInsetSheetClassName,
+                    "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                )}
+            >
+                <DialogHeader className="mx-0 border-0 px-0 pb-0" />
+                <div className="flex flex-col items-center gap-2 text-center">
+                    <DialogTitle className="text-xl font-bold leading-[1.2] tracking-[-0.4px]">
+                        {t("title", { count: entries.length })}
+                    </DialogTitle>
+                    <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
+                        {t.rich("body", {
+                            names,
+                            bold: (chunks) => (
+                                <span className="font-semibold text-foreground break-all overflow-wrap-anywhere text-wrap">
+                                    {chunks}
+                                </span>
+                            ),
+                        })}
+                    </DialogDescription>
+                </div>
+                <DialogFooter className="mx-0 px-0 pt-0">
                     <Button
+                        type="button"
                         variant="destructive"
-                        className="flex-1"
+                        className="h-10 w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
+                        loading={isSubmitting}
                         onClick={handleConfirm}
-                        disabled={isSubmitting}
                     >
                         {isSubmitting ? tCommon("removing") : tCommon("remove")}
                     </Button>

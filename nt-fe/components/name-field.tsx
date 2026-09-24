@@ -2,7 +2,15 @@
 
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import type { IconSvgElement } from "@hugeicons/react";
-import { type ComponentProps, type ReactNode, forwardRef } from "react";
+import {
+    type ComponentProps,
+    type ReactNode,
+    forwardRef,
+    useCallback,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from "react";
 import { Icon } from "@/components/icon";
 import { cn } from "@/lib/utils";
 
@@ -116,11 +124,111 @@ export const NameField = forwardRef<HTMLInputElement, NameFieldProps>(
     },
 );
 
+const noteValueClassName =
+    "min-w-0 flex-1 resize-none overflow-hidden wrap-break-word bg-transparent text-left font-sans text-base font-semibold leading-[1.2] text-general-foreground outline-none placeholder:text-general-muted-foreground";
+
+interface NoteFieldProps
+    extends Omit<ComponentProps<"textarea">, "className" | "rows"> {
+    icon: IconSvgElement;
+    invalid?: boolean;
+    clearLabel: string;
+    onClear: () => void;
+}
+
+/**
+ * Same pill as `NameField`, but the text wraps. One line stays the field
+ * height; each extra line grows the field so the next line stays visible.
+ */
+export const NoteField = forwardRef<HTMLTextAreaElement, NoteFieldProps>(
+    function NoteField(
+        {
+            icon,
+            invalid,
+            clearLabel,
+            onClear,
+            value,
+            onChange,
+            "aria-label": ariaLabel,
+            placeholder,
+            ...props
+        },
+        ref,
+    ) {
+        const localRef = useRef<HTMLTextAreaElement>(null);
+        const hasValue = String(value ?? "").length > 0;
+        const [multiline, setMultiline] = useState(false);
+
+        const fit = useCallback(() => {
+            const element = localRef.current;
+            if (!element) return;
+            element.style.height = "auto";
+            const lineHeight = Number.parseFloat(
+                getComputedStyle(element).lineHeight,
+            );
+            const singleLine = Number.isFinite(lineHeight) ? lineHeight : 20;
+            const nextMultiline = element.scrollHeight > singleLine + 2;
+            setMultiline((current) =>
+                current === nextMultiline ? current : nextMultiline,
+            );
+            element.style.height = `${element.scrollHeight}px`;
+        }, []);
+
+        useLayoutEffect(() => {
+            fit();
+        }, [fit, value]);
+
+        return (
+            <label
+                className={cn(
+                    nameFieldShellClassName,
+                    "transition-colors",
+                    multiline && "h-auto min-h-16 py-3",
+                    invalid
+                        ? "border-destructive"
+                        : "border-general-border focus-within:border-general-unofficial-border-4",
+                )}
+            >
+                <FieldIcon icon={icon} variant="default" />
+                <textarea
+                    ref={(node) => {
+                        localRef.current = node;
+                        if (typeof ref === "function") ref(node);
+                        else if (ref) ref.current = node;
+                    }}
+                    rows={1}
+                    value={value}
+                    onChange={(event) => {
+                        onChange?.(event);
+                        fit();
+                    }}
+                    aria-label={ariaLabel ?? placeholder}
+                    placeholder={placeholder}
+                    className={noteValueClassName}
+                    {...props}
+                />
+                {hasValue ? (
+                    <button
+                        type="button"
+                        aria-label={clearLabel}
+                        className="hidden size-5 shrink-0 items-center justify-center text-general-muted-foreground group-focus-within:flex"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={onClear}
+                    >
+                        <Icon icon={Cancel01Icon} className="size-5" />
+                    </button>
+                ) : null}
+            </label>
+        );
+    },
+);
+
 interface NameFieldButtonProps extends ComponentProps<"button"> {
     icon?: IconSvgElement;
     leading?: ReactNode;
     invalid?: boolean;
     empty?: boolean;
+    /** Let the label wrap onto extra lines instead of widening the field. */
+    wrap?: boolean;
 }
 
 export function NameFieldButton({
@@ -128,6 +236,7 @@ export function NameFieldButton({
     leading,
     invalid,
     empty,
+    wrap = false,
     className,
     children,
     ...props
@@ -138,6 +247,7 @@ export function NameFieldButton({
             className={cn(
                 nameFieldShellClassName,
                 "transition-colors",
+                wrap && "h-auto min-h-16 min-w-0",
                 invalid
                     ? "border-destructive"
                     : "border-general-border hover:border-general-unofficial-border-4 focus-visible:border-general-unofficial-border-4",
@@ -150,6 +260,8 @@ export function NameFieldButton({
             <span
                 className={cn(
                     nameFieldValueClassName,
+                    wrap &&
+                        "overflow-visible whitespace-normal wrap-break-word",
                     empty && "text-general-muted-foreground",
                 )}
             >

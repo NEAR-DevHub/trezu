@@ -191,8 +191,7 @@
             "title": "Paramètres"
         },
         "addressBook": {
-            "title": "Carnet d'adresses",
-            "description": "Gérez vos destinataires enregistrés"
+            "title": "Carnet d'adresses"
         },
         "payments": {
             "title": "Paiements",
@@ -1114,6 +1113,7 @@
         "recipientsSelected": "{count, plural, =0 {aucun destinataire} one {# destinataire} other {# destinataires}} sélectionné{count, plural, =0 {} one {} other {s}}",
         "sectionHeading": "Destinataires",
         "privacyNote": "Les adresses enregistrées sont privées et visibles uniquement par votre équipe.",
+        "contactsCount": "{count, plural, one {# contact} other {# contacts}}",
         "searchPlaceholder": "Rechercher un destinataire par nom",
         "searchPlaceholderShort": "Rechercher",
         "review": {
@@ -1125,6 +1125,7 @@
             "allDuplicates": "Tous les destinataires importés existent déjà dans votre carnet d'adresses. Revenez en arrière pour télécharger une autre liste ou supprimez les doublons de cette vérification.",
             "someDuplicates": "{duplicates} destinataires en double sur {total} destinataires au total. Continuez pour importer uniquement les nouveaux destinataires.",
             "duplicated": "Dupliqué",
+            "contactNumber": "Contact {number}",
             "notePlaceholder": "Ajoutez une note pour aider à identifier ce destinataire (par ex. paiement de prestataire, distribution de vesting).",
             "skipDuplicates": "Ignorer les doublons et n'importer que les nouveaux.",
             "allDuplicatesTooltip": "Tous les destinataires importés sont déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à importer.",
@@ -1135,6 +1136,7 @@
         },
         "removeDialog": {
             "title": "Supprimer le destinataire",
+            "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "Cela supprimera <bold>{count, plural, one {# destinataire} other {# destinataires}}</bold> de votre carnet d'adresses. Vous pourrez les ajouter à nouveau à tout moment.",
             "single": "Cela supprimera <bold>{name}</bold> de votre carnet d'adresses. Vous pourrez ajouter ce destinataire à nouveau à tout moment."
         },
@@ -1155,6 +1157,13 @@
             "recipientAddress": "Adresse du destinataire",
             "network": "Réseau",
             "networkInfo": "Réseaux compatibles avec cette adresse",
+            "enterName": "Enter name",
+            "enterAddress": "Enter address",
+            "note": "Note",
+            "clearName": "Clear name",
+            "clearAddress": "Clear address",
+            "clearNote": "Clear note",
+            "saveContact": "Save contact",
             "enterAddressFirst": "Saisissez d'abord l'adresse du destinataire",
             "selectNetwork": "Sélectionner un réseau",
             "selectNetworksTitle": "Sélectionner les réseaux",
@@ -1746,7 +1755,10 @@
         "orDragDrop": "ou glissez-déposez",
         "maxFileSize": "max 1 fichier jusqu'à {maxSize} Mo, fichier CSV uniquement",
         "noFilePrompt": "Vous n'avez pas de fichier à télécharger ?",
-        "downloadTemplate": "Télécharger un modèle"
+        "downloadTemplate": "Télécharger un modèle",
+        "pleaseUploadCsv": "Please upload a CSV file",
+        "fileSizeLimit": "File size must be less than 1.5 MB",
+        "removeFile": "Remove file"
     },
     "tokenSelect": {
         "selectToken": "Sélectionner un token",
@@ -1896,10 +1908,12 @@
         "selectEntry": "Sélectionner {name}",
         "recipient": "Destinataire",
         "network": "Réseau",
+        "networks": "Networks",
         "addedBy": "Ajouté par",
         "note": "Note",
         "added": "Ajouté",
         "remove": "Supprimer",
+        "noResults": "No contacts match your search.",
         "send": "Envoyer"
     },
     "publicDashboard": {
