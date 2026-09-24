@@ -23,6 +23,7 @@ import {
     TableRow,
 } from "@/components/table";
 import { TableSheet } from "@/components/table-sheet";
+import { Tooltip } from "@/components/tooltip";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { User } from "@/components/user";
@@ -95,14 +96,20 @@ function ContactCell({
 }
 
 function NoteCell({ note }: { note?: string }) {
-    if (!note?.trim()) {
-        return null;
-    }
+    const trimmed = note?.trim();
+    if (!trimmed) return null;
 
     return (
-        <p className="whitespace-pre-wrap wrap-break-word text-sm font-normal leading-[1.4] text-foreground">
-            {note}
-        </p>
+        <Tooltip
+            content={trimmed}
+            contentProps={{ className: "max-w-72 whitespace-pre-wrap" }}
+        >
+            <span className="inline-block w-full max-w-full">
+                <span className="line-clamp-2 text-sm font-medium text-general-foreground">
+                    {trimmed}
+                </span>
+            </span>
+        </Tooltip>
     );
 }
 

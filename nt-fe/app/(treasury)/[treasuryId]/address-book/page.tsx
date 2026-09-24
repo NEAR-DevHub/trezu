@@ -287,9 +287,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
     const [entriesToDelete, setEntriesToDelete] = useState<AddressBookEntry[]>(
         [],
     );
-    const [sheetEntry, setSheetEntry] = useState<AddressBookEntry | null>(
-        null,
-    );
+    const [sheetEntry, setSheetEntry] = useState<AddressBookEntry | null>(null);
     const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const page = Math.max(
         0,

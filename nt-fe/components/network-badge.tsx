@@ -16,8 +16,7 @@ const networkBadgeVariants = cva(
             variant: {
                 default: "bg-card text-foreground px-2 py-0.5",
                 ghost: "text-secondary-foreground px-2 py-0.5",
-                secondary:
-                    "rounded-sm bg-general-bg-secondary p-1.5!",
+                secondary: "rounded-sm bg-general-bg-secondary p-1.5!",
                 outline:
                     "rounded-sm border border-general-border bg-general-bg-secondary p-1.5!",
             },

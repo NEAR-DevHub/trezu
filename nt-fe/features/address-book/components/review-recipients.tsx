@@ -142,47 +142,51 @@ export function ReviewRecipients({
                 </div>
 
                 <div className="flex flex-col divide-y divide-general-border">
-                {fields.map((field, i) => (
-                    <div key={field.id} className="py-4 first:pt-0 last:pb-0">
-                        <RecipientRow
-                            control={control}
-                            index={i}
-                            note={notes[i]}
-                            label={t("contactNumber", { number: i + 1 })}
-                            nameBadge={
-                                duplicateIndexSet.has(i) ? (
-                                    <span className="flex min-h-6 items-center justify-center gap-1.5 rounded-sm border border-general-warning-border bg-general-warning-background-faded px-2 py-0.75 text-xs font-medium text-general-warning-foreground">
-                                        {t("duplicated")}
-                                    </span>
-                                ) : undefined
-                            }
-                            onEdit={() => setEditingIndex(i)}
-                            onRemove={
-                                count > 1
-                                    ? () => {
-                                          remove(i);
-                                          setNotes((prev) => {
-                                              const next: Record<
-                                                  number,
-                                                  string
-                                              > = {};
-                                              for (const [
-                                                  k,
-                                                  v,
-                                              ] of Object.entries(prev)) {
-                                                  const idx = Number(k);
-                                                  if (idx < i) next[idx] = v;
-                                                  else if (idx > i)
-                                                      next[idx - 1] = v;
-                                              }
-                                              return next;
-                                          });
-                                      }
-                                    : undefined
-                            }
-                        />
-                    </div>
-                ))}
+                    {fields.map((field, i) => (
+                        <div
+                            key={field.id}
+                            className="py-4 first:pt-0 last:pb-0"
+                        >
+                            <RecipientRow
+                                control={control}
+                                index={i}
+                                note={notes[i]}
+                                label={t("contactNumber", { number: i + 1 })}
+                                nameBadge={
+                                    duplicateIndexSet.has(i) ? (
+                                        <span className="flex min-h-6 items-center justify-center gap-1.5 rounded-sm border border-general-warning-border bg-general-warning-background-faded px-2 py-0.75 text-xs font-medium text-general-warning-foreground">
+                                            {t("duplicated")}
+                                        </span>
+                                    ) : undefined
+                                }
+                                onEdit={() => setEditingIndex(i)}
+                                onRemove={
+                                    count > 1
+                                        ? () => {
+                                              remove(i);
+                                              setNotes((prev) => {
+                                                  const next: Record<
+                                                      number,
+                                                      string
+                                                  > = {};
+                                                  for (const [
+                                                      k,
+                                                      v,
+                                                  ] of Object.entries(prev)) {
+                                                      const idx = Number(k);
+                                                      if (idx < i)
+                                                          next[idx] = v;
+                                                      else if (idx > i)
+                                                          next[idx - 1] = v;
+                                                  }
+                                                  return next;
+                                              });
+                                          }
+                                        : undefined
+                                }
+                            />
+                        </div>
+                    ))}
                 </div>
             </div>
 

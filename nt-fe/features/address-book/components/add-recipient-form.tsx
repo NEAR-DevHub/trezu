@@ -294,7 +294,6 @@ export function RecipientRow({
     );
 }
 
-
 // ─── AddRecipientInput ─────────────────────────────────────────────────────────
 
 const EMPTY_RECIPIENT = { name: "", networks: [] as string[], address: "" };

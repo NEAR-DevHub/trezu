@@ -1,6 +1,10 @@
 "use client";
 
-import { Delete01Icon, SentIcon, Wallet03Icon } from "@hugeicons/core-free-icons";
+import {
+    Delete01Icon,
+    SentIcon,
+    Wallet03Icon,
+} from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { Button } from "@/components/button";

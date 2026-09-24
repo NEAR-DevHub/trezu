@@ -123,7 +123,8 @@ export function CsvUploadPanel({
         onErrorsClear();
     };
 
-    const hasErrors = Boolean(errors && errors.length > 0) || Boolean(fileError);
+    const hasErrors =
+        Boolean(errors && errors.length > 0) || Boolean(fileError);
     const errorList = fileError ? (
         <p className="wrap-anywhere text-sm text-destructive">{fileError}</p>
     ) : errors && errors.length > 0 ? (
@@ -219,7 +220,8 @@ export function CsvUploadPanel({
                                         className="hidden"
                                         disabled={disabled}
                                         onChange={(event) => {
-                                            const file = event.target.files?.[0];
+                                            const file =
+                                                event.target.files?.[0];
                                             if (file) handleFileUpload(file);
                                             event.target.value = "";
                                         }}

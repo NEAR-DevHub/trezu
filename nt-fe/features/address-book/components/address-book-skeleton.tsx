@@ -125,7 +125,10 @@ export function ContactsTableSkeleton({
                             "rounded-3xl border border-general-border bg-card p-4",
                             fadeRows &&
                                 EMPTY_ROW_FADE[
-                                    Math.min(rowIndex, EMPTY_ROW_FADE.length - 1)
+                                    Math.min(
+                                        rowIndex,
+                                        EMPTY_ROW_FADE.length - 1,
+                                    )
                                 ],
                         )}
                     >
@@ -140,66 +143,71 @@ export function ContactsTableSkeleton({
                 ))}
             </div>
             <TableSheet className={cn("hidden md:block", className)}>
-            <Table className="border-separate border-spacing-0 md:table-fixed">
-                <TableHeader className="border-0 bg-transparent">
-                    <TableRow className="border-0 hover:bg-transparent">
-                        {CONTACT_COLUMN_IDS.map((columnId) => (
-                            <TableHead
-                                key={columnId}
-                                className={cn(
-                                    HEAD_CLASS,
-                                    CONTACT_COLUMN_CLASS[columnId],
-                                )}
-                            >
-                                {columnId === "select" ? (
-                                    <Placeholder className="size-4 rounded-sm" />
-                                ) : (
-                                    headers[columnId]
-                                )}
-                            </TableHead>
-                        ))}
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {Array.from({ length: rows }).map((_, rowIndex) => (
-                        <TableRow
-                            // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list
-                            key={rowIndex}
-                            className={cn(
-                                "border-0 hover:bg-transparent",
-                                fadeRows &&
-                                    EMPTY_ROW_FADE[
-                                        Math.min(
-                                            rowIndex,
-                                            EMPTY_ROW_FADE.length - 1,
-                                        )
-                                    ],
-                            )}
-                        >
-                            {CONTACT_COLUMN_IDS.map((columnId, columnIndex) => (
-                                <TableCell
+                <Table className="border-separate border-spacing-0 md:table-fixed">
+                    <TableHeader className="border-0 bg-transparent">
+                        <TableRow className="border-0 hover:bg-transparent">
+                            {CONTACT_COLUMN_IDS.map((columnId) => (
+                                <TableHead
                                     key={columnId}
                                     className={cn(
-                                        "h-[66px]",
-                                        sheetCellClassName({
-                                            isFirstRow: rowIndex === 0,
-                                            isLastRow: rowIndex === rows - 1,
-                                            isFirstColumn: columnIndex === 0,
-                                            isLastColumn:
-                                                columnIndex ===
-                                                CONTACT_COLUMN_IDS.length - 1,
-                                        }),
+                                        HEAD_CLASS,
                                         CONTACT_COLUMN_CLASS[columnId],
                                     )}
                                 >
-                                    <TableCellSkeleton columnId={columnId} />
-                                </TableCell>
+                                    {columnId === "select"
+                                        ? null
+                                        : headers[columnId]}
+                                </TableHead>
                             ))}
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </TableSheet>
+                    </TableHeader>
+                    <TableBody>
+                        {Array.from({ length: rows }).map((_, rowIndex) => (
+                            <TableRow
+                                // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list
+                                key={rowIndex}
+                                className={cn(
+                                    "border-0 hover:bg-transparent",
+                                    fadeRows &&
+                                        EMPTY_ROW_FADE[
+                                            Math.min(
+                                                rowIndex,
+                                                EMPTY_ROW_FADE.length - 1,
+                                            )
+                                        ],
+                                )}
+                            >
+                                {CONTACT_COLUMN_IDS.map(
+                                    (columnId, columnIndex) => (
+                                        <TableCell
+                                            key={columnId}
+                                            className={cn(
+                                                "h-[66px]",
+                                                sheetCellClassName({
+                                                    isFirstRow: rowIndex === 0,
+                                                    isLastRow:
+                                                        rowIndex === rows - 1,
+                                                    isFirstColumn:
+                                                        columnIndex === 0,
+                                                    isLastColumn:
+                                                        columnIndex ===
+                                                        CONTACT_COLUMN_IDS.length -
+                                                            1,
+                                                }),
+                                                CONTACT_COLUMN_CLASS[columnId],
+                                            )}
+                                        >
+                                            <TableCellSkeleton
+                                                columnId={columnId}
+                                            />
+                                        </TableCell>
+                                    ),
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </TableSheet>
         </>
     );
 }
