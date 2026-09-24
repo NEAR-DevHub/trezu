@@ -22,7 +22,7 @@ static LAST_ALERT_SENT_AT: LazyLock<RwLock<HashMap<String, Instant>>> =
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(crate) struct WatchedAccount {
     pub label: &'static str,
-    pub account_id: String,
+    pub account_id: AccountId,
 }
 
 /// Returns true when liquid balance is below the low-balance threshold.
@@ -44,8 +44,8 @@ pub(crate) fn cooldown_allows_alert(last_sent: Option<Instant>, now: Instant) ->
 /// spenders. Passkey accounts are shared mainnet relayers (the executor is
 /// mainnet-only), so sandbox and testnet deployments skip them.
 pub(crate) fn accounts_to_watch(
-    signer_id: &str,
-    bulk_payment_contract_id: &str,
+    signer_id: &AccountId,
+    bulk_payment_contract_id: &AccountId,
     include_passkeys: bool,
 ) -> Vec<WatchedAccount> {
     let mut accounts = Vec::new();
@@ -53,14 +53,14 @@ pub(crate) fn accounts_to_watch(
         &mut accounts,
         WatchedAccount {
             label: "Sponsor",
-            account_id: signer_id.to_string(),
+            account_id: signer_id.clone(),
         },
     );
     push_unique(
         &mut accounts,
         WatchedAccount {
             label: "Bulk payment",
-            account_id: bulk_payment_contract_id.to_string(),
+            account_id: bulk_payment_contract_id.clone(),
         },
     );
     if include_passkeys {
@@ -68,14 +68,18 @@ pub(crate) fn accounts_to_watch(
             &mut accounts,
             WatchedAccount {
                 label: "Passkey sponsor",
-                account_id: PASSKEY_SPONSOR_ACCOUNT_ID.to_string(),
+                account_id: PASSKEY_SPONSOR_ACCOUNT_ID
+                    .parse()
+                    .expect("passkey sponsor account id"),
             },
         );
         push_unique(
             &mut accounts,
             WatchedAccount {
                 label: "Passkey registry",
-                account_id: PASSKEY_REGISTRY_ACCOUNT_ID.to_string(),
+                account_id: PASSKEY_REGISTRY_ACCOUNT_ID
+                    .parse()
+                    .expect("passkey registry account id"),
             },
         );
     }
@@ -103,15 +107,6 @@ pub(crate) fn format_low_balance_message(
     )
 }
 
-/// Missing accounts are skipped: sandbox may not have every mainnet contract.
-pub(crate) fn is_missing_account(err: &str) -> bool {
-    let err = err.to_ascii_lowercase();
-    err.contains("does not exist")
-        || err.contains("doesn't exist")
-        || err.contains("unknown_account")
-        || err.contains("account not found")
-}
-
 pub async fn fetch_liquid_balance(
     state: &AppState,
     account_id: &AccountId,
@@ -136,8 +131,8 @@ pub async fn run_sponsor_monitor_cycle(
     let now = Instant::now();
     let include_passkeys = state.network.network_name == "mainnet";
     let accounts = accounts_to_watch(
-        state.signer_id.as_str(),
-        state.bulk_payment_contract_id.as_str(),
+        &state.signer_id,
+        &state.bulk_payment_contract_id,
         include_passkeys,
     );
 
@@ -146,35 +141,15 @@ pub async fn run_sponsor_monitor_cycle(
         let last_sent = LAST_ALERT_SENT_AT
             .read()
             .await
-            .get(&account.account_id)
+            .get(account.account_id.as_str())
             .copied();
         if !cooldown_allows_alert(last_sent, now) {
             continue;
         }
 
-        let account_id: AccountId = match account.account_id.parse() {
-            Ok(id) => id,
-            Err(e) => {
-                tracing::error!("Invalid watched account {}: {}", account.account_id, e);
-                if first_error.is_none() {
-                    first_error =
-                        Some(format!("invalid account {}: {}", account.account_id, e).into());
-                }
-                continue;
-            }
-        };
-
-        let liquid = match fetch_liquid_balance(state, &account_id).await {
+        let liquid = match fetch_liquid_balance(state, &account.account_id).await {
             Ok(liquid) => liquid,
             Err(e) => {
-                if is_missing_account(&e.to_string()) {
-                    tracing::warn!(
-                        "Skipping low-balance check for {} ({}): account does not exist",
-                        account.label,
-                        account.account_id,
-                    );
-                    continue;
-                }
                 tracing::error!(
                     "Failed to fetch liquid balance for {} ({}): {}",
                     account.label,
@@ -192,7 +167,8 @@ pub async fn run_sponsor_monitor_cycle(
             continue;
         }
 
-        let message = format_low_balance_message(&account.label, &account.account_id, liquid);
+        let message =
+            format_low_balance_message(account.label, account.account_id.as_str(), liquid);
         if let Err(e) = telegram_client.send_message(&message).await {
             tracing::error!(
                 "Failed to send low-balance alert for {} ({}): {}",
@@ -209,7 +185,7 @@ pub async fn run_sponsor_monitor_cycle(
         LAST_ALERT_SENT_AT
             .write()
             .await
-            .insert(account.account_id.clone(), now);
+            .insert(account.account_id.to_string(), now);
         tracing::warn!(
             "Sent low-balance alert for {} ({}) (liquid: {})",
             account.label,
@@ -264,19 +240,27 @@ mod tests {
         assert!(msg.contains(&ALERT_LOW_BALANCE_THRESHOLD.to_string()));
     }
 
+    fn account(id: &str) -> AccountId {
+        id.parse().expect("account id")
+    }
+
     #[test]
     fn accounts_to_watch_includes_signer_and_bulk_payment() {
-        let accounts = accounts_to_watch("sponsor.trezu.near", "bulkpayment.near", false);
+        let accounts = accounts_to_watch(
+            &account("sponsor.trezu.near"),
+            &account("bulkpayment.near"),
+            false,
+        );
         assert_eq!(
             accounts,
             vec![
                 WatchedAccount {
                     label: "Sponsor",
-                    account_id: "sponsor.trezu.near".to_string(),
+                    account_id: account("sponsor.trezu.near"),
                 },
                 WatchedAccount {
                     label: "Bulk payment",
-                    account_id: "bulkpayment.near".to_string(),
+                    account_id: account("bulkpayment.near"),
                 },
             ]
         );
@@ -284,25 +268,21 @@ mod tests {
 
     #[test]
     fn accounts_to_watch_dedupes_shared_account() {
-        let accounts = accounts_to_watch("sandbox", "sandbox", false);
+        let sandbox = account("sandbox");
+        let accounts = accounts_to_watch(&sandbox, &sandbox, false);
         assert_eq!(accounts.len(), 1);
         assert_eq!(accounts[0].label, "Sponsor");
     }
 
     #[test]
     fn accounts_to_watch_adds_passkey_accounts_on_mainnet() {
-        let accounts = accounts_to_watch("sponsor.trezu.near", "bulkpayment.near", true);
+        let accounts = accounts_to_watch(
+            &account("sponsor.trezu.near"),
+            &account("bulkpayment.near"),
+            true,
+        );
         let ids: Vec<&str> = accounts.iter().map(|a| a.account_id.as_str()).collect();
         assert!(ids.contains(&"helper.trezu.near"));
         assert!(ids.contains(&"passkeys-registry.near"));
-    }
-
-    #[test]
-    fn missing_account_errors_are_skipped() {
-        assert!(is_missing_account(
-            "Server error: Account bulkpayment.near does not exist"
-        ));
-        assert!(is_missing_account("UNKNOWN_ACCOUNT"));
-        assert!(!is_missing_account("timeout talking to rpc"));
     }
 }
