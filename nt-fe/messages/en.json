@@ -720,7 +720,9 @@
             "insufficientBalance": "Requests <highlight>{ids}</highlight> cannot be approved due to insufficient balance. Your approval will only apply to the remaining requests.",
             "approveBlockedBulk": "{count, plural, one {# selected request can't be approved right now — unselect it to continue.} other {# selected requests can't be approved right now — unselect them to continue.}}",
             "remove": "Remove",
-            "confirm": "Confirm"
+            "preparingRemove": "Preparing removal",
+            "confirm": "Confirm",
+            "preparingVote": "Preparing your vote"
         },
         "expanded": {
             "recipient": "Recipient",
