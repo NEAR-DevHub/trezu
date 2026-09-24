@@ -16,7 +16,7 @@ export type { ParsedRecipient };
 
 const TEMPLATE_CSV = `Recipient Name,Recipient Address,Network,Note (optional)
 alice,alice.near,Near,Payroll
-bob,0x82bAFB7aC512C62160C218bf184A3823AF60e9aD,Ethereum;BNB,Payroll
+bob,0x82bAFB7aC512C62160C218bf184A3823AF60e9aD,Ethereum,Payroll
 charlie,F4k6615fhQZerPEGyhhfyfkZR7p8Fd1RK2jdegRcg2Qo,Solana,`;
 const PLACEHOLDER_CSV = TEMPLATE_CSV.split("\n").slice(1).join("\n");
 

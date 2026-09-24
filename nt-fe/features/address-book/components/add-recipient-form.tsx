@@ -89,18 +89,12 @@ function NetworkSelect({
         icon: c.icon,
     }));
 
-    const selectedChains = chains.filter((c) => selected.includes(c.key));
-    const networkLabel =
-        selectedChains.length === 0
-            ? tForm("selectNetwork")
-            : selectedChains.map((chain) => chain.name).join(", ");
+    const selectedChain =
+        chains.find((chain) => chain.key === selected[0]) ?? null;
+    const networkLabel = selectedChain?.name ?? tForm("selectNetwork");
 
     const handleSelect = (option: SelectOption) => {
-        if (selected.includes(option.id)) {
-            onChange(selected.filter((k) => k !== option.id));
-        } else {
-            onChange([...selected, option.id]);
-        }
+        onChange([option.id]);
     };
 
     useEffect(() => {
@@ -120,18 +114,17 @@ function NetworkSelect({
     return (
         <>
             <NameFieldButton
-                wrap
                 leading={
-                    selectedChains[0]?.icon ? (
+                    selectedChain?.icon ? (
                         <SelectListIcon
-                            icon={selectedChains[0].icon}
-                            alt={selectedChains[0].name}
+                            icon={selectedChain.icon}
+                            alt={selectedChain.name}
                         />
                     ) : (
                         <EmptySelectorIcon />
                     )
                 }
-                empty={selectedChains.length === 0}
+                empty={!selectedChain}
                 invalid={invalid}
                 aria-disabled={disabled}
                 onClick={() => {
@@ -141,15 +134,14 @@ function NetworkSelect({
                 {networkLabel}
             </NameFieldButton>
             <SelectModal
-                multiSelect
                 isOpen={open}
                 onClose={() => setOpen(false)}
                 onSelect={handleSelect}
-                title={tForm("selectNetworksTitle")}
+                title={tForm("selectNetwork")}
                 options={options}
                 searchPlaceholder={tForm("searchNetworksPlaceholder")}
                 isLoading={isLoading}
-                selectedIds={selected}
+                selectedId={selectedChain?.key}
             />
         </>
     );
@@ -402,9 +394,9 @@ export function AddRecipientInput({
                 const currentNetworks = getValues(
                     `recipients.${activeIndex}.networks`,
                 );
-                const stillValid = currentNetworks.filter((n) =>
-                    compatibleKeys.includes(n),
-                );
+                const stillValid = currentNetworks
+                    .filter((n) => compatibleKeys.includes(n))
+                    .slice(0, 1);
                 if (stillValid.length !== currentNetworks.length) {
                     setValue(`recipients.${activeIndex}.networks`, stillValid);
                 }
