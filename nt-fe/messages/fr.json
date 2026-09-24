@@ -722,7 +722,9 @@
             "insufficientBalance": "Les demandes <highlight>{ids}</highlight> ne peuvent pas être approuvées en raison d'un solde insuffisant. Votre approbation s'appliquera uniquement aux demandes restantes.",
             "approveBlockedBulk": "{count, plural, one {# demande sélectionnée ne peut pas être approuvée pour le moment — désélectionnez-la pour continuer.} other {# demandes sélectionnées ne peuvent pas être approuvées pour le moment — désélectionnez-les pour continuer.}}",
             "remove": "Supprimer",
-            "confirm": "Confirmer"
+            "preparingRemove": "Préparation de la suppression",
+            "confirm": "Confirmer",
+            "preparingVote": "Préparation de votre vote"
         },
         "expanded": {
             "recipient": "Destinataire",

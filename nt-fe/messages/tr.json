@@ -722,7 +722,9 @@
             "insufficientBalance": "<highlight>{ids}</highlight> talepleri yetersiz bakiye nedeniyle onaylanamaz. Onayınız yalnızca kalan taleplere uygulanacak.",
             "approveBlockedBulk": "{count, plural, one {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimini kaldırın.} other {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimlerini kaldırın.}}",
             "remove": "Kaldır",
-            "confirm": "Onayla"
+            "preparingRemove": "Kaldırma hazırlanıyor",
+            "confirm": "Onayla",
+            "preparingVote": "Oyunuz hazırlanıyor"
         },
         "expanded": {
             "recipient": "Alıcı",

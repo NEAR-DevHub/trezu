@@ -722,7 +722,9 @@
             "insufficientBalance": "Permintaan <highlight>{ids}</highlight> tidak dapat disetujui karena saldo tidak mencukupi. Persetujuan Anda hanya akan berlaku untuk permintaan yang tersisa.",
             "approveBlockedBulk": "{count, plural, one {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.} other {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.}}",
             "remove": "Hapus",
-            "confirm": "Konfirmasi"
+            "preparingRemove": "Menyiapkan penghapusan",
+            "confirm": "Konfirmasi",
+            "preparingVote": "Menyiapkan suara Anda"
         },
         "expanded": {
             "recipient": "Penerima",

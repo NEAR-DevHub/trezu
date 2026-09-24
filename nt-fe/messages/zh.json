@@ -722,7 +722,9 @@
             "insufficientBalance": "由于余额不足,请求 <highlight>{ids}</highlight> 无法被批准。您的批准将仅适用于其余请求。",
             "approveBlockedBulk": "{count, plural, other {所选 # 个请求目前无法批准 — 请取消选择以继续。}}",
             "remove": "移除",
-            "confirm": "确认"
+            "preparingRemove": "正在准备删除",
+            "confirm": "确认",
+            "preparingVote": "正在准备您的投票"
         },
         "expanded": {
             "recipient": "收款人",

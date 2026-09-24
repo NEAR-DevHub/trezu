@@ -722,7 +722,9 @@
             "insufficientBalance": "לא ניתן לאשר את הבקשות <highlight>{ids}</highlight> עקב יתרה לא מספקת. האישור שלך יחול רק על הבקשות הנותרות.",
             "approveBlockedBulk": "{count, plural, one {לא ניתן לאשר את הבקשה הנבחרת כעת — בטל את הבחירה כדי להמשיך.} other {לא ניתן לאשר # מהבקשות הנבחרות כעת — בטל את הבחירה כדי להמשיך.}}",
             "remove": "הסרה",
-            "confirm": "אישור"
+            "preparingRemove": "מכינים את ההסרה",
+            "confirm": "אישור",
+            "preparingVote": "מכינים את ההצבעה שלך"
         },
         "expanded": {
             "recipient": "נמען",
