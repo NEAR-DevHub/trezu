@@ -23,8 +23,8 @@ interface TransactionHashCellProps {
  * Displays a clickable transaction hash link with copy functionality.
  * If no transaction hash is provided, attempts to resolve it from receipt ID.
  * Intents-routed rows (carrying a 1Click deposit address) link to the NEAR
- * Intents explorer; otherwise chainName (from token metadata) picks the
- * block explorer for the tx hash.
+ * Intents explorer; otherwise exchanges and hashes accompanied by NEAR receipts
+ * link to NEAR, and chainName selects the explorer for other transactions.
  */
 export function TransactionHashCell({
     transactionHashes,
@@ -60,7 +60,9 @@ export function TransactionHashCell({
         depositAddress,
         isConfidential,
         transactionHash,
-        chainName,
+        receiptIds,
+        chainName: transactionHashes?.length ? chainName : undefined,
+        isExchange,
     });
 
     return (
