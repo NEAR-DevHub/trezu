@@ -133,6 +133,7 @@ export function PendingRequestItem({
     onDeposit,
 }: PendingRequestItemProps) {
     const tActions = useTranslations("requests.actions");
+    const tExpanded = useTranslations("proposals.expanded");
     const noVoteMessage = useNoVoteMessage();
     const getProposalKindLabel = useProposalKindLabel();
     const type = getProposalUIKind(proposal);
@@ -258,7 +259,7 @@ export function PendingRequestItem({
                                             }}
                                         >
                                             <Icon icon={ArrowDown02Icon} />
-                                            {tActions("deposit")}
+                                            {tExpanded("receive")}
                                         </Button>
                                     </span>
                                 ) : (
