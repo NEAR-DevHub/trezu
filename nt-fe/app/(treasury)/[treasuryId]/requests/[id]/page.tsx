@@ -178,6 +178,7 @@ function RequestDetail({
                             size="icon"
                             className={HEADER_ICON_BUTTON_CLASS}
                             tooltipContent={tExpanded("deleteRequest")}
+                            aria-label={tExpanded("deleteRequest")}
                             onClick={() => onVote("Remove")}
                         >
                             <Icon icon={Delete01Icon} />
@@ -189,6 +190,7 @@ function RequestDetail({
                         className={HEADER_ICON_BUTTON_CLASS}
                         text={`${window.location.origin}/${treasuryId}/requests/${proposal.id}`}
                         tooltipContent={tExpanded("copyLink")}
+                        aria-label={tExpanded("copyLink")}
                     />
                 </>
             }

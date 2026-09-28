@@ -286,7 +286,13 @@ export function PageComponentLayout({
                                 {titleBlock}
                             </div>
                         </div>
-                        {stackedInnerHeader ? headerActions : null}
+                        {/* One flex item, so `justify-between` can't spread
+                            several actions across the row. */}
+                        {stackedInnerHeader && headerActions ? (
+                            <div className="flex shrink-0 items-center gap-2">
+                                {headerActions}
+                            </div>
+                        ) : null}
                     </div>
 
                     {stackedInnerHeader &&

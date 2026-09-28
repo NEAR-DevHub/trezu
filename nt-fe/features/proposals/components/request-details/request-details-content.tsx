@@ -438,7 +438,7 @@ export function useRequestActions({
                     }
                 >
                     <Icon icon={ArrowDown02Icon} />
-                    {t("deposit")}
+                    {t("receive")}
                 </Button>
             ) : (
                 <AuthButtonWithProposal
