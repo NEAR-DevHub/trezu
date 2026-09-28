@@ -596,7 +596,7 @@ export function UploadDataStep({
 
                 <CreateRequestButton
                     type="button"
-                    className="h-11 w-full rounded-2xl"
+                    className="h-11 w-full"
                     disabled={
                         !selectedToken ||
                         (activeTab === "upload" && !csvData) ||

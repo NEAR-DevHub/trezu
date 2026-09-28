@@ -46,7 +46,7 @@ export function FundAccountEmpty({ onReceiveClick }: Props) {
             </div>
             <Button
                 id="dashboard-step1"
-                className="h-11 gap-2 rounded-2xl px-6"
+                className="h-11 gap-2 px-6"
                 onClick={() => {
                     trackEvent("nav_click", {
                         destination: "deposit",

@@ -248,7 +248,7 @@ export function VotingDurationImpactModal({
                     <Button
                         onClick={onConfirm}
                         size="xl"
-                        className="w-full rounded-xl max-sm:h-10 max-sm:rounded-lg max-sm:text-sm"
+                        className="w-full max-sm:h-10 max-sm:text-sm"
                     >
                         {t("yesContinue")}
                     </Button>

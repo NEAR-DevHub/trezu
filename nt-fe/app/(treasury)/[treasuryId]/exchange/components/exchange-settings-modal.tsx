@@ -264,7 +264,7 @@ export function ExchangeSettingsModal({
 
                         <Button
                             type="submit"
-                            className="mt-1 h-12 w-full rounded-2xl"
+                            className="mt-1 h-12 w-full"
                         >
                             {t("save")}
                         </Button>

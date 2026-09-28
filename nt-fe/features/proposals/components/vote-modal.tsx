@@ -180,7 +180,7 @@ export function VoteModal({
                     >
                         <span className="inline-block w-full">
                             <Button
-                                className="w-full rounded-2xl"
+                                className="w-full"
                                 size="xl"
                                 variant={
                                     vote === "Remove"

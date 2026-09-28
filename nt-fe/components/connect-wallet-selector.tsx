@@ -766,7 +766,7 @@ export function ConnectWalletSelector({
                             </div>
                             <Button
                                 type="button"
-                                className="h-13 w-full rounded-2xl text-base font-bold"
+                                className="h-13 w-full text-base font-bold"
                                 onClick={closeUnsupportedWalletModal}
                             >
                                 {t("walletSelector.selectOtherWallet")}

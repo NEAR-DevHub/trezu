@@ -33,7 +33,7 @@ export function NotMemberScreen() {
                 <Button
                     type="button"
                     onClick={handleBackToHome}
-                    className="mt-3 h-11 w-full max-w-sm rounded-2xl text-base font-bold"
+                    className="mt-3 h-11 w-full max-w-sm text-base font-bold"
                     data-testid="not-member-back-home"
                 >
                     {t("backToHome")}

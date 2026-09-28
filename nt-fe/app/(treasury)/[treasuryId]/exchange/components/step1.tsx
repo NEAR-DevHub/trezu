@@ -268,7 +268,7 @@ export function Step1({
 
             <CreateRequestButton
                 onClick={handleContinue}
-                className="w-full h-12 rounded-2xl"
+                className="w-full h-12"
                 permissions={[{ kind: "call", action: "AddProposal" }]}
                 disabled={
                     areSameTokens ||

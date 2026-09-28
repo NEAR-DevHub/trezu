@@ -865,7 +865,7 @@ export default function BalanceWithGraph({
                     }}
                     id="dashboard-step1"
                     size="xl"
-                    className="h-11 max-lg:rounded-2xl max-lg:px-3 max-lg:text-sm"
+                    className="h-11 max-lg:px-3 max-lg:text-sm"
                 >
                     <Icon icon={ArrowDown02Icon} /> {t("receive")}
                 </Button>
