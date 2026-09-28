@@ -483,7 +483,7 @@ export default function PaySharePage() {
                                     type="button"
                                     onClick={handlePayCta}
                                     disabled={!paymentPrefill}
-                                    className="h-11 w-full gap-2 rounded-2xl text-base font-bold leading-4 normal-case text-primary-foreground"
+                                    className="h-11 w-full gap-2 text-base font-bold leading-4 normal-case text-primary-foreground"
                                     data-testid={
                                         isConfidentialShare
                                             ? "deposit-pay-with-near-business"
@@ -505,7 +505,7 @@ export default function PaySharePage() {
                                     <Button
                                         type="button"
                                         onClick={handlePayWithNearcom}
-                                        className="h-11 w-full gap-2 rounded-2xl text-base font-bold leading-4 normal-case text-primary-foreground"
+                                        className="h-11 w-full gap-2 text-base font-bold leading-4 normal-case text-primary-foreground"
                                         data-testid="deposit-pay-with-nearcom"
                                     >
                                         <span className="size-5 shrink-0 overflow-hidden rounded-[5px]">

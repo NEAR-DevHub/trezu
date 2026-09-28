@@ -604,7 +604,7 @@ export function TreasuryOnboardingPage({
                     <Button
                         type="submit"
                         size="xl"
-                        className="w-full rounded-2xl disabled:bg-general-unofficial-border-3 disabled:text-general-muted-foreground disabled:opacity-100"
+                        className="w-full disabled:bg-general-unofficial-border-3 disabled:text-general-muted-foreground disabled:opacity-100"
                         disabled={isSubmitDisabled}
                     >
                         {(isAuthenticating || isCheckingHandle) && (
