@@ -30,6 +30,7 @@ use crate::{
         near_ft_whitelist::NEAR_FT_WHITELIST,
     },
     handlers::intents::confidential::balances::fetch_confidential_balances,
+    handlers::intents::confidential::gold::cursors::is_balance_check_failed,
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_metadata_enriched},
 };
 
@@ -416,6 +417,14 @@ async fn load_confidential_ledger_balances(
     use crate::handlers::public_history::silver::models::decimal_denominator;
 
     if source == BalanceReadSource::Live {
+        return Ok(None);
+    }
+    // A failed ledger-vs-1Click check means the heads are wrong until the
+    // projection reconciles; serve live rather than a balance we know is off.
+    if is_balance_check_failed(pool, account.as_str())
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
+    {
         return Ok(None);
     }
 

@@ -257,7 +257,12 @@ pub async fn load_confidential_chart_readiness(
                   AND gold_cursor.gold_dirty_since IS NOT NULL
             ) AS gold_dirty,
             TRUE AS verification_passed,
-            FALSE AS head_check_failed,
+            EXISTS (
+                SELECT 1
+                FROM gold_confidential_history_cursors gold_cursor
+                WHERE gold_cursor.account_id = $1
+                  AND gold_cursor.balance_check_failed_at IS NOT NULL
+            ) AS head_check_failed,
             TRUE AS staking_ready,
             TRUE AS lockup_ready,
             NULL::timestamptz AS staking_last_observed_at,
