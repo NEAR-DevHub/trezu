@@ -7,6 +7,7 @@ use axum_extra::extract::CookieJar;
 use near_account_id::AccountIdRef;
 use near_api::AccountId;
 use serde_json::Value;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 /// The name of the auth cookie
@@ -75,7 +76,7 @@ impl AuthUser {
     /// together. The prefix can be anything (`policy`, `call`, `*`, …). A wildcard action
     /// (`{kind}:*`) is handled separately by [`Self::permission_grants_action`].
     fn has_add_approve_reject_for_a_kind(permissions: &[Value]) -> bool {
-        let mut flags: std::collections::HashMap<&str, u8> = std::collections::HashMap::new();
+        let mut actions_by_kind: HashMap<&str, HashSet<&str>> = HashMap::new();
         for permission in permissions {
             let Some(permission) = permission.as_str() else {
                 continue;
@@ -83,15 +84,12 @@ impl AuthUser {
             let Some((kind, action)) = permission.split_once(':') else {
                 continue;
             };
-            let bit = match action {
-                "AddProposal" => 1,
-                "VoteApprove" => 2,
-                "VoteReject" => 4,
-                _ => continue,
-            };
-            let entry = flags.entry(kind).or_insert(0);
-            *entry |= bit;
-            if *entry == 7 {
+            if !matches!(action, "AddProposal" | "VoteApprove" | "VoteReject") {
+                continue;
+            }
+            let actions = actions_by_kind.entry(kind).or_default();
+            actions.insert(action);
+            if actions.len() == 3 {
                 return true;
             }
         }

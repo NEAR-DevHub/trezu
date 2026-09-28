@@ -285,25 +285,23 @@ function permissionGrantsAction(permission: string, action: string): boolean {
  * The prefix can be anything (`policy`, `call`, `*`, …). `{kind}:*` is handled by
  * `permissionGrantsAction`.
  */
+const KIND_ACTIONS = new Set(["AddProposal", "VoteApprove", "VoteReject"]);
+
 function hasAddApproveRejectForAKind(permissions: string[]): boolean {
-    const flags = new Map<string, number>();
+    const actionsByKind = new Map<string, Set<string>>();
     for (const permission of permissions) {
         const sep = permission.indexOf(":");
         if (sep <= 0) continue;
         const kind = permission.slice(0, sep);
         const action = permission.slice(sep + 1);
-        const bit =
-            action === "AddProposal"
-                ? 1
-                : action === "VoteApprove"
-                  ? 2
-                  : action === "VoteReject"
-                    ? 4
-                    : 0;
-        if (bit === 0) continue;
-        const next = (flags.get(kind) ?? 0) | bit;
-        if (next === 7) return true;
-        flags.set(kind, next);
+        if (!KIND_ACTIONS.has(action)) continue;
+        let actions = actionsByKind.get(kind);
+        if (!actions) {
+            actions = new Set();
+            actionsByKind.set(kind, actions);
+        }
+        actions.add(action);
+        if (actions.size === KIND_ACTIONS.size) return true;
     }
     return false;
 }
