@@ -114,6 +114,8 @@ const envelope = (status: number, error: Envelope): RelayBehaviour => ({
 });
 
 const REQUESTS_URL = `/${TREASURY_ID}/requests?tab=InProgress`;
+const EXPLORER_URL = `https://nearblocks.io/txns/${TX_HASH}`;
+const CONTACT_US_URL = "https://trezu.org/contact-us";
 
 const CASES: Case[] = [
     {
@@ -126,6 +128,7 @@ const CASES: Case[] = [
         expected: {
             title: codes.SPONSORSHIP_NOT_AVAILABLE.title,
             body: [codes.SPONSORSHIP_NOT_AVAILABLE.body],
+            action: { label: errors.contactUs, opens: CONTACT_US_URL },
         },
     },
     {
@@ -190,9 +193,27 @@ const CASES: Case[] = [
             expected: {
                 title: codes.TX_FAILED.title,
                 body: [reasons[reason]],
+                // Only a failure we can't explain sends the user to the explorer.
+                action:
+                    reason === "UNKNOWN"
+                        ? { label: errors.viewOnExplorer, opens: EXPLORER_URL }
+                        : undefined,
             },
         }),
     ),
+    {
+        name: "TX_FAILED · UNKNOWN without a tx hash has no explorer link",
+        relay: envelope(422, {
+            code: "TX_FAILED",
+            funds_state: "failed_onchain",
+            retryable: false,
+            details: { reason: "UNKNOWN" },
+        }),
+        expected: {
+            title: codes.TX_FAILED.title,
+            body: [reasons.UNKNOWN],
+        },
+    },
     {
         name: "TX_FAILED with a reason the client does not know falls back to UNKNOWN text",
         relay: envelope(422, {
@@ -204,6 +225,7 @@ const CASES: Case[] = [
         expected: {
             title: codes.TX_FAILED.title,
             body: [reasons.UNKNOWN],
+            action: { label: errors.viewOnExplorer, opens: EXPLORER_URL },
         },
     },
     {
@@ -448,6 +470,14 @@ test.describe("Error states — sponsored transaction failures", () => {
             }
             // The request id is for logs and support, never shown to the user.
             await expect(toast).not.toContainText(REQUEST_ID);
+
+            // Keep a picture of the toast before the action click dismisses it.
+            const shot = test.info().outputPath("toast.png");
+            await toast.screenshot({ path: shot });
+            await test.info().attach("toast", {
+                path: shot,
+                contentType: "image/png",
+            });
 
             const action = toast.locator("[data-button]");
             if (expected.action) {

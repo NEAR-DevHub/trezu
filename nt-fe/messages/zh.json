@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "查看请求",
+        "viewOnExplorer": "在浏览器中查看",
+        "contactUs": "联系我们",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu 暂时不可用",

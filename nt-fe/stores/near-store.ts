@@ -16,7 +16,7 @@ import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getAppErrorCopy, getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
-import { markShownToUser, toAppError } from "@/lib/app-error";
+import { appErrorAction, markShownToUser, toAppError } from "@/lib/app-error";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -288,8 +288,8 @@ function showActionError(error: unknown, treasuryId: string): void {
         reason: appError.reason,
     });
 
-    const copy = getAppErrorCopy(appError);
-    const actionUrl = `/${treasuryId}/requests?tab=InProgress`;
+    const action = appErrorAction(appError, treasuryId);
+    const copy = getAppErrorCopy(appError, action);
     if (appError.requestId) {
         console.error(
             `Action failed (request ${appError.requestId})`,
@@ -300,12 +300,21 @@ function showActionError(error: unknown, treasuryId: string): void {
         description: copy.body,
         duration: 15000,
         action:
-            copy.actionLabel && actionUrl
+            action && copy.actionLabel
                 ? {
                       label: copy.actionLabel,
-                      onClick: () => window.open(actionUrl),
+                      onClick: () => window.open(action.href),
                   }
                 : undefined,
+        // The CTA sits on its own line under the message, aligned with the
+        // text (icon width + gap), rather than squeezed beside it.
+        classNames: action
+            ? {
+                  toast: "flex-wrap",
+                  actionButton:
+                      "!basis-full !shrink !ml-[22px] !mt-1 !px-0 !bg-transparent !text-foreground underline underline-offset-2 hover:!bg-transparent !border-0",
+              }
+            : undefined,
     });
 }
 

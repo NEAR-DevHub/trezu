@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Ver solicitações",
+        "viewOnExplorer": "Ver no explorador",
+        "contactUs": "Fale conosco",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "A Trezu está temporariamente indisponível",

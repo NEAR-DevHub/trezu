@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Xem yêu cầu",
+        "viewOnExplorer": "Xem trên trình khám phá",
+        "contactUs": "Liên hệ với chúng tôi",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu tạm thời không khả dụng",

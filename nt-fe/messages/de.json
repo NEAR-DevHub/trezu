@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Anfragen ansehen",
+        "viewOnExplorer": "Im Explorer ansehen",
+        "contactUs": "Kontakt aufnehmen",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu ist vorübergehend nicht verfügbar",

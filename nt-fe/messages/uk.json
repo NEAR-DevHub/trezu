@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Переглянути запити",
+        "viewOnExplorer": "Переглянути в експлорері",
+        "contactUs": "Зв'язатися з нами",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu тимчасово недоступний",

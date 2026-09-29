@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "リクエストを表示",
+        "viewOnExplorer": "エクスプローラーで表示",
+        "contactUs": "お問い合わせ",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu は一時的に利用できません",

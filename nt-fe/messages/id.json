@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Lihat permintaan",
+        "viewOnExplorer": "Lihat di explorer",
+        "contactUs": "Hubungi kami",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu sedang tidak tersedia untuk sementara",

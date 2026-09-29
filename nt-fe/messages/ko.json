@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "요청 보기",
+        "viewOnExplorer": "익스플로러에서 보기",
+        "contactUs": "문의하기",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu를 일시적으로 사용할 수 없습니다",

@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect } from "react";
 import { type AppErrorCopy, useAppErrorCopy } from "@/hooks/use-app-error-copy";
-import type { AppError } from "@/lib/app-error";
+import type { AppError, AppErrorAction } from "@/lib/app-error";
 
 export interface NearStoreMessages {
     connectAndAcceptTerms: string;
@@ -26,13 +26,17 @@ const fallback: NearStoreMessages = {
 
 let current: Readonly<NearStoreMessages> = Object.freeze(fallback);
 
-let describeError: (error: AppError) => AppErrorCopy = () => ({
-    title: "Transaction failed",
-    body: "",
-});
+let describeError: (error: AppError, action?: AppErrorAction) => AppErrorCopy =
+    () => ({
+        title: "Transaction failed",
+        body: "",
+    });
 
-export function getAppErrorCopy(error: AppError): AppErrorCopy {
-    return describeError(error);
+export function getAppErrorCopy(
+    error: AppError,
+    action?: AppErrorAction,
+): AppErrorCopy {
+    return describeError(error, action);
 }
 
 export function getNearStoreMessages(): Readonly<NearStoreMessages> {

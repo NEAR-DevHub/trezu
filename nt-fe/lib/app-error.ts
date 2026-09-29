@@ -1,4 +1,7 @@
 import { isAxiosError } from "axios";
+import { APP_CONTACT_US_URL } from "@/constants/config";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
+import { getExplorerTxUrl } from "@/lib/blockchain-utils";
 import { isUserRejection } from "@/lib/wallet-errors";
 
 export const APP_ERROR_CODES = [
@@ -126,4 +129,43 @@ export function toAppError(error: unknown): AppError {
         retryable: serverFailed,
         requestId,
     };
+}
+
+export type AppErrorActionKind =
+    | "viewRequests"
+    | "viewOnExplorer"
+    | "contactUs";
+
+export interface AppErrorAction {
+    kind: AppErrorActionKind;
+    href: string;
+}
+
+/**
+ * The one action worth offering for an error, if any: the requests list when
+ * the outcome is unknown, the explorer when a landed transaction failed for a
+ * reason we don't classify, and support when the plan's sponsorship ran out.
+ */
+export function appErrorAction(
+    error: AppError,
+    treasuryId: string,
+): AppErrorAction | undefined {
+    switch (error.code) {
+        case "TX_STATUS_UNKNOWN":
+            return {
+                kind: "viewRequests",
+                href: `/${treasuryId}/requests?tab=InProgress`,
+            };
+        case "TX_FAILED": {
+            if ((error.reason ?? "UNKNOWN") !== "UNKNOWN" || !error.txHash) {
+                return undefined;
+            }
+            const href = getExplorerTxUrl(NEAR_NETWORK_ID, error.txHash);
+            return href ? { kind: "viewOnExplorer", href } : undefined;
+        }
+        case "SPONSORSHIP_NOT_AVAILABLE":
+            return { kind: "contactUs", href: APP_CONTACT_US_URL };
+        default:
+            return undefined;
+    }
 }

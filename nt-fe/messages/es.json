@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "Ver solicitudes",
+        "viewOnExplorer": "Ver en el explorador",
+        "contactUs": "Contáctanos",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu no está disponible temporalmente",

@@ -2964,6 +2964,8 @@
     },
     "errors": {
         "viewRequests": "İstekleri görüntüle",
+        "viewOnExplorer": "Explorer'da görüntüle",
+        "contactUs": "Bize ulaşın",
         "codes": {
             "SERVICE_UNAVAILABLE": {
                 "title": "Trezu geçici olarak kullanılamıyor",

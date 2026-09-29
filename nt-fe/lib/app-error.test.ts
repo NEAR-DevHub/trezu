@@ -1,6 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { AxiosError, type AxiosResponse } from "axios";
-import { toAppError } from "./app-error";
+import {
+    type AppError,
+    type AppErrorAction,
+    appErrorAction,
+    toAppError,
+} from "./app-error";
 
 function axiosError(
     status: number,
@@ -89,5 +94,58 @@ describe("toAppError", () => {
         expect(toAppError(new Error("couldnt_parse_arg_tx")).code).toBe(
             "WALLET_FAILED",
         );
+    });
+});
+
+describe("appErrorAction", () => {
+    const base: AppError = {
+        code: "UNEXPECTED",
+        fundsState: "none",
+        retryable: true,
+    };
+
+    test("unknown outcome links to the in-progress requests", () => {
+        expect(
+            appErrorAction({ ...base, code: "TX_STATUS_UNKNOWN" }, "dao.near"),
+        ).toEqual({
+            kind: "viewRequests",
+            href: "/dao.near/requests?tab=InProgress",
+        });
+    });
+
+    test("unclassified on-chain failure links to the explorer", () => {
+        const failed: AppError = {
+            ...base,
+            code: "TX_FAILED",
+            fundsState: "failed_onchain",
+            txHash: "8xQk",
+        };
+        const explorer: AppErrorAction = {
+            kind: "viewOnExplorer",
+            href: "https://nearblocks.io/txns/8xQk",
+        };
+        expect(appErrorAction({ ...failed, reason: "UNKNOWN" }, "d")).toEqual(
+            explorer,
+        );
+        expect(appErrorAction(failed, "d")).toEqual(explorer);
+        expect(
+            appErrorAction({ ...failed, reason: "ALREADY_VOTED" }, "d"),
+        ).toBeUndefined();
+        expect(
+            appErrorAction({ ...failed, txHash: undefined }, "d"),
+        ).toBeUndefined();
+    });
+
+    test("exhausted sponsorship links to contact us", () => {
+        expect(
+            appErrorAction({ ...base, code: "SPONSORSHIP_NOT_AVAILABLE" }, "d"),
+        ).toEqual({ kind: "contactUs", href: "https://trezu.org/contact-us" });
+    });
+
+    test("other codes offer nothing", () => {
+        expect(appErrorAction(base, "d")).toBeUndefined();
+        expect(
+            appErrorAction({ ...base, code: "RPC_UNAVAILABLE" }, "d"),
+        ).toBeUndefined();
     });
 });
