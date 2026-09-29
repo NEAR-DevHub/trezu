@@ -416,22 +416,34 @@ export type TransactionExplorerLink = {
  * deposit address) link to the NEAR Intents explorer — `/mask/` for
  * confidential treasuries, `/transactions/` for public ones. Everything else
  * falls back to the per-chain tx explorer (nearblocks for NEAR). Rows whose
- * token metadata carries no chain are NEAR movements.
+ * token metadata carries no chain are NEAR movements. Exchange hashes are
+ * always NEAR transactions, regardless of the swapped token's origin chain.
+ * NEAR receipt IDs also identify NEAR transactions, including outgoing Intents
+ * transfers that have no swap information.
  */
 export function getTransactionExplorerLink({
     depositAddress,
     isConfidential = false,
     transactionHash,
     chainName,
+    isExchange = false,
+    receiptIds,
 }: {
     depositAddress?: string | null;
     isConfidential?: boolean;
     transactionHash?: string | null;
     chainName?: string | null;
+    isExchange?: boolean;
+    receiptIds?: string[];
 }): TransactionExplorerLink | null {
     const intentsUrl = getIntentsExplorerUrl(depositAddress, isConfidential);
     if (intentsUrl) return { url: intentsUrl, source: "intents" };
     if (!transactionHash) return null;
-    const url = getExplorerTxUrl(chainName ?? NEAR_NETWORK_ID, transactionHash);
+    const url = getExplorerTxUrl(
+        isExchange || receiptIds?.length
+            ? NEAR_NETWORK_ID
+            : (chainName ?? NEAR_NETWORK_ID),
+        transactionHash,
+    );
     return url ? { url, source: "chain" } : null;
 }
