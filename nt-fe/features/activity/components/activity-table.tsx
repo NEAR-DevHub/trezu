@@ -5,12 +5,15 @@ import {
     ArrowRightLeft,
     ChevronRight,
     Clock,
+    FileText,
     Info,
     Loader2,
     Minus,
 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { Address } from "@/components/address";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { FormattedAmount } from "@/components/formatted-amount";
@@ -26,7 +29,6 @@ import {
 } from "@/components/table";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
-import { Address } from "@/components/address";
 import { Tooltip } from "@/components/tooltip";
 import { TooltipUser } from "@/components/user";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -66,6 +68,7 @@ export function ActivityTable({
     onPageChange,
 }: ActivityTableProps) {
     const t = useTranslations("activity");
+    const tReceipt = useTranslations("receiptPage");
     const getActivityLabel = useGetActivityLabel();
     const getFromAccount = useGetFromAccount();
     const { treasuryId, isConfidential } = useTreasury();
@@ -483,21 +486,37 @@ export function ActivityTable({
                                         )}
                                     </TableCell>
                                     <TableCell className="text-right pr-2">
-                                        <TransactionHashCell
-                                            transactionHashes={
-                                                activity.transactionHashes
-                                            }
-                                            receiptIds={activity.receiptIds}
-                                            chainName={
-                                                activity.tokenMetadata
-                                                    ?.chainName
-                                            }
-                                            depositAddress={
-                                                activity.quoteDepositAddress
-                                            }
-                                            isConfidential={isConfidential}
-                                            isExchange={!!activity.swap}
-                                        />
+                                        {isConfidential &&
+                                        activity.swap &&
+                                        activity.quoteDepositAddress &&
+                                        activity.proposalId != null &&
+                                        treasuryId ? (
+                                            <Link
+                                                href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
+                                            >
+                                                <FileText className="size-4 shrink-0 text-muted-foreground" />
+                                                {tReceipt("generateReceipt")}
+                                            </Link>
+                                        ) : (
+                                            <TransactionHashCell
+                                                transactionHashes={
+                                                    activity.transactionHashes
+                                                }
+                                                receiptIds={activity.receiptIds}
+                                                chainName={
+                                                    activity.tokenMetadata
+                                                        ?.chainName
+                                                }
+                                                depositAddress={
+                                                    activity.quoteDepositAddress
+                                                }
+                                                isConfidential={isConfidential}
+                                                isExchange={!!activity.swap}
+                                            />
+                                        )}
                                     </TableCell>
                                     <TableCell className="w-10 px-0 pr-4 text-right">
                                         <Button

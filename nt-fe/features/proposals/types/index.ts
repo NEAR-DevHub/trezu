@@ -224,6 +224,8 @@ export interface SwapRequestData {
     amountOutUsd?: number | null;
     slippage?: string;
     quoteDeadline?: string;
+    /** Absent on proposals created before the flag was stored. */
+    hasAppFee?: boolean;
 }
 
 /**

@@ -5,12 +5,15 @@ import {
     WRAP_NEAR_TOKEN_ID,
 } from "@/constants/network-ids";
 import { NEAR_TOKEN_DECIMALS } from "@/constants/token";
+import { getNearNetwork } from "@/features/omni/network";
+import { extractOmniProposalData } from "@/features/omni/verify";
 import {
     decimalFromBaseUnitsOrNull,
     legacyGroupedDecimalOrNull,
 } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { getKindFromProposal } from "@/lib/config-utils";
+import { quoteHasAppFee } from "@/lib/exchange-fee";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 import type {
     FunctionCallAction,
@@ -42,8 +45,6 @@ import type {
     VestingSchedule,
     VoteData,
 } from "../types/index";
-import { getNearNetwork } from "@/features/omni/network";
-import { extractOmniProposalData } from "@/features/omni/verify";
 import { extractConfidentialBulkDestinationAssetId } from "./confidential-bulk-utils";
 import { getProposalUIKind } from "./proposal-utils";
 
@@ -538,6 +539,16 @@ export function extractExchangeRequestData(
         "signature",
         proposal.description,
     );
+    const hasAppFeeRaw = decodeProposalDescription(
+        "hasAppFee",
+        proposal.description,
+    );
+    const hasAppFee =
+        hasAppFeeRaw === "true"
+            ? true
+            : hasAppFeeRaw === "false"
+              ? false
+              : undefined;
     const timeEstimateRaw = decodeProposalDescription(
         "timeEstimate",
         proposal.description,
@@ -609,6 +620,7 @@ export function extractExchangeRequestData(
         timeEstimate,
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
+        hasAppFee,
     };
 }
 
@@ -947,6 +959,7 @@ export function extractConfidentialRequestData(
         const isSwap = quoteRequest.recipient === treasuryId;
 
         if (isSwap) {
+            const storedAppFees = quoteRequest.appFees;
             mapped = {
                 type: "swap",
                 data: {
@@ -964,6 +977,13 @@ export function extractConfidentialRequestData(
                         (quoteRequest.slippageTolerance ?? 0) / 100
                     ).toString(),
                     quoteDeadline: quoteRequest.deadline,
+                    // Absent on older quotes, which always charged. Explicit
+                    // false hides the row when the quote did not inject a fee.
+                    hasAppFee: Array.isArray(storedAppFees)
+                        ? quoteHasAppFee({
+                              appFees: storedAppFees as { fee?: number }[],
+                          })
+                        : undefined,
                 } as SwapRequestData,
             };
             title = "Confidential Exchange";

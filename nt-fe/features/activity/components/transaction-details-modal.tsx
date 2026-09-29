@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
@@ -550,6 +550,35 @@ function DetailsSection({
     );
 }
 
+function ViewPdfReceiptButton({
+    treasuryId,
+    proposalId,
+}: {
+    treasuryId: string;
+    proposalId: number;
+}) {
+    const tReceipt = useTranslations("receiptPage");
+
+    return (
+        <ModalSection>
+            <Button
+                asChild
+                variant="secondary"
+                className="h-9 w-full rounded-[8px] font-medium"
+            >
+                <Link
+                    href={`/${treasuryId}/requests/${proposalId}/receipt`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >
+                    <FileText className="size-4" />
+                    {tReceipt("generateReceipt")}
+                </Link>
+            </Button>
+        </ModalSection>
+    );
+}
+
 function ViewLinkedRequestButton({
     treasuryId,
     proposalId,
@@ -586,9 +615,15 @@ export function TransactionDetailsModal({
     onClose,
 }: TransactionDetailsModalProps) {
     const t = useTranslations("activity.details");
+    const { isConfidential } = useTreasury();
     if (!activity) return null;
 
     const variant = getActivityDetailsVariant(activity);
+    const showSwapReceipt =
+        isConfidential &&
+        variant === "exchange" &&
+        activity.proposalId != null &&
+        !!activity.quoteDepositAddress;
     const showParties = variant !== "exchange" && !isProposalCall(activity);
 
     return (
@@ -614,6 +649,12 @@ export function TransactionDetailsModal({
 
                 <DetailsSection activity={activity} variant={variant} />
 
+                {showSwapReceipt && activity.proposalId != null ? (
+                    <ViewPdfReceiptButton
+                        treasuryId={treasuryId}
+                        proposalId={activity.proposalId}
+                    />
+                ) : null}
                 {activity.proposalId != null ? (
                     <ViewLinkedRequestButton
                         treasuryId={treasuryId}

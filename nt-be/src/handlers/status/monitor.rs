@@ -469,7 +469,7 @@ async fn process_service(state: &Arc<AppState>, service: &str) {
     apply_check(state, service, &check).await;
 }
 
-/// Track each Instatus post as its own incident so zCash and 1Click each page.
+/// Track each Shield incident as its own row so zCash and TON each page.
 async fn process_near_intents(state: &Arc<AppState>) {
     let posts = match oh_dear::fetch_intents_posts_with_check(state).await {
         Ok(posts) => posts,

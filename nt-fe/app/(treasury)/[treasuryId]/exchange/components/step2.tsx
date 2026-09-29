@@ -15,6 +15,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import {
     calculateExchangeFeeAmount,
     EXCHANGE_FEE_PERCENTAGE,
+    quoteHasAppFee,
 } from "@/lib/exchange-fee";
 import { formatDurationSeconds } from "@/lib/utils";
 import { PROPOSAL_REFRESH_INTERVAL } from "../constants";
@@ -278,8 +279,12 @@ export function Step2({ handleBack }: StepProps) {
                                             </span>
                                         ),
                                     },
-                                    // Don't show Widget Fee for NEAR ↔ wNEAR conversions
-                                    ...(!isWrapConversion
+                                    // Hide the fee for wraps and for quotes that did not
+                                    // inject an app fee (payments, stables).
+                                    ...(!isWrapConversion &&
+                                    quoteHasAppFee(
+                                        localLiveQuoteData.quoteRequest,
+                                    )
                                         ? [
                                               {
                                                   label: tEx(
