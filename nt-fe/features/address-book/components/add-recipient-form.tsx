@@ -578,7 +578,7 @@ export function AddRecipientInput({
 
             {editOnly ? (
                 <Button
-                    className="h-11 w-full rounded-2xl"
+                    className="h-11 w-full"
                     disabled={!isActiveValid}
                     onClick={() => onReview()}
                 >
@@ -614,7 +614,7 @@ export function AddRecipientInput({
                     </Button>
 
                     <Button
-                        className="h-11 w-full rounded-2xl"
+                        className="h-11 w-full"
                         disabled={!canProceed}
                         tooltipContent={
                             !canProceed ? tForm("reviewTooltip") : undefined

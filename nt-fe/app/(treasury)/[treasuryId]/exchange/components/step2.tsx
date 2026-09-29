@@ -289,7 +289,7 @@ export function Step2({ handleBack }: StepProps) {
                 <CreateRequestButton
                     isSubmitting={form.formState.isSubmitting}
                     type="submit"
-                    className="w-full h-12 rounded-2xl"
+                    className="w-full h-12"
                     permissions={[{ kind: "call", action: "AddProposal" }]}
                     idleMessage={tEx("confirmSubmit")}
                     disabled={

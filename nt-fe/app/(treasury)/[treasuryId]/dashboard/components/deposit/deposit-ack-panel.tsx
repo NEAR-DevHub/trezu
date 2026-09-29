@@ -108,7 +108,7 @@ export function DepositAckPanel({
                 onClick={onCta}
                 disabled={!checked || controlsDisabled || ctaLoading}
                 data-testid="deposit-ack-cta"
-                className="h-11 w-full rounded-2xl"
+                className="h-11 w-full"
             >
                 {ctaLoading ? "…" : ctaLabel}
             </Button>

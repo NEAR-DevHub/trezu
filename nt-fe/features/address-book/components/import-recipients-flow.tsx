@@ -115,7 +115,7 @@ export function ImportUploadStep({ onReview }: ImportUploadStepProps) {
                     )}
             </div>
             <Button
-                className="h-11 w-full rounded-2xl"
+                className="h-11 w-full"
                 disabled={!isValid}
                 onClick={handleContinue}
             >

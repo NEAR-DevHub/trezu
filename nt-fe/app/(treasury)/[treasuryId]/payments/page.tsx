@@ -520,7 +520,7 @@ function Step2({
             <CreateRequestButton
                 isSubmitting={form.formState.isSubmitting || isQuoteLoading}
                 type="submit"
-                className="w-full h-11 rounded-2xl"
+                className="w-full h-11"
                 permissions={[
                     { kind: "transfer", action: "AddProposal" },
                     { kind: "call", action: "AddProposal" },

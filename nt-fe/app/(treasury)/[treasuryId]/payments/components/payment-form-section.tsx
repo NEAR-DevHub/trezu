@@ -654,7 +654,7 @@ export function PaymentFormSection<
                 disabled={isSaveDisabled}
                 isSubmitting={isSubmitting}
                 idleMessage={saveButtonText}
-                className="w-full h-11 rounded-2xl"
+                className="w-full h-11"
                 permissions={savePermissions}
             />
         </div>

@@ -690,7 +690,7 @@ export function ReviewPaymentsStep({
 
             <CreateRequestButton
                 type="button"
-                className="w-full h-11 rounded-2xl"
+                className="w-full h-11"
                 onClick={handleProceedClick}
                 disabled={
                     hasValidationErrors ||
