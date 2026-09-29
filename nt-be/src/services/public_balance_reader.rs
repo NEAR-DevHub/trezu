@@ -8,11 +8,11 @@ use bigdecimal::BigDecimal;
 use near_api::NetworkConfig;
 use sqlx::PgPool;
 
-pub use crate::handlers::balance_changes::history::{
+pub use crate::handlers::public_history::charts::models::{
     BalanceSnapshot, ChartMeta, ChartResponse, ChartStatus, Interval,
 };
-pub use crate::handlers::balance_changes::utils::with_transport_retry;
 use crate::utils::contract_read_error::{is_method_not_found, is_unknown_account};
+pub use crate::utils::transport::with_transport_retry;
 
 pub fn is_proven_nonexistence(message: &str) -> bool {
     is_unknown_account(message) || message.contains("Contract account does not exist")
@@ -36,7 +36,7 @@ pub async fn validate_staking_pool_at_block(
     pool_id: &str,
     block_height: u64,
 ) -> Result<bool, String> {
-    match crate::handlers::balance_changes::balance::staking::get_staking_balance_at_exact_block(
+    match crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
         network,
         account_id,
         pool_id,
@@ -140,13 +140,14 @@ pub async fn get_lockup_reading_at_block(
         get_lockup_staking_pool_at_block(network, lockup_account_id, block_height).await?;
     let pool_total = match &pool_account_id {
         Some(pool) => {
-            let result = crate::handlers::balance_changes::balance::staking::get_staking_balance_at_exact_block(
-                network,
-                lockup_account_id,
-                pool,
-                block_height,
-            )
-            .await;
+            let result =
+                crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
+                    network,
+                    lockup_account_id,
+                    pool,
+                    block_height,
+                )
+                .await;
             match result {
                 Ok(balance) => balance,
                 Err(error) if is_proven_nonexistence(&error.to_string()) => BigDecimal::from(0),
@@ -199,14 +200,13 @@ pub async fn get_public_balance_at_block(
     block_height: u64,
 ) -> Result<BigDecimal, String> {
     if let Some(staking_pool) = asset.strip_prefix("staking:") {
-        let result =
-            crate::handlers::balance_changes::balance::staking::get_staking_balance_at_exact_block(
-                network,
-                account_id,
-                staking_pool,
-                block_height,
-            )
-            .await;
+        let result = crate::services::chain_balances::staking::get_staking_balance_at_exact_block(
+            network,
+            account_id,
+            staking_pool,
+            block_height,
+        )
+        .await;
         return match result {
             Ok(balance) => Ok(balance),
             Err(error) if is_proven_nonexistence(&error.to_string()) => Ok(BigDecimal::from(0)),
@@ -219,7 +219,7 @@ pub async fn get_public_balance_at_block(
             .map(|reading| reading.total());
     }
 
-    let result = crate::handlers::balance_changes::balance::get_balance_at_block(
+    let result = crate::services::chain_balances::get_balance_at_block(
         pool,
         network,
         account_id,

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO monitored_accounts (\n                account_id,\n                enabled,\n                export_credits,\n                batch_payment_credits,\n                gas_covered_transactions,\n                plan_type,\n                credits_reset_at\n            )\n            VALUES ('test-account.near', true, 10, 10, 10, 'plus', NOW() + INTERVAL '1 month')\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "8ba980575732f907280375821c89304ad47a51ee47190aa63244366c75f5519b"
+}

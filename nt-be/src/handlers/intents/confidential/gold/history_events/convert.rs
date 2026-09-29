@@ -113,7 +113,6 @@ mod tests {
     fn event(transaction_type: ConfidentialTxType) -> GoldHistoryEvent {
         GoldHistoryEvent {
             history_event_id: 42,
-            intent_id: None,
             dao_id: "dao.near".parse().unwrap(),
             transaction_type,
             origin_asset: Some("nep141:usdt.near".to_string()),
@@ -128,10 +127,7 @@ mod tests {
             destination_balance_before: Some(BigDecimal::from(1)),
             destination_balance_after: Some(BigDecimal::from_str("3.4").unwrap()),
             recipient: "external.near".to_string(),
-            refund_to: "dao.near".to_string(),
             counterparty: "intents.near".to_string(),
-            deposit_address: "deposit-address".to_string(),
-            deposit_memo: None,
             proposal_execution_block_height: None,
             proposal_executed_at: None,
             proposal_execution_transaction_hash: None,

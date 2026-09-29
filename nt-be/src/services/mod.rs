@@ -1,7 +1,8 @@
 //! Services module for external integrations and business logic
 
-pub mod coingecko;
+pub mod chain_balances;
 pub mod confidential_credentials;
+pub mod counterparties;
 pub mod dao_sync;
 pub mod defillama;
 pub mod ft_lockup_scheduler;
@@ -11,17 +12,13 @@ pub mod nearcom_catalog_watch;
 pub mod oneclick_asset_routing;
 pub mod oneclick_tokens;
 pub mod platform_metrics;
-pub mod price_lookup;
-pub mod price_provider;
-pub mod price_sync;
 pub mod public_balance_reader;
 pub mod public_dashboard;
+pub mod receipt_resolver;
 pub mod sponsor_alerts;
 pub mod testing_accounts;
 pub mod token_prices;
-pub mod usd_value_backfill;
 
-pub use coingecko::CoinGeckoClient;
 pub use confidential_credentials::{
     ConfidentialCredentialStore, CredentialScope, TokenBundle, TokenKeyring,
 };
@@ -36,9 +33,6 @@ pub use monitored_accounts::{
     RegisterMonitoredAccountResult, RegistrationMode, is_managed_treasury,
     register_or_refresh_monitored_account,
 };
-pub use price_lookup::PriceLookupService;
-pub use price_provider::PriceProvider;
-pub use price_sync::{run_price_sync_cycle, sync_all_prices_now};
 pub use public_dashboard::{
     PublicDashboardSnapshot, ensure_this_week_public_dashboard_snapshot,
     load_latest_public_dashboard_snapshot,
@@ -46,8 +40,6 @@ pub use public_dashboard::{
 pub use sponsor_alerts::run_sponsor_monitor_cycle;
 pub use testing_accounts::{mark_testing_if_needed, should_mark_testing};
 pub use token_prices::{
-    BalanceChangesUsdBackfill, GoldConfidentialUsdBackfill, GoldLedgerUsdBackfill,
-    HistoricalPriceBackfill, TokenPriceIngestor, TokenPriceService,
+    GoldLedgerUsdBackfill, HistoricalPriceBackfill, TokenPriceIngestor, TokenPriceService,
     spawn_token_price_ingest_worker,
 };
-pub use usd_value_backfill::{backfill_batch, run_usd_value_backfill_service};

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO daos (dao_id, is_dirty, source)\n            VALUES ('guest-remove.sputnik-dao.near', true, 'manual')\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "3f42106a0a41ccfaf3bfc8846a964418b01633983c9a326e26b701936801a2c9"
+}

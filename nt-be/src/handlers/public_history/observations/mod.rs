@@ -34,8 +34,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::AppState;
-use crate::handlers::balance_changes::utils::with_transport_retry;
 use crate::utils::contract_read_error::is_block_unavailable;
+use crate::utils::transport::with_transport_retry;
 
 const DAILY_HORIZON_DAYS: i64 = 90;
 const WEEKLY_HORIZON_WEEKS: i64 = 53;

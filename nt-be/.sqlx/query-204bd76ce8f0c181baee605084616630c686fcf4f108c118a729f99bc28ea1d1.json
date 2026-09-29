@@ -1,0 +1,38 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT export_credits, batch_payment_credits, gas_covered_transactions, credits_reset_at\n            FROM monitored_accounts\n            WHERE account_id = 'plus-afternoon-reset.sputnik-dao.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "export_credits",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_payment_credits",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "gas_covered_transactions",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 3,
+        "name": "credits_reset_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "204bd76ce8f0c181baee605084616630c686fcf4f108c118a729f99bc28ea1d1"
+}

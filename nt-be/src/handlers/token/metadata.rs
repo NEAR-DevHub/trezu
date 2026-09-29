@@ -850,14 +850,18 @@ pub async fn fetch_tokens_metadata_enriched(
         return result;
     }
 
+    // Fill missing prices from the token registry's in-memory latest-price
+    // snapshot (no DB round-trip).
     let requested_ids: Vec<String> = result.keys().cloned().collect();
-    let db_prices = state
-        .price_service
-        .get_cached_tokens_latest_price(&requested_ids)
-        .await
-        .unwrap_or_default();
-
-    for (token_id, price) in db_prices {
+    for token_id in requested_ids {
+        use bigdecimal::ToPrimitive;
+        let Some(price) = state
+            .token_price_service
+            .latest_price(&token_id)
+            .and_then(|(price, _)| price.to_f64())
+        else {
+            continue;
+        };
         if price > 0.0
             && let Some(entry) = result.get_mut(&token_id)
             && entry.price.is_none()

@@ -25,7 +25,7 @@ use super::{
     resolve_boundary_block,
 };
 use crate::AppState;
-use crate::handlers::balance_changes::balance::staking::{
+use crate::services::chain_balances::staking::{
     get_staking_balance_at_exact_block, is_staking_pool,
 };
 use crate::services::public_balance_reader::validate_staking_pool_at_block;

@@ -1,720 +1,213 @@
-//! Integration tests for balance history APIs
+//! Balance-history API tests against the unified gold ledger.
 //!
-//! Tests both the Chart API and CSV Export API endpoints using real webassemblymusic-treasury data
+//! Seeds `gold_treasury_ledger_events` rows directly and exercises the
+//! public endpoints end to end: activity list, filter-option dropdowns, and
+//! CSV export. No legacy `balance_changes` rows are involved.
 
 mod common;
 
-use common::TestServer;
-use serial_test::serial;
+use std::sync::Arc;
 
-/// Ensure the test account has Pro plan (24-month history) for testing
-async fn ensure_pro_plan(pool: &sqlx::PgPool) {
-    // enabled = false: these tests serve FIXTURE data; an enabled row makes
-    // any live backend sharing the database ingest real chain rows for this
-    // account mid-test and corrupt the snapshot assertions.
+use axum::{body::Body, http::Request};
+use chrono::{Duration, Utc};
+use serde_json::Value;
+use sqlx::PgPool;
+use tower::ServiceExt;
+
+const DAO: &str = "ledgerapi.sputnik-dao.near";
+
+async fn seed_gold_activity(pool: &PgPool) {
     sqlx::query(
-        "INSERT INTO monitored_accounts (account_id, enabled, plan_type, export_credits, batch_payment_credits, gas_covered_transactions, created_at, updated_at)
-         VALUES ('webassemblymusic-treasury.sputnik-dao.near', false, 'pro', 10, 100, 2000, NOW(), NOW())
-         ON CONFLICT (account_id) DO UPDATE SET
-            enabled = false,
-            plan_type = 'pro',
-            export_credits = 10,
-            batch_payment_credits = 100,
-            gas_covered_transactions = 2000,
-            is_confidential_account = false",
+        r#"
+        INSERT INTO monitored_accounts (
+            account_id, enabled, is_confidential_account,
+            plan_type, export_credits
+        )
+        VALUES ($1, true, false, 'pro', 10)
+        "#,
     )
+    .bind(DAO)
     .execute(pool)
     .await
-    .expect("Failed to ensure Pro plan for test account");
+    .expect("seed monitored account");
+
+    let base = Utc::now() - Duration::hours(6);
+    sqlx::query(
+        r#"
+        INSERT INTO gold_treasury_ledger_events (
+            gold_event_key, dao_id, source_kind, history_visible,
+            transaction_type, status, event_time, block_height, source_order,
+            token_in, amount_in, token_in_user_balance_after,
+            token_out, amount_out, token_out_user_balance_after,
+            recipient, counterparty, transaction_hash
+        )
+        VALUES
+            ('api-deposit', $1, 'public_silver_leg', TRUE,
+             'deposit', 'success', $2, 100, 0,
+             'near', 5, 5,
+             NULL, NULL, NULL,
+             NULL, 'alice.near', 'hash-deposit'),
+            ('api-sent', $1, 'public_silver_leg', TRUE,
+             'sent', 'success', $3, 110, 0,
+             NULL, NULL, NULL,
+             'near', 2, 3,
+             'bob.near', 'bob.near', 'hash-sent'),
+            ('api-exchange', $1, 'public_silver_leg', TRUE,
+             'exchange', 'success', $4, 120, 0,
+             'usdt.tether-token.near', 3, 3,
+             'near', 1, 2,
+             NULL, 'intents.near', 'hash-exchange')
+        "#,
+    )
+    .bind(DAO)
+    .bind(base)
+    .bind(base + Duration::hours(1))
+    .bind(base + Duration::hours(2))
+    .execute(pool)
+    .await
+    .expect("seed gold ledger rows");
 }
 
-async fn clear_public_history_test_data(pool: &sqlx::PgPool) {
-    const ACCOUNT_ID: &str = "webassemblymusic-treasury.sputnik-dao.near";
-
-    sqlx::query("DELETE FROM gold_public_history_projection_errors WHERE dao_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear gold public projection errors");
-    sqlx::query("DELETE FROM gold_treasury_ledger_events WHERE dao_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear gold ledger events");
-    sqlx::query("DELETE FROM gold_public_history_cursors WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear gold public history cursors");
-    sqlx::query("DELETE FROM silver_public_history_projection_errors WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear silver public projection errors");
-    sqlx::query("DELETE FROM silver_public_transfer_legs WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear silver public transfer legs");
-    sqlx::query("DELETE FROM silver_public_history_cursors WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear silver public history cursors");
-    sqlx::query("DELETE FROM bronze_public_history_events WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear bronze public history events");
-    sqlx::query("DELETE FROM bronze_public_history_cursors WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear bronze public history cursors");
-    sqlx::query("DELETE FROM public_history_backfill_usage WHERE account_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear public history backfill usage");
-    sqlx::query("DELETE FROM dao_proposals WHERE dao_id = $1")
-        .bind(ACCOUNT_ID)
-        .execute(pool)
-        .await
-        .expect("Failed to clear public DAO proposals");
-}
-
-/// Load webassemblymusic-treasury test data from SQL dump files
-async fn load_test_data() {
+async fn build_app(pool: &PgPool) -> axum::Router {
     common::load_test_env();
-
-    let db_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
-
-    // Connect to database
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&db_url)
+    let app_state = nt_be::AppState::builder()
+        .db_pool(pool.clone())
+        .build()
         .await
-        .expect("Failed to connect to test database");
-
-    // Always clear historical prices to ensure fresh fetch from DeFiLlama
-    // This must be done even if balance_changes data already exists
-    sqlx::query("DELETE FROM historical_prices")
-        .execute(&pool)
-        .await
-        .expect("Failed to clear historical_prices test data");
-    clear_public_history_test_data(&pool).await;
-
-    // Reuse loaded data only when it is the COMPLETE fixture. Other test
-    // suites write partial rows for the same account into a shared dev DB;
-    // trusting any nonzero count serves those leftovers to the snapshot
-    // assertions.
-    let fixture_rows: i64 =
-        std::fs::read_to_string("tests/test_data/webassemblymusic_balance_changes.sql")
-            .expect("Failed to read balance changes SQL file")
-            .lines()
-            .filter(|line| line.trim_start().starts_with("INSERT"))
-            .count() as i64;
-    let existing_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM balance_changes
-         WHERE account_id = 'webassemblymusic-treasury.sputnik-dao.near'",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to check existing data");
-
-    if existing_count == fixture_rows {
-        println!(
-            "✓ Test data already loaded ({} records), historical_prices cleared for fresh sync",
-            existing_count
-        );
-
-        // Ensure Pro plan is set (even if data already exists)
-        ensure_pro_plan(&pool).await;
-
-        pool.close().await;
-        return;
-    }
-
-    println!("Loading webassemblymusic-treasury test data...");
-
-    // Clear all test data before loading (tests run serially so this is safe)
-    sqlx::query("DELETE FROM balance_changes WHERE account_id = 'webassemblymusic-treasury.sputnik-dao.near'")
-        .execute(&pool)
-        .await
-        .expect("Failed to clear balance_changes test data");
-
-    // Clear counterparties that will be loaded by the test data
-    // This includes arizcredits.near and all intents.near tokens
-    sqlx::query("DELETE FROM counterparties WHERE account_id IN ('arizcredits.near') OR account_id LIKE 'intents.near:%'")
-        .execute(&pool)
-        .await
-        .expect("Failed to clear counterparties test data");
-
-    // Read and execute counterparties SQL
-    let counterparties_sql =
-        std::fs::read_to_string("tests/test_data/webassemblymusic_counterparties.sql")
-            .expect("Failed to read counterparties SQL file");
-
-    // Execute SQL line by line (skipping comments, SET commands, and pg_dump v18 commands)
-    for line in counterparties_sql.lines() {
-        let trimmed = line.trim();
-        // Skip comments, empty lines, SET commands, SELECT commands, and pg_dump v18 security commands
-        if trimmed.is_empty()
-            || trimmed.starts_with("--")
-            || trimmed.to_uppercase().starts_with("SET ")
-            || trimmed.to_uppercase().starts_with("SELECT ")
-            || trimmed.starts_with("\\restrict")
-            || trimmed.starts_with("\\unrestrict")
-        {
-            continue;
-        }
-
-        // Execute the statement as-is (no need for ON CONFLICT since we cleared the data)
-        if let Err(e) = sqlx::query(line).execute(&pool).await {
-            panic!(
-                "Failed to execute SQL: {}\nError: {}",
-                &line[..100.min(line.len())],
-                e
-            );
-        }
-    }
-
-    // Read and execute balance changes SQL (line by line)
-    let balance_changes_sql =
-        std::fs::read_to_string("tests/test_data/webassemblymusic_balance_changes.sql")
-            .expect("Failed to read balance changes SQL file");
-
-    for statement in balance_changes_sql.lines() {
-        let trimmed = statement.trim();
-        // Skip comments, empty lines, SET commands, SELECT commands, and pg_dump v18 security commands
-        if trimmed.is_empty()
-            || trimmed.starts_with("--")
-            || trimmed.to_uppercase().starts_with("SET ")
-            || trimmed.to_uppercase().starts_with("SELECT ")
-            || trimmed.starts_with("\\restrict")
-            || trimmed.starts_with("\\unrestrict")
-        {
-            continue;
-        }
-
-        // The dump pins primary-key ids from the source database; on a
-        // shared DB those collide with other accounts' rows. Drop the id
-        // column and let the sequence assign fresh ones — nothing joins on
-        // balance_changes.id in these fixtures.
-        let statement = if let Some(without_col) = trimmed
-            .strip_prefix("INSERT INTO public.balance_changes (id, ")
-            .map(|rest| format!("INSERT INTO public.balance_changes ({rest}"))
-        {
-            match without_col.find("VALUES (") {
-                Some(pos) => {
-                    let (head, tail) = without_col.split_at(pos + "VALUES (".len());
-                    let tail = tail.trim_start_matches(|c: char| c.is_ascii_digit());
-                    let tail = tail.strip_prefix(", ").unwrap_or(tail);
-                    format!("{head}{tail}")
-                }
-                None => without_col,
-            }
-        } else {
-            trimmed.to_string()
-        };
-
-        sqlx::query(&statement)
-            .execute(&pool)
-            .await
-            .expect("Failed to load balance change");
-    }
-
-    // Add monitored account with Pro plan (24-month history for tests)
-    ensure_pro_plan(&pool).await;
-
-    // Show summary
-    let balance_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM balance_changes 
-         WHERE account_id = 'webassemblymusic-treasury.sputnik-dao.near'",
-    )
-    .fetch_one(&pool)
-    .await
-    .expect("Failed to count balance changes");
-
-    println!("✓ Loaded {} balance change records", balance_count);
-
-    pool.close().await;
+        .expect("build test app state");
+    nt_be::routes::create_routes(Arc::new(app_state))
 }
 
-/// Wait for the background price sync service to fetch prices from DeFiLlama
-/// This polls the database until we have prices for all expected assets.
-/// The background sync fetches ~1500 prices per asset sequentially, which takes time.
-async fn wait_for_price_sync() {
-    let db_url =
-        std::env::var("DATABASE_URL").expect("DATABASE_URL must be set for integration tests");
-
-    let pool = sqlx::postgres::PgPoolOptions::new()
-        .max_connections(5)
-        .connect(&db_url)
+async fn get_json(app: &axum::Router, uri: &str) -> Value {
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(uri)
+                .body(Body::empty())
+                .expect("request should build"),
+        )
         .await
-        .expect("Failed to connect to test database");
+        .expect("request should succeed");
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("read body");
+    assert!(
+        status.is_success(),
+        "GET {uri} -> {status}: {}",
+        String::from_utf8_lossy(&body)
+    );
+    serde_json::from_slice(&body).expect("JSON body")
+}
 
-    // We need prices for these assets: NEAR, BTC, ETH, SOL, XRP, USDC
-    // Wait for at least 6 distinct assets to have prices
-    let required_assets = 6;
-    let timeout = std::time::Duration::from_secs(300); // 5 minutes - DeFiLlama sync takes time
-    let poll_interval = std::time::Duration::from_secs(2);
-    let start = std::time::Instant::now();
+#[sqlx::test(migrations = "./migrations")]
+async fn balance_changes_are_served_from_the_gold_ledger(pool: PgPool) {
+    seed_gold_activity(&pool).await;
+    let app = build_app(&pool).await;
 
-    loop {
-        let asset_count: i64 =
-            sqlx::query_scalar("SELECT COUNT(DISTINCT asset_id) FROM historical_prices")
-                .fetch_one(&pool)
-                .await
-                .expect("Failed to count assets");
+    let rows = get_json(&app, &format!("/api/balance-changes?accountId={DAO}")).await;
+    let rows = rows.as_array().expect("array response");
+    assert_eq!(rows.len(), 3, "deposit + sent + exchange: {rows:?}");
 
-        let price_count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM historical_prices")
+    // event_time DESC: exchange, sent, deposit.
+    assert_eq!(rows[0]["transactionHashes"][0], "hash-exchange");
+    let swap = &rows[0]["swap"];
+    assert_eq!(swap["sentTokenId"], "near");
+    assert_eq!(swap["receivedTokenId"], "usdt.tether-token.near");
+
+    assert_eq!(rows[1]["transactionHashes"][0], "hash-sent");
+    assert_eq!(rows[1]["counterparty"], "bob.near");
+
+    assert_eq!(rows[2]["transactionHashes"][0], "hash-deposit");
+    assert_eq!(rows[2]["counterparty"], "alice.near");
+    assert_eq!(rows[2]["tokenId"], "near");
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn recent_activity_filter_options_come_from_the_gold_ledger(pool: PgPool) {
+    seed_gold_activity(&pool).await;
+    let app = build_app(&pool).await;
+
+    let senders = get_json(
+        &app,
+        &format!("/api/recent-activity/senders?accountId={DAO}&transactionType=incoming"),
+    )
+    .await;
+    assert_eq!(senders["options"], serde_json::json!(["alice.near"]));
+
+    let recipients = get_json(
+        &app,
+        &format!("/api/recent-activity/recipients?accountId={DAO}&transactionType=outgoing"),
+    )
+    .await;
+    assert_eq!(recipients["options"], serde_json::json!(["bob.near"]));
+
+    // Unfiltered senders include the DAO itself for outbound rows.
+    let all_senders = get_json(
+        &app,
+        &format!("/api/recent-activity/senders?accountId={DAO}"),
+    )
+    .await;
+    assert_eq!(
+        all_senders["options"],
+        serde_json::json!(["alice.near", DAO])
+    );
+
+    // The staking tab has no counterparty options in the gold ledger.
+    let staking = get_json(
+        &app,
+        &format!("/api/recent-activity/senders?accountId={DAO}&transactionType=staking_rewards"),
+    )
+    .await;
+    assert_eq!(staking["options"], serde_json::json!([]));
+}
+
+#[sqlx::test(migrations = "./migrations")]
+async fn csv_export_serves_gold_rows(pool: PgPool) {
+    seed_gold_activity(&pool).await;
+    let app = build_app(&pool).await;
+
+    let start = (Utc::now() - Duration::days(1)).to_rfc3339();
+    let end = Utc::now().to_rfc3339();
+    let uri = format!(
+        "/api/balance-history/export?format=csv&accountId={DAO}&startTime={}&endTime={}",
+        urlencoding::encode(&start),
+        urlencoding::encode(&end)
+    );
+
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("GET")
+                .uri(&uri)
+                .body(Body::empty())
+                .expect("request should build"),
+        )
+        .await
+        .expect("request should succeed");
+    let status = response.status();
+    let body = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .expect("read body");
+    let csv = String::from_utf8_lossy(&body);
+    assert!(status.is_success(), "GET export -> {status}: {csv}");
+
+    assert!(csv.contains("alice.near"), "deposit row exported: {csv}");
+    assert!(csv.contains("bob.near"), "sent row exported: {csv}");
+    assert!(
+        csv.contains("hash-exchange"),
+        "exchange row exported: {csv}"
+    );
+
+    // The export consumed a credit from the seeded account.
+    let credits: i32 =
+        sqlx::query_scalar("SELECT export_credits FROM monitored_accounts WHERE account_id = $1")
+            .bind(DAO)
             .fetch_one(&pool)
             .await
-            .expect("Failed to count prices");
-
-        if asset_count >= required_assets {
-            println!(
-                "✓ Price sync complete ({} assets, {} prices cached in {:?})",
-                asset_count,
-                price_count,
-                start.elapsed()
-            );
-            break;
-        }
-
-        if start.elapsed() > timeout {
-            panic!(
-                "Price sync timed out after {:?}. Only {} assets synced (need {}). \
-                 Check that DeFiLlama API is accessible.",
-                timeout, asset_count, required_assets
-            );
-        }
-
-        if start.elapsed().as_secs().is_multiple_of(30) && start.elapsed().as_secs() > 0 {
-            println!(
-                "Still syncing prices... {} assets, {} prices so far ({:?})",
-                asset_count,
-                price_count,
-                start.elapsed()
-            );
-        }
-
-        tokio::time::sleep(poll_interval).await;
-    }
-
-    pool.close().await;
-}
-
-/// Test the chart API with webassemblymusic-treasury data
-#[tokio::test]
-#[serial]
-async fn test_balance_chart_with_real_data() {
-    // Load test data (also loads test env)
-    load_test_data().await;
-
-    // Start the server
-    let server = TestServer::start().await;
-
-    // Wait for the background price sync to complete
-    wait_for_price_sync().await;
-
-    let client = reqwest::Client::new();
-
-    // Test Chart API with specific date range (Dec 1-4, 2025)
-    // Note: Dec 5 is not included because the mock data has a gap (jumps from Dec 4 to Dec 6)
-    let response = client
-        .get(server.url("/api/balance-history/chart"))
-        .query(&[
-            ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
-            ("startTime", "2025-12-01T00:00:00Z"),
-            ("endTime", "2025-12-04T23:59:59Z"),
-            ("interval", "daily"),
-        ])
-        .send()
-        .await
-        .expect("Failed to send request");
-
-    let status = response.status();
-    let body_text = response.text().await.expect("Failed to read response body");
-
-    assert_eq!(
-        status, 200,
-        "Chart API should return 200. Status: {}, Body: {}",
-        status, body_text
-    );
-
-    let chart_data: serde_json::Value =
-        serde_json::from_str(&body_text).expect("Failed to parse JSON response");
-
-    println!(
-        "Chart data: {}",
-        serde_json::to_string_pretty(&chart_data).unwrap()
-    );
-
-    // Verify response structure - should be grouped by token
-    assert!(chart_data.is_object(), "Response should be an object");
-
-    let token_map = chart_data.as_object().unwrap();
-
-    // Expected tokens, their balances on Dec 4 (last day of the test range), and USD prices
-    // Values are decimal-formatted strings from the API (BigDecimal includes trailing zeros)
-    // Prices are from DeFiLlama mock data for Dec 4, 2025 ~00:00 UTC (beginning of day)
-    let expected_tokens: Vec<(&str, &str, Option<f64>)> = vec![
-        (
-            "near",
-            "26.606689957078532199999977", // Balance on Dec 4
-            Some(1.8515041134),            // NEAR price at Dec 4 00:00:03 UTC
-        ),
-        (
-            "intents.near:nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near",
-            "9.99998000",
-            Some(0.9999063684), // USDC at Dec 3 23:59:56 UTC
-        ),
-        (
-            "intents.near:nep141:btc.omft.near",
-            "0.00544253",
-            Some(93500.8157276086), // BTC price at Dec 4 00:00:03 UTC
-        ),
-        (
-            "intents.near:nep141:xrp.omft.near",
-            "16.69236700",
-            Some(2.2011030105), // XRP price at Dec 4 00:00:05 UTC
-        ),
-        (
-            "intents.near:nep141:eth.omft.near",
-            "0.03501508842977613200",
-            Some(3190.0526253427), // ETH price at Dec 4 00:00:03 UTC
-        ),
-        (
-            "intents.near:nep141:sol-5ce3bf3a31af18be40ba30f721101b4341690186.omft.near",
-            "22.54364600",
-            Some(0.9999063684), // USDC on Solana
-        ),
-        (
-            "intents.near:nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near",
-            "124.83302000",
-            Some(0.9999063684), // USDC on Ethereum
-        ),
-        (
-            "intents.near:nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
-            "119",
-            Some(0.9999063684), // USDC on NEAR
-        ),
-        (
-            "intents.near:nep141:sol.omft.near",
-            "0.08342401",
-            Some(139.01050291113424), // SOL price from mock data
-        ),
-        (
-            "intents.near:nep141:wrap.near",
-            "0.8000",
-            Some(1.8515041134), // wNEAR = NEAR price at Dec 4 00:00:03 UTC
-        ),
-        ("arizcredits.near", "3", None), // Unknown token - no price data
-    ];
-
-    // Check that all expected tokens are present
-    for (token_id, _, _) in &expected_tokens {
-        assert!(
-            token_map.contains_key(*token_id),
-            "Missing expected token: {}",
-            token_id
-        );
-    }
-
-    // Verify balance and price values on the last day (Dec 5)
-    for (token_id, expected_balance, expected_price) in &expected_tokens {
-        let token_data = token_map
-            .get(*token_id)
-            .unwrap_or_else(|| panic!("Token {} not found", token_id));
-        assert!(
-            token_data.is_array(),
-            "Token data should be an array for {}",
-            token_id
-        );
-
-        let snapshots = token_data.as_array().unwrap();
-        assert_eq!(
-            snapshots.len(),
-            4,
-            "Should have 4 daily snapshots for {}",
-            token_id
-        );
-
-        // Check the last day (Dec 4) has the expected balance
-        let last_snapshot = &snapshots[3]; // Index 3 = Dec 4
-        let balance = last_snapshot
-            .get("balance")
-            .and_then(|b| b.as_str())
-            .unwrap_or_else(|| panic!("Balance should be a string for {}", token_id));
-
-        assert_eq!(
-            balance, *expected_balance,
-            "Balance mismatch for token {} on Dec 4: expected {}, got {}",
-            token_id, expected_balance, balance
-        );
-
-        // Check the priceUsd field
-        // Note: Mock data uses DeFiLlama prices from Dec 4, 2025 23:59:55 UTC
-        let actual_price = last_snapshot.get("priceUsd").and_then(|p| p.as_f64());
-        match expected_price {
-            Some(expected) => {
-                assert!(
-                    actual_price.is_some(),
-                    "Expected priceUsd for token {} but got null",
-                    token_id
-                );
-                let actual = actual_price.unwrap();
-                // Mock data is deterministic, so prices should match exactly
-                // (allowing tiny float precision differences)
-                assert!(
-                    (actual - expected).abs() < 0.0001,
-                    "Price mismatch for token {} on Dec 4: expected {}, got {}",
-                    token_id,
-                    expected,
-                    actual
-                );
-            }
-            None => {
-                assert!(
-                    actual_price.is_none(),
-                    "Expected no priceUsd for token {} but got {:?}",
-                    token_id,
-                    actual_price
-                );
-            }
-        }
-    }
-
-    println!("✓ Chart API works with webassemblymusic-treasury data");
-    println!(
-        "✓ All {} expected tokens present with correct balances and prices",
-        expected_tokens.len()
-    );
-}
-
-/// Test CSV export with webassemblymusic-treasury data.
-///
-/// This fixture account only seeds legacy `balance_changes`, so it also
-/// verifies that exports keep using the legacy fallback until public-history
-/// backfill is ready.
-#[tokio::test]
-#[serial]
-async fn test_csv_export_with_real_data() {
-    // Load test data (also loads test env)
-    load_test_data().await;
-
-    // Start the server
-    let server = TestServer::start().await;
-
-    // The export includes historical USD prices loaded by the background sync.
-    wait_for_price_sync().await;
-
-    let client = reqwest::Client::new();
-
-    // Test CSV Export
-    let response = client
-        .get(server.url("/api/balance-history/export"))
-        .query(&[
-            ("format", "csv"),
-            ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
-            ("startTime", "2025-06-01T00:00:00Z"),
-            ("endTime", "2026-01-01T00:00:00Z"),
-        ])
-        .send()
-        .await
-        .expect("Failed to send request");
-
-    assert_eq!(response.status(), 200, "CSV export should return 200");
-
-    // Verify content type
-    let content_type = response
-        .headers()
-        .get("content-type")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    assert!(
-        content_type.starts_with("text/csv"),
-        "Content-Type should be text/csv (got: {})",
-        content_type
-    );
-
-    // Get CSV content
-    let csv_content = response.text().await.expect("Failed to read response");
-
-    let snapshot_path = "tests/test_data/snapshots/csv_export_snapshot.csv";
-
-    // Generate new snapshots if environment variable is set
-    if std::env::var("GENERATE_NEW_TEST_SNAPSHOTS").is_ok() {
-        std::fs::create_dir_all("tests/test_data/snapshots")
-            .expect("Failed to create snapshots directory");
-        std::fs::write(snapshot_path, &csv_content).expect("Failed to write CSV snapshot");
-        println!("✓ CSV snapshot saved to {}", snapshot_path);
-    }
-
-    println!(
-        "CSV preview:\n{}",
-        csv_content.lines().take(5).collect::<Vec<_>>().join("\n")
-    );
-
-    // Verify CSV structure (new accounting-friendly headers)
-    assert!(
-        csv_content.contains("date,time,direction,from_address,to_address,asset_symbol,asset_contract_address,amount,balance_after,price_usd,value_usd,transaction_hash,receipt_id"),
-        "CSV should have proper accounting-friendly headers"
-    );
-
-    // Should NOT include SNAPSHOT or NOT_REGISTERED
-    assert!(
-        !csv_content.contains("SNAPSHOT"),
-        "CSV should not include SNAPSHOT records"
-    );
-    assert!(
-        !csv_content.contains("NOT_REGISTERED"),
-        "CSV should not include NOT_REGISTERED records"
-    );
-
-    // Exact row count (1 header + 172 legacy data rows = 173 total).
-    let row_count = csv_content.lines().count();
-    assert_eq!(
-        row_count, 173,
-        "CSV should have exactly 173 rows (1 header + 172 legacy data rows)"
-    );
-
-    // Compare with snapshot (hard assertion for regression testing)
-    let snapshot_content = std::fs::read_to_string(snapshot_path).unwrap_or_else(|_| {
-        panic!(
-            "Failed to read snapshot file: {}\n\
-         To generate new snapshots, run: GENERATE_NEW_TEST_SNAPSHOTS=1 cargo test",
-            snapshot_path
-        )
-    });
-
-    assert_eq!(
-        csv_content, snapshot_content,
-        "CSV output does not match snapshot!\n\
-         If this change is expected, regenerate snapshots with:\n\
-         GENERATE_NEW_TEST_SNAPSHOTS=1 cargo test --test balance_history_apis_test"
-    );
-
-    println!("✓ CSV export works correctly (found {} rows)", row_count);
-}
-
-/// Test Chart API with different intervals
-#[tokio::test]
-#[serial]
-async fn test_chart_api_intervals() {
-    // Load test data (also loads test env)
-    load_test_data().await;
-
-    // Start the server
-    let server = TestServer::start().await;
-
-    // Wait for the background price sync to complete
-    wait_for_price_sync().await;
-
-    let client = reqwest::Client::new();
-
-    let generate_snapshots = std::env::var("GENERATE_NEW_TEST_SNAPSHOTS").is_ok();
-
-    // Test with different intervals
-    for interval in &["hourly", "daily", "weekly", "monthly"] {
-        let response = client
-            .get(server.url("/api/balance-history/chart"))
-            .query(&[
-                ("accountId", "webassemblymusic-treasury.sputnik-dao.near"),
-                ("startTime", "2025-06-01T00:00:00Z"),
-                ("endTime", "2025-12-31T23:59:59Z"),
-                ("interval", interval),
-            ])
-            .send()
-            .await
-            .expect("Failed to send request");
-
-        assert_eq!(response.status(), 200, "{} interval should work", interval);
-
-        let chart_data: serde_json::Value = response
-            .json()
-            .await
-            .expect("Failed to parse JSON response");
-
-        // Verify we got data
-        assert!(
-            chart_data.is_object() && !chart_data.as_object().unwrap().is_empty(),
-            "{} interval should return data",
-            interval
-        );
-
-        let snapshot_path = format!("tests/test_data/snapshots/chart_{}_snapshot.json", interval);
-
-        // Generate new snapshots if environment variable is set
-        if generate_snapshots {
-            std::fs::create_dir_all("tests/test_data/snapshots")
-                .expect("Failed to create snapshots directory");
-            let snapshot_content =
-                serde_json::to_string_pretty(&chart_data).expect("Failed to serialize JSON");
-            std::fs::write(&snapshot_path, &snapshot_content)
-                .expect("Failed to write snapshot file");
-            println!("✓ Snapshot saved to {}", snapshot_path);
-        }
-
-        // Compare with snapshot (hard assertion for regression testing)
-        let existing_snapshot = std::fs::read_to_string(&snapshot_path).unwrap_or_else(|_| {
-            panic!(
-                "Failed to read snapshot file: {}\n\
-             To generate new snapshots, run: GENERATE_NEW_TEST_SNAPSHOTS=1 cargo test",
-                snapshot_path
-            )
-        });
-
-        let expected_data: serde_json::Value =
-            serde_json::from_str(&existing_snapshot).expect("Failed to parse snapshot");
-
-        // Compare token sets. Top-level metadata fields (lastSyncedAt,
-        // chartMeta) are excluded: their presence depends on whether another
-        // suite sharing the database has synced this account.
-        let token_keys = |data: &serde_json::Value| -> std::collections::BTreeSet<String> {
-            data.as_object()
-                .unwrap()
-                .iter()
-                .filter(|(_, value)| value.is_array())
-                .map(|(key, _)| key.clone())
-                .collect()
-        };
-        let current_keys = token_keys(&chart_data);
-        let expected_keys = token_keys(&expected_data);
-        assert_eq!(
-            current_keys,
-            expected_keys,
-            "{} interval: token set mismatch (missing: {:?}, unexpected: {:?})\n\
-             To regenerate snapshots: GENERATE_NEW_TEST_SNAPSHOTS=1 cargo test --test balance_history_apis_test",
-            interval,
-            expected_keys.difference(&current_keys).collect::<Vec<_>>(),
-            current_keys.difference(&expected_keys).collect::<Vec<_>>()
-        );
-
-        // Compare data point counts for each token. Top-level metadata
-        // fields (lastSyncedAt, chartMeta) are not token series.
-        for (token_id, snapshots) in chart_data.as_object().unwrap() {
-            let Some(snapshots) = snapshots.as_array() else {
-                continue;
-            };
-            let current_snapshots = snapshots.len();
-            let expected_snapshots = expected_data
-                .get(token_id)
-                .and_then(|v| v.as_array())
-                .map(|a| a.len())
-                .unwrap_or(0);
-
-            assert_eq!(
-                current_snapshots, expected_snapshots,
-                "{} interval, token {}: snapshot count mismatch (expected {}, got {})\n\
-                 To regenerate snapshots: GENERATE_NEW_TEST_SNAPSHOTS=1 cargo test --test balance_history_apis_test",
-                interval, token_id, expected_snapshots, current_snapshots
-            );
-        }
-
-        println!("✓ Chart API works with {} interval", interval);
-    }
+            .expect("read export credits");
+    assert_eq!(credits, 9);
 }
