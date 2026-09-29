@@ -485,7 +485,8 @@
             "checking": "새로 고침 상태 확인 중…",
             "unavailable": "새로 고침 상태를 사용할 수 없음",
             "updateTreasuryData": "트레저리 데이터 업데이트"
-        }
+        },
+        "pdfReceipt": "PDF 영수증"
     },
     "apiDocs": {
         "endpoint": "엔드포인트",

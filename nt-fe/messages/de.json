@@ -485,7 +485,8 @@
             "checking": "Aktualisierungsstatus wird geprüft…",
             "unavailable": "Aktualisierungsstatus nicht verfügbar",
             "updateTreasuryData": "Treasury-Daten aktualisieren"
-        }
+        },
+        "pdfReceipt": "PDF-Beleg"
     },
     "apiDocs": {
         "endpoint": "Endpunkt",

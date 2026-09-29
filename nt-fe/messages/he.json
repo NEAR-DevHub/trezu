@@ -485,7 +485,8 @@
             "checking": "בודק סטטוס רענון…",
             "unavailable": "סטטוס הרענון אינו זמין",
             "updateTreasuryData": "עדכון נתוני האוצר"
-        }
+        },
+        "pdfReceipt": "קבלה ב-PDF"
     },
     "apiDocs": {
         "endpoint": "נקודת קצה",

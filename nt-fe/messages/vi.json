@@ -485,7 +485,8 @@
             "checking": "Đang kiểm tra trạng thái làm mới…",
             "unavailable": "Không có trạng thái làm mới",
             "updateTreasuryData": "Cập nhật dữ liệu kho bạc"
-        }
+        },
+        "pdfReceipt": "Biên lai PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",

@@ -485,7 +485,8 @@
             "checking": "Comprobando estado de actualización…",
             "unavailable": "Estado de actualización no disponible",
             "updateTreasuryData": "Actualizar datos de tesorería"
-        }
+        },
+        "pdfReceipt": "Recibo en PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",

@@ -557,7 +557,7 @@ function ViewPdfReceiptButton({
     treasuryId: string;
     proposalId: number;
 }) {
-    const tReceipt = useTranslations("receiptPage");
+    const t = useTranslations("activity");
 
     return (
         <ModalSection>
@@ -572,7 +572,7 @@ function ViewPdfReceiptButton({
                     rel="noopener noreferrer"
                 >
                     <FileText className="size-4" />
-                    {tReceipt("generateReceipt")}
+                    {t("pdfReceipt")}
                 </Link>
             </Button>
         </ModalSection>

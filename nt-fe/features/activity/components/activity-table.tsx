@@ -68,7 +68,6 @@ export function ActivityTable({
     onPageChange,
 }: ActivityTableProps) {
     const t = useTranslations("activity");
-    const tReceipt = useTranslations("receiptPage");
     const getActivityLabel = useGetActivityLabel();
     const getFromAccount = useGetFromAccount();
     const { treasuryId, isConfidential } = useTreasury();
@@ -154,7 +153,20 @@ export function ActivityTable({
                             );
 
                             return (
-                                <TableRow key={activity.id}>
+                                <TableRow
+                                    key={activity.id}
+                                    className="cursor-pointer"
+                                    onClick={(event) => {
+                                        const target = event.target;
+                                        if (
+                                            target instanceof Element &&
+                                            target.closest("a, button")
+                                        ) {
+                                            return;
+                                        }
+                                        openTransactionDetails(activity);
+                                    }}
+                                >
                                     <TableCell className="pl-6">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 bg-muted">
@@ -498,7 +510,7 @@ export function ActivityTable({
                                                 className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
                                             >
                                                 <FileText className="size-4 shrink-0 text-muted-foreground" />
-                                                {tReceipt("generateReceipt")}
+                                                {t("pdfReceipt")}
                                             </Link>
                                         ) : (
                                             <TransactionHashCell

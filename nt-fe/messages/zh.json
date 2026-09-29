@@ -485,7 +485,8 @@
             "checking": "正在检查刷新状态…",
             "unavailable": "刷新状态不可用",
             "updateTreasuryData": "更新金库数据"
-        }
+        },
+        "pdfReceipt": "PDF 收据"
     },
     "apiDocs": {
         "endpoint": "接口地址",

@@ -485,7 +485,8 @@
             "checking": "Yenileme durumu kontrol ediliyor…",
             "unavailable": "Yenileme durumu kullanılamıyor",
             "updateTreasuryData": "Hazine verilerini güncelle"
-        }
+        },
+        "pdfReceipt": "PDF makbuzu"
     },
     "apiDocs": {
         "endpoint": "Uç nokta",

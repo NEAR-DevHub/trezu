@@ -485,7 +485,8 @@
             "checking": "更新ステータスを確認中…",
             "unavailable": "更新ステータスを利用できません",
             "updateTreasuryData": "トレジャリーのデータを更新"
-        }
+        },
+        "pdfReceipt": "PDF領収書"
     },
     "apiDocs": {
         "endpoint": "エンドポイント",

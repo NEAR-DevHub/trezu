@@ -485,7 +485,8 @@
             "checking": "Перевірка статусу оновлення…",
             "unavailable": "Статус оновлення недоступний",
             "updateTreasuryData": "Оновити дані скарбниці"
-        }
+        },
+        "pdfReceipt": "PDF-квитанція"
     },
     "apiDocs": {
         "endpoint": "Ендпоїнт",

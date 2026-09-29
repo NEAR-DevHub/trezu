@@ -485,7 +485,8 @@
             "checking": "Memeriksa status penyegaran…",
             "unavailable": "Status penyegaran tidak tersedia",
             "updateTreasuryData": "Perbarui data treasury"
-        }
+        },
+        "pdfReceipt": "Resi PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",
