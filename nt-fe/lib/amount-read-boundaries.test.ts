@@ -22,6 +22,66 @@ describe("legacy and malformed amount read boundaries", () => {
         expect(extractPaymentRequestData(proposal).networkFee).toBe("1234.56");
     });
 
+    it("reads an on-chain ft_transfer without inventing a destination network", () => {
+        const proposal = {
+            description: "",
+            kind: {
+                FunctionCall: {
+                    receiver_id: "shit.0xshitzu.near",
+                    actions: [
+                        {
+                            method_name: "ft_transfer",
+                            args: btoa(
+                                JSON.stringify({
+                                    receiver_id: "shitzu.pool.near",
+                                    amount: "843326591739215991554088027730",
+                                    memo: null,
+                                }),
+                            ),
+                            deposit: "1",
+                            gas: "270000000000000",
+                        },
+                    ],
+                },
+            },
+        } as Proposal;
+
+        const data = extractPaymentRequestData(proposal);
+        expect(data.tokenId).toBe("shit.0xshitzu.near");
+        expect(data.amount).toBe("843326591739215991554088027730");
+        expect(data.receiver).toBe("shitzu.pool.near");
+        expect(data.destinationAssetId).toBeUndefined();
+        expect(data.nearFt).toBe(true);
+    });
+
+    it("keeps an explicit destination network on an ft_transfer", () => {
+        const proposal = {
+            description: JSON.stringify({ destinationNetwork: "near.com" }),
+            kind: {
+                FunctionCall: {
+                    receiver_id: "shit.0xshitzu.near",
+                    actions: [
+                        {
+                            method_name: "ft_transfer",
+                            args: btoa(
+                                JSON.stringify({
+                                    receiver_id: "shitzu.pool.near",
+                                    amount: "1",
+                                }),
+                            ),
+                            deposit: "1",
+                            gas: "1",
+                        },
+                    ],
+                },
+            },
+        } as Proposal;
+
+        const data = extractPaymentRequestData(proposal);
+        expect(data.destinationAssetId).toBe("near.com");
+        expect(data.nearFt).toBe(true);
+    });
+
     it("keeps malformed near-wrap amounts from throwing", () => {
         const proposal = {
             description: "",
