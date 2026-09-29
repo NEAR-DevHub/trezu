@@ -435,7 +435,8 @@
             "to": "ДО",
             "transactionHash": "ХЕШ ТРАНЗАКЦІЇ",
             "hashTooltip": "Унікальний ідентифікатор (хеш) цієї транзакції",
-            "processing": "Обробка"
+            "processing": "Обробка",
+            "notes": "НОТАТКИ"
         },
         "empty": {
             "title": "Транзакцій не знайдено",
@@ -473,7 +474,8 @@
             "failed": "Невдало",
             "exchangeTransaction": "Транзакція обміну",
             "transferTransaction": "Транзакція переказу",
-            "rate": "Курс"
+            "rate": "Курс",
+            "notes": "Нотатки"
         },
         "refresh": {
             "ariaLabel": "Оновити конфіденційну історію",

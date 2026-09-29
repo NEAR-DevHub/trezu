@@ -48,6 +48,27 @@ import type {
 import { extractConfidentialBulkDestinationAssetId } from "./confidential-bulk-utils";
 import { getProposalUIKind } from "./proposal-utils";
 
+const CONFIDENTIAL_NOTE_PLACEHOLDERS = new Set([
+    "Confidential proposal via private intents. Details are hidden for privacy.",
+    "Confidential proposal. Details are hidden for privacy.",
+]);
+
+/**
+ * User-authored notes from a proposal description. Swap markdown always
+ * appends an execution-deadline reminder; drop that so request details
+ * show only a real comment. Confidential proposals store a privacy
+ * placeholder in the description — the real note lives on the intent.
+ */
+function userNotesFromDescription(description: string): string | undefined {
+    const notes = decodeProposalDescription("notes", description)?.trim();
+    if (!notes) return undefined;
+    if (notes.startsWith("**Must be executed before")) return undefined;
+    if (CONFIDENTIAL_NOTE_PLACEHOLDERS.has(notes)) return undefined;
+    const reminderAt = notes.indexOf("\n\n**Must be executed before");
+    const user = reminderAt === -1 ? notes : notes.slice(0, reminderAt).trim();
+    return user || undefined;
+}
+
 function normalizeTimeEstimateSeconds(value?: string): string | undefined {
     if (!value) return undefined;
     const trimmed = value.trim();
@@ -621,6 +642,7 @@ export function extractExchangeRequestData(
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
         hasAppFee,
+        notes: userNotesFromDescription(proposal.description),
     };
 }
 
@@ -659,6 +681,7 @@ export function extractNearWrapSwapRequestData(
         amountOut: amountFormatted,
         destinationNetwork: NEAR_NETWORK_ID,
         sourceNetwork: NEAR_NETWORK_ID,
+        notes: userNotesFromDescription(proposal.description),
     };
 }
 
@@ -984,6 +1007,7 @@ export function extractConfidentialRequestData(
                               appFees: storedAppFees as { fee?: number }[],
                           })
                         : undefined,
+                    notes: meta?.notes?.trim() || undefined,
                 } as SwapRequestData,
             };
             title = "Confidential Exchange";

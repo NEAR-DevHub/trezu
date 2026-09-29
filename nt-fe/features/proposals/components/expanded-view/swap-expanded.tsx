@@ -140,6 +140,18 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         },
     ];
 
+    const trimmedNotes = data.notes?.trim();
+    if (trimmedNotes) {
+        infoItems.push({
+            label: t("notes"),
+            value: (
+                <span className="whitespace-pre-wrap break-all">
+                    {trimmedNotes}
+                </span>
+            ),
+        });
+    }
+
     const expandableItems: InfoItem[] = [];
 
     if (data.slippage) {
@@ -272,6 +284,18 @@ function NearWrapSwapExpanded({ data }: NearWrapSwapExpandedProps) {
             ),
         },
     ];
+
+    const trimmedNotes = data.notes?.trim();
+    if (trimmedNotes) {
+        infoItems.push({
+            label: t("notes"),
+            value: (
+                <span className="whitespace-pre-wrap break-all">
+                    {trimmedNotes}
+                </span>
+            ),
+        });
+    }
 
     const expandableItems: InfoItem[] = [];
 

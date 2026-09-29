@@ -18,6 +18,7 @@ interface ProposalBuilderParams {
     slippageTolerance: number;
     treasuryId: string;
     proposalBond: string;
+    comment?: string;
 }
 
 interface ProposalAction {
@@ -49,13 +50,18 @@ export function buildProposalDescription(
     sellToken: Token,
     receiveToken: Token,
     slippageTolerance: number,
+    comment?: string,
 ): string {
     // Use quoteRequest.deadline (voting-period aligned). quote.deadline from
     // 1Click can be a longer deposit-address window and must not drive UI expiry.
     const deadline = proposalData.quoteRequest.deadline;
+    const executionNote = `**Must be executed before ${deadline}** for transferring tokens to 1Click's deposit address for swap execution.`;
+    const trimmedComment = comment?.trim();
     return encodeToMarkdown({
         proposal_action: "asset-exchange",
-        notes: `**Must be executed before ${deadline}** for transferring tokens to 1Click's deposit address for swap execution.`,
+        notes: trimmedComment
+            ? `${trimmedComment}\n\n${executionNote}`
+            : executionNote,
         tokenInAddress: sellToken.address,
         tokenOutAddress: receiveToken.address,
         amountIn: decimalFromBaseUnits(
@@ -83,7 +89,13 @@ export function buildProposalDescription(
 export function buildNativeNEARProposal(
     params: ProposalBuilderParams,
 ): ExchangeProposalResult {
-    const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+    const {
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance,
+        comment,
+    } = params;
     const amountInSmallestUnit = proposalData.quote.amountIn;
 
     return {
@@ -93,6 +105,7 @@ export function buildNativeNEARProposal(
                 sellToken,
                 receiveToken,
                 slippageTolerance,
+                comment,
             ),
             kind: {
                 FunctionCall: {
@@ -128,7 +141,13 @@ export function buildNativeNEARProposal(
 export function buildFungibleTokenProposal(
     params: ProposalBuilderParams,
 ): ExchangeProposalResult {
-    const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+    const {
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance,
+        comment,
+    } = params;
     const amountInSmallestUnit = proposalData.quote.amountIn;
     const originAsset = sellToken.address;
     const isNearToken =
@@ -141,6 +160,7 @@ export function buildFungibleTokenProposal(
         sellToken,
         receiveToken,
         slippageTolerance,
+        comment,
     );
 
     if (isNearToken) {
@@ -189,7 +209,13 @@ export function buildFungibleTokenProposal(
 export function buildNEARDepositProposal(
     params: ProposalBuilderParams,
 ): ExchangeProposalResult {
-    const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+    const {
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance,
+        comment,
+    } = params;
     const amountInSmallestUnit = proposalData.quote.amountIn;
 
     return {
@@ -199,6 +225,7 @@ export function buildNEARDepositProposal(
                 sellToken,
                 receiveToken,
                 slippageTolerance,
+                comment,
             ),
             kind: {
                 FunctionCall: {
@@ -224,7 +251,13 @@ export function buildNEARDepositProposal(
 export function buildNEARWithdrawProposal(
     params: ProposalBuilderParams,
 ): ExchangeProposalResult {
-    const { proposalData, sellToken, receiveToken, slippageTolerance } = params;
+    const {
+        proposalData,
+        sellToken,
+        receiveToken,
+        slippageTolerance,
+        comment,
+    } = params;
     const amountInSmallestUnit = proposalData.quote.amountIn;
 
     return {
@@ -234,6 +267,7 @@ export function buildNEARWithdrawProposal(
                 sellToken,
                 receiveToken,
                 slippageTolerance,
+                comment,
             ),
             kind: {
                 FunctionCall: {

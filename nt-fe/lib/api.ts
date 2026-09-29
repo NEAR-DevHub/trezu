@@ -327,6 +327,8 @@ export interface RecentActivity {
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;
+    /** Proposer's comment. Absent when the request had no note. */
+    notes?: string | null;
 }
 
 export interface RecentActivityResponse {

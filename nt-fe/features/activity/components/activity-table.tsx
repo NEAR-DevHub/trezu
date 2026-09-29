@@ -50,6 +50,26 @@ import {
 import { TransactionDetailsModal } from "./transaction-details-modal";
 import { TransactionHashCell } from "./transaction-hash-cell";
 
+function NotesCell({ notes }: { notes?: string | null }) {
+    const trimmed = notes?.trim();
+    if (!trimmed) return null;
+
+    return (
+        <Tooltip
+            content={trimmed}
+            contentProps={{
+                className: "w-auto max-w-72 whitespace-pre-wrap wrap-anywhere",
+            }}
+        >
+            <span className="inline-block w-full max-w-full">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-foreground">
+                    {trimmed}
+                </span>
+            </span>
+        </Tooltip>
+    );
+}
+
 interface ActivityTableProps {
     activities: RecentActivity[];
     isLoading: boolean;
@@ -87,7 +107,7 @@ export function ActivityTable({
     };
 
     if (isLoading) {
-        return <TableSkeleton rows={pageSize} columns={6} />;
+        return <TableSkeleton rows={pageSize} columns={7} />;
     }
 
     if (activities.length === 0) {
@@ -117,6 +137,9 @@ export function ActivityTable({
                             </TableHead>
                             <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">
                                 {t("table.to")}
+                            </TableHead>
+                            <TableHead className="min-w-[140px] max-w-[220px] text-xs font-medium uppercase text-muted-foreground">
+                                {t("table.notes")}
                             </TableHead>
                             <TableHead className="text-right pr-2 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">
                                 <div className="flex items-center justify-end gap-1">
@@ -496,6 +519,9 @@ export function ActivityTable({
                                                 )}
                                             </span>
                                         )}
+                                    </TableCell>
+                                    <TableCell className="min-w-[140px] max-w-[220px] overflow-hidden whitespace-normal">
+                                        <NotesCell notes={activity.notes} />
                                     </TableCell>
                                     <TableCell className="text-right pr-2">
                                         {isConfidential &&

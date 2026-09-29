@@ -119,6 +119,10 @@ pub struct EnrichedBalanceChange {
     /// row as intents-routed so clients can link the intents explorer.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quote_deposit_address: Option<String>,
+    /// Proposer's comment from the create-request form (`memo`/`comment`),
+    /// stored as `notes` on the proposal.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
 }
 
 /// The backing store selected for one balance-history request.

@@ -435,7 +435,8 @@
             "to": "接收方",
             "transactionHash": "交易哈希",
             "hashTooltip": "此交易的唯一标识符(哈希)",
-            "processing": "处理中"
+            "processing": "处理中",
+            "notes": "备注"
         },
         "empty": {
             "title": "未找到交易",
@@ -473,7 +474,8 @@
             "failed": "失败",
             "exchangeTransaction": "兑换交易",
             "transferTransaction": "转账交易",
-            "rate": "汇率"
+            "rate": "汇率",
+            "notes": "备注"
         },
         "refresh": {
             "ariaLabel": "刷新机密历史记录",

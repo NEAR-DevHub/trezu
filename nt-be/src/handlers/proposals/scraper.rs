@@ -486,6 +486,25 @@ pub fn extract_from_description(desc: &str, key: &str) -> Option<String> {
     None
 }
 
+/// User-facing note from a proposal description.
+///
+/// Create-request forms collect this as `memo` (payments) or `comment`
+/// (swaps); `encodeToMarkdown` stores it under `notes`. Swap descriptions
+/// always append an execution-deadline reminder when the proposer left no
+/// comment — drop that so history shows only a real note.
+pub fn user_notes_from_description(description: &str) -> Option<String> {
+    let notes = extract_from_description(description, "notes")
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())?;
+    if notes.starts_with("**Must be executed before")
+        || notes == "Confidential proposal via private intents. Details are hidden for privacy."
+        || notes == "Confidential proposal. Details are hidden for privacy."
+    {
+        return None;
+    }
+    Some(notes)
+}
+
 fn get_current_time_nanos() -> U64 {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -1480,6 +1499,36 @@ mod tests {
         for kind in [extra_action, wrap_mismatch, bad_args, zero, transfer] {
             assert_eq!(PublicToConfidentialCall::from_kind(&kind), None);
         }
+    }
+
+    #[test]
+    fn user_notes_reads_payment_memo() {
+        let description = "* Proposal Action: transfer <br>* Notes: Invoice 1042";
+        assert_eq!(
+            user_notes_from_description(description).as_deref(),
+            Some("Invoice 1042")
+        );
+    }
+
+    #[test]
+    fn user_notes_ignores_title() {
+        let description = "* Title: Monthly payroll";
+        assert_eq!(user_notes_from_description(description), None);
+    }
+
+    #[test]
+    fn user_notes_keeps_swap_comment_and_drops_reminder() {
+        let with_comment = "* Proposal Action: asset-exchange <br>* Notes: Rebalance USDC\n\n**Must be executed before 2026-01-01** for transferring tokens to 1Click's deposit address for swap execution.";
+        assert_eq!(
+            user_notes_from_description(with_comment).as_deref(),
+            Some("Rebalance USDC")
+        );
+
+        let reminder_only = "* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-01-01** for transferring tokens to 1Click's deposit address for swap execution.";
+        assert_eq!(user_notes_from_description(reminder_only), None);
+
+        let placeholder = "* Proposal Action: confidential <br>* Notes: Confidential proposal via private intents. Details are hidden for privacy.";
+        assert_eq!(user_notes_from_description(placeholder), None);
     }
 
     /// Regression test: `BatchPayment.recipient` was previously typed as `AccountId`,
