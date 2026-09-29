@@ -194,7 +194,9 @@ for (const viewport of [
                 const proposalResp = page.waitForResponse((r) =>
                     r
                         .url()
-                        .includes(`/api/proposal/${TREASURY_ID}/${PROPOSAL_ID}`),
+                        .includes(
+                            `/api/proposal/${TREASURY_ID}/${PROPOSAL_ID}`,
+                        ),
                 );
                 await page.goto(`/${TREASURY_ID}/requests/${PROPOSAL_ID}`);
                 await proposalResp;

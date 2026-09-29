@@ -320,66 +320,68 @@ function Step2({
         }
         return undefined;
     }, [bridgeAssets, destinationNetwork]);
-    const { recipientAmount, displayNetworkFee, recipientEstimatedUSDValue } =
-        useMemo(() => {
-            if (!token) {
-                return {
-                    totalAmountWithFees: Big(0),
-                    recipientAmount: Big(0),
-                    displayNetworkFee: Big(0),
-                    estimatedUSDValue: null,
-                    recipientEstimatedUSDValue: null,
-                };
-            }
+    const {
+        totalAmountWithFees,
+        recipientAmount,
+        displayNetworkFee,
+        estimatedUSDValue,
+        recipientEstimatedUSDValue,
+    } = useMemo(() => {
+        if (!token) {
+            return {
+                totalAmountWithFees: Big(0),
+                recipientAmount: Big(0),
+                displayNetworkFee: Big(0),
+                estimatedUSDValue: null,
+                recipientEstimatedUSDValue: null,
+            };
+        }
 
-            const enteredAmount = decimalOrNull(amount) ?? Big(0);
-            const price = decimalOrNull(tokenData?.price);
+        const enteredAmount = decimalOrNull(amount) ?? Big(0);
+        const price = decimalOrNull(tokenData?.price);
 
-            if (liveQuote?.quote) {
-                const quotedTotal =
-                    decimalFromBaseUnitsOrNull(
-                        liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
-                        token.decimals,
-                    ) ??
-                    groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
-                    Big(0);
-                const quotedRecipient =
-                    groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
-                    decimalFromBaseUnitsOrNull(
-                        liveQuote.quote.amountOut ||
-                            liveQuote.quote.minAmountOut,
-                        token.decimals,
-                    ) ??
-                    Big(0);
-                const feeValue =
-                    decimalOrNull(computeQuoteNetworkFee(liveQuote.quote)) ??
-                    Big(0);
-
-                return {
-                    totalAmountWithFees: quotedTotal,
-                    recipientAmount: quotedRecipient,
-                    displayNetworkFee: feeValue,
-                    estimatedUSDValue:
-                        decimalOrNull(liveQuote.quote.amountInUsd) ??
-                        (price?.gt(0) ? quotedTotal.mul(price) : null),
-                    recipientEstimatedUSDValue:
-                        decimalOrNull(liveQuote.quote.amountOutUsd) ??
-                        (price?.gt(0) ? quotedRecipient.mul(price) : null),
-                };
-            }
+        if (liveQuote?.quote) {
+            const quotedTotal =
+                decimalFromBaseUnitsOrNull(
+                    liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
+                    token.decimals,
+                ) ??
+                groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
+                Big(0);
+            const quotedRecipient =
+                groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
+                decimalFromBaseUnitsOrNull(
+                    liveQuote.quote.amountOut || liveQuote.quote.minAmountOut,
+                    token.decimals,
+                ) ??
+                Big(0);
+            const feeValue =
+                decimalOrNull(computeQuoteNetworkFee(liveQuote.quote)) ??
+                Big(0);
 
             return {
-                totalAmountWithFees: enteredAmount,
-                recipientAmount: enteredAmount,
-                displayNetworkFee: Big(0),
-                estimatedUSDValue: price?.gt(0)
-                    ? enteredAmount.mul(price)
-                    : null,
-                recipientEstimatedUSDValue: price?.gt(0)
-                    ? enteredAmount.mul(price)
-                    : null,
+                totalAmountWithFees: quotedTotal,
+                recipientAmount: quotedRecipient,
+                displayNetworkFee: feeValue,
+                estimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountInUsd) ??
+                    (price?.gt(0) ? quotedTotal.mul(price) : null),
+                recipientEstimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountOutUsd) ??
+                    (price?.gt(0) ? quotedRecipient.mul(price) : null),
             };
-        }, [amount, liveQuote, token, tokenData?.price]);
+        }
+
+        return {
+            totalAmountWithFees: enteredAmount,
+            recipientAmount: enteredAmount,
+            displayNetworkFee: Big(0),
+            estimatedUSDValue: price?.gt(0) ? enteredAmount.mul(price) : null,
+            recipientEstimatedUSDValue: price?.gt(0)
+                ? enteredAmount.mul(price)
+                : null,
+        };
+    }, [amount, liveQuote, token, tokenData?.price]);
 
     const isQuoteLoading =
         isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);
@@ -393,8 +395,8 @@ function Step2({
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={recipientAmount}
-                    totalUSD={recipientEstimatedUSDValue}
+                    total={totalAmountWithFees}
+                    totalUSD={estimatedUSDValue}
                     token={token}
                     title=""
                     showNetworkIcon={true}
