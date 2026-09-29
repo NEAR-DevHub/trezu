@@ -463,7 +463,8 @@ pub fn metadata_lookup_candidates(token_id: &str) -> Vec<String> {
 }
 
 /// Prefer the unified asset's display symbol/name/icon when a defuse id maps to
-/// a real unified group. Standalone catalog duplicates (e.g. `AURORA (omni)`)
+/// a real unified group. The catalog icon always wins over counterparties/on-chain
+/// icons so every screen matches the near.com deposit flow. Standalone catalog duplicates (e.g. `AURORA (omni)`)
 /// share the same defuseAssetId but should not win for user-facing labels.
 fn apply_unified_display_override(meta: &mut TokenMetadata) {
     let stripped = meta
@@ -488,9 +489,7 @@ fn apply_unified_display_override(meta: &mut TokenMetadata) {
         };
         meta.symbol = unified.symbol.clone();
         meta.name = unified.name.clone();
-        if meta.icon.is_none() {
-            meta.icon = Some(unified.icon.clone());
-        }
+        meta.icon = Some(unified.icon.clone());
         return;
     }
 }
@@ -1166,6 +1165,39 @@ mod tests {
         apply_unified_display_override(&mut meta);
         assert_eq!(meta.symbol, "AURORA");
         assert_eq!(meta.name, "Aurora");
+    }
+
+    #[test]
+    fn unified_display_override_replaces_stale_icon_with_catalog_icon() {
+        for (token_id, expected_icon) in [
+            (
+                "usdt.tether-token.near",
+                "https://near.com/static/icons/network/usdt.png",
+            ),
+            (
+                "intents.near:nep141:eth.omft.near",
+                "https://near.com/static/icons/network/ethereum.png",
+            ),
+            (
+                "intents.near:nep245:v2_1.omni.hot.tg:1117_",
+                "https://assets.coingecko.com/coins/images/17980/standard/Gram_Circular_Badge.png?1781524778",
+            ),
+        ] {
+            let mut meta = TokenMetadata {
+                token_id: token_id.to_string(),
+                name: String::new(),
+                symbol: String::new(),
+                decimals: 6,
+                icon: Some("https://s2.coinmarketcap.com/static/img/coins/128x128/825.png".into()),
+                price: None,
+                price_updated_at: None,
+                network: None,
+                chain_name: None,
+                chain_icons: None,
+            };
+            apply_unified_display_override(&mut meta);
+            assert_eq!(meta.icon.as_deref(), Some(expected_icon), "{token_id}");
+        }
     }
 
     #[test]
