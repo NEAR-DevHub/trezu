@@ -1,4 +1,6 @@
-import { expect, type Page, type Route, test } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
+import { expect, test } from "./fixtures/test-with-pages";
+import { seedLedgerSession, stubLedgerDevice } from "./helpers/ledger-session";
 
 /**
  * Regression coverage for issue #1690 (fix: PR #1709): after confirming a vote
@@ -20,8 +22,6 @@ import { expect, type Page, type Route, test } from "@playwright/test";
 const TREASURY_ID = "webassemblymusic-treasury.sputnik-dao.near";
 const ACCOUNT_ID = "test.near";
 const PROPOSAL_ID = 7;
-// Sandbox genesis key for test.near, same as ledger-login.spec.ts.
-const LEDGER_PUBLIC_KEY = "ed25519:5BGSaf6YjVm7565VzWQHNxoyEjwr3jUpRJSGjREvU9dB";
 const DEVICE_WAKE_MS = 4000;
 
 const ONE_NEAR = "1000000000000000000000000";
@@ -103,58 +103,10 @@ function fulfillJson(route: Route, body: unknown) {
     });
 }
 
-/**
- * Signs test.near in with the real Ledger wallet: near-connect's selected
- * wallet, Trezu's forced direct-trigger target (so the connector is built
- * with Ledger included), and the executor's own storage, which near-connect
- * namespaces as `<walletId>:<key>` in the page's localStorage.
- */
-async function seedLedgerSession(page: Page) {
-    await page.addInitScript(
-        ({ accountId, publicKey }) => {
-            // Init scripts also run in the executor's sandboxed iframe, which
-            // has no localStorage of its own to seed.
-            try {
-                localStorage.setItem("selected-wallet", "ledger");
-                localStorage.setItem("trezu:target-wallet", "ledger");
-                localStorage.setItem(
-                    "ledger:ledger:accounts",
-                    JSON.stringify([{ accountId, publicKey }]),
-                );
-                localStorage.setItem("ledger:ledger:transportMode", "WebHID");
-            } catch {}
-        },
-        { accountId: ACCOUNT_ID, publicKey: LEDGER_PUBLIC_KEY },
-    );
-}
-
-/**
- * Fakes a Ledger that takes DEVICE_WAKE_MS to answer the silent reconnect and
- * then turns out not to be there. Runs in every frame, including the
- * executor's iframe, where the lookup happens.
- */
-async function stubSlowLedgerDevice(page: Page) {
-    await page.addInitScript((wakeMs) => {
-        Object.defineProperty(navigator, "usb", {
-            configurable: true,
-            value: {
-                getDevices: () =>
-                    new Promise((resolve) => setTimeout(() => resolve([]), wakeMs)),
-                requestDevice: () =>
-                    Promise.reject(
-                        new DOMException("No device selected.", "NotFoundError"),
-                    ),
-                addEventListener: () => {},
-                removeEventListener: () => {},
-            },
-        });
-    }, DEVICE_WAKE_MS);
-}
-
 async function setupMocks(page: Page) {
     const proposal = buildPendingTransfer();
-    await seedLedgerSession(page);
-    await stubSlowLedgerDevice(page);
+    await seedLedgerSession(page, ACCOUNT_ID);
+    await stubLedgerDevice(page, DEVICE_WAKE_MS);
 
     await page.route("**/*", async (route) => {
         const url = route.request().url();
@@ -229,67 +181,45 @@ for (const vote of ["Approve", "Reject"] as const) {
      */
     test(`${vote}: vote dialog stays up with a disabled "Preparing your vote" until the Ledger popup shows`, async ({
         page,
+        requestDetailsPage,
+        voteDialog,
+        walletConnectorPopup,
     }) => {
         test.setTimeout(60_000);
         await setupMocks(page);
 
-        const main = page.locator("main");
-        const voteDialog = page.getByRole("dialog", {
-            name: "Confirm your vote",
-        });
-        // Every popup root near-connect mounts, hidden or shown.
-        const connectorPopups = page.locator(".hot-connector-popup");
-        const shownPopups = connectorPopups.filter({ visible: true });
-        const ledgerScreen = page
-            .frameLocator(".hot-connector-popup iframe")
-            .getByText("Reconnect Ledger");
-
         await test.step("open the pending request and choose the vote", async () => {
-            const proposalResp = page.waitForResponse((r) =>
-                r.url().includes(`/api/proposal/${TREASURY_ID}/${PROPOSAL_ID}`),
-            );
-            await page.goto(`/${TREASURY_ID}/requests/${PROPOSAL_ID}`);
-            await proposalResp;
-            await main
-                .getByRole("button", { name: vote, exact: true })
-                .click({ timeout: 15000 });
-            await expect(voteDialog).toBeVisible();
-        });
-
-        const confirm = voteDialog.getByRole("button", {
-            name: "Confirm",
-            exact: true,
+            await requestDetailsPage.goto(TREASURY_ID, PROPOSAL_ID);
+            await requestDetailsPage.voteButton(vote).click({ timeout: 15000 });
+            await expect(voteDialog.root).toBeVisible();
         });
 
         await test.step("confirm: the dialog shows it is preparing", async () => {
-            await confirm.click();
+            await voteDialog.confirmButton().click();
 
-            const preparing = voteDialog.getByRole("button", {
-                name: "Preparing your vote",
-            });
-            await expect(preparing).toBeVisible();
+            await expect(voteDialog.preparingButton()).toBeVisible();
             // A second press must not be possible while Ledger is loading.
-            await expect(preparing).toBeDisabled();
+            await expect(voteDialog.preparingButton()).toBeDisabled();
         });
 
         await test.step("the hidden Ledger popup does not tear the dialog down", async () => {
             // near-connect has mounted the popup root but not shown it yet:
             // this is exactly when the bug closed the dialog.
-            await expect(connectorPopups.last()).toBeAttached();
-            await expect(shownPopups).toHaveCount(0);
-            await expect(voteDialog).toBeVisible();
-            await expect(
-                voteDialog.getByRole("button", { name: "Preparing your vote" }),
-            ).toBeDisabled();
+            await expect(walletConnectorPopup.roots.last()).toBeAttached();
+            await expect(walletConnectorPopup.shown).toHaveCount(0);
+            await expect(voteDialog.root).toBeVisible();
+            await expect(voteDialog.preparingButton()).toBeDisabled();
         });
 
         await test.step("the Ledger popup takes over from the dialog", async () => {
-            await expect(ledgerScreen).toBeVisible({
+            await expect(
+                walletConnectorPopup.ledgerReconnectScreen(),
+            ).toBeVisible({
                 timeout: DEVICE_WAKE_MS + 10_000,
             });
-            await expect(voteDialog).toBeHidden();
+            await expect(voteDialog.root).toBeHidden();
             // One vote, one wallet popup: no second signing flow was started.
-            await expect(shownPopups).toHaveCount(1);
+            await expect(walletConnectorPopup.shown).toHaveCount(1);
         });
     });
 }
