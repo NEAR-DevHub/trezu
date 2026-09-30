@@ -281,25 +281,29 @@ function permissionGrantsAction(permission: string, action: string): boolean {
 }
 
 /**
- * True when one proposal-kind prefix has `AddProposal`, `VoteApprove`, and `VoteReject` together.
- * The prefix can be anything (`policy`, `call`, `*`, …). `{kind}:*` is handled by
- * `permissionGrantsAction`.
+ * True when `kind` or `*` has `AddProposal`, `VoteApprove`, and `VoteReject` together.
+ * A trio on a different kind does not count. `{kind}:*` is handled by `permissionGrantsAction`.
  */
 const KIND_ACTIONS = new Set(["AddProposal", "VoteApprove", "VoteReject"]);
 
-function hasAddApproveRejectForAKind(permissions: string[]): boolean {
-    const actionsByKind = new Map<string, Set<string>>();
+function hasAddApproveRejectForKind(
+    permissions: string[],
+    kind: string,
+): boolean {
+    const forKind = new Set<string>();
+    const forAny = new Set<string>();
     for (const permission of permissions) {
         const sep = permission.indexOf(":");
         if (sep <= 0) continue;
-        const kind = permission.slice(0, sep);
+        const permissionKind = permission.slice(0, sep);
         const action = permission.slice(sep + 1);
-        if (!KIND_ACTIONS.has(action)) continue;
-        let actions = actionsByKind.get(kind);
-        if (!actions) {
-            actions = new Set();
-            actionsByKind.set(kind, actions);
+        if (
+            (permissionKind !== kind && permissionKind !== "*") ||
+            !KIND_ACTIONS.has(action)
+        ) {
+            continue;
         }
+        const actions = permissionKind === "*" ? forAny : forKind;
         actions.add(action);
         if (actions.size === KIND_ACTIONS.size) return true;
     }
@@ -313,14 +317,15 @@ function hasAddApproveRejectForAKind(permissions: string[]): boolean {
  * nt-be `verify_can_perform_action(dao, action)` call must match the same way — otherwise the UI
  * shows an action the backend 403s (or hides one it allows).
  *
- * A role matches when some permission's action segment equals `action` or `*`, or when any
- * proposal kind on that role has `AddProposal`, `VoteApprove`, and `VoteReject` together. The
- * trio is not limited to the `ChangePolicy` gate — it satisfies every action this function checks.
+ * A role matches when some permission's action segment equals `action` or `*`. When `kind` is
+ * set, it also matches if that kind — or `*` — has `AddProposal`, `VoteApprove`, and
+ * `VoteReject` together. A trio on a different kind does not.
  */
 export function hasActionPermission(
     policy: Policy | null | undefined,
     accountId: string,
     action: string,
+    kind?: string,
 ): boolean {
     if (!policy || !accountId) return false;
 
@@ -329,7 +334,9 @@ export function hasActionPermission(
         return (
             role.permissions.some((permission) =>
                 permissionGrantsAction(permission, action),
-            ) || hasAddApproveRejectForAKind(role.permissions)
+            ) ||
+            (kind !== undefined &&
+                hasAddApproveRejectForKind(role.permissions, kind))
         );
     });
 }
@@ -343,5 +350,5 @@ export function canChangePolicy(
     policy: Policy | null | undefined,
     accountId: string,
 ): boolean {
-    return hasActionPermission(policy, accountId, "ChangePolicy");
+    return hasActionPermission(policy, accountId, "ChangePolicy", "policy");
 }
