@@ -481,7 +481,6 @@
             "lastUpdated": "Son güncelleme {time}",
             "notUpdated": "Henüz güncellenmedi",
             "justNow": "şimdi",
-            "moments": "az önce",
             "checking": "Yenileme durumu kontrol ediliyor…",
             "unavailable": "Yenileme durumu kullanılamıyor",
             "updateTreasuryData": "Hazine verilerini güncelle"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "Sona Erer",
-        "created": "Oluşturuldu",
+        "executed": "Yürütüldü",
+        "rejected": "Reddedildi",
+        "failed": "Başarısız",
         "expired": "Süresi Doldu",
         "removed": "Kaldırıldı"
     },
     "relativeTime": {
-        "justNow": "Az önce",
-        "moments": "anlar"
+        "justNow": "Az önce"
     },
     "amount": {
         "network": "Ağ: {network}"

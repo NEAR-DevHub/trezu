@@ -37,7 +37,11 @@ type StandardDateProps = BaseFormattedDateProps & {
 };
 
 type ProposalStatusDateProps = BaseFormattedDateProps & {
-    date?: never;
+    /**
+     * Overrides the status-derived date while keeping the status label,
+     * e.g. the resolved on-chain vote timestamp for "Executed 2 days ago".
+     */
+    date?: Date;
     /** Proposal to derive the status-based date from */
     proposal: Proposal;
     /** Policy required for expiration calculation */
@@ -54,7 +58,8 @@ type FormattedDateProps = StandardDateProps | ProposalStatusDateProps;
  *
  * When `proposal` + `policy` are provided, displays the status-relevant date:
  * - Pending → "Expires in X" (expiry date)
- * - Executed/Rejected/Failed/Expired/Removed → "Status X ago" (resolved date)
+ * - Executed/Rejected/Failed/Expired/Removed → "Status X ago" (resolved date,
+ *   or the `date` override when the caller has resolved the vote transaction)
  * Full timestamp shown in tooltip on hover.
  */
 export function FormattedDate(props: FormattedDateProps) {
@@ -64,7 +69,6 @@ export function FormattedDate(props: FormattedDateProps) {
     const locale = useLocale();
     const relativeLabels: RelativeTimeLabels = {
         justNow: tRel("justNow"),
-        moments: tRel("moments"),
         locale,
     };
 
@@ -80,10 +84,12 @@ export function FormattedDate(props: FormattedDateProps) {
     let urgentExpiry = false;
 
     if (props.proposal && props.policy) {
-        const { date, isFuture, labelKey } = getProposalStatusDateInfo(
+        const statusDate = getProposalStatusDateInfo(
             props.proposal,
             props.policy,
         );
+        const { isFuture, labelKey } = statusDate;
+        const date = props.date ?? statusDate.date;
         const label = labelKey ? tDate(labelKey) : "";
         tooltipText = formatUserDate(date, { timezone, timeFormat });
         if (isFuture && date.getTime() - Date.now() < 6 * 60 * 60 * 1000) {

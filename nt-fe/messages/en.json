@@ -481,7 +481,6 @@
             "lastUpdated": "Last updated {time}",
             "notUpdated": "Not updated yet",
             "justNow": "now",
-            "moments": "moments",
             "checking": "Checking refresh status…",
             "unavailable": "Refresh status unavailable",
             "updateTreasuryData": "Update treasury data"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "Expires",
-        "created": "Created",
+        "executed": "Executed",
+        "rejected": "Rejected",
+        "failed": "Failed",
         "expired": "Expired",
         "removed": "Removed"
     },
     "relativeTime": {
-        "justNow": "Just now",
-        "moments": "moments"
+        "justNow": "Just now"
     },
     "amount": {
         "network": "Network: {network}"

@@ -481,7 +481,6 @@
             "lastUpdated": "עודכן לאחרונה {time}",
             "notUpdated": "עדיין לא עודכן",
             "justNow": "עכשיו",
-            "moments": "רגעים",
             "checking": "בודק סטטוס רענון…",
             "unavailable": "סטטוס הרענון אינו זמין",
             "updateTreasuryData": "עדכון נתוני האוצר"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "פג תוקף",
-        "created": "נוצר",
+        "executed": "בוצע",
+        "rejected": "נדחה",
+        "failed": "נכשל",
         "expired": "פג תוקף",
         "removed": "הוסר"
     },
     "relativeTime": {
-        "justNow": "כרגע",
-        "moments": "רגעים"
+        "justNow": "כרגע"
     },
     "amount": {
         "network": "רשת: {network}"

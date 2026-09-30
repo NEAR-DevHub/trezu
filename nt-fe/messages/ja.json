@@ -481,7 +481,6 @@
             "lastUpdated": "最終更新: {time}",
             "notUpdated": "まだ更新されていません",
             "justNow": "今",
-            "moments": "しばらく",
             "checking": "更新ステータスを確認中…",
             "unavailable": "更新ステータスを利用できません",
             "updateTreasuryData": "トレジャリーのデータを更新"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "有効期限",
-        "created": "作成日",
+        "executed": "実行済み",
+        "rejected": "却下済み",
+        "failed": "失敗",
         "expired": "失効",
         "removed": "削除済み"
     },
     "relativeTime": {
-        "justNow": "たった今",
-        "moments": "わずか前"
+        "justNow": "たった今"
     },
     "amount": {
         "network": "ネットワーク: {network}"

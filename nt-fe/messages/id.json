@@ -481,7 +481,6 @@
             "lastUpdated": "Terakhir diperbarui {time}",
             "notUpdated": "Belum diperbarui",
             "justNow": "sekarang",
-            "moments": "beberapa saat",
             "checking": "Memeriksa status penyegaran…",
             "unavailable": "Status penyegaran tidak tersedia",
             "updateTreasuryData": "Perbarui data treasury"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "Kedaluwarsa",
-        "created": "Dibuat",
+        "executed": "Dieksekusi",
+        "rejected": "Ditolak",
+        "failed": "Gagal",
         "expired": "Kedaluwarsa",
         "removed": "Dihapus"
     },
     "relativeTime": {
-        "justNow": "Baru saja",
-        "moments": "beberapa saat"
+        "justNow": "Baru saja"
     },
     "amount": {
         "network": "Jaringan: {network}"

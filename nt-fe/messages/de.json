@@ -481,7 +481,6 @@
             "lastUpdated": "Zuletzt aktualisiert {time}",
             "notUpdated": "Noch nicht aktualisiert",
             "justNow": "jetzt",
-            "moments": "Momente",
             "checking": "Aktualisierungsstatus wird geprüft…",
             "unavailable": "Aktualisierungsstatus nicht verfügbar",
             "updateTreasuryData": "Treasury-Daten aktualisieren"
@@ -2411,13 +2410,14 @@
     },
     "statusDate": {
         "expires": "Läuft ab",
-        "created": "Erstellt",
+        "executed": "Ausgeführt",
+        "rejected": "Abgelehnt",
+        "failed": "Fehlgeschlagen",
         "expired": "Abgelaufen",
         "removed": "Entfernt"
     },
     "relativeTime": {
-        "justNow": "Gerade eben",
-        "moments": "Momente"
+        "justNow": "Gerade eben"
     },
     "amount": {
         "network": "Netzwerk: {network}"

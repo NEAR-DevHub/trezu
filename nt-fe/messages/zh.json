@@ -481,7 +481,6 @@
             "lastUpdated": "上次更新于 {time}",
             "notUpdated": "尚未更新",
             "justNow": "刚刚",
-            "moments": "片刻",
             "checking": "正在检查刷新状态…",
             "unavailable": "刷新状态不可用",
             "updateTreasuryData": "更新金库数据"
@@ -2394,13 +2393,14 @@
     },
     "statusDate": {
         "expires": "过期",
-        "created": "已创建",
+        "executed": "已执行",
+        "rejected": "已拒绝",
+        "failed": "失败",
         "expired": "已过期",
         "removed": "已移除"
     },
     "relativeTime": {
-        "justNow": "刚刚",
-        "moments": "片刻"
+        "justNow": "刚刚"
     },
     "amount": {
         "network": "网络:{network}"

@@ -91,8 +91,9 @@ interface ProposalsTableProps {
     onSelectionChange?: (count: number) => void;
 }
 
-// Prefer resolved timestamp only for executed proposals, then fall back
-// to the standard status-based date.
+// Executed / Failed / Rejected rows show the vote transaction timestamp
+// ("Executed 2 days ago"); until it resolves, or when NearBlocks has no
+// match, they fall back to the standard status-based date.
 function ProposalTimelineDate({
     proposal,
     policy,
@@ -105,6 +106,8 @@ function ProposalTimelineDate({
     const { treasuryId } = useTreasury();
     const status = getProposalStatus(proposal, policy);
     const isProposalExecuted = status === "Executed";
+    const isResolvedByVote =
+        isProposalExecuted || status === "Failed" || status === "Rejected";
     const depositAddress = extractReceiptProposalData(
         proposal,
         treasuryId,
@@ -124,7 +127,7 @@ function ProposalTimelineDate({
         treasuryId,
         proposal,
         policy,
-        isProposalExecuted && !shouldUseSwapDate,
+        isResolvedByVote && !shouldUseSwapDate,
     );
     const { data: swapStatus, isLoading: isLoadingSwapStatus } = useSwapStatus(
         depositAddress || null,
@@ -133,7 +136,7 @@ function ProposalTimelineDate({
         treasuryId,
     );
 
-    if (!isProposalExecuted) {
+    if (!isResolvedByVote) {
         return (
             <FormattedDate
                 proposal={proposal}
@@ -167,7 +170,15 @@ function ProposalTimelineDate({
         );
     }
 
-    return <FormattedDate date={executedDate} relative className={className} />;
+    return (
+        <FormattedDate
+            proposal={proposal}
+            policy={policy}
+            date={executedDate}
+            relative
+            className={className}
+        />
+    );
 }
 
 export function ProposalsTable({

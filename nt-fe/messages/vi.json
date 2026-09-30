@@ -481,7 +481,6 @@
             "lastUpdated": "Cập nhật lần cuối {time}",
             "notUpdated": "Chưa cập nhật",
             "justNow": "bây giờ",
-            "moments": "khoảnh khắc",
             "checking": "Đang kiểm tra trạng thái làm mới…",
             "unavailable": "Không có trạng thái làm mới",
             "updateTreasuryData": "Cập nhật dữ liệu kho bạc"
@@ -2394,13 +2393,14 @@
     },
     "statusDate": {
         "expires": "Hết hạn",
-        "created": "Đã tạo",
+        "executed": "Đã thực thi",
+        "rejected": "Đã từ chối",
+        "failed": "Thất bại",
         "expired": "Đã hết hạn",
         "removed": "Đã xóa"
     },
     "relativeTime": {
-        "justNow": "Vừa xong",
-        "moments": "khoảnh khắc"
+        "justNow": "Vừa xong"
     },
     "amount": {
         "network": "Mạng: {network}"
