@@ -32,6 +32,14 @@ pub struct EnvVars {
     pub disable_stats_generation: bool,
     pub disable_ft_lockup_scheduler: bool,
     pub disable_gold_ledger_usd_backfill: bool,
+    /// `DISABLE_PUBLIC_TREASURY_WORKERS`: skip every worker that only serves
+    /// public (on-chain) treasuries — the NearBlocks history pipeline,
+    /// silver/gold projection + verification, proposal/quote reconcilers,
+    /// staking observation, the sputnik factory mirror, the public AUM
+    /// dashboard and FT lockups. A confidential-only deployment (near.com)
+    /// sets this; the shared Goldsky detector keeps running for confidential
+    /// proposal signals.
+    pub disable_public_treasury_workers: bool,
     /// `BALANCE_READ_SOURCE`: "ledger" (default) or "live". Public
     /// treasuries only; "live" is the backup switch that bypasses the
     /// verified ledger.
@@ -162,6 +170,10 @@ impl Default for EnvVars {
                 .parse()
                 .unwrap_or(false),
             disable_gold_ledger_usd_backfill: std::env::var("DISABLE_GOLD_LEDGER_USD_BACKFILL")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
+            disable_public_treasury_workers: std::env::var("DISABLE_PUBLIC_TREASURY_WORKERS")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),

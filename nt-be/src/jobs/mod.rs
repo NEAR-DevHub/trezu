@@ -540,78 +540,89 @@ fn configure_cron_runtime(
             schedule_every_secs(2),
             handlers::public_history_scheduler
         );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-latest-dispatcher",
-            schedule_every_secs(1),
-            handlers::public_history_latest_dispatcher
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-readiness-scheduler",
-            schedule_every_secs(60),
-            handlers::public_history_readiness_scheduler
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-backfill-scheduler",
-            schedule_every_secs(10),
-            handlers::public_history_backfill_scheduler
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-silver-projection",
-            schedule_every_secs(5),
-            handlers::public_silver_projection
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-gold-projection",
-            schedule_every_secs(5),
-            handlers::public_gold_projection
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-proposal-reconciliation",
-            schedule_every_secs(600),
-            handlers::public_proposal_reconciliation
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-quote-status-refresh",
-            schedule_every_secs(env_secs("PUBLIC_QUOTE_REFRESH_INTERVAL_SECONDS", 120)),
-            handlers::public_quote_status_refresh
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "staking-observation",
-            schedule_every_secs(env_secs("STAKING_OBSERVATION_INTERVAL_SECONDS", 900)),
-            handlers::staking_observation
-        );
+        // Shared with confidential treasuries: the Goldsky detector above also
+        // stamps confidential intents and links confidential proposals. Only
+        // the workers below are public-treasury-specific.
+        if state.env_vars.disable_public_treasury_workers {
+            if preparing_queues {
+                tracing::info!(
+                    "public treasury workers disabled (DISABLE_PUBLIC_TREASURY_WORKERS=true)"
+                );
+            }
+        } else {
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-latest-dispatcher",
+                schedule_every_secs(1),
+                handlers::public_history_latest_dispatcher
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-readiness-scheduler",
+                schedule_every_secs(60),
+                handlers::public_history_readiness_scheduler
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-backfill-scheduler",
+                schedule_every_secs(10),
+                handlers::public_history_backfill_scheduler
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-silver-projection",
+                schedule_every_secs(5),
+                handlers::public_silver_projection
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-gold-projection",
+                schedule_every_secs(5),
+                handlers::public_gold_projection
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-proposal-reconciliation",
+                schedule_every_secs(600),
+                handlers::public_proposal_reconciliation
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-quote-status-refresh",
+                schedule_every_secs(env_secs("PUBLIC_QUOTE_REFRESH_INTERVAL_SECONDS", 120)),
+                handlers::public_quote_status_refresh
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "staking-observation",
+                schedule_every_secs(env_secs("STAKING_OBSERVATION_INTERVAL_SECONDS", 900)),
+                handlers::staking_observation
+            );
+        }
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -731,7 +742,7 @@ fn configure_cron_runtime(
 
     // The factory mirror pulls every sputnik DAO into `daos`; a managed-only
     // deployment relies solely on DAOs registered through creation/save.
-    if !state.env_vars.managed_treasuries_only {
+    if !state.env_vars.managed_treasuries_only && !state.env_vars.disable_public_treasury_workers {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -742,7 +753,9 @@ fn configure_cron_runtime(
             handlers::dao_list_sync
         );
     } else if preparing_queues {
-        tracing::warn!("dao-list-sync disabled: MANAGED_TREASURIES_ONLY is set");
+        tracing::warn!(
+            "dao-list-sync disabled: MANAGED_TREASURIES_ONLY or DISABLE_PUBLIC_TREASURY_WORKERS is set"
+        );
     }
 
     // Notify-only drift check vs near.com production.json; sync stays manual.
@@ -789,7 +802,7 @@ fn configure_cron_runtime(
         handlers::subscription_monthly_reset
     );
 
-    if !state.env_vars.disable_stats_generation {
+    if !state.env_vars.disable_stats_generation && !state.env_vars.disable_public_treasury_workers {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -801,7 +814,9 @@ fn configure_cron_runtime(
         );
     }
 
-    if !state.env_vars.disable_ft_lockup_scheduler {
+    if !state.env_vars.disable_ft_lockup_scheduler
+        && !state.env_vars.disable_public_treasury_workers
+    {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -813,7 +828,9 @@ fn configure_cron_runtime(
         );
     } else {
         if preparing_queues {
-            tracing::info!("FT lockup scheduler disabled (DISABLE_FT_LOCKUP_SCHEDULER=true)");
+            tracing::info!(
+                "FT lockup scheduler disabled (DISABLE_FT_LOCKUP_SCHEDULER or DISABLE_PUBLIC_TREASURY_WORKERS)"
+            );
         }
     }
 
@@ -849,7 +866,9 @@ fn prepare_job_queues(state: Arc<AppState>) -> (JobQueues, Vec<QueueSpec>) {
     let (_, mut registry) =
         configure_cron_runtime(state.clone(), QueueRegistry::default(), None, &wake_hub);
 
-    if state.env_vars.nearblocks_api_key.is_some() {
+    if state.env_vars.nearblocks_api_key.is_some()
+        && !state.env_vars.disable_public_treasury_workers
+    {
         registry
             .specs
             .extend(crate::handlers::public_history::bronze::jobs::public_history_queue_specs());
@@ -1260,6 +1279,64 @@ mod tests {
         for spec in crate::handlers::public_history::bronze::jobs::public_history_queue_specs() {
             assert_eq!(spec.fetch_batch, spec.concurrency);
             assert_eq!(spec.poll_interval, std::time::Duration::from_secs(1));
+        }
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn disabling_public_treasury_workers_keeps_shared_detector(pool: sqlx::PgPool) {
+        let env = crate::utils::env::EnvVars {
+            nearblocks_api_key: Some("test".to_string()),
+            goldsky_database_url: None,
+            disable_public_treasury_workers: true,
+            ..Default::default()
+        };
+        let state = std::sync::Arc::new(
+            crate::AppState::builder()
+                .db_pool(pool)
+                .env_vars(env)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let (queues, specs) = super::prepare_job_queues(state);
+        for queue in [
+            "public-history-scheduler",
+            "price-history-backfill",
+            "confidential-history-ingest",
+            "notifications",
+            "gold-usd-enrichment",
+        ] {
+            assert!(
+                queues.storage(queue).is_some(),
+                "{queue} must stay registered"
+            );
+        }
+        for queue in [
+            "public-history-latest-dispatcher",
+            "public-history-readiness-scheduler",
+            "public-history-backfill-scheduler",
+            "public-silver-projection",
+            "public-gold-projection",
+            "public-proposal-reconciliation",
+            "public-quote-status-refresh",
+            "staking-observation",
+            "dao-list-sync",
+            "public-dashboard-refresh",
+            "ft-lockup-refresh",
+        ] {
+            assert!(queues.storage(queue).is_none(), "{queue} must be skipped");
+            assert!(
+                specs.iter().all(|spec| spec.queue != queue),
+                "{queue} must not be watched"
+            );
+        }
+        for spec in crate::handlers::public_history::bronze::jobs::public_history_queue_specs() {
+            assert!(
+                specs.iter().all(|watched| watched.queue != spec.queue),
+                "{} must not be watched",
+                spec.queue
+            );
         }
     }
 

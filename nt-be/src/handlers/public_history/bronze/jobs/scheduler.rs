@@ -442,7 +442,13 @@ async fn tick_goldsky_scheduler(
     goldsky_pool: &PgPool,
 ) -> Result<PublicHistoryDetectorStats, Box<dyn std::error::Error + Send + Sync>> {
     let mut cursor = load_goldsky_cursor(&state.db_pool, goldsky_pool, CONSUMER_NAME).await?;
-    let monitored = load_monitored_accounts(&state.db_pool).await?;
+    // Without public treasury workers nothing would consume the latest-refresh
+    // demands, so the detector only serves confidential DAOs.
+    let monitored = if state.env_vars.disable_public_treasury_workers {
+        HashSet::new()
+    } else {
+        load_monitored_accounts(&state.db_pool).await?
+    };
     let confidential = load_confidential_accounts(&state.db_pool).await?;
     let mut stats = PublicHistoryDetectorStats::default();
 

@@ -48,6 +48,8 @@ services:
         sync: false
       - key: CONFIDENTIAL_BALANCE_READ_SOURCE
         sync: false
+      - key: DISABLE_PUBLIC_TREASURY_WORKERS
+        value: "true"
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -135,6 +137,8 @@ services:
         sync: false
       - key: CONFIDENTIAL_BALANCE_READ_SOURCE
         sync: false
+      - key: DISABLE_PUBLIC_TREASURY_WORKERS
+        value: "true"
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 

@@ -175,6 +175,17 @@ returning a plain `404` (the board only owns `/api/v1`).
 
 ## Queues
 
+`DISABLE_PUBLIC_TREASURY_WORKERS=true` (confidential-only deployments such as
+near.com) skips every queue marked *public-only* below: the NearBlocks
+per-account history queues plus `public-history-latest-dispatcher`,
+`public-history-readiness-scheduler`, `public-history-backfill-scheduler`,
+`public-silver-projection`, `public-gold-projection`,
+`public-proposal-reconciliation`, `public-quote-status-refresh`,
+`staking-observation`, `dao-list-sync`, `public-dashboard-refresh` and
+`ft-lockup-refresh`. `public-history-scheduler` (the Goldsky detector) stays
+registered because it also stamps confidential intents and links confidential
+proposals; with the flag set it stops seeding public latest-refresh demands.
+
 | Queue | Schedule (default) | Env override | Notes |
 |---|---|---|---|
 | account-maintenance | every 60s | MAINTENANCE_INTERVAL_SECONDS | gated by DISABLE_BALANCE_MONITORING |
