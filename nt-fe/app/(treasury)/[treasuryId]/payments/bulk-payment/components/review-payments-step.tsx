@@ -748,9 +748,9 @@ export function ReviewPaymentsStep({
                     <DialogFooter className="mx-0 px-0 pt-0">
                         <Button
                             type="button"
-                            variant="destructive"
+                            variant="error"
                             size="xl"
-                            className="w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
+                            className="w-full rounded-2xl"
                             disabled={isSubmitting}
                             onClick={() =>
                                 recipientToRemove &&

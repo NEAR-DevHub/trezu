@@ -1131,10 +1131,13 @@
             "notePlaceholder": "Ajoutez une note pour aider à identifier ce destinataire (par ex. paiement de prestataire, distribution de vesting).",
             "skipDuplicates": "Ignorer les doublons et n'importer que les nouveaux.",
             "allDuplicatesTooltip": "Tous les destinataires importés sont déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à importer.",
+            "manualAllDuplicates": "{count, plural, =1 {Ce contact existe déjà dans votre carnet d'adresses.} other {Ces contacts existent déjà dans votre carnet d'adresses.}}",
+            "manualSomeDuplicates": "{duplicates, plural, =1 {# contact sur {total} existe déjà dans votre carnet d'adresses.} other {# contacts sur {total} existent déjà dans votre carnet d'adresses.}} Seuls les nouveaux contacts seront enregistrés.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Ce contact est déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à enregistrer.} other {Ces contacts sont déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à enregistrer.}}",
             "duplicateActionTooltip": "Activez le saut des doublons ou supprimez les destinataires en double pour continuer.",
             "adding": "Ajout…",
             "nothingNew": "Rien de nouveau à importer",
-            "addRecipientsButton": "{count, plural, one {Ajouter le destinataire} other {Ajouter les destinataires}}"
+            "addRecipientsButton": "Enregistrer les contacts"
         },
         "removeDialog": {
             "title": "Supprimer le destinataire",
@@ -1148,7 +1151,7 @@
             "foundSummary": "{count, plural, one {# destinataire trouvé} other {# destinataires trouvés}} sur {networkCount, plural, one {# réseau} other {# réseaux}}",
             "uploadPrompt": "Téléchargez ou collez les données du destinataire",
             "fixErrors": "Corrigez les erreurs pour continuer",
-            "continueReview": "Continuer vers la vérification"
+            "continueReview": "Vérifier les détails"
         },
         "form": {
             "editRecipient": "Modifier le destinataire",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, one {# membre} other {# membres}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Destinataire ajouté} other {# destinataires ajoutés}}",
-        "alreadyExistsToast": "Le destinataire est déjà dans votre carnet d'adresses",
-        "addedSingleToast": "Destinataire ajouté",
-        "addFailedToast": "Échec de l'ajout des destinataires",
-        "addSingleFailedToast": "Échec de l'ajout du destinataire",
-        "removedToast": "{count, plural, one {Destinataire supprimé} other {# destinataires supprimés}}",
-        "removeFailedToast": "Échec de la suppression des destinataires",
-        "exportFailedToast": "Échec de l'export des destinataires"
+        "addedToast": "{count, plural, =1 {Contact enregistré avec succès} other {# contacts ajoutés}}",
+        "alreadyExistsToast": "Le contact est déjà dans votre carnet d'adresses",
+        "addedSingleToast": "Contact ajouté",
+        "addFailedToast": "Échec de l'ajout des contacts",
+        "addSingleFailedToast": "Échec de l'ajout du contact",
+        "removedToast": "{count, plural, =1 {Contact supprimé avec succès} other {# contacts supprimés}}",
+        "removeFailedToast": "Échec de la suppression des contacts",
+        "exportFailedToast": "Échec de l'export des contacts"
     },
     "treasuryMutations": {
         "savedToast": "Trésorerie enregistrée dans votre liste",

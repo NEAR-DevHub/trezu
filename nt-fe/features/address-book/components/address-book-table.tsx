@@ -107,7 +107,7 @@ function NoteCell({ note }: { note?: string }) {
             }}
         >
             <span className="inline-block w-full max-w-full">
-                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-general-foreground">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-semibold text-general-foreground">
                     {trimmed}
                 </span>
             </span>
@@ -368,7 +368,7 @@ export function AddressBookTable({
                                                 <User
                                                     accountId={entry.createdBy}
                                                     size="md"
-                                                    avatarClassName="size-9!"
+                                                    avatarClassName="rounded-lg"
                                                     withHoverCard
                                                     withLink={false}
                                                 />
@@ -385,7 +385,7 @@ export function AddressBookTable({
                                             <FormattedDate
                                                 date={entry.createdAt}
                                                 relative
-                                                className="text-sm text-foreground"
+                                                className="text-sm font-semibold text-general-foreground"
                                             />
                                         </TableCell>
                                         <TableCell

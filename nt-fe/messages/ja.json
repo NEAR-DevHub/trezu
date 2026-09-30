@@ -1131,10 +1131,13 @@
             "notePlaceholder": "この受取人を識別するためのメモを追加(例: 業務委託支払い、ベスティング配布)。",
             "skipDuplicates": "重複をスキップして新しいもののみインポートします。",
             "allDuplicatesTooltip": "インポートされたすべての受取人はすでにアドレス帳にあるため、新しくインポートするものはありません。",
+            "manualAllDuplicates": "{count, plural, =1 {この連絡先はすでにアドレス帳に存在します。} other {これらの連絡先はすでにアドレス帳に存在します。}}",
+            "manualSomeDuplicates": "{total}件中{duplicates}件の連絡先はすでにアドレス帳に存在します。新しい連絡先のみ保存されます。",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {この連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。} other {これらの連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。}}",
             "duplicateActionTooltip": "続行するには重複スキップを有効化するか、重複する受取人を削除してください。",
             "adding": "追加中…",
             "nothingNew": "新しくインポートするものはありません",
-            "addRecipientsButton": "{count, plural, other {受取人を追加}}"
+            "addRecipientsButton": "連絡先を保存"
         },
         "removeDialog": {
             "title": "受取人を削除",
@@ -1148,7 +1151,7 @@
             "foundSummary": "{networkCount, plural, other {# 件のネットワーク}}上で{count, plural, other {# 人の受取人}}を発見",
             "uploadPrompt": "受取人データをアップロードまたは貼り付け",
             "fixErrors": "続行するにはエラーを修正してください",
-            "continueReview": "確認に進む"
+            "continueReview": "詳細を確認"
         },
         "form": {
             "editRecipient": "受取人を編集",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, other {# 名のメンバー}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {# 名の受取人を追加しました}}",
-        "alreadyExistsToast": "この受取人はすでにアドレス帳にあります",
-        "addedSingleToast": "受取人を追加しました",
-        "addFailedToast": "受取人の追加に失敗しました",
-        "addSingleFailedToast": "受取人の追加に失敗しました",
-        "removedToast": "{count, plural, other {# 名の受取人を削除しました}}",
-        "removeFailedToast": "受取人の削除に失敗しました",
-        "exportFailedToast": "受取人のエクスポートに失敗しました"
+        "addedToast": "{count, plural, =1 {連絡先を保存しました} other {# 件の連絡先を追加しました}}",
+        "alreadyExistsToast": "この連絡先はすでにアドレス帳にあります",
+        "addedSingleToast": "連絡先を追加しました",
+        "addFailedToast": "連絡先の追加に失敗しました",
+        "addSingleFailedToast": "連絡先の追加に失敗しました",
+        "removedToast": "{count, plural, =1 {連絡先を削除しました} other {# 件の連絡先を削除しました}}",
+        "removeFailedToast": "連絡先の削除に失敗しました",
+        "exportFailedToast": "連絡先のエクスポートに失敗しました"
     },
     "treasuryMutations": {
         "savedToast": "トレジャリーを一覧に保存しました",

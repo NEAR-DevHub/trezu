@@ -1,5 +1,5 @@
 "use client";
-import { ArrowDown01Icon, LoaderCircleIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
 import { useFormContext } from "react-hook-form";
@@ -14,6 +14,7 @@ import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 import { DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
 import { useExchangeAmountQuote } from "../hooks/use-exchange-amount-quote";
@@ -214,16 +215,15 @@ export function Step1({
                         <Button
                             type="button"
                             variant="unstyled"
-                            className="size-8 rounded-lg border border-general-border bg-card p-0 text-muted-foreground shadow-sm hover:bg-card"
+                            className={cn(
+                                "size-8 rounded-lg border border-general-border p-0 shadow-sm",
+                                !isQuoteBusy &&
+                                    "bg-card text-muted-foreground hover:bg-card",
+                            )}
                             onClick={handleSwapTokens}
-                            disabled={isQuoteBusy}
+                            loading={isQuoteBusy}
                         >
-                            {isQuoteBusy ? (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin text-muted-foreground"
-                                />
-                            ) : (
+                            {isQuoteBusy ? null : (
                                 <Icon icon={ArrowDown01Icon} />
                             )}
                         </Button>

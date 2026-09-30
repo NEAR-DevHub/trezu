@@ -9,6 +9,7 @@ import { StepperHeader } from "@/components/step-wizard";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { AddressBookEntry } from "../types";
+import { duplicateRecipientIndexes } from "../utils/duplicate-recipients";
 import {
     AddRecipientInput,
     type FormValues,
@@ -47,20 +48,10 @@ export function ReviewRecipients({
         () => new Set(existingEntries.map((entry) => entry.address.trim())),
         [existingEntries],
     );
-    const duplicateIndexes = useMemo(() => {
-        const seen = new Set<string>();
-        const duplicates: number[] = [];
-        for (let index = 0; index < recipients.length; index++) {
-            const address = recipients[index]?.address?.trim();
-            if (!address) continue;
-            if (existingAddresses.has(address) || seen.has(address)) {
-                duplicates.push(index);
-            } else {
-                seen.add(address);
-            }
-        }
-        return duplicates;
-    }, [existingAddresses, recipients]);
+    const duplicateIndexes = useMemo(
+        () => duplicateRecipientIndexes(recipients, existingAddresses),
+        [existingAddresses, recipients],
+    );
     const duplicateIndexSet = useMemo(
         () => new Set(duplicateIndexes),
         [duplicateIndexes],
@@ -211,7 +202,8 @@ export function ReviewRecipients({
 
             <Button
                 className="w-full"
-                disabled={isSubmitting || !canSubmit}
+                loading={isSubmitting}
+                disabled={!canSubmit}
                 tooltipContent={submitTooltip}
                 onClick={() => onSubmit(notes, includedRecipientIndexes)}
             >

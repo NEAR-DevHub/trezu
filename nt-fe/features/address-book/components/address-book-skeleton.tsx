@@ -23,15 +23,31 @@ import {
 const TABLE_ROWS = 8;
 
 /**
- * Placeholder bars fade down the empty table. The sheet border and headers
- * stay at full strength.
+ * Placeholder bars and the divider under each row fade together. The sheet
+ * frame (outer edge) and headers stay at full strength.
  */
 const EMPTY_ROW_FADE = [
-    "**:data-[slot=skeleton]:opacity-55",
-    "**:data-[slot=skeleton]:opacity-35",
-    "**:data-[slot=skeleton]:opacity-20",
-    "**:data-[slot=skeleton]:opacity-10",
-];
+    {
+        bars: "**:data-[slot=skeleton]:opacity-55",
+        line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_55%,transparent)]!",
+        card: "border-[color-mix(in_srgb,var(--general-border)_55%,transparent)]",
+    },
+    {
+        bars: "**:data-[slot=skeleton]:opacity-35",
+        line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_35%,transparent)]!",
+        card: "border-[color-mix(in_srgb,var(--general-border)_35%,transparent)]",
+    },
+    {
+        bars: "**:data-[slot=skeleton]:opacity-20",
+        line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_20%,transparent)]!",
+        card: "border-[color-mix(in_srgb,var(--general-border)_20%,transparent)]",
+    },
+    {
+        bars: "**:data-[slot=skeleton]:opacity-10",
+        line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_10%,transparent)]!",
+        card: "border-[color-mix(in_srgb,var(--general-border)_10%,transparent)]",
+    },
+] as const;
 
 function Placeholder({ className }: { className?: string }) {
     return (
@@ -65,7 +81,9 @@ function TableCellSkeleton({ columnId }: { columnId: ContactColumnId }) {
             return <Placeholder className="size-4 rounded-sm" />;
         case "contact":
         case "addedBy":
-            return <PersonCellSkeleton />;
+            return (
+                <PersonCellSkeleton avatarClassName="size-8 rounded-lg" />
+            );
         case "network":
             return (
                 <div className="flex items-center gap-1.5">
@@ -122,14 +140,22 @@ export function ContactsTableSkeleton({
                         // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list
                         key={rowIndex}
                         className={cn(
-                            "rounded-3xl border border-general-border bg-card p-4",
+                            "rounded-3xl border bg-card p-4",
+                            fadeRows
+                                ? EMPTY_ROW_FADE[
+                                      Math.min(
+                                          rowIndex,
+                                          EMPTY_ROW_FADE.length - 1,
+                                      )
+                                  ].card
+                                : "border-general-border",
                             fadeRows &&
                                 EMPTY_ROW_FADE[
                                     Math.min(
                                         rowIndex,
                                         EMPTY_ROW_FADE.length - 1,
                                     )
-                                ],
+                                ].bars,
                         )}
                     >
                         <div className="flex flex-col gap-3">
@@ -174,7 +200,15 @@ export function ContactsTableSkeleton({
                                                 rowIndex,
                                                 EMPTY_ROW_FADE.length - 1,
                                             )
-                                        ],
+                                        ].bars,
+                                    fadeRows &&
+                                        rowIndex < rows - 1 &&
+                                        EMPTY_ROW_FADE[
+                                            Math.min(
+                                                rowIndex,
+                                                EMPTY_ROW_FADE.length - 1,
+                                            )
+                                        ].line,
                                 )}
                             >
                                 {CONTACT_COLUMN_IDS.map(

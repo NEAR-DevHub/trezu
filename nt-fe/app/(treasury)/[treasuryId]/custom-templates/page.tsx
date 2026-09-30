@@ -1,5 +1,4 @@
 "use client";
-import { Icon } from "@/components/icon";
 import {
     Add01Icon,
     Bookmark01Icon,
@@ -16,6 +15,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
+import { Icon } from "@/components/icon";
 import {
     Dialog,
     DialogContent,
@@ -378,7 +378,7 @@ export default function CustomTemplatesIndexPage() {
                         <Button
                             variant="destructive"
                             className="flex-1"
-                            disabled={deleteTemplate.isPending}
+                            loading={deleteTemplate.isPending}
                             onClick={handleDelete}
                         >
                             {deleteTemplate.isPending

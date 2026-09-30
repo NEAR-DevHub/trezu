@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import type { ReactNode } from "react";
 import { AuthButton } from "@/components/auth-button";
 import { CopyButton } from "@/components/copy-button";
+import { FormattedDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
 import {
@@ -13,18 +14,16 @@ import {
     DialogTitle,
     mobileInsetSheetClassName,
 } from "@/components/modal";
-import { cn } from "@/lib/utils";
-import { FormattedDate } from "@/components/formatted-date";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/components/user";
+import { cn } from "@/lib/utils";
 
 interface Member {
     accountId: string;
     roles: string[];
 }
 
-const ACTION_CLASS =
-    "h-10 min-w-0 w-auto flex-1 overflow-hidden rounded-2xl bg-general-bg-secondary px-5 text-base font-semibold text-general-secondary-foreground shadow-none hover:bg-general-bg-secondary/80";
+const ACTION_CLASS = "min-w-0 flex-1 overflow-hidden";
 
 const SECTION_LABEL_CLASS =
     "text-sm font-semibold leading-normal text-general-secondary-foreground";
@@ -124,7 +123,7 @@ export function MemberActionSheet({
                     <AuthButton
                         permissionKind="transfer"
                         permissionAction="AddProposal"
-                        variant="unstyled"
+                        variant="secondary"
                         className={ACTION_CLASS}
                         onClick={onSend}
                     >
@@ -135,7 +134,7 @@ export function MemberActionSheet({
                         permissionKind="policy"
                         permissionAction="AddProposal"
                         balanceCheck={{ withProposalBond: true }}
-                        variant="unstyled"
+                        variant="secondary"
                         className={ACTION_CLASS}
                         onClick={onRemove}
                         disabled={removeDisabled}

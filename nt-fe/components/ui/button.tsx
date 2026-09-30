@@ -1,6 +1,6 @@
-import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { cva, type VariantProps } from "class-variance-authority";
+import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,10 @@ const buttonVariants = cva(
                     "bg-primary text-primary-foreground hover:bg-primary/90",
                 destructive:
                     "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
+                // Solid error red (#EC003F) in both themes. `destructive` shifts
+                // to #CF001C in light and #FF6568 in dark, so remove actions
+                // that must stay this red use `error` instead.
+                error: "bg-general-error-foreground text-white hover:bg-general-error-foreground/90 dark:bg-general-error-foreground",
                 outline:
                     "border bg-background shadow-xs hover:bg-foreground/10 dark:bg-input/30 dark:border-input dark:hover:bg-foreground/20",
                 // The design system's secondary button: borderless grey surface

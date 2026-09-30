@@ -1,62 +1,63 @@
 "use client";
 
-import { Icon } from "@/components/icon";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
     Add01Icon,
     Delete01Icon,
     FileDownIcon,
     FileUpIcon,
 } from "@hugeicons/core-free-icons";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { trackEvent } from "@/lib/analytics";
-import { cn } from "@/lib/utils";
-import { PageCard } from "@/components/card";
-import { PageComponentLayout } from "@/components/page-component-layout";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
+import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
 import { EmptyState } from "@/components/empty-state";
+import { Icon } from "@/components/icon";
+import { ResponsiveInput } from "@/components/input";
 import { MobilePageHeading } from "@/components/mobile-page-heading";
+import { PageComponentLayout } from "@/components/page-component-layout";
+import { Form } from "@/components/ui/form";
+import {
+    type AddressBookEntry,
+    formatAddressBookDisplayAddress,
+    persistAddressBookAddress,
+    type RecipientDraft,
+    useAddressBook,
+    useCreateAddressBookEntries,
+    useDeleteAddressBookEntries,
+    useExportAddressBook,
+} from "@/features/address-book";
+import { useChains } from "@/features/address-book/chains";
 import {
     AddRecipientInput,
     buildFormSchema,
     type FormValues,
 } from "@/features/address-book/components/add-recipient-form";
-import { RECIPIENT_NAME_MAX_LENGTH } from "@/features/address-book/types";
-import { Form } from "@/components/ui/form";
-import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
-import { AddressBookTable } from "@/features/address-book/components/address-book-table";
 import {
     ContactsEmptyBackdrop,
     ContactsTableSkeleton,
 } from "@/features/address-book/components/address-book-skeleton";
+import { AddressBookTable } from "@/features/address-book/components/address-book-table";
 import { ContactActionSheet } from "@/features/address-book/components/contact-action-sheet";
-import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
 import {
     ImportUploadStep,
     type ParsedRecipient,
 } from "@/features/address-book/components/import-recipients-flow";
-import {
-    useCreateAddressBookEntries,
-    useAddressBook,
-    useDeleteAddressBookEntries,
-    useExportAddressBook,
-    type RecipientDraft,
-    type AddressBookEntry,
-    persistAddressBookAddress,
-    formatAddressBookDisplayAddress,
-} from "@/features/address-book";
-import { useChains } from "@/features/address-book/chains";
-import { useTreasury } from "@/hooks/use-treasury";
-import { ResponsiveInput } from "@/components/input";
+import { RemoveRecipientDialog } from "@/features/address-book/components/remove-recipient-dialog";
+import { ReviewRecipients } from "@/features/address-book/components/review-recipients";
+import { RECIPIENT_NAME_MAX_LENGTH } from "@/features/address-book/types";
+import { duplicateRecipientIndexes } from "@/features/address-book/utils/duplicate-recipients";
 import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
-import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
+import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
+import { cn } from "@/lib/utils";
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
@@ -82,7 +83,12 @@ function AddressBookEmptyState({
                         permissionKind="any"
                         permissionAction=""
                         variant="secondary"
-                        className={TOOLBAR_BUTTON_CLASS}
+                        className={cn(
+                            TOOLBAR_BUTTON_CLASS,
+                            // Same gray as the translucent secondary fill, but
+                            // solid, so the faded row line cannot show through.
+                            "dark:bg-[color-mix(in_srgb,white_10%,var(--card))]",
+                        )}
                         onClick={onImport}
                     >
                         <Icon icon={FileDownIcon} /> {tAb("import")}
@@ -126,7 +132,6 @@ function RecipientFlow({
     const [step, setStep] = useState(0);
     const [activeIndex, setActiveIndex] = useState(0);
     const [importNotes, setImportNotes] = useState<Record<number, string>>({});
-    const [manualNotes, setManualNotes] = useState<Record<number, string>>({});
     const createEntries = useCreateAddressBookEntries(treasuryId);
     const defaultValues = useMemo(
         () => ({
@@ -161,27 +166,46 @@ function RecipientFlow({
         setStep(0);
         setActiveIndex(0);
         setImportNotes({});
-        setManualNotes({});
     }, [defaultValues, form]);
 
-    // Manual add: filter empty rows → review
-    const handleManualReview = (notes: Record<number, string> = {}) => {
-        const filled: FormValues["recipients"] = [];
-        const nextNotes: Record<number, string> = {};
-        form.getValues().recipients.forEach((recipient, index) => {
+    // Manual add saves from the form. Duplicates are skipped, same as review.
+    const handleManualSave = async (notes: Record<number, string> = {}) => {
+        if (!treasuryId) return;
+
+        const existingAddresses = new Set(
+            existingEntries.map((entry) => entry.address.trim()),
+        );
+        const recipients = form.getValues().recipients;
+        const duplicateIndexes = new Set(
+            duplicateRecipientIndexes(recipients, existingAddresses),
+        );
+        const entries = recipients.flatMap((recipient, index) => {
             if (
                 !recipient.name.trim() ||
                 !recipient.address.trim() ||
-                recipient.networks.length === 0
+                recipient.networks.length === 0 ||
+                duplicateIndexes.has(index)
             ) {
-                return;
+                return [];
             }
-            nextNotes[filled.length] = notes[index] ?? "";
-            filled.push(recipient);
+
+            return [
+                {
+                    name: recipient.name,
+                    networks: recipient.networks,
+                    address: persistAddressBookAddress(recipient),
+                    note: notes[index] || undefined,
+                },
+            ];
         });
-        form.reset({ recipients: filled });
-        setManualNotes(nextNotes);
-        setStep(1);
+
+        if (entries.length === 0) return;
+
+        await createEntries.mutateAsync({
+            daoId: treasuryId,
+            entries,
+        });
+        onDone();
     };
 
     // Import: parsed recipients → populate form → review
@@ -212,7 +236,9 @@ function RecipientFlow({
                         activeIndex={activeIndex}
                         setActiveIndex={setActiveIndex}
                         handleBack={onCancel}
-                        onReview={handleManualReview}
+                        onSave={handleManualSave}
+                        existingEntries={existingEntries}
+                        isSubmitting={createEntries.isPending}
                         onImport={onImport}
                         hideHeader={hideHeader}
                     />
@@ -225,7 +251,7 @@ function RecipientFlow({
                     control={form.control}
                     existingEntries={existingEntries}
                     isSubmitting={createEntries.isPending}
-                    initialNotes={mode === "import" ? importNotes : manualNotes}
+                    initialNotes={importNotes}
                     onSubmit={async (notes, includedIndexes) => {
                         // Empty indexes is unreachable while ReviewRecipients
                         // disables submit when canSubmit is false (all duplicates
@@ -485,8 +511,11 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                         <AuthButton
                             permissionKind="any"
                             permissionAction=""
-                            variant="outline-destructive"
-                            className={toolbarButtonClass}
+                            variant="secondary"
+                            className={cn(
+                                toolbarButtonClass,
+                                "text-destructive hover:text-destructive dark:text-destructive dark:hover:text-destructive",
+                            )}
                             disabled={deleteEntries.isPending}
                             onClick={() => handleRemoveSelected()}
                         >

@@ -1,9 +1,9 @@
-import { cn } from "@/lib/utils";
-import { Button as ShadcnButton, buttonVariants } from "./ui/button";
-import { VariantProps } from "class-variance-authority";
-import { Tooltip } from "./tooltip";
-import { Icon } from "./icon";
 import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
+import type { VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+import { Icon } from "./icon";
+import { Tooltip } from "./tooltip";
+import { type buttonVariants, Button as ShadcnButton } from "./ui/button";
 
 type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 
@@ -26,7 +26,7 @@ type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 // `dark:bg-gray-500` is not redundant with `bg-gray-500`: a `dark:bg-*` from
 // the underlying variant would out-specify a plain `bg-*` here, so
 // `destructive` would stay red in dark mode only. Call sites that genuinely
-// want to keep their colour override both (see the "Remove member" modal).
+// want to keep their colour override both.
 // No hover pair is needed — a loading button is disabled, and the base sets
 // `disabled:pointer-events-none`.
 const LOADING_SURFACE_CLASS = "bg-gray-500 dark:bg-gray-500";

@@ -1131,10 +1131,13 @@
             "notePlaceholder": "이 수신자를 식별하는 데 도움이 되는 메모를 추가하세요 (예: 계약자 결제, 베스팅 분배).",
             "skipDuplicates": "중복을 건너뛰고 새로운 항목만 가져오기.",
             "allDuplicatesTooltip": "가져온 모든 수신자가 이미 주소록에 있으므로 새로 가져올 항목이 없습니다.",
+            "manualAllDuplicates": "{count, plural, =1 {이 연락처는 이미 주소록에 있습니다.} other {이 연락처들은 이미 주소록에 있습니다.}}",
+            "manualSomeDuplicates": "총 {total}개의 연락처 중 {duplicates}개가 이미 주소록에 있습니다. 새 연락처만 저장됩니다.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {이 연락처는 이미 주소록에 있으므로 새로 저장할 항목이 없습니다.} other {이 연락처들은 이미 주소록에 있으므로 새로 저장할 항목이 없습니다.}}",
             "duplicateActionTooltip": "계속하려면 중복 건너뛰기를 활성화하거나 중복 수신자를 제거하세요.",
             "adding": "추가 중…",
             "nothingNew": "가져올 새 항목 없음",
-            "addRecipientsButton": "{count, plural, other {수신자 추가}}"
+            "addRecipientsButton": "연락처 저장"
         },
         "removeDialog": {
             "title": "수신자 제거",
@@ -1148,7 +1151,7 @@
             "foundSummary": "{networkCount, plural, other {#개 네트워크}}에서 {count, plural, other {#명의 수신자}}을(를) 찾았습니다",
             "uploadPrompt": "수신자 데이터 업로드 또는 붙여넣기",
             "fixErrors": "계속하려면 오류를 수정하세요",
-            "continueReview": "검토로 계속"
+            "continueReview": "세부정보 검토"
         },
         "form": {
             "editRecipient": "수신자 편집",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, other {멤버 #명}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {수신자 #명 추가됨}}",
-        "alreadyExistsToast": "수신자가 이미 주소록에 있습니다",
-        "addedSingleToast": "수신자가 추가되었습니다",
-        "addFailedToast": "수신자 추가에 실패했습니다",
-        "addSingleFailedToast": "수신자 추가에 실패했습니다",
-        "removedToast": "{count, plural, other {수신자 #명 제거됨}}",
-        "removeFailedToast": "수신자 제거에 실패했습니다",
-        "exportFailedToast": "수신자 내보내기에 실패했습니다"
+        "addedToast": "{count, plural, =1 {연락처가 저장되었습니다} other {연락처 #개 추가됨}}",
+        "alreadyExistsToast": "연락처가 이미 주소록에 있습니다",
+        "addedSingleToast": "연락처가 추가되었습니다",
+        "addFailedToast": "연락처 추가에 실패했습니다",
+        "addSingleFailedToast": "연락처 추가에 실패했습니다",
+        "removedToast": "{count, plural, =1 {연락처가 삭제되었습니다} other {연락처 #개 제거됨}}",
+        "removeFailedToast": "연락처 제거에 실패했습니다",
+        "exportFailedToast": "연락처 내보내기에 실패했습니다"
     },
     "treasuryMutations": {
         "savedToast": "트레저리가 목록에 저장되었습니다",

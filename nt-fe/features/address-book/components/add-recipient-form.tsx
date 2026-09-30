@@ -9,36 +9,48 @@ import {
     Wallet03Icon,
 } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
-import { useState, useEffect, useCallback, type ReactNode, useId } from "react";
 import {
-    useWatch,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useId,
+    useMemo,
+    useState,
+} from "react";
+import {
+    type Control,
     useFieldArray,
     useFormContext,
-    type Control,
+    useWatch,
 } from "react-hook-form";
 import { z } from "zod";
+import {
+    SelectModal,
+    type SelectOption,
+} from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
 import AccountInput from "@/components/account-input";
 import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { NameField, NameFieldButton, NoteField } from "@/components/name-field";
 import { NetworkList } from "@/components/network-list";
+import { Pill } from "@/components/pill";
 import { SelectListIcon } from "@/components/select-list";
 import { EmptySelectorIcon } from "@/components/selector-field";
 import { StepperHeader } from "@/components/step-wizard";
+import { FormField, FormItem, FormMessage } from "@/components/ui/form";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
+import { formatShortAddress } from "@/lib/format-short-address";
+import { hasNearComAddressPrefix } from "@/lib/nearcom-address";
 import { WALLET_ADDRESS_INPUT_PROPS } from "@/lib/wallet-address-input-props";
 import { useChains } from "../chains";
 import { getCompatibleChains } from "../compatible-chains";
 import {
-    SelectModal,
-    type SelectOption,
-} from "@/app/(treasury)/[treasuryId]/dashboard/components/select-modal";
-import { FormField, FormItem, FormMessage } from "@/components/ui/form";
-import { Pill } from "@/components/pill";
-import { buildRecipientSchema, RECIPIENT_NAME_MAX_LENGTH } from "../types";
+    type AddressBookEntry,
+    buildRecipientSchema,
+    RECIPIENT_NAME_MAX_LENGTH,
+} from "../types";
+import { duplicateRecipientIndexes } from "../utils/duplicate-recipients";
 import { formatAddressBookDisplayAddress } from "../utils/find-entry";
-import { formatShortAddress } from "@/lib/format-short-address";
-import { NEAR_NETWORK_ID } from "@/constants/network-ids";
-import { hasNearComAddressPrefix } from "@/lib/nearcom-address";
 
 // ─── Form schema ───────────────────────────────────────────────────────────────
 
@@ -83,11 +95,18 @@ function NetworkSelect({
 
     const compatibleChains = getCompatibleChains(address, chains);
 
+    const selectedId = selected[0];
     const options = compatibleChains.map((c) => ({
         id: c.key,
         name: c.name,
         icon: c.icon,
     }));
+    const orderedOptions = selectedId
+        ? [
+              ...options.filter((option) => option.id === selectedId),
+              ...options.filter((option) => option.id !== selectedId),
+          ]
+        : options;
 
     const selectedChain =
         chains.find((chain) => chain.key === selected[0]) ?? null;
@@ -138,7 +157,7 @@ function NetworkSelect({
                 onClose={() => setOpen(false)}
                 onSelect={handleSelect}
                 title={tForm("selectNetwork")}
-                options={options}
+                options={orderedOptions}
                 searchPlaceholder={tForm("searchNetworksPlaceholder")}
                 isLoading={isLoading}
                 selectedId={selectedChain?.key}
@@ -295,7 +314,12 @@ interface AddRecipientInputProps {
     activeIndex: number;
     setActiveIndex: (index: number) => void;
     handleBack?: () => void;
-    onReview: (notes?: Record<number, string>) => void;
+    /** Import edit returns to the review list. */
+    onReview?: (notes?: Record<number, string>) => void;
+    /** Manual add saves without a review step. */
+    onSave?: (notes?: Record<number, string>) => void | Promise<void>;
+    existingEntries?: AddressBookEntry[];
+    isSubmitting?: boolean;
     onImport?: () => void;
     /** Page header owns the title and import action. */
     hideHeader?: boolean;
@@ -312,6 +336,9 @@ export function AddRecipientInput({
     setActiveIndex,
     handleBack,
     onReview,
+    onSave,
+    existingEntries = [],
+    isSubmitting = false,
     onImport,
     hideHeader = false,
     note,
@@ -319,6 +346,7 @@ export function AddRecipientInput({
     editOnly = false,
 }: AddRecipientInputProps) {
     const tForm = useTranslations("addressBook.form");
+    const tReview = useTranslations("addressBook.review");
     const { data: chains = [] } = useChains();
     const [isAddressValid, setIsAddressValid] = useState(false);
     const [isAddressValidating, setIsAddressValidating] = useState(false);
@@ -344,6 +372,36 @@ export function AddRecipientInput({
         name: `recipients.${activeIndex}.networks`,
     });
     const allRecipients = useWatch({ control, name: "recipients" }) ?? [];
+    const existingAddresses = useMemo(
+        () => new Set(existingEntries.map((entry) => entry.address.trim())),
+        [existingEntries],
+    );
+    const duplicateIndexes = useMemo(
+        () => duplicateRecipientIndexes(allRecipients, existingAddresses),
+        [allRecipients, existingAddresses],
+    );
+    const duplicateIndexSet = useMemo(
+        () => new Set(duplicateIndexes),
+        [duplicateIndexes],
+    );
+    const duplicateCount = duplicateIndexes.length;
+    const newRecipientCount = allRecipients.filter(
+        (recipient, index) =>
+            !!recipient?.name?.trim() &&
+            !!recipient?.address?.trim() &&
+            (recipient?.networks?.length ?? 0) > 0 &&
+            !duplicateIndexSet.has(index),
+    ).length;
+    const hasOnlyDuplicates =
+        duplicateCount > 0 &&
+        newRecipientCount === 0 &&
+        allRecipients.some(
+            (recipient) =>
+                !!recipient?.name?.trim() &&
+                !!recipient?.address?.trim() &&
+                (recipient?.networks?.length ?? 0) > 0,
+        );
+    const activeIsDuplicate = duplicateIndexSet.has(activeIndex);
 
     const isActiveValid =
         !formState.errors.recipients?.[activeIndex] &&
@@ -519,7 +577,9 @@ export function AddRecipientInput({
                                 {...WALLET_ADDRESS_INPUT_PROPS}
                                 ref={field.ref}
                                 icon={Wallet03Icon}
-                                invalid={!!fieldState.error}
+                                invalid={
+                                    !!fieldState.error || activeIsDuplicate
+                                }
                                 value={field.value ?? ""}
                                 placeholder={tForm("enterAddress")}
                                 clearLabel={tForm("clearAddress")}
@@ -536,6 +596,12 @@ export function AddRecipientInput({
                                             ? NEAR_NETWORK_ID
                                             : "unknown"
                                     }
+                                    // `nearcom:` is the near.com route. Without
+                                    // this, the prefix is rejected as not
+                                    // allowed on a plain NEAR address.
+                                    requireNearComPrefix={hasNearComAddressPrefix(
+                                        activeAddress,
+                                    )}
                                     value={activeAddress}
                                     setValue={field.onChange}
                                     setIsValid={handleAddressValid}
@@ -545,6 +611,11 @@ export function AddRecipientInput({
                                 />
                             </div>
                             <FormMessage />
+                            {activeIsDuplicate && !fieldState.error ? (
+                                <p className="text-sm font-medium text-general-info-foreground">
+                                    {tReview("duplicated")}
+                                </p>
+                            ) : null}
                         </FormItem>
                     )}
                 />
@@ -580,7 +651,7 @@ export function AddRecipientInput({
                 <Button
                     className="h-11 w-full"
                     disabled={!isActiveValid}
-                    onClick={() => onReview()}
+                    onClick={() => onReview?.()}
                 >
                     {tForm("done")}
                 </Button>
@@ -598,6 +669,13 @@ export function AddRecipientInput({
                                         onEdit={() => handleEdit(i)}
                                         onRemove={() => handleRemove(i)}
                                         invalid={!isEntryComplete(i)}
+                                        nameBadge={
+                                            duplicateIndexSet.has(i) ? (
+                                                <span className="flex min-h-6 items-center justify-center gap-1.5 rounded-sm border border-general-warning-border bg-general-warning-background-faded px-2 py-0.75 text-xs font-medium text-general-warning-foreground">
+                                                    {tReview("duplicated")}
+                                                </span>
+                                            ) : undefined
+                                        }
                                     />
                                 ) : null,
                             )}
@@ -613,15 +691,49 @@ export function AddRecipientInput({
                         {tForm("addAnother")}
                     </Button>
 
+                    {duplicateCount > 0 ? (
+                        <p className="text-sm font-medium text-general-info-foreground">
+                            {allRecipients.some(
+                                (recipient, index) =>
+                                    !!recipient?.address?.trim() &&
+                                    !duplicateIndexSet.has(index),
+                            )
+                                ? tReview("manualSomeDuplicates", {
+                                      duplicates: duplicateCount,
+                                      total: allRecipients.filter((recipient) =>
+                                          recipient?.address?.trim(),
+                                      ).length,
+                                  })
+                                : tReview("manualAllDuplicates", {
+                                      count: duplicateCount,
+                                  })}
+                        </p>
+                    ) : null}
+
                     <Button
                         className="h-11 w-full"
-                        disabled={!canProceed}
+                        loading={isSubmitting}
+                        disabled={!canProceed || hasOnlyDuplicates}
                         tooltipContent={
-                            !canProceed ? tForm("reviewTooltip") : undefined
+                            hasOnlyDuplicates
+                                ? tReview("manualAllDuplicatesTooltip", {
+                                      count: duplicateCount,
+                                  })
+                                : !canProceed
+                                  ? tForm("reviewTooltip")
+                                  : undefined
                         }
-                        onClick={() => onReview(notes)}
+                        onClick={() => {
+                            if (onSave) {
+                                void onSave(notes);
+                                return;
+                            }
+                            onReview?.(notes);
+                        }}
                     >
-                        {tForm("saveContact")}
+                        {isSubmitting
+                            ? tReview("adding")
+                            : tForm("saveContact")}
                     </Button>
                 </>
             )}

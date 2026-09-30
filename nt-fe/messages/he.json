@@ -1131,10 +1131,13 @@
             "notePlaceholder": "הוסף הערה כדי לזהות את הנמען הזה (למשל תשלום לקבלן, חלוקת הבשלה).",
             "skipDuplicates": "דלג על כפילויות וייבא רק חדשים.",
             "allDuplicatesTooltip": "כל הנמענים המיובאים כבר בספר הכתובות שלך, אז אין מה לייבא חדש.",
+            "manualAllDuplicates": "{count, plural, =1 {איש קשר זה כבר קיים בספר הכתובות שלך.} other {אנשי קשר אלה כבר קיימים בספר הכתובות שלך.}}",
+            "manualSomeDuplicates": "{duplicates} מתוך {total} אנשי קשר כבר קיימים בספר הכתובות שלך. יישמרו רק אנשי קשר חדשים.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {איש קשר זה כבר נמצא בספר הכתובות שלך, כך שאין מה חדש לשמור.} other {אנשי קשר אלה כבר נמצאים בספר הכתובות שלך, כך שאין מה חדש לשמור.}}",
             "duplicateActionTooltip": "הפעל דילוג על כפילויות או הסר נמענים כפולים כדי להמשיך.",
             "adding": "מוסיף…",
             "nothingNew": "אין חדש לייבא",
-            "addRecipientsButton": "{count, plural, one {הוסף נמען} two {הוסף נמענים} many {הוסף נמענים} other {הוסף נמענים}}"
+            "addRecipientsButton": "שמור אנשי קשר"
         },
         "removeDialog": {
             "title": "הסר נמען",
@@ -1148,7 +1151,7 @@
             "foundSummary": "נמצאו {count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}} ב-{networkCount, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}",
             "uploadPrompt": "העלה או הדבק נתוני נמענים",
             "fixErrors": "תקן שגיאות כדי להמשיך",
-            "continueReview": "המשך לסקירה"
+            "continueReview": "סקירת פרטים"
         },
         "form": {
             "editRecipient": "ערוך נמען",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {נמען נוסף} two {# נמענים נוספו} many {# נמענים נוספו} other {# נמענים נוספו}}",
-        "alreadyExistsToast": "הנמען כבר קיים בספר הכתובות",
-        "addedSingleToast": "נמען נוסף",
-        "addFailedToast": "הוספת הנמענים נכשלה",
-        "addSingleFailedToast": "הוספת הנמען נכשלה",
-        "removedToast": "{count, plural, one {נמען הוסר} two {# נמענים הוסרו} many {# נמענים הוסרו} other {# נמענים הוסרו}}",
-        "removeFailedToast": "הסרת הנמענים נכשלה",
-        "exportFailedToast": "ייצוא הנמענים נכשל"
+        "addedToast": "{count, plural, =1 {איש הקשר נשמר בהצלחה} two {# אנשי קשר נוספו} many {# אנשי קשר נוספו} other {# אנשי קשר נוספו}}",
+        "alreadyExistsToast": "איש הקשר כבר קיים בספר הכתובות",
+        "addedSingleToast": "איש קשר נוסף",
+        "addFailedToast": "הוספת אנשי הקשר נכשלה",
+        "addSingleFailedToast": "הוספת איש הקשר נכשלה",
+        "removedToast": "{count, plural, =1 {איש הקשר הוסר בהצלחה} two {# אנשי קשר הוסרו} many {# אנשי קשר הוסרו} other {# אנשי קשר הוסרו}}",
+        "removeFailedToast": "הסרת אנשי הקשר נכשלה",
+        "exportFailedToast": "ייצוא אנשי הקשר נכשל"
     },
     "treasuryMutations": {
         "savedToast": "האוצר נשמר לרשימה שלך",

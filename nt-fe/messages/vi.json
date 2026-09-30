@@ -1131,10 +1131,13 @@
             "notePlaceholder": "Thêm ghi chú để giúp xác định người nhận này (ví dụ: thanh toán cho nhà thầu, phân phối vesting).",
             "skipDuplicates": "Bỏ qua bản trùng lặp và chỉ nhập những bản mới.",
             "allDuplicatesTooltip": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ, nên không có gì mới để nhập.",
+            "manualAllDuplicates": "{count, plural, =1 {Liên hệ này đã có trong sổ địa chỉ của bạn.} other {Những liên hệ này đã có trong sổ địa chỉ của bạn.}}",
+            "manualSomeDuplicates": "{duplicates} trong số {total} liên hệ đã có trong sổ địa chỉ của bạn. Chỉ các liên hệ mới được lưu.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.} other {Những liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.}}",
             "duplicateActionTooltip": "Bật bỏ qua bản trùng lặp hoặc xóa người nhận trùng lặp để tiếp tục.",
             "adding": "Đang thêm…",
             "nothingNew": "Không có gì mới để nhập",
-            "addRecipientsButton": "{count, plural, one {Thêm người nhận} other {Thêm người nhận}}"
+            "addRecipientsButton": "Lưu danh bạ"
         },
         "removeDialog": {
             "title": "Xóa người nhận",
@@ -1148,7 +1151,7 @@
             "foundSummary": "Tìm thấy {count, plural, other {# người nhận}} trên {networkCount, plural, other {# mạng}}",
             "uploadPrompt": "Tải lên hoặc dán dữ liệu người nhận",
             "fixErrors": "Sửa lỗi để tiếp tục",
-            "continueReview": "Tiếp tục xem lại"
+            "continueReview": "Xem lại chi tiết"
         },
         "form": {
             "editRecipient": "Chỉnh sửa người nhận",
@@ -2181,14 +2184,14 @@
         "moreMembers": "+{count, plural, other {# thành viên}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Đã thêm người nhận} other {Đã thêm # người nhận}}",
-        "alreadyExistsToast": "Người nhận đã có trong sổ địa chỉ",
-        "addedSingleToast": "Đã thêm người nhận",
-        "addFailedToast": "Không thể thêm người nhận",
-        "addSingleFailedToast": "Không thể thêm người nhận",
-        "removedToast": "{count, plural, one {Đã xóa người nhận} other {Đã xóa # người nhận}}",
-        "removeFailedToast": "Không thể xóa người nhận",
-        "exportFailedToast": "Không thể xuất danh sách người nhận"
+        "addedToast": "{count, plural, =1 {Đã lưu liên hệ thành công} other {Đã thêm # liên hệ}}",
+        "alreadyExistsToast": "Liên hệ đã có trong sổ địa chỉ",
+        "addedSingleToast": "Đã thêm liên hệ",
+        "addFailedToast": "Không thể thêm liên hệ",
+        "addSingleFailedToast": "Không thể thêm liên hệ",
+        "removedToast": "{count, plural, =1 {Đã xóa liên hệ thành công} other {Đã xóa # liên hệ}}",
+        "removeFailedToast": "Không thể xóa liên hệ",
+        "exportFailedToast": "Không thể xuất danh sách liên hệ"
     },
     "treasuryMutations": {
         "savedToast": "Đã lưu ngân quỹ vào danh sách của bạn",

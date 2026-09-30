@@ -93,8 +93,8 @@ export function DeleteConfirmationModal({
                     <ButtonWithTooltip
                         type="button"
                         onClick={handleConfirm}
-                        variant="destructive"
-                        className="h-10 w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
+                        variant="error"
+                        className="h-10 w-full rounded-2xl"
                         loading={isSubmitting}
                         disabled={!!validationError}
                         tooltipMessage={validationError}

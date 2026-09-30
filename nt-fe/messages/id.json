@@ -1131,10 +1131,13 @@
             "notePlaceholder": "Tambahkan catatan untuk membantu mengidentifikasi penerima ini (mis. pembayaran kontraktor, distribusi vesting).",
             "skipDuplicates": "Lewati duplikat dan hanya impor yang baru.",
             "allDuplicatesTooltip": "Semua penerima yang diimpor sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk diimpor.",
+            "manualAllDuplicates": "{count, plural, =1 {Kontak ini sudah ada di buku alamat Anda.} other {Kontak ini sudah ada di buku alamat Anda.}}",
+            "manualSomeDuplicates": "{duplicates} dari {total} kontak sudah ada di buku alamat Anda. Hanya kontak baru yang akan disimpan.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.} other {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.}}",
             "duplicateActionTooltip": "Aktifkan lewati duplikat atau hapus penerima duplikat untuk melanjutkan.",
             "adding": "Menambahkan…",
             "nothingNew": "Tidak Ada yang Baru untuk Diimpor",
-            "addRecipientsButton": "{count, plural, other {Tambah Penerima}}"
+            "addRecipientsButton": "Simpan kontak"
         },
         "removeDialog": {
             "title": "Hapus Penerima",
@@ -1148,7 +1151,7 @@
             "foundSummary": "Ditemukan {count, plural, other {# penerima}} di {networkCount, plural, other {# jaringan}}",
             "uploadPrompt": "Unggah atau tempel data penerima",
             "fixErrors": "Perbaiki kesalahan untuk melanjutkan",
-            "continueReview": "Lanjutkan ke Tinjauan"
+            "continueReview": "Tinjau Detail"
         },
         "form": {
             "editRecipient": "Ubah Penerima",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, other {# anggota}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {# penerima ditambahkan}}",
-        "alreadyExistsToast": "Penerima sudah ada di buku alamat",
-        "addedSingleToast": "Penerima ditambahkan",
-        "addFailedToast": "Gagal menambahkan penerima",
-        "addSingleFailedToast": "Gagal menambahkan penerima",
-        "removedToast": "{count, plural, other {# penerima dihapus}}",
-        "removeFailedToast": "Gagal menghapus penerima",
-        "exportFailedToast": "Gagal mengekspor penerima"
+        "addedToast": "{count, plural, =1 {Kontak berhasil disimpan} other {# kontak ditambahkan}}",
+        "alreadyExistsToast": "Kontak sudah ada di buku alamat",
+        "addedSingleToast": "Kontak ditambahkan",
+        "addFailedToast": "Gagal menambahkan kontak",
+        "addSingleFailedToast": "Gagal menambahkan kontak",
+        "removedToast": "{count, plural, =1 {Kontak berhasil dihapus} other {# kontak dihapus}}",
+        "removeFailedToast": "Gagal menghapus kontak",
+        "exportFailedToast": "Gagal mengekspor kontak"
     },
     "treasuryMutations": {
         "savedToast": "Treasury disimpan ke daftar Anda",

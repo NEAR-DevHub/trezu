@@ -1131,10 +1131,13 @@
             "notePlaceholder": "Bu alıcıyı tanımlamaya yardımcı olacak bir not ekleyin (örn. yüklenici ödemesi, vesting dağıtımı).",
             "skipDuplicates": "Tekrarları atla ve yalnızca yenileri içe aktar.",
             "allDuplicatesTooltip": "İçe aktarılan tüm alıcılar zaten adres defterinizde, bu nedenle içe aktarılacak yeni bir şey yok.",
+            "manualAllDuplicates": "{count, plural, =1 {Bu kişi zaten adres defterinizde var.} other {Bu kişiler zaten adres defterinizde var.}}",
+            "manualSomeDuplicates": "{total} kişiden {duplicates} tanesi zaten adres defterinizde var. Yalnızca yeni kişiler kaydedilecek.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Bu kişi zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.} other {Bu kişiler zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.}}",
             "duplicateActionTooltip": "Devam etmek için tekrar atlamayı etkinleştirin veya tekrarlanan alıcıları kaldırın.",
             "adding": "Ekleniyor…",
             "nothingNew": "İçe Aktarılacak Yeni Bir Şey Yok",
-            "addRecipientsButton": "{count, plural, one {Alıcı Ekle} other {Alıcı Ekle}}"
+            "addRecipientsButton": "Kişileri kaydet"
         },
         "removeDialog": {
             "title": "Alıcıyı Kaldır",
@@ -1148,7 +1151,7 @@
             "foundSummary": "{networkCount, plural, one {# ağda} other {# ağda}} {count, plural, one {# alıcı} other {# alıcı}} bulundu",
             "uploadPrompt": "Alıcı verilerini yükleyin veya yapıştırın",
             "fixErrors": "Devam etmek için hataları düzeltin",
-            "continueReview": "İncelemeye Devam Et"
+            "continueReview": "Ayrıntıları İncele"
         },
         "form": {
             "editRecipient": "Alıcıyı Düzenle",
@@ -2198,14 +2201,14 @@
         "moreMembers": "+{count, plural, one {# üye} other {# üye}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Alıcı eklendi} other {# alıcı eklendi}}",
-        "alreadyExistsToast": "Alıcı zaten adres defterinizde",
-        "addedSingleToast": "Alıcı eklendi",
-        "addFailedToast": "Alıcılar eklenemedi",
-        "addSingleFailedToast": "Alıcı eklenemedi",
-        "removedToast": "{count, plural, one {Alıcı kaldırıldı} other {# alıcı kaldırıldı}}",
-        "removeFailedToast": "Alıcılar kaldırılamadı",
-        "exportFailedToast": "Alıcılar dışa aktarılamadı"
+        "addedToast": "{count, plural, =1 {Kişi başarıyla kaydedildi} other {# kişi eklendi}}",
+        "alreadyExistsToast": "Kişi zaten adres defterinizde",
+        "addedSingleToast": "Kişi eklendi",
+        "addFailedToast": "Kişiler eklenemedi",
+        "addSingleFailedToast": "Kişi eklenemedi",
+        "removedToast": "{count, plural, =1 {Kişi başarıyla kaldırıldı} other {# kişi kaldırıldı}}",
+        "removeFailedToast": "Kişiler kaldırılamadı",
+        "exportFailedToast": "Kişiler dışa aktarılamadı"
     },
     "treasuryMutations": {
         "savedToast": "Hazine listenize kaydedildi",

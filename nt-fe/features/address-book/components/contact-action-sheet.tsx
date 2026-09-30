@@ -26,8 +26,7 @@ import { useChains } from "../chains";
 import type { AddressBookEntry } from "../types";
 import { formatAddressBookDisplayAddress } from "../utils/find-entry";
 
-const ACTION_CLASS =
-    "h-10 min-w-0 w-auto flex-1 overflow-hidden rounded-2xl bg-general-bg-secondary px-5 text-base font-semibold text-general-secondary-foreground shadow-none hover:bg-general-bg-secondary/80";
+const ACTION_CLASS = "min-w-0 flex-1 overflow-hidden";
 
 const SECTION_LABEL_CLASS =
     "text-sm font-semibold leading-normal text-general-secondary-foreground";
@@ -124,7 +123,7 @@ export function ContactActionSheet({
                                 size="md"
                                 withLink={false}
                                 withHoverCard={false}
-                                avatarClassName="size-9!"
+                                avatarClassName="rounded-lg"
                             />
                         </SheetSection>
                     ) : null}
@@ -149,7 +148,7 @@ export function ContactActionSheet({
                 <div className="mt-3 flex gap-3">
                     <Button
                         type="button"
-                        variant="unstyled"
+                        variant="secondary"
                         className={ACTION_CLASS}
                         onClick={onSend}
                     >
@@ -158,7 +157,7 @@ export function ContactActionSheet({
                     </Button>
                     <Button
                         type="button"
-                        variant="unstyled"
+                        variant="secondary"
                         className={ACTION_CLASS}
                         onClick={onRemove}
                     >
