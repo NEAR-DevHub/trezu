@@ -60,7 +60,9 @@ test.describe("Sign out", () => {
             // path), so once it is gone any signOut call would have been made.
             await expect
                 .poll(() =>
-                    page.evaluate(() => localStorage.getItem("selected-wallet")),
+                    page.evaluate(() =>
+                        localStorage.getItem("selected-wallet"),
+                    ),
                 )
                 .toBeNull();
             expect(meteor.signOutCalls).toBe(0);
