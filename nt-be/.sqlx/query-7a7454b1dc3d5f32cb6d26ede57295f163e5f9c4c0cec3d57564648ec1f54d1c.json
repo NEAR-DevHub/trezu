@@ -1,0 +1,32 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT export_credits, batch_payment_credits, gas_covered_transactions\n            FROM monitored_accounts\n            WHERE account_id = 'free-reset.sputnik-dao.near'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "export_credits",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "batch_payment_credits",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "gas_covered_transactions",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "7a7454b1dc3d5f32cb6d26ede57295f163e5f9c4c0cec3d57564648ec1f54d1c"
+}

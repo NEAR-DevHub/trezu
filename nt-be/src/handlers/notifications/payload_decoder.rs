@@ -1,4 +1,3 @@
-use base64::Engine as _;
 use bigdecimal::{BigDecimal, ToPrimitive};
 use near_api::{AccountId, types::json::U64};
 use serde_json::Value;
@@ -6,7 +5,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use crate::handlers::{
     notifications::formatting::{
-        escape_telegram_html, format_raw_amount, format_token_label, format_usd, token_meta_for_id,
+        escape_telegram_html, format_token_label, format_usd, token_meta_for_id,
     },
     proposals::scraper::{
         AssetExchangeInfo, BulkPayment, LockupInfo, PaymentInfo, PaymentProposalType, Proposal,
@@ -16,15 +15,6 @@ use crate::handlers::{
 };
 
 const BULK_PAYMENT_CONTRACT_ID: &str = "bulkpayment.near";
-
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct AddProposalPayload {
-    pub description: Option<String>,
-    pub proposal_kind: Option<String>,
-    /// For delegate actions, the real submitter (`sender_id` from the delegate
-    /// action) which should be used instead of the balance-change counterparty.
-    pub delegate_sender_id: Option<String>,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DecodedNotificationContent {
@@ -46,7 +36,9 @@ fn format_submitter_for_display(raw: &str) -> String {
     }
 }
 
-fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
+/// Human label for a Sputnik proposal, derived from its `{description, kind}`
+/// JSON. Used by the notification detector on `dao_proposals.proposal_kind`.
+pub(crate) fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
     let description = proposal_json
         .get("description")
         .and_then(|v| v.as_str())
@@ -122,142 +114,6 @@ fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
     None
 }
 
-/// Decoded add_proposal args together with an optional delegate `sender_id`.
-struct DecodedArgs {
-    args: Value,
-    delegate_sender_id: Option<String>,
-}
-
-fn decode_add_proposal_args(actions: &Value) -> Option<DecodedArgs> {
-    fn decode_add_proposal(action: &Value) -> Option<Value> {
-        let function_call = action
-            .get("FunctionCall")
-            .or_else(|| action.get("function_call"))?;
-        if function_call.get("method_name").and_then(|v| v.as_str()) != Some("add_proposal") {
-            return None;
-        }
-        let args_b64 = function_call.get("args").and_then(|v| v.as_str())?;
-        let decoded = base64::engine::general_purpose::STANDARD
-            .decode(args_b64)
-            .ok()?;
-        serde_json::from_slice::<Value>(&decoded).ok()
-    }
-
-    let actions = actions.as_array()?;
-    for action in actions {
-        if let Some(args) = decode_add_proposal(action) {
-            return Some(DecodedArgs {
-                args,
-                delegate_sender_id: None,
-            });
-        }
-        let delegate_action = action
-            .get("Delegate")
-            .or_else(|| action.get("delegate"))
-            .and_then(|v| v.get("delegate_action").or_else(|| v.get("delegateAction")));
-        if let Some(da) = delegate_action {
-            let inner_actions = da.get("actions").and_then(|v| v.as_array());
-            if let Some(inner_actions) = inner_actions
-                && let Some(args) = inner_actions.iter().find_map(decode_add_proposal)
-            {
-                let sender_id = da
-                    .get("sender_id")
-                    .or_else(|| da.get("senderId"))
-                    .and_then(|v| v.as_str())
-                    .map(str::to_owned);
-                return Some(DecodedArgs {
-                    args,
-                    delegate_sender_id: sender_id,
-                });
-            }
-        }
-    }
-    None
-}
-
-fn summarize_proposal_for_logs(proposal: &Value) -> String {
-    let description = proposal
-        .get("description")
-        .and_then(|v| v.as_str())
-        .unwrap_or_default();
-    let kind_obj = proposal.get("kind").and_then(|v| v.as_object());
-    let kind_keys: Vec<String> = kind_obj
-        .map(|obj| obj.keys().cloned().collect())
-        .unwrap_or_default();
-
-    let mut function_call_receiver = None::<String>;
-    let mut function_call_methods = Vec::<String>::new();
-    if let Some(fc) = proposal.get("kind").and_then(|k| k.get("FunctionCall")) {
-        function_call_receiver = fc
-            .get("receiver_id")
-            .and_then(|v| v.as_str())
-            .map(str::to_owned);
-        if let Some(actions) = fc.get("actions").and_then(|v| v.as_array()) {
-            function_call_methods = actions
-                .iter()
-                .filter_map(|a| {
-                    a.get("method_name")
-                        .and_then(|v| v.as_str())
-                        .map(str::to_owned)
-                })
-                .collect();
-        }
-    }
-
-    format!(
-        "description='{}', kind_keys={:?}, function_call_receiver={:?}, function_call_methods={:?}",
-        description, kind_keys, function_call_receiver, function_call_methods
-    )
-}
-
-pub fn decode_add_proposal_payload(actions: Option<&Value>) -> AddProposalPayload {
-    let Some(actions) = actions else {
-        tracing::debug!("add_proposal decode: missing actions");
-        return AddProposalPayload::default();
-    };
-    let Some(decoded) = decode_add_proposal_args(actions) else {
-        tracing::debug!("add_proposal decode: failed to decode add_proposal args from actions");
-        return AddProposalPayload::default();
-    };
-    let args = &decoded.args;
-    let proposal = if let Some(proposal) = args.get("proposal") {
-        proposal
-    } else if args.get("kind").is_some() || args.get("description").is_some() {
-        // Some DAO versions send add_proposal args as top-level proposal fields:
-        // { "description": "...", "kind": { ... } }
-        args
-    } else {
-        let arg_keys: Vec<String> = args
-            .as_object()
-            .map(|obj| obj.keys().cloned().collect())
-            .unwrap_or_default();
-        tracing::debug!(
-            "add_proposal decode: decoded args did not contain proposal object; args_keys={:?}, args={}",
-            arg_keys,
-            args
-        );
-        return AddProposalPayload::default();
-    };
-
-    let description = proposal
-        .get("description")
-        .and_then(|v| v.as_str())
-        .map(str::to_owned);
-    let proposal_kind = classify_proposal_kind(proposal);
-    if proposal_kind.is_none() {
-        tracing::warn!(
-            "add_proposal kind unresolved: {}",
-            summarize_proposal_for_logs(proposal)
-        );
-    }
-
-    AddProposalPayload {
-        description,
-        proposal_kind,
-        delegate_sender_id: decoded.delegate_sender_id,
-    }
-}
-
 pub fn collect_notification_token_ids(event_type: &str, payload: &Value) -> Vec<String> {
     match event_type {
         "payment" => payload
@@ -291,11 +147,12 @@ pub fn decode_notification_content(
         format!("{frontend_base_url}/{dao_id}/dashboard/activity?tab=exchange");
     match event_type {
         "add_proposal" => {
-            let counterparty = payload
+            // Public proposals carry the proposer; confidential ones have no
+            // public submitter, so the "By:" line is omitted entirely.
+            let submitter = payload
                 .get("counterparty")
                 .and_then(|v| v.as_str())
-                .unwrap_or("unknown");
-            let submitter = format_submitter_for_display(counterparty);
+                .map(format_submitter_for_display);
             let proposal_kind = payload
                 .get("proposal_kind")
                 .and_then(|v| v.as_str())
@@ -308,10 +165,13 @@ pub fn decode_notification_content(
                 );
             }
             let dao_esc = escape_telegram_html(dao_id);
-            let subtitle = format!(
-                "<b>DAO:</b> {dao_esc}\n<b>By:</b> {}",
-                escape_telegram_html(&submitter)
-            );
+            let subtitle = match submitter {
+                Some(submitter) => format!(
+                    "<b>DAO:</b> {dao_esc}\n<b>By:</b> {}",
+                    escape_telegram_html(&submitter)
+                ),
+                None => format!("<b>DAO:</b> {dao_esc}"),
+            };
 
             let kind_esc = escape_telegram_html(proposal_kind);
             let title = format!("New <b>{kind_esc}</b> proposal");
@@ -338,14 +198,14 @@ pub fn decode_notification_content(
                 .and_then(|v| v.as_str())
                 .unwrap_or("unknown");
 
+            // Ledger amounts are decimal-adjusted human values; render as-is
+            // (same convention the swap branch has always used).
             let amount_abs = amount_raw.trim_start_matches('-');
             let token_meta = token_meta_for_id(token_id, metadata_map);
             let token_symbol = token_meta
                 .map(|m| m.symbol.as_str())
                 .unwrap_or_else(|| format_token_label(token_id));
-            let display_amount = token_meta
-                .and_then(|m| format_raw_amount(amount_abs, m.decimals))
-                .unwrap_or_else(|| amount_abs.to_string());
+            let display_amount = amount_abs.to_string();
 
             let usd_value = payload
                 .get("usd_value")
@@ -354,13 +214,12 @@ pub fn decode_notification_content(
                 .and_then(|v| v.to_f64())
                 .map(f64::abs)
                 .or_else(|| {
-                    let amount = token_meta
-                        .and_then(|m| format_raw_amount(amount_abs, m.decimals))
-                        .and_then(|s| BigDecimal::from_str(s.as_str()).ok())
-                        .and_then(|v: BigDecimal| v.to_f64());
+                    let amount = BigDecimal::from_str(amount_abs)
+                        .ok()
+                        .and_then(|v| v.to_f64());
                     let price = token_meta.and_then(|m| m.price);
                     match (amount, price) {
-                        (Some(a), Some(p)) => Some(a * p),
+                        (Some(a), Some(p)) => Some(a * p.abs()),
                         _ => None,
                     }
                 });
@@ -449,67 +308,77 @@ pub fn decode_notification_content(
 #[cfg(test)]
 mod tests {
     use super::{
-        collect_notification_token_ids, decode_add_proposal_payload, decode_notification_content,
+        classify_proposal_kind, collect_notification_token_ids, decode_notification_content,
     };
     use crate::handlers::token::metadata::TokenMetadata;
     use std::collections::HashMap;
 
-    #[test]
-    fn decode_direct_add_proposal_transfer() {
-        let actions = serde_json::json!([{
-            "FunctionCall": {
-                "method_name": "add_proposal",
-                "args": "eyJwcm9wb3NhbCI6eyJkZXNjcmlwdGlvbiI6IlBheSBBbGljZSIsImtpbmQiOnsiVHJhbnNmZXIiOnsicmVjZWl2ZXJfaWQiOiJhbGljZS5uZWFyIiwiYW1vdW50IjoiMSIsInRva2VuX2lkIjoidXNkYy5uZWFyIn19fX0="
-            }
-        }]);
-
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.description.as_deref(), Some("Pay Alice"));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
-        assert_eq!(decoded.delegate_sender_id, None);
+    /// Parse the raw add_proposal args JSON (as stored on-chain) and return
+    /// the inner proposal object, mirroring what dao_proposals persists.
+    fn proposal_from_args(args_json: &str) -> serde_json::Value {
+        let args: serde_json::Value = serde_json::from_str(args_json).expect("valid args json");
+        args.get("proposal").cloned().unwrap_or(args)
     }
 
     #[test]
-    fn decode_delegate_wrapped_add_proposal() {
-        let actions = serde_json::json!([{
-            "Delegate": {
-                "delegate_action": {
-                    "sender_id": "alice.near",
-                    "actions": [{
-                        "FunctionCall": {
-                            "method_name": "add_proposal",
-                            "args": "eyJwcm9wb3NhbCI6eyJkZXNjcmlwdGlvbiI6IkNhbGwgY29udHJhY3QiLCJraW5kIjp7IkZ1bmN0aW9uQ2FsbCI6eyJyZWNlaXZlcl9pZCI6InVzZGMubmVhciIsImFjdGlvbnMiOlt7Im1ldGhvZF9uYW1lIjoiZnRfdHJhbnNmZXIiLCJhcmdzIjoiZXlKeVpXTmxhWFpsY2w5cFpDSTZJbUZzYVdObExtNWxZWElpTENKaGJXOTFiblFpT2lJeE1EQWlmUT09IiwiZ2FzIjoiMTAwMDAwMDAwMDAwMDAwIiwiZGVwb3NpdCI6IjEifV19fX19"
-                        }
-                    }]
-                }
-            }
-        }]);
-
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.description.as_deref(), Some("Call contract"));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
-        assert_eq!(decoded.delegate_sender_id.as_deref(), Some("alice.near"));
+    fn classify_transfer_kind_as_payment() {
+        let proposal = serde_json::json!({
+            "description": "Pay Alice",
+            "kind": {"Transfer": {"receiver_id": "alice.near", "amount": "1", "token_id": "usdc.near"}}
+        });
+        assert_eq!(
+            classify_proposal_kind(&proposal).as_deref(),
+            Some("Payment")
+        );
     }
 
     #[test]
-    fn decode_top_level_add_proposal_fields() {
-        let actions = serde_json::json!([{
-            "FunctionCall": {
-                "method_name": "add_proposal",
-                "args": "eyJkZXNjcmlwdGlvbiI6IkxlZ2FjeSBzaGFwZSIsImtpbmQiOnsiVHJhbnNmZXIiOnsicmVjZWl2ZXJfaWQiOiJhbGljZS5uZWFyIiwiYW1vdW50IjoiMSIsInRva2VuX2lkIjoiIn19fQ=="
-            }
-        }]);
+    fn classify_change_policy_kind() {
+        let proposal = serde_json::json!({
+            "description": "* Title: Update Policy",
+            "kind": {"ChangePolicyUpdateParameters": {"parameters": {}}}
+        });
+        assert_eq!(
+            classify_proposal_kind(&proposal).as_deref(),
+            Some("Change Policy")
+        );
+    }
 
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.description.as_deref(), Some("Legacy shape"));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
+    #[test]
+    fn classify_real_yurtur_exchange_mt_transfer() {
+        let args = r#"{"proposal":{"description":"* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-24T12:51:30.813Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token In Address: nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near <br>* Token Out Address: nep141:btc.omft.near <br>* Amount In: 102.9 <br>* Amount Out: 0.00144464 <br>* Slippage: 0.5 <br>* Quote Deadline: 2026-03-24T12:51:30.813Z <br>* Time Estimate: 10 seconds <br>* Deposit Address: cab3bb780c77e98eb0d55f9c938302a52afc04d96b6c963fe9c47c5127eea363 <br>* Signature: ed25519:67d7aMJr2cmLJsH45D9LS3qZAsocEHQnWCjEUYPk21YdzXeEDRJA98TrQoZCk2SfadXtAP7Kf9DBYsbaNhmwRsXG","kind":{"FunctionCall":{"receiver_id":"intents.near","actions":[{"method_name":"mt_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImNhYjNiYjc4MGM3N2U5OGViMGQ1NWY5YzkzODMwMmE1MmFmYzA0ZDk2YjZjOTYzZmU5YzQ3YzUxMjdlZWEzNjMiLCJhbW91bnQiOiIxMDI5MDAwMDAiLCJ0b2tlbl9pZCI6Im5lcDE0MTpldGgtMHhhMGI4Njk5MWM2MjE4YjM2YzFkMTlkNGEyZTllYjBjZTM2MDZlYjQ4Lm9tZnQubmVhciJ9","deposit":"1","gas":"150000000000000"}]}}}}"#;
+        let proposal = proposal_from_args(args);
+        assert_eq!(
+            classify_proposal_kind(&proposal).as_deref(),
+            Some("Exchange")
+        );
+    }
+
+    #[test]
+    fn classify_real_yurtur_exchange_wrap_near() {
+        let args = r#"{"proposal":{"description":"* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-17T16:04:14.636Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token In Address: near <br>* Token Out Address: nep141:btc.omft.near <br>* Amount In: 150.0 <br>* Amount Out: 0.00287923 <br>* Slippage: 0.5 <br>* Quote Deadline: 2026-03-17T16:04:14.636Z <br>* Time Estimate: 20 seconds <br>* Deposit Address: bd32ed3931fed4e972c91f2c17dc90a9434a7644610679bde60c081d0443f265 <br>* Signature: ed25519:2wPQyFgdMXs1usmWg5qmKQU4HM1FidJkS94RMdwvMM7PeHWhb2ZRrWxRMMMRnbVESG9CT7176CZBg94QPJfN37Gh","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"150000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImJkMzJlZDM5MzFmZWQ0ZTk3MmM5MWYyYzE3ZGM5MGE5NDM0YTc2NDQ2MTA2NzliZGU2MGMwODFkMDQ0M2YyNjUiLCJhbW91bnQiOiIxNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
+        let proposal = proposal_from_args(args);
+        assert_eq!(
+            classify_proposal_kind(&proposal).as_deref(),
+            Some("Exchange")
+        );
+    }
+
+    #[test]
+    fn classify_payment_transfer_wrap_near_as_payment() {
+        let args = r#"{"proposal":{"description":"* Proposal Action: payment-transfer <br>* Notes: treasury payment via intents","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"1000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImFiYzEyMyIsImFtb3VudCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
+        let proposal = proposal_from_args(args);
+        assert_eq!(
+            classify_proposal_kind(&proposal).as_deref(),
+            Some("Payment")
+        );
     }
 
     #[test]
     fn decode_notification_content_payment_shape() {
         let payload = serde_json::json!({
             "token_id": "intents.near:nep141:usdc.near",
-            "amount": "-1234500",
+            "amount": "1.2345",
             "counterparty": "bob.near",
             "usd_value": "1.2345"
         });
@@ -546,6 +415,41 @@ mod tests {
             "https://app.trezu.app/dao.near/dashboard/activity"
         );
         assert_eq!(decoded.action_text, "View Activity");
+    }
+
+    #[test]
+    fn decode_notification_content_payment_usd_falls_back_to_price() {
+        let payload = serde_json::json!({
+            "token_id": "usdc.near",
+            "amount": "50",
+            "counterparty": "bob.near"
+        });
+        let mut metadata = HashMap::new();
+        metadata.insert(
+            "usdc.near".to_string(),
+            TokenMetadata {
+                token_id: "usdc.near".to_string(),
+                name: "USDC".to_string(),
+                symbol: "USDC".to_string(),
+                decimals: 6,
+                icon: None,
+                price: Some(1.0),
+                price_updated_at: None,
+                network: None,
+                chain_name: None,
+                chain_icons: None,
+            },
+        );
+
+        let decoded = decode_notification_content(
+            "payment",
+            "dao.near",
+            &payload,
+            &metadata,
+            "https://app.trezu.app",
+        );
+        assert!(decoded.subtitle.contains("50 USDC -&gt; bob.near"));
+        assert!(decoded.subtitle.contains("USD: $50"));
     }
 
     #[test]
@@ -652,53 +556,22 @@ mod tests {
         assert_eq!(decoded.action_text, "View Proposals");
     }
 
-    fn build_add_proposal_actions(args_json: &str) -> serde_json::Value {
-        use base64::Engine as _;
-        let args_b64 = base64::engine::general_purpose::STANDARD.encode(args_json.as_bytes());
-        serde_json::json!([{
-            "FunctionCall": {
-                "method_name": "add_proposal",
-                "args": args_b64
-            }
-        }])
-    }
-
     #[test]
-    fn decode_real_yurtur_exchange_mt_transfer() {
-        let args = r#"{"proposal":{"description":"* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-24T12:51:30.813Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token In Address: nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near <br>* Token Out Address: nep141:btc.omft.near <br>* Amount In: 102.9 <br>* Amount Out: 0.00144464 <br>* Slippage: 0.5 <br>* Quote Deadline: 2026-03-24T12:51:30.813Z <br>* Time Estimate: 10 seconds <br>* Deposit Address: cab3bb780c77e98eb0d55f9c938302a52afc04d96b6c963fe9c47c5127eea363 <br>* Signature: ed25519:67d7aMJr2cmLJsH45D9LS3qZAsocEHQnWCjEUYPk21YdzXeEDRJA98TrQoZCk2SfadXtAP7Kf9DBYsbaNhmwRsXG","kind":{"FunctionCall":{"receiver_id":"intents.near","actions":[{"method_name":"mt_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImNhYjNiYjc4MGM3N2U5OGViMGQ1NWY5YzkzODMwMmE1MmFmYzA0ZDk2YjZjOTYzZmU5YzQ3YzUxMjdlZWEzNjMiLCJhbW91bnQiOiIxMDI5MDAwMDAiLCJ0b2tlbl9pZCI6Im5lcDE0MTpldGgtMHhhMGI4Njk5MWM2MjE4YjM2YzFkMTlkNGEyZTllYjBjZTM2MDZlYjQ4Lm9tZnQubmVhciJ9","deposit":"1","gas":"150000000000000"}]}}}}"#;
-        let actions = build_add_proposal_actions(args);
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Exchange"));
-        assert!(
-            decoded
-                .description
-                .as_deref()
-                .unwrap_or_default()
-                .contains("asset-exchange")
+    fn decode_notification_content_add_proposal_without_submitter() {
+        let payload = serde_json::json!({
+            "proposal_kind": "Payment",
+            "description": "confidential payout"
+        });
+
+        let decoded = decode_notification_content(
+            "add_proposal",
+            "conf.sputnik-dao.near",
+            &payload,
+            &HashMap::new(),
+            "https://app.trezu.app",
         );
-    }
 
-    #[test]
-    fn decode_real_yurtur_exchange_wrap_near_150() {
-        let args = r#"{"proposal":{"description":"* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-17T16:04:14.636Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token In Address: near <br>* Token Out Address: nep141:btc.omft.near <br>* Amount In: 150.0 <br>* Amount Out: 0.00287923 <br>* Slippage: 0.5 <br>* Quote Deadline: 2026-03-17T16:04:14.636Z <br>* Time Estimate: 20 seconds <br>* Deposit Address: bd32ed3931fed4e972c91f2c17dc90a9434a7644610679bde60c081d0443f265 <br>* Signature: ed25519:2wPQyFgdMXs1usmWg5qmKQU4HM1FidJkS94RMdwvMM7PeHWhb2ZRrWxRMMMRnbVESG9CT7176CZBg94QPJfN37Gh","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"150000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImJkMzJlZDM5MzFmZWQ0ZTk3MmM5MWYyYzE3ZGM5MGE5NDM0YTc2NDQ2MTA2NzliZGU2MGMwODFkMDQ0M2YyNjUiLCJhbW91bnQiOiIxNTAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
-        let actions = build_add_proposal_actions(args);
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Exchange"));
-    }
-
-    #[test]
-    fn decode_real_yurtur_exchange_wrap_near_200() {
-        let args = r#"{"proposal":{"description":"* Proposal Action: asset-exchange <br>* Notes: **Must be executed before 2026-03-12T11:57:54.898Z** for transferring tokens to 1Click's deposit address for swap execution. <br>* Token In Address: near <br>* Token Out Address: nep141:sol.omft.near <br>* Amount In: 200.0 <br>* Amount Out: 3.015674196 <br>* Slippage: 0.5 <br>* Quote Deadline: 2026-03-12T11:57:54.898Z <br>* Time Estimate: 20 seconds <br>* Deposit Address: 036e9cc142253e962a7f30c410f7eb3a5c8370062bd73255d9086043b13568b2 <br>* Signature: ed25519:4XyZ3GtuTaABimuen2wvK1XwgGk5sup2hJjUixU1u4rgEpQvC5aLnhkbz8SWANoGHUMn7Hk6whCcHSNptr5n667b","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"200000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6IjAzNmU5Y2MxNDIyNTNlOTYyYTdmMzBjNDEwZjdlYjNhNWM4MzcwMDYyYmQ3MzI1NWQ5MDg2MDQzYjEzNTY4YjIiLCJhbW91bnQiOiIyMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
-        let actions = build_add_proposal_actions(args);
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Exchange"));
-    }
-
-    #[test]
-    fn decode_payment_transfer_wrap_near_as_payment() {
-        let args = r#"{"proposal":{"description":"* Proposal Action: payment-transfer <br>* Notes: treasury payment via intents","kind":{"FunctionCall":{"receiver_id":"wrap.near","actions":[{"method_name":"near_deposit","args":"e30=","deposit":"1000000000000000000000000","gas":"10000000000000"},{"method_name":"ft_transfer","args":"eyJyZWNlaXZlcl9pZCI6ImFiYzEyMyIsImFtb3VudCI6IjEwMDAwMDAwMDAwMDAwMDAwMDAwMDAifQ==","deposit":"1","gas":"150000000000000"}]}}}}"#;
-        let actions = build_add_proposal_actions(args);
-        let decoded = decode_add_proposal_payload(Some(&actions));
-        assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
+        assert_eq!(decoded.title, "New <b>Payment</b> proposal");
+        assert_eq!(decoded.subtitle, "<b>DAO:</b> conf.sputnik-dao.near");
     }
 }

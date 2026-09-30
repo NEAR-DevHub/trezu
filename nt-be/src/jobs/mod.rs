@@ -12,7 +12,7 @@
 //! - tracing spans per task and `concurrency(1)` so cycles never overlap
 //!
 //! Schedules keep their old intervals/env-var overrides. Jobs that used to
-//! run once at startup (reconciliation, monthly reset, dashboard, FT
+//! run once at startup (monthly reset, dashboard, FT
 //! lockup) get one deduplicated task when the process first becomes leader,
 //! in addition to their cron schedule.
 
@@ -530,27 +530,6 @@ fn configure_cron_runtime(
 ) -> (Option<Monitor>, QueueRegistry) {
     let preparing_queues = monitor.is_none();
 
-    if !state.env_vars.disable_balance_monitoring {
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "account-maintenance",
-            schedule_every_secs(env_secs("MAINTENANCE_INTERVAL_SECONDS", 60)),
-            handlers::account_maintenance
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "confidential-poll",
-            schedule_every_secs(env_secs("CONFIDENTIAL_POLL_INTERVAL_SECONDS", 300)),
-            handlers::confidential_poll
-        );
-    }
-
     if state.env_vars.nearblocks_api_key.is_some() {
         monitor = register_cron_worker!(
             monitor,
@@ -663,35 +642,10 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
-        "price-sync",
-        schedule_every_secs(60),
-        handlers::price_sync
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
         "token-price-ingest",
         schedule_every_secs(60),
         handlers::token_price_ingest
     );
-
-    // Skipping this becuase balance_changs table will be depreceated and we will only use gold projections
-
-    // if !state.env_vars.disable_balance_changes_usd_backfill {
-    //     spawn_cron_worker!(
-    //         queues,
-    //         state,
-    //         "balance-changes-usd-backfill",
-    //         schedule_every_secs(env_secs(
-    //             "BALANCE_CHANGES_USD_BACKFILL_INTERVAL_SECONDS",
-    //             3600
-    //         )),
-    //         handlers::balance_changes_usd_backfill
-    //     );
-    // }
 
     if !state.env_vars.disable_gold_ledger_usd_backfill {
         monitor = register_cron_worker!(
@@ -720,46 +674,10 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
-        "confidential-snapshots",
-        schedule_every_secs(3600),
-        handlers::confidential_snapshots
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
-        "confidential-gold-reconciliation",
-        schedule_every_secs(86_400),
-        handlers::confidential_gold_reconciliation
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
         "bulk-payment-payout",
         schedule_every_secs(5),
         handlers::bulk_payment_payout
     );
-
-    if state.goldsky_pool.is_some() {
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "goldsky-enrichment",
-            schedule_every_secs(env_secs("ENRICHMENT_INTERVAL_SECONDS", 15)),
-            handlers::goldsky_enrichment
-        );
-    } else {
-        if preparing_queues {
-            tracing::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
-        }
-    }
 
     let sweeper_disabled = std::env::var("DISABLE_TREASURY_CREATION_SWEEPER")
         .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
@@ -960,12 +878,10 @@ fn build_cron_runtime(
     )
 }
 
-const STARTUP_QUEUES: [&str; 7] = [
-    "confidential-gold-reconciliation",
+const STARTUP_QUEUES: [&str; 5] = [
     "subscription-monthly-reset",
     "public-dashboard-refresh",
     "ft-lockup-refresh",
-    "balance-changes-usd-backfill",
     "gold-usd-enrichment",
     "price-history-backfill",
 ];

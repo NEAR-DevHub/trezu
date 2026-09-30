@@ -1,3 +1,7 @@
+//! The detector classifies `dao_proposals.proposal_kind` JSON after a
+//! Postgres JSONB round-trip — these tests pin that the payload written to
+//! `dao_notifications` carries the classified kind and description.
+
 mod common;
 
 use sqlx::PgPool;
@@ -27,84 +31,52 @@ async fn insert_dao_with_telegram(pool: &PgPool) {
         .expect("insert telegram connection");
 }
 
-async fn reset_balance_changes_cursor(pool: &PgPool) {
+async fn reset_proposals_cursor(pool: &PgPool) {
     sqlx::query(
         "INSERT INTO goldsky_cursors (consumer_name, last_processed_id, last_processed_block, updated_at)
-         VALUES ('notifications:balance_changes', '0', 0, NOW())
+         VALUES ('notifications:dao_proposals', '0', 0, NOW())
          ON CONFLICT (consumer_name) DO UPDATE SET
            last_processed_id = '0', last_processed_block = 0, updated_at = NOW()",
     )
     .execute(pool)
     .await
-    .expect("reset balance_changes cursor");
+    .expect("reset dao_proposals cursor");
 }
 
-async fn insert_add_proposal_balance_change(
+async fn insert_proposal_with_kind(
     pool: &PgPool,
-    block_height: i64,
-    actions: serde_json::Value,
+    proposal_id: i64,
+    description: &str,
+    kind: serde_json::Value,
 ) -> i64 {
     sqlx::query_scalar(
         r#"
-        INSERT INTO balance_changes
-            (account_id, block_height, block_timestamp, block_time, token_id, amount,
-             balance_before, balance_after, counterparty, transaction_hashes, receipt_id,
-             method_name, action_kind, actions)
-        VALUES ($1, $2, $3, $4, 'near', 0, 0, 0, 'alice.near', '{}', '{}',
-                'add_proposal', 'FUNCTION_CALL', $5)
+        INSERT INTO dao_proposals
+            (dao_id, proposal_id, status, proposal_kind, proposer, description,
+             proposal_created_at, proposal_creation_block_height)
+        VALUES ($1, $2, 'in_progress', $3, 'alice.near', $4, NOW(), 100)
         RETURNING id
         "#,
     )
     .bind(DAO_ID)
-    .bind(block_height)
-    .bind(1_000_000_000_000i64)
-    .bind(chrono::Utc::now())
-    .bind(actions)
+    .bind(proposal_id)
+    .bind(kind)
+    .bind(description)
     .fetch_one(pool)
     .await
-    .expect("insert add_proposal balance change")
+    .expect("insert dao_proposal")
 }
 
 #[sqlx::test]
-async fn test_decoder_reads_nested_proposal_shape_from_db(pool: PgPool) {
-    common::load_test_env();
-
-    let actions = serde_json::json!([{
-        "FunctionCall": {
-            "method_name": "add_proposal",
-            "args": "eyJwcm9wb3NhbCI6eyJkZXNjcmlwdGlvbiI6IlBheSBBbGljZSIsImtpbmQiOnsiVHJhbnNmZXIiOnsicmVjZWl2ZXJfaWQiOiJhbGljZS5uZWFyIiwiYW1vdW50IjoiMSIsInRva2VuX2lkIjoidXNkYy5uZWFyIn19fX0="
-        }
-    }]);
-
-    let id = insert_add_proposal_balance_change(&pool, 100, actions).await;
-    let db_actions: serde_json::Value =
-        sqlx::query_scalar("SELECT actions FROM balance_changes WHERE id = $1")
-            .bind(id)
-            .fetch_one(&pool)
-            .await
-            .expect("fetch actions from db");
-
-    let decoded = nt_be::handlers::notifications::payload_decoder::decode_add_proposal_payload(
-        Some(&db_actions),
-    );
-    assert_eq!(decoded.description.as_deref(), Some("Pay Alice"));
-    assert_eq!(decoded.proposal_kind.as_deref(), Some("Payment"));
-}
-
-#[sqlx::test]
-async fn test_detector_writes_decoded_payload_for_top_level_shape(pool: PgPool) {
+async fn test_detector_classifies_transfer_kind_from_db(pool: PgPool) {
     common::load_test_env();
     insert_dao_with_telegram(&pool).await;
-    reset_balance_changes_cursor(&pool).await;
+    reset_proposals_cursor(&pool).await;
 
-    let actions = serde_json::json!([{
-        "FunctionCall": {
-            "method_name": "add_proposal",
-            "args": "eyJkZXNjcmlwdGlvbiI6IkxlZ2FjeSBzaGFwZSIsImtpbmQiOnsiVHJhbnNmZXIiOnsicmVjZWl2ZXJfaWQiOiJhbGljZS5uZWFyIiwiYW1vdW50IjoiMSIsInRva2VuX2lkIjoiIn19fQ=="
-        }
-    }]);
-
-    let source_id = insert_add_proposal_balance_change(&pool, 101, actions).await;
+    let kind = serde_json::json!({
+        "Transfer": {"receiver_id": "alice.near", "amount": "1", "token_id": "usdc.near"}
+    });
+    insert_proposal_with_kind(&pool, 1, "Pay Alice", kind).await;
 
     let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
         .await
@@ -112,19 +84,49 @@ async fn test_detector_writes_decoded_payload_for_top_level_shape(pool: PgPool) 
     assert_eq!(detected, 1, "one add_proposal notification expected");
 
     let payload: serde_json::Value = sqlx::query_scalar(
-        "SELECT payload FROM dao_notifications WHERE source_table = 'balance_changes' AND source_id = $1 AND event_type = 'add_proposal'",
+        "SELECT payload FROM dao_notifications WHERE source_table = 'dao_proposals' AND event_type = 'add_proposal'",
     )
-    .bind(source_id)
     .fetch_one(&pool)
     .await
     .expect("fetch dao_notifications payload");
 
     assert_eq!(
         payload.get("description").and_then(|v| v.as_str()),
-        Some("Legacy shape")
+        Some("Pay Alice")
     );
     assert_eq!(
         payload.get("proposal_kind").and_then(|v| v.as_str()),
         Some("Payment")
+    );
+    assert_eq!(
+        payload.get("counterparty").and_then(|v| v.as_str()),
+        Some("alice.near")
+    );
+}
+
+#[sqlx::test]
+async fn test_detector_classifies_change_policy_kind_from_db(pool: PgPool) {
+    common::load_test_env();
+    insert_dao_with_telegram(&pool).await;
+    reset_proposals_cursor(&pool).await;
+
+    let kind = serde_json::json!({"ChangePolicyUpdateParameters": {"parameters": {}}});
+    insert_proposal_with_kind(&pool, 2, "* Title: Update Policy", kind).await;
+
+    let detected = nt_be::handlers::notifications::detector::run_detection_cycle(&pool)
+        .await
+        .expect("run detection");
+    assert_eq!(detected, 1);
+
+    let payload: serde_json::Value = sqlx::query_scalar(
+        "SELECT payload FROM dao_notifications WHERE source_table = 'dao_proposals' AND event_type = 'add_proposal'",
+    )
+    .fetch_one(&pool)
+    .await
+    .expect("fetch dao_notifications payload");
+
+    assert_eq!(
+        payload.get("proposal_kind").and_then(|v| v.as_str()),
+        Some("Change Policy")
     );
 }

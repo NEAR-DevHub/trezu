@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO dao_members (dao_id, account_id, is_policy_member, is_saved, is_hidden)\n            VALUES ($1, $2, true, false, false)\n            ON CONFLICT (dao_id, account_id) DO UPDATE\n            SET is_policy_member = EXCLUDED.is_policy_member,\n                is_saved = EXCLUDED.is_saved,\n                is_hidden = EXCLUDED.is_hidden\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Varchar",
+        "Varchar"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "72594ea88a6ae20df55770817b5ddb2bf264e4ba23d0cbf08a01d21a69773f1d"
+}

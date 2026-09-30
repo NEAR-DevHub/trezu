@@ -20,6 +20,7 @@ use super::repository::{
     load_silver_suffix, upsert_gold_event, upsert_projection_error,
     widen_for_overlapping_completed_exchanges,
 };
+use crate::handlers::notifications::emitter::emit_gold_ledger_notification;
 use crate::handlers::public_history::bronze::store::is_public_history_backfill_complete;
 use crate::handlers::public_history::quotes::{
     QuoteProposalSnapshot, QuoteProposalType, proposal_quote_from_metadata, quote_amount_matches,
@@ -794,6 +795,7 @@ async fn persist_completed_exchange(
         Ok(event) => {
             preserve_keys.insert(event.gold_event_key.clone());
             upsert_gold_event(tx, &event).await?;
+            emit_gold_ledger_notification(tx, &event.gold_event_key).await?;
             clear_projection_error(tx, outgoing_id).await?;
             clear_projection_error(tx, incoming.id).await?;
             stats.rows_projected += 1;
@@ -1031,6 +1033,9 @@ pub async fn project_public_gold_for_account(
             Ok(Some(event)) => {
                 preserve_keys.insert(event.gold_event_key.clone());
                 upsert_gold_event(&mut tx, &event).await?;
+                if event.transaction_type == PublicTransactionType::Sent {
+                    emit_gold_ledger_notification(&mut tx, &event.gold_event_key).await?;
+                }
                 clear_projection_error(&mut tx, leg.id).await?;
                 stats.rows_projected += 1;
             }
