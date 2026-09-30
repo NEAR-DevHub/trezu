@@ -2414,7 +2414,8 @@
         "rejected": "Abgelehnt",
         "failed": "Fehlgeschlagen",
         "expired": "Abgelaufen",
-        "removed": "Entfernt"
+        "removed": "Entfernt",
+        "absolute": "{label} am {date}"
     },
     "relativeTime": {
         "justNow": "Gerade eben"

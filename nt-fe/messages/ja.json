@@ -2414,7 +2414,8 @@
         "rejected": "却下済み",
         "failed": "失敗",
         "expired": "失効",
-        "removed": "削除済み"
+        "removed": "削除済み",
+        "absolute": "{date} に{label}"
     },
     "relativeTime": {
         "justNow": "たった今"

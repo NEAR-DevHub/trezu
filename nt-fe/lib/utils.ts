@@ -36,10 +36,21 @@ export interface RelativeTimeLabels {
     locale: string;
 }
 
-const MINUTE_MS = 60 * 1000;
+const SECOND_MS = 1000;
+const MINUTE_MS = 60 * SECOND_MS;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 const WEEK_MS = 7 * DAY_MS;
+const MONTH_MS = 30 * DAY_MS;
+const SIX_MONTHS_MS = 6 * MONTH_MS;
+
+type RelativeStep = [ms: number, unit: Intl.RelativeTimeFormatUnit];
+
+const SUB_DAY_STEPS: RelativeStep[] = [
+    [HOUR_MS, "hour"],
+    [MINUTE_MS, "minute"],
+    [SECOND_MS, "second"],
+];
 
 function formatAbsoluteDate(date: Date, locale: string): string {
     return date.toLocaleDateString(locale, {
@@ -60,58 +71,33 @@ function intlRelative(
     );
 }
 
-/**
- * Single relative-time scale shared by every "X ago" / "in X" label:
- * - < 1 minute  → "30 seconds ago" / "in 30 seconds"
- * - < 1 hour    → "12 minutes ago" / "in 12 minutes"
- * - < 1 day     → "3 hours ago"
- * - < 1 week    → "2 days ago" ("yesterday" / "tomorrow" for 1 day)
- * - < 2 weeks   → "last week" / "next week"
- * - otherwise   → absolute date, e.g. "Sep 12, 2026"
- *
- * @param diffMs - Absolute distance from now, in ms
- * @param sign - -1 for past dates, 1 for future dates
- */
-function formatRelativeDuration(
-    date: Date,
+/** Largest step that fits `diffMs`, e.g. "3 hours ago" / "in 3 hours". */
+function relativeFromSteps(
     diffMs: number,
     sign: -1 | 1,
     locale: string,
+    steps: RelativeStep[],
 ): string {
-    if (diffMs >= 2 * WEEK_MS) {
-        return formatAbsoluteDate(date, locale);
+    for (const [ms, unit] of steps) {
+        if (diffMs >= ms) {
+            return intlRelative(sign * Math.floor(diffMs / ms), unit, locale);
+        }
     }
-    if (diffMs >= WEEK_MS) {
-        return intlRelative(sign, "week", locale);
-    }
-    if (diffMs >= DAY_MS) {
-        return intlRelative(sign * Math.floor(diffMs / DAY_MS), "day", locale);
-    }
-    if (diffMs >= HOUR_MS) {
-        return intlRelative(
-            sign * Math.floor(diffMs / HOUR_MS),
-            "hour",
-            locale,
-        );
-    }
-    if (diffMs >= MINUTE_MS) {
-        return intlRelative(
-            sign * Math.floor(diffMs / MINUTE_MS),
-            "minute",
-            locale,
-        );
-    }
-    return intlRelative(
-        sign * Math.max(1, Math.floor(diffMs / 1000)),
-        "second",
-        locale,
-    );
+    return intlRelative(sign, "second", locale);
+}
+
+export interface ProposalStatusDateText {
+    text: string;
+    /** True when `text` is an absolute date (beyond the 6-month horizon). */
+    isAbsolute: boolean;
 }
 
 /**
- * Relative time for a proposal status date (see formatRelativeDuration for
- * the scale). The caller prefixes the status verb: "Expires in 2 hours",
- * "Executed 2 days ago".
+ * Relative time for a proposal status date. The caller prefixes the status
+ * verb: "Expires in 2 hours", "Executed 3 months ago".
+ * - < 1 hour  → minutes, < 1 day → hours, < 1 month → days, else months
+ * - > 6 months (either direction) → absolute date, flagged so the caller can
+ *   render "Executed on Mar 1, 2026"
  *
  * @param date - The relevant date for the status (expiration, execution, etc.)
  * @param isFuture - Whether the date is in the future (pending expiry)
@@ -120,15 +106,26 @@ export function formatProposalStatusDate(
     date: Date,
     isFuture: boolean,
     labels: RelativeTimeLabels,
-): string {
+): ProposalStatusDateText {
     const now = Date.now();
-    const diffMs = isFuture ? date.getTime() - now : now - date.getTime();
-    return formatRelativeDuration(
-        date,
-        Math.max(0, diffMs),
-        isFuture ? 1 : -1,
-        labels.locale,
+    const diffMs = Math.max(
+        0,
+        isFuture ? date.getTime() - now : now - date.getTime(),
     );
+    if (diffMs > SIX_MONTHS_MS) {
+        return {
+            text: formatAbsoluteDate(date, labels.locale),
+            isAbsolute: true,
+        };
+    }
+    return {
+        text: relativeFromSteps(diffMs, isFuture ? 1 : -1, labels.locale, [
+            [MONTH_MS, "month"],
+            [DAY_MS, "day"],
+            ...SUB_DAY_STEPS,
+        ]),
+        isAbsolute: false,
+    };
 }
 
 function normalizeDate(
@@ -148,7 +145,7 @@ function normalizeDate(
 
 /**
  * Relative time for a past date, e.g. "Just now", "2 minutes ago",
- * "yesterday", "last week", then the absolute date after two weeks.
+ * "yesterday", "last week" (7–13 days), then the absolute date from two weeks.
  */
 export function formatRelativeTime(
     date: Date | string | number | null | undefined,
@@ -163,7 +160,14 @@ export function formatRelativeTime(
     if (diffMs < MINUTE_MS) {
         return labels.justNow;
     }
-    return formatRelativeDuration(dateObj, diffMs, -1, labels.locale);
+    if (diffMs >= 2 * WEEK_MS) {
+        return formatAbsoluteDate(dateObj, labels.locale);
+    }
+    return relativeFromSteps(diffMs, -1, labels.locale, [
+        [WEEK_MS, "week"],
+        [DAY_MS, "day"],
+        ...SUB_DAY_STEPS,
+    ]);
 }
 
 export function formatTimestamp(date: Date) {

@@ -2414,7 +2414,8 @@
         "rejected": "נדחה",
         "failed": "נכשל",
         "expired": "פג תוקף",
-        "removed": "הוסר"
+        "removed": "הוסר",
+        "absolute": "{label} ב-{date}"
     },
     "relativeTime": {
         "justNow": "כרגע"

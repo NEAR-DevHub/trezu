@@ -2397,7 +2397,8 @@
         "rejected": "已拒绝",
         "failed": "失败",
         "expired": "已过期",
-        "removed": "已移除"
+        "removed": "已移除",
+        "absolute": "{label}于 {date}"
     },
     "relativeTime": {
         "justNow": "刚刚"

@@ -60,6 +60,7 @@ type FormattedDateProps = StandardDateProps | ProposalStatusDateProps;
  * - Pending → "Expires in X" (expiry date)
  * - Executed/Rejected/Failed/Expired/Removed → "Status X ago" (resolved date,
  *   or the `date` override when the caller has resolved the vote transaction)
+ * - Beyond 6 months either way → "Status on Mar 1, 2026"
  * Full timestamp shown in tooltip on hover.
  */
 export function FormattedDate(props: FormattedDateProps) {
@@ -96,12 +97,18 @@ export function FormattedDate(props: FormattedDateProps) {
             urgentExpiry = true;
         }
         if (props.relative) {
-            const relativeStr = formatProposalStatusDate(
+            const { text, isAbsolute } = formatProposalStatusDate(
                 date,
                 isFuture,
                 relativeLabels,
             );
-            displayText = label ? `${label} ${relativeStr}` : relativeStr;
+            if (!label) {
+                displayText = text;
+            } else if (isAbsolute) {
+                displayText = tDate("absolute", { label, date: text });
+            } else {
+                displayText = `${label} ${text}`;
+            }
         } else {
             displayText = tooltipText;
             tooltipText = undefined;

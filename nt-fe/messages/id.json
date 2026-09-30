@@ -2414,7 +2414,8 @@
         "rejected": "Ditolak",
         "failed": "Gagal",
         "expired": "Kedaluwarsa",
-        "removed": "Dihapus"
+        "removed": "Dihapus",
+        "absolute": "{label} pada {date}"
     },
     "relativeTime": {
         "justNow": "Baru saja"

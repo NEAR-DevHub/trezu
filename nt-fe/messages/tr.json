@@ -2414,7 +2414,8 @@
         "rejected": "Reddedildi",
         "failed": "Başarısız",
         "expired": "Süresi Doldu",
-        "removed": "Kaldırıldı"
+        "removed": "Kaldırıldı",
+        "absolute": "{date} tarihinde {label}"
     },
     "relativeTime": {
         "justNow": "Az önce"

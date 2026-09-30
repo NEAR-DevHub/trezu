@@ -2414,7 +2414,8 @@
         "rejected": "거부됨",
         "failed": "실패",
         "expired": "만료됨",
-        "removed": "제거됨"
+        "removed": "제거됨",
+        "absolute": "{date}에 {label}"
     },
     "relativeTime": {
         "justNow": "방금 전"

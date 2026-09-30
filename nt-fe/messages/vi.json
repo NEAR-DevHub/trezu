@@ -2397,7 +2397,8 @@
         "rejected": "Đã từ chối",
         "failed": "Thất bại",
         "expired": "Đã hết hạn",
-        "removed": "Đã xóa"
+        "removed": "Đã xóa",
+        "absolute": "{label} vào {date}"
     },
     "relativeTime": {
         "justNow": "Vừa xong"

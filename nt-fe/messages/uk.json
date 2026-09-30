@@ -2397,7 +2397,8 @@
         "rejected": "Відхилено",
         "failed": "Не вдалося",
         "expired": "Прострочено",
-        "removed": "Видалено"
+        "removed": "Видалено",
+        "absolute": "{label} {date}"
     },
     "relativeTime": {
         "justNow": "Щойно"
