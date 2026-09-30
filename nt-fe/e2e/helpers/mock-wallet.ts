@@ -247,3 +247,74 @@ export async function seedMockWalletAccount(
 
     await page.evaluate(script, payload);
 }
+
+export const METEOR_WALLET_ID = "meteor-wallet";
+const METEOR_EXECUTOR_PATH = "/_near-connect-test/meteor-wallet.js";
+const METEOR_SIGN_OUT_PROBE = "https://meteor-sign-out.test/probe";
+
+/**
+ * Serve a stand-in for Meteor Wallet under its real manifest id and seed a
+ * signed-in Meteor session. Its signOut pings a probe URL: real Meteor's
+ * signOut opens the "Execute Action" prompt (#1441), so sign-out must never
+ * call it. Register after installTreasuryApiMocks so these routes win.
+ */
+export async function routeMeteorStandIn(
+    page: Page,
+    accountId: string,
+): Promise<{ signOutCalls: number }> {
+    const calls = { signOutCalls: 0 };
+    const manifest = {
+        wallets: [
+            {
+                ...MOCK_MANIFEST.wallets[0],
+                id: METEOR_WALLET_ID,
+                name: "Meteor Wallet",
+                executor: METEOR_EXECUTOR_PATH,
+            },
+        ],
+    };
+    const executor = MOCK_WALLET_EXECUTOR_JS.replace(
+        "async signOut() {",
+        `async signOut() {\n      await fetch('${METEOR_SIGN_OUT_PROBE}').catch(() => {});`,
+    );
+
+    await page.route("**/*", async (route) => {
+        const url = route.request().url();
+        if (url.startsWith(METEOR_SIGN_OUT_PROBE)) {
+            calls.signOutCalls += 1;
+            return route.fulfill({
+                status: 204,
+                headers: { "Access-Control-Allow-Origin": "*" },
+            });
+        }
+        if (url.includes(METEOR_EXECUTOR_PATH)) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/javascript",
+                body: executor,
+            });
+        }
+        if (isManifestUrl(url)) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(manifest),
+            });
+        }
+        return route.fallback();
+    });
+
+    await page.addInitScript(
+        ({ walletId, acct }) => {
+            localStorage.setItem("selected-wallet", walletId);
+            localStorage.setItem(`${walletId}:signedAccountId`, acct);
+            localStorage.setItem(
+                `${walletId}:meteor-account-data`,
+                JSON.stringify({ account: { accountId: acct } }),
+            );
+        },
+        { walletId: METEOR_WALLET_ID, acct: accountId },
+    );
+
+    return calls;
+}
