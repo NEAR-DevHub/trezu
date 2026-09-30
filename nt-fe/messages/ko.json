@@ -481,7 +481,6 @@
             "lastUpdated": "마지막 업데이트: {time}",
             "notUpdated": "아직 업데이트되지 않음",
             "justNow": "지금",
-            "moments": "잠시 전",
             "checking": "새로 고침 상태 확인 중…",
             "unavailable": "새로 고침 상태를 사용할 수 없음",
             "updateTreasuryData": "트레저리 데이터 업데이트"
@@ -2411,13 +2410,15 @@
     },
     "statusDate": {
         "expires": "만료 시간",
-        "created": "생성됨",
+        "executed": "실행됨",
+        "rejected": "거부됨",
+        "failed": "실패",
         "expired": "만료됨",
-        "removed": "제거됨"
+        "removed": "제거됨",
+        "absolute": "{date}에 {label}"
     },
     "relativeTime": {
-        "justNow": "방금 전",
-        "moments": "잠시"
+        "justNow": "방금 전"
     },
     "amount": {
         "network": "네트워크: {network}"

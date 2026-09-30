@@ -398,11 +398,20 @@ export function getProposalStatus(
 /**
  * Returns the status-relevant date for a proposal and metadata for display.
  * - Pending: expiration date (future)
- * - All others (Executed, Rejected, Failed, Expired, Removed, Moved): submission_time (past)
+ * - Expired: expiration date (past)
+ * - Executed / Rejected / Failed / Removed: submission_time as a fallback —
+ *   the proposal payload has no resolution timestamp, so callers that resolve
+ *   the vote transaction pass its timestamp to FormattedDate's `date` override.
  *
- * Returns { date, isFuture, label } where label is the status verb prefix for non-pending.
+ * Returns { date, isFuture, labelKey } where labelKey is the status verb prefix.
  */
-export type StatusDateLabelKey = "expires" | "created" | "expired" | "removed";
+export type StatusDateLabelKey =
+    | "expires"
+    | "executed"
+    | "rejected"
+    | "failed"
+    | "expired"
+    | "removed";
 
 export function getProposalStatusDateInfo(
     proposal: Proposal,
@@ -419,8 +428,6 @@ export function getProposalStatusDateInfo(
         };
     }
 
-    // For all resolved statuses, use submission_time as a fallback since
-    // the API doesn't provide a separate execution timestamp.
     const submissionDate = new Date(submissionTimeMs);
 
     switch (uiStatus) {
@@ -428,19 +435,19 @@ export function getProposalStatusDateInfo(
             return {
                 date: submissionDate,
                 isFuture: false,
-                labelKey: "created",
+                labelKey: "executed",
             };
         case "Rejected":
             return {
                 date: submissionDate,
                 isFuture: false,
-                labelKey: "created",
+                labelKey: "rejected",
             };
         case "Failed":
             return {
                 date: submissionDate,
                 isFuture: false,
-                labelKey: "created",
+                labelKey: "failed",
             };
         case "Expired": {
             return {

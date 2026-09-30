@@ -481,7 +481,6 @@
             "lastUpdated": "Востаннє оновлено {time}",
             "notUpdated": "Ще не оновлено",
             "justNow": "щойно",
-            "moments": "кілька миттєвостей",
             "checking": "Перевірка статусу оновлення…",
             "unavailable": "Статус оновлення недоступний",
             "updateTreasuryData": "Оновити дані скарбниці"
@@ -2394,13 +2393,15 @@
     },
     "statusDate": {
         "expires": "Закінчується",
-        "created": "Створено",
+        "executed": "Виконано",
+        "rejected": "Відхилено",
+        "failed": "Не вдалося",
         "expired": "Прострочено",
-        "removed": "Видалено"
+        "removed": "Видалено",
+        "absolute": "{label} {date}"
     },
     "relativeTime": {
-        "justNow": "Щойно",
-        "moments": "мить"
+        "justNow": "Щойно"
     },
     "amount": {
         "network": "Мережа: {network}"

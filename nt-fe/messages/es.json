@@ -481,7 +481,6 @@
             "lastUpdated": "Última actualización {time}",
             "notUpdated": "Aún no se ha actualizado",
             "justNow": "ahora",
-            "moments": "unos momentos",
             "checking": "Comprobando estado de actualización…",
             "unavailable": "Estado de actualización no disponible",
             "updateTreasuryData": "Actualizar datos de tesorería"
@@ -2411,13 +2410,15 @@
     },
     "statusDate": {
         "expires": "Caduca",
-        "created": "Creado",
+        "executed": "Ejecutado",
+        "rejected": "Rechazado",
+        "failed": "Fallido",
         "expired": "Caducado",
-        "removed": "Eliminado"
+        "removed": "Eliminado",
+        "absolute": "{label} el {date}"
     },
     "relativeTime": {
-        "justNow": "Ahora mismo",
-        "moments": "momentos"
+        "justNow": "Ahora mismo"
     },
     "amount": {
         "network": "Red: {network}"
