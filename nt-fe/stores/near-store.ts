@@ -8,8 +8,10 @@ import {
 import type { SignDelegateActionsParams } from "@hot-labs/near-connect/build/types";
 import { useQueryClient } from "@tanstack/react-query";
 import SignClient from "@walletconnect/sign-client";
+import { createElement } from "react";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { ToastActionButton } from "@/components/toaster";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getNearStoreMessages } from "@/i18n/store-messages";
@@ -19,10 +21,6 @@ import {
     trackEvent,
 } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
-import {
-    isMemberAddedProposalKind,
-    memberAddedAtQueryKey,
-} from "@/lib/member-added-at";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -36,6 +34,10 @@ import {
     getKindFromProposal,
     type ProposalPermissionKind,
 } from "@/lib/config-utils";
+import {
+    isMemberAddedProposalKind,
+    memberAddedAtQueryKey,
+} from "@/lib/member-added-at";
 import { ensurePasskeyWallet } from "@/lib/passkey-wallet";
 import {
     getLastProposalId,
@@ -908,14 +910,15 @@ export const useNear = () => {
         // Show toast after invalidation
         if (showToast) {
             toast.success(toastMessage, {
-                duration: 10000,
-                action: {
-                    label: getNearStoreMessages().viewRequest,
-                    onClick: () =>
+                duration: 5000,
+                action: createElement(ToastActionButton, {
+                    onClick: () => {
                         window.open(
                             `/${params.treasuryId}/requests?tab=InProgress`,
-                        ),
-                },
+                        );
+                    },
+                    children: getNearStoreMessages().viewRequest,
+                }),
             });
         }
     };
@@ -934,13 +937,14 @@ export const useNear = () => {
         // Show toast at the same time as UI updates
         const toastAction =
             votes.length === 1 && votes[0].vote !== "Remove"
-                ? {
-                      label: getNearStoreMessages().viewRequest,
-                      onClick: () =>
+                ? createElement(ToastActionButton, {
+                      onClick: () => {
                           window.open(
                               `/${treasuryId}/requests/${votes[0].proposalId}`,
-                          ),
-                  }
+                          );
+                      },
+                      children: getNearStoreMessages().viewRequest,
+                  })
                 : undefined;
         const messages = getNearStoreMessages();
         const text =
@@ -950,7 +954,7 @@ export const useNear = () => {
                   ? messages.votesSubmitted
                   : messages.voteSubmitted;
         toast.success(text, {
-            duration: 10000,
+            duration: 5000,
             action: toastAction,
         });
 

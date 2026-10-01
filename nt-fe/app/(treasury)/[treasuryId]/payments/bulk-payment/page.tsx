@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { PageComponentLayout } from "@/components/page-component-layout";
+import { ToastActionButton } from "@/components/toaster";
 import { NEAR_COM_NETWORK_ID, NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { default_near_token } from "@/constants/token";
 import { BulkActivationCard } from "@/features/confidential/components/bulk-activation-card";
@@ -25,14 +26,14 @@ import {
     generateListId,
     submitPaymentList,
 } from "@/lib/bulk-payment-api";
-import type { SectionRule } from "@/lib/section-rules";
-import { encodeToMarkdown } from "@/lib/utils";
 import {
     hasNearComAddressPrefix,
     stripNearComAddressPrefix,
 } from "@/lib/nearcom-address";
-import { useNear } from "@/stores/near-store";
 import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
+import type { SectionRule } from "@/lib/section-rules";
+import { encodeToMarkdown } from "@/lib/utils";
+import { useNear } from "@/stores/near-store";
 import { BulkPaymentToast } from "../components/bulk-payment-toast";
 import {
     type RecipientNetworkRuleOption,
@@ -345,14 +346,18 @@ export default function BulkPaymentPage() {
             });
 
             toast.success(tBulk("proposalSubmitted"), {
-                duration: 10000,
-                action: {
-                    label: tReq("viewRequest"),
-                    onClick: () =>
-                        router.push(
-                            `/${selectedTreasury}/requests?tab=InProgress`,
-                        ),
-                },
+                duration: 5000,
+                action: (
+                    <ToastActionButton
+                        onClick={() =>
+                            router.push(
+                                `/${selectedTreasury}/requests?tab=InProgress`,
+                            )
+                        }
+                    >
+                        {tReq("viewRequest")}
+                    </ToastActionButton>
+                ),
             });
 
             await queryClient.invalidateQueries({
@@ -560,14 +565,18 @@ export default function BulkPaymentPage() {
             toast.dismiss(loadingToastId);
 
             toast.success(tBulk("proposalSubmitted"), {
-                duration: 10000,
-                action: {
-                    label: tReq("viewRequest"),
-                    onClick: () =>
-                        router.push(
-                            `/${selectedTreasury}/requests?tab=InProgress`,
-                        ),
-                },
+                duration: 5000,
+                action: (
+                    <ToastActionButton
+                        onClick={() =>
+                            router.push(
+                                `/${selectedTreasury}/requests?tab=InProgress`,
+                            )
+                        }
+                    >
+                        {tReq("viewRequest")}
+                    </ToastActionButton>
+                ),
             });
 
             await queryClient.invalidateQueries({
