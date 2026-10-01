@@ -60,7 +60,8 @@ pub struct EarlyAccessRequest {
     /// choice, so there is nothing to withhold and nothing to enforce here.
     #[serde(default)]
     pub marketing_opt_in: bool,
-    /// The page the form was submitted from.
+    /// Full URL of the page the form was submitted from, without the
+    /// querystring or fragment.
     pub landing_page: Option<String>,
 }
 
