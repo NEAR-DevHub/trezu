@@ -12,16 +12,10 @@ import { CopyButton } from "@/components/copy-button";
 import { FormattedDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    mobileInsetSheetClassName,
-} from "@/components/modal";
+import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
 import { NetworkList } from "@/components/network-list";
 import { User } from "@/components/user";
 import { formatShortAddress } from "@/lib/format-short-address";
-import { cn } from "@/lib/utils";
 import { useChains } from "../chains";
 import type { AddressBookEntry } from "../types";
 import { formatAddressBookDisplayAddress } from "../utils/find-entry";
@@ -75,7 +69,7 @@ export function ContactActionSheet({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className={cn(mobileInsetSheetClassName, "gap-6")}
+                className="gap-6"
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <SheetHandle />
@@ -149,6 +143,7 @@ export function ContactActionSheet({
                     <Button
                         type="button"
                         variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onSend}
                     >
@@ -158,6 +153,7 @@ export function ContactActionSheet({
                     <Button
                         type="button"
                         variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onRemove}
                     >

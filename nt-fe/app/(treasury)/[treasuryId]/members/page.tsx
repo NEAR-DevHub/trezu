@@ -634,25 +634,28 @@ export default function MembersPage() {
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-3">
                                     {isMobileSelectMode ? (
-                                        <Checkbox
-                                            checked={selected}
-                                            onClick={(event) =>
-                                                event.stopPropagation()
-                                            }
-                                            onCheckedChange={() =>
-                                                handleToggleMember(
-                                                    member.accountId,
-                                                )
-                                            }
+                                        <span className="flex size-9 shrink-0 items-center justify-center">
+                                            <Checkbox
+                                                checked={selected}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                                onCheckedChange={() =>
+                                                    handleToggleMember(
+                                                        member.accountId,
+                                                    )
+                                                }
+                                            />
+                                        </span>
+                                    ) : (
+                                        <User
+                                            accountId={member.accountId}
+                                            size="md"
+                                            variant="avatar"
+                                            withLink={false}
+                                            avatarClassName="size-9 rounded-lg"
                                         />
-                                    ) : null}
-                                    <User
-                                        accountId={member.accountId}
-                                        size="md"
-                                        variant="avatar"
-                                        withLink={false}
-                                        avatarClassName="size-9 rounded-lg"
-                                    />
+                                    )}
                                     <div className="min-w-0 flex-1">
                                         <User
                                             accountId={member.accountId}

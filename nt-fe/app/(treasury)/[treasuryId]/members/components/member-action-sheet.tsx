@@ -8,15 +8,9 @@ import { CopyButton } from "@/components/copy-button";
 import { FormattedDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    mobileInsetSheetClassName,
-} from "@/components/modal";
+import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
 import { Skeleton } from "@/components/ui/skeleton";
 import { User } from "@/components/user";
-import { cn } from "@/lib/utils";
 
 interface Member {
     accountId: string;
@@ -74,7 +68,7 @@ export function MemberActionSheet({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className={cn(mobileInsetSheetClassName, "gap-6")}
+                className="gap-6"
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <SheetHandle />
@@ -124,6 +118,7 @@ export function MemberActionSheet({
                         permissionKind="transfer"
                         permissionAction="AddProposal"
                         variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onSend}
                     >
@@ -135,6 +130,7 @@ export function MemberActionSheet({
                         permissionAction="AddProposal"
                         balanceCheck={{ withProposalBond: true }}
                         variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onRemove}
                         disabled={removeDisabled}

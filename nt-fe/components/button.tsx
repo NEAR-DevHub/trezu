@@ -9,12 +9,12 @@ type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 
 /**
  * The loading state's skin: gray-500 (#737373) surface, white label and spinner,
- * 16px/700 at 100% line height, 12px radius (`rounded-lg`, like every other
- * button). It's split in two so the layering works out: the surface goes
- * *before* the call site's `className`, letting a button that must stay on
- * brand (a destructive red, say) keep its own background, while the rest goes
- * *after*, so every loading button agrees on type and radius no matter what
- * the call site asked for when idle.
+ * 16px/700 at 100% line height. Radius stays with the button's `size`. It's
+ * split in two so the layering works out: the surface goes *before* the call
+ * site's `className`, letting a button that must stay on brand (a destructive
+ * red, say) keep its own background, while the rest goes *after*, so every
+ * loading button agrees on type no matter what the call site asked for when
+ * idle.
  *
  * Height is deliberately not part of this — it stays with the button's `size`,
  * because resizing a button the moment it's clicked moves the layout under the
@@ -31,7 +31,7 @@ type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 // `disabled:pointer-events-none`.
 const LOADING_SURFACE_CLASS = "bg-gray-500 dark:bg-gray-500";
 const LOADING_SKIN_CLASS =
-    "text-white rounded-lg text-base font-bold leading-none disabled:opacity-100";
+    "text-white text-base font-bold leading-none disabled:opacity-100";
 
 interface ButtonProps
     extends Omit<React.ComponentProps<typeof ShadcnButton>, "variant"> {

@@ -15,17 +15,6 @@ import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
 import { useMobileShellStore } from "@/stores/mobile-shell-store";
 
-function isSendScreen(
-    pathname: string | null,
-    treasuryId: string | undefined,
-): boolean {
-    if (!treasuryId) return false;
-    return (
-        pathname === `/${treasuryId}/payments` ||
-        pathname === `/${treasuryId}/payments/`
-    );
-}
-
 export function MobileBottomNav() {
     const t = useTranslations("nav");
     const pathname = usePathname();
@@ -33,8 +22,7 @@ export function MobileBottomNav() {
     const { treasuryId } = useTreasury();
     const sheet = useMobileShellStore((state) => state.sheet);
     const hideBottomNav = useMobileShellStore((state) => state.hideBottomNav);
-    const onSendScreen = isSendScreen(pathname, treasuryId);
-    const keyboardOpen = useMobileKeyboardOpen(onSendScreen);
+    const keyboardOpen = useMobileKeyboardOpen();
     const openSheet = useMobileShellStore((state) => state.openSheet);
     const closeSheet = useMobileShellStore((state) => state.closeSheet);
 
@@ -73,7 +61,7 @@ export function MobileBottomNav() {
         pathname?.startsWith(`/${treasuryId}/settings`) === true;
     const isMenuActive = sheet === "menu" || isMenuRoute;
 
-    if (hideBottomNav || (onSendScreen && keyboardOpen)) {
+    if (hideBottomNav || keyboardOpen) {
         return null;
     }
 

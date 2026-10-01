@@ -30,22 +30,18 @@ const EMPTY_ROW_FADE = [
     {
         bars: "**:data-[slot=skeleton]:opacity-55",
         line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_55%,transparent)]!",
-        card: "border-[color-mix(in_srgb,var(--general-border)_55%,transparent)]",
     },
     {
         bars: "**:data-[slot=skeleton]:opacity-35",
         line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_35%,transparent)]!",
-        card: "border-[color-mix(in_srgb,var(--general-border)_35%,transparent)]",
     },
     {
         bars: "**:data-[slot=skeleton]:opacity-20",
         line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_20%,transparent)]!",
-        card: "border-[color-mix(in_srgb,var(--general-border)_20%,transparent)]",
     },
     {
         bars: "**:data-[slot=skeleton]:opacity-10",
         line: "[&_td]:[border-bottom-color:color-mix(in_srgb,var(--general-border)_10%,transparent)]!",
-        card: "border-[color-mix(in_srgb,var(--general-border)_10%,transparent)]",
     },
 ] as const;
 
@@ -81,9 +77,7 @@ function TableCellSkeleton({ columnId }: { columnId: ContactColumnId }) {
             return <Placeholder className="size-4 rounded-sm" />;
         case "contact":
         case "addedBy":
-            return (
-                <PersonCellSkeleton avatarClassName="size-8 rounded-lg" />
-            );
+            return <PersonCellSkeleton avatarClassName="size-8 rounded-lg" />;
         case "network":
             return (
                 <div className="flex items-center gap-1.5">
@@ -134,21 +128,13 @@ export function ContactsTableSkeleton({
 
     return (
         <>
-            <div className={cn("flex flex-col gap-2 md:hidden", className)}>
+            <div className={cn("flex flex-col md:hidden", className)}>
                 {Array.from({ length: cardRows }).map((_, rowIndex) => (
                     <div
                         // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length placeholder list
                         key={rowIndex}
                         className={cn(
-                            "rounded-3xl border bg-card p-4",
-                            fadeRows
-                                ? EMPTY_ROW_FADE[
-                                      Math.min(
-                                          rowIndex,
-                                          EMPTY_ROW_FADE.length - 1,
-                                      )
-                                  ].card
-                                : "border-general-border",
+                            "flex items-center gap-3 py-3",
                             fadeRows &&
                                 EMPTY_ROW_FADE[
                                     Math.min(
@@ -158,13 +144,10 @@ export function ContactsTableSkeleton({
                                 ].bars,
                         )}
                     >
-                        <div className="flex flex-col gap-3">
+                        <div className="min-w-0 flex-1">
                             <PersonCellSkeleton />
-                            <div className="flex gap-2">
-                                <Placeholder className="h-6 w-[88px] rounded-lg" />
-                                <Placeholder className="h-6 w-[120px] rounded-lg" />
-                            </div>
                         </div>
+                        <Placeholder className="h-6 w-[88px] shrink-0 rounded-lg" />
                     </div>
                 ))}
             </div>

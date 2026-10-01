@@ -9,9 +9,9 @@ import {
 } from "@/lib/mobile-keyboard";
 
 /**
- * True while an on-page field is focused (Send amount) or the keyboard
- * has squeezed the viewport. Dialog fields are ignored so the address
- * picker can raise the keyboard on the first tap.
+ * True while an on-page field is focused or the keyboard has squeezed
+ * the viewport. Dialog fields are ignored so a picker can raise the
+ * keyboard on the first tap.
  * Pass `enabled` so pages that never hide the tab bar skip the listeners.
  */
 export function useMobileKeyboardOpen(enabled = true): boolean {

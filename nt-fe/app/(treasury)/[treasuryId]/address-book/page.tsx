@@ -71,39 +71,66 @@ function AddressBookEmptyState({
     onImport: () => void;
 }) {
     const tAb = useTranslations("addressBook");
-    return (
+    const actions = () => (
+        <div className="flex items-center gap-2">
+            <AuthButton
+                permissionKind="any"
+                permissionAction=""
+                variant="secondary"
+                className={cn(
+                    TOOLBAR_BUTTON_CLASS,
+                    // Same gray as the translucent secondary fill, but solid,
+                    // so the faded row line cannot show through.
+                    "dark:bg-[color-mix(in_srgb,white_10%,var(--card))]",
+                )}
+                onClick={onImport}
+            >
+                <Icon icon={FileDownIcon} />
+                {tAb("import")}
+            </AuthButton>
+            <AuthButton
+                permissionKind="any"
+                permissionAction=""
+                className={TOOLBAR_BUTTON_CLASS}
+                onClick={onAdd}
+            >
+                <Icon icon={Add01Icon} /> {tAb("addRecipient")}
+            </AuthButton>
+        </div>
+    );
+
+    const message = (
         <EmptyState
             title={tAb("emptyTitle")}
             description={tAb("emptyDescription")}
-            skeleton={<ContactsEmptyBackdrop />}
             className="gap-4 py-0"
-            actions={
-                <div className="flex items-center gap-2">
-                    <AuthButton
-                        permissionKind="any"
-                        permissionAction=""
-                        variant="secondary"
-                        className={cn(
-                            TOOLBAR_BUTTON_CLASS,
-                            // Same gray as the translucent secondary fill, but
-                            // solid, so the faded row line cannot show through.
-                            "dark:bg-[color-mix(in_srgb,white_10%,var(--card))]",
-                        )}
-                        onClick={onImport}
-                    >
-                        <Icon icon={FileDownIcon} /> {tAb("import")}
-                    </AuthButton>
-                    <AuthButton
-                        permissionKind="any"
-                        permissionAction=""
-                        className={TOOLBAR_BUTTON_CLASS}
-                        onClick={onAdd}
-                    >
-                        <Icon icon={Add01Icon} /> {tAb("addRecipient")}
-                    </AuthButton>
-                </div>
-            }
+            actions={actions()}
         />
+    );
+
+    return (
+        <>
+            <div className="relative min-h-0 flex-1 md:hidden">
+                <div
+                    aria-hidden
+                    className="pointer-events-none select-none **:data-[slot=skeleton]:animate-none!"
+                >
+                    <ContactsEmptyBackdrop />
+                </div>
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <div className="pointer-events-auto">{message}</div>
+                </div>
+            </div>
+            <div className="hidden md:block">
+                <EmptyState
+                    title={tAb("emptyTitle")}
+                    description={tAb("emptyDescription")}
+                    skeleton={<ContactsEmptyBackdrop />}
+                    className="gap-4 py-0"
+                    actions={actions()}
+                />
+            </div>
+        </>
     );
 }
 
@@ -463,9 +490,13 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
         );
     }
 
-    const toolbarButtonClass = cn(
+    const toolbarIconButtonClass = cn(
         TOOLBAR_BUTTON_CLASS,
         "size-10 px-0 sm:h-10 sm:w-auto sm:px-4",
+        mobileSearchActive && "hidden sm:inline-flex",
+    );
+    const toolbarLabeledButtonClass = cn(
+        TOOLBAR_BUTTON_CLASS,
         mobileSearchActive && "hidden sm:inline-flex",
     );
 
@@ -495,34 +526,27 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                             permissionKind="any"
                             permissionAction=""
                             variant="secondary"
-                            className={toolbarButtonClass}
+                            className={toolbarLabeledButtonClass}
                             loading={exportEntries.isPending}
                             onClick={handleExport}
                         >
                             {exportEntries.isPending ? null : (
                                 <Icon icon={FileUpIcon} />
                             )}
-                            <span className="hidden sm:inline">
-                                {exportEntries.isPending
-                                    ? tCommon("exporting")
-                                    : tCommon("export")}
-                            </span>
+                            {exportEntries.isPending
+                                ? tCommon("exporting")
+                                : tCommon("export")}
                         </AuthButton>
                         <AuthButton
                             permissionKind="any"
                             permissionAction=""
-                            variant="secondary"
-                            className={cn(
-                                toolbarButtonClass,
-                                "text-destructive hover:text-destructive dark:text-destructive dark:hover:text-destructive",
-                            )}
+                            variant="destructive"
+                            className={toolbarLabeledButtonClass}
                             disabled={deleteEntries.isPending}
                             onClick={() => handleRemoveSelected()}
                         >
                             <Icon icon={Delete01Icon} />
-                            <span className="hidden sm:inline">
-                                {tCommon("remove")}
-                            </span>
+                            {tCommon("remove")}
                         </AuthButton>
                     </div>
                 </div>
@@ -573,7 +597,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                             permissionKind="any"
                             permissionAction=""
                             variant="secondary"
-                            className={toolbarButtonClass}
+                            className={toolbarIconButtonClass}
                             loading={exportEntries.isPending}
                             onClick={handleExport}
                         >
@@ -589,7 +613,7 @@ function RecipientsView({ onAdd }: { onAdd: () => void }) {
                         <AuthButton
                             permissionKind="any"
                             permissionAction=""
-                            className={toolbarButtonClass}
+                            className={toolbarIconButtonClass}
                             onClick={onAdd}
                         >
                             <Icon icon={Add01Icon} />
@@ -771,11 +795,13 @@ export default function AddressBookPage() {
                         permissionKind="any"
                         permissionAction=""
                         variant="secondary"
-                        className="h-10 gap-2 rounded-lg text-sm"
+                        className="size-10 px-0 sm:h-10 sm:w-auto sm:px-4 gap-2 rounded-lg text-sm"
                         onClick={handleImport}
                     >
                         <Icon icon={FileDownIcon} />
-                        {tAb("import")}
+                        <span className="hidden sm:inline">
+                            {tAb("import")}
+                        </span>
                     </AuthButton>
                 }
             >
@@ -794,27 +820,25 @@ export default function AddressBookPage() {
         );
     }
 
+    const isEmptyList = !isLoading && !hasEntries;
+
     return (
-        <PageComponentLayout title={t("title")}>
-            {flowMode ? null : (
-                <MobilePageHeading>{t("title")}</MobilePageHeading>
-            )}
-            {flowMode ? (
-                <RecipientFlow
-                    mode={flowMode}
-                    initialRecipient={initialRecipient}
-                    existingEntries={entries ?? []}
-                    onDone={handleCloseFlow}
-                    onCancel={handleCloseFlow}
-                    onImport={handleImport}
-                />
-            ) : isLoading || hasEntries ? (
-                <RecipientsView onAdd={handleAdd} />
+        <PageComponentLayout
+            title={t("title")}
+            mainClassName={
+                isEmptyList ? "max-md:flex max-md:flex-col" : undefined
+            }
+        >
+            <MobilePageHeading>{t("title")}</MobilePageHeading>
+            {isEmptyList ? (
+                <div className="flex min-h-0 flex-1 flex-col md:block">
+                    <AddressBookEmptyState
+                        onAdd={handleAdd}
+                        onImport={handleImport}
+                    />
+                </div>
             ) : (
-                <AddressBookEmptyState
-                    onAdd={handleAdd}
-                    onImport={handleImport}
-                />
+                <RecipientsView onAdd={handleAdd} />
             )}
         </PageComponentLayout>
     );

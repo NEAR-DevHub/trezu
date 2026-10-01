@@ -63,8 +63,8 @@ export function DeleteConfirmationModal({
         >
             <DialogContent
                 className={cn(
-                    mobileInsetSheetClassName,
                     "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                    mobileInsetSheetClassName,
                 )}
             >
                 <DialogHeader className="mx-0 border-0 px-0 pb-0" />
