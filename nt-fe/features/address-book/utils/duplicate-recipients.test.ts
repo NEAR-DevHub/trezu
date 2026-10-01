@@ -20,6 +20,15 @@ describe("duplicateRecipientIndexes", () => {
         ).toEqual([1]);
     });
 
+    it("treats a bare near.com address as the stored nearcom: form", () => {
+        expect(
+            duplicateRecipientIndexes(
+                [{ address: "alice.near", networks: ["near.com"] }],
+                new Set(["nearcom:alice.near"]),
+            ),
+        ).toEqual([0]);
+    });
+
     it("ignores blank addresses", () => {
         expect(
             duplicateRecipientIndexes(

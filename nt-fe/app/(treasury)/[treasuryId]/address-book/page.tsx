@@ -200,7 +200,7 @@ function RecipientFlow({
         if (!treasuryId) return;
 
         const existingAddresses = new Set(
-            existingEntries.map((entry) => entry.address.trim()),
+            existingEntries.map((entry) => persistAddressBookAddress(entry)),
         );
         const recipients = form.getValues().recipients;
         const duplicateIndexes = new Set(

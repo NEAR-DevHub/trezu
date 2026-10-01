@@ -50,7 +50,10 @@ import {
     RECIPIENT_NAME_MAX_LENGTH,
 } from "../types";
 import { duplicateRecipientIndexes } from "../utils/duplicate-recipients";
-import { formatAddressBookDisplayAddress } from "../utils/find-entry";
+import {
+    formatAddressBookDisplayAddress,
+    persistAddressBookAddress,
+} from "../utils/find-entry";
 
 // ─── Form schema ───────────────────────────────────────────────────────────────
 
@@ -373,7 +376,12 @@ export function AddRecipientInput({
     });
     const allRecipients = useWatch({ control, name: "recipients" }) ?? [];
     const existingAddresses = useMemo(
-        () => new Set(existingEntries.map((entry) => entry.address.trim())),
+        () =>
+            new Set(
+                existingEntries.map((entry) =>
+                    persistAddressBookAddress(entry),
+                ),
+            ),
         [existingEntries],
     );
     const duplicateIndexes = useMemo(
