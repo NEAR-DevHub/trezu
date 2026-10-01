@@ -2403,6 +2403,7 @@
         }
     },
     "warnings": {
+        "gotIt": "Зрозуміло",
         "offlineBadge": "Офлайн",
         "statusPageLink": "[Сторінка статусу](https://status.trezu.org/)",
         "schedule": {

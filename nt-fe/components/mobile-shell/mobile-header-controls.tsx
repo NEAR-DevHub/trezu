@@ -2,6 +2,7 @@
 
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { ProfileAvatarChip } from "@/components/profile-avatar-chip";
 import { ConnectWalletButton } from "@/components/sign-in";
@@ -63,25 +64,28 @@ export function MobileUserHeaderButton() {
     const openSheet = useMobileShellStore((state) => state.openSheet);
 
     if (!accountId || !isAuthenticated) {
-        return <ConnectWalletButton iconOnly className="size-9 rounded-xl" />;
+        return <ConnectWalletButton iconOnly />;
     }
 
     const displayName =
         profile?.name && profile.name !== accountId ? profile.name : accountId;
 
     return (
-        <button
+        <Button
             type="button"
+            variant="unstyled"
+            size="icon"
             onClick={() => openSheet("user")}
             aria-label={accountId}
-            className="flex size-9 items-center justify-center"
+            className="relative overflow-hidden p-0"
             data-testid="mobile-user-trigger"
         >
             <ProfileAvatarChip
                 imageUrl={resolveProfileImageUrl(profile?.image)}
                 name={displayName}
                 variant="large"
+                className="absolute inset-0 size-full rounded-lg"
             />
-        </button>
+        </Button>
     );
 }

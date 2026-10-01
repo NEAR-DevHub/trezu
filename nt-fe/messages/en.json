@@ -2418,6 +2418,7 @@
         }
     },
     "warnings": {
+        "gotIt": "Got it",
         "offlineBadge": "Offline",
         "statusPageLink": "[Status page](https://status.trezu.org/)",
         "schedule": {

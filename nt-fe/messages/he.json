@@ -2420,6 +2420,7 @@
         }
     },
     "warnings": {
+        "gotIt": "הבנתי",
         "offlineBadge": "Offline",
         "statusPageLink": "[Status page](https://status.trezu.org/)",
         "schedule": {

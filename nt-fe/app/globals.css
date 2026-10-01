@@ -319,6 +319,7 @@
     --general-warning-background-faded: rgb(254, 252, 232); /* #FEFCE8 */
     --general-warning-border: rgb(254, 240, 138); /* #FEF08A */
     --general-warning-foreground: rgb(161, 98, 7); /* #A16207 */
+    --general-warning-icon: rgba(254, 154, 0, 1); /* #FE9A00 */
     --general-amber-background-faded: rgb(255, 251, 235); /* #FFFBEB */
     --general-amber-border: rgb(254, 243, 198); /* #FEF3C6 */
     --general-amber-foreground: rgb(151, 60, 0); /* #973C00 */
@@ -452,6 +453,16 @@
     --general-warning-background-faded: rgb(66, 32, 6); /* #422006 */
     --general-warning-border: rgb(113, 63, 18); /* #713F12 */
     --general-warning-foreground: rgb(250, 204, 21); /* #FACC15 */
+    --general-warning-icon: rgba(254, 154, 0, 1); /* #FE9A00 */
+    /* Rebind the Tailwind color aliases on this element. A nested `.dark`
+       (the black rail) otherwise inherits the light-theme colors already
+       resolved on :root, so a warning on the rail stays cream-on-black. */
+    --color-general-warning-background-faded: var(
+        --general-warning-background-faded
+    );
+    --color-general-warning-border: var(--general-warning-border);
+    --color-general-warning-foreground: var(--general-warning-foreground);
+    --color-general-warning-icon: var(--general-warning-icon);
     --general-amber-background-faded: rgb(66, 32, 6); /* #422006 */
     --general-amber-border: rgb(113, 63, 18); /* #713F12 */
     --general-amber-foreground: rgb(250, 204, 21); /* #FACC15 */
@@ -596,6 +607,7 @@
     );
     --color-general-warning-border: var(--general-warning-border);
     --color-general-warning-foreground: var(--general-warning-foreground);
+    --color-general-warning-icon: var(--general-warning-icon);
     --color-general-amber-background-faded: var(
         --general-amber-background-faded
     );
