@@ -74,7 +74,7 @@ export function RemoveRecipientDialog({
                 <DialogFooter className="mx-0 px-0 pt-0">
                     <Button
                         type="button"
-                        variant="error"
+                        variant="destructive"
                         className="h-10 w-full rounded-2xl"
                         loading={isSubmitting}
                         onClick={handleConfirm}

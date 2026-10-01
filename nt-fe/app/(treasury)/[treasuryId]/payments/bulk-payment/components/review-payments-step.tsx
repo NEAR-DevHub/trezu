@@ -748,7 +748,7 @@ export function ReviewPaymentsStep({
                     <DialogFooter className="mx-0 px-0 pt-0">
                         <Button
                             type="button"
-                            variant="error"
+                            variant="destructive"
                             size="xl"
                             className="w-full rounded-2xl"
                             disabled={isSubmitting}

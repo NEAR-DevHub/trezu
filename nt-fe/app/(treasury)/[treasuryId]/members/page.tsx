@@ -1354,7 +1354,7 @@ export default function MembersPage() {
                                         balanceCheck={{
                                             withProposalBond: true,
                                         }}
-                                        variant="error"
+                                        variant="destructive"
                                         onClick={handleBulkDelete}
                                         disabled={
                                             isMemberActionsDisabled ||
