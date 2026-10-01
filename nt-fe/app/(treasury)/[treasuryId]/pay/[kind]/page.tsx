@@ -18,12 +18,16 @@ import { PageComponentLayout } from "@/components/page-component-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import { NEAR_COM_ICON } from "@/constants/token";
-import { withNearComAddressPrefix } from "@/lib/nearcom-address";
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useConfidentialBridgeAddress } from "@/hooks/use-confidential-bridge-address";
 import { useDepositAddressStatus } from "@/hooks/use-deposit-address-status";
 import { useDepositExpiryClock } from "@/hooks/use-deposit-expiry-clock";
 import { useTreasury } from "@/hooks/use-treasury";
+import {
+    buildNearComSendHref,
+    NEAR_COM_SEND_INTERNAL_NETWORK,
+    withNearComAddressPrefix,
+} from "@/lib/nearcom-address";
 import { useNear } from "@/stores/near-store";
 import { DepositAddressCard } from "../../dashboard/components/deposit/deposit-address-card";
 import { DepositAddressSkeleton } from "../../dashboard/components/deposit/deposit-address-view";
@@ -374,7 +378,15 @@ export default function PaySharePage() {
     };
 
     const handlePayWithNearcom = () => {
-        window.open("https://near.com/send", "_blank", "noopener,noreferrer");
+        if (!recipientDaoId) return;
+        window.open(
+            buildNearComSendHref({
+                network: NEAR_COM_SEND_INTERNAL_NETWORK,
+                recipient: withNearComAddressPrefix(recipientDaoId),
+            }),
+            "_blank",
+            "noopener,noreferrer",
+        );
     };
 
     const handlePayWithTrezu = () => {

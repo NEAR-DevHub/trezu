@@ -435,7 +435,8 @@
             "to": "ĐẾN",
             "transactionHash": "HASH GIAO DỊCH",
             "hashTooltip": "Định danh duy nhất (hash) của giao dịch này",
-            "processing": "Đang xử lý"
+            "processing": "Đang xử lý",
+            "notes": "GHI CHÚ"
         },
         "empty": {
             "title": "Không tìm thấy giao dịch nào",
@@ -473,7 +474,8 @@
             "failed": "Thất bại",
             "exchangeTransaction": "Giao dịch trao đổi",
             "transferTransaction": "Giao dịch chuyển khoản",
-            "rate": "Tỷ giá"
+            "rate": "Tỷ giá",
+            "notes": "Ghi chú"
         },
         "refresh": {
             "ariaLabel": "Làm mới lịch sử bảo mật",
@@ -484,7 +486,8 @@
             "checking": "Đang kiểm tra trạng thái làm mới…",
             "unavailable": "Không có trạng thái làm mới",
             "updateTreasuryData": "Cập nhật dữ liệu kho bạc"
-        }
+        },
+        "pdfReceipt": "Biên lai PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",

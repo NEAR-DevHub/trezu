@@ -35,6 +35,7 @@ use crate::handlers::intents::confidential::link_intent_to_history_event;
 use crate::handlers::intents::swap_status::fetch_public_swap_status;
 use crate::handlers::proposals::scraper::{
     ProposalStatus, extract_from_description, extract_payload_hash_from_kind, fetch_proposal,
+    user_notes_from_description,
 };
 use crate::handlers::public_history::bronze::store::BronzePublicHistoryEvent;
 use crate::handlers::public_history::quotes::{
@@ -116,6 +117,7 @@ struct DaoProposalUpsert<'a> {
     /// detector can render proposals without RPC or raw-args decoding.
     proposer: Option<String>,
     description: Option<String>,
+    notes: Option<String>,
     creation: Option<ReceiptFacts>,
     execution: Option<ReceiptFacts>,
 }
@@ -146,11 +148,12 @@ impl DaoProposalUpsert<'_> {
                 proposal_execution_receipt_id,
                 proposer,
                 description,
+                notes,
                 updated_at
             )
             VALUES (
                 $1, $2, COALESCE($3::proposal_status, 'in_progress'),
-                $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, NOW()
+                $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, NOW()
             )
             ON CONFLICT (dao_id, proposal_id) DO UPDATE SET
                 status = CASE
@@ -213,6 +216,7 @@ impl DaoProposalUpsert<'_> {
                 ),
                 proposer = COALESCE(EXCLUDED.proposer, dao_proposals.proposer),
                 description = COALESCE(EXCLUDED.description, dao_proposals.description),
+                notes = COALESCE(EXCLUDED.notes, dao_proposals.notes),
                 updated_at = NOW()
             RETURNING proposal_kind
             "#,
@@ -249,6 +253,7 @@ impl DaoProposalUpsert<'_> {
         )
         .bind(&self.proposer)
         .bind(&self.description)
+        .bind(&self.notes)
         .fetch_one(&mut **tx)
         .await?;
 
@@ -1002,6 +1007,7 @@ async fn link_proposal_group(
         _ => None,
     };
     let quote_metadata = build_quote_metadata(None, quote_snapshot.as_ref(), quote_status);
+    let notes = description.as_deref().and_then(user_notes_from_description);
 
     let upsert = DaoProposalUpsert {
         dao_id: &group.dao_id,
@@ -1012,6 +1018,7 @@ async fn link_proposal_group(
         quote_deposit_address,
         proposer: details.proposer,
         description: description.clone(),
+        notes,
         creation: group.created.map(ReceiptFacts::from_event),
         execution: group.executed.map(ReceiptFacts::from_event),
     };
@@ -1090,6 +1097,10 @@ pub(crate) async fn refresh_proposal_from_chain(
         quote_snapshot_from_proposal(details.description.as_deref(), details.kind.as_ref());
     let quote_metadata = build_quote_metadata(None, snapshot.as_ref(), None);
     let quote_deposit_address = snapshot.map(|snapshot| snapshot.deposit_address);
+    let notes = details
+        .description
+        .as_deref()
+        .and_then(user_notes_from_description);
 
     let upsert = DaoProposalUpsert {
         dao_id,
@@ -1100,6 +1111,7 @@ pub(crate) async fn refresh_proposal_from_chain(
         quote_deposit_address,
         proposer: details.proposer,
         description: details.description,
+        notes,
         creation: None,
         execution: None,
     };

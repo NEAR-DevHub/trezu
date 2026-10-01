@@ -327,6 +327,8 @@ export interface RecentActivity {
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;
+    /** Proposer's comment. Absent when the request had no note. */
+    notes?: string | null;
 }
 
 export interface RecentActivityResponse {
@@ -1358,6 +1360,7 @@ export interface IntentsQuoteRequest {
     deadline: string;
     quoteWaitingTimeMs?: number;
     isPayment?: boolean;
+    appFees?: { recipient?: string; fee?: number }[] | null;
 }
 
 export interface IntentsQuote {
@@ -1381,6 +1384,8 @@ export interface IntentsQuoteResponse {
     signature: string;
     timestamp: string;
     correlationId: string;
+    /** True when the quote proxy injected our app fee. Absent on older quotes. */
+    hasAppFee?: boolean;
 }
 
 /**

@@ -2117,23 +2117,36 @@
       };
     }
 
+    function clearLinkedPostScheduleLock() {
+      ['f-show-from', 'f-starts-at', 'f-ends-at'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.removeAttribute('data-locked');
+          el.title = '';
+        }
+      });
+      const hint = document.getElementById('linked-post-schedule-hint');
+      if (hint) hint.remove();
+    }
+
     function applyScheduleFromIntentsPost(post) {
       if (!post) {
-        // Clear the lock when a post is deselected.
-        ['f-show-from', 'f-starts-at', 'f-ends-at'].forEach(id => {
-          const el = document.getElementById(id);
-          if (el) {
-            el.removeAttribute('data-locked');
-            el.title = '';
-          }
-        });
-        const hint = document.getElementById('linked-post-schedule-hint');
-        if (hint) hint.remove();
+        clearLinkedPostScheduleLock();
         return;
       }
 
       const { startsAt, endsAt } = intentsPostTimes(post);
-      if (startsAt == null && endsAt == null) return;
+      // Active Shield incidents have createdAt and no resolvedAt. A schedule
+      // needs both bounds; otherwise the warning stays live with no dates.
+      if (startsAt == null || endsAt == null) {
+        clearLinkedPostScheduleLock();
+        const nowTiming = document.querySelector('input[name="timing"][value="now"]');
+        if (nowTiming && !nowTiming.checked) {
+          nowTiming.checked = true;
+          toggleActiveSchedule();
+        }
+        return;
+      }
 
       setTimingScheduled();
       const showFromEl = document.getElementById('f-show-from');

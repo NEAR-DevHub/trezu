@@ -330,6 +330,7 @@ export function ProposalSidebar({
     // Confidential metadata is backend-enriched and nested under mapped.data.
     let depositAddress: string | undefined;
     let isConfidentialPayment = false;
+    let isConfidentialSwap = false;
     let confidentialPaymentData: PaymentRequestData | undefined;
     let confidentialProposalCreatedAt: Date | undefined;
     let confidentialExecutedAt: Date | undefined;
@@ -348,6 +349,7 @@ export function ProposalSidebar({
                 );
                 const mapped = confidentialData?.mapped;
                 isConfidentialPayment = mapped?.type === "payment";
+                isConfidentialSwap = mapped?.type === "swap";
                 if (isConfidentialPayment) {
                     confidentialPaymentData =
                         mapped?.data as PaymentRequestData;
@@ -424,10 +426,12 @@ export function ProposalSidebar({
 
     // Swap is still settling (no finalized transaction yet).
     const isSwapProcessing = swapStatus?.status === "PROCESSING";
-    // Hide the transaction link for confidential requests while the swap is
-    // still processing — there is no finalized transaction to link to yet.
+    // Confidential swaps link to the NEAR Intents /mask explorer, which does
+    // not resolve. Hide that link and leave the PDF receipt as the artifact.
+    // Also hide the link while a confidential request is still settling.
     const hideTransactionLink =
-        isConfidentialRequestProposal && isSwapProcessing;
+        (isConfidentialSwap && hasDepositAddress) ||
+        (isConfidentialRequestProposal && isSwapProcessing);
     // near.com confidential payments link to NEAR Blocks; all other
     // intents-routed proposals use the NEAR Intents explorer (masked for
     // confidential).

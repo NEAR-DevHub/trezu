@@ -197,7 +197,7 @@ struct NearStatusMonitor {
     status: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone)]
 pub struct IntentsStatusResponse {
     pub posts: Vec<IntentsStatusPost>,
 }
@@ -209,6 +209,99 @@ pub struct IntentsStatusPost {
     pub post_type: String,
     pub starts_at: Option<i64>,
     pub ends_at: Option<i64>,
+}
+
+/// Payload from `GET https://shield.chaindefuser.com/public/status`.
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShieldStatusResponse {
+    #[serde(default)]
+    active_incidents: Vec<ShieldIncident>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ShieldIncident {
+    id: Option<String>,
+    scope_type: Option<String>,
+    scope_value: Option<String>,
+    direction: Option<String>,
+    public_description: Option<String>,
+    created_at: Option<String>,
+    resolved_at: Option<String>,
+}
+
+impl From<ShieldStatusResponse> for IntentsStatusResponse {
+    fn from(status: ShieldStatusResponse) -> Self {
+        Self {
+            posts: status
+                .active_incidents
+                .into_iter()
+                .map(IntentsStatusPost::from)
+                .collect(),
+        }
+    }
+}
+
+impl From<ShieldIncident> for IntentsStatusPost {
+    fn from(incident: ShieldIncident) -> Self {
+        let incident_id = incident.id.as_deref();
+        Self {
+            id: incident.id.clone(),
+            title: shield_incident_title(&incident),
+            post_type: INTENTS_POST_INCIDENT.to_string(),
+            starts_at: parse_iso_millis(incident.created_at.as_deref(), "createdAt", incident_id),
+            ends_at: parse_iso_millis(incident.resolved_at.as_deref(), "resolvedAt", incident_id),
+        }
+    }
+}
+
+fn parse_iso_millis(value: Option<&str>, field: &str, incident_id: Option<&str>) -> Option<i64> {
+    let raw = value?;
+    match DateTime::parse_from_rfc3339(raw) {
+        Ok(time) => Some(time.timestamp_millis()),
+        Err(error) => {
+            tracing::warn!(
+                incident_id = incident_id.unwrap_or_default(),
+                field,
+                value = raw,
+                error = %error,
+                "Shield incident timestamp could not be parsed"
+            );
+            None
+        }
+    }
+}
+
+fn shield_incident_title(incident: &ShieldIncident) -> String {
+    if let Some(description) = incident
+        .public_description
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+    {
+        return description.to_string();
+    }
+
+    let mut parts = Vec::new();
+    if let Some(value) = incident
+        .scope_value
+        .as_deref()
+        .filter(|value| !value.is_empty())
+    {
+        parts.push(value.to_uppercase());
+    }
+    if let Some(scope_type) = incident.scope_type.as_deref() {
+        parts.push(scope_type.replace('_', " "));
+    }
+    if let Some(direction) = incident.direction.as_deref() {
+        parts.push(direction.to_string());
+    }
+    if parts.is_empty() {
+        "Shield incident".to_string()
+    } else {
+        parts.join(" ")
+    }
 }
 
 #[derive(Debug, Deserialize)]
@@ -498,11 +591,12 @@ async fn fetch_intents_response(
         .get(&state.env_vars.near_intents_status_api_url);
 
     let started = Instant::now();
-    let result = send_json_check::<IntentsStatusResponse>(
+    let result = send_json_check::<ShieldStatusResponse>(
         request,
         Duration::from_secs(config.http_timeout_seconds),
     )
-    .await;
+    .await
+    .map(IntentsStatusResponse::from);
     (result, started.elapsed().as_millis())
 }
 
@@ -1511,108 +1605,25 @@ mod tests {
         assert_check(&json, "near-protocol.status-page", "failed");
     }
 
-    #[tokio::test]
-    async fn near_intents_endpoint_maps_maintenance_to_warning() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": 0,
-                        "ends_at": null
-                    }
-                ]
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+    fn shield_status_body(active: Vec<Value>) -> Value {
+        json!({
+            "activeIncidentCount": active.len(),
+            "activeIncidents": active,
+            "recentlyResolved": []
         })
-        .await;
-        let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
-
-        assert_check(&json, "near-intents.status", "warning");
-        assert_eq!(
-            json["checkResults"][0]["shortSummary"],
-            "Maintenance active"
-        );
     }
 
     #[tokio::test]
-    async fn near_intents_endpoint_maps_scheduled_maintenance_to_warning() {
+    async fn near_intents_endpoint_maps_empty_shield_status_to_ok() {
         let mock_server = MockServer::start().await;
-        let now = Utc::now().timestamp_millis();
-        let starts_at = now + 86_400_000; // tomorrow
-        let ends_at = starts_at + 3_600_000;
         Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "PWRA2AY",
-                        "title": "zCash Bridge Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": starts_at,
-                        "ends_at": ends_at
-                    }
-                ]
-            })))
+            .and(path("/public/status"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(shield_status_body(vec![])))
             .mount(&mock_server)
             .await;
 
         let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
-        })
-        .await;
-        let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
-
-        assert_check(&json, "near-intents.status", "warning");
-        assert_eq!(
-            json["checkResults"][0]["shortSummary"],
-            "Maintenance scheduled"
-        );
-        assert!(
-            json["checkResults"][0]["notificationMessage"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("scheduled maintenance")
-        );
-        assert!(
-            !json["checkResults"][0]["notificationMessage"]
-                .as_str()
-                .unwrap_or_default()
-                .contains("zCash"),
-            "Oh Dear copy stays generic; post titles are ops-Telegram only"
-        );
-    }
-
-    #[tokio::test]
-    async fn near_intents_endpoint_ignores_expired_maintenance() {
-        let mock_server = MockServer::start().await;
-        let now = Utc::now().timestamp_millis();
-        Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Past Maintenance",
-                        "post_type": "maintenance",
-                        "starts_at": now - 7_200_000,
-                        "ends_at": now - 3_600_000
-                    }
-                ]
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+            env.near_intents_status_api_url = format!("{}/public/status", mock_server.uri());
         })
         .await;
         let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
@@ -1621,31 +1632,96 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn near_intents_endpoint_maps_incident_to_failed() {
+    async fn near_intents_endpoint_maps_shield_incident_to_failed() {
         let mock_server = MockServer::start().await;
         Mock::given(method("GET"))
-            .and(path("/api/posts"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "posts": [
-                    {
-                        "id": "1",
-                        "title": "Incident",
-                        "post_type": "incident",
-                        "starts_at": 0,
-                        "ends_at": null
-                    }
-                ]
-            })))
+            .and(path("/public/status"))
+            .respond_with(
+                ResponseTemplate::new(200).set_body_json(shield_status_body(vec![json!({
+                    "id": "92f92e48-9e74-41aa-9b0f-e8d0da5fc000",
+                    "scopeType": "chain",
+                    "scopeValue": "ton",
+                    "publicDescription": "TON deposits are delayed",
+                    "createdAt": "2026-09-18T14:37:49.902Z"
+                })])),
+            )
             .mount(&mock_server)
             .await;
 
         let state = test_state(|env| {
-            env.near_intents_status_api_url = format!("{}/api/posts", mock_server.uri());
+            env.near_intents_status_api_url = format!("{}/public/status", mock_server.uri());
         })
         .await;
         let json = get_status_json(state, "/api/oh-dear/status/near-intents").await;
 
         assert_check(&json, "near-intents.status", "failed");
+        assert_eq!(json["checkResults"][0]["shortSummary"], "Incident active");
+        assert_eq!(
+            json["checkResults"][0]["notificationMessage"],
+            "NEAR Intents has an active incident"
+        );
+        assert_eq!(
+            json["checkResults"][0]["meta"]["title"],
+            "TON deposits are delayed"
+        );
+    }
+
+    #[test]
+    fn shield_incident_title_prefers_public_description() {
+        let incident = ShieldIncident {
+            id: Some("1".to_string()),
+            scope_type: Some("chain".to_string()),
+            scope_value: Some("eth".to_string()),
+            direction: Some("withdraw".to_string()),
+            public_description: Some("ETH withdrawals are delayed".to_string()),
+            created_at: None,
+            resolved_at: None,
+        };
+        assert_eq!(
+            shield_incident_title(&incident),
+            "ETH withdrawals are delayed"
+        );
+    }
+
+    #[test]
+    fn shield_incident_title_falls_back_to_scope() {
+        let incident = ShieldIncident {
+            id: Some("1".to_string()),
+            scope_type: Some("chain_all".to_string()),
+            scope_value: Some("starknet".to_string()),
+            direction: None,
+            public_description: None,
+            created_at: None,
+            resolved_at: None,
+        };
+        assert_eq!(shield_incident_title(&incident), "STARKNET chain all");
+    }
+
+    #[test]
+    fn parse_iso_millis_returns_none_for_malformed_timestamps() {
+        assert_eq!(
+            parse_iso_millis(Some("not-a-date"), "resolvedAt", Some("ton-1")),
+            None
+        );
+    }
+
+    #[test]
+    fn maintenance_mapping_stays_available_for_synthetic_posts() {
+        let now = Utc::now().timestamp_millis();
+        let scheduled = map_near_intents_status(
+            IntentsStatusResponse {
+                posts: vec![IntentsStatusPost {
+                    id: Some("PWRA2AY".to_string()),
+                    title: "zCash Bridge Maintenance".to_string(),
+                    post_type: "maintenance".to_string(),
+                    starts_at: Some(now + 86_400_000),
+                    ends_at: Some(now + 90_000_000),
+                }],
+            },
+            1,
+        );
+        assert_eq!(scheduled.short_summary, "Maintenance scheduled");
+        assert!(!scheduled.notification_message.contains("zCash"));
     }
 
     #[test]
