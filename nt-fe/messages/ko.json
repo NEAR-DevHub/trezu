@@ -2420,6 +2420,7 @@
         }
     },
     "warnings": {
+        "gotIt": "확인",
         "offlineBadge": "Offline",
         "statusPageLink": "[Status page](https://status.trezu.org/)",
         "schedule": {

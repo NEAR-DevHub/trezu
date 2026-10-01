@@ -11,6 +11,10 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { type ReactNode, useEffect, useState } from "react";
 import { useHasSidebarRail } from "@/components/app-shell-context";
+import {
+    AppWarningMobileControl,
+    useAppWarningCopy,
+} from "@/components/app-warning-mobile";
 import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -127,6 +131,11 @@ export function PageComponentLayout({
     }, []);
 
     const isDarkTheme = mounted ? resolvedTheme === "dark" : true;
+    const appWarning = useAppWarningCopy();
+    const hasMobileAppWarning =
+        hasSidebarRail &&
+        !hideAppWarningBanner &&
+        Boolean(appWarning.heading || appWarning.body);
 
     const router = useRouter();
     const cameFromApp = useInAppHistory();
@@ -139,7 +148,8 @@ export function PageComponentLayout({
     // stacked title does not jump. Large screens leave the title flush left.
     const reserveBackSlot = Boolean(backButton) || reserveHeaderSpace;
     const showMobileChromeRow =
-        stackedInnerHeader && (showBack || !!headerActions || reserveBackSlot);
+        stackedInnerHeader &&
+        (showBack || !!headerActions || reserveBackSlot || hasMobileAppWarning);
     const showShellUserControl = hasSidebarRail && !hideMobileShellControls;
     const showPublicHeaderControls =
         !hasSidebarRail && !hideHeaderContent && !hideHeaderControls;
@@ -288,8 +298,19 @@ export function PageComponentLayout({
                         </div>
                         {/* One flex item, so `justify-between` can't spread
                             several actions across the row. */}
-                        {stackedInnerHeader && headerActions ? (
-                            <div className="flex shrink-0 items-center gap-2">
+                        {stackedInnerHeader &&
+                        (headerActions || hasMobileAppWarning) ? (
+                            <div
+                                className={cn(
+                                    "flex shrink-0 items-center gap-2",
+                                    !headerActions && "lg:hidden",
+                                )}
+                            >
+                                {hasMobileAppWarning ? (
+                                    <div className="lg:hidden">
+                                        <AppWarningMobileControl />
+                                    </div>
+                                ) : null}
                                 {headerActions}
                             </div>
                         ) : null}
@@ -320,7 +341,10 @@ export function PageComponentLayout({
                         >
                             {stackedInnerHeader ? null : headerActions}
                             {showShellUserControl && (
-                                <div className="lg:hidden">
+                                <div className="flex items-center gap-2 lg:hidden">
+                                    {hasMobileAppWarning ? (
+                                        <AppWarningMobileControl />
+                                    ) : null}
                                     <MobileUserHeaderButton />
                                 </div>
                             )}
@@ -392,7 +416,16 @@ export function PageComponentLayout({
                             className="lg:hidden mb-3"
                             headingClassName="font-medium"
                         />
-                        <SlotWarning slot="app" className="lg:hidden mb-3" />
+                        {/* Inside the treasury shell the app warning is the
+                            header icon on small screens and the sidebar banner
+                            on large ones. Pages without that shell keep the
+                            inline banner. */}
+                        {!hasSidebarRail && (
+                            <SlotWarning
+                                slot="app"
+                                className="lg:hidden mb-3"
+                            />
+                        )}
                     </>
                 )}
                 {children}

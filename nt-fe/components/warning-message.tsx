@@ -1,10 +1,10 @@
 "use client";
-import { Icon } from "@/components/icon";
 import { Alert01Icon, InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useMemo } from "react";
 import { Alert, AlertDescription } from "@/components/alert";
 import { useFormatDate } from "@/components/formatted-date";
+import { Icon } from "@/components/icon";
 import { Tooltip } from "@/components/tooltip";
 import {
     useWarningMessage,
@@ -66,7 +66,11 @@ export function parseWarningCopy(message: string | null): {
 
 const LINK_PATTERN = /\[([^\]]+)\]\((https?:\/\/[^)]+)\)|(https?:\/\/[^\s]+)/g;
 
-function renderWithLinks(text: string) {
+/** Filled warning triangle. The mark is general/warning/icon; the exclamation is the alert surface. */
+export const warningIconClassName =
+    "shrink-0 text-general-warning-background-faded! [&_path:first-child]:fill-general-warning-icon [&_path:first-child]:stroke-general-warning-icon";
+
+export function renderWithLinks(text: string) {
     const parts: ReactNode[] = [];
     let lastIndex = 0;
 
@@ -291,7 +295,7 @@ export function WarningMessage(props: WarningMessageProps) {
                 className,
             )}
         >
-            <Icon icon={Alert01Icon} className="shrink-0" />
+            <Icon icon={Alert01Icon} className={warningIconClassName} />
             <AlertDescription className="block">
                 {heading && (
                     <div
