@@ -10,15 +10,15 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { Tooltip } from "@/components/tooltip";
 
 const networkBadgeVariants = cva(
-    "inline-flex items-center gap-1 rounded-[8px] font-medium",
+    "inline-flex items-center gap-1 rounded-[8px] font-semibold",
     {
         variants: {
             variant: {
                 default: "bg-card text-foreground px-2 py-0.5",
                 ghost: "text-secondary-foreground px-2 py-0.5",
-                secondary: "rounded-sm bg-general-bg-secondary p-1.5!",
+                secondary: "bg-general-bg-secondary p-1.5!",
                 outline:
-                    "rounded-sm border border-general-border bg-general-bg-secondary p-1.5!",
+                    "border border-general-border bg-general-bg-secondary p-1.5!",
             },
             size: {
                 lg: "text-xl md:px-3 p-1",

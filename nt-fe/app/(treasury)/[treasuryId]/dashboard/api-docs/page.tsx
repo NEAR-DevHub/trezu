@@ -1,11 +1,11 @@
 "use client";
-import { Icon } from "@/components/icon";
-import { LoaderCircleIcon, PlayIcon } from "@hugeicons/core-free-icons";
+import { PlayIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { CopyButton } from "@/components/copy-button";
+import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import { PageComponentLayout } from "@/components/page-component-layout";
 import {
@@ -408,15 +408,8 @@ export default function ApiDocsPage() {
                     </Tabs>
 
                     <div className="flex flex-wrap items-center gap-3">
-                        <Button onClick={handleRun} disabled={isRunning}>
-                            {isRunning ? (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin"
-                                />
-                            ) : (
-                                <Icon icon={PlayIcon} />
-                            )}
+                        <Button onClick={handleRun} loading={isRunning}>
+                            {isRunning ? null : <Icon icon={PlayIcon} />}
                             {isRunning ? tDocs("running") : tDocs("run")}
                         </Button>
                         <p className="text-sm text-muted-foreground">

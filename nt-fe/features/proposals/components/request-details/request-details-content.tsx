@@ -6,7 +6,6 @@ import {
     CheckIcon,
     File01Icon,
     LinkSquare02Icon,
-    LoaderCircleIcon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -25,7 +24,6 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
 import { getApproversAndThreshold } from "@/lib/config-utils";
 import type { Proposal } from "@/lib/proposals-api";
-import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
 import type { useProposalDetails } from "../../hooks/use-proposal-details";
@@ -446,21 +444,14 @@ export function useRequestActions({
                     variant="default"
                     className="h-10 w-full text-sm"
                     onClick={handleApprove}
-                    disabled={
-                        hasVoted ||
-                        isChecking ||
-                        approveBlocked ||
-                        approveSlot.blocked
-                    }
+                    loading={isChecking}
+                    disabled={hasVoted || approveBlocked || approveSlot.blocked}
                     tooltip={
                         approveSlot.inlineTooltip ??
                         (hasVoted ? noVoteMessage : undefined)
                     }
                 >
-                    <Icon
-                        icon={isChecking ? LoaderCircleIcon : CheckIcon}
-                        className={cn(isChecking && "animate-spin")}
-                    />
+                    {isChecking ? null : <Icon icon={CheckIcon} />}
                     {t("approve")}
                 </AuthButtonWithProposal>
             )}

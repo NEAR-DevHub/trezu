@@ -750,7 +750,7 @@ export function ReviewPaymentsStep({
                             type="button"
                             variant="destructive"
                             size="xl"
-                            className="w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
+                            className="w-full rounded-2xl"
                             disabled={isSubmitting}
                             onClick={() =>
                                 recipientToRemove &&

@@ -1,11 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-    Coins01Icon,
-    LoaderCircleIcon,
-    PaletteIcon,
-} from "@hugeicons/core-free-icons";
+import { Coins01Icon, PaletteIcon } from "@hugeicons/core-free-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -14,7 +10,6 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
-import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import {
     disabledActionClasses,
@@ -274,20 +269,14 @@ export function GeneralTab() {
                                 type="submit"
                                 className={cn(
                                     "h-10 px-4 text-sm leading-none",
-                                    disabledActionClasses,
+                                    !savingName && disabledActionClasses,
                                 )}
+                                loading={savingName}
                                 disabled={
-                                    savingName ||
                                     !form.formState.dirtyFields.displayName ||
                                     !canEdit
                                 }
                             >
-                                {savingName && (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                )}
                                 {t("save")}
                             </Button>
                         </form>
@@ -328,14 +317,9 @@ export function GeneralTab() {
                                 variant="secondary"
                                 className="h-10 px-4 text-sm leading-none"
                                 onClick={() => fileInputRef.current?.click()}
-                                disabled={uploadingImage || !canEdit}
+                                loading={uploadingImage}
+                                disabled={!canEdit}
                             >
-                                {uploadingImage && (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                )}
                                 {uploadingImage ? t("uploading") : t("edit")}
                             </Button>
                             {logo && (
@@ -418,21 +402,15 @@ export function GeneralTab() {
                                 type="button"
                                 className={cn(
                                     "h-10 px-4 text-sm leading-none",
-                                    disabledActionClasses,
+                                    !savingColor && disabledActionClasses,
                                 )}
                                 onClick={handleSaveColor}
+                                loading={savingColor}
                                 disabled={
-                                    savingColor ||
                                     !form.formState.dirtyFields.primaryColor ||
                                     !canEdit
                                 }
                             >
-                                {savingColor && (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                )}
                                 {t("save")}
                             </Button>
                         </div>

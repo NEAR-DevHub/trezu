@@ -1132,10 +1132,13 @@
             "notePlaceholder": "Fügen Sie eine Notiz hinzu, um diesen Empfänger zu identifizieren (z. B. Auftragnehmer-Zahlung, Vesting-Verteilung).",
             "skipDuplicates": "Duplikate überspringen und nur neue importieren.",
             "allDuplicatesTooltip": "Alle importierten Empfänger sind bereits in Ihrem Adressbuch, sodass es nichts Neues zu importieren gibt.",
+            "manualAllDuplicates": "{count, plural, =1 {Dieser Kontakt existiert bereits in Ihrem Adressbuch.} other {Diese Kontakte existieren bereits in Ihrem Adressbuch.}}",
+            "manualSomeDuplicates": "{duplicates, plural, =1 {# von {total} Kontakten existiert bereits in Ihrem Adressbuch.} other {# von {total} Kontakten existieren bereits in Ihrem Adressbuch.}} Es werden nur neue Kontakte gespeichert.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Dieser Kontakt ist bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.} other {Diese Kontakte sind bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.}}",
             "duplicateActionTooltip": "Aktivieren Sie das Überspringen von Duplikaten oder entfernen Sie doppelte Empfänger, um fortzufahren.",
             "adding": "Wird hinzugefügt…",
             "nothingNew": "Nichts Neues zu importieren",
-            "addRecipientsButton": "{count, plural, one {Empfänger hinzufügen} other {Empfänger hinzufügen}}"
+            "addRecipientsButton": "Kontakte speichern"
         },
         "removeDialog": {
             "title": "Empfänger entfernen",
@@ -1149,7 +1152,7 @@
             "foundSummary": "{count, plural, one {# Empfänger} other {# Empfänger}} auf {networkCount, plural, one {# Netzwerk} other {# Netzwerken}} gefunden",
             "uploadPrompt": "Empfängerdaten hochladen oder einfügen",
             "fixErrors": "Fehler beheben, um fortzufahren",
-            "continueReview": "Weiter zur Prüfung"
+            "continueReview": "Details prüfen"
         },
         "form": {
             "editRecipient": "Empfänger bearbeiten",
@@ -2199,14 +2202,14 @@
         "moreMembers": "+{count, plural, one {# Mitglied} other {# Mitglieder}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Empfänger hinzugefügt} other {# Empfänger hinzugefügt}}",
-        "alreadyExistsToast": "Empfänger ist bereits im Adressbuch",
-        "addedSingleToast": "Empfänger hinzugefügt",
-        "addFailedToast": "Hinzufügen der Empfänger fehlgeschlagen",
-        "addSingleFailedToast": "Hinzufügen des Empfängers fehlgeschlagen",
-        "removedToast": "{count, plural, one {Empfänger entfernt} other {# Empfänger entfernt}}",
-        "removeFailedToast": "Entfernen der Empfänger fehlgeschlagen",
-        "exportFailedToast": "Export der Empfänger fehlgeschlagen"
+        "addedToast": "{count, plural, =1 {Kontakt erfolgreich gespeichert} other {# Kontakte hinzugefügt}}",
+        "alreadyExistsToast": "Kontakt ist bereits im Adressbuch",
+        "addedSingleToast": "Kontakt hinzugefügt",
+        "addFailedToast": "Hinzufügen der Kontakte fehlgeschlagen",
+        "addSingleFailedToast": "Hinzufügen des Kontakts fehlgeschlagen",
+        "removedToast": "{count, plural, =1 {Kontakt erfolgreich entfernt} other {# Kontakte entfernt}}",
+        "removeFailedToast": "Entfernen der Kontakte fehlgeschlagen",
+        "exportFailedToast": "Export der Kontakte fehlgeschlagen"
     },
     "treasuryMutations": {
         "savedToast": "Treasury in Ihrer Liste gespeichert",

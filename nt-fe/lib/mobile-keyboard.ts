@@ -69,8 +69,8 @@ export function isInsideDialog(
 }
 
 /**
- * Hide for an on-page field (the Send amount) or once the keyboard has
- * resized the viewport. Skip dialog fields so the address picker can type.
+ * Hide for an on-page field or once the keyboard has resized the
+ * viewport. Skip dialog fields so a picker can type.
  */
 export function shouldHideBottomNavForKeyboard(args: {
     pageTextEntryFocused: boolean;

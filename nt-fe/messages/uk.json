@@ -1132,10 +1132,13 @@
             "notePlaceholder": "Додайте примітку, щоб легше впізнати цього отримувача (напр. платіж підряднику, розподіл вестингу).",
             "skipDuplicates": "Пропустити дублікати й імпортувати лише нових.",
             "allDuplicatesTooltip": "Усі імпортовані отримувачі вже у вашій адресній книзі, тож імпортувати нічого.",
+            "manualAllDuplicates": "{count, plural, =1 {Цей контакт уже є у вашій адресній книзі.} other {Ці контакти вже є у вашій адресній книзі.}}",
+            "manualSomeDuplicates": "{duplicates} із {total} контактів уже є у вашій адресній книзі. Буде збережено лише нові контакти.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Цей контакт уже у вашій адресній книзі, тож зберігати нічого.} other {Ці контакти вже у вашій адресній книзі, тож зберігати нічого.}}",
             "duplicateActionTooltip": "Увімкніть пропуск дублікатів або видаліть дубльованих отримувачів, щоб продовжити.",
             "adding": "Додавання…",
             "nothingNew": "Нема чого імпортувати",
-            "addRecipientsButton": "{count, plural, one {Додати отримувача} few {Додати отримувачів} many {Додати отримувачів} other {Додати отримувачів}}"
+            "addRecipientsButton": "Зберегти контакти"
         },
         "removeDialog": {
             "title": "Видалити отримувача",
@@ -1149,7 +1152,7 @@
             "foundSummary": "Знайдено {count, plural, one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}} у {networkCount, plural, one {# мережі} few {# мережах} many {# мережах} other {# мережах}}",
             "uploadPrompt": "Завантажте або вставте дані отримувачів",
             "fixErrors": "Виправте помилки, щоб продовжити",
-            "continueReview": "Продовжити до перегляду"
+            "continueReview": "Переглянути деталі"
         },
         "form": {
             "editRecipient": "Редагувати отримувача",
@@ -2182,14 +2185,14 @@
         "moreMembers": "+{count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасників}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Одержувача додано} few {# одержувачів додано} many {# одержувачів додано} other {# одержувачів додано}}",
-        "alreadyExistsToast": "Одержувач уже є в адресній книзі",
-        "addedSingleToast": "Одержувача додано",
-        "addFailedToast": "Не вдалось додати одержувачів",
-        "addSingleFailedToast": "Не вдалось додати одержувача",
-        "removedToast": "{count, plural, one {Одержувача вилучено} few {# одержувачів вилучено} many {# одержувачів вилучено} other {# одержувачів вилучено}}",
-        "removeFailedToast": "Не вдалось вилучити одержувачів",
-        "exportFailedToast": "Не вдалось експортувати одержувачів"
+        "addedToast": "{count, plural, =1 {Контакт успішно збережено} few {# контакти додано} many {# контактів додано} other {# контактів додано}}",
+        "alreadyExistsToast": "Контакт уже є в адресній книзі",
+        "addedSingleToast": "Контакт додано",
+        "addFailedToast": "Не вдалось додати контакти",
+        "addSingleFailedToast": "Не вдалось додати контакт",
+        "removedToast": "{count, plural, =1 {Контакт успішно вилучено} few {# контакти вилучено} many {# контактів вилучено} other {# контактів вилучено}}",
+        "removeFailedToast": "Не вдалось вилучити контакти",
+        "exportFailedToast": "Не вдалось експортувати контакти"
     },
     "treasuryMutations": {
         "savedToast": "Скарбницю збережено у ваш список",

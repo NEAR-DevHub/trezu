@@ -1,11 +1,11 @@
-import { Icon } from "@/components/icon";
-import { ArrowLeft01Icon, LoaderCircleIcon } from "@hugeicons/core-free-icons";
-import { useRef } from "react";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
+import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { useRef } from "react";
+import { Icon } from "@/components/icon";
 import { useHideMobileBottomNav } from "@/hooks/use-hide-mobile-bottom-nav";
-import { Button } from "./button";
-import { motion, AnimatePresence } from "motion/react";
 import { cn } from "@/lib/utils";
+import { Button } from "./button";
 
 export interface StepProps {
     handleBack?: () => void;
@@ -227,14 +227,8 @@ export function InlineNextButton({
                 className="w-full"
                 type={type}
                 onClick={onClickHandler}
-                disabled={loading}
+                loading={loading}
             >
-                {loading && (
-                    <Icon
-                        icon={LoaderCircleIcon}
-                        className="mr-2 animate-spin"
-                    />
-                )}
                 {text}
             </Button>
         </div>

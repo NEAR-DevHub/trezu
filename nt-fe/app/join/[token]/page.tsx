@@ -1,6 +1,5 @@
 "use client";
 
-import { Icon } from "@/components/icon";
 import {
     CheckIcon,
     InformationCircleIcon,
@@ -15,6 +14,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
+import { Icon } from "@/components/icon";
 import NearBusinessLogo from "@/components/icons/near-business-logo";
 import { NameField } from "@/components/name-field";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -321,7 +321,7 @@ export default function JoinInvitePage() {
             <Button
                 className="h-10 w-full mt-3"
                 onClick={() => void handleAskJoin()}
-                disabled={joinMutation.isPending}
+                loading={joinMutation.isPending}
             >
                 {joinMutation.isPending ? t("submitting") : t("askJoin")}
             </Button>

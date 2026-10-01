@@ -1132,10 +1132,13 @@
             "notePlaceholder": "添加备注以便识别此收款人(例如承包商付款、归属分发)。",
             "skipDuplicates": "跳过重复项,仅导入新收款人。",
             "allDuplicatesTooltip": "所有导入的收款人均已在您的地址簿中,因此没有新的可导入项。",
+            "manualAllDuplicates": "{count, plural, =1 {此联系人已存在于您的地址簿中。} other {这些联系人已存在于您的地址簿中。}}",
+            "manualSomeDuplicates": "{total} 个联系人中有 {duplicates} 个已存在于地址簿中。将仅保存新的联系人。",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {此联系人已在您的地址簿中，因此没有新的可保存项。} other {这些联系人已在您的地址簿中，因此没有新的可保存项。}}",
             "duplicateActionTooltip": "启用跳过重复项或移除重复收款人后即可继续。",
             "adding": "正在添加…",
             "nothingNew": "没有可导入的新内容",
-            "addRecipientsButton": "{count, plural, other {添加收款人}}"
+            "addRecipientsButton": "保存联系人"
         },
         "removeDialog": {
             "title": "移除收款人",
@@ -1149,7 +1152,7 @@
             "foundSummary": "在 {networkCount, plural, other {# 个网络}}上找到 {count, plural, other {# 个收款人}}",
             "uploadPrompt": "上传或粘贴收款人数据",
             "fixErrors": "修复错误以继续",
-            "continueReview": "继续审核"
+            "continueReview": "审核详情"
         },
         "form": {
             "editRecipient": "编辑收款人",
@@ -2182,14 +2185,14 @@
         "moreMembers": "+{count, plural, other {# 名成员}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {已添加 # 个收款人}}",
-        "alreadyExistsToast": "收款人已在地址簿中",
-        "addedSingleToast": "已添加收款人",
-        "addFailedToast": "添加收款人失败",
-        "addSingleFailedToast": "添加收款人失败",
-        "removedToast": "{count, plural, other {已移除 # 个收款人}}",
-        "removeFailedToast": "移除收款人失败",
-        "exportFailedToast": "导出收款人失败"
+        "addedToast": "{count, plural, =1 {联系人已成功保存} other {已添加 # 个联系人}}",
+        "alreadyExistsToast": "联系人已在地址簿中",
+        "addedSingleToast": "已添加联系人",
+        "addFailedToast": "添加联系人失败",
+        "addSingleFailedToast": "添加联系人失败",
+        "removedToast": "{count, plural, =1 {联系人已成功移除} other {已移除 # 个联系人}}",
+        "removeFailedToast": "移除联系人失败",
+        "exportFailedToast": "导出联系人失败"
     },
     "treasuryMutations": {
         "savedToast": "金库已保存到您的列表",
