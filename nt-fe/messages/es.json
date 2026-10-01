@@ -483,7 +483,6 @@
             "lastUpdated": "Última actualización {time}",
             "notUpdated": "Aún no se ha actualizado",
             "justNow": "ahora",
-            "moments": "unos momentos",
             "checking": "Comprobando estado de actualización…",
             "unavailable": "Estado de actualización no disponible",
             "updateTreasuryData": "Actualizar datos de tesorería"
@@ -723,7 +722,9 @@
             "insufficientBalance": "Las solicitudes <highlight>{ids}</highlight> no se pueden aprobar por saldo insuficiente. Tu aprobación solo se aplicará al resto de solicitudes.",
             "approveBlockedBulk": "{count, plural, one {# solicitud seleccionada no puede aprobarse ahora — deselecciónala para continuar.} other {# solicitudes seleccionadas no pueden aprobarse ahora — deselecciónalas para continuar.}}",
             "remove": "Eliminar",
-            "confirm": "Confirmar"
+            "preparingRemove": "Preparando la eliminación",
+            "confirm": "Confirmar",
+            "preparingVote": "Preparando tu voto"
         },
         "expanded": {
             "recipient": "Destinatario",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "Caduca",
-        "created": "Creado",
+        "executed": "Ejecutado",
+        "rejected": "Rechazado",
+        "failed": "Fallido",
         "expired": "Caducado",
-        "removed": "Eliminado"
+        "removed": "Eliminado",
+        "absolute": "{label} el {date}"
     },
     "relativeTime": {
-        "justNow": "Ahora mismo",
-        "moments": "momentos"
+        "justNow": "Ahora mismo"
     },
     "amount": {
         "network": "Red: {network}"

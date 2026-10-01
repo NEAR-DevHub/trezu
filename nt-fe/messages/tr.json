@@ -483,7 +483,6 @@
             "lastUpdated": "Son güncelleme {time}",
             "notUpdated": "Henüz güncellenmedi",
             "justNow": "şimdi",
-            "moments": "az önce",
             "checking": "Yenileme durumu kontrol ediliyor…",
             "unavailable": "Yenileme durumu kullanılamıyor",
             "updateTreasuryData": "Hazine verilerini güncelle"
@@ -723,7 +722,9 @@
             "insufficientBalance": "<highlight>{ids}</highlight> talepleri yetersiz bakiye nedeniyle onaylanamaz. Onayınız yalnızca kalan taleplere uygulanacak.",
             "approveBlockedBulk": "{count, plural, one {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimini kaldırın.} other {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimlerini kaldırın.}}",
             "remove": "Kaldır",
-            "confirm": "Onayla"
+            "preparingRemove": "Kaldırma hazırlanıyor",
+            "confirm": "Onayla",
+            "preparingVote": "Oyunuz hazırlanıyor"
         },
         "expanded": {
             "recipient": "Alıcı",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "Sona Erer",
-        "created": "Oluşturuldu",
+        "executed": "Yürütüldü",
+        "rejected": "Reddedildi",
+        "failed": "Başarısız",
         "expired": "Süresi Doldu",
-        "removed": "Kaldırıldı"
+        "removed": "Kaldırıldı",
+        "absolute": "{date} tarihinde {label}"
     },
     "relativeTime": {
-        "justNow": "Az önce",
-        "moments": "anlar"
+        "justNow": "Az önce"
     },
     "amount": {
         "network": "Ağ: {network}"

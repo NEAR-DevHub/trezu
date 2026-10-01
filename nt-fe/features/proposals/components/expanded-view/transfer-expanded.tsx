@@ -92,7 +92,12 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                 />
             ),
         },
-        {
+    ];
+
+    // Cross-chain and explicit on-NEAR routes store a destination. A plain
+    // ft_transfer has none — don't invent one from the token's origin chain.
+    if (data.destinationAssetId) {
+        infoItems.push({
             label: t("destinationNetwork"),
             value: shouldShowDestinationNetworkSkeleton ? (
                 <Skeleton className="h-5 w-28" />
@@ -103,8 +108,8 @@ export function TransferExpanded({ data }: TransferExpandedProps) {
                     networkNameClassName="font-normal"
                 />
             ),
-        },
-    ];
+        });
+    }
 
     if (hasFeeData) {
         infoItems.push({

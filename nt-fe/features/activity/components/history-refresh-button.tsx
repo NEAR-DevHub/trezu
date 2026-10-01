@@ -124,7 +124,6 @@ export function HistoryRefreshButton({ className }: { className?: string }) {
     const refreshRelativeTime = lastUpdatedAt
         ? formatRelativeTime(lastUpdatedAt, {
               justNow: justNowLabel,
-              moments: t("refresh.moments"),
               locale,
           })
         : null;

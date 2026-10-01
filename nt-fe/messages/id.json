@@ -483,7 +483,6 @@
             "lastUpdated": "Terakhir diperbarui {time}",
             "notUpdated": "Belum diperbarui",
             "justNow": "sekarang",
-            "moments": "beberapa saat",
             "checking": "Memeriksa status penyegaran…",
             "unavailable": "Status penyegaran tidak tersedia",
             "updateTreasuryData": "Perbarui data treasury"
@@ -723,7 +722,9 @@
             "insufficientBalance": "Permintaan <highlight>{ids}</highlight> tidak dapat disetujui karena saldo tidak mencukupi. Persetujuan Anda hanya akan berlaku untuk permintaan yang tersisa.",
             "approveBlockedBulk": "{count, plural, one {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.} other {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.}}",
             "remove": "Hapus",
-            "confirm": "Konfirmasi"
+            "preparingRemove": "Menyiapkan penghapusan",
+            "confirm": "Konfirmasi",
+            "preparingVote": "Menyiapkan suara Anda"
         },
         "expanded": {
             "recipient": "Penerima",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "Kedaluwarsa",
-        "created": "Dibuat",
+        "executed": "Dieksekusi",
+        "rejected": "Ditolak",
+        "failed": "Gagal",
         "expired": "Kedaluwarsa",
-        "removed": "Dihapus"
+        "removed": "Dihapus",
+        "absolute": "{label} pada {date}"
     },
     "relativeTime": {
-        "justNow": "Baru saja",
-        "moments": "beberapa saat"
+        "justNow": "Baru saja"
     },
     "amount": {
         "network": "Jaringan: {network}"

@@ -114,6 +114,9 @@ function extractFTTransferData(
                         : functionCall.receiver_id,
                 amount: args.amount || "0",
                 receiver: args.receiver_id || "",
+                // On-chain NEAR FT. NearBlocks is the metadata fallback when
+                // the contract is not in the intents catalog.
+                nearFt: true,
             };
         }
     } else if (actionMTTransfer) {
@@ -185,6 +188,7 @@ export function extractPaymentRequestData(
     );
 
     let isTransferKind = false;
+    let nearFt = false;
 
     if ("Transfer" in proposal.kind) {
         isTransferKind = true;
@@ -204,6 +208,7 @@ export function extractPaymentRequestData(
             tokenId = ftTransferData.tokenId;
             amount = ftTransferData.amount;
             receiver = ftTransferData.receiver;
+            nearFt = !!ftTransferData.nearFt;
         }
     } else {
         throw new Error("Proposal is not a Function Call or Transfer proposal");
@@ -263,7 +268,7 @@ export function extractPaymentRequestData(
         quoteSignature,
         networkFee,
         destinationAssetId,
-        nearFt: isTransferKind || undefined,
+        nearFt: isTransferKind || nearFt || undefined,
         usdValue: goldAmountOutUsd,
     };
 }

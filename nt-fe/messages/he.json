@@ -483,7 +483,6 @@
             "lastUpdated": "עודכן לאחרונה {time}",
             "notUpdated": "עדיין לא עודכן",
             "justNow": "עכשיו",
-            "moments": "רגעים",
             "checking": "בודק סטטוס רענון…",
             "unavailable": "סטטוס הרענון אינו זמין",
             "updateTreasuryData": "עדכון נתוני האוצר"
@@ -723,7 +722,9 @@
             "insufficientBalance": "לא ניתן לאשר את הבקשות <highlight>{ids}</highlight> עקב יתרה לא מספקת. האישור שלך יחול רק על הבקשות הנותרות.",
             "approveBlockedBulk": "{count, plural, one {לא ניתן לאשר את הבקשה הנבחרת כעת — בטל את הבחירה כדי להמשיך.} other {לא ניתן לאשר # מהבקשות הנבחרות כעת — בטל את הבחירה כדי להמשיך.}}",
             "remove": "הסרה",
-            "confirm": "אישור"
+            "preparingRemove": "מכינים את ההסרה",
+            "confirm": "אישור",
+            "preparingVote": "מכינים את ההצבעה שלך"
         },
         "expanded": {
             "recipient": "נמען",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "פג תוקף",
-        "created": "נוצר",
+        "executed": "בוצע",
+        "rejected": "נדחה",
+        "failed": "נכשל",
         "expired": "פג תוקף",
-        "removed": "הוסר"
+        "removed": "הוסר",
+        "absolute": "{label} ב-{date}"
     },
     "relativeTime": {
-        "justNow": "כרגע",
-        "moments": "רגעים"
+        "justNow": "כרגע"
     },
     "amount": {
         "network": "רשת: {network}"
