@@ -10,7 +10,7 @@
 use std::collections::{HashMap, VecDeque};
 use std::marker::PhantomData;
 use std::pin::Pin;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, LazyLock, Mutex};
 use std::task::{Context, Poll};
 use std::time::Duration;
 
@@ -24,12 +24,13 @@ use apalis_postgres::{
 };
 use apalis_sql::TaskRow;
 use futures::stream::{self, BoxStream};
-use futures::{Sink, StreamExt};
+use futures::{Sink, Stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use sqlx::types::chrono::{DateTime, Utc};
 use sqlx::{PgPool, postgres::PgListener};
 use tokio::sync::watch;
 use tokio_util::sync::CancellationToken;
+use uuid::Uuid;
 
 pub const DEFAULT_POLL_INTERVAL: Duration = Duration::from_secs(1);
 pub const DEFAULT_CLAIM_ALERT_AFTER: Duration = Duration::from_secs(10);
@@ -40,6 +41,19 @@ pub const MIN_RUNNING_RECLAIM_AFTER: Duration = Duration::from_secs(60 * 60);
 const DB_ERROR_BACKOFF_INITIAL: Duration = Duration::from_secs(1);
 const DB_ERROR_BACKOFF_MAX: Duration = Duration::from_secs(30);
 const JITTER_MIN_PERCENT: u64 = 80;
+/// Heartbeats a registered worker may miss before a rebuilt worker with the
+/// same id treats it as dead and takes the id over.
+const REGISTRATION_STALE_HEARTBEATS: u32 = 3;
+const STORAGE_NAME: &str = "TrezuSteadyPostgresStorage";
+/// `storage_name` of a registration whose process drained its workers and
+/// handed the id back, so a successor need not wait for the heartbeat to age.
+const RELEASED_STORAGE_NAME: &str = "TrezuSteadyPostgresStorage:released";
+/// Identifies this process in `apalis.workers.storage_name`.
+static PROCESS_INSTANCE: LazyLock<Uuid> = LazyLock::new(Uuid::new_v4);
+
+fn process_storage_name() -> String {
+    format!("{STORAGE_NAME}:{}", *PROCESS_INSTANCE)
+}
 const NOTIFY_CHANNEL: &str = "apalis::job::insert";
 
 fn steady_poller_enabled(queue: &str) -> bool {
@@ -77,6 +91,10 @@ pub struct ReclaimPolicy {
 #[derive(Clone, Debug)]
 pub struct QueueSpec {
     pub queue: &'static str,
+    /// Stable apalis worker id consuming this queue (`apalis.workers.id`).
+    /// Defaults to the queue name; the public-history consumers register
+    /// under a different id.
+    pub worker_id: &'static str,
     pub kind: QueueKind,
     pub concurrency: usize,
     pub fetch_batch: usize,
@@ -98,6 +116,7 @@ impl QueueSpec {
         let concurrency = concurrency.max(1);
         Self {
             queue,
+            worker_id: queue,
             kind: QueueKind::Cron { interval_secs },
             concurrency,
             fetch_batch: concurrency,
@@ -121,6 +140,7 @@ impl QueueSpec {
         let concurrency = concurrency.max(1);
         Self {
             queue,
+            worker_id: queue,
             kind: QueueKind::Queue,
             concurrency,
             fetch_batch: concurrency,
@@ -147,6 +167,12 @@ impl QueueSpec {
     #[must_use]
     pub fn with_backlog_alert_after(mut self, after: Duration) -> Self {
         self.backlog_alert_after = after;
+        self
+    }
+
+    #[must_use]
+    pub fn with_worker_id(mut self, worker_id: &'static str) -> Self {
+        self.worker_id = worker_id;
         self
     }
 }
@@ -401,25 +427,52 @@ async fn register_worker_and_reclaim(
     // This mirrors Apalis's private worker-registration query, but deliberately
     // does not call its generic orphan recovery first: that routine requeues
     // both Queued and Running jobs, while the platform must kill ambiguous
-    // Running executions. Registration remains the exclusivity gate; a live
-    // predecessor holding the stable worker-id advisory lock makes this fail.
+    // Running executions. Registration remains the exclusivity gate.
+    let stale_after = config
+        .keep_alive()
+        .saturating_mul(REGISTRATION_STALE_HEARTBEATS);
+    register_worker(pool, config, worker, stale_after).await?;
+    reclaim_predecessor_locks(pool, worker.name(), config.queue().as_ref()).await?;
+    Ok(())
+}
+
+/// Registers this worker under its stable id.
+///
+/// The id is taken over when the previous registration came from this process
+/// (supervisors only rebuild a worker after the old one has finished, so it is
+/// dead), was released by a process that shut down cleanly
+/// ([`release_worker_registrations`]), or has a heartbeat older than
+/// `stale_after` (another process that lost leadership and has since drained). A fresh heartbeat from another
+/// process yields `WORKER_ALREADY_EXISTS` for the supervisor to retry with
+/// backoff. Unlike a session-level advisory lock, nothing here outlives the
+/// statement on a pooled connection.
+pub(crate) async fn register_worker(
+    pool: &PgPool,
+    config: &Config,
+    worker: &WorkerContext,
+    stale_after: Duration,
+) -> Result<(), sqlx::Error> {
     let registered = sqlx::query(
         r#"
         INSERT INTO apalis.workers (
             id, worker_type, storage_name, layers, last_seen
         )
-        VALUES ($1, $2, 'TrezuSteadyPostgresStorage', $3, NOW())
+        VALUES ($1, $2, $3, $4, NOW())
         ON CONFLICT (id) DO UPDATE SET
             worker_type = EXCLUDED.worker_type,
             storage_name = EXCLUDED.storage_name,
             layers = EXCLUDED.layers,
             last_seen = NOW()
-        WHERE pg_try_advisory_lock(hashtext(apalis.workers.id))
+        WHERE apalis.workers.storage_name IN (EXCLUDED.storage_name, $6)
+           OR apalis.workers.last_seen < NOW() - make_interval(secs => $5)
         "#,
     )
     .bind(worker.name())
     .bind(config.queue().to_string())
+    .bind(process_storage_name())
     .bind(worker.get_service())
+    .bind(stale_after.as_secs_f64())
+    .bind(RELEASED_STORAGE_NAME)
     .execute(pool)
     .await?;
     if registered.rows_affected() == 0 {
@@ -428,9 +481,66 @@ async fn register_worker_and_reclaim(
             "WORKER_ALREADY_EXISTS",
         )));
     }
-
-    reclaim_predecessor_locks(pool, worker.name(), config.queue().as_ref()).await?;
     Ok(())
+}
+
+/// Hands back every worker id this process registered. Only call once all of
+/// its workers have stopped: the next registration takes the ids over at once.
+pub(crate) async fn release_worker_registrations(pool: &PgPool) -> Result<u64, sqlx::Error> {
+    let released =
+        sqlx::query("UPDATE apalis.workers SET storage_name = $2 WHERE storage_name = $1")
+            .bind(process_storage_name())
+            .bind(RELEASED_STORAGE_NAME)
+            .execute(pool)
+            .await?;
+    Ok(released.rows_affected())
+}
+
+/// A heartbeat that fails on a transient database error (a pool-acquire timeout
+/// under connection starvation) must not end the worker: only a run of
+/// `REGISTRATION_STALE_HEARTBEATS` consecutive failures does, which is also
+/// when the registration stops protecting the worker id. Any other error,
+/// such as `WORKER_DOES_NOT_EXIST`, ends it at once.
+fn tolerate_missed_heartbeats(
+    beats: impl Stream<Item = Result<(), sqlx::Error>> + Send + 'static,
+    worker_id: String,
+) -> impl Stream<Item = Result<(), sqlx::Error>> + Send + 'static {
+    let mut missed = 0u32;
+    beats.map(move |beat| match beat {
+        Ok(()) => {
+            missed = 0;
+            Ok(())
+        }
+        Err(error) => {
+            missed += 1;
+            if !is_transient_db_error(&error) || missed >= REGISTRATION_STALE_HEARTBEATS {
+                return Err(error);
+            }
+            tracing::warn!(worker = %worker_id, %error, missed, "job worker heartbeat failed");
+            Ok(())
+        }
+    })
+}
+
+/// Database errors that clear on their own and say nothing about the worker.
+/// Apalis reports registration failures (`WORKER_DOES_NOT_EXIST`,
+/// `WORKER_ALREADY_EXISTS`) as `Io` too, so only connection-level kinds count.
+fn is_transient_db_error(error: &sqlx::Error) -> bool {
+    use std::io::ErrorKind;
+    match error {
+        sqlx::Error::PoolTimedOut => true,
+        sqlx::Error::Io(io) => matches!(
+            io.kind(),
+            ErrorKind::ConnectionRefused
+                | ErrorKind::ConnectionReset
+                | ErrorKind::ConnectionAborted
+                | ErrorKind::NotConnected
+                | ErrorKind::BrokenPipe
+                | ErrorKind::TimedOut
+                | ErrorKind::UnexpectedEof
+        ),
+        _ => false,
+    }
 }
 
 fn jitter(delay: Duration) -> Duration {
@@ -630,6 +740,11 @@ pub struct SteadyPostgresStorage<Args> {
     steady_enabled: bool,
     wake: Option<watch::Receiver<u64>>,
     sink: PostgresStorage<Args>,
+    /// Whether the current worker attempt has registered. `poll` clears it
+    /// when an attempt starts and sets it once registration and reclaim
+    /// succeed; the heartbeat waits for it, so an unregistered replacement can
+    /// never refresh its predecessor's `last_seen`.
+    registered: Arc<watch::Sender<bool>>,
     _args: PhantomData<Args>,
 }
 
@@ -643,6 +758,7 @@ impl<Args> Clone for SteadyPostgresStorage<Args> {
             steady_enabled: self.steady_enabled,
             wake: self.wake.clone(),
             sink: self.sink.clone(),
+            registered: self.registered.clone(),
             _args: PhantomData,
         }
     }
@@ -664,6 +780,7 @@ impl<Args> SteadyPostgresStorage<Args> {
             startup_delay: Duration::ZERO,
             steady_enabled,
             wake,
+            registered: Arc::new(watch::Sender::new(false)),
             _args: PhantomData,
         }
     }
@@ -688,14 +805,17 @@ where
     type Layer = Stack<LockTaskLayer, apalis_core::worker::ext::ack::AcknowledgeLayer<PgAck>>;
 
     fn heartbeat(&self, worker: &WorkerContext) -> Self::Beat {
-        let beats = keep_alive_stream(self.pool.clone(), self.config.clone(), worker.clone());
-        let startup_delay = self.startup_delay;
+        let beats = tolerate_missed_heartbeats(
+            keep_alive_stream(self.pool.clone(), self.config.clone(), worker.clone()),
+            worker.name().to_owned(),
+        );
+        let registered = self.registered.clone();
         stream::once(async move {
-            if !startup_delay.is_zero() {
-                // Let the delayed poll stream register the worker before its
-                // keep-alive checks begin.
-                tokio::time::sleep(startup_delay.saturating_add(Duration::from_millis(100))).await;
-            }
+            // The sender is held here, so this only returns once registered.
+            let _ = registered
+                .subscribe()
+                .wait_for(|registered| *registered)
+                .await;
             Ok(())
         })
         .chain(beats)
@@ -734,8 +854,11 @@ where
         let startup_pool = self.pool.clone();
         let startup_config = self.config.clone();
         let startup_worker = worker.clone();
+        let registered = self.registered.clone();
+        registered.send_replace(false);
         let register = stream::once(async move {
             register_worker_and_reclaim(&startup_pool, &startup_config, &startup_worker).await?;
+            registered.send_replace(true);
             Ok(None)
         });
         let startup_delay = self.startup_delay;
@@ -800,7 +923,21 @@ where
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        Pin::new(&mut self.get_mut().sink).poll_flush(cx)
+        let this = self.get_mut();
+        match Pin::new(&mut this.sink).poll_flush(cx) {
+            // A sink error ends the piping worker. The inner sink has already
+            // dropped the failed batch, so a transient error costs the cron
+            // ticks in it and the next tick goes through the same sink.
+            Poll::Ready(Err(error)) if is_transient_db_error(&error) => {
+                tracing::warn!(
+                    queue = %this.config.queue(),
+                    %error,
+                    "dropped job push on transient database error"
+                );
+                Poll::Ready(Ok(()))
+            }
+            other => other,
+        }
     }
 
     fn poll_close(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
@@ -1021,5 +1158,144 @@ mod tests {
         .await?;
         assert_eq!(action, "startup_killed");
         Ok(())
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn registration_takes_over_own_process_and_stale_heartbeats_only(
+        pool: PgPool,
+    ) -> Result<(), sqlx::Error> {
+        crate::jobs::setup_apalis(&pool).await?;
+        let config = Config::new("registration-gate-test").set_buffer_size(1);
+        let stale_after = Duration::from_secs(90);
+        let worker = WorkerContext::new::<()>("gated-worker");
+
+        // Another process with a fresh heartbeat keeps the id.
+        sqlx::query(
+            r#"
+            INSERT INTO apalis.workers (id, worker_type, storage_name, layers, last_seen)
+            VALUES ('gated-worker', 'registration-gate-test', 'TrezuSteadyPostgresStorage:other', '', NOW())
+            "#,
+        )
+        .execute(&pool)
+        .await?;
+        let error = register_worker(&pool, &config, &worker, stale_after)
+            .await
+            .expect_err("a live worker in another process must keep its id");
+        assert!(error.to_string().contains("WORKER_ALREADY_EXISTS"));
+
+        // Once that heartbeat is stale the id is taken over and refreshed.
+        sqlx::query(
+            "UPDATE apalis.workers SET last_seen = NOW() - INTERVAL '10 minutes' WHERE id = 'gated-worker'",
+        )
+        .execute(&pool)
+        .await?;
+        register_worker(&pool, &config, &worker, stale_after).await?;
+        let refreshed: bool = sqlx::query_scalar(
+            "SELECT NOW() - last_seen < INTERVAL '5 seconds' FROM apalis.workers WHERE id = 'gated-worker'",
+        )
+        .fetch_one(&pool)
+        .await?;
+        assert!(refreshed, "takeover must refresh the heartbeat");
+
+        // A rebuild inside this process does not wait for its own dead
+        // predecessor's heartbeat to go stale.
+        register_worker(&pool, &config, &worker, stale_after).await?;
+
+        // Neither does the successor of a process that shut down cleanly.
+        assert_eq!(release_worker_registrations(&pool).await?, 1);
+        let storage_name: String =
+            sqlx::query_scalar("SELECT storage_name FROM apalis.workers WHERE id = 'gated-worker'")
+                .fetch_one(&pool)
+                .await?;
+        assert_eq!(storage_name, RELEASED_STORAGE_NAME);
+        register_worker(&pool, &config, &worker, stale_after).await?;
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn heartbeat_survives_transient_failures_but_not_a_sustained_run() {
+        let beats = stream::iter(vec![
+            Err(sqlx::Error::PoolTimedOut),
+            Err(sqlx::Error::PoolTimedOut),
+            Ok(()),
+            Err(sqlx::Error::PoolTimedOut),
+            Err(sqlx::Error::PoolTimedOut),
+            Err(sqlx::Error::PoolTimedOut),
+        ]);
+        let results: Vec<bool> = tolerate_missed_heartbeats(beats, "unit-test".to_owned())
+            .map(|beat| beat.is_ok())
+            .collect()
+            .await;
+        assert_eq!(results, [true, true, true, true, true, false]);
+
+        // A missing registration is not transient and ends the worker at once.
+        let beats = stream::iter(vec![
+            Err(sqlx::Error::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "WORKER_DOES_NOT_EXIST",
+            ))),
+            Ok(()),
+        ]);
+        let first = tolerate_missed_heartbeats(beats, "unit-test".to_owned())
+            .next()
+            .await
+            .expect("first beat");
+        assert!(first.is_err());
+    }
+
+    #[tokio::test]
+    async fn heartbeat_waits_for_the_current_attempt_to_register() {
+        let pool = PgPool::connect_lazy("postgres://unused@127.0.0.1:1/unused")
+            .expect("lazy pool needs no server");
+        let spec = QueueSpec::cron("heartbeat-gate-test", 1, 1, Duration::from_secs(30));
+        let storage = SteadyPostgresStorage::<()>::new(&pool, &spec, &JobWakeHub::default());
+        let worker = WorkerContext::new::<()>("heartbeat-gate-test");
+
+        // A predecessor attempt registered through a clone of this storage.
+        storage.registered.send_replace(true);
+
+        // The replacement's registration is delayed; its heartbeat must not
+        // start on the predecessor's registration.
+        let attempt = storage.clone().with_startup_delay(Duration::from_secs(60));
+        let mut beats = attempt.heartbeat(&worker);
+        let _poll = attempt.poll_compact_inner(&worker);
+        assert!(
+            tokio::time::timeout(Duration::from_millis(200), beats.next())
+                .await
+                .is_err(),
+            "heartbeat must wait for this attempt's registration"
+        );
+
+        storage.registered.send_replace(true);
+        tokio::time::timeout(Duration::from_secs(1), beats.next())
+            .await
+            .expect("heartbeat starts once registered")
+            .expect("heartbeat stream is open")
+            .expect("start signal is not an error");
+    }
+
+    #[tokio::test]
+    async fn sink_drops_a_push_on_transient_database_error() {
+        use futures::SinkExt;
+
+        // No server and a short acquire timeout: every flush fails with a
+        // transient pool/IO error, which must not surface to the pipe.
+        let pool = sqlx::postgres::PgPoolOptions::new()
+            .acquire_timeout(Duration::from_millis(200))
+            .connect_lazy("postgres://unused@127.0.0.1:1/unused")
+            .expect("lazy pool needs no server");
+        let spec = QueueSpec::cron("sink-transient-test", 1, 1, Duration::from_secs(30));
+        let mut storage = SteadyPostgresStorage::<()>::new(&pool, &spec, &JobWakeHub::default());
+
+        for _ in 0..2 {
+            let task = PgTask::<()>::new(())
+                .try_map(|args| JsonCodec::<CompactType>::encode(&args))
+                .expect("encode unit task");
+            storage
+                .send(task)
+                .await
+                .expect("transient push failure must not end the worker");
+        }
+        assert!(!is_transient_db_error(&sqlx::Error::RowNotFound));
     }
 }

@@ -246,7 +246,7 @@ export function TreasurySelector({
                     align="start"
                     sideOffset={8}
                     className="dark w-(--radix-select-trigger-width) min-w-56 rounded-2xl border-white/10 bg-gray-950 text-white shadow-xl"
-                    viewportClassName="min-w-0 p-1.5"
+                    viewportClassName="min-w-0 max-h-81 p-1.5"
                     footer={
                         <div className="shrink-0 border-t border-white/10 bg-gray-950 p-1.5 pt-1">
                             <Button

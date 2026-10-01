@@ -18,6 +18,7 @@ import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
 import { stripMessageForTooltip } from "@/lib/warnings";
 import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
+import { WALLET_IDS } from "@/lib/wallets";
 import { useNear } from "@/stores/near-store";
 
 interface VoteModalProps {
@@ -40,7 +41,7 @@ export function VoteModal({
     const t = useTranslations("proposals.voteModal");
     const tCreate = useTranslations("createRequestButton");
     const { treasuryId } = useTreasury();
-    const { voteProposals } = useNear();
+    const { voteProposals, walletId } = useNear();
     // Each vote action has its own slot, so ops can pause approving without
     // touching reject/remove (and vice-versa). Approve → action.approve, etc.
     const voteSlot = `action.${vote.toLowerCase()}`;
@@ -129,9 +130,11 @@ export function VoteModal({
                         {title}
                     </DialogTitle>
                     <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
-                        {isBulk
-                            ? t("bulkBody", { action })
-                            : t("singleBody", { action })}
+                        {walletId === WALLET_IDS.LEDGER
+                            ? t("ledgerBody")
+                            : isBulk
+                              ? t("bulkBody", { action })
+                              : t("singleBody", { action })}
                     </DialogDescription>
                 </div>
                 <SlotWarning slot={voteSlot} />

@@ -189,7 +189,11 @@ export function convertUrlParamsToApiFilters(
             selected: string[];
         } | null;
         if (myVoteData?.selected && myVoteData.selected.length > 0) {
-            const voteString = `${userId}:${myVoteData.selected.join(",")}`;
+            // API format is "account:vote,account:vote" — one pair per
+            // selected status, not one account with comma-joined votes.
+            const voteString = myVoteData.selected
+                .map((status) => `${userId}:${status}`)
+                .join(",");
             filters.voter_votes = voteString;
         }
     }

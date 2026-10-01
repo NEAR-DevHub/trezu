@@ -715,6 +715,7 @@
             "removeTitle": "Talebi Kaldır",
             "bulkBody": "Birden çok talebi {action} etmek üzeresiniz. Gönderildikten sonra bu karar değiştirilemez.",
             "singleBody": "Bu talebi {action} etmek üzeresiniz. Onaylandığında bu işlem geri alınamaz.",
+            "ledgerBody": "Ledger cihazınızın kilidini açık tutun. Sıradaki adımda oyunuzu orada onaylayacaksınız.",
             "actionApprove": "onaylama",
             "actionReject": "reddetme",
             "actionRemove": "kaldırma",

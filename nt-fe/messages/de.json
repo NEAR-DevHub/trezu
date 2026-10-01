@@ -715,6 +715,7 @@
             "removeTitle": "Anfrage entfernen",
             "bulkBody": "Sie sind dabei, mehrere Anfragen zu {action}. Nach dem Absenden kann diese Entscheidung nicht mehr geändert werden.",
             "singleBody": "Sie sind dabei, diese Anfrage zu {action}. Nach der Bestätigung kann diese Aktion nicht rückgängig gemacht werden.",
+            "ledgerBody": "Lassen Sie Ihren Ledger entsperrt. Als Nächstes bestätigen Sie dort Ihre Abstimmung.",
             "actionApprove": "genehmigen",
             "actionReject": "ablehnen",
             "actionRemove": "entfernen",

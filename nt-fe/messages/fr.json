@@ -715,6 +715,7 @@
             "removeTitle": "Supprimer la demande",
             "bulkBody": "Vous êtes sur le point de {action} plusieurs demandes. Une fois soumise, cette décision ne pourra pas être modifiée.",
             "singleBody": "Vous êtes sur le point de {action} cette demande. Une fois confirmée, cette action ne peut pas être annulée.",
+            "ledgerBody": "Gardez votre Ledger déverrouillé. Vous y confirmerez ensuite votre vote.",
             "actionApprove": "approuver",
             "actionReject": "rejeter",
             "actionRemove": "supprimer",

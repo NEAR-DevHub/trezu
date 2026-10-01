@@ -715,6 +715,7 @@
             "removeTitle": "移除请求",
             "bulkBody": "您即将{action}多个请求。提交后,此决定无法更改。",
             "singleBody": "您即将{action}此请求。确认后,此操作无法撤销。",
+            "ledgerBody": "请保持 Ledger 处于解锁状态。接下来你将在 Ledger 上确认投票。",
             "actionApprove": "批准",
             "actionReject": "拒绝",
             "actionRemove": "移除",
