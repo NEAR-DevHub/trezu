@@ -17,7 +17,7 @@ use serde::Deserialize;
 use crate::{
     AppState,
     error_event::ErrorCode,
-    services::attio::{AttioClient, Attribution, EarlyAccessLead},
+    services::attio::{AttioClient, EarlyAccessLead},
     utils::rate_limiter::RateLimiter,
 };
 
@@ -60,8 +60,8 @@ pub struct EarlyAccessRequest {
     /// choice, so there is nothing to withhold and nothing to enforce here.
     #[serde(default)]
     pub marketing_opt_in: bool,
-    #[serde(default)]
-    pub attribution: Attribution,
+    /// The page the form was submitted from.
+    pub landing_page: Option<String>,
 }
 
 pub async fn submit_early_access(
@@ -153,9 +153,9 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
 
     Ok(EarlyAccessLead {
         name: required("Name", payload.name)?,
-        company: required("Company", payload.company)?,
         email,
         telegram: optional(payload.telegram),
+        company_name: required("Company", payload.company)?,
         business_type: required(
             "Vertical / type of business",
             payload.business_type.unwrap_or_default(),
@@ -165,7 +165,7 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
             payload.referral_source.unwrap_or_default(),
         )?,
         marketing_opt_in: payload.marketing_opt_in,
-        attribution: payload.attribution,
+        landing_page: optional(payload.landing_page),
     })
 }
 
@@ -182,7 +182,7 @@ mod tests {
             business_type: Some("Treasury".to_string()),
             referral_source: Some("Word of Mouth".to_string()),
             marketing_opt_in: true,
-            attribution: Attribution::default(),
+            landing_page: Some(" /business ".to_string()),
         }
     }
 
@@ -206,6 +206,7 @@ mod tests {
 
         assert_eq!(lead.name, "Ada");
         assert_eq!(lead.telegram, None);
+        assert_eq!(lead.landing_page.as_deref(), Some("/business"));
     }
 
     #[test]

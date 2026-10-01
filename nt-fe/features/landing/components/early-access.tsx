@@ -12,17 +12,13 @@ import {
     type ReactNode,
     useCallback,
     useContext,
-    useEffect,
     useId,
     useMemo,
     useState,
 } from "react";
 import { Icon } from "@/components/icon";
 import { PRIVACY_POLICY_HREF } from "@/constants/config";
-import {
-    type EarlyAccessAttribution,
-    submitEarlyAccessRequest,
-} from "@/lib/api";
+import { submitEarlyAccessRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
     BUSINESS_TYPE_OPTIONS,
@@ -69,12 +65,6 @@ export function EarlyAccessProvider({
 }) {
     const [isOpen, setIsOpen] = useState(false);
     const open = useCallback(() => setIsOpen(true), []);
-    const [attribution, setAttribution] = useState<EarlyAccessAttribution>({});
-
-    // Read on mount rather than on submit: a visitor who steps out to the
-    // privacy policy and back would otherwise arrive with the campaign tags
-    // and the original referrer already gone.
-    useEffect(() => setAttribution(readAttribution()), []);
 
     const cta = useMemo<EarlyAccessCta>(
         () =>
@@ -88,66 +78,15 @@ export function EarlyAccessProvider({
         <EarlyAccessContext.Provider value={cta}>
             {children}
             {showRedesignedModal && (
-                <EarlyAccessModal
-                    open={isOpen}
-                    onOpenChange={setIsOpen}
-                    attribution={attribution}
-                />
+                <EarlyAccessModal open={isOpen} onOpenChange={setIsOpen} />
             )}
         </EarlyAccessContext.Provider>
     );
 }
 
-/** Long enough for any real campaign tag, short enough not to be a payload. */
-const MAX_ATTRIBUTION_LENGTH = 256;
-
 /** Long enough to name a vertical or a conference, short enough to read as a
  *  CRM value rather than as a paragraph. */
 const MAX_OTHER_LENGTH = 100;
-
-function capped(value: string | undefined) {
-    return value?.slice(0, MAX_ATTRIBUTION_LENGTH) || undefined;
-}
-
-/**
- * Only the parts of the URL this page chose. The full href and the raw
- * referrer are deliberately never sent: both routinely carry a querystring or
- * fragment the visitor has no idea they are handing over — an OAuth `code`, a
- * password-reset `token`, a CRM's `utm_email` — and everything here is stored
- * verbatim as CRM free text and passes through our logs and Sentry on the way.
- * The named `utm_*` keys are the only query values we read, and even those are
- * length-capped because they are attacker-supplied strings.
- */
-function readAttribution(): EarlyAccessAttribution {
-    const params = new URLSearchParams(window.location.search);
-    const tag = (key: string) => capped(params.get(key) ?? undefined);
-
-    return {
-        utmSource: tag("utm_source"),
-        utmMedium: tag("utm_medium"),
-        utmCampaign: tag("utm_campaign"),
-        utmTerm: tag("utm_term"),
-        utmContent: tag("utm_content"),
-        referrer: readReferrer(),
-        // Path only — no search, and no hash, which is where implicit OAuth
-        // flows put their tokens.
-        landingPage: capped(window.location.pathname),
-    };
-}
-
-/** Which site sent them, not which page of it and not with what attached. */
-function readReferrer() {
-    if (!document.referrer) return undefined;
-
-    try {
-        const referrer = new URL(document.referrer);
-        // Our own pages say nothing about where the visitor came from.
-        if (referrer.origin === window.location.origin) return undefined;
-        return capped(referrer.host);
-    } catch {
-        return undefined;
-    }
-}
 
 /** The landing's primary CTA, in the nav, the hero and the closing block. */
 export function EarlyAccessButton({ className }: { className?: string }) {
@@ -226,11 +165,9 @@ const FIELD = cn(
 function EarlyAccessModal({
     open,
     onOpenChange,
-    attribution,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    attribution: EarlyAccessAttribution;
 }) {
     const titleId = useId();
     // The card doubles as the boundary the open dropdowns are kept inside of.
@@ -310,7 +247,6 @@ function EarlyAccessModal({
                                 confirmation that the form is gone. */}
                             {!isSent && <PrivacyNotice />}
                             <EarlyAccessForm
-                                attribution={attribution}
                                 card={card}
                                 onSent={() => setIsSent(true)}
                             />
@@ -387,11 +323,9 @@ function PrivacyNotice() {
  * the submission state together.
  */
 function EarlyAccessForm({
-    attribution,
     card,
     onSent,
 }: {
-    attribution: EarlyAccessAttribution;
     card: HTMLElement | null;
     /** Raised once, so the card can shed the photograph it was sized for. */
     onSent: () => void;
@@ -444,7 +378,7 @@ function EarlyAccessForm({
                 businessType: answer("businessType"),
                 referralSource: answer("referralSource"),
                 marketingOptIn: fields.has("marketingOptIn"),
-                attribution,
+                landingPage: `${window.location.origin}${window.location.pathname}`,
             });
             setStatus("sent");
             onSent();

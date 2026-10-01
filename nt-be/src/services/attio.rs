@@ -11,42 +11,11 @@
 
 use std::time::Duration;
 
-use chrono::Utc;
+use chrono::{SecondsFormat, Utc};
 use reqwest::StatusCode;
-use serde::Deserialize;
-use serde_json::{Map, Value, json};
+use serde::Serialize;
 
 use crate::utils::env::EnvVars;
-
-/// Attio people-object attribute slugs written by this form.
-///
-/// Each one must already exist in the workspace with a matching type: Attio
-/// rejects the entire write when a slug is unknown, and rejects a select value
-/// that is not character-for-character one of that attribute's options. Which
-/// is why `business_type` and `referral_source` are text rather than select —
-/// the form's "Other" lets a visitor answer either one in their own words.
-mod slug {
-    pub const NAME: &str = "name";
-    pub const EMAIL_ADDRESSES: &str = "email_addresses";
-    pub const COMPANY: &str = "company_name";
-    pub const TELEGRAM: &str = "telegram";
-    pub const BUSINESS_TYPE: &str = "business_type";
-    pub const REFERRAL_SOURCE: &str = "referral_source";
-    pub const MARKETING_OPT_IN: &str = "marketing_opt_in";
-    pub const LEAD_SOURCE: &str = "lead_source";
-    pub const SUBMITTED_AT: &str = "submitted_at";
-    pub const UTM_SOURCE: &str = "utm_source";
-    pub const UTM_MEDIUM: &str = "utm_medium";
-    pub const UTM_CAMPAIGN: &str = "utm_campaign";
-    pub const UTM_TERM: &str = "utm_term";
-    pub const UTM_CONTENT: &str = "utm_content";
-    pub const REFERRER: &str = "referrer";
-    pub const LANDING_PAGE: &str = "landing_page";
-}
-
-/// Fixed attribution stamped on every record this form creates, so leads from
-/// the landing page stay separable from every other way people reach Attio.
-const LEAD_SOURCE: &str = "Near Business early access form";
 
 /// Retry schedule for calls that could still succeed: three retries, 3.5s of
 /// sleeps plus however long the round trips themselves take, all of it with a
@@ -58,31 +27,31 @@ const RETRY_BACKOFF: [Duration; 3] = [
 ];
 
 /// A completed early-access form. Validated by the handler before it gets here.
-#[derive(Debug, Clone)]
+///
+/// Serializes straight into the webhook payload. The field names are what the
+/// Attio workflow reads, so renaming one here breaks the CRM sync.
+#[derive(Debug, Clone, Serialize)]
 pub struct EarlyAccessLead {
     pub name: String,
-    pub company: String,
     pub email: String,
-    /// The only answer the form lets a visitor skip.
+    /// The only answer the form lets a visitor skip. Left off the payload
+    /// rather than blanked, so it cannot overwrite a value a previous
+    /// submission filled in.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub telegram: Option<String>,
+    pub company_name: String,
     pub business_type: String,
     pub referral_source: String,
     pub marketing_opt_in: bool,
-    pub attribution: Attribution,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub landing_page: Option<String>,
 }
 
-/// Campaign tags read from the landing page's URL, captured when the page
-/// loads rather than when the form is submitted.
-#[derive(Debug, Clone, Default, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Attribution {
-    pub utm_source: Option<String>,
-    pub utm_medium: Option<String>,
-    pub utm_campaign: Option<String>,
-    pub utm_term: Option<String>,
-    pub utm_content: Option<String>,
-    pub referrer: Option<String>,
-    pub landing_page: Option<String>,
+#[derive(Serialize)]
+struct WebhookPayload<'a> {
+    #[serde(flatten)]
+    lead: &'a EarlyAccessLead,
+    submitted_at: String,
 }
 
 #[derive(Debug)]
@@ -137,7 +106,10 @@ impl AttioClient {
         &self,
         lead: &EarlyAccessLead,
     ) -> Result<(), AttioError> {
-        let body = json!({ "data": { "values": person_values(lead) } });
+        let body = WebhookPayload {
+            lead,
+            submitted_at: Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true),
+        };
         let mut attempt = 0;
 
         loop {
@@ -156,7 +128,7 @@ impl AttioClient {
         }
     }
 
-    async fn send_once(&self, body: &Value) -> Result<(), AttioError> {
+    async fn send_once(&self, body: &WebhookPayload<'_>) -> Result<(), AttioError> {
         let response = self
             .http
             .post(&self.webhook_url)
@@ -176,87 +148,26 @@ impl AttioClient {
     }
 }
 
-fn person_values(lead: &EarlyAccessLead) -> Value {
-    let mut values = Map::new();
-    values.insert(slug::NAME.to_owned(), json!([split_name(&lead.name)]));
-    values.insert(slug::EMAIL_ADDRESSES.to_owned(), json!([lead.email]));
-    values.insert(slug::COMPANY.to_owned(), json!(lead.company));
-    values.insert(slug::BUSINESS_TYPE.to_owned(), json!(lead.business_type));
-    values.insert(
-        slug::REFERRAL_SOURCE.to_owned(),
-        json!(lead.referral_source),
-    );
-    values.insert(
-        slug::MARKETING_OPT_IN.to_owned(),
-        json!(lead.marketing_opt_in),
-    );
-    values.insert(slug::LEAD_SOURCE.to_owned(), json!(LEAD_SOURCE));
-    values.insert(
-        slug::SUBMITTED_AT.to_owned(),
-        json!(Utc::now().to_rfc3339()),
-    );
-
-    let attribution = &lead.attribution;
-    let optional = [
-        (slug::TELEGRAM, &lead.telegram),
-        (slug::UTM_SOURCE, &attribution.utm_source),
-        (slug::UTM_MEDIUM, &attribution.utm_medium),
-        (slug::UTM_CAMPAIGN, &attribution.utm_campaign),
-        (slug::UTM_TERM, &attribution.utm_term),
-        (slug::UTM_CONTENT, &attribution.utm_content),
-        (slug::REFERRER, &attribution.referrer),
-        (slug::LANDING_PAGE, &attribution.landing_page),
-    ];
-
-    // An answer the visitor skipped is left off the payload entirely: sending
-    // "" would overwrite a value a previous submission had filled in.
-    for (slug, value) in optional {
-        if let Some(value) = value.as_deref().map(str::trim).filter(|v| !v.is_empty()) {
-            values.insert(slug.to_owned(), json!(value));
-        }
-    }
-
-    Value::Object(values)
-}
-
-/// Attio's personal-name attribute wants the parts separately. The form asks
-/// for one line, so the first space is the split — everything after it is the
-/// last name, which keeps multi-part surnames intact. A single word leaves the
-/// surname empty: guessing one would write a name into the CRM that nobody
-/// gave us, and `full_name` already carries what the visitor actually typed.
-fn split_name(name: &str) -> Value {
-    let name = name.trim();
-    let (first, last) = name.split_once(' ').unwrap_or((name, ""));
-    json!({
-        "first_name": first,
-        "last_name": last.trim(),
-        "full_name": name,
-    })
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
-        matchers::{body_partial_json, method, path},
+        matchers::{method, path},
     };
 
     const WEBHOOK_PATH: &str = "/w/workspace/workflow";
 
     fn lead() -> EarlyAccessLead {
         EarlyAccessLead {
-            name: "  Ada Van Lovelace ".to_string(),
-            company: "Analytical Engines".to_string(),
+            name: "Ada Lovelace".to_string(),
             email: "ada@example.com".to_string(),
-            telegram: Some("   ".to_string()),
+            telegram: None,
+            company_name: "Analytical Engines".to_string(),
             business_type: "Treasury".to_string(),
             referral_source: "Word of Mouth".to_string(),
             marketing_opt_in: true,
-            attribution: Attribution {
-                utm_source: Some("x".to_string()),
-                ..Default::default()
-            },
+            landing_page: Some("/business".to_string()),
         }
     }
 
@@ -267,44 +178,12 @@ mod tests {
         }
     }
 
-    #[test]
-    fn skipped_answers_are_omitted_rather_than_blanked() {
-        let values = person_values(&lead());
-
-        assert_eq!(values[slug::NAME][0]["first_name"], "Ada");
-        assert_eq!(values[slug::NAME][0]["last_name"], "Van Lovelace");
-        assert_eq!(values[slug::NAME][0]["full_name"], "Ada Van Lovelace");
-        assert_eq!(values[slug::EMAIL_ADDRESSES][0], "ada@example.com");
-        assert_eq!(values[slug::BUSINESS_TYPE], "Treasury");
-        assert_eq!(values[slug::REFERRAL_SOURCE], "Word of Mouth");
-        assert_eq!(values[slug::MARKETING_OPT_IN], true);
-        assert_eq!(values[slug::UTM_SOURCE], "x");
-        // Whitespace-only and absent optionals are both left out.
-        assert!(values.get(slug::TELEGRAM).is_none());
-        assert!(values.get(slug::REFERRER).is_none());
-    }
-
-    #[test]
-    fn a_one_word_name_leaves_the_surname_empty() {
-        let name = split_name("Prince");
-
-        assert_eq!(name["first_name"], "Prince");
-        assert_eq!(name["last_name"], "");
-        assert_eq!(name["full_name"], "Prince");
-    }
-
     #[tokio::test]
-    async fn capture_posts_the_person_upsert_payload_to_the_webhook() {
+    async fn capture_posts_the_lead_to_the_webhook() {
         let server = MockServer::start().await;
 
         Mock::given(method("POST"))
             .and(path(WEBHOOK_PATH))
-            .and(body_partial_json(json!({
-                "data": { "values": {
-                    "email_addresses": ["ada@example.com"],
-                    "company_name": "Analytical Engines",
-                }}
-            })))
             .respond_with(ResponseTemplate::new(200))
             .expect(1)
             .mount(&server)
@@ -314,6 +193,28 @@ mod tests {
             .capture_early_access_lead(&lead())
             .await
             .expect("capture should succeed");
+
+        let requests = server.received_requests().await.expect("recording is on");
+        let mut body: serde_json::Value = requests[0].body_json().expect("JSON body");
+        let submitted_at = body
+            .as_object_mut()
+            .and_then(|body| body.remove("submitted_at"))
+            .expect("submitted_at is stamped");
+
+        assert!(submitted_at.as_str().is_some_and(|at| at.ends_with('Z')));
+        // A skipped telegram is omitted rather than sent as null.
+        assert_eq!(
+            body,
+            serde_json::json!({
+                "name": "Ada Lovelace",
+                "email": "ada@example.com",
+                "company_name": "Analytical Engines",
+                "business_type": "Treasury",
+                "referral_source": "Word of Mouth",
+                "marketing_opt_in": true,
+                "landing_page": "/business",
+            })
+        );
     }
 
     #[tokio::test]
