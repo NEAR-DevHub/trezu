@@ -16,6 +16,7 @@ import {
 } from "@/components/modal";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
 import { cn } from "@/lib/utils";
+import { sanitizeSlippageDraft, slippageFromDraft } from "./slippage-draft";
 
 interface ExchangeSettingsModalProps {
     slippageTolerance: number;
@@ -25,15 +26,9 @@ interface ExchangeSettingsModalProps {
 
 const SLIPPAGE_PRESETS = [0.1, 0.5, 1.0];
 
-function sanitizeSlippageInput(value: string): string {
-    const digitsAndDots = value.replace(/[^0-9.]/g, "");
-    const firstDotIndex = digitsAndDots.indexOf(".");
-    const singleDot =
-        firstDotIndex === -1
-            ? digitsAndDots
-            : digitsAndDots.slice(0, firstDotIndex + 1) +
-              digitsAndDots.slice(firstDotIndex + 1).replace(/\./g, "");
-    return singleDot.replace(/^0+(?=\d)/, "");
+function slippageDraftFromValue(value: number): string {
+    if (!Number.isFinite(value) || value === 0) return "";
+    return String(value);
 }
 
 function buildSettingsFormSchema(messages: { slippageRange: string }) {
@@ -77,9 +72,9 @@ export function ExchangeSettingsModal({
     const currentSlippage = form.watch("slippageTolerance");
 
     const [customInputText, setCustomInputText] = useState<string>(() =>
-        !SLIPPAGE_PRESETS.includes(slippageTolerance) && slippageTolerance
-            ? String(slippageTolerance)
-            : "",
+        SLIPPAGE_PRESETS.includes(slippageTolerance)
+            ? ""
+            : slippageDraftFromValue(slippageTolerance),
     );
 
     const handleSlippagePreset = (value: number) => {
@@ -90,11 +85,9 @@ export function ExchangeSettingsModal({
 
     const handleCustomClick = () => {
         form.setValue("isCustom", true);
-        setCustomInputText(
-            !SLIPPAGE_PRESETS.includes(currentSlippage) && currentSlippage
-                ? String(currentSlippage)
-                : "",
-        );
+        // Show the current value, including a preset, so the field matches
+        // what Save will store.
+        setCustomInputText(slippageDraftFromValue(currentSlippage));
     };
 
     const onSubmit = (data: SettingsFormValues) => {
@@ -181,22 +174,17 @@ export function ExchangeSettingsModal({
                                                 value={customInputText}
                                                 onChange={(e) => {
                                                     const sanitized =
-                                                        sanitizeSlippageInput(
+                                                        sanitizeSlippageDraft(
                                                             e.target.value,
                                                         );
                                                     setCustomInputText(
                                                         sanitized,
                                                     );
-                                                    if (
-                                                        sanitized === "" ||
-                                                        sanitized === "."
-                                                    ) {
-                                                        field.onChange(0);
-                                                    } else {
-                                                        field.onChange(
-                                                            Number(sanitized),
-                                                        );
-                                                    }
+                                                    field.onChange(
+                                                        slippageFromDraft(
+                                                            sanitized,
+                                                        ),
+                                                    );
                                                 }}
                                                 placeholder={t(
                                                     "customPlaceholder",
