@@ -226,8 +226,6 @@ export interface SwapRequestData {
     quoteDeadline?: string;
     /** Absent on proposals created before the flag was stored. */
     hasAppFee?: boolean;
-    /** Proposer comment. Public swaps read it from the description; confidential swaps from the intent. */
-    notes?: string;
 }
 
 /**

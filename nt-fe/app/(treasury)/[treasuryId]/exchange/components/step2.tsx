@@ -10,8 +10,6 @@ import { FormattedAmount } from "@/components/formatted-amount";
 import { useFormatDate } from "@/components/formatted-date";
 import { InfoDisplay } from "@/components/info-display";
 import { ReviewStep, type StepProps } from "@/components/step-wizard";
-import { FormField } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useTreasury } from "@/hooks/use-treasury";
 import {
@@ -31,7 +29,6 @@ import { Rate } from "./rate";
 
 export function Step2({ handleBack }: StepProps) {
     const tEx = useTranslations("exchange");
-    const tPay = useTranslations("payments");
     const locale = useLocale();
     const form = useFormContext<ExchangeFormValues>();
     const { treasuryId: selectedTreasury, isConfidential } = useTreasury();
@@ -341,18 +338,6 @@ export function Step2({ handleBack }: StepProps) {
                         </div>
                     </>
                 ) : null}
-
-                <FormField
-                    control={form.control}
-                    name="comment"
-                    render={({ field }) => (
-                        <Input
-                            value={field.value ?? ""}
-                            onChange={field.onChange}
-                            placeholder={tPay("commentPlaceholder")}
-                        />
-                    )}
-                />
             </ReviewStep>
 
             <div className="rounded-lg border bg-card p-0 overflow-hidden">

@@ -80,7 +80,6 @@ export default function ExchangePage() {
             receiveToken: ETH_TOKEN,
             slippageTolerance: 0.5,
             amountMode: "EXACT_INPUT",
-            comment: "",
         },
     });
 
@@ -125,7 +124,6 @@ export default function ExchangePage() {
                     standard: "nep413",
                     signerId: selectedTreasury,
                     quoteMetadata,
-                    notes: data.comment?.trim() || undefined,
                 });
 
                 const confidentialResult = buildConfidentialProposal({
@@ -152,7 +150,6 @@ export default function ExchangePage() {
                     slippageTolerance: data.slippageTolerance || 0.5,
                     treasuryId: selectedTreasury,
                     proposalBond,
-                    comment: data.comment?.trim() || undefined,
                 };
 
                 let result;
