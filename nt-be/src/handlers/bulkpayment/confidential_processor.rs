@@ -20,7 +20,7 @@ use serde_json::json;
 use crate::AppState;
 
 const ACTIVATE_DEPOSIT: NearToken = NearToken::from_millinear(500); // 0.5 NEAR
-const PING_GAS: NearGas = NearGas::from_tgas(300);
+const PING_GAS: NearGas = NearGas::from_tgas(1000);
 
 // Strongly-typed mirror of the on-chain contract types. Kept in lockstep
 // with `contracts/confidential-bulk-payment/src/lib.rs`. Duplicating them

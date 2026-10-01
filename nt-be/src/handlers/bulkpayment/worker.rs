@@ -1,8 +1,10 @@
 use crate::app_state::AppState;
-use near_api::Contract;
+use near_api::{Contract, NearGas};
 use serde::Deserialize;
 use sqlx::PgPool;
 use std::sync::Arc;
+
+const PAYOUT_BATCH_GAS: NearGas = NearGas::from_tgas(1000);
 
 /// Response type for view_list contract call
 #[derive(Debug, Deserialize)]
@@ -209,6 +211,7 @@ pub async fn query_and_process_pending_lists(
                 }),
             )
             .transaction()
+            .gas(PAYOUT_BATCH_GAS)
             .with_signer(state.signer_id.clone(), state.signer.clone())
             .send_to(&state.network)
             .await;
