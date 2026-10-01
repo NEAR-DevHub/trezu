@@ -1,10 +1,7 @@
 /**
- * Shared mock API response bodies for treasury E2E specs.
- *
- * Previously these objects (TREASURY_POLICY, SUBSCRIPTION, TREASURY_ASSETS,
- * EMPTY_PROPOSALS) were copy-pasted verbatim across requests-page.spec.ts and
- * onboarding-tour.spec.ts. Centralizing them here means a DAO-policy or
- * subscription schema change only needs updating in one place.
+ * Shared mock API response bodies for treasury E2E specs, used with
+ * `installTreasuryApiMocks`. Only requests-my-vote-filter.spec.ts uses them
+ * today; the older specs still define their own copies inline.
  */
 
 export interface TreasurySummary {
@@ -121,77 +118,3 @@ export const DEFAULT_TREASURY_ASSETS = [
         },
     },
 ];
-
-export const EMPTY_ASSETS: typeof DEFAULT_TREASURY_ASSETS = [];
-
-/**
- * Legacy-shaped single-proposal response used only by onboarding-tour specs
- * to flip the "has proposals" client-side check. Note this shape
- * (snake_case, no `proposalId`/`daoId`/`voteCounts`/`txHash`) does NOT match
- * the shape `buildExecutedProposalsResponse` below returns for
- * requests-page — that's a pre-existing discrepancy carried over verbatim
- * from the original specs, not something this refactor fixes. Worth a
- * follow-up to confirm which shape the real API actually returns.
- */
-export function buildProposalsWithOneLegacyShape(
-    accountId: string,
-): ProposalsResponse {
-    return {
-        page: 0,
-        page_size: 15,
-        total: 1,
-        proposals: [
-            {
-                id: 1,
-                proposer: accountId,
-                description: "Test payment",
-                kind: {
-                    Transfer: {
-                        token_id: "",
-                        receiver_id: "bob.near",
-                        amount: "1000000000000000000000000",
-                    },
-                },
-                status: "Approved",
-                vote_counts: {},
-                votes: {},
-                submission_time: "1700000000000000000",
-            },
-        ],
-    };
-}
-
-/** Full-shaped executed-proposal response used by requests-page's "all caught up" test. */
-export function buildExecutedProposalsResponse(
-    treasuryId: string,
-    accountId: string,
-): ProposalsResponse {
-    return {
-        page: 0,
-        page_size: 15,
-        total: 1,
-        proposals: [
-            {
-                id: 1,
-                proposalId: 1,
-                daoId: treasuryId,
-                proposer: accountId,
-                kind: {
-                    Transfer: {
-                        tokenId: "",
-                        receiverId: "bob.near",
-                        amount: "1000000000000000000000000",
-                        msg: null,
-                    },
-                },
-                type: "Payments",
-                status: "Approved",
-                voteCounts: { council: [1, 0, 0] },
-                votes: { [accountId]: "Approve" },
-                submissionTime: "1712000000000000000",
-                description: "Payment to bob",
-                txHash: "abc123",
-            },
-        ],
-    };
-}

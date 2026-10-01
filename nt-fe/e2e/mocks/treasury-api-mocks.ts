@@ -1,9 +1,8 @@
 /**
- * Composable route-mock installer shared by the requests-page, start-page,
- * and onboarding-tour specs. Replaces three near-identical hand-copied
- * `page.route("**\/*", ...)` blocks with one function; each spec only passes
- * the response bodies it cares about and lets the rest fall back to
- * sensible defaults.
+ * Composable route-mock installer for treasury pages: each spec passes only
+ * the response bodies it cares about and the rest fall back to defaults from
+ * fixtures/treasury-mock-data.ts. Only requests-my-vote-filter.spec.ts uses
+ * it today.
  */
 import type { Page } from "@playwright/test";
 import {
@@ -32,17 +31,6 @@ export interface TreasuryApiMockOptions {
     subscription?: unknown;
     assets?: unknown[];
     proposals?: ProposalsResponse;
-    /** Branches the proposals response on the request's `statuses` query param (see requests-page's "all caught up" test). Overrides `proposals` when set. */
-    proposalsByStatus?: (statuses: string | null) => ProposalsResponse;
-    /**
-     * balance-history/chart, user/profile and address-book mocks. Only
-     * onboarding-tour's original spec mocked these (needed so
-     * BalanceWithGraph doesn't hang on a full dashboard render);
-     * requests-page/start-page never did. Defaults to false so this shared
-     * installer reproduces each spec's original network behavior exactly —
-     * flip it on only for specs that render the full dashboard shell.
-     */
-    includeDashboardExtras?: boolean;
 }
 
 function matchesAny(url: string, substrings: string[]): boolean {
@@ -119,10 +107,6 @@ export async function installTreasuryApiMocks(
         }
 
         if (matchesAny(url, ["/api/proposals/", "/proposals/"])) {
-            if (opts.proposalsByStatus) {
-                const statuses = new URL(url).searchParams.get("statuses");
-                return json(opts.proposalsByStatus(statuses));
-            }
             return json(opts.proposals ?? EMPTY_PROPOSALS);
         }
 
@@ -132,19 +116,6 @@ export async function installTreasuryApiMocks(
                 enabled: true,
                 planType: "free",
             });
-        }
-
-        if (opts.includeDashboardExtras) {
-            // Prevents BalanceWithGraph from getting stuck loading on a full dashboard render.
-            if (url.includes("/balance-history/chart")) {
-                return json({});
-            }
-            if (url.includes("/user/profile")) {
-                return json({ name: "Test User" });
-            }
-            if (matchesAny(url, ["/api/address-book", "/address-book"])) {
-                return json([]);
-            }
         }
 
         return route.continue();
