@@ -518,7 +518,7 @@ impl ErrorCode {
                 priority: P::P1,
                 surface: S::UserAction,
                 dependency: Some(D::Attio),
-                title: "user action / early access / Attio credentials unset — every lead is being rejected",
+                title: "user action / early access / Attio webhook URL unset — every lead is being rejected",
             },
             C::CustomRequestsFailed => EventSpec {
                 code: "CUSTOM_REQUESTS_FAILED",

@@ -1,17 +1,18 @@
 //! Attio CRM sync for the landing page's early-access form.
 //!
 //! Everything that talks to Attio lives in this module: the handler hands over
-//! a validated [`EarlyAccessLead`] and gets back success or failure, so the API
-//! key is read in exactly one place and never crosses into a response.
+//! a validated [`EarlyAccessLead`] and gets back success or failure, so the
+//! webhook URL — itself the credential — is read in exactly one place and never
+//! crosses into a response.
 //!
-//! Capturing a lead is two calls, in order — upsert the person (matched on
-//! their email so a second submission updates rather than duplicates), then add
-//! that person to the early-access list.
+//! Capturing a lead is one call to an Attio workflow webhook. The workflow
+//! upserts the person (matched on their email so a second submission updates
+//! rather than duplicates) and adds them to the early-access list.
 
 use std::time::Duration;
 
 use chrono::Utc;
-use reqwest::{Method, StatusCode};
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
 
@@ -48,9 +49,7 @@ mod slug {
 const LEAD_SOURCE: &str = "Near Business early access form";
 
 /// Retry schedule for calls that could still succeed: three retries, 3.5s of
-/// sleeps. [`AttioClient::capture_early_access_lead`] stacks two of these — the
-/// person upsert, then the list entry — so a sustained Attio outage spends ~7s
-/// sleeping plus however long the round trips themselves take, all of it with a
+/// sleeps plus however long the round trips themselves take, all of it with a
 /// browser request held open. The route's timeout is what actually bounds that.
 const RETRY_BACKOFF: [Duration; 3] = [
     Duration::from_millis(500),
@@ -89,12 +88,7 @@ pub struct Attribution {
 #[derive(Debug)]
 pub enum AttioError {
     Transport(reqwest::Error),
-    Status {
-        status: StatusCode,
-        body: String,
-    },
-    /// A 2xx whose shape we could not read — most likely an API change.
-    UnexpectedResponse(&'static str),
+    Status { status: StatusCode, body: String },
 }
 
 impl AttioError {
@@ -107,7 +101,6 @@ impl AttioError {
             Self::Status { status, .. } => {
                 *status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error()
             }
-            Self::UnexpectedResponse(_) => false,
         }
     }
 }
@@ -117,7 +110,6 @@ impl std::fmt::Display for AttioError {
         match self {
             Self::Transport(error) => write!(f, "transport error: {error}"),
             Self::Status { status, body } => write!(f, "HTTP {status}: {body}"),
-            Self::UnexpectedResponse(what) => write!(f, "unexpected response: {what}"),
         }
     }
 }
@@ -127,46 +119,29 @@ impl std::error::Error for AttioError {}
 #[derive(Clone)]
 pub struct AttioClient {
     http: reqwest::Client,
-    api_key: String,
-    list_id: String,
-    base_url: String,
+    webhook_url: String,
 }
 
 impl AttioClient {
-    /// `None` until both `ATTIO_API_KEY` and `ATTIO_EARLY_ACCESS_LIST_ID` are
-    /// configured — a half-configured sync would leave leads on the people
-    /// object but off the list anyone actually reads. Callers treat `None` as
-    /// a failure, not as a reason to skip.
+    /// `None` until `ATTIO_EARLY_ACCESS_WEBHOOK_URL` is configured. Callers
+    /// treat `None` as a failure, not as a reason to skip.
     pub fn from_env(http: reqwest::Client, env: &EnvVars) -> Option<Self> {
-        let api_key = env.attio_api_key.clone()?;
-        let list_id = env.attio_early_access_list_id.clone()?;
-        Some(Self {
-            http,
-            api_key,
-            list_id,
-            base_url: env.attio_api_base_url.trim_end_matches('/').to_string(),
-        })
+        let webhook_url = env.attio_early_access_webhook_url.clone()?;
+        Some(Self { http, webhook_url })
     }
 
+    /// Retries what could still succeed. A delivery that landed but whose
+    /// response we never saw runs the workflow twice — a much cheaper mistake
+    /// than a dropped lead.
     pub async fn capture_early_access_lead(
         &self,
         lead: &EarlyAccessLead,
     ) -> Result<(), AttioError> {
-        let record_id = self.upsert_person(lead).await?;
-
-        // The create below is the one call we cannot simply resend: Attio has
-        // no idempotency key for list entries, so a create that landed but
-        // whose response we never saw would otherwise be repeated as a second
-        // row. Hence the check runs before *every* attempt, not just the
-        // first — it also covers the ordinary case of someone applying twice.
+        let body = json!({ "data": { "values": person_values(lead) } });
         let mut attempt = 0;
-        loop {
-            if self.is_already_on_list(&record_id).await {
-                tracing::info!(%record_id, "already on the Attio early access list");
-                return Ok(());
-            }
 
-            let error = match self.add_to_list(&record_id).await {
+        loop {
+            let error = match self.send_once(&body).await {
                 Ok(()) => return Ok(()),
                 Err(error) if error.is_retryable() => error,
                 Err(error) => return Err(error),
@@ -175,94 +150,16 @@ impl AttioClient {
             let Some(delay) = RETRY_BACKOFF.get(attempt) else {
                 return Err(error);
             };
-            tracing::warn!(%record_id, attempt, "Attio list entry failed, retrying: {error}");
+            tracing::warn!(attempt, "Attio webhook failed, retrying: {error}");
             tokio::time::sleep(*delay).await;
             attempt += 1;
         }
     }
 
-    /// Matching on `email_addresses` makes this idempotent: the same person
-    /// submitting twice updates one record instead of creating two.
-    async fn upsert_person(&self, lead: &EarlyAccessLead) -> Result<String, AttioError> {
-        let response = self
-            .send(
-                Method::PUT,
-                "/v2/objects/people/records?matching_attribute=email_addresses",
-                &json!({ "data": { "values": person_values(lead) } }),
-            )
-            .await?;
-
-        response["data"]["id"]["record_id"]
-            .as_str()
-            .map(str::to_owned)
-            .ok_or(AttioError::UnexpectedResponse("no data.id.record_id"))
-    }
-
-    /// Best-effort on purpose: if the lookup itself fails we add the entry
-    /// anyway, because a duplicate row is a much cheaper mistake than a
-    /// dropped lead.
-    async fn is_already_on_list(&self, record_id: &str) -> bool {
-        let path = format!("/v2/lists/{}/entries/query", self.list_id);
-        let body = json!({ "filter": { "parent_record_id": record_id }, "limit": 1 });
-
-        match self.send(Method::POST, &path, &body).await {
-            Ok(response) => response["data"]
-                .as_array()
-                .is_some_and(|entries| !entries.is_empty()),
-            Err(error) => {
-                tracing::warn!("Attio list lookup failed, adding the entry anyway: {error}");
-                false
-            }
-        }
-    }
-
-    /// One attempt only — retrying is the caller's business, because it has to
-    /// re-check the list first.
-    async fn add_to_list(&self, record_id: &str) -> Result<(), AttioError> {
-        let path = format!("/v2/lists/{}/entries", self.list_id);
-        let body = json!({
-            "data": {
-                "parent_record_id": record_id,
-                "parent_object": "people",
-                "entry_values": {},
-            }
-        });
-
-        self.send_once(Method::POST, &path, &body).await.map(|_| ())
-    }
-
-    /// An Attio call under the retry policy, for the requests that are safe to
-    /// repeat blindly.
-    async fn send(&self, method: Method, path: &str, body: &Value) -> Result<Value, AttioError> {
-        let mut attempt = 0;
-
-        loop {
-            let error = match self.send_once(method.clone(), path, body).await {
-                Ok(response) => return Ok(response),
-                Err(error) if error.is_retryable() => error,
-                Err(error) => return Err(error),
-            };
-
-            let Some(delay) = RETRY_BACKOFF.get(attempt) else {
-                return Err(error);
-            };
-            tracing::warn!(path, attempt, "Attio call failed, retrying: {error}");
-            tokio::time::sleep(*delay).await;
-            attempt += 1;
-        }
-    }
-
-    /// A single Attio call, with no retrying of its own.
-    async fn send_once(
-        &self,
-        method: Method,
-        path: &str,
-        body: &Value,
-    ) -> Result<Value, AttioError> {
+    async fn send_once(&self, body: &Value) -> Result<(), AttioError> {
         let response = self
             .http
-            .request(method, format!("{}{path}", self.base_url))
-            .bearer_auth(&self.api_key)
+            .post(&self.webhook_url)
             .json(body)
             .send()
             .await
@@ -275,7 +172,7 @@ impl AttioClient {
             });
         }
 
-        response.json().await.map_err(AttioError::Transport)
+        Ok(())
     }
 }
 
@@ -342,8 +239,10 @@ mod tests {
     use super::*;
     use wiremock::{
         Mock, MockServer, ResponseTemplate,
-        matchers::{body_json_string, method, path, query_param},
+        matchers::{body_partial_json, method, path},
     };
+
+    const WEBHOOK_PATH: &str = "/w/workspace/workflow";
 
     fn lead() -> EarlyAccessLead {
         EarlyAccessLead {
@@ -364,9 +263,7 @@ mod tests {
     fn client(server: &MockServer) -> AttioClient {
         AttioClient {
             http: reqwest::Client::new(),
-            api_key: "test-key".to_string(),
-            list_id: "early-access".to_string(),
-            base_url: server.uri(),
+            webhook_url: format!("{}{WEBHOOK_PATH}", server.uri()),
         }
     }
 
@@ -397,39 +294,18 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn capture_upserts_the_person_then_adds_them_to_the_list() {
+    async fn capture_posts_the_person_upsert_payload_to_the_webhook() {
         let server = MockServer::start().await;
 
-        Mock::given(method("PUT"))
-            .and(path("/v2/objects/people/records"))
-            .and(query_param("matching_attribute", "email_addresses"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": { "id": { "record_id": "rec_1" } }
+        Mock::given(method("POST"))
+            .and(path(WEBHOOK_PATH))
+            .and(body_partial_json(json!({
+                "data": { "values": {
+                    "email_addresses": ["ada@example.com"],
+                    "company_name": "Analytical Engines",
+                }}
             })))
-            .expect(1)
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries/query"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
-            .expect(1)
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries"))
-            .and(body_json_string(
-                json!({
-                    "data": {
-                        "parent_record_id": "rec_1",
-                        "parent_object": "people",
-                        "entry_values": {},
-                    }
-                })
-                .to_string(),
-            ))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": {} })))
+            .respond_with(ResponseTemplate::new(200))
             .expect(1)
             .mount(&server)
             .await;
@@ -438,95 +314,21 @@ mod tests {
             .capture_early_access_lead(&lead())
             .await
             .expect("capture should succeed");
-    }
-
-    #[tokio::test]
-    async fn an_existing_list_entry_is_not_added_twice() {
-        let server = MockServer::start().await;
-
-        Mock::given(method("PUT"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": { "id": { "record_id": "rec_1" } }
-            })))
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries/query"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": [{ "id": { "entry_id": "ent_1" } }]
-            })))
-            .mount(&server)
-            .await;
-
-        // No mock for the create call: a request to it fails the test.
-        client(&server)
-            .capture_early_access_lead(&lead())
-            .await
-            .expect("capture should succeed");
-    }
-
-    #[tokio::test]
-    async fn a_list_entry_lost_to_a_failed_response_is_not_created_twice() {
-        // Attio applied the create but answered 502, so our retry has to
-        // notice the entry is already there rather than add a second one.
-        let server = MockServer::start().await;
-
-        Mock::given(method("PUT"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": { "id": { "record_id": "rec_1" } }
-            })))
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries/query"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
-            .up_to_n_times(1)
-            .expect(1)
-            .mount(&server)
-            .await;
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries/query"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": [{ "id": { "entry_id": "ent_1" } }]
-            })))
-            .expect(1)
-            .mount(&server)
-            .await;
-
-        Mock::given(method("POST"))
-            .and(path("/v2/lists/early-access/entries"))
-            .respond_with(ResponseTemplate::new(502))
-            .expect(1)
-            .mount(&server)
-            .await;
-
-        client(&server)
-            .capture_early_access_lead(&lead())
-            .await
-            .expect("the entry Attio already has counts as success");
     }
 
     #[tokio::test]
     async fn a_server_error_is_retried() {
         let server = MockServer::start().await;
 
-        Mock::given(method("PUT"))
+        Mock::given(method("POST"))
             .respond_with(ResponseTemplate::new(503))
             .up_to_n_times(1)
             .expect(1)
             .mount(&server)
             .await;
-        Mock::given(method("PUT"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "data": { "id": { "record_id": "rec_1" } }
-            })))
-            .expect(1)
-            .mount(&server)
-            .await;
         Mock::given(method("POST"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({ "data": [] })))
+            .respond_with(ResponseTemplate::new(200))
+            .expect(1)
             .mount(&server)
             .await;
 
@@ -540,8 +342,8 @@ mod tests {
     async fn a_rejected_payload_fails_without_retrying() {
         let server = MockServer::start().await;
 
-        Mock::given(method("PUT"))
-            .respond_with(ResponseTemplate::new(400).set_body_string("unknown attribute"))
+        Mock::given(method("POST"))
+            .respond_with(ResponseTemplate::new(400).set_body_string("bad request"))
             .expect(1)
             .mount(&server)
             .await;
