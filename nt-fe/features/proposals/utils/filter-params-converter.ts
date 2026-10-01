@@ -189,8 +189,8 @@ export function convertUrlParamsToApiFilters(
             selected: string[];
         } | null;
         if (myVoteData?.selected && myVoteData.selected.length > 0) {
-            // API format is "account:vote,account:vote" — one pair per
-            // selected status, not one account with comma-joined votes.
+            // API format is "account:vote,account:vote". Statuses for this
+            // account are combined with OR (Approved or Rejected).
             const voteString = myVoteData.selected
                 .map((status) => `${userId}:${status}`)
                 .join(",");

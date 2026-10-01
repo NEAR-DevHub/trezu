@@ -224,6 +224,7 @@ interface NearStore {
     // with; used to decide whether it can be reused or must be rebuilt.
     connectorExcludeKey: string | null;
     walletAccountId: string | null; // Raw wallet account ID
+    walletId: string | null; // Connected wallet's manifest id, e.g. "ledger"
     isInitializing: boolean;
 
     // Auth state
@@ -277,6 +278,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     connector: null,
     connectorExcludeKey: null,
     walletAccountId: null,
+    walletId: null,
     isInitializing: true,
 
     // Auth state
@@ -359,6 +361,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             clearSessionHint();
             set({
                 walletAccountId: null,
+                walletId: null,
                 isAuthenticated: false,
                 hasAcceptedTerms: false,
                 isAuthenticating: false,
@@ -448,6 +451,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             markSessionHint();
             set({
                 walletAccountId: accountId,
+                walletId: wallet.manifest.id,
                 isAuthenticated: true,
                 hasAcceptedTerms: loginResponse.termsAccepted,
                 user: {
@@ -501,6 +505,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         clearSessionHint();
         set({
             walletAccountId: null,
+            walletId: null,
             isAuthenticated: false,
             hasAcceptedTerms: false,
             isAuthenticating: false,
@@ -552,17 +557,16 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 // If wallet state is gone, the session cookie is useless — log out.
                 const { connector, init } = get();
                 const conn = connector ?? (await init());
-                let walletValid = false;
+                let walletId: string | null = null;
                 if (conn) {
                     try {
-                        await conn.wallet();
-                        walletValid = true;
+                        walletId = (await conn.wallet()).manifest.id;
                     } catch {
                         // Wallet has no accounts — localStorage was likely cleared
                     }
                 }
 
-                if (!walletValid) {
+                if (!walletId) {
                     try {
                         await authLogout();
                     } catch {
@@ -574,6 +578,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         hasAcceptedTerms: false,
                         user: null,
                         walletAccountId: null,
+                        walletId: null,
                     });
                     return;
                 }
@@ -587,6 +592,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         hasAcceptedV1Terms: user.hasAcceptedV1Terms ?? false,
                     },
                     walletAccountId: user.accountId,
+                    walletId,
                 });
                 identifyAnalyticsUser(user.accountId);
             } else {
@@ -596,6 +602,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     hasAcceptedTerms: false,
                     user: null,
                     walletAccountId: null,
+                    walletId: null,
                 });
             }
         } catch (error) {
@@ -605,6 +612,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 hasAcceptedTerms: false,
                 user: null,
                 walletAccountId: null,
+                walletId: null,
             });
         }
     },
@@ -838,6 +846,7 @@ export const useNear = () => {
     const {
         connector,
         walletAccountId,
+        walletId,
         isInitializing,
         isAuthenticated,
         hasAcceptedTerms,
@@ -1015,6 +1024,7 @@ export const useNear = () => {
         connector,
         accountId,
         walletAccountId,
+        walletId,
         isInitializing,
         isAuthenticated,
         hasAcceptedTerms,

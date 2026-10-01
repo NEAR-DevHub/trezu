@@ -13,6 +13,7 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { Address } from "@/components/address";
 import { CopyButton } from "@/components/copy-button";
 import { Icon } from "@/components/icon";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -101,13 +102,14 @@ export function SidebarProfileMenu({
         );
     }
 
-    const displayName =
-        profile?.name && profile.name !== accountId ? profile.name : accountId;
+    const profileName =
+        profile?.name && profile.name !== accountId ? profile.name : undefined;
+    const shortAccountId = <Address address={accountId} />;
 
     const avatar = (
         <ProfileAvatarChip
             imageUrl={resolveProfileImageUrl(profile?.image)}
-            name={displayName}
+            name={profileName ?? accountId}
         />
     );
 
@@ -131,9 +133,9 @@ export function SidebarProfileMenu({
             )}
         >
             {avatar}
-            <span className="min-w-0 flex-1 truncate text-start font-semibold text-sm text-gray-900 dark:text-white">
-                {accountId}
-            </span>
+            <div className="min-w-0 flex-1 truncate text-start font-semibold text-sm text-gray-900 dark:text-white">
+                {shortAccountId}
+            </div>
             {isStaging && (
                 // Decorative — the menu itself carries a labelled "Staging" row.
                 <span
@@ -176,12 +178,12 @@ export function SidebarProfileMenu({
             >
                 <div className="flex items-center justify-between gap-3 px-3 py-1">
                     <div className="min-w-0 px-3">
-                        <p className="truncate font-semibold text-sm leading-[1.5]">
-                            {displayName}
-                        </p>
-                        <p className="truncate font-semibold text-xs leading-[1.5] text-muted-foreground">
-                            {accountId}
-                        </p>
+                        <div className="truncate font-semibold text-sm leading-[1.5]">
+                            {profileName ?? shortAccountId}
+                        </div>
+                        <div className="truncate font-semibold text-xs leading-[1.5] text-muted-foreground">
+                            {shortAccountId}
+                        </div>
                     </div>
                     <CopyButton
                         text={accountId}
