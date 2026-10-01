@@ -715,6 +715,7 @@
             "removeTitle": "הסר בקשה",
             "bulkBody": "אתה עומד {action} מספר בקשות. לאחר השליחה, לא ניתן לשנות החלטה זו.",
             "singleBody": "אתה עומד {action} בקשה זו. לאחר האישור, לא ניתן לבטל פעולה זו.",
+            "ledgerBody": "השאר את ה-Ledger שלך פתוח. בשלב הבא תאשר בו את ההצבעה שלך.",
             "actionApprove": "לאשר",
             "actionReject": "לדחות",
             "actionRemove": "להסיר",

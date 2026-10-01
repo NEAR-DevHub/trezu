@@ -713,6 +713,7 @@
             "removeTitle": "Remove request",
             "bulkBody": "You are about to vote to {action} multiple requests. Once submitted, this decision cannot be changed.",
             "singleBody": "You are about to vote to {action} this request. Once submitted, this decision cannot be changed.",
+            "ledgerBody": "Keep your Ledger unlocked. You'll confirm your vote there next.",
             "actionApprove": "approve",
             "actionReject": "reject",
             "actionRemove": "remove",

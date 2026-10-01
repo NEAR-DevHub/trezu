@@ -715,6 +715,7 @@
             "removeTitle": "Hapus Permintaan",
             "bulkBody": "Anda akan {action} beberapa permintaan. Setelah dikirim, keputusan ini tidak dapat diubah.",
             "singleBody": "Anda akan {action} permintaan ini. Setelah dikonfirmasi, tindakan ini tidak dapat dibatalkan.",
+            "ledgerBody": "Biarkan Ledger Anda tetap tidak terkunci. Selanjutnya Anda akan mengonfirmasi suara Anda di sana.",
             "actionApprove": "menyetujui",
             "actionReject": "menolak",
             "actionRemove": "menghapus",

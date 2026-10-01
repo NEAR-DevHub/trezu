@@ -715,6 +715,7 @@
             "removeTitle": "Xóa yêu cầu",
             "bulkBody": "Bạn sắp {action} nhiều yêu cầu. Sau khi gửi, quyết định này không thể thay đổi.",
             "singleBody": "Bạn sắp {action} yêu cầu này. Sau khi xác nhận, hành động này không thể hoàn tác.",
+            "ledgerBody": "Hãy giữ Ledger của bạn ở trạng thái mở khóa. Tiếp theo, bạn sẽ xác nhận phiếu bầu trên đó.",
             "actionApprove": "phê duyệt",
             "actionReject": "từ chối",
             "actionRemove": "xóa",
