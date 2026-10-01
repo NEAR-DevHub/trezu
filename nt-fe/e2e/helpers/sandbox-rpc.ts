@@ -168,6 +168,32 @@ async function signAndSend(
             `Transaction execution failed: ${JSON.stringify(status.Failure)}`,
         );
     }
+
+    // broadcast_tx_commit only waits for execution, not finality. Callers that
+    // immediately act on chain state derived from this tx (e.g. logging in as
+    // an account right after createAccount adds its key) can race a
+    // finalized-block read that hasn't caught up yet, so block here until the
+    // tx is final — same one-shot mechanism approveProposal already uses
+    // below for cross-contract receipts, just with a higher wait_until.
+    const txHash = (txResult as { transaction?: { hash?: string } }).transaction
+        ?.hash;
+    if (txHash) {
+        await fetch(SANDBOX_RPC, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                id: 1,
+                method: "EXPERIMENTAL_tx_status",
+                params: {
+                    tx_hash: txHash,
+                    sender_account_id: signerId,
+                    wait_until: "FINAL",
+                },
+            }),
+        });
+    }
+
     return txResult;
 }
 
