@@ -483,7 +483,6 @@
             "lastUpdated": "Last updated {time}",
             "notUpdated": "Not updated yet",
             "justNow": "now",
-            "moments": "moments",
             "checking": "Checking refresh status…",
             "unavailable": "Refresh status unavailable",
             "updateTreasuryData": "Update treasury data"
@@ -723,7 +722,9 @@
             "insufficientBalance": "Requests <highlight>{ids}</highlight> cannot be approved due to insufficient balance. Your approval will only apply to the remaining requests.",
             "approveBlockedBulk": "{count, plural, one {# selected request can't be approved right now — unselect it to continue.} other {# selected requests can't be approved right now — unselect them to continue.}}",
             "remove": "Remove",
-            "confirm": "Confirm"
+            "preparingRemove": "Preparing removal",
+            "confirm": "Confirm",
+            "preparingVote": "Preparing your vote"
         },
         "expanded": {
             "recipient": "Recipient",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "Expires",
-        "created": "Created",
+        "executed": "Executed",
+        "rejected": "Rejected",
+        "failed": "Failed",
         "expired": "Expired",
-        "removed": "Removed"
+        "removed": "Removed",
+        "absolute": "{label} on {date}"
     },
     "relativeTime": {
-        "justNow": "Just now",
-        "moments": "moments"
+        "justNow": "Just now"
     },
     "amount": {
         "network": "Network: {network}"

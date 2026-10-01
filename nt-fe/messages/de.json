@@ -483,7 +483,6 @@
             "lastUpdated": "Zuletzt aktualisiert {time}",
             "notUpdated": "Noch nicht aktualisiert",
             "justNow": "jetzt",
-            "moments": "Momente",
             "checking": "Aktualisierungsstatus wird geprüft…",
             "unavailable": "Aktualisierungsstatus nicht verfügbar",
             "updateTreasuryData": "Treasury-Daten aktualisieren"
@@ -723,7 +722,9 @@
             "insufficientBalance": "Anfragen <highlight>{ids}</highlight> können wegen unzureichenden Guthabens nicht genehmigt werden. Ihre Genehmigung gilt nur für die verbleibenden Anfragen.",
             "approveBlockedBulk": "{count, plural, one {# ausgewählte Anfrage kann derzeit nicht genehmigt werden — heben Sie die Auswahl auf, um fortzufahren.} other {# ausgewählte Anfragen können derzeit nicht genehmigt werden — heben Sie die Auswahl auf, um fortzufahren.}}",
             "remove": "Entfernen",
-            "confirm": "Bestätigen"
+            "preparingRemove": "Entfernen wird vorbereitet",
+            "confirm": "Bestätigen",
+            "preparingVote": "Abstimmung wird vorbereitet"
         },
         "expanded": {
             "recipient": "Empfänger",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "Läuft ab",
-        "created": "Erstellt",
+        "executed": "Ausgeführt",
+        "rejected": "Abgelehnt",
+        "failed": "Fehlgeschlagen",
         "expired": "Abgelaufen",
-        "removed": "Entfernt"
+        "removed": "Entfernt",
+        "absolute": "{label} am {date}"
     },
     "relativeTime": {
-        "justNow": "Gerade eben",
-        "moments": "Momente"
+        "justNow": "Gerade eben"
     },
     "amount": {
         "network": "Netzwerk: {network}"

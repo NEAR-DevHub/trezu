@@ -123,6 +123,7 @@ pub enum ErrorCode {
     RelaySpendRecordFailed,
     ConfKeyringRejected,
     ConfAuthTokensMissing,
+    ConfLedgerBalanceMismatch,
     // ── p2: distinct alertable failures surfaced by the raw-error migration ──
     ConfJwtRefreshFailed,
     ConfJwtPersistFailed,
@@ -333,6 +334,13 @@ impl ErrorCode {
                 surface: S::UserAction,
                 dependency: Some(D::OneClick),
                 title: "user action / confidential auth / 1Click response missing tokens — intent marked failed",
+            },
+            C::ConfLedgerBalanceMismatch => EventSpec {
+                code: "CONF_LEDGER_BALANCE_MISMATCH",
+                priority: P::P1,
+                surface: S::BackgroundJob,
+                dependency: Some(D::OneClick),
+                title: "background job / confidential ledger / head balance diverged from 1Click — serving live balances until it reconciles",
             },
             C::ConfJwtRefreshFailed => EventSpec {
                 code: "CONF_JWT_REFRESH_FAILED",
@@ -716,6 +724,7 @@ impl ErrorCode {
         ErrorCode::RelaySpendRecordFailed,
         ErrorCode::ConfKeyringRejected,
         ErrorCode::ConfAuthTokensMissing,
+        ErrorCode::ConfLedgerBalanceMismatch,
         ErrorCode::ConfJwtRefreshFailed,
         ErrorCode::ConfJwtPersistFailed,
         ErrorCode::BulkConfSubmitFailed,

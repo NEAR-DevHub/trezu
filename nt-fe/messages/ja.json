@@ -483,7 +483,6 @@
             "lastUpdated": "最終更新: {time}",
             "notUpdated": "まだ更新されていません",
             "justNow": "今",
-            "moments": "しばらく",
             "checking": "更新ステータスを確認中…",
             "unavailable": "更新ステータスを利用できません",
             "updateTreasuryData": "トレジャリーのデータを更新"
@@ -723,7 +722,9 @@
             "insufficientBalance": "残高不足のため、リクエスト<highlight>{ids}</highlight>は承認できません。承認は残りのリクエストにのみ適用されます。",
             "approveBlockedBulk": "{count, plural, one {選択した # 件のリクエストは現在承認できません。続行するには選択を解除してください。} other {選択した # 件のリクエストは現在承認できません。続行するには選択を解除してください。}}",
             "remove": "削除",
-            "confirm": "確認"
+            "preparingRemove": "削除を準備しています",
+            "confirm": "確認",
+            "preparingVote": "投票を準備しています"
         },
         "expanded": {
             "recipient": "受取人",
@@ -2414,13 +2415,15 @@
     },
     "statusDate": {
         "expires": "有効期限",
-        "created": "作成日",
+        "executed": "実行済み",
+        "rejected": "却下済み",
+        "failed": "失敗",
         "expired": "失効",
-        "removed": "削除済み"
+        "removed": "削除済み",
+        "absolute": "{date} に{label}"
     },
     "relativeTime": {
-        "justNow": "たった今",
-        "moments": "わずか前"
+        "justNow": "たった今"
     },
     "amount": {
         "network": "ネットワーク: {network}"
