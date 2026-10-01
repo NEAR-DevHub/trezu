@@ -40,6 +40,7 @@ import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { decimalOrNull } from "@/lib/amount-format";
 import { trackEvent } from "@/lib/analytics";
 import { refreshConfidentialHistory, type TreasuryAsset } from "@/lib/api";
+import { wasShownToUser } from "@/lib/app-error";
 import { hasPermission } from "@/lib/config-utils";
 import { useNear } from "@/stores/near-store";
 import { PaymentFormSection } from "../payments/components/payment-form-section";
@@ -277,11 +278,12 @@ function MoveAssetWizard({ asset, onExit }: MoveAssetWizardProps) {
             onExit();
         } catch (error) {
             console.error("Move assets error", error);
-            form.setError("amount", {
-                type: "manual",
-                message:
-                    error instanceof Error ? error.message : t("errors.failed"),
-            });
+            if (!wasShownToUser(error)) {
+                form.setError("amount", {
+                    type: "manual",
+                    message: t("errors.failed"),
+                });
+            }
             setStep(0);
         }
     };

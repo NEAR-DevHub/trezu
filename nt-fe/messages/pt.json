@@ -2448,8 +2448,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Por favor, conecte a carteira e aceite os termos para continuar.",
         "transactionNotApproved": "A transação não foi aprovada na sua carteira.",
-        "failedSubmitVote": "Falha ao enviar voto",
-        "failedSubmitVotes": "Falha ao enviar votos",
         "viewRequest": "Ver solicitação",
         "proposalRemoved": "Sua proposta foi removida",
         "voteSubmitted": "Seu voto foi enviado",
@@ -2965,6 +2963,62 @@
             "tooManyDecimals": "Casas decimais demais para este token",
             "exceedsBalance": "O valor excede o saldo público",
             "failed": "Não foi possível preparar o pedido de movimentação. Tente novamente."
+        }
+    },
+    "errors": {
+        "viewRequests": "Ver solicitações",
+        "viewOnExplorer": "Ver no explorador",
+        "contactUs": "Fale conosco",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "A Trezu está temporariamente indisponível",
+                "body": "Não conseguimos acessar nossos servidores no momento. Seus fundos estão seguros: eles permanecem na sua tesouraria on-chain, não com a Trezu. Tente novamente em alguns minutos."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "A Trezu não pode cobrir a taxa desta ação",
+                "body": "Esta tesouraria usou todas as transações patrocinadas do plano, então nada foi enviado. Faça upgrade do plano para continuar."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Você não pode realizar esta ação",
+                "body": "Sua função nesta tesouraria não permite isso. Nada foi enviado."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Não foi possível enviar esta solicitação",
+                "body": "Algo na solicitação não foi aceito, então nada foi enviado. Atualize a página e tente novamente."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "A transação não foi enviada",
+                "body": "A rede NEAR não está respondendo no momento. Nenhum fundo foi movido. Tente novamente em um minuto."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Ainda não conseguimos confirmar sua transação",
+                "body": "Ela ainda pode ser concluída. Verifique suas solicitações antes de tentar novamente para não enviá-la duas vezes."
+            },
+            "TX_FAILED": {
+                "title": "A transação falhou"
+            },
+            "WALLET_REJECTED": {
+                "title": "A transação não foi aprovada",
+                "body": "Você recusou a solicitação na sua carteira. Nada foi enviado."
+            },
+            "WALLET_FAILED": {
+                "title": "Sua carteira não conseguiu assinar esta transação",
+                "body": "Nada foi enviado. Tente novamente e, se continuar falhando, reconecte ou atualize sua carteira."
+            },
+            "UNEXPECTED": {
+                "title": "Algo deu errado do nosso lado",
+                "body": "Fomos notificados e estamos investigando."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "A tesouraria não tem saldo suficiente para este pagamento.",
+            "REQUEST_EXPIRED": "Esta solicitação expirou antes de ser aprovada.",
+            "REQUEST_NOT_ACTIVE": "Esta solicitação não está mais aberta para votação.",
+            "ALREADY_VOTED": "Você já votou nesta solicitação.",
+            "RECIPIENT_NOT_REGISTERED": "A conta do destinatário ainda não está configurada para receber este token.",
+            "INSUFFICIENT_PERMISSIONS": "Sua função nesta tesouraria não pode realizar esta ação.",
+            "OUT_OF_GAS": "A transação ficou sem gas antes de terminar.",
+            "UNKNOWN": "A blockchain rejeitou esta transação. Veja os detalhes no explorador."
         }
     }
 }

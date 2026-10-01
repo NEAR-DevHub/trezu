@@ -2448,8 +2448,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Silakan hubungkan dompet dan terima ketentuan untuk melanjutkan.",
         "transactionNotApproved": "Transaksi tidak disetujui di dompet Anda.",
-        "failedSubmitVote": "Gagal mengirim suara",
-        "failedSubmitVotes": "Gagal mengirim suara",
         "viewRequest": "Lihat Permintaan",
         "proposalRemoved": "Usulan Anda telah dihapus",
         "voteSubmitted": "Suara Anda telah dikirim",
@@ -2965,6 +2963,62 @@
             "tooManyDecimals": "Terlalu banyak angka desimal untuk token ini",
             "exceedsBalance": "Jumlah melebihi saldo publik",
             "failed": "Tidak dapat menyiapkan permintaan pemindahan. Silakan coba lagi."
+        }
+    },
+    "errors": {
+        "viewRequests": "Lihat permintaan",
+        "viewOnExplorer": "Lihat di explorer",
+        "contactUs": "Hubungi kami",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu sedang tidak tersedia untuk sementara",
+                "body": "Kami tidak dapat menjangkau server kami saat ini. Dana Anda aman: dana tetap berada di treasury Anda secara on-chain, bukan di Trezu. Coba lagi dalam beberapa menit."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu tidak dapat menanggung biaya untuk tindakan ini",
+                "body": "Treasury ini telah memakai semua transaksi bersponsor dalam paketnya, jadi tidak ada yang dikirim. Tingkatkan paket untuk melanjutkan."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Anda tidak dapat melakukan tindakan ini",
+                "body": "Peran Anda di treasury ini tidak mengizinkannya. Tidak ada yang dikirim."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Permintaan ini tidak dapat dikirim",
+                "body": "Ada bagian dari permintaan yang tidak diterima, jadi tidak ada yang dikirim. Muat ulang halaman dan coba lagi."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "Transaksi tidak terkirim",
+                "body": "Jaringan NEAR sedang tidak merespons. Tidak ada dana yang dipindahkan. Coba lagi dalam satu menit."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "Kami belum dapat mengonfirmasi transaksi Anda",
+                "body": "Transaksi mungkin masih berhasil. Periksa permintaan Anda sebelum mencoba lagi agar tidak terkirim dua kali."
+            },
+            "TX_FAILED": {
+                "title": "Transaksi gagal"
+            },
+            "WALLET_REJECTED": {
+                "title": "Transaksi tidak disetujui",
+                "body": "Anda menolak permintaan di wallet Anda. Tidak ada yang dikirim."
+            },
+            "WALLET_FAILED": {
+                "title": "Wallet Anda tidak dapat menandatangani transaksi ini",
+                "body": "Tidak ada yang dikirim. Coba lagi, dan jika terus gagal, hubungkan ulang atau perbarui wallet Anda."
+            },
+            "UNEXPECTED": {
+                "title": "Terjadi kesalahan di pihak kami",
+                "body": "Kami telah diberi tahu dan sedang menyelidikinya."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "Treasury tidak memiliki saldo yang cukup untuk pembayaran ini.",
+            "REQUEST_EXPIRED": "Permintaan ini kedaluwarsa sebelum disetujui.",
+            "REQUEST_NOT_ACTIVE": "Permintaan ini tidak lagi terbuka untuk pemungutan suara.",
+            "ALREADY_VOTED": "Anda sudah memberikan suara pada permintaan ini.",
+            "RECIPIENT_NOT_REGISTERED": "Akun penerima belum disiapkan untuk menerima token ini.",
+            "INSUFFICIENT_PERMISSIONS": "Peran Anda di treasury ini tidak dapat melakukan tindakan ini.",
+            "OUT_OF_GAS": "Transaksi kehabisan gas sebelum selesai.",
+            "UNKNOWN": "Blockchain menolak transaksi ini. Lihat detailnya di explorer."
         }
     }
 }

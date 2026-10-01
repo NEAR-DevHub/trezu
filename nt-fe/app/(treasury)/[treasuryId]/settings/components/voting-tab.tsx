@@ -38,6 +38,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { RoleName } from "@/components/role-name";
 import { WarningAlert } from "@/components/warning-alert";
 import { NumberBadge } from "@/components/number-badge";
+import { wasShownToUser } from "@/lib/app-error";
 
 type VotingFormValues = {
     voteDuration: string;
@@ -337,7 +338,7 @@ export function VotingTab() {
             }));
         } catch (error) {
             console.error("Error creating proposal:", error);
-            toast.error(t("createProposalFailed"));
+            if (!wasShownToUser(error)) toast.error(t("createProposalFailed"));
         } finally {
             setIsSubmittingThreshold(false);
         }

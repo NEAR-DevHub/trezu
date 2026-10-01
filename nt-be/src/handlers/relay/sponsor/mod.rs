@@ -15,17 +15,23 @@ pub mod retry;
 use std::{fmt::Display, future::Future, sync::Arc};
 
 use near_api::{
-    AccountId, NearGas, NearToken, NetworkConfig, Signer, Tokens, Transaction,
+    AccountId, CryptoHash, NearGas, NearToken, NetworkConfig, Signer, Tokens, Transaction,
+    advanced::{ExecuteSignedTransaction, TransactionableOrSigned},
+    errors::{ExecuteTransactionError, RetryError, SendRequestError},
     types::{
         Action,
         transaction::{
-            actions::FunctionCallAction, delegate_action::SignedDelegateAction,
+            SignedTransaction, actions::FunctionCallAction, delegate_action::SignedDelegateAction,
             result::ExecutionFinalResult,
         },
     },
 };
+use near_openapi_types::RpcTransactionError;
 
-use crate::AppState;
+use crate::{
+    AppState,
+    utils::api_error::{ApiError, TxFailureReason},
+};
 
 use self::retry::{RetryPolicy, retry};
 
@@ -84,26 +90,14 @@ impl Sponsor {
     pub async fn relay_meta_tx(
         &self,
         signed: SignedDelegateAction,
-    ) -> Result<ExecutionFinalResult, String> {
+    ) -> Result<ExecutionFinalResult, RelayFailure> {
         let outer_receiver = signed.delegate_action.sender_id.clone();
-        let outcome = self
-            .send_retried("relay meta-tx", || async {
-                Transaction::construct(self.signer_id.clone(), outer_receiver.clone())
-                    .add_action(Action::Delegate(Box::new(signed.clone())))
-                    .with_signer(self.signer.clone())
-                    .send_to(&self.network)
-                    .await
-            })
-            .await
-            .map_err(|e| format!("Failed to relay: {}", e))?;
-        if let Some(receipt_failure) = receipt_failure_message(&outcome) {
-            return Err(receipt_failure);
-        }
-        outcome
-            .clone()
-            .into_result()
-            .map_err(|e| format!("Execution failed: {}", e))?;
-        Ok(outcome)
+        self.send_replay_protected("relay meta-tx", || {
+            Transaction::construct(self.signer_id.clone(), outer_receiver.clone())
+                .add_action(Action::Delegate(Box::new(signed.clone())))
+                .with_signer(self.signer.clone())
+        })
+        .await
     }
 
     /// Replay the sponsor's prepared actions directly to the user's wallet contract.
@@ -112,29 +106,15 @@ impl Sponsor {
         &self,
         receiver: &AccountId,
         actions: Vec<Action>,
-    ) -> Result<ExecutionFinalResult, String> {
-        let outcome = self
-            .send_retried("replay w_execute_signed", || async {
-                let mut transaction =
-                    Transaction::construct(self.signer_id.clone(), receiver.clone());
-                for action in &actions {
-                    transaction = transaction.add_action(action.clone());
-                }
-                transaction
-                    .with_signer(self.signer.clone())
-                    .send_to(&self.network)
-                    .await
-            })
-            .await
-            .map_err(|e| format!("Failed to relay: {}", e))?;
-        if let Some(receipt_failure) = receipt_failure_message(&outcome) {
-            return Err(receipt_failure);
-        }
-        outcome
-            .clone()
-            .into_result()
-            .map_err(|e| format!("Execution failed: {}", e))?;
-        Ok(outcome)
+    ) -> Result<ExecutionFinalResult, RelayFailure> {
+        self.send_replay_protected("replay w_execute_signed", || {
+            let mut transaction = Transaction::construct(self.signer_id.clone(), receiver.clone());
+            for action in &actions {
+                transaction = transaction.add_action(action.clone());
+            }
+            transaction.with_signer(self.signer.clone())
+        })
+        .await
     }
 
     /// Transfer NEAR to `receiver`. NOT retried after broadcast: a bare transfer has
@@ -170,9 +150,205 @@ impl Sponsor {
             .await
             .map_err(|e| e.to_string())
     }
+
+    /// Send a user's relayed transaction, owning every broadcast so the relay
+    /// always knows what may have reached the network.
+    ///
+    /// near-api's own retry loop is bypassed (one send per endpoint, no SDK
+    /// retries): it re-sends the same bytes across endpoints and surfaces only
+    /// the final error, so an early timeout (a broadcast) followed by a refused
+    /// re-send elsewhere would come back looking like "never sent". Here the
+    /// transaction is signed, then tried endpoint by endpoint; while every send
+    /// is proven unsent it is re-signed between attempts, and once any send may
+    /// have been broadcast the same bytes are re-sent to read their outcome and
+    /// the relay can no longer be reported as unsent.
+    async fn send_replay_protected(
+        &self,
+        label: &str,
+        build: impl Fn() -> ExecuteSignedTransaction,
+    ) -> Result<ExecutionFinalResult, RelayFailure> {
+        let policy = RetryPolicy::rpc();
+        let mut maybe_broadcast: Option<SignedTransaction> = None;
+        let mut last_error = String::new();
+
+        for attempt in 1..=policy.max_attempts {
+            if attempt > 1 {
+                tokio::time::sleep(policy.delay).await;
+            }
+            let signed = match &maybe_broadcast {
+                Some(signed) => signed.clone(),
+                None => match build().presign_with(&self.network).await {
+                    Ok(presigned) => match presigned.transaction {
+                        TransactionableOrSigned::Signed((signed, _)) => signed,
+                        TransactionableOrSigned::Transactionable(_) => {
+                            last_error = "presigned transaction is unsigned".to_owned();
+                            continue;
+                        }
+                    },
+                    Err(sign_error) => {
+                        tracing::warn!(
+                            "{label} attempt {attempt}/{} failed to sign: {sign_error}",
+                            policy.max_attempts
+                        );
+                        last_error = sign_error.to_string();
+                        continue;
+                    }
+                },
+            };
+
+            for (index, endpoint) in self.network.rpc_endpoints.iter().enumerate() {
+                let single_shot = NetworkConfig {
+                    rpc_endpoints: vec![endpoint.clone().with_retries(1)],
+                    ..self.network.clone()
+                };
+                match with_signed(build(), signed.clone())
+                    .send_to(&single_shot)
+                    .await
+                {
+                    Ok(outcome) => {
+                        return landed_result(
+                            outcome,
+                            maybe_broadcast.as_ref().map(SignedTransaction::get_hash),
+                        );
+                    }
+                    Err(send_error) => {
+                        if !was_never_broadcast(&send_error) {
+                            maybe_broadcast.get_or_insert_with(|| signed.clone());
+                        }
+                        tracing::warn!(
+                            "{label} attempt {attempt}/{} endpoint {index} failed: {send_error}",
+                            policy.max_attempts
+                        );
+                        last_error = send_error.to_string();
+                    }
+                }
+            }
+        }
+
+        Err(match maybe_broadcast {
+            Some(signed) => RelayFailure::StatusUnknown {
+                tx_hash: Some(signed.get_hash()),
+                message: last_error,
+            },
+            None => RelayFailure::NotSent {
+                message: last_error,
+            },
+        })
+    }
 }
 
-/// Detect a downstream receipt failure in a landed transaction.
+/// Pair already-signed bytes with a fresh handle so the same transaction can be
+/// sent again: near-api consumes the handle on every send.
+fn with_signed(
+    mut handle: ExecuteSignedTransaction,
+    signed: SignedTransaction,
+) -> ExecuteSignedTransaction {
+    handle.transaction = match handle.transaction {
+        TransactionableOrSigned::Transactionable(transactionable)
+        | TransactionableOrSigned::Signed((_, transactionable)) => {
+            TransactionableOrSigned::Signed((signed, transactionable))
+        }
+    };
+    handle
+}
+
+/// How a relayed transaction failed, by what is known about the user's funds.
+#[derive(Debug)]
+pub enum RelayFailure {
+    /// No attempt can have reached the network.
+    NotSent { message: String },
+    /// An attempt may have been broadcast and its outcome was never read.
+    StatusUnknown {
+        tx_hash: Option<CryptoHash>,
+        message: String,
+    },
+    /// The transaction landed and failed.
+    FailedOnChain {
+        tx_hash: CryptoHash,
+        reason: TxFailureReason,
+        message: String,
+    },
+}
+
+impl RelayFailure {
+    pub fn message(&self) -> &str {
+        match self {
+            Self::NotSent { message }
+            | Self::StatusUnknown { message, .. }
+            | Self::FailedOnChain { message, .. } => message,
+        }
+    }
+}
+
+impl From<&RelayFailure> for ApiError {
+    fn from(failure: &RelayFailure) -> Self {
+        match failure {
+            RelayFailure::NotSent { .. } => ApiError::rpc_unavailable(),
+            RelayFailure::StatusUnknown { tx_hash, .. } => {
+                ApiError::tx_status_unknown(tx_hash.map(|hash| hash.to_string()))
+            }
+            RelayFailure::FailedOnChain {
+                tx_hash, reason, ..
+            } => ApiError::tx_failed(tx_hash.to_string(), *reason),
+        }
+    }
+}
+
+/// Whether a send error proves the transaction never reached the network:
+/// it failed before signing, could not connect, or the RPC refused it outright.
+/// Anything else (timeouts, dropped responses) may have been broadcast.
+fn was_never_broadcast(error: &ExecuteTransactionError) -> bool {
+    let send_error = match error {
+        ExecuteTransactionError::TransactionError(
+            RetryError::Critical(send_error) | RetryError::RetriesExhausted(send_error),
+        ) => send_error,
+        ExecuteTransactionError::TransactionError(_) => return true,
+        ExecuteTransactionError::DataConversionError(_) => return false,
+        _ => return true,
+    };
+    match send_error {
+        SendRequestError::RequestCreationError(_) | SendRequestError::RequestValidationError(_) => {
+            true
+        }
+        SendRequestError::ServerError(rpc_error) => matches!(
+            rpc_error,
+            RpcTransactionError::InvalidTransaction { .. } | RpcTransactionError::DoesNotTrackShard
+        ),
+        SendRequestError::TransportError(near_openapi_client::Error::CommunicationError(
+            transport,
+        )) => transport.is_connect(),
+        _ => false,
+    }
+}
+
+/// Turn a landed outcome into the relay result. The outcome is only trusted
+/// as the user's when it belongs to the transaction that may already have been
+/// broadcast (or nothing was); a different transaction failing after that is a
+/// nonce replay of the earlier one, so the outcome is reported as unknown.
+fn landed_result(
+    outcome: ExecutionFinalResult,
+    maybe_broadcast: Option<CryptoHash>,
+) -> Result<ExecutionFinalResult, RelayFailure> {
+    let landed_hash = outcome.transaction().get_hash();
+    if let Some(earlier_tx_hash) = maybe_broadcast.filter(|earlier| *earlier != landed_hash) {
+        return Err(RelayFailure::StatusUnknown {
+            tx_hash: Some(earlier_tx_hash),
+            message: format!(
+                "a later transaction {landed_hash} landed after {earlier_tx_hash} may have been broadcast"
+            ),
+        });
+    }
+    let Some(message) = landed_failure_message(&outcome) else {
+        return Ok(outcome);
+    };
+    Err(RelayFailure::FailedOnChain {
+        tx_hash: landed_hash,
+        reason: TxFailureReason::classify(&message),
+        message,
+    })
+}
+
+/// Describe why a landed transaction failed, if it did.
 ///
 /// `ExecutionFinalResult::into_result()` inspects only the transaction's
 /// top-level `FinalExecutionStatus`. Sputnik's `act_proposal` schedules a
@@ -180,8 +356,18 @@ impl Sponsor {
 /// with no callback that re-raises its failure, so if that call runs out of
 /// gas ("Exceeded the prepaid gas") the receipt fails while the top-level
 /// status stays `Success`. Scan every receipt so such failures surface to the
-/// caller (flagged to the user and logged at ERROR → Sentry) instead of being
-/// silently swallowed.
+/// caller instead of being silently swallowed.
+fn landed_failure_message(outcome: &ExecutionFinalResult) -> Option<String> {
+    if let Some(receipt_failure) = receipt_failure_message(outcome) {
+        return Some(receipt_failure);
+    }
+    outcome
+        .clone()
+        .into_result()
+        .err()
+        .map(|failure| format!("Execution failed: {failure}"))
+}
+
 pub(crate) fn receipt_failure_message(outcome: &ExecutionFinalResult) -> Option<String> {
     let failures = outcome.receipt_failures();
     if failures.is_empty() {
@@ -197,4 +383,59 @@ pub(crate) fn receipt_failure_message(outcome: &ExecutionFinalResult) -> Option<
         failures.len(),
         details
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::utils::api_error::{ApiErrorCode, FundsState};
+
+    fn rpc_error(error: RpcTransactionError) -> ExecuteTransactionError {
+        ExecuteTransactionError::TransactionError(RetryError::RetriesExhausted(
+            SendRequestError::ServerError(error),
+        ))
+    }
+
+    #[test]
+    fn a_timeout_may_have_been_broadcast() {
+        assert!(!was_never_broadcast(&rpc_error(
+            RpcTransactionError::TimeoutError
+        )));
+    }
+
+    #[test]
+    fn a_refused_transaction_was_never_broadcast() {
+        assert!(was_never_broadcast(&rpc_error(
+            RpcTransactionError::InvalidTransaction(Default::default())
+        )));
+        assert!(was_never_broadcast(
+            &ExecuteTransactionError::TransactionError(RetryError::NoRpcEndpoints)
+        ));
+    }
+
+    #[test]
+    fn failures_map_to_the_funds_state_they_prove() {
+        let not_sent = ApiError::from(&RelayFailure::NotSent {
+            message: String::new(),
+        });
+        assert_eq!(not_sent.code, ApiErrorCode::RpcUnavailable);
+        assert_eq!(not_sent.funds_state, FundsState::NotSent);
+        assert!(not_sent.retryable);
+
+        let unknown = ApiError::from(&RelayFailure::StatusUnknown {
+            tx_hash: Some(CryptoHash::default()),
+            message: String::new(),
+        });
+        assert_eq!(unknown.code, ApiErrorCode::TxStatusUnknown);
+        assert!(!unknown.retryable);
+        assert!(unknown.details.tx_hash.is_some());
+
+        let failed = ApiError::from(&RelayFailure::FailedOnChain {
+            tx_hash: CryptoHash::default(),
+            reason: TxFailureReason::AlreadyVoted,
+            message: String::new(),
+        });
+        assert_eq!(failed.funds_state, FundsState::FailedOnchain);
+        assert_eq!(failed.details.reason, Some(TxFailureReason::AlreadyVoted));
+    }
 }

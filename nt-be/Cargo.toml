@@ -9,7 +9,7 @@ async-trait = "0.1"
 axum = { version = "0.8.7", features = ["macros"] }
 tokio = { version = "1", features = ["full"] }
 tokio-util = "0.7"
-tower-http = { version = "0.6", features = ["cors", "trace"] }
+tower-http = { version = "0.6", features = ["cors", "trace", "request-id"] }
 near-api = "0.8"
 near-account-id = "2.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -47,6 +47,7 @@ near-jsonrpc-client = "0.20.0"
 near-jsonrpc-primitives = "0.34"
 near-primitives = "0.34.3"
 near-openapi-types = "0.7.0"
+near-openapi-client = "0.7.0"
 once_cell = "1.21.3"
 regex = "1.11"
 borsh = "1.5.7"

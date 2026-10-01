@@ -66,6 +66,7 @@ import { NumberBadge } from "@/components/number-badge";
 import { useSearchParams, useRouter } from "next/navigation";
 import { trackEvent } from "@/lib/analytics";
 import { useMediaQuery } from "@/hooks/use-media-query";
+import { wasShownToUser } from "@/lib/app-error";
 
 interface Member {
     accountId: string;
@@ -278,7 +279,9 @@ export default function MembersPage() {
             });
         } catch (error) {
             reportError(error, "Failed to create proposal");
-            toast.error(tMembers("policy.createProposalFailed"));
+            if (!wasShownToUser(error)) {
+                toast.error(tMembers("policy.createProposalFailed"));
+            }
             throw error;
         }
     };

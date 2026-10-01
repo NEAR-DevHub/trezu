@@ -2448,8 +2448,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "Devam etmek için lütfen cüzdanı bağlayın ve şartları kabul edin.",
         "transactionNotApproved": "İşlem cüzdanınızda onaylanmadı.",
-        "failedSubmitVote": "Oy gönderilemedi",
-        "failedSubmitVotes": "Oylar gönderilemedi",
         "viewRequest": "Talebi Görüntüle",
         "proposalRemoved": "Öneriniz kaldırıldı",
         "voteSubmitted": "Oyunuz gönderildi",
@@ -2965,6 +2963,62 @@
             "tooManyDecimals": "Bu token için çok fazla ondalık basamak",
             "exceedsBalance": "Tutar herkese açık bakiyeyi aşıyor",
             "failed": "Taşıma isteği hazırlanamadı. Lütfen tekrar deneyin."
+        }
+    },
+    "errors": {
+        "viewRequests": "İstekleri görüntüle",
+        "viewOnExplorer": "Explorer'da görüntüle",
+        "contactUs": "Bize ulaşın",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu geçici olarak kullanılamıyor",
+                "body": "Şu anda sunucularımıza ulaşamıyoruz. Fonlarınız güvende: Trezu'da değil, zincir üzerindeki hazinenizde duruyor. Birkaç dakika içinde tekrar deneyin."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu bu işlemin ücretini karşılayamıyor",
+                "body": "Bu hazine, planındaki tüm sponsorlu işlemleri kullandı, bu yüzden hiçbir şey gönderilmedi. Devam etmek için planı yükseltin."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "Bu işlemi gerçekleştiremezsiniz",
+                "body": "Bu hazinedeki rolünüz buna izin vermiyor. Hiçbir şey gönderilmedi."
+            },
+            "REQUEST_REJECTED": {
+                "title": "Bu istek gönderilemedi",
+                "body": "İstekteki bir şey kabul edilmedi, bu yüzden hiçbir şey gönderilmedi. Sayfayı yenileyip tekrar deneyin."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "İşlem gönderilmedi",
+                "body": "NEAR ağı şu anda yanıt vermiyor. Hiçbir fon taşınmadı. Bir dakika içinde tekrar deneyin."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "İşleminizi henüz doğrulayamıyoruz",
+                "body": "Hâlâ gerçekleşebilir. İki kez göndermemek için tekrar denemeden önce isteklerinizi kontrol edin."
+            },
+            "TX_FAILED": {
+                "title": "İşlem başarısız oldu"
+            },
+            "WALLET_REJECTED": {
+                "title": "İşlem onaylanmadı",
+                "body": "İsteği cüzdanınızda reddettiniz. Hiçbir şey gönderilmedi."
+            },
+            "WALLET_FAILED": {
+                "title": "Cüzdanınız bu işlemi imzalayamadı",
+                "body": "Hiçbir şey gönderilmedi. Tekrar deneyin; sorun devam ederse cüzdanınızı yeniden bağlayın veya güncelleyin."
+            },
+            "UNEXPECTED": {
+                "title": "Bizim tarafımızda bir sorun oluştu",
+                "body": "Bilgilendirildik ve inceliyoruz."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "Hazinede bu ödeme için yeterli bakiye yok.",
+            "REQUEST_EXPIRED": "Bu isteğin süresi onaylanmadan önce doldu.",
+            "REQUEST_NOT_ACTIVE": "Bu istek artık oylamaya açık değil.",
+            "ALREADY_VOTED": "Bu istek için zaten oy kullandınız.",
+            "RECIPIENT_NOT_REGISTERED": "Alıcının hesabı bu token'ı almak için henüz ayarlanmamış.",
+            "INSUFFICIENT_PERMISSIONS": "Bu hazinedeki rolünüz bu işlemi gerçekleştiremez.",
+            "OUT_OF_GAS": "İşlem tamamlanamadan gas tükendi.",
+            "UNKNOWN": "Blok zinciri bu işlemi reddetti. Ayrıntıları gezginde görün."
         }
     }
 }

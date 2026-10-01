@@ -1,6 +1,8 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAppErrorCopy } from "@/hooks/use-app-error-copy";
+import { toAppError } from "@/lib/app-error";
 import { http as axios } from "@/lib/http";
 import { base64ToJson, nanosToMs } from "@/lib/utils";
 import { useNearStore } from "@/stores/near-store";
@@ -26,6 +28,7 @@ const APPROVAL_POLL_INTERVAL_MS = 10_000;
  */
 export function useWalletFlow() {
     const tWErr = useTranslations("wallet.errors");
+    const getErrorCopy = useAppErrorCopy();
     const tWProposal = useTranslations("wallet.proposal");
     const walletProposalLabels = useMemo<WalletProposalLabels>(
         () => ({
@@ -274,7 +277,9 @@ export function useWalletFlow() {
             }
 
             if (submittedProposalIds.length === 0) {
-                throw new Error(tWErr("noProposalIds"));
+                setError(tWErr("noProposalIds"));
+                setStep("error");
+                return;
             }
 
             setProposalIds(submittedProposalIds);
@@ -296,9 +301,9 @@ export function useWalletFlow() {
             router.replace(`/wallet?${newParams.toString()}`);
 
             setStep("waiting-approval");
-        } catch (e: any) {
+        } catch (e) {
             console.error("Failed to create proposal:", e);
-            setError(e.message || tWErr("createProposalFailed"));
+            setError(getErrorCopy(toAppError(e)).body);
             setStep("error");
         }
     }, [
@@ -310,6 +315,7 @@ export function useWalletFlow() {
         createProposal,
         walletProposalLabels,
         tWErr,
+        getErrorCopy,
     ]);
 
     const checkApproval = useCallback(async () => {

@@ -8,7 +8,24 @@ use sentry::integrations::tower::{NewSentryLayer, SentryHttpLayer};
 use std::sync::Arc;
 use tokio_util::sync::CancellationToken;
 use tower_http::cors::{AllowOrigin, Any, CorsLayer};
+use tower_http::request_id::{
+    MakeRequestId, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
+};
 use tower_http::trace::{DefaultOnFailure, TraceLayer};
+
+const REQUEST_ID_HEADER: header::HeaderName = header::HeaderName::from_static("x-request-id");
+
+/// Short enough for a user to read out as the "Error ID", and unique enough to
+/// find one request's logs alongside its timestamp.
+#[derive(Clone, Copy)]
+struct ShortRequestId;
+
+impl MakeRequestId for ShortRequestId {
+    fn make_request_id<B>(&mut self, _request: &Request<B>) -> Option<RequestId> {
+        let id = uuid::Uuid::new_v4().simple().to_string();
+        HeaderValue::from_str(&id[..12]).ok().map(RequestId::new)
+    }
+}
 
 fn main() {
     tokio::runtime::Builder::new_multi_thread()
@@ -89,6 +106,7 @@ async fn async_main() {
             header::HeaderName::from_static("sentry-trace"),
             header::HeaderName::from_static("baggage"),
         ])
+        .expose_headers([REQUEST_ID_HEADER])
         .allow_credentials(true);
 
     let open_cors = CorsLayer::new()
@@ -133,15 +151,25 @@ async fn async_main() {
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<Body>| {
+                    let request_id = request
+                        .headers()
+                        .get(REQUEST_ID_HEADER)
+                        .and_then(|value| value.to_str().ok())
+                        .unwrap_or_default();
+                    sentry::configure_scope(|scope| scope.set_tag("request_id", request_id));
                     tracing::info_span!(
                         "http_request",
                         method = %request.method(),
                         path = %request.uri().path(),
-                        request_id = %uuid::Uuid::new_v4(),
+                        request_id = %request_id,
                     )
                 })
                 .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
         )
+        // The id is returned as `x-request-id` so the frontend can show it as the
+        // Error ID. Both wrap `TraceLayer` so the span reads the same id.
+        .layer(PropagateRequestIdLayer::new(REQUEST_ID_HEADER))
+        .layer(SetRequestIdLayer::new(REQUEST_ID_HEADER, ShortRequestId))
         .layer(SentryHttpLayer::new().enable_transaction())
         .layer(NewSentryLayer::<Request<Body>>::new_from_top());
 

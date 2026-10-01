@@ -31,12 +31,14 @@ use near_api::{
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-use crate::handlers::relay::confidential::extract_v1_signer_hash_from_kind;
+use crate::{
+    handlers::relay::confidential::extract_v1_signer_hash_from_kind, utils::api_error::ApiError,
+};
 
 // ─── Request / response DTOs ─────────────────────────────────────────────────────
 
-/// Error returned by relay handlers: an HTTP status plus a JSON body.
-pub type RelayError = (StatusCode, Json<RelayResponse>);
+/// Error returned by relay handlers.
+pub type RelayError = ApiError;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -67,53 +69,54 @@ pub struct RelayRequest {
 #[serde(rename_all = "camelCase")]
 pub struct RelayResponse {
     pub success: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub error: Option<String>,
     /// Ids of the proposals created by an `add_proposal` relay, in submission
-    /// order. Absent on vote relays and on failures.
+    /// order. Absent on vote relays.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub proposal_ids: Option<Vec<u64>>,
+    pub tx_hash: String,
 }
 
-/// Build an error response from a status and message.
+/// Build the error for a relay step that failed before anything was broadcast.
 ///
-/// This is the single choke point every relay failure flows through — parse
-/// rejects, authorization, policy, registrations, and on-chain submission — so
-/// it logs the failure by class: **server errors (5xx)** at `error!`, which the
-/// tracing→Sentry bridge turns into an alert, and **client errors (4xx)** —
-/// invalid delegate action, forbidden, payment-required — at `warn!` only, so a
-/// caller sending a bad request can't spam Sentry with false alarms. The message
-/// is a field (not the log message) so failures group by status, not by text.
+/// `msg` is logged, never sent to the client: the frontend picks its copy from
+/// the error code.
 pub fn error_response(status: StatusCode, msg: impl Into<String>) -> RelayError {
-    let msg = msg.into();
-    if status.is_server_error() {
-        // Sponsor-side failure blocking proposal creation/votes for real
-        // users. A Sentry alert rule on `alert_priority:p1` routes it to Telegram.
+    logged(ApiError::rejected_before_send(status), &msg.into())
+}
+
+/// The single choke point every relay failure flows through. Alertable failures
+/// log at `error!`, which the tracing→Sentry bridge turns into an alert routed
+/// to Telegram on `alert_priority:p1`; caller-caused ones log at `warn!` only,
+/// so a bad request can't spam Sentry. The message is a field (not the log
+/// message) so failures group by code, not by text.
+pub fn logged(error: RelayError, msg: &str) -> RelayError {
+    if error.is_alertable() {
         crate::error_event!(
             crate::error_event::ErrorCode::RelaySubmitFailed,
-            status = %status,
+            status = %error.status,
+            code = ?error.code,
+            tx_hash = ?error.details.tx_hash,
             error = %msg
         );
     } else {
-        tracing::warn!(status = %status, error = %msg, "relay request rejected");
+        tracing::warn!(
+            status = %error.status,
+            code = ?error.code,
+            tx_hash = ?error.details.tx_hash,
+            error = %msg,
+            "relay request rejected"
+        );
     }
-    (
-        status,
-        Json(RelayResponse {
-            success: false,
-            error: Some(msg),
-            proposal_ids: None,
-        }),
-    )
+    error
 }
 
-/// The success body (`{ "success": true }`), carrying the created proposal ids
-/// when the relay was an `add_proposal`.
-pub fn success_response(proposal_ids: Option<Vec<u64>>) -> Json<RelayResponse> {
+/// The success body, carrying the created proposal ids when the relay was an
+/// `add_proposal`.
+pub fn success_response(proposal_ids: Option<Vec<u64>>, tx_hash: String) -> Json<RelayResponse> {
     Json(RelayResponse {
         success: true,
-        error: None,
         proposal_ids,
+        tx_hash,
     })
 }
 

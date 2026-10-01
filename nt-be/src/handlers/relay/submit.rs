@@ -28,6 +28,7 @@ use crate::{
             policy::{self, SpentNear},
         },
     },
+    utils::api_error::ApiError,
 };
 
 /// Relay a sponsored delegate action to the NEAR network.
@@ -200,7 +201,10 @@ pub async fn relay_delegate_action(
     let proposal_ids = operation
         .is_add_proposals()
         .then(|| created_proposal_ids(&outcome, &treasury_id));
-    Ok(success_response(proposal_ids))
+    Ok(success_response(
+        proposal_ids,
+        outcome.transaction().get_hash().to_string(),
+    ))
 }
 
 /// Ids of the proposals this relay created, read from the execution outcome:
@@ -237,8 +241,7 @@ async fn submit_relay(
         }
     };
 
-    // `error_response` logs the failure at ERROR (→ Sentry, tagged
-    // RELAY_SUBMIT_FAILED / p1); no extra log here or the same failure would
-    // produce two events.
-    result.map_err(|error_message| error_response(StatusCode::INTERNAL_SERVER_ERROR, error_message))
+    // `logged` is the only log of this failure; an extra one here would produce
+    // two Sentry events.
+    result.map_err(|failure| parse::logged(ApiError::from(&failure), failure.message()))
 }

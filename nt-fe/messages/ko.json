@@ -2448,8 +2448,6 @@
     "nearStore": {
         "connectAndAcceptTerms": "계속하려면 지갑을 연결하고 약관에 동의해 주세요.",
         "transactionNotApproved": "트랜잭션이 지갑에서 승인되지 않았습니다.",
-        "failedSubmitVote": "투표 제출에 실패했습니다",
-        "failedSubmitVotes": "투표 제출에 실패했습니다",
         "viewRequest": "요청 보기",
         "proposalRemoved": "제안이 제거되었습니다",
         "voteSubmitted": "투표가 제출되었습니다",
@@ -2965,6 +2963,62 @@
             "tooManyDecimals": "이 토큰에 비해 소수 자릿수가 너무 많습니다",
             "exceedsBalance": "금액이 퍼블릭 잔액을 초과합니다",
             "failed": "이동 요청을 준비할 수 없습니다. 다시 시도하세요."
+        }
+    },
+    "errors": {
+        "viewRequests": "요청 보기",
+        "viewOnExplorer": "익스플로러에서 보기",
+        "contactUs": "문의하기",
+        "codes": {
+            "SERVICE_UNAVAILABLE": {
+                "title": "Trezu를 일시적으로 사용할 수 없습니다",
+                "body": "지금은 서버에 연결할 수 없습니다. 자금은 안전합니다. 자금은 Trezu가 아니라 온체인 트레저리에 그대로 있습니다. 몇 분 후에 다시 시도해 주세요."
+            },
+            "SPONSORSHIP_NOT_AVAILABLE": {
+                "title": "Trezu가 이 작업의 수수료를 부담할 수 없습니다",
+                "body": "이 트레저리는 플랜의 스폰서 트랜잭션을 모두 사용했기 때문에 아무것도 전송되지 않았습니다. 계속하려면 플랜을 업그레이드하세요."
+            },
+            "NOT_AUTHORIZED": {
+                "title": "이 작업을 수행할 수 없습니다",
+                "body": "이 트레저리에서의 역할로는 허용되지 않습니다. 아무것도 전송되지 않았습니다."
+            },
+            "REQUEST_REJECTED": {
+                "title": "이 요청을 제출할 수 없습니다",
+                "body": "요청의 일부가 승인되지 않아 아무것도 전송되지 않았습니다. 페이지를 새로 고친 후 다시 시도해 주세요."
+            },
+            "RPC_UNAVAILABLE": {
+                "title": "트랜잭션이 전송되지 않았습니다",
+                "body": "현재 NEAR 네트워크가 응답하지 않습니다. 자금은 이동하지 않았습니다. 1분 후에 다시 시도해 주세요."
+            },
+            "TX_STATUS_UNKNOWN": {
+                "title": "아직 트랜잭션을 확인할 수 없습니다",
+                "body": "아직 처리될 수 있습니다. 두 번 전송하지 않도록 다시 시도하기 전에 요청을 확인하세요."
+            },
+            "TX_FAILED": {
+                "title": "트랜잭션이 실패했습니다"
+            },
+            "WALLET_REJECTED": {
+                "title": "트랜잭션이 승인되지 않았습니다",
+                "body": "지갑에서 요청을 거부했습니다. 아무것도 전송되지 않았습니다."
+            },
+            "WALLET_FAILED": {
+                "title": "지갑이 이 트랜잭션에 서명하지 못했습니다",
+                "body": "아무것도 전송되지 않았습니다. 다시 시도하고, 계속 실패하면 지갑을 다시 연결하거나 업데이트하세요."
+            },
+            "UNEXPECTED": {
+                "title": "저희 쪽에서 문제가 발생했습니다",
+                "body": "알림을 받았으며 확인 중입니다."
+            }
+        },
+        "reasons": {
+            "INSUFFICIENT_BALANCE": "트레저리에 이 결제를 위한 잔액이 부족합니다.",
+            "REQUEST_EXPIRED": "이 요청은 승인되기 전에 만료되었습니다.",
+            "REQUEST_NOT_ACTIVE": "이 요청은 더 이상 투표할 수 없습니다.",
+            "ALREADY_VOTED": "이미 이 요청에 투표했습니다.",
+            "RECIPIENT_NOT_REGISTERED": "수신자 계정이 아직 이 토큰을 받을 수 있도록 설정되지 않았습니다.",
+            "INSUFFICIENT_PERMISSIONS": "이 트레저리에서의 역할로는 이 작업을 수행할 수 없습니다.",
+            "OUT_OF_GAS": "트랜잭션이 완료되기 전에 gas가 소진되었습니다.",
+            "UNKNOWN": "블록체인이 이 트랜잭션을 거부했습니다. 익스플로러에서 세부 정보를 확인하세요."
         }
     }
 }

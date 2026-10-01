@@ -2960,6 +2960,7 @@ dependencies = [
  "near-crypto",
  "near-jsonrpc-client",
  "near-jsonrpc-primitives",
+ "near-openapi-client",
  "near-openapi-types",
  "near-primitives",
  "once_cell",
@@ -5459,6 +5460,7 @@ dependencies = [
  "tower-layer",
  "tower-service",
  "tracing",
+ "uuid",
 ]
 
 [[package]]

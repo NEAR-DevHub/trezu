@@ -324,7 +324,7 @@ mod tests {
         let err = reserve_gas_credit(&pool, &account, PlanType::Plus)
             .await
             .expect_err("no credits");
-        assert_eq!(err.0, StatusCode::PAYMENT_REQUIRED);
+        assert_eq!(err.status, StatusCode::PAYMENT_REQUIRED);
     }
 
     /// A missing `monitored_accounts` row is a backend/data problem, not a
@@ -337,7 +337,7 @@ mod tests {
         let err = reserve_gas_credit(&pool, &account, PlanType::Plus)
             .await
             .expect_err("untracked account");
-        assert_eq!(err.0, StatusCode::INTERNAL_SERVER_ERROR);
+        assert_eq!(err.status, StatusCode::INTERNAL_SERVER_ERROR);
     }
 
     /// Enterprise is unlimited: reservation always succeeds and never decrements.
@@ -368,7 +368,7 @@ mod tests {
             .await
             .expect_err("zero credits must be rejected");
         assert_eq!(
-            err.0,
+            err.status,
             StatusCode::PAYMENT_REQUIRED,
             "zero credits → 402 upgrade prompt"
         );
@@ -388,7 +388,7 @@ mod tests {
             .await
             .expect_err("missing row must be rejected");
         assert_eq!(
-            err.0,
+            err.status,
             StatusCode::INTERNAL_SERVER_ERROR,
             "missing row → 5xx, not 402"
         );

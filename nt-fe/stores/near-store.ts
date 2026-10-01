@@ -13,9 +13,10 @@ import { toast } from "sonner";
 import { create } from "zustand";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
-import { getNearStoreMessages } from "@/i18n/store-messages";
+import { getAppErrorCopy, getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
+import { appErrorAction, markShownToUser, toAppError } from "@/lib/app-error";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -268,6 +269,54 @@ const isFullyAuthenticated = (state: NearStore): boolean => {
         !!state.walletAccountId
     );
 };
+
+/**
+ * Tell the user why their action failed. Declining in the wallet keeps its
+ * own message; every other failure gets copy chosen by the backend's error
+ * code, plus a link to the requests list when the outcome is still unknown.
+ */
+function showActionError(error: unknown, treasuryId: string): void {
+    const appError = toAppError(error);
+    markShownToUser(error);
+    if (appError.code === "WALLET_REJECTED") {
+        toast.error(getNearStoreMessages().transactionNotApproved);
+        return;
+    }
+    trackEvent("transaction_failed", {
+        code: appError.code,
+        funds_state: appError.fundsState,
+        reason: appError.reason,
+    });
+
+    const action = appErrorAction(appError, treasuryId);
+    const copy = getAppErrorCopy(appError, action);
+    if (appError.requestId) {
+        console.error(
+            `Action failed (request ${appError.requestId})`,
+            appError,
+        );
+    }
+    toast.error(copy.title, {
+        description: copy.body,
+        duration: 15000,
+        action:
+            action && copy.actionLabel
+                ? {
+                      label: copy.actionLabel,
+                      onClick: () => window.open(action.href),
+                  }
+                : undefined,
+        // The CTA sits on its own line under the message, aligned with the
+        // text (icon width + gap), rather than squeezed beside it.
+        classNames: action
+            ? {
+                  toast: "flex-wrap",
+                  actionButton:
+                      "!basis-full !shrink !ml-[22px] !mt-1 !px-0 !bg-transparent !text-foreground underline underline-offset-2 hover:!bg-transparent !border-0",
+              }
+            : undefined,
+    });
+}
 
 export const useNearStore = create<NearStore>((set, get) => ({
     // Wallet state
@@ -655,11 +704,6 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 i === 0 ? proposalType : undefined,
                 i === 0 ? addressBookPayment : undefined,
             );
-            if (!relayResult.success) {
-                throw new Error(
-                    relayResult.error || "Failed to relay delegate action",
-                );
-            }
             if (relayResult.proposalIds) {
                 proposalIds.push(...relayResult.proposalIds);
             }
@@ -738,7 +782,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             } else {
                 console.error("Failed to create proposal:", error);
             }
-            toast.error(getNearStoreMessages().transactionNotApproved);
+            showActionError(error, params.treasuryId);
             throw error;
         }
     },
@@ -819,11 +863,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             } else {
                 console.error("Failed to vote proposals:", error);
             }
-            toast.error(
-                votes.length > 1
-                    ? getNearStoreMessages().failedSubmitVotes
-                    : getNearStoreMessages().failedSubmitVote,
-            );
+            showActionError(error, treasuryId);
             throw error;
         }
     },
