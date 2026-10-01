@@ -28,6 +28,7 @@ import { availableBalance } from "@/lib/balance";
 import Big from "@/lib/big";
 import { getPaymentBalanceWarning } from "@/lib/intents-fee";
 import { findMatchingTreasuryAsset } from "@/lib/match-treasury-asset";
+import { sanitizeAmountInput } from "@/lib/sanitize-amount-input";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { FormattedAmount } from "./formatted-amount";
@@ -36,10 +37,6 @@ import { LargeInput } from "./large-input";
 import TokenSelect, { type SelectedTokenData } from "./token-select";
 import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
-
-function sanitizeAmountInput(value: string): string {
-    return value.replace(/[^0-9.]/g, "").replace(/^0+(?=\d)/, "");
-}
 
 function isEntireInputSelected(el: HTMLInputElement): boolean {
     return (
