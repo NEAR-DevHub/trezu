@@ -213,7 +213,7 @@ async fn verify_proposal_access(
                 .map_err(|(status, msg)| error_response(status, msg))?;
             for vote_action in vote_actions {
                 auth_user
-                    .verify_can_perform_action_with_policy(&policy, treasury_id, &vote_action)
+                    .verify_can_perform_action_with_policy(&policy, treasury_id, &vote_action, None)
                     .map_err(|(status, msg)| error_response(status, msg))?;
             }
             Ok(())

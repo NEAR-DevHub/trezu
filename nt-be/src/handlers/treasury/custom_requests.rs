@@ -68,7 +68,7 @@ pub async fn set_custom_requests_setting(
     Json(req): Json<CustomRequestsSetting>,
 ) -> Result<Json<CustomRequestsSetting>, (StatusCode, String)> {
     auth_user
-        .verify_can_perform_action(&state, &dao_id, "ChangePolicy")
+        .verify_can_perform_action(&state, &dao_id, "ChangePolicy", Some("policy"))
         .await?;
 
     // Ensure the monitored_accounts row exists via the canonical path: it enforces the

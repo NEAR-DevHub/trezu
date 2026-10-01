@@ -1,5 +1,5 @@
 import type { Policy, RoleKind } from "@/types/policy";
-import { ProposalKind } from "./proposals-api";
+import type { ProposalKind } from "./proposals-api";
 
 export type ProposalPermissionKind =
     | "transfer"
@@ -275,6 +275,41 @@ export function isRequestor(
     );
 }
 
+function permissionGrantsAction(permission: string, action: string): boolean {
+    const permissionAction = permission.split(":")[1];
+    return permissionAction === action || permissionAction === "*";
+}
+
+/**
+ * True when `kind` or `*` has `AddProposal`, `VoteApprove`, and `VoteReject` together.
+ * A trio on a different kind does not count. `{kind}:*` is handled by `permissionGrantsAction`.
+ */
+const KIND_ACTIONS = new Set(["AddProposal", "VoteApprove", "VoteReject"]);
+
+function hasAddApproveRejectForKind(
+    permissions: string[],
+    kind: string,
+): boolean {
+    const forKind = new Set<string>();
+    const forAny = new Set<string>();
+    for (const permission of permissions) {
+        const sep = permission.indexOf(":");
+        if (sep <= 0) continue;
+        const permissionKind = permission.slice(0, sep);
+        const action = permission.slice(sep + 1);
+        if (
+            (permissionKind !== kind && permissionKind !== "*") ||
+            !KIND_ACTIONS.has(action)
+        ) {
+            continue;
+        }
+        const actions = permissionKind === "*" ? forAny : forKind;
+        actions.add(action);
+        if (actions.size === KIND_ACTIONS.size) return true;
+    }
+    return false;
+}
+
 /**
  * Mirror of nt-be's `role_has_action_permission` + role-membership check: whether `accountId` is in
  * a role holding a permission whose ACTION segment equals `action` or the wildcard `*`. nt-be matches
@@ -282,26 +317,28 @@ export function isRequestor(
  * nt-be `verify_can_perform_action(dao, action)` call must match the same way — otherwise the UI
  * shows an action the backend 403s (or hides one it allows).
  *
- * `action` is either a real SputnikDAO action (`AddProposal`, `VoteApprove`, …) or the proposal-kind
- * label nt-be passes as a gate name (e.g. `ChangePolicy`). Note `ChangePolicy` is a proposal *kind*,
- * not an action, so it only matches wildcard-action roles (`policy:*`, `config:*`, `*:*`) or the
- * synthetic `*:ChangePolicy` fixture — i.e. governance, never a plain Requestor.
+ * A role matches when some permission's action segment equals `action` or `*`. When `kind` is
+ * set, it also matches if that kind — or `*` — has `AddProposal`, `VoteApprove`, and
+ * `VoteReject` together. A trio on a different kind does not.
  */
 export function hasActionPermission(
     policy: Policy | null | undefined,
     accountId: string,
     action: string,
+    kind?: string,
 ): boolean {
     if (!policy || !accountId) return false;
 
-    return policy.roles.some(
-        (role) =>
-            checkRoleMembership(role.kind, accountId) &&
-            role.permissions.some((permission) => {
-                const permissionAction = permission.split(":")[1];
-                return permissionAction === action || permissionAction === "*";
-            }),
-    );
+    return policy.roles.some((role) => {
+        if (!checkRoleMembership(role.kind, accountId)) return false;
+        return (
+            role.permissions.some((permission) =>
+                permissionGrantsAction(permission, action),
+            ) ||
+            (kind !== undefined &&
+                hasAddApproveRejectForKind(role.permissions, kind))
+        );
+    });
 }
 
 /**
@@ -313,5 +350,5 @@ export function canChangePolicy(
     policy: Policy | null | undefined,
     accountId: string,
 ): boolean {
-    return hasActionPermission(policy, accountId, "ChangePolicy");
+    return hasActionPermission(policy, accountId, "ChangePolicy", "policy");
 }

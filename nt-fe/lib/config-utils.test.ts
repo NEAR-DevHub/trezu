@@ -40,10 +40,16 @@ function policyWith(
     };
 }
 
+function kindGovernance(kind: string): string[] {
+    return ["AddProposal", "VoteApprove", "VoteReject"].map(
+        (action) => `${kind}:${action}`,
+    );
+}
+
 describe("canChangePolicy (admin / template-delete gate)", () => {
-    // Mirrors nt-be's action-only matcher: true iff a role holds a permission whose action is
-    // `ChangePolicy` or the wildcard `*`. For real DAOs that means a wildcard-action (governance)
-    // role — never a plain Requestor.
+    // Mirrors nt-be: a wildcard action (`{kind}:*`), or the kind this check asks for (`policy`)
+    // with AddProposal, VoteApprove, and VoteReject together. `*` covers every kind. Two of the
+    // three, the three split across kinds, or the same trio on another kind, fail.
     it("grants on wildcard-action governance roles (policy:*, config:*, *:*)", () => {
         expect(canChangePolicy(policyWith(["policy:*"]), ACCOUNT)).toBe(true);
         expect(canChangePolicy(policyWith(["config:*"]), ACCOUNT)).toBe(true);
@@ -54,6 +60,50 @@ describe("canChangePolicy (admin / template-delete gate)", () => {
         expect(canChangePolicy(policyWith(["*:ChangePolicy"]), ACCOUNT)).toBe(
             true,
         );
+    });
+
+    it("grants when policy or * has AddProposal, VoteApprove, and VoteReject together", () => {
+        expect(
+            canChangePolicy(policyWith(kindGovernance("policy")), ACCOUNT),
+        ).toBe(true);
+        expect(canChangePolicy(policyWith(kindGovernance("*")), ACCOUNT)).toBe(
+            true,
+        );
+    });
+
+    it("denies a trio on a different kind, and grants that trio for its own kind", () => {
+        const vote = policyWith(kindGovernance("vote"));
+        expect(canChangePolicy(vote, ACCOUNT)).toBe(false);
+        expect(hasActionPermission(vote, ACCOUNT, "ChangePolicy", "vote")).toBe(
+            true,
+        );
+        expect(
+            hasActionPermission(
+                policyWith(kindGovernance("config")),
+                ACCOUNT,
+                "ChangePolicy",
+                "config",
+            ),
+        ).toBe(true);
+    });
+
+    it("denies when the three actions are incomplete or split across kinds", () => {
+        expect(
+            canChangePolicy(
+                policyWith(["policy:AddProposal", "policy:VoteApprove"]),
+                ACCOUNT,
+            ),
+        ).toBe(false);
+        expect(
+            canChangePolicy(
+                policyWith([
+                    "policy:AddProposal",
+                    "call:VoteApprove",
+                    "config:VoteReject",
+                ]),
+                ACCOUNT,
+            ),
+        ).toBe(false);
     });
 
     it("denies a Requestor — AddProposal (even *:AddProposal) is not admin", () => {

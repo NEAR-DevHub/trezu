@@ -289,7 +289,7 @@ pub async fn create_proposal_template(
     // on the same capability as filing — `AddProposal` (issue #1046: Requestors manage templates).
     // Deletion is the exception: it stays `ChangePolicy` (admin-only) — see `delete_proposal_template`.
     auth_user
-        .verify_can_perform_action(&state, &dao_id, "AddProposal")
+        .verify_can_perform_action(&state, &dao_id, "AddProposal", None)
         .await?;
 
     let manifest = validate_manifest(&req.manifest).map_err(|e| (StatusCode::BAD_REQUEST, e))?;
@@ -377,7 +377,7 @@ pub async fn update_proposal_template(
         .verify_dao_member_for_http(&state.db_pool, &dao_id)
         .await?;
     auth_user
-        .verify_can_perform_action(&state, &dao_id, "AddProposal")
+        .verify_can_perform_action(&state, &dao_id, "AddProposal", None)
         .await?;
 
     let manifest = match &req.manifest {
@@ -448,13 +448,13 @@ pub async fn delete_proposal_template(
 ) -> Result<StatusCode, (StatusCode, String)> {
     // Member-gated first (see `create_proposal_template`), then the admin action. Deletion is
     // destructive and removes a template other members rely on, so it stays admin-only:
-    // `ChangePolicy`. With the action-only permission matcher this resolves to roles holding a
-    // wildcard-action permission (`policy:*`, `config:*`, `*:*`) — i.e. governance, not Requestors.
+    // `ChangePolicy` for the `policy` kind. That matches a wildcard action (`{kind}:*`) or
+    // `policy`/`*` holding `AddProposal`, `VoteApprove`, and `VoteReject` together.
     auth_user
         .verify_dao_member_for_http(&state.db_pool, &dao_id)
         .await?;
     auth_user
-        .verify_can_perform_action(&state, &dao_id, "ChangePolicy")
+        .verify_can_perform_action(&state, &dao_id, "ChangePolicy", Some("policy"))
         .await?;
 
     let result = sqlx::query!(
