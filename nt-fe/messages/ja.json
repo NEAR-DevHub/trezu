@@ -715,6 +715,7 @@
             "removeTitle": "リクエストを削除",
             "bulkBody": "複数のリクエストを{action}しようとしています。一度送信すると、この決定は変更できません。",
             "singleBody": "このリクエストを{action}しようとしています。一度確認すると、このアクションは取り消せません。",
+            "ledgerBody": "Ledgerのロックを解除したままにしてください。次にLedger上で投票を確認します。",
             "actionApprove": "承認",
             "actionReject": "却下",
             "actionRemove": "削除",

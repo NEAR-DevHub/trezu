@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "@hugeicons/core-free-icons";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { isAxiosError } from "axios";
@@ -16,6 +17,7 @@ import {
     useMemo,
     useState,
 } from "react";
+import { Icon } from "@/components/icon";
 import { PRIVACY_POLICY_HREF } from "@/constants/config";
 import {
     type EarlyAccessAttribution,
@@ -334,6 +336,12 @@ function EarlyAccessModal({
                             </div>
                         )}
                     </div>
+                    <DialogPrimitive.Close
+                        aria-label="Close"
+                        className="absolute right-4 top-4 inline-flex size-9 cursor-pointer items-center justify-center rounded-full text-landing-ink/60 transition-colors hover:bg-landing-ink/5 hover:text-landing-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-landing-ink/30"
+                    >
+                        <Icon icon={XIcon} className="size-4" />
+                    </DialogPrimitive.Close>
                 </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
         </DialogPrimitive.Root>

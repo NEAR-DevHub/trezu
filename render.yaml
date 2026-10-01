@@ -46,6 +46,8 @@ services:
         sync: false
       - key: ANALYTICS_USERS
         sync: false
+      - key: ANALYTICS_SUPER_USERS
+        sync: false
       - key: BALANCE_READ_SOURCE
         sync: false
       - key: CONFIDENTIAL_BALANCE_READ_SOURCE
@@ -134,6 +136,8 @@ services:
       - key: ANALYTICS_API_KEY
         sync: false
       - key: ANALYTICS_USERS
+        sync: false
+      - key: ANALYTICS_SUPER_USERS
         sync: false
       - key: BALANCE_READ_SOURCE
         sync: false

@@ -30,8 +30,7 @@ export function InviteRequired({ landingUrl }: { landingUrl: string }) {
                 </div>
                 <Button
                     asChild
-                    size="xl"
-                    className="mt-3 w-full max-w-60 rounded-full text-base font-bold leading-none"
+                    className="mt-3 w-full max-w-60 rounded-xl bg-general-bg-primary hover:bg-general-bg-primary/90"
                 >
                     <a href={landingUrl}>{t("cta")}</a>
                 </Button>

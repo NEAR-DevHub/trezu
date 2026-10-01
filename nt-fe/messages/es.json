@@ -715,6 +715,7 @@
             "removeTitle": "Eliminar solicitud",
             "bulkBody": "Estás a punto de {action} varias solicitudes. Una vez enviado, esta decisión no se puede cambiar.",
             "singleBody": "Estás a punto de {action} esta solicitud. Una vez confirmado, esta acción no se puede deshacer.",
+            "ledgerBody": "Mantén tu Ledger desbloqueado. A continuación confirmarás tu voto en él.",
             "actionApprove": "aprobar",
             "actionReject": "rechazar",
             "actionRemove": "eliminar",
