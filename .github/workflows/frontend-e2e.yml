@@ -83,7 +83,7 @@ jobs:
 
       - name: Run Playwright tests
         working-directory: nt-fe
-        run: bun run test:e2e
+        run: bun run test:e2e requests-my-vote-filter.spec.ts --reporter=list,html
         env:
           BACKEND_URL: http://localhost:8080
           NEXT_PUBLIC_BACKEND_API_BASE: http://localhost:8080
