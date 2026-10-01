@@ -4,6 +4,7 @@ use std::str::FromStr;
 use bigdecimal::{BigDecimal, Zero};
 use futures::StreamExt;
 use near_account_id::AccountIdRef;
+use serde_json::Value;
 use sqlx::PgPool;
 
 use super::convert::{bronze_to_gold, confidential_gold_event_key};
@@ -17,7 +18,10 @@ use super::repository::{
 use crate::AppState;
 use crate::constants::intents_tokens::get_defuse_tokens_map;
 use crate::handlers::intents::confidential::balances::fetch_confidential_balances;
-use crate::handlers::intents::confidential::gold::cursors::clear_gold_dirty_if_not_advanced;
+use crate::handlers::intents::confidential::gold::cursors::{
+    BalanceCheckState, clear_gold_dirty_if_not_advanced, load_balance_check_state,
+    record_balance_check_failed, record_balance_check_passed,
+};
 use crate::handlers::intents::confidential::types::ConfidentialTxType;
 use crate::handlers::notifications::emitter::emit_gold_ledger_notification;
 
@@ -223,6 +227,7 @@ pub async fn verify_confidential_ledger_heads(state: &AppState, dao_id: &str) {
     let assets: BTreeSet<&String> = api_balances.keys().chain(ledger_heads.keys()).collect();
     let zero = BigDecimal::zero();
     let mut mismatches: Vec<String> = Vec::new();
+    let mut mismatch = serde_json::Map::new();
     for asset in assets {
         if unverifiable.contains(asset.as_str()) {
             continue;
@@ -231,20 +236,90 @@ pub async fn verify_confidential_ledger_heads(state: &AppState, dao_id: &str) {
         let api = api_balances.get(asset.as_str()).unwrap_or(&zero);
         if ledger != api {
             mismatches.push(format!("{asset} ledger={ledger} 1click={api}"));
+            mismatch.insert(
+                asset.clone(),
+                serde_json::json!({ "ledger": ledger.to_string(), "live": api.to_string() }),
+            );
         }
     }
 
+    let previous = match load_balance_check_state(&state.db_pool, dao_id).await {
+        Ok(previous) => previous,
+        Err(e) => {
+            tracing::warn!("balance check state load failed for {}: {}", dao_id, e);
+            BalanceCheckState::default()
+        }
+    };
+
+    // A drifting asset that could not be compared this round is not
+    // reconciled; keep serving live until it is actually verified.
+    let unresolved = previous.unresolved_assets(&unverifiable);
+
     if mismatches.is_empty() {
+        if !unresolved.is_empty() {
+            tracing::warn!(
+                "balance check inconclusive for {}: drifting assets not comparable: {}",
+                dao_id,
+                unresolved.join(",")
+            );
+            return;
+        }
         if let Err(e) = clear_balance_check_errors(&state.db_pool, dao_id).await {
             tracing::warn!("balance check error clear failed for {}: {}", dao_id, e);
         }
+        if let Err(e) = record_balance_check_passed(&state.db_pool, dao_id).await {
+            tracing::warn!("balance check state clear failed for {}: {}", dao_id, e);
+        }
+        if previous.is_failed() {
+            tracing::info!("ledger/1click balance mismatch cleared for {}", dao_id);
+            // Clients refetched on the projection broadcast before this check
+            // ran; evict and notify again so they pick up the ledger reads.
+            state
+                .publish_treasury_projection_updated(dao_id.to_string())
+                .await;
+        }
         return;
+    }
+
+    // Carry unresolved drift forward so it is not forgotten behind this
+    // round's mismatches.
+    for asset in &unresolved {
+        mismatches.push(format!("{asset} not comparable"));
+        let entry = previous.mismatch_entry(asset).cloned().unwrap_or_else(|| {
+            let ledger = ledger_heads.get(asset.as_str()).unwrap_or(&zero);
+            serde_json::json!({ "ledger": ledger.to_string(), "live": Value::Null })
+        });
+        mismatch.insert(asset.clone(), entry);
     }
 
     let detail = mismatches.join("; ");
     tracing::warn!("ledger/1click balance mismatch for {}: {}", dao_id, detail);
     if let Err(e) = record_balance_check_mismatch(&state.db_pool, dao_id, &detail).await {
         tracing::warn!("balance check error record failed for {}: {}", dao_id, e);
+    }
+
+    // One Sentry event per incident: on first failure or when the set of
+    // drifting assets changes, not on every refresh while the drift persists.
+    let mut mismatched_assets: Vec<String> = mismatch.keys().cloned().collect();
+    mismatched_assets.sort();
+    if !previous.is_failed() || previous.mismatched_assets() != mismatched_assets {
+        crate::error_event!(
+            crate::error_event::ErrorCode::ConfLedgerBalanceMismatch,
+            dao_id,
+            assets = %mismatched_assets.join(","),
+            detail = %detail
+        );
+    }
+    if let Err(e) =
+        record_balance_check_failed(&state.db_pool, dao_id, &Value::Object(mismatch)).await
+    {
+        tracing::warn!("balance check state record failed for {}: {}", dao_id, e);
+        return;
+    }
+    if !previous.is_failed() {
+        state
+            .publish_treasury_projection_updated(dao_id.to_string())
+            .await;
     }
 }
 
@@ -328,7 +403,9 @@ mod tests {
     use wiremock::{Mock, MockServer, ResponseTemplate};
 
     use super::*;
-    use crate::handlers::intents::confidential::gold::cursors::mark_gold_dirty;
+    use crate::handlers::intents::confidential::gold::cursors::{
+        is_balance_check_failed, mark_gold_dirty,
+    };
     use crate::utils::test_utils::build_test_state;
 
     const DAO: &str = "proj-test.sputnik-dao.near";
@@ -582,6 +659,21 @@ mod tests {
         .expect("load balance check errors")
     }
 
+    async fn balance_check_state(pool: &PgPool) -> BalanceCheckState {
+        load_balance_check_state(pool, DAO)
+            .await
+            .expect("load balance check state")
+    }
+
+    async fn head_check_failed(pool: &PgPool) -> bool {
+        crate::handlers::public_history::charts::repository::load_confidential_chart_readiness(
+            pool, DAO,
+        )
+        .await
+        .expect("load readiness")
+        .head_check_failed
+    }
+
     #[sqlx::test]
     async fn inline_balance_check_flags_mismatch_and_clears_on_match(pool: PgPool) {
         seed_confidential_dao(&pool).await;
@@ -605,6 +697,7 @@ mod tests {
 
         let mock = MockServer::start().await;
         let state = state_with_mock_api(pool.clone(), &mock).await;
+        let mut events = state.event_tx.subscribe();
 
         // Ledger head is 5 wrap (24 decimals). Matching balances: no error.
         mock_balances(
@@ -616,8 +709,14 @@ mod tests {
         .await;
         verify_confidential_ledger_heads(&state, DAO).await;
         assert!(balance_check_errors(&pool).await.is_empty());
+        assert!(!balance_check_state(&pool).await.is_failed());
+        assert!(!head_check_failed(&pool).await);
+        assert!(!is_balance_check_failed(&pool, DAO).await.unwrap());
+        assert!(events.try_recv().is_err());
 
-        // Drifted balances: error recorded, projected rows untouched.
+        // Drifted balances: error recorded, projected rows untouched, DAO
+        // flagged so balance reads go live and the chart degrades to Stale,
+        // and clients are told to refetch.
         mock_balances(
             &mock,
             serde_json::json!([
@@ -630,8 +729,93 @@ mod tests {
         assert_eq!(errors.len(), 1);
         assert!(errors[0].contains("nep141:wrap.near"));
         assert_eq!(load_unified_rows(&pool).await.len(), 1);
+        let flagged = balance_check_state(&pool).await;
+        assert!(flagged.is_failed());
+        assert_eq!(
+            flagged.mismatched_assets(),
+            vec!["nep141:wrap.near".to_string()]
+        );
+        assert_eq!(
+            flagged.balance_check_mismatch.unwrap()["nep141:wrap.near"]["live"],
+            serde_json::json!("7")
+        );
+        assert!(head_check_failed(&pool).await);
+        assert!(is_balance_check_failed(&pool, DAO).await.unwrap());
+        assert_eq!(events.try_recv().unwrap().account_id, DAO);
 
-        // Fetch failure: check skipped, prior error row stays as-is.
+        // Still drifting on the next refresh: first failure time is kept and
+        // clients are not re-notified.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "8000000000000000000000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert_eq!(
+            balance_check_state(&pool).await.balance_check_failed_at,
+            flagged.balance_check_failed_at
+        );
+        assert!(events.try_recv().is_err());
+
+        // The drifting asset comes back unparseable: nothing else mismatches,
+        // but the flag must survive until that asset is actually verified.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "not-a-number" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(balance_check_state(&pool).await.is_failed());
+        assert_eq!(balance_check_errors(&pool).await.len(), 1);
+        assert!(events.try_recv().is_err());
+
+        // A second asset drifts while the first is still unparseable: the
+        // unresolved first asset is carried into the new record.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "not-a-number" },
+                { "tokenId": "nep141:usdt.tether-token.near", "available": "3000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        let carried = balance_check_state(&pool).await;
+        assert_eq!(
+            carried.mismatched_assets(),
+            vec![
+                "nep141:usdt.tether-token.near".to_string(),
+                "nep141:wrap.near".to_string()
+            ]
+        );
+        assert_eq!(
+            carried.mismatch_entry("nep141:wrap.near").unwrap()["live"],
+            serde_json::json!("8")
+        );
+        let errors = balance_check_errors(&pool).await;
+        assert_eq!(errors.len(), 1);
+        assert!(errors[0].contains("nep141:wrap.near not comparable"));
+        assert!(events.try_recv().is_err());
+
+        // The second asset recovers while the first is still unparseable:
+        // the flag must not clear on the strength of the second alone.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "not-a-number" },
+                { "tokenId": "nep141:usdt.tether-token.near", "available": "0" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(balance_check_state(&pool).await.is_failed());
+        assert!(events.try_recv().is_err());
+
+        // Fetch failure: check skipped, prior error row and flag stay as-is.
         mock.reset().await;
         Mock::given(method("GET"))
             .and(path("/v0/account/balances"))
@@ -640,8 +824,9 @@ mod tests {
             .await;
         verify_confidential_ledger_heads(&state, DAO).await;
         assert_eq!(balance_check_errors(&pool).await.len(), 1);
+        assert!(balance_check_state(&pool).await.is_failed());
 
-        // Matching again: the recorded mismatch clears.
+        // Matching again: the recorded mismatch and the flag clear.
         mock_balances(
             &mock,
             serde_json::json!([
@@ -651,5 +836,98 @@ mod tests {
         .await;
         verify_confidential_ledger_heads(&state, DAO).await;
         assert!(balance_check_errors(&pool).await.is_empty());
+        assert!(!balance_check_state(&pool).await.is_failed());
+        assert!(!head_check_failed(&pool).await);
+        assert!(!is_balance_check_failed(&pool, DAO).await.unwrap());
+        assert_eq!(events.try_recv().unwrap().account_id, DAO);
+    }
+
+    #[sqlx::test]
+    async fn detailless_balance_check_failure_clears_only_on_conclusive_check(pool: PgPool) {
+        seed_confidential_dao(&pool).await;
+        sqlx::query(
+            r#"
+            INSERT INTO bronze_confidential_history_cursors (account_id, backfill_done, last_polled_at)
+            VALUES ($1, true, NOW())
+            "#,
+        )
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .expect("seed bronze cursor");
+
+        let t0 = Utc::now() - Duration::minutes(30);
+        seed_bronze_event(&pool, t0, DAO, None, "nep141:wrap.near", None, "5").await;
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        // Flag set by hand: failure time, no per-asset detail.
+        sqlx::query(
+            "UPDATE gold_confidential_history_cursors SET balance_check_failed_at = NOW() WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .expect("seed flag");
+
+        let mock = MockServer::start().await;
+        let state = state_with_mock_api(pool.clone(), &mock).await;
+        let mut events = state.event_tx.subscribe();
+
+        // Everything comparable matches, but one asset is not comparable:
+        // without detail we cannot know it was not the drifting one.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "5000000000000000000000000" },
+                { "tokenId": "nep141:usdt.tether-token.near", "available": "not-a-number" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        let stale = balance_check_state(&pool).await;
+        assert!(stale.is_failed());
+        assert!(stale.balance_check_mismatch.is_none());
+        assert!(events.try_recv().is_err());
+
+        // A drift is found while another asset is not comparable: both are
+        // recorded so the flag tracks them from here on.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "not-a-number" },
+                { "tokenId": "nep141:usdt.tether-token.near", "available": "3000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        let recorded = balance_check_state(&pool).await;
+        assert_eq!(
+            recorded.mismatched_assets(),
+            vec![
+                "nep141:usdt.tether-token.near".to_string(),
+                "nep141:wrap.near".to_string()
+            ]
+        );
+        assert_eq!(
+            recorded.mismatch_entry("nep141:wrap.near").unwrap(),
+            &serde_json::json!({ "ledger": "5", "live": null })
+        );
+        assert!(events.try_recv().is_err());
+
+        // Conclusive check with every asset comparable and matching: clears.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "5000000000000000000000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(!balance_check_state(&pool).await.is_failed());
+        assert!(!is_balance_check_failed(&pool, DAO).await.unwrap());
+        assert_eq!(events.try_recv().unwrap().account_id, DAO);
     }
 }
