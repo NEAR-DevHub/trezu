@@ -117,24 +117,33 @@ struct VoterVote {
 }
 
 fn parse_voter_votes(opt: &Option<String>) -> Option<Vec<VoterVote>> {
+    // `account:vote,account:vote`. Several statuses for one account are
+    // alternatives (Approved or Rejected). Different accounts stay separate
+    // and must each match.
     opt.as_ref().map(|s| {
-        s.split(',')
-            .filter_map(|pair| {
-                let parts: Vec<&str> = pair.trim().split(':').collect();
-                if parts.len() == 2 {
-                    Some(VoterVote {
-                        account: parts[0].trim().to_string(),
-                        expected_vote: parts[1]
-                            .trim()
-                            .split(',')
-                            .map(|s| s.trim().to_string())
-                            .collect(),
-                    })
-                } else {
-                    None
+        let mut grouped: Vec<VoterVote> = Vec::new();
+        for pair in s.split(',') {
+            let parts: Vec<&str> = pair.trim().splitn(2, ':').collect();
+            if parts.len() != 2 {
+                continue;
+            }
+            let account = parts[0].trim();
+            let vote = parts[1].trim();
+            if account.is_empty() || vote.is_empty() {
+                continue;
+            }
+            if let Some(existing) = grouped.iter_mut().find(|entry| entry.account == account) {
+                if !existing.expected_vote.iter().any(|status| status == vote) {
+                    existing.expected_vote.push(vote.to_string());
                 }
-            })
-            .collect()
+            } else {
+                grouped.push(VoterVote {
+                    account: account.to_string(),
+                    expected_vote: vec![vote.to_string()],
+                });
+            }
+        }
+        grouped
     })
 }
 
@@ -1232,6 +1241,28 @@ mod tests {
     use super::*;
     use crate::handlers::proposals::scraper::{PUBLIC_TO_CONFIDENTIAL_ACTION, ProposalStatus};
     use std::collections::HashMap;
+
+    #[test]
+    fn voter_votes_for_one_account_are_alternatives() {
+        let parsed =
+            parse_voter_votes(&Some("alice.near:Approved,alice.near:Rejected".to_string()))
+                .expect("parsed");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].account, "alice.near");
+        assert_eq!(
+            parsed[0].expected_vote,
+            vec!["Approved".to_string(), "Rejected".to_string()]
+        );
+    }
+
+    #[test]
+    fn voter_votes_for_different_accounts_stay_separate() {
+        let parsed = parse_voter_votes(&Some("alice.near:Approved,bob.near:Rejected".to_string()))
+            .expect("parsed");
+        assert_eq!(parsed.len(), 2);
+        assert_eq!(parsed[0].expected_vote, vec!["Approved".to_string()]);
+        assert_eq!(parsed[1].expected_vote, vec!["Rejected".to_string()]);
+    }
 
     fn ft_transfer_proposal(description: &str) -> Proposal {
         // {"receiver_id":"2c24…c1f2","amount":"7"} base64-encoded.

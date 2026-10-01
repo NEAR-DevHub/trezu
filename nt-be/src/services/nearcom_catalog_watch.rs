@@ -1,6 +1,6 @@
 //! Notify-only watcher for near.com's private token catalog.
 //!
-//! Fetches `apps/defuse-near/src/tokens/production.json` from the private
+//! Fetches `packages/token-catalog/src/production.json` from the private
 //! `defuse-frontend-monorepos` repo via the GitHub Contents API, diffs it
 //! against our vendored [`nearcom-tokens.json`], and sends a Telegram ops
 //! alert summarizing changes. Never writes the vendored file (manual sync).
@@ -16,7 +16,7 @@ use serde_json::Value;
 use crate::AppState;
 
 const UPSTREAM_REPO: &str = "defuse-protocol/defuse-frontend-monorepos";
-const UPSTREAM_PATH: &str = "apps/defuse-near/src/tokens/production.json";
+const UPSTREAM_PATH: &str = "packages/token-catalog/src/production.json";
 const VENDORED_CATALOG: &str = include_str!("../../data/nearcom-tokens.json");
 
 #[derive(Debug, Deserialize)]
