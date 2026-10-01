@@ -219,6 +219,10 @@ fn build_filtered_legs_query(
                           AND ci.proposal_id = gold_treasury_ledger_events.proposal_id
                           AND ci.notes IS NOT NULL
                           AND BTRIM(ci.notes) <> ''
+                          AND BTRIM(ci.notes) NOT IN (
+                              'Confidential proposal via private intents. Details are hidden for privacy.',
+                              'Confidential proposal. Details are hidden for privacy.'
+                          )
                         ORDER BY ci.id DESC
                         LIMIT 1
                     ),
@@ -234,6 +238,10 @@ fn build_filtered_legs_query(
                         END
                           AND ci.notes IS NOT NULL
                           AND BTRIM(ci.notes) <> ''
+                          AND BTRIM(ci.notes) NOT IN (
+                              'Confidential proposal via private intents. Details are hidden for privacy.',
+                              'Confidential proposal. Details are hidden for privacy.'
+                          )
                         ORDER BY ci.id DESC
                         LIMIT 1
                     ),

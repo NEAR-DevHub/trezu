@@ -1384,6 +1384,8 @@ export interface IntentsQuoteResponse {
     signature: string;
     timestamp: string;
     correlationId: string;
+    /** True when the quote proxy injected our app fee. Absent on older quotes. */
+    hasAppFee?: boolean;
 }
 
 /**

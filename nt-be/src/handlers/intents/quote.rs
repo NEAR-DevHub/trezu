@@ -183,6 +183,10 @@ pub async fn get_quote(
     Json(request): Json<QuoteRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
     let body = build_quote_body(&state, &request);
+    // Record the injection decision on the response. The fee list 1Click
+    // returns also contains its own protocol fee, so a length check is not
+    // a reliable signal for callers.
+    let has_app_fee: bool = body.get("appFees").is_some();
 
     // Check confidentiality when dao_id is provided
     if let Some(dao_id) = &request.dao_id {
@@ -195,7 +199,7 @@ pub async fn get_quote(
             let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
             return send_oneclick_request(&state, &url, &body, Some(&access_token))
                 .await
-                .map(Json);
+                .map(|value| Json(with_has_app_fee(value, has_app_fee)));
         }
     }
 
@@ -203,7 +207,14 @@ pub async fn get_quote(
     let access_token = state.env_vars.oneclick_jwt_token.as_deref();
     send_oneclick_request(&state, &url, &body, access_token)
         .await
-        .map(Json)
+        .map(|value| Json(with_has_app_fee(value, has_app_fee)))
+}
+
+fn with_has_app_fee(mut value: Value, has_app_fee: bool) -> Value {
+    if let Some(map) = value.as_object_mut() {
+        map.insert("hasAppFee".to_string(), Value::Bool(has_app_fee));
+    }
+    value
 }
 
 #[cfg(test)]
@@ -274,6 +285,14 @@ mod tests {
             is_payment,
             ..create_test_request()
         }
+    }
+
+    #[test]
+    fn stamps_has_app_fee_on_quote_response() {
+        let charged = with_has_app_fee(serde_json::json!({ "quote": {} }), true);
+        assert_eq!(charged["hasAppFee"], true);
+        let skipped = with_has_app_fee(serde_json::json!({ "quote": {} }), false);
+        assert_eq!(skipped["hasAppFee"], false);
     }
 
     #[test]

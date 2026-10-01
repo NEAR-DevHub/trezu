@@ -329,24 +329,12 @@ pub async fn get_deposit_tokens(
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
-    let state_clone = state.clone();
-    state
-        .cache
-        .cached::<_, DepositAssetsResponse, (StatusCode, String)>(
-            CacheTier::LongTerm,
-            "swap-tokens".to_string(),
-            async move {
-                let deposit = load_deposit_catalog(state_clone.clone()).await?;
-                let oneclick_tokens = fetch_oneclick_tokens(&state_clone)
-                    .await
-                    .unwrap_or_default();
-                let oneclick_ids: HashSet<String> =
-                    oneclick_tokens.into_iter().map(|t| t.asset_id).collect();
-                Ok(filter_catalog_for_swap(deposit, &oneclick_ids))
-            },
-        )
-        .await
-        .map(Json)
+    // Deposit catalog stays cached. Intersect 1Click tokens on each request
+    // so this list does not keep a second snapshot after that cache refreshes.
+    let deposit = load_deposit_catalog(state.clone()).await?;
+    let oneclick_tokens = fetch_oneclick_tokens(&state).await.unwrap_or_default();
+    let oneclick_ids: HashSet<String> = oneclick_tokens.into_iter().map(|t| t.asset_id).collect();
+    Ok(Json(filter_catalog_for_swap(deposit, &oneclick_ids)))
 }
 
 /// Backward-compatible alias of [`get_deposit_tokens`].

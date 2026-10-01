@@ -13,7 +13,6 @@ import {
 } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { getKindFromProposal } from "@/lib/config-utils";
-import { quoteHasAppFee } from "@/lib/exchange-fee";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 import type {
     FunctionCallAction,
@@ -964,7 +963,6 @@ export function extractConfidentialRequestData(
         const isSwap = quoteRequest.recipient === treasuryId;
 
         if (isSwap) {
-            const storedAppFees = quoteRequest.appFees;
             mapped = {
                 type: "swap",
                 data: {
@@ -984,11 +982,7 @@ export function extractConfidentialRequestData(
                     quoteDeadline: quoteRequest.deadline,
                     // Absent on older quotes, which always charged. Explicit
                     // false hides the row when the quote did not inject a fee.
-                    hasAppFee: Array.isArray(storedAppFees)
-                        ? quoteHasAppFee({
-                              appFees: storedAppFees as { fee?: number }[],
-                          })
-                        : undefined,
+                    hasAppFee: quoteResponse.hasAppFee,
                 } as SwapRequestData,
             };
             title = "Confidential Exchange";

@@ -2,20 +2,17 @@ import Big from "@/lib/big";
 
 export const EXCHANGE_FEE_PERCENTAGE = 0.7;
 
-export type QuoteAppFee = {
-    recipient?: string;
-    fee?: number;
-};
-
 /**
- * True when the 1Click quote charged our app fee.
- * `appFees` is one protocol-fee entry when we did not inject, and additional
- * entries when we did.
+ * True when this quote included our app fee.
+ * The quote proxy sets `hasAppFee`. Quotes from before that always charged,
+ * so a missing flag still counts as charged.
  */
 export function quoteHasAppFee(
-    quoteRequest?: { appFees?: QuoteAppFee[] | null } | null,
+    source?: {
+        hasAppFee?: boolean | null;
+    } | null,
 ): boolean {
-    return (quoteRequest?.appFees?.length ?? 0) > 1;
+    return source?.hasAppFee !== false;
 }
 
 /**

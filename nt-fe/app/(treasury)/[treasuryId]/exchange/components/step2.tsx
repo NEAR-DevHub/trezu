@@ -282,9 +282,7 @@ export function Step2({ handleBack }: StepProps) {
                                     // Hide the fee for wraps and for quotes that did not
                                     // inject an app fee (payments, stables).
                                     ...(!isWrapConversion &&
-                                    quoteHasAppFee(
-                                        localLiveQuoteData.quoteRequest,
-                                    )
+                                    quoteHasAppFee(localLiveQuoteData)
                                         ? [
                                               {
                                                   label: tEx(

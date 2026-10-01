@@ -73,7 +73,7 @@ export function buildProposalDescription(
             : undefined,
         depositAddress: proposalData.quote.depositAddress,
         signature: proposalData.signature,
-        hasAppFee: quoteHasAppFee(proposalData.quoteRequest) ? "true" : "false",
+        hasAppFee: quoteHasAppFee(proposalData) ? "true" : "false",
     });
 }
 
