@@ -899,8 +899,9 @@ body[data-onboarding-tour="info-box-dismissed"]
     --general-unofficial-ghost-hover: rgba(255, 255, 255, 0.1); /* #FFFFFF @ 10% alpha */
     --general-success-foreground: rgba(0, 236, 151, 1); /* #00EC97 */
     --general-secondary-foreground: rgb(161, 161, 161); /* #A1A1A1 */
-    /* Toast card is always dark, so keep the error mark readable on it. */
+    /* Toast card is always dark, so keep the error and info marks readable on it. */
     --general-error-icon: rgb(255, 32, 86); /* #FF2056 */
+    --general-info-icon: rgb(96, 165, 250); /* #60A5FA */
     font-family: var(--font-figtree), ui-sans-serif, system-ui, sans-serif;
 }
 
@@ -987,6 +988,8 @@ body[data-onboarding-tour="info-box-dismissed"]
     overflow-wrap: anywhere;
 }
 
+/* Grid placement only. Label, size, and hover come from ToastActionButton.
+   Pass that element as `action`; `{ label, onClick }` is not styled here. */
 [data-sonner-toast] .toaster-action {
     grid-column: 2;
     grid-row: 2;

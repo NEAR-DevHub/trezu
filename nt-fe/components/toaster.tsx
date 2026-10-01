@@ -10,6 +10,7 @@ import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { useMediaQuery } from "@/hooks/use-media-query";
 
+/** Toast action. Pass this element as `action`, not `{ label, onClick }`. */
 const TOAST_ACTION_CLASS =
     "toaster-action text-sm font-bold leading-none text-general-unofficial-ghost-foreground hover:bg-general-unofficial-ghost-hover hover:text-general-unofficial-ghost-foreground";
 
@@ -44,7 +45,8 @@ export function Toaster() {
             closeButton={false}
             offset={isMobile ? 12 : 24}
             mobileOffset={{ top: 12, left: 16, right: 16 }}
-            duration={2000}
+            // Toasts with an action pass 5000 so the link stays clickable.
+            duration={3000}
             toastOptions={{
                 unstyled: false,
                 classNames: {
