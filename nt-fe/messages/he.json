@@ -1285,6 +1285,7 @@
             "removeMember": "עדכון מדיניות - הסרת חבר",
             "removeMembers": "עדכון מדיניות - הסרת חברים",
             "removeMemberSuccess": "בקשת הסרת חבר נוצרה בהצלחה",
+            "removeMembersSuccess": "בקשת הסרת חברים מרובים נוצרה בהצלחה",
             "createProposalFailed": "יצירת בקשת החבר נכשלה. נסה שוב."
         },
         "infoSection": {

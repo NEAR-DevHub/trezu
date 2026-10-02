@@ -324,7 +324,9 @@ export default function MembersPage() {
                 membersToRemove.length > 1
                     ? tMembers("policy.removeMembers")
                     : tMembers("policy.removeMember"),
-                tMembers("policy.removeMemberSuccess"),
+                membersToRemove.length > 1
+                    ? tMembers("policy.removeMembersSuccess")
+                    : tMembers("policy.removeMemberSuccess"),
             );
 
             trackEvent("member-delete-submitted", {

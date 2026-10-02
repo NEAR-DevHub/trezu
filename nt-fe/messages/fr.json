@@ -1285,6 +1285,7 @@
             "removeMember": "Mettre à jour la politique - Supprimer un membre",
             "removeMembers": "Mettre à jour la politique - Supprimer des membres",
             "removeMemberSuccess": "Demande de suppression de membre créée avec succès",
+            "removeMembersSuccess": "Demande de suppression groupée de membres créée avec succès",
             "createProposalFailed": "Échec de la création de la demande de membre. Veuillez réessayer."
         },
         "infoSection": {

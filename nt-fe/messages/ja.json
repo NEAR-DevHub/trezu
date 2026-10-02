@@ -1285,6 +1285,7 @@
             "removeMember": "ポリシー更新 - メンバーを削除",
             "removeMembers": "ポリシー更新 - メンバーを削除",
             "removeMemberSuccess": "メンバー削除リクエストが正常に作成されました",
+            "removeMembersSuccess": "メンバー一括削除リクエストが正常に作成されました",
             "createProposalFailed": "メンバーリクエストの作成に失敗しました。もう一度お試しください。"
         },
         "infoSection": {
