@@ -103,7 +103,7 @@ export function VotingTab() {
                     .refine((val) => Number(val) < 1000, {
                         message: t("validation.max"),
                     })
-                    .refine((val) => Number.isInteger(Number(val)), {
+                    .refine((val) => /^\d+$/.test(val), {
                         message: t("validation.whole"),
                     }),
                 thresholds: z.record(z.string(), z.number()),
