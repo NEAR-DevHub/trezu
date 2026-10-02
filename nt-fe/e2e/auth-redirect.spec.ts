@@ -1,5 +1,8 @@
 import { test, expect, type Page } from "@playwright/test";
+import { AccountMenuComponent } from "./components/account-menu.component";
 import {
+    MOCK_MANIFEST,
+    MOCK_WALLET_EXECUTOR_JS,
     maybeFulfillMockWalletRequest,
     seedMockWalletAccount,
 } from "./helpers/mock-wallet";
@@ -59,6 +62,78 @@ const SUBSCRIPTION = {
     creditsResetAt: "2026-05-06T00:00:00Z",
     monthlyUsedVolumeCents: 0,
 };
+
+const METEOR_WALLET_ID = "meteor-wallet";
+const METEOR_EXECUTOR_PATH = "/_near-connect-test/meteor-wallet.js";
+const METEOR_SIGN_OUT_PROBE = "https://meteor-sign-out.test/probe";
+
+/**
+ * Serve a stand-in for Meteor Wallet under its real manifest id. Its signOut
+ * pings a probe URL: real Meteor's signOut opens the "Execute Action" prompt
+ * (#1441), so any call to it is what Trezu's sign-out must avoid.
+ * Register after setupTreasuryMocks so these routes take precedence.
+ */
+async function routeMeteorWallet(page: Page): Promise<{ signOutCalls: number }> {
+    const calls = { signOutCalls: 0 };
+    const manifest = {
+        wallets: [
+            {
+                ...MOCK_MANIFEST.wallets[0],
+                id: METEOR_WALLET_ID,
+                name: "Meteor Wallet",
+                executor: METEOR_EXECUTOR_PATH,
+            },
+        ],
+    };
+    const executor = MOCK_WALLET_EXECUTOR_JS.replace(
+        "async signOut() {",
+        `async signOut() {\n      await fetch('${METEOR_SIGN_OUT_PROBE}').catch(() => {});`,
+    );
+
+    await page.route("**/*", async (route) => {
+        const url = route.request().url();
+        if (url.startsWith(METEOR_SIGN_OUT_PROBE)) {
+            calls.signOutCalls += 1;
+            return route.fulfill({
+                status: 204,
+                headers: { "Access-Control-Allow-Origin": "*" },
+            });
+        }
+        if (url.includes(METEOR_EXECUTOR_PATH)) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/javascript",
+                body: executor,
+            });
+        }
+        if (
+            url.includes("manifest.json") &&
+            (url.includes("/raw.githubusercontent.com/") ||
+                url.includes("/cdn.jsdelivr.net/"))
+        ) {
+            return route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify(manifest),
+            });
+        }
+        return route.fallback();
+    });
+
+    await page.addInitScript(
+        ({ walletId, acct }) => {
+            localStorage.setItem("selected-wallet", walletId);
+            localStorage.setItem(`${walletId}:signedAccountId`, acct);
+            localStorage.setItem(
+                `${walletId}:meteor-account-data`,
+                JSON.stringify({ account: { accountId: acct } }),
+            );
+        },
+        { walletId: METEOR_WALLET_ID, acct: ACCOUNT_ID },
+    );
+
+    return calls;
+}
 
 test.use({ locale: "en-US" });
 test.describe.configure({ timeout: 120_000 });
@@ -340,12 +415,46 @@ test.describe("Auth redirect", () => {
             { timeout: 30_000 },
         );
 
-        // Header SignIn popover (desktop) or profile menu — open then sign out
-        await page.getByText(ACCOUNT_ID, { exact: false }).first().click();
-        await page
-            .getByRole("button", { name: /log out|sign out|disconnect/i })
-            .click();
+        await new AccountMenuComponent(page, ACCOUNT_ID).signOut();
 
         await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
+    });
+
+    /**
+     * Scenario: sign out with Meteor Wallet never calls Meteor's signOut
+     * Requirement: issue #1441 (Meteor "Execute Action" iframe after Sign Out)
+     * Priority: P2
+     */
+    test("sign out with Meteor Wallet does not trigger the wallet sign-out prompt", async ({
+        page,
+    }) => {
+        await setupTreasuryMocks(page, { authenticated: true });
+        const meteor = await routeMeteorWallet(page);
+
+        await test.step("open the dashboard signed in with Meteor", async () => {
+            await page.goto(`/${TREASURY_ID}/dashboard`);
+            await expect(page).toHaveURL(
+                new RegExp(`/${ESCAPED_TREASURY}/dashboard`),
+                { timeout: 30_000 },
+            );
+        });
+
+        await test.step("sign out", async () => {
+            await new AccountMenuComponent(page, ACCOUNT_ID).signOut();
+        });
+
+        await expect(page).toHaveURL(/\/login/, { timeout: 30_000 });
+        // The wallet selection is cleared last (after signOut on the old
+        // path), so once it is gone any signOut call would have been made.
+        await expect
+            .poll(() =>
+                page.evaluate(() => localStorage.getItem("selected-wallet")),
+            )
+            .toBeNull();
+        expect(meteor.signOutCalls).toBe(0);
+        const meteorKeys = await page.evaluate((prefix) =>
+            Object.keys(localStorage).filter((key) => key.startsWith(prefix)),
+        `${METEOR_WALLET_ID}:`);
+        expect(meteorKeys).toEqual([]);
     });
 });
