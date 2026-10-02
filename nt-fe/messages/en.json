@@ -2927,6 +2927,7 @@
         "invalidImage": "Please choose a valid image file.",
         "imageTooLarge": "Image must be 2 MB or smaller.",
         "avatarUploaded": "Avatar uploaded successfully",
+        "displayNameRequiredToSave": "Enter a display name to save your profile",
         "uploadError": "Error occurred while uploading image, please try again.",
         "signInRequired": "Connect your wallet to manage your account."
     },

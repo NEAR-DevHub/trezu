@@ -2928,6 +2928,7 @@
         "imageTooLarge": "La imagen debe tener 2 MB o menos.",
         "signInRequired": "Conecta tu billetera para administrar tu cuenta.",
         "avatarUploaded": "Avatar subido correctamente",
+        "displayNameRequiredToSave": "Introduce un nombre para mostrar para guardar tu perfil",
         "uploadError": "Error al subir la imagen. Inténtalo de nuevo."
     },
     "moveAssets": {
