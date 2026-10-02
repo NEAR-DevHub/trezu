@@ -28,6 +28,9 @@ pub struct EnvVars {
     pub signer_key: SecretKey,
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
+    /// How many times the confidential bulk processor resets `SignFailed`
+    /// recipient hashes (`retry_failed`) before giving up on them.
+    pub confidential_bulk_max_sign_retries: i32,
     pub disable_treasury_creation: bool,
     pub disable_stats_generation: bool,
     pub disable_ft_lockup_scheduler: bool,
@@ -124,6 +127,10 @@ impl Default for EnvVars {
                 .expect("BULK_PAYMENT_SIGNER is not set")
                 .parse()
                 .expect("Invalid BULK_PAYMENT_SIGNER"),
+            confidential_bulk_max_sign_retries: std::env::var("CONFIDENTIAL_BULK_MAX_SIGN_RETRIES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(3),
             fastnear_api_key: std::env::var("FASTNEAR_API_KEY")
                 .expect("FASTNEAR_API_KEY is not set"),
             sputnik_dao_api_base: std::env::var("SPUTNIK_DAO_API_BASE")
