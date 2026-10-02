@@ -560,6 +560,24 @@ export const useNearStore = create<NearStore>((set, get) => ({
 
         // Disconnect wallet
         if (connector) {
+            // Meteor's signOut opens its "Execute Action" prompt on mobile,
+            // which stays over the login page after logout (#1441). We never
+            // add a function-call key, so there is nothing to revoke on the
+            // wallet side: clear its sandbox storage and selection locally.
+            const selectedWalletId =
+                typeof window !== "undefined"
+                    ? window.localStorage.getItem(SELECTED_WALLET_STORAGE_KEY)
+                    : null;
+            if (selectedWalletId === WALLET_IDS.METEOR) {
+                const prefix = `${WALLET_IDS.METEOR}:`;
+                for (const key of Object.keys(window.localStorage)) {
+                    if (key.startsWith(prefix)) {
+                        window.localStorage.removeItem(key);
+                    }
+                }
+                window.localStorage.removeItem(SELECTED_WALLET_STORAGE_KEY);
+                return;
+            }
             await connector.disconnect();
         }
     },
