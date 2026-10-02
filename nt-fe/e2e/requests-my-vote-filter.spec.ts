@@ -1,7 +1,7 @@
 /**
- * Regression coverage for issue #1546: the Requests page "My Vote Status"
- * filter must apply every selected status (union / OR), independent of the
- * order the checkboxes were ticked in.
+ * Regression coverage for issue #1778 (Trezu twin of #1546): the Requests
+ * page "My Vote Status" filter must apply every selected status (union / OR),
+ * independent of the order the checkboxes were ticked in.
  *
  * Two layers, on purpose:
  * - "UI + request" tests run fully mocked. They check the pill and that each
@@ -102,14 +102,14 @@ async function selectMyVoteStatuses(
     }
 }
 
-test.describe("Requests – My Vote Status filter (#1546) – UI + request", () => {
+test.describe("Requests – My Vote Status filter (#1778) – UI + request", () => {
     for (const order of [
         ["No Voted", "Approved"],
         ["Approved", "No Voted"],
     ]) {
         /**
          * Scenario: SC-1 / SC-2: both selected statuses are shown and requested
-         * Requirement: REQ-1 (all selected statuses applied), REQ-2 (order-independent) / issue #1546
+         * Requirement: REQ-1 (all selected statuses applied), REQ-2 (order-independent) / issue #1778
          * Priority: P1
          */
         test(`selecting ${order.join(" → ")} requests both statuses`, async ({
@@ -167,7 +167,7 @@ test.describe("Requests – My Vote Status filter (#1546) – UI + request", () 
  * Real-backend layer. Needs the Docker sandbox (see .agents/skills/sandbox):
  * NEAR RPC :3030, API :8080, test session service :4000.
  */
-test.describe("Requests – My Vote Status filter (#1546) – real backend", () => {
+test.describe("Requests – My Vote Status filter (#1778) – real backend", () => {
     test.describe.configure({ mode: "serial", timeout: 180_000 });
 
     const ids = { approved: -1, rejected: -1, noVote: -1 };
@@ -314,7 +314,7 @@ test.describe("Requests – My Vote Status filter (#1546) – real backend", () 
 
     /**
      * Scenario: SC-3: control: a single status still filters correctly
-     * Requirement: REQ-1 baseline / issue #1546
+     * Requirement: REQ-1 baseline / issue #1778
      * Priority: P1
      */
     test("single status Approved shows only the approved request", async ({
@@ -340,13 +340,14 @@ test.describe("Requests – My Vote Status filter (#1546) – real backend", () 
     ]) {
         /**
          * Scenario: SC-4 / SC-5: two statuses return their union, in either order
-         * Requirement: REQ-1 (union/OR), REQ-2 (order-independent) / issue #1546 Expected Result
+         * Requirement: REQ-1 (union/OR), REQ-2 (order-independent) / issue #1778 Expected Result
          * Priority: P1
          *
-         * fixme: #1546 is still open. The backend ANDs every `voter_votes`
-         * pair (nt-be/src/handlers/proposals/filters.rs), so two statuses for
-         * one account return nothing ("No requests found matching your
-         * filters."). Remove the fixme together with the backend fix.
+         * fixme: #1778 is still open. On `main` the backend ANDs every
+         * `voter_votes` pair (nt-be/src/handlers/proposals/filters.rs), so two
+         * statuses for one account return nothing ("No requests found matching
+         * your filters."). The fix (c6a009c6) is on nearcom_redesign only.
+         * Remove the fixme when it is ported to `main`.
          */
         test.fixme(
             `${order.join(" + ")} shows approved and not-voted requests, not rejected`,
