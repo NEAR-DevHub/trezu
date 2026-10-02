@@ -366,6 +366,7 @@ export default function MembersPage() {
     // Handle bulk delete
     const handleBulkDelete = useCallback(() => {
         if (isMemberActionsDisabled) return;
+        setMemberToDelete(null);
         setIsDeleteModalOpen(true);
     }, [isMemberActionsDisabled]);
 
@@ -583,6 +584,7 @@ export default function MembersPage() {
                                             onClick={() => {
                                                 if (isMemberActionsDisabled)
                                                     return;
+                                                setSelectedMembers([]);
                                                 setMemberToDelete(member);
                                                 setIsDeleteModalOpen(true);
                                             }}
