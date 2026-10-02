@@ -4,7 +4,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { trackEvent } from "@/lib/analytics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -16,7 +15,9 @@ import { TreasuryLogo } from "@/components/treasury-info";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { useTreasury } from "@/hooks/use-treasury";
+import { trackEvent } from "@/lib/analytics";
 import { updateTreasurySettings } from "@/lib/api";
+import { getSvgDimensions } from "@/lib/svg-dimensions";
 import { useNear } from "@/stores/near-store";
 
 const COLOR_OPTIONS = [
@@ -168,6 +169,25 @@ export function GeneralTab() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
+
+        if (file.type === "image/svg+xml") {
+            // SVGs without explicit width/height report browser-default sizes
+            // via Image, so read the size from the markup (width/height or viewBox).
+            file.text()
+                .then((text) => {
+                    const size = getSvgDimensions(text);
+                    if (size?.width === 256 && size.height === 256) {
+                        uploadImageToServer(file);
+                    } else {
+                        toast.error(t("invalidLogo"));
+                    }
+                })
+                .catch(() => toast.error(t("fileReadError")));
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+            return;
+        }
 
         const reader = new FileReader();
 
