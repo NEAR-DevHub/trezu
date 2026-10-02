@@ -37,6 +37,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useIsHistoryRefreshing } from "@/features/activity";
 import { HistoryRefreshButton } from "@/features/activity/components/history-refresh-button";
+import { useDelayedFlag } from "@/hooks/use-delayed-flag";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBalanceChart } from "@/hooks/use-treasury-queries";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
@@ -500,6 +501,13 @@ export default function BalanceWithGraph({
     }
     const displayChartData = frozenChartData.current;
 
+    const isChartLoading =
+        isLoading ||
+        isHistoryRefreshing ||
+        (isFetching && chartData.data.length === 0);
+    // Skip the skeleton for loads that finish almost immediately (flicker).
+    const showChartSkeleton = useDelayedFlag(isChartLoading);
+
     if (isLoadingTokens) {
         return (
             <PageCard className="relative">
@@ -902,11 +910,11 @@ export default function BalanceWithGraph({
                 className={cn(isConfidential ? "hidden" : "")}
                 data-testid="balance-chart"
             >
-                {isLoading ||
-                isHistoryRefreshing ||
-                (isFetching && chartData.data.length === 0) ? (
+                {isChartLoading ? (
                     <div className="h-56 w-full space-y-3 p-4">
-                        <Skeleton className="h-50 w-full" />
+                        {showChartSkeleton && (
+                            <Skeleton className="h-50 w-full" />
+                        )}
                     </div>
                 ) : selectedToken !== "all" &&
                   displayChartData.data.length === 0 ? (
