@@ -55,6 +55,7 @@ export function GeneralTab() {
             z.object({
                 displayName: z
                     .string()
+                    .trim()
                     .min(1, t("validation.displayNameRequired"))
                     .max(100, t("validation.displayNameMax")),
                 accountName: z.string(),
