@@ -164,10 +164,12 @@ export default function MembersPage() {
         ? tMemberValidation("pendingRequest")
         : undefined;
 
-    const { data: joinRequests = [] } = useMemberJoinRequests(
-        canAddMember ? treasuryId : undefined,
-    );
+    const { data: joinRequests = [], isLoading: isJoinRequestsLoading } =
+        useMemberJoinRequests(canAddMember ? treasuryId : undefined);
     const joinRequestCount = joinRequests.length;
+    // Show Pending / Wants to Join together once both are known, so one
+    // doesn't flash in alone while the other is still loading.
+    const areRequestButtonsReady = isMemberDataReady && !isJoinRequestsLoading;
 
     const membersInfoItems = useMemo<MembersInfoItem[]>(
         () => [
@@ -703,12 +705,14 @@ export default function MembersPage() {
                             />
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <PendingButton
-                                id="members-pending-btn"
-                                types={["Change Policy"]}
-                            />
+                            {areRequestButtonsReady && (
+                                <PendingButton
+                                    id="members-pending-btn"
+                                    types={["Change Policy"]}
+                                />
+                            )}
 
-                            {joinRequestCount > 0 && (
+                            {areRequestButtonsReady && joinRequestCount > 0 && (
                                 <AuthButton
                                     permissionKind="policy"
                                     permissionAction="AddProposal"
