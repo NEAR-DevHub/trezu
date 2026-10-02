@@ -1285,6 +1285,7 @@
             "removeMember": "Richtlinie aktualisieren - Mitglied entfernen",
             "removeMembers": "Richtlinie aktualisieren - Mitglieder entfernen",
             "removeMemberSuccess": "Anfrage zur Mitgliederentfernung erfolgreich erstellt",
+            "removeMembersSuccess": "Anfrage zur Entfernung mehrerer Mitglieder erfolgreich erstellt",
             "createProposalFailed": "Mitgliederanfrage konnte nicht erstellt werden. Bitte versuche es erneut."
         },
         "infoSection": {

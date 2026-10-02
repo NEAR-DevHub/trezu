@@ -1285,6 +1285,7 @@
             "removeMember": "Perbarui Kebijakan - Hapus Anggota",
             "removeMembers": "Perbarui Kebijakan - Hapus Anggota",
             "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat",
+            "removeMembersSuccess": "Permintaan penghapusan beberapa anggota berhasil dibuat",
             "createProposalFailed": "Gagal membuat permintaan anggota. Silakan coba lagi."
         },
         "infoSection": {

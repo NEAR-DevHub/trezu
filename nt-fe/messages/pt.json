@@ -1285,6 +1285,7 @@
             "removeMember": "Atualizar política - Remover membro",
             "removeMembers": "Atualizar política - Remover membros",
             "removeMemberSuccess": "Solicitação de remoção de membro criada com sucesso",
+            "removeMembersSuccess": "Solicitação de remoção em massa de membros criada com sucesso",
             "createProposalFailed": "Falha ao criar a solicitação de membro. Tente novamente."
         },
         "infoSection": {

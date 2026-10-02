@@ -1285,6 +1285,7 @@
             "removeMember": "Cập nhật chính sách - Xóa thành viên",
             "removeMembers": "Cập nhật chính sách - Xóa các thành viên",
             "removeMemberSuccess": "Đã tạo thành công yêu cầu xóa thành viên",
+            "removeMembersSuccess": "Yêu cầu xóa nhiều thành viên đã được tạo thành công",
             "createProposalFailed": "Không thể tạo yêu cầu thành viên. Vui lòng thử lại."
         },
         "infoSection": {

@@ -1285,6 +1285,7 @@
             "removeMember": "Politikayı Güncelle - Üye Kaldır",
             "removeMembers": "Politikayı Güncelle - Üyeleri Kaldır",
             "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu",
+            "removeMembersSuccess": "Toplu üye kaldırma talebi başarıyla oluşturuldu",
             "createProposalFailed": "Üye talebi oluşturulamadı. Lütfen tekrar deneyin."
         },
         "infoSection": {

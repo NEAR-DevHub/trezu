@@ -1285,6 +1285,7 @@
             "removeMember": "Update Policy - Remove Member",
             "removeMembers": "Update Policy - Remove Members",
             "removeMemberSuccess": "Member removal request created successfully",
+            "removeMembersSuccess": "Bulk member removal request created successfully",
             "createProposalFailed": "Failed to create member request. Please try again."
         },
         "infoSection": {
