@@ -321,6 +321,15 @@ export default function AccountPage() {
                                                         )}
                                                     />
                                                 </FormControl>
+                                                {form.formState.isDirty &&
+                                                    trimmedDisplayName.length ===
+                                                        0 && (
+                                                        <p className="text-sm text-destructive">
+                                                            {t(
+                                                                "displayNameRequiredToSave",
+                                                            )}
+                                                        </p>
+                                                    )}
                                             </div>
                                         </FormItem>
                                     )}

@@ -2928,6 +2928,7 @@
         "imageTooLarge": "A imagem deve ter 2 MB ou menos.",
         "signInRequired": "Conecte sua carteira para gerenciar sua conta.",
         "avatarUploaded": "Avatar enviado com sucesso",
+        "displayNameRequiredToSave": "Insira um nome de exibição para salvar seu perfil",
         "uploadError": "Erro ao enviar a imagem. Tente novamente."
     },
     "moveAssets": {
