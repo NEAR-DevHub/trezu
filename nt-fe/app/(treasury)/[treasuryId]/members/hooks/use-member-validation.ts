@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo } from "react";
+import { useFormatRoleName } from "@/components/role-name";
 
 interface Member {
     accountId: string;
@@ -25,6 +26,7 @@ export function useMemberValidation(
 ) {
     const tAuth = useTranslations("auth");
     const tMembers = useTranslations("memberValidation");
+    const formatRoleName = useFormatRoleName();
     const { accountId, canAddMember, hasPendingMemberRequest } = options || {};
 
     const roleMembersMap = useMemo(() => {
@@ -49,7 +51,8 @@ export function useMemberValidation(
 
     // Helper to format critical roles list - memoized function
     const formatRolesList = useCallback(
-        (criticalRoles: string[]): string => {
+        (rawRoles: string[]): string => {
+            const criticalRoles = rawRoles.map(formatRoleName);
             if (criticalRoles.length === 1) return criticalRoles[0];
             if (criticalRoles.length === 2)
                 return tMembers("rolesAnd", {
@@ -61,7 +64,7 @@ export function useMemberValidation(
                 last: criticalRoles[criticalRoles.length - 1],
             });
         },
-        [tMembers],
+        [tMembers, formatRoleName],
     );
 
     // Helper to check if roles contain governance - memoized
