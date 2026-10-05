@@ -959,6 +959,28 @@ async fn push_startup_tasks(queues: &JobQueues, pool: &PgPool) {
     }
 }
 
+/// Prefills `dao_proposals.notes` once the leader is up. Detached from the
+/// runtime children: finishing is the normal outcome, not a runtime failure.
+fn spawn_proposal_notes_backfill(pool: PgPool, shutdown: CancellationToken) {
+    tokio::spawn(async move {
+        let backfill =
+            crate::handlers::public_history::proposals::notes_backfill::ProposalNotesBackfill::new(
+                pool,
+            );
+        tokio::select! {
+            _ = shutdown.cancelled() => {}
+            result = backfill.run() => match result {
+                Ok(stats) => tracing::info!(
+                    scanned = stats.scanned,
+                    updated = stats.updated,
+                    "proposal notes backfill complete"
+                ),
+                Err(error) => tracing::error!(error = %error, "proposal notes backfill failed"),
+            },
+        }
+    });
+}
+
 fn install_treasury_sweeper_wakeup(
     queues: &JobQueues,
     state: &Arc<AppState>,
@@ -1001,6 +1023,7 @@ async fn run_leader_runtime(
     let (monitor, queues) = build_cron_runtime(state.clone(), queues, &wake_hub, shutdown.clone());
     if run_startup_tasks {
         push_startup_tasks(&queues, &state.db_pool).await;
+        spawn_proposal_notes_backfill(state.db_pool.clone(), shutdown.clone());
     }
 
     let liveness_pool = state.db_pool.clone();
