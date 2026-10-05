@@ -1,4 +1,5 @@
 import { expect, type Page } from "@playwright/test";
+import { AccountMenuComponent } from "../components/account-menu.component";
 import { ChartComponent } from "../components/chart.component";
 import { CongratsTooltipComponent } from "../components/congrats-tooltip.component";
 import { OnboardingProgressComponent } from "../components/onboarding-progress.component";
@@ -25,6 +26,7 @@ export class DashboardPage extends BasePage {
     readonly congratsTooltip: CongratsTooltipComponent;
     readonly progressWidget: OnboardingProgressComponent;
     readonly chart: ChartComponent;
+    readonly accountMenu: AccountMenuComponent;
 
     constructor(page: Page) {
         super(page);
@@ -33,6 +35,7 @@ export class DashboardPage extends BasePage {
         this.congratsTooltip = new CongratsTooltipComponent(page);
         this.progressWidget = new OnboardingProgressComponent(page);
         this.chart = new ChartComponent(page);
+        this.accountMenu = new AccountMenuComponent(page);
     }
 
     /** Plain navigation to the dashboard URL, with none of `goto()`'s bootstrap-call waits — for specs that gate on the chart's own render instead. */
