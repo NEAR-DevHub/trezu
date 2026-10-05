@@ -178,7 +178,7 @@ async function signAndSend(
     const txHash = (txResult as { transaction?: { hash?: string } }).transaction
         ?.hash;
     if (txHash) {
-        await fetch(SANDBOX_RPC, {
+        const finalityResp = await fetch(SANDBOX_RPC, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -192,6 +192,17 @@ async function signAndSend(
                 },
             }),
         });
+        if (!finalityResp.ok) {
+            throw new Error(
+                `Finality wait failed: HTTP ${finalityResp.status} for tx ${txHash}`,
+            );
+        }
+        const finality = (await finalityResp.json()) as { error?: unknown };
+        if (finality.error) {
+            throw new Error(
+                `Finality wait failed for tx ${txHash}: ${JSON.stringify(finality.error)}`,
+            );
+        }
     }
 
     return txResult;
