@@ -37,6 +37,8 @@ interface DepositAddressViewProps {
     /** Shown above tabs/title (e.g. public slow-network banner). */
     warningSlot?: ReactNode;
     headerSlot?: ReactNode;
+    /** Live deposit progress, rendered between the address card and notices. */
+    statusSlot?: ReactNode;
 }
 
 export function DepositAddressSkeleton({ className }: { className?: string }) {
@@ -91,6 +93,7 @@ export function DepositAddressView({
     className,
     warningSlot,
     headerSlot,
+    statusSlot,
 }: DepositAddressViewProps) {
     const t = useTranslations("depositModal");
 
@@ -117,6 +120,8 @@ export function DepositAddressView({
                 showShare={showShare}
                 onShare={onShare}
             />
+
+            {statusSlot}
 
             <DepositNoticeList
                 notices={notices}

@@ -423,11 +423,11 @@ export function RecentActivity() {
                     const isReceived = isPositiveActivityAmount(
                         activity.amount,
                     );
+                    const status = getActivityStatus(activity);
 
                     if (activity.swap) {
                         const swap = activity.swap;
                         const isDeposit = swap.swapRole === "deposit";
-                        const status = getActivityStatus(activity);
                         const sentSymbol =
                             swap.sentTokenMetadata?.symbol ?? null;
                         const receivedSymbol =
@@ -580,12 +580,30 @@ export function RecentActivity() {
                                         signDisplay="always"
                                     />
                                 </div>
-                                <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
-                                    <FormattedDate
-                                        date={new Date(activity.blockTime)}
-                                        relative
-                                    />
-                                </div>
+                                {status ? (
+                                    <div
+                                        className={cn(
+                                            "flex items-center gap-1 text-xs font-medium",
+                                            status === "failed"
+                                                ? "text-general-destructive-foreground"
+                                                : "text-general-orange-foreground",
+                                        )}
+                                    >
+                                        {status === "pending" ? (
+                                            <Loader2 className="size-3 animate-spin" />
+                                        ) : null}
+                                        {status === "pending"
+                                            ? tDetails("processing")
+                                            : tDetails("failed")}
+                                    </div>
+                                ) : (
+                                    <div className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
+                                        <FormattedDate
+                                            date={new Date(activity.blockTime)}
+                                            relative
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </div>
                     );

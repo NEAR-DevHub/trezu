@@ -236,7 +236,7 @@ pub async fn record_confidential_history_poll_result(
 }
 
 pub async fn mark_confidential_history_activity_due(
-    pool: &PgPool,
+    executor: impl sqlx::PgExecutor<'_>,
     account_id: &str,
 ) -> Result<(), sqlx::Error> {
     let now = Utc::now();
@@ -258,7 +258,7 @@ pub async fn mark_confidential_history_activity_due(
     )
     .bind(account_id)
     .bind(now)
-    .execute(pool)
+    .execute(executor)
     .await?;
 
     Ok(())

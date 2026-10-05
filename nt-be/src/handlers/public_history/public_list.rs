@@ -154,7 +154,7 @@ fn collect_token_ids(legs: &[LegRow]) -> Vec<String> {
     ids.into_iter().collect()
 }
 
-fn fallback_metadata(token_id: &str) -> TokenMetadata {
+pub(crate) fn fallback_metadata(token_id: &str) -> TokenMetadata {
     let symbol = token_id
         .strip_prefix("intents.near:")
         .unwrap_or(token_id)

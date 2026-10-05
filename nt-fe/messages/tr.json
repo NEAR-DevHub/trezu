@@ -396,7 +396,16 @@
             "linkInactiveDescription": "Bu ödemeyi yapmak için bağlantıyı gönderen kişiden yeni bir bağlantı isteyin."
         },
         "expiresInRemaining": "<time>{duration}</time> içinde sona erer – <bold>kullanılmasa bile</bold>.",
-        "addressExpired": "Bu adresin süresi dolmuştur."
+        "addressExpired": "Bu adresin süresi dolmuştur.",
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "Coin Fiyatı",

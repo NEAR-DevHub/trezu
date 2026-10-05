@@ -396,7 +396,16 @@
             "linkInactiveDescription": "Untuk melakukan pembayaran ini, minta tautan baru dari orang yang mengirimkannya."
         },
         "expiresInRemaining": "Kedaluwarsa dalam <time>{duration}</time> – <bold>meski belum digunakan</bold>.",
-        "addressExpired": "Alamat ini telah kedaluwarsa."
+        "addressExpired": "Alamat ini telah kedaluwarsa.",
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "Harga Koin",

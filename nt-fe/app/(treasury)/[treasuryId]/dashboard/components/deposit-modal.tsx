@@ -36,6 +36,7 @@ import {
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useDepositAddressStatus } from "@/hooks/use-deposit-address-status";
 import { useDepositExpiryClock } from "@/hooks/use-deposit-expiry-clock";
+import { useDepositTracker } from "@/hooks/use-deposit-tracker";
 import { useTreasury } from "@/hooks/use-treasury";
 import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
 import {
@@ -73,6 +74,7 @@ import {
     buildPublicWalletOneTimeNotices,
 } from "./deposit/deposit-notices";
 import { DepositSourceCards } from "./deposit/deposit-source-cards";
+import { DepositTrackerPanel } from "./deposit/deposit-tracker-panel";
 import { buildPaySharePath } from "./deposit/deposit-transfer-url";
 import type {
     ConfidentialOrigin,
@@ -202,6 +204,9 @@ function renderBalance(amount: number | string, amountUSD: number) {
         </div>
     );
 }
+
+/** Public addresses are reusable: in-flight deposits seen this long before the address was shown still count. */
+const TRACKER_IN_FLIGHT_LOOKBACK_MS = 10 * 60 * 1000;
 
 export function DepositModal({
     prefillTokenId,
@@ -933,6 +938,44 @@ export function DepositModal({
         (statusIsTerminal ||
             isDepositAddressExpired(oneTimeExpiresAtMs, nowMs));
 
+    // Live deposit progress from the backend tracker. Bridge-routed addresses
+    // only: native NEAR deposits land directly on the treasury account and
+    // have no pre-settlement signal.
+    const trackerChain = selectedNetwork
+        ? (selectedNetwork.chainId ?? selectedNetwork.id)
+        : null;
+    const trackerBridgeScoped =
+        !!trackerChain &&
+        trackerChain !== NEAR_COM_DIRECT_NETWORK_ID &&
+        !trackerChain.toLowerCase().includes(NEAR_NETWORK_ID);
+    const depositTrackerEnabled =
+        step === "address" &&
+        !!depositInfo &&
+        !isLoadingAddress &&
+        depositSource === "public_wallet" &&
+        (isConfidential
+            ? !!depositInfo.quoteDepositAddress
+            : trackerBridgeScoped);
+    const shownDepositAddress = depositInfo?.address ?? null;
+    const [addressShownAtMs, setAddressShownAtMs] = useState<number | null>(
+        null,
+    );
+    useEffect(() => {
+        setAddressShownAtMs(
+            step === "address" && shownDepositAddress ? Date.now() : null,
+        );
+    }, [step, shownDepositAddress]);
+    const { deposits: trackedDeposits } = useDepositTracker({
+        enabled: depositTrackerEnabled,
+        accountId: treasuryId,
+        chain: isConfidential ? null : trackerChain,
+        quoteDepositAddress: isConfidential
+            ? depositInfo?.quoteDepositAddress
+            : null,
+        shownAtMs: addressShownAtMs,
+        inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
+    });
+
     const addressTitle = useMemo(() => {
         if (!isConfidential) {
             return t("publicAddressTitle", {
@@ -1162,6 +1205,14 @@ export function DepositModal({
                                 : undefined
                         }
                         createNewAddressDisabled={isLoadingAddress}
+                        statusSlot={
+                            depositTrackerEnabled ? (
+                                <DepositTrackerPanel
+                                    deposits={trackedDeposits}
+                                    waiting={!oneTimeAddressInactive}
+                                />
+                            ) : undefined
+                        }
                         warningSlot={
                             showAddressWarningBanner ? (
                                 <SlotWarning

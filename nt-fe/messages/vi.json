@@ -396,7 +396,16 @@
             "linkInactiveDescription": "Để thực hiện thanh toán này, hãy yêu cầu người gửi liên kết cung cấp một liên kết mới."
         },
         "expiresInRemaining": "Hết hạn sau <time>{duration}</time> – <bold>kể cả khi chưa dùng</bold>.",
-        "addressExpired": "Địa chỉ này đã hết hạn."
+        "addressExpired": "Địa chỉ này đã hết hạn.",
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "Giá Coin",

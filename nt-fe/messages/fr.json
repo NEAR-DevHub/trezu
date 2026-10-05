@@ -396,7 +396,16 @@
             "linkInactiveDescription": "Pour effectuer ce paiement, demandez un nouveau lien à la personne qui vous l'a envoyé."
         },
         "expiresInRemaining": "Expire dans <time>{duration}</time> – <bold>même si inutilisée</bold>.",
-        "addressExpired": "Cette adresse a expiré."
+        "addressExpired": "Cette adresse a expiré.",
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "Prix de la pièce",

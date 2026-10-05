@@ -23,6 +23,7 @@ use std::sync::Arc;
 use urlencoding::encode;
 
 use crate::config::get_plan_config;
+use crate::handlers::intents::deposit_tracker::activity::in_process_activity_rows;
 use crate::handlers::public_history::{confidential_list, public_list};
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
@@ -1336,6 +1337,21 @@ pub async fn get_recent_activity(
                 })),
             )
         })?;
+    let fetched_ledger_rows = enriched_changes.len() as i64;
+
+    // Deposits the tracker has seen but the ledger has not projected yet lead
+    // the first page; they retire once the exact ledger row exists.
+    let mut enriched_changes = {
+        let mut rows = in_process_activity_rows(&state, &balance_query, &enriched_changes)
+            .await
+            .unwrap_or_else(|e| {
+                tracing::warn!("Failed to load in-process deposits: {}", e);
+                Vec::new()
+            });
+        rows.append(&mut enriched_changes);
+        rows
+    };
+    let total = total + enriched_changes.len() as i64 - fetched_ledger_rows;
 
     // Enrich all recent-activity rows with chain metadata
     let activity_token_ids: Vec<String> = enriched_changes
