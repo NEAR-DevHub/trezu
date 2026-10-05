@@ -19,12 +19,17 @@ export function useProposalStatus(proposal: Proposal, policy: Policy) {
     const depositAddress = isApproved
         ? extractReceiptProposalData(proposal, treasuryId)?.depositAddress
         : undefined;
-    const { data: swapStatus } = useSwapStatus(
+    const { data: swapStatus, isPending } = useSwapStatus(
         depositAddress,
         undefined,
         isApproved,
         treasuryId,
     );
+
+    // Until the first swap status lands, the swap may well still be settling —
+    // don't claim "Executed" yet. A missing (404) or failed lookup falls back
+    // to the on-chain outcome.
+    if (depositAddress && isPending) return "Processing";
 
     return getProposalStatus(proposal, policy, swapStatus?.status);
 }
