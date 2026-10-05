@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "En attente",
+            "processing": "En cours",
             "approved": "Approuvée",
             "rejected": "Rejetée",
             "executed": "Exécutée",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Cette demande est encore en attente et n'a pas encore atteint le nombre de votes requis pour être exécutée.",
+            "processing": "Approuvée et en cours de traitement. Cela ne prend que quelques secondes.",
             "executed": "Exécutée après que {approved} sur {required} membres ont approuvé la demande.",
             "rejected": "Rejetée après que {rejected} sur {required} membres ont voté pour rejeter la demande.",
             "expired": "Expirée car elle n'a pas reçu suffisamment de votes pour être exécutée.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{received}/{required} approbations reçues",
             "expiresAt": "Expire le",
             "expiredAt": "Expirée le",
-            "exchangingTokens": "Échange de tokens",
-            "exchangingTokensBody": "Cette demande a été approuvée par l'équipe. L'échange de tokens est en cours et peut prendre un certain temps.",
+            "processing": "Votre demande est approuvée et en cours de traitement – quelques secondes seulement.",
             "requestFailed": "Demande échouée",
             "requestFailedBody": "L'équipe a approuvé cette demande, mais elle a échoué en raison de fluctuations de taux. Veuillez créer une nouvelle demande et réessayer.",
             "votingPeriod24h": "Période de vote : 24 heures",
@@ -876,8 +877,6 @@
             "reject": "Rejeter",
             "approve": "Approuver",
             "destinationNetwork": "Réseau de destination",
-            "processingPayment": "Paiement en cours",
-            "processingPaymentBody": "Ce paiement a été approuvé par l'équipe et est maintenant en cours de traitement. Cela peut prendre un certain temps.",
             "addMember": "Ajouter un membre",
             "removeMember": "Retirer un membre",
             "member": "Membre",

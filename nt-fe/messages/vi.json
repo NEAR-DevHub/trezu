@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Đang chờ",
+            "processing": "Đang xử lý",
             "approved": "Đã phê duyệt",
             "rejected": "Đã từ chối",
             "executed": "Đã thực thi",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Yêu cầu này vẫn đang chờ và chưa đạt được số phiếu cần thiết để thực thi.",
+            "processing": "Đã được phê duyệt và đang được xử lý. Chỉ mất vài giây.",
             "executed": "Đã thực thi sau khi {approved} trên {required} thành viên phê duyệt yêu cầu.",
             "rejected": "Đã từ chối sau khi {rejected} trên {required} thành viên bỏ phiếu từ chối yêu cầu.",
             "expired": "Đã hết hạn vì không nhận đủ số phiếu để thực thi.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "Đã nhận {received}/{required} phê duyệt",
             "expiresAt": "Hết hạn vào",
             "expiredAt": "Đã hết hạn vào",
-            "exchangingTokens": "Đang trao đổi token",
-            "exchangingTokensBody": "Yêu cầu này đã được đội phê duyệt. Việc trao đổi token đang diễn ra và có thể mất một chút thời gian.",
+            "processing": "Yêu cầu của bạn đã được phê duyệt và đang xử lý - chỉ vài giây.",
             "requestFailed": "Yêu cầu thất bại",
             "requestFailedBody": "Đội đã phê duyệt yêu cầu này, nhưng nó đã thất bại do biến động tỷ giá. Vui lòng tạo yêu cầu mới và thử lại.",
             "votingPeriod24h": "Thời gian bỏ phiếu: 24 giờ",
@@ -876,8 +877,6 @@
             "reject": "Từ chối",
             "approve": "Phê duyệt",
             "destinationNetwork": "Mạng đích",
-            "processingPayment": "Đang xử lý thanh toán",
-            "processingPaymentBody": "Khoản thanh toán này đã được nhóm phê duyệt và đang được xử lý. Có thể mất một chút thời gian để hoàn thành.",
             "addMember": "Thêm thành viên",
             "removeMember": "Xóa thành viên",
             "member": "Thành viên",

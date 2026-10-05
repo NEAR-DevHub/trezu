@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Pendente",
+            "processing": "Processando",
             "approved": "Aprovada",
             "rejected": "Rejeitada",
             "executed": "Executada",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Esta solicitação ainda está pendente e não atingiu o número necessário de votos para execução.",
+            "processing": "Aprovada e em processamento. Leva apenas alguns segundos.",
             "executed": "Executada após {approved} de {required} membros aprovarem a solicitação.",
             "rejected": "Rejeitada após {rejected} de {required} membros votarem para rejeitar a solicitação.",
             "expired": "Expirada por não receber votos suficientes para ser executada.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{received}/{required} aprovações recebidas",
             "expiresAt": "Expira em",
             "expiredAt": "Expirou em",
-            "exchangingTokens": "Trocando tokens",
-            "exchangingTokensBody": "Esta solicitação foi aprovada pela equipe. A troca de tokens está em andamento e pode levar algum tempo.",
+            "processing": "Sua solicitação foi aprovada e está sendo processada - apenas alguns segundos.",
             "requestFailed": "Solicitação falhou",
             "requestFailedBody": "A equipe aprovou esta solicitação, mas ela falhou devido a flutuações de taxa. Por favor, crie uma nova solicitação e tente novamente.",
             "votingPeriod24h": "Período de votação: 24 horas",
@@ -876,8 +877,6 @@
             "reject": "Rejeitar",
             "approve": "Aprovar",
             "destinationNetwork": "Rede de destino",
-            "processingPayment": "Pagamento em andamento",
-            "processingPaymentBody": "Este pagamento foi aprovado pela equipe e está sendo processado. Pode levar algum tempo para ser concluído.",
             "addMember": "Adicionar membro",
             "removeMember": "Remover membro",
             "member": "Membro",

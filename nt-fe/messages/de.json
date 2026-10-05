@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Ausstehend",
+            "processing": "Wird verarbeitet",
             "approved": "Genehmigt",
             "rejected": "Abgelehnt",
             "executed": "Ausgeführt",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Diese Anfrage ist noch ausstehend und hat die zur Ausführung erforderliche Anzahl an Stimmen noch nicht erreicht.",
+            "processing": "Genehmigt und wird jetzt verarbeitet. Das dauert nur wenige Sekunden.",
             "executed": "Ausgeführt, nachdem {approved} von {required} Mitgliedern die Anfrage genehmigt haben.",
             "rejected": "Abgelehnt, nachdem {rejected} von {required} Mitgliedern für die Ablehnung der Anfrage gestimmt haben.",
             "expired": "Abgelaufen, da nicht genügend Stimmen zur Ausführung erhalten wurden.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{received}/{required} Genehmigungen erhalten",
             "expiresAt": "Läuft ab am",
             "expiredAt": "Abgelaufen am",
-            "exchangingTokens": "Token werden getauscht",
-            "exchangingTokensBody": "Diese Anfrage wurde vom Team genehmigt. Der Token-Tausch ist nun in Bearbeitung und kann einige Zeit in Anspruch nehmen.",
+            "processing": "Ihre Anfrage wurde genehmigt und wird verarbeitet – nur wenige Sekunden.",
             "requestFailed": "Anfrage fehlgeschlagen",
             "requestFailedBody": "Das Team hat diese Anfrage genehmigt, sie ist jedoch aufgrund von Kursschwankungen fehlgeschlagen. Bitte erstellen Sie eine neue Anfrage und versuchen Sie es erneut.",
             "votingPeriod24h": "Abstimmungszeitraum: 24 Stunden",
@@ -876,8 +877,6 @@
             "reject": "Ablehnen",
             "approve": "Genehmigen",
             "destinationNetwork": "Zielnetzwerk",
-            "processingPayment": "Zahlung wird verarbeitet",
-            "processingPaymentBody": "Diese Zahlung wurde vom Team genehmigt und wird jetzt verarbeitet. Dies kann einige Zeit dauern.",
             "addMember": "Mitglied hinzufügen",
             "removeMember": "Mitglied entfernen",
             "member": "Mitglied",

@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "대기 중",
+            "processing": "처리 중",
             "approved": "승인됨",
             "rejected": "거부됨",
             "executed": "실행됨",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "이 요청은 아직 대기 중이며 실행에 필요한 투표 수에 도달하지 않았습니다.",
+            "processing": "승인되어 현재 처리 중입니다. 몇 초면 완료됩니다.",
             "executed": "{required}명 중 {approved}명이 요청을 승인한 후 실행되었습니다.",
             "rejected": "{required}명 중 {rejected}명이 거부에 투표한 후 거부되었습니다.",
             "expired": "실행에 필요한 충분한 표를 받지 못해 만료되었습니다.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{required}명 중 {received}명 승인",
             "expiresAt": "만료 시간",
             "expiredAt": "만료됨",
-            "exchangingTokens": "토큰 교환 중",
-            "exchangingTokensBody": "이 요청은 팀에 의해 승인되었습니다. 토큰 교환이 진행 중이며 시간이 다소 걸릴 수 있습니다.",
+            "processing": "요청이 승인되어 처리 중입니다. 몇 초만 기다려 주세요.",
             "requestFailed": "요청 실패",
             "requestFailedBody": "팀이 이 요청을 승인했지만 환율 변동으로 인해 실패했습니다. 새 요청을 생성하고 다시 시도해 주세요.",
             "votingPeriod24h": "투표 기간: 24시간",
@@ -876,8 +877,6 @@
             "reject": "거부",
             "approve": "승인",
             "destinationNetwork": "대상 네트워크",
-            "processingPayment": "결제 처리 중",
-            "processingPaymentBody": "이 결제는 팀에 의해 승인되었으며 현재 처리 중입니다. 완료되는 데 시간이 걸릴 수 있습니다.",
             "addMember": "멤버 추가",
             "removeMember": "멤버 제거",
             "member": "멤버",

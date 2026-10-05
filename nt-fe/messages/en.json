@@ -692,6 +692,7 @@
     "proposals": {
         "status": {
             "pending": "Pending",
+            "processing": "Processing",
             "approved": "Approved",
             "rejected": "Rejected",
             "executed": "Executed",
@@ -702,6 +703,7 @@
         },
         "statusTooltip": {
             "pending": "This request is still pending and has not yet reached the required number of votes for execution.",
+            "processing": "Approved and now being processed. This takes just a few seconds.",
             "executed": "Executed after {approved} of {required} members approved the request.",
             "rejected": "Rejected after {rejected} of {required} members voted to reject the request.",
             "expired": "Expired as it did not receive enough votes to execute.",
@@ -865,8 +867,7 @@
             "approvalsReceived": "{received}/{required} approvals received",
             "expiresAt": "Expires at",
             "expiredAt": "Expired at",
-            "exchangingTokens": "Exchanging tokens",
-            "exchangingTokensBody": "This request has been approved by the team. Token exchange is now in progress and may take some time.",
+            "processing": "Your request is approved and processing - just a few seconds.",
             "requestFailed": "Request failed",
             "requestFailedBody": "The team approved this request, but it failed due to rate fluctuations. Please create a new request and try again.",
             "votingPeriod24h": "Voting period: 24 hours",
@@ -874,8 +875,6 @@
             "reject": "Reject",
             "approve": "Approve",
             "destinationNetwork": "Destination network",
-            "processingPayment": "Processing payment",
-            "processingPaymentBody": "This payment has been approved by the team and is now being processed. It may take some time to complete.",
             "addMember": "Add member",
             "removeMember": "Remove member",
             "member": "Member",

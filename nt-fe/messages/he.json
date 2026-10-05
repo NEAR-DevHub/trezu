@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "ממתין",
+            "processing": "בעיבוד",
             "approved": "אושר",
             "rejected": "נדחה",
             "executed": "בוצע",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "בקשה זו עדיין ממתינה ולא הגיעה למספר ההצבעות הנדרש לביצוע.",
+            "processing": "אושרה ונמצאת כעת בעיבוד. זה ייקח רק כמה שניות.",
             "executed": "בוצעה לאחר ש-{approved} מתוך {required} חברים אישרו את הבקשה.",
             "rejected": "נדחתה לאחר ש-{rejected} מתוך {required} חברים הצביעו לדחיית הבקשה.",
             "expired": "פג תוקף מכיוון שלא התקבלו מספיק הצבעות לביצוע.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{received}/{required} אישורים התקבלו",
             "expiresAt": "פג תוקף ב-",
             "expiredAt": "פג תוקף ב-",
-            "exchangingTokens": "מחליף טוקנים",
-            "exchangingTokensBody": "בקשה זו אושרה על ידי הצוות. החלפת הטוקנים מתבצעת כעת ועשויה לקחת זמן מה.",
+            "processing": "הבקשה שלך אושרה ונמצאת בעיבוד – רק כמה שניות.",
             "requestFailed": "הבקשה נכשלה",
             "requestFailedBody": "הצוות אישר את הבקשה, אך היא נכשלה עקב תנודות בשער. אנא צור בקשה חדשה ונסה שוב.",
             "votingPeriod24h": "תקופת הצבעה: 24 שעות",
@@ -876,8 +877,6 @@
             "reject": "דחייה",
             "approve": "אישור",
             "destinationNetwork": "רשת יעד",
-            "processingPayment": "עיבוד תשלום",
-            "processingPaymentBody": "התשלום אושר על ידי הצוות ומעובד כעת. ייתכן שייקח קצת זמן להשלים.",
             "addMember": "הוספת חבר",
             "removeMember": "הסרת חבר",
             "member": "חבר",

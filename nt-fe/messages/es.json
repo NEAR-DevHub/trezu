@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Pendiente",
+            "processing": "Procesando",
             "approved": "Aprobada",
             "rejected": "Rechazada",
             "executed": "Ejecutada",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Esta solicitud sigue pendiente y aún no ha alcanzado el número de votos requerido para ejecutarse.",
+            "processing": "Aprobada y en proceso. Solo tardará unos segundos.",
             "executed": "Ejecutada después de que {approved} de {required} miembros aprobaran la solicitud.",
             "rejected": "Rechazada después de que {rejected} de {required} miembros votaran en contra.",
             "expired": "Caducada al no recibir suficientes votos para ejecutarse.",
@@ -867,8 +869,7 @@
             "approvalsReceived": "{received}/{required} aprobaciones recibidas",
             "expiresAt": "Caduca el",
             "expiredAt": "Caducó el",
-            "exchangingTokens": "Intercambiando tokens",
-            "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
+            "processing": "Tu solicitud está aprobada y en proceso: solo unos segundos.",
             "requestFailed": "Solicitud fallida",
             "requestFailedBody": "El equipo aprobó esta solicitud, pero falló debido a fluctuaciones de la tasa. Crea una nueva solicitud e inténtalo de nuevo.",
             "votingPeriod24h": "Periodo de votación: 24 horas",
@@ -876,8 +877,6 @@
             "reject": "Rechazar",
             "approve": "Aprobar",
             "destinationNetwork": "Red de destino",
-            "processingPayment": "Procesando pago",
-            "processingPaymentBody": "Este pago ha sido aprobado por el equipo y ahora está siendo procesado. Puede tardar algún tiempo.",
             "addMember": "Añadir miembro",
             "removeMember": "Eliminar miembro",
             "member": "Miembro",
