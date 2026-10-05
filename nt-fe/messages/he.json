@@ -2,7 +2,7 @@
     "common": {
         "loading": "טוען...",
         "notAvailable": "לא זמין",
-        "connecting": "מתחבר...",
+        "connecting": "מתחבר",
         "save": "שמירה",
         "cancel": "ביטול",
         "submit": "שליחה",
@@ -18,7 +18,7 @@
         "exporting": "מייצא",
         "import": "ייבוא",
         "remove": "הסרה",
-        "removing": "מסיר...",
+        "removing": "מסיר",
         "edit": "עריכה",
         "continue": "המשך",
         "select": "בחירה",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "אין לך הרשאה לייצא",
             "quotaExhausted": "ניצלת את כל המכסה שלך",
-            "exporting": "מייצא...",
+            "exporting": "מייצא",
             "export": "ייצוא"
         },
         "empty": {
@@ -940,7 +940,7 @@
                 "voteDescription": "הפרטים מגיעים ממולאים מראש. אתם יוצרים את הבקשה, והצוות מצביע."
             },
             "generateLink": "יצירת קישור הזמנה",
-            "generating": "יוצר...",
+            "generating": "יוצר",
             "generateFailed": "יצירת קישור ההזמנה נכשלה. נסו שוב.",
             "readyTitle": "קישור ההזמנה מוכן",
             "readyDescription": "שלחו אותו לאדם שתרצו להוסיף. הוא יחבר ארנק ויבקש להצטרף.",
@@ -1010,14 +1010,14 @@
             "newMembersCount": "{count, plural, one {# חבר חדש} two {# חברים חדשים} many {# חברים חדשים} other {# חברים חדשים}}",
             "updatedMembers": "חברים מעודכנים",
             "newMembers": "חברים חדשים",
-            "creatingProposal": "יוצר הצעה...",
+            "creatingProposal": "יוצר הצעה",
             "confirmSubmit": "צור בקשה"
         },
         "removeDialog": {
             "title": "להסיר {count, plural, one {חבר} other {חברים}}?",
             "nearnBody": "לאחר האישור, {account} יוסר לצמיתות מהאוצר וכל ההרשאות הקשורות יבוטלו. לאחר ההסרה, חשבון זה לא יוכל עוד ליצור בקשות מ-NEARN.",
             "genericBody": "לאחר האישור, פעולה זו תסיר לצמיתות את <bold>{accounts}</bold> מהאוצר ותבטל את כל ההרשאות שהוקצו.",
-            "creatingProposal": "יוצר הצעה..."
+            "creatingProposal": "יוצר הצעה"
         },
         "validation": {
             "accountIdRequired": "מזהה חשבון נדרש",
@@ -1136,7 +1136,7 @@
             "manualSomeDuplicates": "{duplicates} מתוך {total} אנשי קשר כבר קיימים בספר הכתובות שלך. יישמרו רק אנשי קשר חדשים.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {איש קשר זה כבר נמצא בספר הכתובות שלך, כך שאין מה חדש לשמור.} other {אנשי קשר אלה כבר נמצאים בספר הכתובות שלך, כך שאין מה חדש לשמור.}}",
             "duplicateActionTooltip": "הפעל דילוג על כפילויות או הסר נמענים כפולים כדי להמשיך.",
-            "adding": "מוסיף…",
+            "adding": "מוסיף",
             "nothingNew": "אין חדש לייבא",
             "addRecipientsButton": "שמור אנשי קשר"
         },
@@ -1144,7 +1144,8 @@
             "title": "הסר נמען",
             "body": "פעולה זו תסיר את <bold>{names}</bold> מספר הכתובות שלך. תוכל להוסיף אותם שוב בכל עת.",
             "bulk": "זה יסיר <bold>{count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}}</bold> מספר הכתובות שלך. תוכל להוסיף אותם שוב בכל עת.",
-            "single": "זה יסיר את <bold>{name}</bold> מספר הכתובות שלך. תוכל להוסיף נמען זה שוב בכל עת."
+            "single": "זה יסיר את <bold>{name}</bold> מספר הכתובות שלך. תוכל להוסיף נמען זה שוב בכל עת.",
+            "removing": "מסיר"
         },
         "importFlow": {
             "title": "ייבוא נמענים",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "תיאור הצעה (אופציונלי)",
         "proposalDescriptionPlaceholder": "תאר הצעה זו...",
         "createProposal": "צור הצעה",
-        "creatingProposal": "יוצר הצעה...",
+        "creatingProposal": "יוצר הצעה",
         "confirmInWallet": "אנא אשר בארנק שלך",
         "proposalSubmitted": "ההצעה נשלחה",
         "shareProposal": "ההצעה שלך נוצרה. שתף את הקישור למטה עם חברי האוצר כדי להצביע.",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, one {# אוצר נבחר מקושר לצ'אט Telegram אחר. חיבור יחבר אותו מחדש וישנה את הקישור לצ'אט זה.} two {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} many {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} other {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.}}",
         "connectedToAnother": "מחובר לצ'אט אחר",
         "notMember": "אינך חבר מדיניות באף אוצר.",
-        "connecting": "מתחבר…",
+        "connecting": "מתחבר",
         "connect": "חיבור",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "אין לך הרשאה להוריד את הקובץ.",
         "noExportPermission": "אין לך הרשאה לייצא",
         "quotaUsed": "ניצלת את כל המכסה שלך",
-        "exporting": "מייצא...",
+        "exporting": "מייצא",
         "export": "ייצוא",
         "columnSubmissionTime": "שעת שליחה",
         "columnDateRange": "טווח תאריכים",
@@ -2512,7 +2513,7 @@
             "title": "מחיקת תבנית",
             "body": "למחוק את <b>{name}</b>? חברים לא יוכלו עוד להגיש הצעות באמצעותה. לא ניתן לבטל פעולה זו.",
             "confirm": "מחק",
-            "deleting": "מוחק…"
+            "deleting": "מוחק"
         },
         "editor": {
             "nameLabel": "שם",

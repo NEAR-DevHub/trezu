@@ -2,7 +2,7 @@
     "common": {
         "loading": "로딩 중...",
         "notAvailable": "해당 없음",
-        "connecting": "연결 중...",
+        "connecting": "연결 중",
         "save": "저장",
         "cancel": "취소",
         "submit": "제출",
@@ -18,7 +18,7 @@
         "exporting": "내보내는 중",
         "import": "가져오기",
         "remove": "제거",
-        "removing": "제거 중...",
+        "removing": "제거 중",
         "edit": "편집",
         "continue": "계속",
         "select": "선택",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "내보내기 권한이 없습니다",
             "quotaExhausted": "할당량을 모두 사용했습니다",
-            "exporting": "내보내는 중...",
+            "exporting": "내보내는 중",
             "export": "내보내기"
         },
         "empty": {
@@ -940,7 +940,7 @@
                 "voteDescription": "정보가 미리 채워집니다. 요청을 만들고 팀이 투표합니다."
             },
             "generateLink": "초대 링크 생성",
-            "generating": "생성 중...",
+            "generating": "생성 중",
             "generateFailed": "초대 링크를 만들지 못했습니다. 다시 시도하세요.",
             "readyTitle": "초대 링크가 준비되었습니다",
             "readyDescription": "추가하려는 사람에게 보내세요. 지갑을 연결하고 가입을 요청합니다.",
@@ -1010,14 +1010,14 @@
             "newMembersCount": "{count, plural, other {신규 멤버 #명}}",
             "updatedMembers": "업데이트된 멤버",
             "newMembers": "신규 멤버",
-            "creatingProposal": "제안 생성 중...",
+            "creatingProposal": "제안 생성 중",
             "confirmSubmit": "요청 만들기"
         },
         "removeDialog": {
             "title": "{count, plural, one {멤버} other {멤버}}를 제거할까요?",
             "nearnBody": "승인되면 {account}이(가) 트레저리에서 영구적으로 제거되고 모든 관련 권한이 취소됩니다. 제거 후에는 이 계정이 더 이상 NEARN에서 요청을 생성할 수 없습니다.",
             "genericBody": "승인되면 이 작업은 트레저리에서 <bold>{accounts}</bold>을(를) 영구적으로 제거하고 할당된 모든 권한을 취소합니다.",
-            "creatingProposal": "제안 생성 중..."
+            "creatingProposal": "제안 생성 중"
         },
         "validation": {
             "accountIdRequired": "계정 ID는 필수입니다",
@@ -1136,7 +1136,7 @@
             "manualSomeDuplicates": "총 {total}개의 연락처 중 {duplicates}개가 이미 주소록에 있습니다. 새 연락처만 저장됩니다.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {이 연락처는 이미 주소록에 있으므로 새로 저장할 항목이 없습니다.} other {이 연락처들은 이미 주소록에 있으므로 새로 저장할 항목이 없습니다.}}",
             "duplicateActionTooltip": "계속하려면 중복 건너뛰기를 활성화하거나 중복 수신자를 제거하세요.",
-            "adding": "추가 중…",
+            "adding": "추가 중",
             "nothingNew": "가져올 새 항목 없음",
             "addRecipientsButton": "연락처 저장"
         },
@@ -1144,7 +1144,8 @@
             "title": "수신자 제거",
             "body": "주소록에서 <bold>{names}</bold>을(를) 제거합니다. 언제든지 다시 추가할 수 있습니다.",
             "bulk": "주소록에서 <bold>{count, plural, other {수신자 #명}}</bold>을(를) 제거합니다. 언제든지 다시 추가할 수 있습니다.",
-            "single": "주소록에서 <bold>{name}</bold>을(를) 제거합니다. 언제든지 이 수신자를 다시 추가할 수 있습니다."
+            "single": "주소록에서 <bold>{name}</bold>을(를) 제거합니다. 언제든지 이 수신자를 다시 추가할 수 있습니다.",
+            "removing": "제거 중"
         },
         "importFlow": {
             "title": "수신자 가져오기",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "제안 설명 (선택사항)",
         "proposalDescriptionPlaceholder": "이 제안에 대해 설명하세요...",
         "createProposal": "제안 생성",
-        "creatingProposal": "제안 생성 중...",
+        "creatingProposal": "제안 생성 중",
         "confirmInWallet": "지갑에서 확인해 주세요",
         "proposalSubmitted": "제안 제출됨",
         "shareProposal": "제안이 생성되었습니다. 투표를 위해 아래 링크를 트레저리 멤버에게 공유하세요.",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, other {선택한 트레저리 #개가 다른 Telegram 채팅에 연결되어 있습니다. 연결하면 다시 연결되며 채팅 ID 링크가 이 채팅으로 변경됩니다.}}",
         "connectedToAnother": "다른 채팅에 연결됨",
         "notMember": "어떤 트레저리의 정책 멤버도 아닙니다.",
-        "connecting": "연결 중…",
+        "connecting": "연결 중",
         "connect": "연결",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "파일을 다운로드할 권한이 없습니다.",
         "noExportPermission": "내보내기 권한이 없습니다",
         "quotaUsed": "할당량을 모두 사용했습니다",
-        "exporting": "내보내는 중...",
+        "exporting": "내보내는 중",
         "export": "내보내기",
         "columnSubmissionTime": "Submission Time",
         "columnDateRange": "Date Range",
@@ -2512,7 +2513,7 @@
             "title": "템플릿 삭제",
             "body": "<b>{name}</b> 템플릿을 삭제할까요? 멤버가 더 이상 이 템플릿으로 제안을 제출할 수 없게 됩니다. 이 작업은 되돌릴 수 없습니다.",
             "confirm": "삭제",
-            "deleting": "삭제 중…"
+            "deleting": "삭제 중"
         },
         "editor": {
             "nameLabel": "이름",

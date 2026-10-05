@@ -2,7 +2,7 @@
     "common": {
         "loading": "Memuat...",
         "notAvailable": "T/A",
-        "connecting": "Menghubungkan...",
+        "connecting": "Menghubungkan",
         "save": "Simpan",
         "cancel": "Batal",
         "submit": "Kirim",
@@ -18,7 +18,7 @@
         "exporting": "Mengekspor",
         "import": "Impor",
         "remove": "Hapus",
-        "removing": "Menghapus...",
+        "removing": "Menghapus",
         "edit": "Ubah",
         "continue": "Lanjutkan",
         "select": "Pilih",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Anda tidak memiliki izin untuk mengekspor",
             "quotaExhausted": "Anda telah menggunakan semua kuota Anda",
-            "exporting": "Mengekspor...",
+            "exporting": "Mengekspor",
             "export": "Ekspor"
         },
         "empty": {
@@ -940,7 +940,7 @@
                 "voteDescription": "Detail mereka sudah terisi. Anda membuat permintaan, lalu tim memberi suara."
             },
             "generateLink": "Buat tautan undangan",
-            "generating": "Membuat...",
+            "generating": "Membuat",
             "generateFailed": "Gagal membuat tautan undangan. Coba lagi.",
             "readyTitle": "Tautan undangan Anda siap",
             "readyDescription": "Kirim ke orang yang ingin Anda tambahkan. Mereka akan menghubungkan dompet dan meminta bergabung.",
@@ -1010,14 +1010,14 @@
             "newMembersCount": "{count, plural, other {# anggota baru}}",
             "updatedMembers": "Anggota yang Diperbarui",
             "newMembers": "Anggota Baru",
-            "creatingProposal": "Membuat Usulan...",
+            "creatingProposal": "Membuat Usulan",
             "confirmSubmit": "Buat permintaan"
         },
         "removeDialog": {
             "title": "Hapus {count, plural, one {anggota} other {anggota}}?",
             "nearnBody": "Setelah disetujui, {account} akan dihapus secara permanen dari treasury dan semua izin terkait akan dicabut. Setelah dihapus, akun ini tidak akan dapat lagi membuat permintaan dari NEARN.",
             "genericBody": "Setelah disetujui, tindakan ini akan menghapus secara permanen <bold>{accounts}</bold> dari treasury dan mencabut semua izin yang ditetapkan.",
-            "creatingProposal": "Membuat Usulan..."
+            "creatingProposal": "Membuat Usulan"
         },
         "validation": {
             "accountIdRequired": "ID Akun diperlukan",
@@ -1136,7 +1136,7 @@
             "manualSomeDuplicates": "{duplicates} dari {total} kontak sudah ada di buku alamat Anda. Hanya kontak baru yang akan disimpan.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.} other {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.}}",
             "duplicateActionTooltip": "Aktifkan lewati duplikat atau hapus penerima duplikat untuk melanjutkan.",
-            "adding": "Menambahkan…",
+            "adding": "Menambahkan",
             "nothingNew": "Tidak Ada yang Baru untuk Diimpor",
             "addRecipientsButton": "Simpan kontak"
         },
@@ -1144,7 +1144,8 @@
             "title": "Hapus Penerima",
             "body": "Ini akan menghapus <bold>{names}</bold> dari kontak Anda. Anda dapat menambahkannya lagi kapan saja.",
             "bulk": "Ini akan menghapus <bold>{count, plural, other {# penerima}}</bold> dari buku alamat Anda. Anda dapat menambahkannya lagi kapan saja.",
-            "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja."
+            "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja.",
+            "removing": "Menghapus"
         },
         "importFlow": {
             "title": "Impor Penerima",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "Deskripsi usulan (opsional)",
         "proposalDescriptionPlaceholder": "Jelaskan usulan ini...",
         "createProposal": "Buat Usulan",
-        "creatingProposal": "Membuat usulan...",
+        "creatingProposal": "Membuat usulan",
         "confirmInWallet": "Silakan konfirmasi di dompet Anda",
         "proposalSubmitted": "Usulan Telah Dikirim",
         "shareProposal": "Usulan Anda telah dibuat. Bagikan tautan di bawah dengan anggota treasury untuk memilih.",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, other {# treasury yang dipilih ditautkan ke chat Telegram lain. Menghubungkan akan menautkan ulang dan mengubah tautan ID chat-nya ke chat ini.}}",
         "connectedToAnother": "Terhubung ke chat lain",
         "notMember": "Anda bukan anggota kebijakan dari treasury mana pun.",
-        "connecting": "Menghubungkan…",
+        "connecting": "Menghubungkan",
         "connect": "Hubungkan",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "Anda tidak memiliki izin untuk mengunduh file.",
         "noExportPermission": "Anda tidak memiliki izin untuk mengekspor",
         "quotaUsed": "Anda telah menggunakan semua kuota Anda",
-        "exporting": "Mengekspor...",
+        "exporting": "Mengekspor",
         "export": "Ekspor",
         "columnSubmissionTime": "Waktu Pengiriman",
         "columnDateRange": "Rentang Tanggal",
@@ -2512,7 +2513,7 @@
             "title": "Hapus templat",
             "body": "Hapus <b>{name}</b>? Anggota tidak akan dapat lagi mengajukan proposal darinya. Tindakan ini tidak dapat dibatalkan.",
             "confirm": "Hapus",
-            "deleting": "Menghapus…"
+            "deleting": "Menghapus"
         },
         "editor": {
             "nameLabel": "Nama",

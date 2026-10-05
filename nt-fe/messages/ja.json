@@ -2,7 +2,7 @@
     "common": {
         "loading": "読み込み中...",
         "notAvailable": "該当なし",
-        "connecting": "接続中...",
+        "connecting": "接続中",
         "save": "保存",
         "cancel": "キャンセル",
         "submit": "送信",
@@ -18,7 +18,7 @@
         "exporting": "エクスポート中",
         "import": "インポート",
         "remove": "削除",
-        "removing": "削除中...",
+        "removing": "削除中",
         "edit": "編集",
         "continue": "続ける",
         "select": "選択",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "エクスポートする権限がありません",
             "quotaExhausted": "上限をすべて使い切りました",
-            "exporting": "エクスポート中...",
+            "exporting": "エクスポート中",
             "export": "エクスポート"
         },
         "empty": {
@@ -940,7 +940,7 @@
                 "voteDescription": "詳細は事前入力されます。リクエストを作成し、チームが投票します。"
             },
             "generateLink": "招待リンクを作成",
-            "generating": "作成中...",
+            "generating": "作成中",
             "generateFailed": "招待リンクの作成に失敗しました。もう一度お試しください。",
             "readyTitle": "招待リンクの準備ができました",
             "readyDescription": "追加したい人に送信してください。ウォレットを接続して参加を申請します。",
@@ -1010,14 +1010,14 @@
             "newMembersCount": "{count, plural, other {# 名の新しいメンバー}}",
             "updatedMembers": "更新されたメンバー",
             "newMembers": "新しいメンバー",
-            "creatingProposal": "提案を作成中...",
+            "creatingProposal": "提案を作成中",
             "confirmSubmit": "リクエストを作成"
         },
         "removeDialog": {
             "title": "{count, plural, one {メンバー} other {メンバー}}を削除しますか？",
             "nearnBody": "承認されると、{account}はトレジャリーから永久に削除され、関連するすべての権限が取り消されます。削除後、このアカウントはNEARNからリクエストを作成できなくなります。",
             "genericBody": "承認されると、このアクションにより<bold>{accounts}</bold>がトレジャリーから永久に削除され、割り当てられたすべての権限が取り消されます。",
-            "creatingProposal": "提案を作成中..."
+            "creatingProposal": "提案を作成中"
         },
         "validation": {
             "accountIdRequired": "アカウントIDは必須です",
@@ -1136,7 +1136,7 @@
             "manualSomeDuplicates": "{total}件中{duplicates}件の連絡先はすでにアドレス帳に存在します。新しい連絡先のみ保存されます。",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {この連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。} other {これらの連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。}}",
             "duplicateActionTooltip": "続行するには重複スキップを有効化するか、重複する受取人を削除してください。",
-            "adding": "追加中…",
+            "adding": "追加中",
             "nothingNew": "新しくインポートするものはありません",
             "addRecipientsButton": "連絡先を保存"
         },
@@ -1144,7 +1144,8 @@
             "title": "受取人を削除",
             "body": "アドレス帳から<bold>{names}</bold>を削除します。いつでも再度追加できます。",
             "bulk": "アドレス帳から<bold>{count, plural, other {# 人の受取人}}</bold>を削除します。いつでも再度追加できます。",
-            "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。"
+            "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。",
+            "removing": "削除中"
         },
         "importFlow": {
             "title": "受取人をインポート",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "提案の説明(任意)",
         "proposalDescriptionPlaceholder": "この提案を説明してください...",
         "createProposal": "提案を作成",
-        "creatingProposal": "提案を作成中...",
+        "creatingProposal": "提案を作成中",
         "confirmInWallet": "ウォレットで確認してください",
         "proposalSubmitted": "提案を送信しました",
         "shareProposal": "提案が作成されました。下のリンクをトレジャリーメンバーと共有して投票してもらってください。",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, other {# 件の選択されたトレジャリーは別のTelegramチャットにリンクされています。接続するとチャットIDのリンクがこのチャットに変更されます。}}",
         "connectedToAnother": "別のチャットに接続されています",
         "notMember": "あなたはどのトレジャリーのポリシーメンバーでもありません。",
-        "connecting": "接続中…",
+        "connecting": "接続中",
         "connect": "接続",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "ファイルをダウンロードする権限がありません。",
         "noExportPermission": "エクスポートする権限がありません",
         "quotaUsed": "上限をすべて使い切りました",
-        "exporting": "エクスポート中...",
+        "exporting": "エクスポート中",
         "export": "エクスポート",
         "columnSubmissionTime": "送信時刻",
         "columnDateRange": "期間",
@@ -2512,7 +2513,7 @@
             "title": "テンプレートを削除",
             "body": "<b>{name}</b> を削除しますか？メンバーはこのテンプレートから提案を提出できなくなります。この操作は元に戻せません。",
             "confirm": "削除",
-            "deleting": "削除中…"
+            "deleting": "削除中"
         },
         "editor": {
             "nameLabel": "名前",
