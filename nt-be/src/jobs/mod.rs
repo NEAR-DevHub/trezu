@@ -959,6 +959,32 @@ async fn push_startup_tasks(queues: &JobQueues, pool: &PgPool) {
     }
 }
 
+/// Prefills `dao_proposals.notes` once the leader is up. Runs on every
+/// leader session, not only the process's first: the session token cancels
+/// an in-flight pass on leadership loss, and the pass is idempotent and
+/// cheap once complete, so the next session simply resumes it. Detached
+/// from the runtime children: finishing is the normal outcome, not a
+/// runtime failure.
+fn spawn_proposal_notes_backfill(pool: PgPool, shutdown: CancellationToken) {
+    tokio::spawn(async move {
+        let backfill =
+            crate::handlers::public_history::proposals::notes_backfill::ProposalNotesBackfill::new(
+                pool,
+            );
+        tokio::select! {
+            _ = shutdown.cancelled() => {}
+            result = backfill.run() => match result {
+                Ok(stats) => tracing::info!(
+                    scanned = stats.scanned,
+                    updated = stats.updated,
+                    "proposal notes backfill complete"
+                ),
+                Err(error) => tracing::error!(error = %error, "proposal notes backfill failed"),
+            },
+        }
+    });
+}
+
 fn install_treasury_sweeper_wakeup(
     queues: &JobQueues,
     state: &Arc<AppState>,
@@ -1002,6 +1028,7 @@ async fn run_leader_runtime(
     if run_startup_tasks {
         push_startup_tasks(&queues, &state.db_pool).await;
     }
+    spawn_proposal_notes_backfill(state.db_pool.clone(), shutdown.clone());
 
     let liveness_pool = state.db_pool.clone();
     let payload_consumers =
