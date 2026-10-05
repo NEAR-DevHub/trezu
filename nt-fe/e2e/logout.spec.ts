@@ -80,6 +80,13 @@ function connectWalletButton(page: Page) {
         .filter({ visible: true });
 }
 
+/**
+ * Wallet keys a logout must clear. Trezu writes `selected-wallet` on login
+ * (stores/near-store.ts) and relies on the connector to clear it: near-connect's
+ * `disconnect()` removes it unconditionally. A stale value would let the
+ * connector resolve the wallet again on reload. `trezu:target-wallet` is
+ * cleared by Trezu's own `disconnect()`.
+ */
 function storedWalletSelection(page: Page) {
     return page.evaluate(() => ({
         selectedWallet: localStorage.getItem("selected-wallet"),
