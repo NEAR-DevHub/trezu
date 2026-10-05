@@ -281,6 +281,40 @@ export async function approveProposal(
 }
 
 /**
+ * Cast a plain vote on a DAO proposal of any kind (Transfer, FunctionCall, …).
+ * Unlike `approveProposal`, doesn't wait for cross-contract receipts — use it
+ * when the test only cares about the recorded vote, not execution results.
+ */
+export async function voteOnProposal(
+    signerId: string,
+    daoId: string,
+    proposalId: number,
+    action: "VoteApprove" | "VoteReject",
+): Promise<void> {
+    const proposal = (await viewFunction(daoId, "get_proposal", {
+        id: proposalId,
+    })) as { kind: Record<string, unknown> };
+
+    // Wait for the proposal to be ready for voting (needs a new block)
+    await waitBlock();
+
+    await signAndSend(signerId, daoId, [
+        actionCreators.functionCall(
+            "act_proposal",
+            Buffer.from(
+                JSON.stringify({
+                    id: proposalId,
+                    action,
+                    proposal: proposal.kind,
+                }),
+            ),
+            BigInt("300000000000000"),
+            BigInt(0),
+        ),
+    ]);
+}
+
+/**
  * Extract the MPC signature from an act_proposal execution result.
  *
  * Searches for the base64 marker "eyJzY2hlbWUi" (= `{"scheme"`) in
