@@ -5,12 +5,15 @@ import {
     ArrowRightLeft,
     ChevronRight,
     Clock,
+    FileText,
     Info,
     Loader2,
     Minus,
 } from "lucide-react";
+import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
+import { Address } from "@/components/address";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { FormattedAmount } from "@/components/formatted-amount";
@@ -26,7 +29,6 @@ import {
 } from "@/components/table";
 import { TableSkeleton } from "@/components/table-skeleton";
 import { TokenDisplay } from "@/components/token-display-with-network";
-import { Address } from "@/components/address";
 import { Tooltip } from "@/components/tooltip";
 import { TooltipUser } from "@/components/user";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -47,6 +49,26 @@ import {
 } from "../utils/history-utils";
 import { TransactionDetailsModal } from "./transaction-details-modal";
 import { TransactionHashCell } from "./transaction-hash-cell";
+
+function NotesCell({ notes }: { notes?: string | null }) {
+    const trimmed = notes?.trim();
+    if (!trimmed) return null;
+
+    return (
+        <Tooltip
+            content={trimmed}
+            contentProps={{
+                className: "w-auto max-w-72 whitespace-pre-wrap wrap-anywhere",
+            }}
+        >
+            <span className="inline-block w-full max-w-full">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-foreground">
+                    {trimmed}
+                </span>
+            </span>
+        </Tooltip>
+    );
+}
 
 interface ActivityTableProps {
     activities: RecentActivity[];
@@ -85,7 +107,7 @@ export function ActivityTable({
     };
 
     if (isLoading) {
-        return <TableSkeleton rows={pageSize} columns={6} />;
+        return <TableSkeleton rows={pageSize} columns={7} />;
     }
 
     if (activities.length === 0) {
@@ -115,6 +137,9 @@ export function ActivityTable({
                             </TableHead>
                             <TableHead className="min-w-[150px] text-xs font-medium uppercase text-muted-foreground">
                                 {t("table.to")}
+                            </TableHead>
+                            <TableHead className="min-w-[140px] max-w-[220px] text-xs font-medium uppercase text-muted-foreground">
+                                {t("table.notes")}
                             </TableHead>
                             <TableHead className="text-right pr-2 min-w-[120px] text-xs font-medium uppercase text-muted-foreground">
                                 <div className="flex items-center justify-end gap-1">
@@ -151,7 +176,20 @@ export function ActivityTable({
                             );
 
                             return (
-                                <TableRow key={activity.id}>
+                                <TableRow
+                                    key={activity.id}
+                                    className="cursor-pointer"
+                                    onClick={(event) => {
+                                        const target = event.target;
+                                        if (
+                                            target instanceof Element &&
+                                            target.closest("a, button")
+                                        ) {
+                                            return;
+                                        }
+                                        openTransactionDetails(activity);
+                                    }}
+                                >
                                     <TableCell className="pl-6">
                                         <div className="flex items-center gap-3">
                                             <div className="flex h-8 w-8 items-center justify-center rounded-full shrink-0 bg-muted">
@@ -482,22 +520,41 @@ export function ActivityTable({
                                             </span>
                                         )}
                                     </TableCell>
+                                    <TableCell className="min-w-[140px] max-w-[220px] overflow-hidden whitespace-normal">
+                                        <NotesCell notes={activity.notes} />
+                                    </TableCell>
                                     <TableCell className="text-right pr-2">
-                                        <TransactionHashCell
-                                            transactionHashes={
-                                                activity.transactionHashes
-                                            }
-                                            receiptIds={activity.receiptIds}
-                                            chainName={
-                                                activity.tokenMetadata
-                                                    ?.chainName
-                                            }
-                                            depositAddress={
-                                                activity.quoteDepositAddress
-                                            }
-                                            isConfidential={isConfidential}
-                                            isExchange={!!activity.swap}
-                                        />
+                                        {isConfidential &&
+                                        activity.swap &&
+                                        activity.quoteDepositAddress &&
+                                        activity.proposalId != null &&
+                                        treasuryId ? (
+                                            <Link
+                                                href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
+                                            >
+                                                <FileText className="size-4 shrink-0 text-muted-foreground" />
+                                                {t("pdfReceipt")}
+                                            </Link>
+                                        ) : (
+                                            <TransactionHashCell
+                                                transactionHashes={
+                                                    activity.transactionHashes
+                                                }
+                                                receiptIds={activity.receiptIds}
+                                                chainName={
+                                                    activity.tokenMetadata
+                                                        ?.chainName
+                                                }
+                                                depositAddress={
+                                                    activity.quoteDepositAddress
+                                                }
+                                                isConfidential={isConfidential}
+                                                isExchange={!!activity.swap}
+                                            />
+                                        )}
                                     </TableCell>
                                     <TableCell className="w-10 px-0 pr-4 text-right">
                                         <Button

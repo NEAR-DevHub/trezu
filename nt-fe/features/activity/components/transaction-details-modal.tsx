@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ChevronRight, FileText } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
@@ -546,7 +546,52 @@ function DetailsSection({
     return (
         <ModalSection className="rounded-t-[12px]">
             <InfoDisplay hideSeparator items={items} className="w-full" />
+            <NotesBlock notes={activity.notes} />
         </ModalSection>
+    );
+}
+
+function NotesBlock({ notes }: { notes?: string | null }) {
+    const t = useTranslations("activity.details");
+    const trimmed = notes?.trim();
+    if (!trimmed) return null;
+
+    return (
+        <div className="flex w-full flex-col gap-1 py-1">
+            <p className="text-sm font-medium text-muted-foreground">
+                {t("notes")}
+            </p>
+            <p className="whitespace-pre-wrap break-all text-sm font-semibold text-foreground">
+                {trimmed}
+            </p>
+        </div>
+    );
+}
+
+function ViewPdfReceiptButton({
+    treasuryId,
+    proposalId,
+}: {
+    treasuryId: string;
+    proposalId: number;
+}) {
+    const t = useTranslations("activity");
+
+    return (
+        <Button
+            asChild
+            variant="secondary"
+            className="h-9 w-full rounded-[8px] font-medium"
+        >
+            <Link
+                href={`/${treasuryId}/requests/${proposalId}/receipt`}
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                <FileText className="size-4" />
+                {t("pdfReceipt")}
+            </Link>
+        </Button>
     );
 }
 
@@ -560,22 +605,20 @@ function ViewLinkedRequestButton({
     const t = useTranslations("activity.details");
 
     return (
-        <ModalSection>
-            <Button
-                asChild
-                variant="secondary"
-                className="h-9 w-full rounded-[8px] font-medium"
+        <Button
+            asChild
+            variant="secondary"
+            className="h-9 w-full rounded-[8px] font-medium"
+        >
+            <Link
+                href={`/${treasuryId}/requests/${proposalId}`}
+                target="_blank"
+                rel="noopener noreferrer"
             >
-                <Link
-                    href={`/${treasuryId}/requests/${proposalId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >
-                    {t("viewLinkedRequest")}
-                    <ArrowRight className="size-4" />
-                </Link>
-            </Button>
-        </ModalSection>
+                {t("viewLinkedRequest")}
+                <ArrowRight className="size-4" />
+            </Link>
+        </Button>
     );
 }
 
@@ -586,9 +629,15 @@ export function TransactionDetailsModal({
     onClose,
 }: TransactionDetailsModalProps) {
     const t = useTranslations("activity.details");
+    const { isConfidential } = useTreasury();
     if (!activity) return null;
 
     const variant = getActivityDetailsVariant(activity);
+    const showSwapReceipt =
+        isConfidential &&
+        variant === "exchange" &&
+        activity.proposalId != null &&
+        !!activity.quoteDepositAddress;
     const showParties = variant !== "exchange" && !isProposalCall(activity);
 
     return (
@@ -615,10 +664,18 @@ export function TransactionDetailsModal({
                 <DetailsSection activity={activity} variant={variant} />
 
                 {activity.proposalId != null ? (
-                    <ViewLinkedRequestButton
-                        treasuryId={treasuryId}
-                        proposalId={activity.proposalId}
-                    />
+                    <ModalSection>
+                        {showSwapReceipt ? (
+                            <ViewPdfReceiptButton
+                                treasuryId={treasuryId}
+                                proposalId={activity.proposalId}
+                            />
+                        ) : null}
+                        <ViewLinkedRequestButton
+                            treasuryId={treasuryId}
+                            proposalId={activity.proposalId}
+                        />
+                    </ModalSection>
                 ) : null}
             </DialogContent>
         </Dialog>

@@ -435,7 +435,8 @@
             "to": "KE",
             "transactionHash": "HASH TRANSAKSI",
             "hashTooltip": "Pengenal unik (hash) dari transaksi ini",
-            "processing": "Memproses"
+            "processing": "Memproses",
+            "notes": "CATATAN"
         },
         "empty": {
             "title": "Tidak ada transaksi ditemukan",
@@ -473,7 +474,8 @@
             "failed": "Gagal",
             "exchangeTransaction": "Transaksi Penukaran",
             "transferTransaction": "Transaksi Transfer",
-            "rate": "Kurs"
+            "rate": "Kurs",
+            "notes": "Catatan"
         },
         "refresh": {
             "ariaLabel": "Segarkan riwayat rahasia",
@@ -484,7 +486,8 @@
             "checking": "Memeriksa status penyegaran…",
             "unavailable": "Status penyegaran tidak tersedia",
             "updateTreasuryData": "Perbarui data treasury"
-        }
+        },
+        "pdfReceipt": "Resi PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",

@@ -435,7 +435,8 @@
             "to": "KİME",
             "transactionHash": "İŞLEM HASH'İ",
             "hashTooltip": "Bu işlemin benzersiz tanımlayıcısı (hash)",
-            "processing": "İşleniyor"
+            "processing": "İşleniyor",
+            "notes": "NOTLAR"
         },
         "empty": {
             "title": "İşlem bulunamadı",
@@ -473,7 +474,8 @@
             "failed": "Başarısız",
             "exchangeTransaction": "Takas İşlemi",
             "transferTransaction": "Transfer İşlemi",
-            "rate": "Kur"
+            "rate": "Kur",
+            "notes": "Notlar"
         },
         "refresh": {
             "ariaLabel": "Gizli geçmişi yenile",
@@ -484,7 +486,8 @@
             "checking": "Yenileme durumu kontrol ediliyor…",
             "unavailable": "Yenileme durumu kullanılamıyor",
             "updateTreasuryData": "Hazine verilerini güncelle"
-        }
+        },
+        "pdfReceipt": "PDF makbuzu"
     },
     "apiDocs": {
         "endpoint": "Uç nokta",

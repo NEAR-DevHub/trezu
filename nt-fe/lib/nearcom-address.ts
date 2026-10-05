@@ -4,6 +4,14 @@ import { isValidNearAddressFormat } from "@/lib/near-validation";
 /** Prefix for near.com payment / deposit recipients (public + confidential). */
 export const NEAR_COM_ADDRESS_PREFIX = "nearcom:";
 
+/** Base URL for the near.com send flow. */
+export const NEAR_COM_SEND_URL = "https://near.com/send";
+
+/**
+ * Network id near.com expects for `nearcom:` recipients.
+ */
+export const NEAR_COM_SEND_INTERNAL_NETWORK = "near_intents";
+
 export function hasNearComAddressPrefix(
     address: string | null | undefined,
 ): boolean {
@@ -77,4 +85,27 @@ export function formatRecipientForNearComDestination(
         return trimmed;
     }
     return withNearComAddressPrefix(trimmed);
+}
+
+export type NearComSendPrefill = {
+    token?: string | null;
+    network?: string | null;
+    recipient?: string | null;
+    paymentToken?: string | null;
+};
+
+/** near.com/send deep link (`token`, `network`, `recipient`, `paymentToken`). */
+export function buildNearComSendHref(prefill: NearComSendPrefill): string {
+    const url = new URL(NEAR_COM_SEND_URL);
+    const entries: [keyof NearComSendPrefill, string | null | undefined][] = [
+        ["token", prefill.token],
+        ["network", prefill.network],
+        ["recipient", prefill.recipient],
+        ["paymentToken", prefill.paymentToken],
+    ];
+    for (const [key, value] of entries) {
+        const trimmed = value?.trim();
+        if (trimmed) url.searchParams.set(key, trimmed);
+    }
+    return url.toString();
 }

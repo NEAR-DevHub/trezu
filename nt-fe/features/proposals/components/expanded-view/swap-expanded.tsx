@@ -13,6 +13,7 @@ import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
 import {
     calculateExchangeFeeAmount,
     EXCHANGE_FEE_PERCENTAGE,
+    shouldShowStoredExchangeFee,
 } from "@/lib/exchange-fee";
 import { formatDurationSeconds } from "@/lib/utils";
 import type { SwapRequestData } from "../../types/index";
@@ -205,30 +206,32 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         });
     }
 
-    expandableItems.push({
-        label: tExchange("info.exchangeFee"),
-        value: isTokenInLoading ? (
-            <Skeleton className="h-5 w-24" />
-        ) : (
-            <span>
-                <FormattedAmount
-                    kind="percent"
-                    value={EXCHANGE_FEE_PERCENTAGE}
-                />{" "}
-                /{" "}
-                <FormattedAmount
-                    kind="token"
-                    value={exchangeFeeAmount}
-                    symbol={tokenInData?.symbol || ""}
-                    tokenDecimals={tokenInData?.decimals}
-                    unitPriceUsd={tokenInData?.price}
-                    profile="standard"
-                    rounding="up"
-                />
-            </span>
-        ),
-        info: tExchange("info.exchangeFeeTooltip"),
-    });
+    if (shouldShowStoredExchangeFee(data.hasAppFee)) {
+        expandableItems.push({
+            label: tExchange("info.exchangeFee"),
+            value: isTokenInLoading ? (
+                <Skeleton className="h-5 w-24" />
+            ) : (
+                <span>
+                    <FormattedAmount
+                        kind="percent"
+                        value={EXCHANGE_FEE_PERCENTAGE}
+                    />{" "}
+                    /{" "}
+                    <FormattedAmount
+                        kind="token"
+                        value={exchangeFeeAmount}
+                        symbol={tokenInData?.symbol || ""}
+                        tokenDecimals={tokenInData?.decimals}
+                        unitPriceUsd={tokenInData?.price}
+                        profile="standard"
+                        rounding="up"
+                    />
+                </span>
+            ),
+            info: tExchange("info.exchangeFeeTooltip"),
+        });
+    }
 
     return <InfoDisplay items={infoItems} expandableItems={expandableItems} />;
 }
