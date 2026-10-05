@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "待处理",
+            "processing": "处理中",
             "approved": "已批准",
             "rejected": "已拒绝",
             "executed": "已执行",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "此请求仍待处理,尚未达到执行所需的投票数。",
+            "processing": "已批准,正在处理中。只需几秒钟。",
             "executed": "在 {required} 名成员中有 {approved} 人批准后已执行。",
             "rejected": "在 {required} 名成员中有 {rejected} 人投票拒绝后已被拒绝。",
             "expired": "由于未获得足够的投票而过期。",
@@ -868,8 +870,7 @@
             "approvalsReceived": "已收到 {received}/{required} 个批准",
             "expiresAt": "过期时间",
             "expiredAt": "已过期于",
-            "exchangingTokens": "正在兑换代币",
-            "exchangingTokensBody": "此请求已获团队批准。代币兑换正在进行中,可能需要一些时间。",
+            "processing": "您的请求已批准,正在处理中 - 只需几秒钟。",
             "requestFailed": "请求失败",
             "requestFailedBody": "团队已批准此请求,但因汇率波动而失败。请创建新请求并再次尝试。",
             "votingPeriod24h": "投票期:24 小时",
@@ -877,8 +878,6 @@
             "reject": "拒绝",
             "approve": "批准",
             "destinationNetwork": "目标网络",
-            "processingPayment": "处理付款中",
-            "processingPaymentBody": "此付款已获团队批准，正在处理中，可能需要一些时间才能完成。",
             "addMember": "添加成员",
             "removeMember": "移除成员",
             "member": "成员",

@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "保留中",
+            "processing": "処理中",
             "approved": "承認済み",
             "rejected": "却下済み",
             "executed": "実行済み",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "このリクエストはまだ保留中で、実行に必要な投票数に達していません。",
+            "processing": "承認済みで、現在処理中です。数秒で完了します。",
             "executed": "{required}人中{approved}人のメンバーがリクエストを承認したため実行されました。",
             "rejected": "{required}人中{rejected}人のメンバーがリクエストを却下したため拒否されました。",
             "expired": "実行に必要な投票数を獲得できなかったため期限切れとなりました。",
@@ -868,8 +870,7 @@
             "approvalsReceived": "{received}/{required}件の承認を受領",
             "expiresAt": "有効期限",
             "expiredAt": "失効日時",
-            "exchangingTokens": "トークンを交換中",
-            "exchangingTokensBody": "このリクエストはチームに承認されました。トークン交換が進行中で、しばらく時間がかかる場合があります。",
+            "processing": "リクエストは承認され、処理中です。数秒お待ちください。",
             "requestFailed": "リクエストが失敗しました",
             "requestFailedBody": "チームはこのリクエストを承認しましたが、レート変動により失敗しました。新しいリクエストを作成して、もう一度お試しください。",
             "votingPeriod24h": "投票期間: 24時間",
@@ -877,8 +878,6 @@
             "reject": "却下",
             "approve": "承認",
             "destinationNetwork": "送先ネットワーク",
-            "processingPayment": "支払い処理中",
-            "processingPaymentBody": "この支払いはチームによって承認され、現在処理中です。完了まで時間がかかる場合があります。",
             "addMember": "メンバーを追加",
             "removeMember": "メンバーを削除",
             "member": "メンバー",
