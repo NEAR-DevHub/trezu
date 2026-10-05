@@ -321,6 +321,25 @@ mod tests {
     }
 
     #[sqlx::test(migrations = "./migrations")]
+    async fn write_never_overrides_notes_set_after_the_page_was_read(pool: PgPool) {
+        insert_proposal(&pool, 8, Some("* Notes: stale read"), None, None).await;
+        let backfill = ProposalNotesBackfill::new(pool.clone());
+        let page = backfill.next_batch(None).await.unwrap();
+        assert_eq!(page.len(), 1);
+
+        sqlx::query("UPDATE dao_proposals SET notes = 'linker won' WHERE proposal_id = 8")
+            .execute(&pool)
+            .await
+            .unwrap();
+
+        assert_eq!(backfill.write_notes(&page).await.unwrap(), 0);
+        assert_eq!(
+            notes_by_proposal(&pool).await,
+            vec![(8, Some("linker won".to_string()))]
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
     async fn pages_past_a_single_batch(pool: PgPool) {
         for proposal_id in 0..(BATCH_SIZE + 3) {
             insert_proposal(&pool, proposal_id, Some("* Notes: paged"), None, None).await;
