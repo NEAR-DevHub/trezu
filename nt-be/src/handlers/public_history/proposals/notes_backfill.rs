@@ -5,9 +5,11 @@
 //! slow scan never holds a deploy. The note is derived from the stored
 //! description (or, for rows linked before that column existed, from the
 //! bronze `add_proposal` receipt found by the creation transaction hash,
-//! which is indexed) with the same `user_notes_from_description` rule the
-//! linker applies. Idempotent: only `notes IS NULL` rows are read, so a
-//! repeat run after the first full pass is a handful of index lookups.
+//! which is indexed, falling back to the creation receipt id for receipts
+//! NearBlocks served without a hash) with the same
+//! `user_notes_from_description` rule the linker applies. Idempotent: only
+//! `notes IS NULL` rows are read, so a repeat run after the first full
+//! pass is a handful of index lookups.
 
 use sqlx::PgPool;
 
@@ -70,21 +72,33 @@ impl ProposalNotesBackfill {
                 ) AS description
             FROM dao_proposals dp
             LEFT JOIN LATERAL (
-                SELECT b.raw_payload
-                FROM bronze_public_history_events b
+                SELECT c.raw_payload
+                FROM (
+                    SELECT
+                        b.raw_payload,
+                        b.id,
+                        (b.receipt_id = dp.proposal_creation_receipt_id) AS exact_receipt
+                    FROM bronze_public_history_events b
+                    WHERE b.transaction_hash = dp.proposal_creation_transaction_hash
+                      AND b.account_id = dp.dao_id
+                      AND b.method_name = 'add_proposal'
+                    UNION ALL
+                    SELECT b.raw_payload, b.id, TRUE
+                    FROM bronze_public_history_events b
+                    WHERE dp.proposal_creation_transaction_hash IS NULL
+                      AND b.receipt_id = dp.proposal_creation_receipt_id
+                      AND b.account_id = dp.dao_id
+                      AND b.method_name = 'add_proposal'
+                ) c
                 WHERE dp.description IS NULL
-                  AND b.transaction_hash = dp.proposal_creation_transaction_hash
-                  AND b.account_id = dp.dao_id
-                  AND b.method_name = 'add_proposal'
-                ORDER BY
-                    (b.receipt_id = dp.proposal_creation_receipt_id) DESC NULLS LAST,
-                    b.id
+                ORDER BY c.exact_receipt DESC NULLS LAST, c.id
                 LIMIT 1
             ) b ON TRUE
             WHERE dp.notes IS NULL
               AND (
                     dp.description IS NOT NULL
                  OR dp.proposal_creation_transaction_hash IS NOT NULL
+                 OR dp.proposal_creation_receipt_id IS NOT NULL
               )
               AND (dp.dao_id, dp.proposal_id) > ($1, $2)
             ORDER BY dp.dao_id, dp.proposal_id
@@ -257,6 +271,52 @@ mod tests {
                 scanned: 1,
                 updated: 0
             }
+        );
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn falls_back_to_receipt_id_when_bronze_has_no_transaction_hash(pool: PgPool) {
+        sqlx::query(
+            r#"
+            INSERT INTO dao_proposals (dao_id, proposal_id, proposal_creation_receipt_id)
+            VALUES ('dao.near', 7, 'receipt-7')
+            "#,
+        )
+        .execute(&pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            r#"
+            INSERT INTO bronze_public_history_events (
+                account_id, source, source_event_key, transaction_hash, receipt_id,
+                block_height, block_timestamp, block_time, affected_account_id,
+                method_name, raw_payload
+            )
+            VALUES (
+                'dao.near', 'nearblocks_receipt', 'receipt-7', NULL, 'receipt-7',
+                1, 1, NOW(), 'dao.near', 'add_proposal', $1
+            )
+            "#,
+        )
+        .bind(json!({"action": {"proposal": {"description": "* Notes: Hashless receipt"}}}))
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let stats = ProposalNotesBackfill::new(pool.clone())
+            .run()
+            .await
+            .unwrap();
+        assert_eq!(
+            stats,
+            ProposalNotesBackfillStats {
+                scanned: 1,
+                updated: 1
+            }
+        );
+        assert_eq!(
+            notes_by_proposal(&pool).await,
+            vec![(7, Some("Hashless receipt".to_string()))]
         );
     }
 
