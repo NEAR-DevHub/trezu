@@ -28,6 +28,7 @@ pub struct EnvVars {
     pub signer_key: SecretKey,
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
+    pub disable_balance_monitoring: bool,
     /// How many times the confidential bulk processor resets `SignFailed`
     /// recipient hashes (`retry_failed`) before giving up on them.
     pub confidential_bulk_max_sign_retries: i32,
