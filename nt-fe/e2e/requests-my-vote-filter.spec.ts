@@ -78,20 +78,15 @@ function myVoteParam(selected: string[]): string {
     return JSON.stringify({ operation: "Is", selected });
 }
 
-/** Statuses requested for `accountId` in a `voter_votes` query value, however the pairs are grouped. */
+/** Statuses requested for `accountId` in a `voter_votes` query value (`user:status` pairs joined by `,`). */
 function requestedStatuses(voterVotes: string, accountId: string): string[] {
-    const statuses: string[] = [];
-    let current: string | null = null;
-    for (const part of voterVotes.split(",").map((p) => p.trim())) {
-        const idx = part.indexOf(":");
-        if (idx >= 0) {
-            current = part.slice(0, idx);
-            if (current === accountId) statuses.push(part.slice(idx + 1));
-        } else if (current === accountId) {
-            statuses.push(part);
-        }
-    }
-    return statuses.sort();
+    const prefix = `${accountId}:`;
+    return voterVotes
+        .split(",")
+        .map((p) => p.trim())
+        .filter((p) => p.startsWith(prefix))
+        .map((p) => p.slice(prefix.length))
+        .sort();
 }
 
 async function selectMyVoteStatuses(
