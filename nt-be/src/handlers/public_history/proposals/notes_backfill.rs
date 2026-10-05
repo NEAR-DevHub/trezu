@@ -243,13 +243,14 @@ mod tests {
         )
         .await;
         insert_proposal(&pool, 5, None, None, None).await;
+        insert_proposal(&pool, 6, Some(""), None, None).await;
 
         let backfill = ProposalNotesBackfill::new(pool.clone());
         let stats = backfill.run().await.unwrap();
         assert_eq!(
             stats,
             ProposalNotesBackfillStats {
-                scanned: 3,
+                scanned: 4,
                 updated: 2
             }
         );
@@ -261,6 +262,7 @@ mod tests {
                 (3, Some("From bronze".to_string())),
                 (4, Some("kept".to_string())),
                 (5, None),
+                (6, None),
             ]
         );
 
@@ -268,7 +270,7 @@ mod tests {
         assert_eq!(
             again,
             ProposalNotesBackfillStats {
-                scanned: 1,
+                scanned: 2,
                 updated: 0
             }
         );
