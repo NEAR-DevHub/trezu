@@ -36,7 +36,7 @@ export function EmptySelectorIcon({ className }: { className?: string }) {
  */
 export const selectorTriggerClassName = cn(
     nameFieldShellClassName,
-    "cursor-pointer self-stretch border-general-border text-left hover:opacity-80",
+    "cursor-pointer self-stretch border-general-border text-left transition-colors enabled:hover:border-general-unofficial-border-4",
 );
 
 /** Scrollable list inside payment select modals. Fills the sheet on mobile. */

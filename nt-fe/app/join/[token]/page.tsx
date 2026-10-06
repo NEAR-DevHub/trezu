@@ -266,12 +266,7 @@ export default function JoinInvitePage() {
                 <p className="text-sm text-general-secondary-foreground">
                     {t("walletConnected")}
                 </p>
-                <div
-                    className={cn(
-                        selectorTriggerClassName,
-                        "cursor-default hover:opacity-100",
-                    )}
-                >
+                <div className={cn(selectorTriggerClassName, "cursor-default")}>
                     <ProfileAvatarChip
                         imageUrl={resolveProfileImageUrl(profile?.image)}
                         name={existingName || accountId}

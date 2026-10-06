@@ -315,7 +315,8 @@ export function RecipientNetworkSelect({
                 disabled={isDisabled}
                 className={cn(
                     selectorTriggerClassName,
-                    invalid && "border-destructive bg-destructive/5",
+                    invalid &&
+                        "border-destructive bg-destructive/5 enabled:hover:border-destructive",
                     isDisabled && !locked && "opacity-100",
                     locked && "opacity-60",
                 )}
