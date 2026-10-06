@@ -15,12 +15,20 @@ import { DetailsCard, RequestParty } from "./primitives";
 import { REQUEST_ACTION_ROW_CLASS } from "./request-details-content";
 
 /** How far along the workflow a marker is — the rail is tinted to match. */
-type Tone = "success" | "muted" | "destructive";
+type Tone = "success" | "muted" | "destructive" | "warning";
 
 const TONE_CLASS = {
     success: "bg-general-success-foreground",
     muted: "bg-general-border",
     destructive: "bg-general-destructive-foreground",
+    warning: "bg-yellow-500",
+} as const satisfies Record<Tone, string>;
+
+/** Rails are solid, except a warning one, which is dashed 8/8. */
+const RAIL_CLASS = {
+    ...TONE_CLASS,
+    warning:
+        "bg-[linear-gradient(to_bottom,var(--color-yellow-500)_50%,transparent_50%)] bg-size-[1px_16px]",
 } as const satisfies Record<Tone, string>;
 
 /**
@@ -42,7 +50,7 @@ function Rail({
             {above === "offset" ? (
                 <div className="h-[18px] shrink-0" />
             ) : (
-                <div className={cn("w-px flex-1", TONE_CLASS[above])} />
+                <div className={cn("w-px flex-1", RAIL_CLASS[above])} />
             )}
             {dot && (
                 <div
@@ -55,7 +63,7 @@ function Rail({
             {below === "none" ? (
                 <div className="flex-1" />
             ) : (
-                <div className={cn("w-px flex-1", TONE_CLASS[below])} />
+                <div className={cn("w-px flex-1", RAIL_CLASS[below])} />
             )}
         </div>
     );
@@ -163,7 +171,6 @@ export function ApprovalWorkflow({
     // request never got there, so its rail stays grey from that point down.
     const isUnresolved = status === "Pending" || status === "Expired";
     const votingTone: Tone = isUnresolved ? "muted" : "success";
-
     let outcomeTone: Tone;
     let outcomeTitle: string;
     switch (status) {
@@ -174,6 +181,10 @@ export function ApprovalWorkflow({
         case "Expired":
             outcomeTone = "muted";
             outcomeTitle = t("expiredAt");
+            break;
+        case "Processing":
+            outcomeTone = "warning";
+            outcomeTitle = tStatus("processing");
             break;
         case "Executed":
             outcomeTone = "success";
@@ -188,9 +199,12 @@ export function ApprovalWorkflow({
             outcomeTitle = tStatus("removed");
             break;
         default:
-            outcomeTone = "destructive";
+            outcomeTone = "warning";
             outcomeTitle = tStatus("failed");
     }
+    // Still settling, or approved but never went through: the rail runs dashed
+    // from the vote onwards.
+    const railTone: Tone = outcomeTone === "warning" ? "warning" : votingTone;
 
     const outcomeDate = timestamp
         ? formatDate(timestamp)
@@ -222,7 +236,7 @@ export function ApprovalWorkflow({
             <Step
                 dot={votingTone}
                 above="success"
-                below={votingTone}
+                below={railTone}
                 title={t("approvals")}
                 subtitle={t("approvalsReceived", {
                     received: approvalsReceived,
@@ -235,15 +249,15 @@ export function ApprovalWorkflow({
             {votes.map(([voter, vote]) => (
                 <Party
                     key={voter}
-                    above={votingTone}
-                    below={votingTone}
+                    above={railTone}
+                    below={railTone}
                     accountId={voter}
                     badge={<VoteBadge vote={vote} />}
                 />
             ))}
             <Step
                 dot={outcomeTone}
-                above={votingTone}
+                above={railTone}
                 below="none"
                 title={outcomeTitle}
                 subtitle={outcomeDate}

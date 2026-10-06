@@ -29,6 +29,9 @@ pub struct EnvVars {
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
     pub disable_balance_monitoring: bool,
+    /// How many times the confidential bulk processor resets `SignFailed`
+    /// recipient hashes (`retry_failed`) before giving up on them.
+    pub confidential_bulk_max_sign_retries: i32,
     pub disable_treasury_creation: bool,
     pub disable_stats_generation: bool,
     pub disable_ft_lockup_scheduler: bool,
@@ -107,12 +110,10 @@ pub struct EnvVars {
     /// Fine-scoped GitHub token with read access to the private
     /// `defuse-frontend-monorepos` repo (near.com catalog watch).
     pub nearcom_catalog_github_token: Option<String>,
-    /// Attio CRM, where the landing page's early-access form lands. Both are
-    /// required: with either missing the form rejects every submission with a
-    /// 500 rather than quietly dropping the lead.
-    pub attio_api_key: Option<String>,
-    pub attio_early_access_list_id: Option<String>,
-    pub attio_api_base_url: String, // Override for testing
+    /// Attio workflow webhook (`https://hooks.attio.com/w/…/…`) where the
+    /// landing page's early-access form lands. Required: without it the form
+    /// rejects every submission with a 500 rather than quietly dropping the lead.
+    pub attio_early_access_webhook_url: Option<String>,
 }
 
 fn parse_csv_set(key: &str) -> HashSet<String> {
@@ -140,6 +141,10 @@ impl Default for EnvVars {
                 .expect("BULK_PAYMENT_SIGNER is not set")
                 .parse()
                 .expect("Invalid BULK_PAYMENT_SIGNER"),
+            confidential_bulk_max_sign_retries: std::env::var("CONFIDENTIAL_BULK_MAX_SIGN_RETRIES")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(3),
             fastnear_api_key: std::env::var("FASTNEAR_API_KEY")
                 .expect("FASTNEAR_API_KEY is not set"),
             sputnik_dao_api_base: std::env::var("SPUTNIK_DAO_API_BASE")
@@ -319,14 +324,9 @@ impl Default for EnvVars {
             nearcom_catalog_github_token: std::env::var("NEARCOM_CATALOG_GITHUB_TOKEN")
                 .ok()
                 .filter(|s| !s.is_empty()),
-            attio_api_key: std::env::var("ATTIO_API_KEY")
+            attio_early_access_webhook_url: std::env::var("ATTIO_EARLY_ACCESS_WEBHOOK_URL")
                 .ok()
                 .filter(|s| !s.is_empty()),
-            attio_early_access_list_id: std::env::var("ATTIO_EARLY_ACCESS_LIST_ID")
-                .ok()
-                .filter(|s| !s.is_empty()),
-            attio_api_base_url: std::env::var("ATTIO_API_BASE_URL")
-                .unwrap_or_else(|_| "https://api.attio.com".to_string()),
         }
     }
 }

@@ -255,47 +255,24 @@ export function RequestNotices({
     const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
     const {
+        status,
         isPending,
         isExecuted,
         hasDepositAddress,
-        swapStatus,
         shortQuoteDeadline,
-        isPaymentLikeProposal,
     } = details;
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
         proposal,
         treasuryId,
     );
 
-    const isSettling =
-        swapStatus?.status === "KNOWN_DEPOSIT_TX" ||
-        swapStatus?.status === "PENDING_DEPOSIT" ||
-        swapStatus?.status === "INCOMPLETE_DEPOSIT" ||
-        swapStatus?.status === "PROCESSING";
-    const hasFailed =
-        swapStatus?.status === "FAILED" || swapStatus?.status === "REFUNDED";
-
     return (
         <>
-            {isExecuted && hasDepositAddress && isSettling && (
-                <InfoAlert
-                    className="inline-flex"
-                    message={
-                        <span>
-                            <strong>
-                                {isPaymentLikeProposal
-                                    ? t("processingPayment")
-                                    : t("exchangingTokens")}
-                            </strong>
-                            <br />
-                            {isPaymentLikeProposal
-                                ? t("processingPaymentBody")
-                                : t("exchangingTokensBody")}
-                        </span>
-                    }
-                />
+            {status === "Processing" && (
+                <InfoAlert className="inline-flex" message={t("processing")} />
             )}
-            {isExecuted && hasDepositAddress && hasFailed && (
+            {/* Approved on-chain, but the swap it paid for didn't go through. */}
+            {isExecuted && hasDepositAddress && status === "Failed" && (
                 <InfoAlert
                     className="inline-flex"
                     message={

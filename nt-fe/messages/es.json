@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Cargando...",
+        "loading": "Cargando",
         "notAvailable": "N/D",
-        "connecting": "Conectando...",
+        "connecting": "Conectando",
         "save": "Guardar",
         "cancel": "Cancelar",
         "submit": "Enviar",
@@ -18,7 +18,7 @@
         "exporting": "Exportando",
         "import": "Importar",
         "remove": "Eliminar",
-        "removing": "Eliminando...",
+        "removing": "Eliminando",
         "edit": "Editar",
         "continue": "Continuar",
         "select": "Seleccionar",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "No tienes permiso para exportar",
             "quotaExhausted": "Has agotado tu cuota",
-            "exporting": "Exportando...",
+            "exporting": "Exportando",
             "export": "Exportar"
         },
         "empty": {
@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Pendiente",
+            "processing": "Procesando",
             "approved": "Aprobada",
             "rejected": "Rechazada",
             "executed": "Ejecutada",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Esta solicitud sigue pendiente y aún no ha alcanzado el número de votos requerido para ejecutarse.",
+            "processing": "Aprobada y en proceso. Solo tardará unos segundos.",
             "executed": "Ejecutada después de que {approved} de {required} miembros aprobaran la solicitud.",
             "rejected": "Rechazada después de que {rejected} de {required} miembros votaran en contra.",
             "expired": "Caducada al no recibir suficientes votos para ejecutarse.",
@@ -868,8 +870,7 @@
             "approvalsReceived": "{received}/{required} aprobaciones recibidas",
             "expiresAt": "Caduca el",
             "expiredAt": "Caducó el",
-            "exchangingTokens": "Intercambiando tokens",
-            "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
+            "processing": "Tu solicitud está aprobada y en proceso: solo unos segundos.",
             "requestFailed": "Solicitud fallida",
             "requestFailedBody": "El equipo aprobó esta solicitud, pero falló debido a fluctuaciones de la tasa. Crea una nueva solicitud e inténtalo de nuevo.",
             "votingPeriod24h": "Periodo de votación: 24 horas",
@@ -877,8 +878,6 @@
             "reject": "Rechazar",
             "approve": "Aprobar",
             "destinationNetwork": "Red de destino",
-            "processingPayment": "Procesando pago",
-            "processingPaymentBody": "Este pago ha sido aprobado por el equipo y ahora está siendo procesado. Puede tardar algún tiempo.",
             "addMember": "Añadir miembro",
             "removeMember": "Eliminar miembro",
             "member": "Miembro",
@@ -940,7 +939,7 @@
                 "voteDescription": "Sus datos llegan precargados. Creas la solicitud y el equipo vota."
             },
             "generateLink": "Generar enlace de invitación",
-            "generating": "Generando...",
+            "generating": "Generando",
             "generateFailed": "No se pudo generar el enlace de invitación. Inténtalo de nuevo.",
             "readyTitle": "Tu enlace de invitación está listo",
             "readyDescription": "Envíalo a la persona que quieres añadir. Conectará una billetera y pedirá unirse.",
@@ -1010,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# nuevo miembro} other {# nuevos miembros}}",
             "updatedMembers": "Miembros actualizados",
             "newMembers": "Nuevos miembros",
-            "creatingProposal": "Creando propuesta...",
+            "creatingProposal": "Creando propuesta",
             "confirmSubmit": "Crear solicitud"
         },
         "removeDialog": {
             "title": "¿Eliminar {count, plural, one {miembro} other {miembros}}?",
             "nearnBody": "Una vez aprobado, {account} se eliminará permanentemente de la tesorería y se revocarán todos los permisos asociados. Tras la eliminación, esta cuenta ya no podrá crear solicitudes desde NEARN.",
             "genericBody": "Una vez aprobado, esta acción eliminará permanentemente a <bold>{accounts}</bold> de la tesorería y revocará todos los permisos asignados.",
-            "creatingProposal": "Creando propuesta..."
+            "creatingProposal": "Creando propuesta"
         },
         "validation": {
             "accountIdRequired": "Se requiere el ID de cuenta",
@@ -1062,7 +1061,7 @@
             "displayNamePlaceholder": "Introduce el nombre visible",
             "logo": "Logotipo",
             "logoDescription": "Sube un logotipo para tu tesorería. Se recomienda SVG, PNG o JPG (256x256 px).",
-            "uploading": "Subiendo...",
+            "uploading": "Subiendo",
             "removeLogo": "Eliminar",
             "logoUploaded": "Logotipo subido correctamente",
             "uploadError": "Error al subir la imagen, inténtalo de nuevo.",
@@ -1136,7 +1135,7 @@
             "manualSomeDuplicates": "{duplicates, plural, =1 {# de {total} contactos ya existe en tu libreta de direcciones.} other {# de {total} contactos ya existen en tu libreta de direcciones.}} Solo se guardarán los contactos nuevos.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Este contacto ya está en tu libreta de direcciones, así que no hay nada nuevo que guardar.} other {Estos contactos ya están en tu libreta de direcciones, así que no hay nada nuevo que guardar.}}",
             "duplicateActionTooltip": "Activa omitir duplicados o elimina los destinatarios duplicados para continuar.",
-            "adding": "Añadiendo…",
+            "adding": "Añadiendo",
             "nothingNew": "Nada nuevo para importar",
             "addRecipientsButton": "Guardar contactos"
         },
@@ -1144,7 +1143,8 @@
             "title": "Eliminar destinatario",
             "body": "Esto eliminará <bold>{names}</bold> de tus contactos. Puedes añadirlos de nuevo en cualquier momento.",
             "bulk": "Esto eliminará <bold>{count, plural, one {# destinatario} other {# destinatarios}}</bold> de tu libreta de direcciones. Puedes añadirlos de nuevo cuando quieras.",
-            "single": "Esto eliminará <bold>{name}</bold> de tu libreta de direcciones. Puedes añadir este destinatario de nuevo cuando quieras."
+            "single": "Esto eliminará <bold>{name}</bold> de tu libreta de direcciones. Puedes añadir este destinatario de nuevo cuando quieras.",
+            "removing": "Eliminando"
         },
         "importFlow": {
             "title": "Importar destinatarios",
@@ -1562,7 +1562,7 @@
         "proposalDescriptionLabel": "Descripción de la propuesta (opcional)",
         "proposalDescriptionPlaceholder": "Describe esta propuesta...",
         "createProposal": "Crear propuesta",
-        "creatingProposal": "Creando propuesta...",
+        "creatingProposal": "Creando propuesta",
         "confirmInWallet": "Confirma en tu cartera",
         "proposalSubmitted": "Propuesta enviada",
         "shareProposal": "Tu propuesta ha sido creada. Comparte el enlace de abajo con los miembros de la tesorería para votar.",
@@ -1612,7 +1612,7 @@
         "relinking": "{count, plural, one {# tesorería seleccionada está vinculada a otro chat de Telegram. Al conectar se reconectará y cambiará su vínculo a este chat.} other {# tesorerías seleccionadas están vinculadas a otros chats de Telegram. Al conectar se reconectarán y cambiarán sus vínculos a este chat.}}",
         "connectedToAnother": "Conectada a otro chat",
         "notMember": "No eres miembro de la política de ninguna tesorería.",
-        "connecting": "Conectando…",
+        "connecting": "Conectando",
         "connect": "Conectar",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1823,7 @@
         "noDownloadPermission": "No tienes permiso para descargar el archivo.",
         "noExportPermission": "No tienes permiso para exportar",
         "quotaUsed": "Has usado toda tu cuota",
-        "exporting": "Exportando...",
+        "exporting": "Exportando",
         "export": "Exportar",
         "columnSubmissionTime": "Fecha de envío",
         "columnDateRange": "Rango de fechas",
@@ -2513,7 +2513,7 @@
             "title": "Eliminar plantilla",
             "body": "¿Eliminar <b>{name}</b>? Los miembros ya no podrán presentar propuestas a partir de ella. Esta acción no se puede deshacer.",
             "confirm": "Eliminar",
-            "deleting": "Eliminando…"
+            "deleting": "Eliminando"
         },
         "editor": {
             "nameLabel": "Nombre",
@@ -2657,7 +2657,7 @@
         "save": "Guardar",
         "edit": "Editar",
         "remove": "Eliminar",
-        "uploading": "Subiendo...",
+        "uploading": "Subiendo",
         "saveSuccess": "Tus cambios se guardaron.",
         "saveError": "No se pudieron guardar los cambios. Inténtalo de nuevo.",
         "invalidImage": "Elige un archivo de imagen válido.",

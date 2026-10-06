@@ -1033,24 +1033,6 @@ export async function submitWhitelistRequest(
     await axios.post(`${BACKEND_API_BASE}/treasury/whitelist-request`, body);
 }
 
-/**
- * Campaign tags read off the landing page's own URL. Every field is optional:
- * the backend drops the ones that are absent rather than writing them blank.
- *
- * Deliberately coarse — `referrer` is a bare host and `landingPage` a bare
- * path. These are stored as CRM free text, so neither may carry a querystring
- * or fragment the visitor did not knowingly disclose.
- */
-export interface EarlyAccessAttribution {
-    utmSource?: string;
-    utmMedium?: string;
-    utmCampaign?: string;
-    utmTerm?: string;
-    utmContent?: string;
-    referrer?: string;
-    landingPage?: string;
-}
-
 export interface EarlyAccessRequestBody {
     name: string;
     company: string;
@@ -1061,7 +1043,8 @@ export interface EarlyAccessRequestBody {
     referralSource: string;
     /** The marketing tickbox. Privacy is a notice on the form, not a choice. */
     marketingOptIn: boolean;
-    attribution?: EarlyAccessAttribution;
+    /** Full URL without the querystring or fragment. */
+    landingPage: string;
 }
 
 /**
