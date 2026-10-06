@@ -475,15 +475,15 @@ export function getProposalStatusDateInfo(
 const FEATURE_WARNING_SLOT: Partial<Record<ProposalUIKind, string>> = {
     "Payment Request": "payments",
     "Batch Payment Request": "payments",
-    "Confidential Request": "payments",
     "Move to Confidential": "payments",
     Exchange: "exchange",
 };
 
 /**
  * Feature warning slot for this request. Payments and exchanges only.
- * A confidential swap uses the exchange slot; other confidential requests
- * use payments. Other kinds have no feature slot.
+ * A confidential swap uses the exchange slot. A confidential payment or
+ * bulk payment uses payments. A confidential request with no mapped quote
+ * has no feature slot. Other kinds have no feature slot.
  */
 export function getProposalFeatureWarningSlot(
     proposal: Proposal,
@@ -493,7 +493,11 @@ export function getProposalFeatureWarningSlot(
     if (uiKind === "Confidential Request") {
         const data = extractProposalData(proposal, treasuryId)
             .data as ConfidentialRequestData;
-        return data.mapped?.type === "swap" ? "exchange" : "payments";
+        if (data.mapped?.type === "swap") return "exchange";
+        if (data.mapped?.type === "payment" || data.mapped?.type === "bulk") {
+            return "payments";
+        }
+        return null;
     }
     return FEATURE_WARNING_SLOT[uiKind] ?? null;
 }
