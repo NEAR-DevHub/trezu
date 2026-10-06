@@ -681,7 +681,7 @@ mod tests {
         assert!(message.contains("Trigger: <b>Manual</b> · Post to app · by Megha_Goel"));
         assert!(message.contains("Exchange quotes"));
         assert!(message.contains("exchange.quote"));
-        assert!(message.contains("Exchange is temporarily paused"));
+        assert!(message.contains("Swap is temporarily paused"));
         assert!(message.contains("Response: Paused"));
         assert!(message.contains("Severity: High"));
         assert!(!message.contains("Deposits are paused"));

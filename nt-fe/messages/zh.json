@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "加载中...",
+        "loading": "加载中",
         "notAvailable": "不适用",
-        "connecting": "连接中...",
+        "connecting": "连接中",
         "save": "保存",
         "cancel": "取消",
         "submit": "提交",
@@ -18,7 +18,7 @@
         "exporting": "导出中",
         "import": "导入",
         "remove": "移除",
-        "removing": "移除中...",
+        "removing": "移除中",
         "edit": "编辑",
         "continue": "继续",
         "select": "选择",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "您没有导出权限",
             "quotaExhausted": "您的配额已用完",
-            "exporting": "导出中...",
+            "exporting": "导出中",
             "export": "导出"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "信息会预填好。你创建请求，团队进行投票。"
             },
             "generateLink": "生成邀请链接",
-            "generating": "生成中...",
+            "generating": "生成中",
             "generateFailed": "生成邀请链接失败，请重试。",
             "readyTitle": "邀请链接已就绪",
             "readyDescription": "发给你想添加的人。对方会连接钱包并申请加入。",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, other {# 名新成员}}",
             "updatedMembers": "已更新成员",
             "newMembers": "新成员",
-            "creatingProposal": "正在创建提案...",
+            "creatingProposal": "正在创建提案",
             "confirmSubmit": "创建请求"
         },
         "removeDialog": {
             "title": "移除{count, plural, one {成员} other {成员}}？",
             "nearnBody": "一旦获批,{account} 将从金库中被永久移除,所有相关权限也将被撤销。移除后,此账户将无法再从 NEARN 创建请求。",
             "genericBody": "一旦获批,此操作将从金库中永久移除 <bold>{accounts}</bold>,并撤销所有已分配的权限。",
-            "creatingProposal": "正在创建提案..."
+            "creatingProposal": "正在创建提案"
         },
         "validation": {
             "accountIdRequired": "账户 ID 为必填项",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "输入显示名称",
             "logo": "标志",
             "logoDescription": "为您的金库上传标志。建议使用 SVG、PNG 或 JPG 格式(256x256 像素)。",
-            "uploading": "上传中...",
+            "uploading": "上传中",
             "removeLogo": "移除",
             "logoUploaded": "标志上传成功",
             "uploadError": "上传图片时出错,请再试一次。",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{total} 个联系人中有 {duplicates} 个已存在于地址簿中。将仅保存新的联系人。",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {此联系人已在您的地址簿中，因此没有新的可保存项。} other {这些联系人已在您的地址簿中，因此没有新的可保存项。}}",
             "duplicateActionTooltip": "启用跳过重复项或移除重复收款人后即可继续。",
-            "adding": "正在添加…",
+            "adding": "正在添加",
             "nothingNew": "没有可导入的新内容",
             "addRecipientsButton": "保存联系人"
         },
@@ -1143,7 +1143,8 @@
             "title": "移除收款人",
             "body": "这将从您的联系人中移除 <bold>{names}</bold>。您可以随时再次添加。",
             "bulk": "这将从您的地址簿中移除 <bold>{count, plural, other {# 个收款人}}</bold>。您可以随时再次添加。",
-            "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。"
+            "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。",
+            "removing": "移除中"
         },
         "importFlow": {
             "title": "导入收款人",
@@ -1545,7 +1546,7 @@
         "proposalDescriptionLabel": "提案描述(可选)",
         "proposalDescriptionPlaceholder": "描述此提案...",
         "createProposal": "创建提案",
-        "creatingProposal": "正在创建提案...",
+        "creatingProposal": "正在创建提案",
         "confirmInWallet": "请在您的钱包中确认",
         "proposalSubmitted": "提案已提交",
         "shareProposal": "您的提案已创建。请将下方链接分享给金库成员进行投票。",
@@ -1595,7 +1596,7 @@
         "relinking": "{count, plural, other {# 个所选金库当前已链接到其他 Telegram 聊天。连接将重新链接它们,并将其聊天 ID 更改为此聊天。}}",
         "connectedToAnother": "已连接到其他聊天",
         "notMember": "您不是任何金库的策略成员。",
-        "connecting": "连接中…",
+        "connecting": "连接中",
         "connect": "连接",
         "settings": {
             "title": "Telegram",
@@ -1806,7 +1807,7 @@
         "noDownloadPermission": "您没有下载此文件的权限。",
         "noExportPermission": "您没有导出权限",
         "quotaUsed": "您的配额已用完",
-        "exporting": "导出中...",
+        "exporting": "导出中",
         "export": "导出",
         "columnSubmissionTime": "提交时间",
         "columnDateRange": "日期范围",
@@ -2403,8 +2404,9 @@
         }
     },
     "warnings": {
+        "gotIt": "知道了",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "于",
             "until": "至"
@@ -2495,7 +2497,7 @@
             "title": "删除模板",
             "body": "确定删除 <b>{name}</b>？成员将无法再使用它发起提案。此操作无法撤销。",
             "confirm": "删除",
-            "deleting": "正在删除…"
+            "deleting": "正在删除"
         },
         "editor": {
             "nameLabel": "名称",
@@ -2656,7 +2658,7 @@
         "save": "保存",
         "edit": "编辑",
         "remove": "移除",
-        "uploading": "上传中...",
+        "uploading": "上传中",
         "saveSuccess": "您的更改已保存。",
         "saveError": "无法保存更改。请重试。",
         "invalidImage": "请选择有效的图片文件。",

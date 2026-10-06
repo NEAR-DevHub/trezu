@@ -1,5 +1,5 @@
 {
-  "statusPageLink": "[Status page](https://status.trezu.org/)",
+  "statusPageLink": "[Status page](https://status.business.near.com)",
   "placements": {
     "app": "App-wide banner (every page)",
     "login": "Login – all wallets",
@@ -87,7 +87,7 @@
       "placements": ["features"],
       "byPlacement": {
         "payments": "### Payments are temporarily paused.\nWe're working on it.",
-        "exchange": "### Exchange is temporarily paused.\nWe're working on it.",
+        "exchange": "### Swap is temporarily paused.\nWe're working on it.",
         "deposit": "### Deposits are temporarily paused.\nWe're working on it.",
         "features": "### Some features are temporarily paused.\nWe're working on it."
       }
@@ -153,8 +153,8 @@
       "placements": [],
       "scope": "wallet",
       "byPlacement": {
-        "login": "### Signing in isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back.",
-        "login.wallet.*": "### Signing in with {wallet} isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back."
+        "login": "### Wallet sign-in is paused right now\nYour treasury and funds are safe on-chain. Updates: {statusPageLink}",
+        "login.wallet.*": "### This wallet isn't working right now.\nIt'll be back soon, or pick another"
       }
     },
     {

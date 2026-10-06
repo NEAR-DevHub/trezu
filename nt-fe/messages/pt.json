@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Carregando...",
+        "loading": "Carregando",
         "notAvailable": "N/D",
-        "connecting": "Conectando...",
+        "connecting": "Conectando",
         "save": "Salvar",
         "cancel": "Cancelar",
         "submit": "Enviar",
@@ -18,7 +18,7 @@
         "exporting": "Exportando",
         "import": "Importar",
         "remove": "Remover",
-        "removing": "Removendo...",
+        "removing": "Removendo",
         "edit": "Editar",
         "continue": "Continuar",
         "select": "Selecionar",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Você não tem permissão para exportar",
             "quotaExhausted": "Você usou toda a sua cota",
-            "exporting": "Exportando...",
+            "exporting": "Exportando",
             "export": "Exportar"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "Os dados chegam pré-preenchidos. Você cria a solicitação e a equipe vota."
             },
             "generateLink": "Gerar link de convite",
-            "generating": "Gerando...",
+            "generating": "Gerando",
             "generateFailed": "Falha ao gerar o link de convite. Tente novamente.",
             "readyTitle": "Seu link de convite está pronto",
             "readyDescription": "Envie para a pessoa que deseja adicionar. Ela conectará uma carteira e pedirá para entrar.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# novo membro} other {# novos membros}}",
             "updatedMembers": "Membros atualizados",
             "newMembers": "Novos membros",
-            "creatingProposal": "Criando proposta...",
+            "creatingProposal": "Criando proposta",
             "confirmSubmit": "Criar solicitação"
         },
         "removeDialog": {
             "title": "Remover {count, plural, one {membro} other {membros}}?",
             "nearnBody": "Após aprovado, {account} será removido permanentemente da tesouraria e todas as permissões associadas serão revogadas. Após a remoção, esta conta não poderá mais criar solicitações a partir do NEARN.",
             "genericBody": "Após aprovada, esta ação removerá permanentemente <bold>{accounts}</bold> da tesouraria e revogará todas as permissões atribuídas.",
-            "creatingProposal": "Criando proposta..."
+            "creatingProposal": "Criando proposta"
         },
         "validation": {
             "accountIdRequired": "ID da conta é obrigatório",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Insira o nome de exibição",
             "logo": "Logotipo",
             "logoDescription": "Faça upload de um logotipo para sua tesouraria. Recomendado SVG, PNG ou JPG (256x256 px).",
-            "uploading": "Enviando...",
+            "uploading": "Enviando",
             "removeLogo": "Remover",
             "logoUploaded": "Logotipo enviado com sucesso",
             "uploadError": "Ocorreu um erro ao enviar a imagem, por favor tente novamente.",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{duplicates, plural, =1 {# de {total} contatos já existe na sua lista de contatos.} other {# de {total} contatos já existem na sua lista de contatos.}} Somente os novos contatos serão salvos.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Este contato já está na sua lista de contatos, então não há nada novo para salvar.} other {Estes contatos já estão na sua lista de contatos, então não há nada novo para salvar.}}",
             "duplicateActionTooltip": "Ative o pulo de duplicatas ou remova destinatários duplicados para continuar.",
-            "adding": "Adicionando…",
+            "adding": "Adicionando",
             "nothingNew": "Nada novo para importar",
             "addRecipientsButton": "Salvar contatos"
         },
@@ -1143,7 +1143,8 @@
             "title": "Remover destinatário",
             "body": "Isso removerá <bold>{names}</bold> dos seus contatos. Você pode adicioná-los novamente a qualquer momento.",
             "bulk": "Isso removerá <bold>{count, plural, one {# destinatário} other {# destinatários}}</bold> do seu catálogo de endereços. Você pode adicioná-los novamente a qualquer momento.",
-            "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento."
+            "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento.",
+            "removing": "Removendo"
         },
         "importFlow": {
             "title": "Importar destinatários",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "Descrição da proposta (opcional)",
         "proposalDescriptionPlaceholder": "Descreva esta proposta...",
         "createProposal": "Criar proposta",
-        "creatingProposal": "Criando proposta...",
+        "creatingProposal": "Criando proposta",
         "confirmInWallet": "Por favor, confirme na sua carteira",
         "proposalSubmitted": "Proposta enviada",
         "shareProposal": "Sua proposta foi criada. Compartilhe o link abaixo com os membros da tesouraria para votarem.",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, one {# tesouraria selecionada está vinculada a outro chat do Telegram. Conectar fará a reconexão e alterará o link do ID do chat para este chat.} other {# tesourarias selecionadas estão vinculadas a outros chats do Telegram. Conectar fará a reconexão e alterará os links de ID do chat para este chat.}}",
         "connectedToAnother": "Conectada a outro chat",
         "notMember": "Você não é membro de nenhuma tesouraria.",
-        "connecting": "Conectando…",
+        "connecting": "Conectando",
         "connect": "Conectar",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "Você não tem permissão para baixar o arquivo.",
         "noExportPermission": "Você não tem permissão para exportar",
         "quotaUsed": "Você usou toda a sua cota",
-        "exporting": "Exportando...",
+        "exporting": "Exportando",
         "export": "Exportar",
         "columnSubmissionTime": "Data de envio",
         "columnDateRange": "Intervalo de datas",
@@ -2420,8 +2421,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Entendi",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Página de status](https://status.trezu.org/)",
+        "statusPageLink": "[Página de status](https://status.business.near.com)",
         "schedule": {
             "on": "em",
             "until": "até"
@@ -2512,7 +2514,7 @@
             "title": "Excluir modelo",
             "body": "Excluir <b>{name}</b>? Os membros não poderão mais registrar propostas a partir dele. Esta ação não pode ser desfeita.",
             "confirm": "Excluir",
-            "deleting": "Excluindo…"
+            "deleting": "Excluindo"
         },
         "editor": {
             "nameLabel": "Nome",
@@ -2656,7 +2658,7 @@
         "save": "Salvar",
         "edit": "Editar",
         "remove": "Remover",
-        "uploading": "Enviando...",
+        "uploading": "Enviando",
         "saveSuccess": "Suas alterações foram salvas.",
         "saveError": "Não foi possível salvar as alterações. Tente novamente.",
         "invalidImage": "Escolha um arquivo de imagem válido.",

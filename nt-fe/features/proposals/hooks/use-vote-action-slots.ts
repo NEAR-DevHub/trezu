@@ -1,6 +1,9 @@
 import { useSlotBlock, type Warning } from "@/hooks/use-warnings";
 import { stripMessageForTooltip } from "@/lib/warnings";
 
+/** Actions-wide outage. Shown as a button hover, not a request-details banner. */
+const REQUESTS_WONT_PROCESS = "requests_wont_process";
+
 export type VoteActionSlot = "action.approve" | "action.reject";
 
 export interface VoteActionSlotState {
@@ -18,6 +21,11 @@ export interface VoteActionSlotState {
      * Tooltip for CTAs with no nearby banner (e.g. bulk approve/reject bar).
      */
     blockedTooltip?: string;
+    /**
+     * Hover copy for the actions-wide outage. Request details uses this
+     * instead of a banner.
+     */
+    hoverTooltip?: string;
 }
 
 export interface VoteActionSlots {
@@ -42,6 +50,8 @@ function toVoteActionSlotState(
 ): VoteActionSlotState {
     const isAppLevel = isAppLevelSlotBlock(slot, block.blocked, block.warning);
     const stripped = stripMessageForTooltip(block.message) || undefined;
+    const isRequestsWontProcess =
+        block.warning?.situation === REQUESTS_WONT_PROCESS;
 
     return {
         blocked: block.blocked,
@@ -50,7 +60,15 @@ function toVoteActionSlotState(
         isAppLevel,
         inlineTooltip: isAppLevel ? stripped : undefined,
         blockedTooltip: block.blocked ? stripped : undefined,
+        hoverTooltip:
+            block.blocked && isRequestsWontProcess ? stripped : undefined,
     };
+}
+
+export function isRequestsWontProcessWarning(
+    warning: Warning | null | undefined,
+): boolean {
+    return warning?.situation === REQUESTS_WONT_PROCESS;
 }
 
 /**

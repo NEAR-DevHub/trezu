@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/button";
 import {
     Dialog,
@@ -10,18 +10,23 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
+    mobileInsetSheetClassName,
 } from "@/components/modal";
-import { parseWarningCopy } from "@/components/warning-message";
-import { useWarningMessage } from "@/hooks/use-warnings";
-import { useWarnings } from "@/hooks/use-warnings";
+import {
+    parseWarningCopy,
+    renderWithLinks,
+} from "@/components/warning-message";
+import { useWarningMessage, useWarnings } from "@/hooks/use-warnings";
+import { cn } from "@/lib/utils";
 
 /**
  * Shows a one-time-per-session modal when balances are temporarily
- * unavailable (`data.balances` warning). After dismissal the persistent
- * banner in the sidebar keeps the user informed.
+ * unavailable (`data.balances` warning). Same inset sheet on small screens
+ * and centered dialog on large screens. After dismissal the persistent
+ * banner keeps the user informed.
  */
 export function BalanceWarningModal() {
-    const t = useTranslations("proposals.insufficientBalance");
+    const t = useTranslations("warnings");
     const { getWarning } = useWarnings();
     const warning = getWarning("data.balances");
     const message = useWarningMessage(warning, "data.balances");
@@ -66,13 +71,30 @@ export function BalanceWarningModal() {
                 if (!next) handleClose();
             }}
         >
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{heading}</DialogTitle>
-                </DialogHeader>
-                {body && <DialogDescription>{body}</DialogDescription>}
-                <DialogFooter>
-                    <Button className="w-full" onClick={handleClose}>
+            <DialogContent
+                className={cn(
+                    "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                    mobileInsetSheetClassName,
+                )}
+            >
+                <DialogHeader className="mx-0 border-0 px-0 pb-0" />
+                <div className="flex flex-col items-center gap-2 text-center">
+                    <DialogTitle className="text-xl font-bold leading-[1.2] tracking-[-0.4px]">
+                        {heading || body}
+                    </DialogTitle>
+                    {heading && body ? (
+                        <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
+                            {renderWithLinks(body)}
+                        </DialogDescription>
+                    ) : null}
+                </div>
+                <DialogFooter className="mx-0 px-0 pt-0">
+                    <Button
+                        type="button"
+                        className="h-10 w-full rounded-2xl focus-visible:border-transparent focus-visible:ring-0"
+                        onClick={handleClose}
+                        data-testid="balance-warning-dismiss"
+                    >
                         {t("gotIt")}
                     </Button>
                 </DialogFooter>

@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Yükleniyor...",
+        "loading": "Yükleniyor",
         "notAvailable": "Yok",
-        "connecting": "Bağlanıyor...",
+        "connecting": "Bağlanıyor",
         "save": "Kaydet",
         "cancel": "İptal",
         "submit": "Gönder",
@@ -18,7 +18,7 @@
         "exporting": "Dışa Aktarılıyor",
         "import": "İçe Aktar",
         "remove": "Kaldır",
-        "removing": "Kaldırılıyor...",
+        "removing": "Kaldırılıyor",
         "edit": "Düzenle",
         "continue": "Devam Et",
         "select": "Seç",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Dışa aktarma izniniz yok",
             "quotaExhausted": "Tüm kotanızı kullandınız",
-            "exporting": "Dışa Aktarılıyor...",
+            "exporting": "Dışa Aktarılıyor",
             "export": "Dışa Aktar"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "Bilgileri önceden dolar. Talebi siz oluşturursunuz, ekip oy verir."
             },
             "generateLink": "Davet bağlantısı oluştur",
-            "generating": "Oluşturuluyor...",
+            "generating": "Oluşturuluyor",
             "generateFailed": "Davet bağlantısı oluşturulamadı. Lütfen tekrar deneyin.",
             "readyTitle": "Davet bağlantınız hazır",
             "readyDescription": "Eklemek istediğiniz kişiye gönderin. Cüzdan bağlayıp katılmak isteyecekler.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# yeni üye} other {# yeni üye}}",
             "updatedMembers": "Güncellenmiş Üyeler",
             "newMembers": "Yeni Üyeler",
-            "creatingProposal": "Öneri Oluşturuluyor...",
+            "creatingProposal": "Öneri Oluşturuluyor",
             "confirmSubmit": "Talep oluştur"
         },
         "removeDialog": {
             "title": "{count, plural, one {Üye} other {Üyeler}} kaldırılsın mı?",
             "nearnBody": "Onaylandıktan sonra, {account} hazineden kalıcı olarak kaldırılacak ve ilgili tüm izinler iptal edilecek. Kaldırıldıktan sonra, bu hesap NEARN'den artık talep oluşturamayacak.",
             "genericBody": "Onaylandıktan sonra, bu işlem <bold>{accounts}</bold> üyesini hazineden kalıcı olarak kaldıracak ve atanan tüm izinleri iptal edecek.",
-            "creatingProposal": "Öneri Oluşturuluyor..."
+            "creatingProposal": "Öneri Oluşturuluyor"
         },
         "validation": {
             "accountIdRequired": "Hesap kimliği gereklidir",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Görünen adı girin",
             "logo": "Logo",
             "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
-            "uploading": "Yükleniyor...",
+            "uploading": "Yükleniyor",
             "removeLogo": "Kaldır",
             "logoUploaded": "Logo başarıyla yüklendi",
             "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{total} kişiden {duplicates} tanesi zaten adres defterinizde var. Yalnızca yeni kişiler kaydedilecek.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Bu kişi zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.} other {Bu kişiler zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.}}",
             "duplicateActionTooltip": "Devam etmek için tekrar atlamayı etkinleştirin veya tekrarlanan alıcıları kaldırın.",
-            "adding": "Ekleniyor…",
+            "adding": "Ekleniyor",
             "nothingNew": "İçe Aktarılacak Yeni Bir Şey Yok",
             "addRecipientsButton": "Kişileri kaydet"
         },
@@ -1143,7 +1143,8 @@
             "title": "Alıcıyı Kaldır",
             "body": "Bu, kişilerinizden <bold>{names}</bold> kaydını kaldırır. İstediğiniz zaman yeniden ekleyebilirsiniz.",
             "bulk": "Bu, adres defterinizden <bold>{count, plural, one {# alıcıyı} other {# alıcıyı}}</bold> kaldıracak. Onları istediğiniz zaman tekrar ekleyebilirsiniz.",
-            "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz."
+            "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz.",
+            "removing": "Kaldırılıyor"
         },
         "importFlow": {
             "title": "Alıcıları İçe Aktar",
@@ -1562,7 +1563,7 @@
         "proposalDescriptionLabel": "Öneri açıklaması (isteğe bağlı)",
         "proposalDescriptionPlaceholder": "Bu öneriyi açıklayın...",
         "createProposal": "Öneri Oluştur",
-        "creatingProposal": "Öneri oluşturuluyor...",
+        "creatingProposal": "Öneri oluşturuluyor",
         "confirmInWallet": "Lütfen cüzdanınızda onaylayın",
         "proposalSubmitted": "Öneri Gönderildi",
         "shareProposal": "Öneriniz oluşturuldu. Oy kullanmak için aşağıdaki bağlantıyı hazine üyeleriyle paylaşın.",
@@ -1612,7 +1613,7 @@
         "relinking": "{count, plural, one {# seçili hazine başka bir Telegram sohbetine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantısını bu sohbete değiştirecek.} other {# seçili hazine başka Telegram sohbetlerine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantılarını bu sohbete değiştirecek.}}",
         "connectedToAnother": "Başka bir sohbete bağlı",
         "notMember": "Hiçbir hazinenin politika üyesi değilsiniz.",
-        "connecting": "Bağlanıyor…",
+        "connecting": "Bağlanıyor",
         "connect": "Bağlan",
         "settings": {
             "title": "Telegram",
@@ -1823,7 +1824,7 @@
         "noDownloadPermission": "Dosyayı indirme izniniz yok.",
         "noExportPermission": "Dışa aktarma izniniz yok",
         "quotaUsed": "Tüm kotanızı kullandınız",
-        "exporting": "Dışa Aktarılıyor...",
+        "exporting": "Dışa Aktarılıyor",
         "export": "Dışa Aktar",
         "columnSubmissionTime": "Gönderim Zamanı",
         "columnDateRange": "Tarih Aralığı",
@@ -2420,8 +2421,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Anladım",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "tarihinde",
             "until": "tarihine kadar"
@@ -2512,7 +2514,7 @@
             "title": "Şablonu sil",
             "body": "<b>{name}</b> şablonunu silmek istiyor musunuz? Üyeler artık bundan teklif oluşturamayacak. Bu işlem geri alınamaz.",
             "confirm": "Sil",
-            "deleting": "Siliniyor…"
+            "deleting": "Siliniyor"
         },
         "editor": {
             "nameLabel": "Ad",
@@ -2656,7 +2658,7 @@
         "save": "Kaydet",
         "edit": "Düzenle",
         "remove": "Kaldır",
-        "uploading": "Yükleniyor...",
+        "uploading": "Yükleniyor",
         "saveSuccess": "Değişiklikleriniz kaydedildi.",
         "saveError": "Değişiklikler kaydedilemedi. Tekrar deneyin.",
         "invalidImage": "Lütfen geçerli bir görsel dosyası seçin.",

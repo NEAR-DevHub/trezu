@@ -1,13 +1,13 @@
 import { useTranslations } from "next-intl";
+import { Button } from "@/components/button";
 import {
     Dialog,
     DialogContent,
-    DialogHeader,
-    DialogTitle,
     DialogDescription,
     DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/modal";
-import { Button } from "@/components/button";
 
 interface InsufficientBalanceModalProps {
     isOpen: boolean;

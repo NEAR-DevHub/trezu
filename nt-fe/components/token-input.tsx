@@ -642,6 +642,7 @@ export function TokenInput<
                         className={cn(
                             "text-sm font-semibold",
                             messageOffsetClass,
+                            isSwapCard && "mt-3",
                         )}
                     />
                 ) : infoMessage ? (

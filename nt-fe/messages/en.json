@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Loading...",
+        "loading": "Loading",
         "notAvailable": "N/A",
-        "connecting": "Connecting...",
+        "connecting": "Connecting",
         "save": "Save",
         "cancel": "Cancel",
         "submit": "Submit",
@@ -18,7 +18,7 @@
         "exporting": "Exporting",
         "import": "Import",
         "remove": "Remove",
-        "removing": "Removing...",
+        "removing": "Removing",
         "edit": "Edit",
         "continue": "Continue",
         "select": "Select",
@@ -575,7 +575,7 @@
         "buttons": {
             "noPermissionExport": "You don't have permission to export",
             "quotaExhausted": "You've used all your quota",
-            "exporting": "Exporting...",
+            "exporting": "Exporting",
             "export": "Export"
         },
         "empty": {
@@ -943,7 +943,7 @@
                 "voteDescription": "Their details arrive pre-filled. You create the request, and the team votes."
             },
             "generateLink": "Generate invite link",
-            "generating": "Generating...",
+            "generating": "Generating",
             "generateFailed": "Failed to generate invite link. Please try again.",
             "readyTitle": "Your invite link is ready",
             "readyDescription": "Send it to the person you want to add. They'll connect a wallet and ask to join.",
@@ -1008,14 +1008,14 @@
             "newMembersCount": "{count, plural, one {# new member} other {# new members}}",
             "updatedMembers": "Updated members",
             "newMembers": "New members",
-            "creatingProposal": "Creating proposal...",
+            "creatingProposal": "Creating proposal",
             "confirmSubmit": "Create request"
         },
         "removeDialog": {
             "title": "Remove {count, plural, one {member} other {members}}?",
             "nearnBody": "Once approved, {account} will be permanently removed from the treasury and all associated permissions will be revoked. After removal, this account will no longer be able to create requests from NEARN.",
             "genericBody": "Once approved, this action will permanently remove <bold>{accounts}</bold> from the treasury and revoke all assigned permissions.",
-            "creatingProposal": "Creating proposal..."
+            "creatingProposal": "Creating proposal"
         },
         "validation": {
             "accountIdRequired": "Account ID is required",
@@ -1059,7 +1059,7 @@
             "displayNamePlaceholder": "Enter display name",
             "logo": "Logo",
             "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
-            "uploading": "Uploading...",
+            "uploading": "Uploading",
             "removeLogo": "Remove",
             "logoUploaded": "Logo uploaded successfully",
             "uploadError": "Error occurred while uploading image, please try again.",
@@ -1133,7 +1133,7 @@
             "manualSomeDuplicates": "{duplicates, plural, =1 {# of {total} contacts already exists in your address book.} other {# of {total} contacts already exist in your address book.}} Only new contacts will be saved.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {This contact is already in your address book, so there is nothing new to save.} other {These contacts are already in your address book, so there is nothing new to save.}}",
             "duplicateActionTooltip": "Enable duplicate skipping or remove duplicate contacts to continue.",
-            "adding": "Adding…",
+            "adding": "Adding",
             "nothingNew": "Nothing new to import",
             "addRecipientsButton": "Save contacts"
         },
@@ -1141,7 +1141,8 @@
             "title": "Remove {count, plural, one {contact} other {contacts}}?",
             "body": "This will remove <bold>{names}</bold> from your contacts. You can add them again anytime.",
             "bulk": "This will remove <bold>{count, plural, one {# contact} other {# contacts}}</bold> from your address book. You can add them again anytime.",
-            "single": "This will remove <bold>{name}</bold> from your address book. You can add this contact again anytime."
+            "single": "This will remove <bold>{name}</bold> from your address book. You can add this contact again anytime.",
+            "removing": "Removing"
         },
         "importFlow": {
             "title": "Import contacts",
@@ -1560,7 +1561,7 @@
         "proposalDescriptionLabel": "Proposal description (optional)",
         "proposalDescriptionPlaceholder": "Describe this proposal...",
         "createProposal": "Create proposal",
-        "creatingProposal": "Creating proposal...",
+        "creatingProposal": "Creating proposal",
         "confirmInWallet": "Please confirm in your wallet",
         "proposalSubmitted": "Proposal submitted",
         "shareProposal": "Your proposal has been created. Share the link below with the treasury members to vote.",
@@ -1610,7 +1611,7 @@
         "relinking": "{count, plural, one {# selected treasury is linked to another Telegram chat. Connecting will re-connect it and change its chat ID link to this chat.} other {# selected treasuries are linked to other Telegram chats. Connecting will re-connect them and change their chat ID links to this chat.}}",
         "connectedToAnother": "Connected to another chat",
         "notMember": "You are not a policy member of any treasuries.",
-        "connecting": "Connecting…",
+        "connecting": "Connecting",
         "connect": "Connect",
         "settings": {
             "title": "Telegram",
@@ -1821,7 +1822,7 @@
         "noDownloadPermission": "You don't have permission to download the file.",
         "noExportPermission": "You don't have permission to export",
         "quotaUsed": "You've used all your quota",
-        "exporting": "Exporting...",
+        "exporting": "Exporting",
         "export": "Export",
         "columnSubmissionTime": "Submission Time",
         "columnDateRange": "Date Range",
@@ -2418,8 +2419,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Got it",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "on",
             "until": "until"
@@ -2461,7 +2463,7 @@
             },
             "features_paused": {
                 "payments": "### Payments are temporarily paused.\nWe're working on it.",
-                "exchange": "### Exchange is temporarily paused.\nWe're working on it.",
+                "exchange": "### Swap is temporarily paused.\nWe're working on it.",
                 "deposit": "### Deposits are temporarily paused.\nWe're working on it.",
                 "features": "### Some features are temporarily paused.\nWe're working on it."
             },
@@ -2481,8 +2483,8 @@
                 "default": "Approving requests is paused right now while a network provider recovers.\n You can still reject pending requests, and approvals will work again once it's back."
             },
             "wallet_login_unavailable": {
-                "login": "### Signing in isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back.",
-                "loginWallet": "### Signing in with {wallet} isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back."
+                "login": "### Wallet sign-in is paused right now\nYour treasury and funds are safe on-chain. Updates: {statusPageLink}",
+                "loginWallet": "### This wallet isn't working right now.\nIt'll be back soon, or pick another"
             },
             "backend_down": {
                 "default": "### We're having a temporary issue\nSome data may not load. Your funds are on-chain and unaffected – try again shortly."
@@ -2510,7 +2512,7 @@
             "title": "Delete template",
             "body": "Delete <b>{name}</b>? Members will no longer be able to file proposals from it. This cannot be undone.",
             "confirm": "Delete",
-            "deleting": "Deleting…"
+            "deleting": "Deleting"
         },
         "editor": {
             "nameLabel": "Name",
@@ -2654,7 +2656,7 @@
         "save": "Save",
         "edit": "Edit",
         "remove": "Remove",
-        "uploading": "Uploading...",
+        "uploading": "Uploading",
         "saveSuccess": "Your changes are saved.",
         "saveError": "Couldn't save your changes. Try again.",
         "invalidImage": "Please choose a valid image file.",

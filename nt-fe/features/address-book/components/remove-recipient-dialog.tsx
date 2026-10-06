@@ -75,11 +75,12 @@ export function RemoveRecipientDialog({
                     <Button
                         type="button"
                         variant="destructive"
-                        className="h-10 w-full rounded-2xl"
+                        size="xl"
+                        className="w-full flex-1"
                         loading={isSubmitting}
                         onClick={handleConfirm}
                     >
-                        {isSubmitting ? tCommon("removing") : tCommon("remove")}
+                        {isSubmitting ? t("removing") : tCommon("remove")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

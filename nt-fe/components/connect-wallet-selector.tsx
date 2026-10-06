@@ -157,30 +157,53 @@ function WalletCard({
             disabled={disabled}
             aria-disabled={disabled || dimmed}
             className={cn(
-                "flex flex-col items-start gap-5 rounded-2xl border border-general-border bg-card p-[19px] text-left dark:border-general-unofficial-border-2 dark:bg-general-unofficial-accent-0",
+                "relative flex flex-col items-start gap-5 rounded-2xl border border-general-border bg-card p-[19px] text-left dark:border-general-unofficial-border-2 dark:bg-general-unofficial-accent-0",
                 "transition-colors hover:border-general-unofficial-border-4",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 "disabled:pointer-events-none",
                 dimmed
-                    ? "cursor-not-allowed opacity-50 hover:border-general-border"
+                    ? "cursor-not-allowed hover:border-general-border"
                     : "cursor-pointer",
                 className,
             )}
         >
-            <div className="flex w-full items-start justify-between gap-2">
-                {icon}
-                {badge}
-            </div>
-            <div className="flex w-full flex-col gap-[3px]">
-                <span className="text-base font-semibold leading-[1.2]">
-                    {title}
-                </span>
-                {description && (
-                    <span className="text-sm font-medium leading-5 text-general-muted-foreground whitespace-normal dark:text-muted-foreground">
-                        {description}
-                    </span>
+            <div
+                className={cn(
+                    "flex w-full flex-col items-start gap-5",
+                    dimmed && "opacity-50",
                 )}
+            >
+                <div className="flex w-full items-start justify-between gap-2">
+                    {icon}
+                    {badge ? (
+                        <span
+                            className={
+                                dimmed
+                                    ? "invisible pointer-events-none"
+                                    : undefined
+                            }
+                            aria-hidden={dimmed || undefined}
+                        >
+                            {badge}
+                        </span>
+                    ) : null}
+                </div>
+                <div className="flex w-full flex-col gap-[3px]">
+                    <span className="text-base font-semibold leading-[1.2]">
+                        {title}
+                    </span>
+                    {description && (
+                        <span className="text-sm font-medium leading-5 text-general-muted-foreground whitespace-normal dark:text-muted-foreground">
+                            {description}
+                        </span>
+                    )}
+                </div>
             </div>
+            {dimmed && badge ? (
+                <span className="absolute top-[19px] right-[19px]">
+                    {badge}
+                </span>
+            ) : null}
         </button>
     );
 }

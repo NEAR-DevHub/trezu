@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Đang tải...",
+        "loading": "Đang tải",
         "notAvailable": "N/A",
-        "connecting": "Đang kết nối...",
+        "connecting": "Đang kết nối",
         "save": "Lưu",
         "cancel": "Hủy",
         "submit": "Gửi",
@@ -18,7 +18,7 @@
         "exporting": "Đang xuất",
         "import": "Nhập",
         "remove": "Xóa",
-        "removing": "Đang xóa...",
+        "removing": "Đang xóa",
         "edit": "Chỉnh sửa",
         "continue": "Tiếp tục",
         "select": "Chọn",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Bạn không có quyền xuất",
             "quotaExhausted": "Bạn đã dùng hết hạn mức",
-            "exporting": "Đang xuất...",
+            "exporting": "Đang xuất",
             "export": "Xuất"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "Thông tin của họ đã được điền sẵn. Bạn tạo yêu cầu và nhóm bỏ phiếu."
             },
             "generateLink": "Tạo liên kết mời",
-            "generating": "Đang tạo...",
+            "generating": "Đang tạo",
             "generateFailed": "Không tạo được liên kết mời. Vui lòng thử lại.",
             "readyTitle": "Liên kết mời của bạn đã sẵn sàng",
             "readyDescription": "Gửi cho người bạn muốn thêm. Họ sẽ kết nối ví và yêu cầu tham gia.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, other {# thành viên mới}}",
             "updatedMembers": "Thành viên đã cập nhật",
             "newMembers": "Thành viên mới",
-            "creatingProposal": "Đang tạo đề xuất...",
+            "creatingProposal": "Đang tạo đề xuất",
             "confirmSubmit": "Tạo yêu cầu"
         },
         "removeDialog": {
             "title": "Xóa {count, plural, one {thành viên} other {thành viên}}?",
             "nearnBody": "Sau khi được phê duyệt, {account} sẽ bị xóa vĩnh viễn khỏi ngân quỹ và mọi quyền liên quan sẽ bị thu hồi. Sau khi xóa, tài khoản này sẽ không thể tạo yêu cầu từ NEARN nữa.",
             "genericBody": "Sau khi phê duyệt, hành động này sẽ xóa vĩnh viễn <bold>{accounts}</bold> khỏi ngân quỹ và thu hồi tất cả quyền đã gán.",
-            "creatingProposal": "Đang tạo đề xuất..."
+            "creatingProposal": "Đang tạo đề xuất"
         },
         "validation": {
             "accountIdRequired": "Bắt buộc nhập ID tài khoản",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Nhập tên hiển thị",
             "logo": "Logo",
             "logoDescription": "Tải lên logo cho ngân quỹ của bạn. Khuyến nghị SVG, PNG hoặc JPG (256x256 px).",
-            "uploading": "Đang tải lên...",
+            "uploading": "Đang tải lên",
             "removeLogo": "Xóa",
             "logoUploaded": "Đã tải lên logo thành công",
             "uploadError": "Đã xảy ra lỗi khi tải lên hình ảnh, vui lòng thử lại.",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{duplicates} trong số {total} liên hệ đã có trong sổ địa chỉ của bạn. Chỉ các liên hệ mới được lưu.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.} other {Những liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.}}",
             "duplicateActionTooltip": "Bật bỏ qua bản trùng lặp hoặc xóa người nhận trùng lặp để tiếp tục.",
-            "adding": "Đang thêm…",
+            "adding": "Đang thêm",
             "nothingNew": "Không có gì mới để nhập",
             "addRecipientsButton": "Lưu danh bạ"
         },
@@ -1143,7 +1143,8 @@
             "title": "Xóa người nhận",
             "body": "Thao tác này sẽ xóa <bold>{names}</bold> khỏi danh bạ của bạn. Bạn có thể thêm lại bất cứ lúc nào.",
             "bulk": "Thao tác này sẽ xóa <bold>{count, plural, other {# người nhận}}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại bất kỳ lúc nào.",
-            "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào."
+            "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào.",
+            "removing": "Đang xóa"
         },
         "importFlow": {
             "title": "Nhập người nhận",
@@ -1545,7 +1546,7 @@
         "proposalDescriptionLabel": "Mô tả đề xuất (tùy chọn)",
         "proposalDescriptionPlaceholder": "Mô tả đề xuất này...",
         "createProposal": "Tạo đề xuất",
-        "creatingProposal": "Đang tạo đề xuất...",
+        "creatingProposal": "Đang tạo đề xuất",
         "confirmInWallet": "Vui lòng xác nhận trong ví của bạn",
         "proposalSubmitted": "Đã gửi đề xuất",
         "shareProposal": "Đề xuất của bạn đã được tạo. Chia sẻ liên kết bên dưới với các thành viên ngân quỹ để bỏ phiếu.",
@@ -1595,7 +1596,7 @@
         "relinking": "{count, plural, other {# ngân quỹ đã chọn được liên kết với các cuộc trò chuyện Telegram khác. Việc kết nối sẽ kết nối lại và thay đổi liên kết ID cuộc trò chuyện sang cuộc trò chuyện này.}}",
         "connectedToAnother": "Đã kết nối với một cuộc trò chuyện khác",
         "notMember": "Bạn không phải là thành viên chính sách của bất kỳ ngân quỹ nào.",
-        "connecting": "Đang kết nối…",
+        "connecting": "Đang kết nối",
         "connect": "Kết nối",
         "settings": {
             "title": "Telegram",
@@ -1806,7 +1807,7 @@
         "noDownloadPermission": "Bạn không có quyền tải tệp này.",
         "noExportPermission": "Bạn không có quyền xuất",
         "quotaUsed": "Bạn đã dùng hết hạn mức",
-        "exporting": "Đang xuất...",
+        "exporting": "Đang xuất",
         "export": "Xuất",
         "columnSubmissionTime": "Thời gian gửi",
         "columnDateRange": "Khoảng ngày",
@@ -2403,8 +2404,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Đã hiểu",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "vào",
             "until": "đến"
@@ -2495,7 +2497,7 @@
             "title": "Xóa mẫu",
             "body": "Xóa <b>{name}</b>? Thành viên sẽ không còn có thể nộp đề xuất từ mẫu này. Thao tác này không thể hoàn tác.",
             "confirm": "Xóa",
-            "deleting": "Đang xóa…"
+            "deleting": "Đang xóa"
         },
         "editor": {
             "nameLabel": "Tên",
@@ -2656,7 +2658,7 @@
         "save": "Lưu",
         "edit": "Chỉnh sửa",
         "remove": "Xóa",
-        "uploading": "Đang tải lên...",
+        "uploading": "Đang tải lên",
         "saveSuccess": "Các thay đổi của bạn đã được lưu.",
         "saveError": "Không thể lưu thay đổi. Vui lòng thử lại.",
         "invalidImage": "Vui lòng chọn tệp hình ảnh hợp lệ.",

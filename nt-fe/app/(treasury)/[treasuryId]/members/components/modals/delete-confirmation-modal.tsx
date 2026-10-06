@@ -94,7 +94,8 @@ export function DeleteConfirmationModal({
                         type="button"
                         onClick={handleConfirm}
                         variant="destructive"
-                        className="h-10 w-full rounded-2xl"
+                        size="xl"
+                        className="w-full flex-1"
                         loading={isSubmitting}
                         disabled={!!validationError}
                         tooltipMessage={validationError}

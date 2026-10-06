@@ -43,6 +43,18 @@ function isBulkPaymentPath(pathname: string | null): boolean {
     return /\/payments\/bulk-payment(?:\/|$)/.test(pathname ?? "");
 }
 
+/** Deposit and the full recent-transactions list leave the dashboard behind. */
+function isDashboardSubpagePath(pathname: string | null): boolean {
+    return /\/dashboard\/(?:deposit|activity)(?:\/|$)/.test(pathname ?? "");
+}
+
+/** Screens opened from the members list. The list itself keeps the tab bar. */
+function isMemberSubflowPath(pathname: string | null): boolean {
+    return /\/members\/(?:add|edit|invite|join-requests)(?:\/|$)/.test(
+        pathname ?? "",
+    );
+}
+
 export function TreasuryLayoutClient({
     children,
     treasuryId,
@@ -101,6 +113,8 @@ export function TreasuryLayoutClient({
                         </div>
                         {!isRequestDetailPath(pathname) &&
                             !isBulkPaymentPath(pathname) &&
+                            !isDashboardSubpagePath(pathname) &&
+                            !isMemberSubflowPath(pathname) &&
                             !isSideSheetOpen && <MobileBottomNav />}
                         <MobileMenuSheet />
                         <MobileUserSheet />
