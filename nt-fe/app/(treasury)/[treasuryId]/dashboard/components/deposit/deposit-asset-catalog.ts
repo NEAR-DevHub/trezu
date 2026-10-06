@@ -30,6 +30,21 @@ export interface DepositAssetCatalog {
     networkBalancesByAsset: Map<string, Map<string, NetworkBalanceDisplay>>;
 }
 
+/**
+ * 1Click rejects USDC on Hyperliquid as a deposit origin. Send still delivers
+ * to this id, so it stays in the swap catalog and is only removed here.
+ */
+const USDC_HYPERLIQUID_QUOTE_ID =
+    "1cs_v1:hypercore:erc20:0xb88339cb7199b77e23db6e890353e22632ba630f";
+
+export function isDepositOriginSupported(network: {
+    id: string;
+    quoteAssetId?: string;
+}): boolean {
+    const quote = (network.quoteAssetId || network.id).toLowerCase();
+    return quote !== USDC_HYPERLIQUID_QUOTE_ID;
+}
+
 export function toNetworkOption(network: BridgeNetwork): SelectOption {
     const iconUrl = network.chainIcons?.icon ?? null;
     return {
@@ -205,12 +220,15 @@ export function buildDepositAssetCatalog(params: {
     const otherAssets: SelectOption[] = [];
 
     for (const asset of bridgeAssets) {
-        // Public deposits need Bridge/POA chain support; confidential uses 1Click.
-        const depositNetworks = isConfidential
-            ? asset.networks
-            : asset.networks.filter(
-                  (network) => network.publicDepositSupported !== false,
-              );
+        // Public deposits need Bridge/POA chain support. Confidential uses
+        // 1Click, but still skips origins 1Click rejects.
+        const depositNetworks = asset.networks.filter((network) => {
+            if (!isDepositOriginSupported(network)) return false;
+            if (!isConfidential && network.publicDepositSupported === false) {
+                return false;
+            }
+            return true;
+        });
         if (depositNetworks.length === 0) {
             continue;
         }

@@ -39,6 +39,7 @@ import {
 import { availableBalance } from "@/lib/balance";
 import { getPaymentBalanceWarning } from "@/lib/intents-fee";
 import { findMatchingTreasuryAsset } from "@/lib/match-treasury-asset";
+import { isChainDeliveryRoute } from "@/lib/oneclick-asset-routing";
 import { sanitizeAmountInput } from "@/lib/sanitize-amount-input";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -84,6 +85,11 @@ export const tokenSchema = z.object({
     balanceAssetId: z.string().optional(),
     /** 1Click routing id (may be `1cs_v1:`) for quotes */
     quoteAssetId: z.string().optional(),
+    /**
+     * Decimals of `balance` when this row delivers a different asset than the
+     * one the treasury holds. `decimals` stays the destination asset's decimals.
+     */
+    balanceDecimals: z.number().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -125,6 +131,11 @@ interface TokenInputProps<
          * (highest-USD owned → USDC on NEAR). Exchange sets this false.
          */
         autoSelect?: boolean;
+        /**
+         * Hide chain-delivery networks that need a non-NEAR address.
+         * Exchange sets this. Send leaves it off.
+         */
+        hideOffNearChainDelivery?: boolean;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -237,12 +248,35 @@ export function TokenInput<
         DEFAULT_ASSETS_QUERY,
     );
 
+    // A chain-delivery row (NEAR on Solana) is not its own balance. Look up
+    // the held sibling so MAX and the balance line use that raw amount.
+    const balanceLookupToken = useMemo(() => {
+        if (
+            !token ||
+            !token.balanceAssetId ||
+            !isChainDeliveryRoute({
+                id: token.address,
+                balanceAssetId: token.balanceAssetId,
+                quoteAssetId: token.quoteAssetId,
+            })
+        ) {
+            return token;
+        }
+        return {
+            address: token.balanceAssetId,
+            residency: token.residency,
+        };
+    }, [token]);
+
     const matchedAsset = useMemo(
         () =>
             balanceFromToken
                 ? null
-                : findMatchingTreasuryAsset(assetsData?.tokens, token),
-        [assetsData?.tokens, token, balanceFromToken],
+                : findMatchingTreasuryAsset(
+                      assetsData?.tokens,
+                      balanceLookupToken,
+                  ),
+        [assetsData?.tokens, balanceLookupToken, balanceFromToken],
     );
 
     // Prefer live assets balance; fall back to the form token's balance.
@@ -254,10 +288,11 @@ export function TokenInput<
             : (token?.balance ??
               (isAssetsPending && !balanceFromToken ? null : "0")));
     const tokenPrice = matchedAsset?.price ?? token?.price;
+    const spendDecimals = token?.balanceDecimals ?? token?.decimals;
     const tokenDecimals =
         balanceOverrideRaw != null
-            ? (token?.decimals ?? matchedAsset?.decimals)
-            : (matchedAsset?.decimals ?? token?.decimals);
+            ? (spendDecimals ?? matchedAsset?.decimals)
+            : (matchedAsset?.decimals ?? spendDecimals);
 
     const balanceWarning = useMemo(() => {
         if (!showInsufficientBalance || !token || tokenBalance == null) {
@@ -470,7 +505,8 @@ export function TokenInput<
                     field.value
                         ? `${
                               amountFormat.token(field.value, {
-                                  tokenDecimals: token.decimals,
+                                  tokenDecimals:
+                                      tokenDecimals ?? token.decimals,
                                   unitPriceUsd: tokenPrice,
                               }).display
                           } ${token.symbol}`
@@ -656,6 +692,9 @@ export function TokenInput<
                                         }
                                         filterTokens={tokenSelect?.filterTokens}
                                         autoSelect={tokenSelect?.autoSelect}
+                                        hideOffNearChainDelivery={
+                                            tokenSelect?.hideOffNearChainDelivery
+                                        }
                                         balanceLayout={
                                             tokenSelectExtras?.balanceLayout
                                         }

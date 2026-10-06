@@ -1255,7 +1255,6 @@
             "orDragDrop": "veya sürükleyip bırakın",
             "token": "Token",
             "destinationNetwork": "Hedef ağ",
-            "uploadFileFirst": "Önce bir dosya yükleyin",
             "removeFile": "Dosyayı kaldır",
             "maxFileSize": "en fazla 1 dosya, 1.5 MB'a kadar, yalnızca CSV dosyası",
             "noFilePrompt": "Yüklenecek dosyanız yok mu?",
@@ -1350,6 +1349,7 @@
             "enterAmount": "Bir miktar girin"
         },
         "review": "Takası incele",
+        "chainDeliveryUnsupported": "Bu ağ takasta kullanılamaz.",
         "poweredBy": "Destekleyen",
         "info": {
             "priceDifference": "Fiyat Farkı",

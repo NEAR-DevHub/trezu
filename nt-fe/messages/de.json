@@ -1255,7 +1255,6 @@
             "orDragDrop": "oder per Drag & Drop",
             "token": "Token",
             "destinationNetwork": "Zielnetzwerk",
-            "uploadFileFirst": "Laden Sie zuerst eine Datei hoch",
             "removeFile": "Datei entfernen",
             "maxFileSize": "max. 1 Datei bis zu 1,5 MB, nur CSV-Datei",
             "noFilePrompt": "Keine Datei zum Hochladen?",
@@ -1350,6 +1349,7 @@
             "enterAmount": "Betrag eingeben"
         },
         "review": "Tausch prüfen",
+        "chainDeliveryUnsupported": "Dieses Netzwerk ist beim Tauschen nicht verfügbar.",
         "poweredBy": "Bereitgestellt von",
         "info": {
             "priceDifference": "Preisunterschied",

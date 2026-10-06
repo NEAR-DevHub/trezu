@@ -1255,7 +1255,6 @@
             "orDragDrop": "ou glissez-déposez",
             "token": "Jeton",
             "destinationNetwork": "Réseau de destination",
-            "uploadFileFirst": "Importez d’abord un fichier",
             "removeFile": "Supprimer le fichier",
             "maxFileSize": "max 1 fichier jusqu'à 1,5 Mo, fichier CSV uniquement",
             "noFilePrompt": "Vous n'avez pas de fichier à télécharger ?",
@@ -1350,6 +1349,7 @@
             "enterAmount": "Saisissez un montant"
         },
         "review": "Vérifier l'échange",
+        "chainDeliveryUnsupported": "Ce réseau n'est pas disponible pour l'échange.",
         "poweredBy": "Propulsé par",
         "info": {
             "priceDifference": "Différence de prix",

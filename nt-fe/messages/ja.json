@@ -1255,7 +1255,6 @@
             "orDragDrop": "またはドラッグ&ドロップ",
             "token": "トークン",
             "destinationNetwork": "送信先ネットワーク",
-            "uploadFileFirst": "先にファイルをアップロードしてください",
             "removeFile": "ファイルを削除",
             "maxFileSize": "最大1ファイル、1.5MBまで、CSVファイルのみ",
             "noFilePrompt": "アップロードするファイルがない場合は?",
@@ -1350,6 +1349,7 @@
             "enterAmount": "金額を入力してください"
         },
         "review": "スワップを確認",
+        "chainDeliveryUnsupported": "このネットワークは交換では利用できません。",
         "poweredBy": "提供:",
         "info": {
             "priceDifference": "価格差",

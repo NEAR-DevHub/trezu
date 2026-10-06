@@ -1255,7 +1255,6 @@
             "orDragDrop": "або перетягніть сюди",
             "token": "Токен",
             "destinationNetwork": "Мережа призначення",
-            "uploadFileFirst": "Спочатку завантажте файл",
             "removeFile": "Видалити файл",
             "maxFileSize": "не більше 1 файлу до 1.5 МБ, лише CSV",
             "noFilePrompt": "Немає файлу для завантаження?",
@@ -1333,6 +1332,7 @@
             "enterAmount": "Введіть суму"
         },
         "review": "Переглянути обмін",
+        "chainDeliveryUnsupported": "Ця мережа недоступна для обміну.",
         "poweredBy": "Працює на",
         "info": {
             "priceDifference": "Різниця в ціні",

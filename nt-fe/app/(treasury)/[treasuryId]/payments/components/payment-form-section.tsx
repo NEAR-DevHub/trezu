@@ -534,6 +534,7 @@ export function PaymentFormSection<
                             balanceLayout="usdPrimary"
                             appearance="card"
                             triggerLabel={tPay("tokenLabel")}
+                            hideChainDeliveryRoutes
                         />
                     )}
                 />

@@ -61,9 +61,10 @@ interface RecipientNetworkSelectProps {
     /** Error text shown under the network card. */
     errorMessage?: string | null;
     /**
-     * When true (default), the picker stays disabled until a recipient
-     * address is entered and filters/clears by address compatibility.
-     * When false, every option is available immediately (no address gate).
+     * When true (default), an empty recipient shows every destination for the
+     * token. Once an address is entered, networks that cannot receive it are
+     * disabled, and the current selection is cleared.
+     * When false, every option stays available and the address is ignored.
      */
     requireRecipient?: boolean;
     /** Card treatment used by the bulk-payment flow. */
@@ -71,7 +72,6 @@ interface RecipientNetworkSelectProps {
     /** Optional copy overrides for flows with different picker semantics. */
     label?: string;
     placeholder?: string;
-    recipientRequiredPlaceholder?: string;
     modalTitle?: string;
     /** Display-only: selection cannot change (bulk edit). */
     locked?: boolean;
@@ -140,7 +140,6 @@ export function RecipientNetworkSelect({
     appearance = "default",
     label,
     placeholder,
-    recipientRequiredPlaceholder,
     modalTitle,
     locked = false,
 }: RecipientNetworkSelectProps) {
@@ -221,10 +220,14 @@ export function RecipientNetworkSelect({
         return availableOptions.find((o) => o.id === value) ?? null;
     }, [availableOptions, value]);
 
+    const hasRecipient = recipient.trim().length > 0;
     const enrichedOptions = useMemo(() => {
+        // No address yet: every network this token can be sent to is selectable.
+        // An address limits the list to chains that can receive it.
+        const checkAddress = requireRecipient && hasRecipient;
         return availableOptions.map((option) => ({
             ...option,
-            isCompatible: requireRecipient
+            isCompatible: checkAddress
                 ? isAddressCompatibleWithNetwork(
                       recipient,
                       option.networkName,
@@ -232,7 +235,7 @@ export function RecipientNetworkSelect({
                   )
                 : true,
         }));
-    }, [availableOptions, recipient, requireRecipient]);
+    }, [availableOptions, hasRecipient, recipient, requireRecipient]);
 
     const compatibleOptions = useMemo(
         () => enrichedOptions.filter((option) => option.isCompatible),
@@ -261,9 +264,10 @@ export function RecipientNetworkSelect({
     const hasCompatibleNetwork = compatibleOptions.length > 0;
     const isDisabled =
         locked ||
-        (requireRecipient
-            ? !recipient || isBridgeAssetsLoading || !hasCompatibleNetwork
-            : isBridgeAssetsLoading || availableOptions.length === 0);
+        isBridgeAssetsLoading ||
+        (hasRecipient && requireRecipient
+            ? !hasCompatibleNetwork
+            : availableOptions.length === 0);
 
     const prevRecipientRef = useRef<string | null>(null);
     const onChangeRef = useRef(onChange);
@@ -294,14 +298,13 @@ export function RecipientNetworkSelect({
         onChangeRef.current("");
     }, [availableOptions.length, locked, selectedOption, value]);
 
-    const placeholderText = requireRecipient
-        ? !recipient
-            ? (recipientRequiredPlaceholder ?? t("enterAddressFirst"))
-            : // While destinations load there is nothing to be incompatible with.
-              !hasCompatibleNetwork && !isBridgeAssetsLoading
-              ? t("noCompatibleNetwork")
-              : (placeholder ?? t("placeholder"))
-        : (placeholder ?? t("placeholder"));
+    const placeholderText =
+        requireRecipient &&
+        hasRecipient &&
+        !hasCompatibleNetwork &&
+        !isBridgeAssetsLoading
+            ? t("noCompatibleNetwork")
+            : (placeholder ?? t("placeholder"));
 
     const selectorButton =
         appearance === "card" ? (

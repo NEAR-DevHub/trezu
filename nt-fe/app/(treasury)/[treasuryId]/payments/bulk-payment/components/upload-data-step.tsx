@@ -363,6 +363,7 @@ export function UploadDataStep({
                             : token.address.startsWith("nep245:")
                     }
                     disableTokenMessage={t("disableTokenMessage")}
+                    hideChainDeliveryRoutes
                     disabled={availableCredits === 0}
                     iconSize="2xl"
                     triggerLabel={t("token")}

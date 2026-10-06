@@ -3,6 +3,7 @@ import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { default_usdc_near_token } from "@/constants/token";
 import type { MergedNetwork, MergedToken } from "@/hooks/use-merged-tokens";
 import Big from "@/lib/big";
+import { isChainDeliveryRoute } from "@/lib/oneclick-asset-routing";
 
 export type DefaultTokenFilter = (token: {
     address: string;
@@ -38,6 +39,10 @@ function toSelected(
         // Seed balance/price so TokenInput can show them immediately.
         balance: network.balance,
         price: network.price,
+        balanceDecimals: network.balanceDecimals,
+        balanceAssetId: network.balanceAssetId || network.id,
+        quoteAssetId:
+            network.quoteAssetId || network.balanceAssetId || network.id,
     };
 }
 
@@ -80,6 +85,7 @@ export function pickHighestUsdOwnedToken(
         for (const network of token.networks) {
             if (
                 !networkHasBalance(network) ||
+                isChainDeliveryRoute(network) ||
                 isDisabled(network, disableTokens)
             ) {
                 continue;

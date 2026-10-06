@@ -30,7 +30,10 @@ import {
     hasNearComAddressPrefix,
     stripNearComAddressPrefix,
 } from "@/lib/nearcom-address";
-import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
+import {
+    findQuoteAssetIdForDestination,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import type { SectionRule } from "@/lib/section-rules";
 import { encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
@@ -82,8 +85,7 @@ export default function BulkPaymentPage() {
         useTokenCatalog({ kind: "swap" });
 
     const [step, setStep] = useState(0);
-    // Empty until the user adds a recipient address and picks a network —
-    // RecipientNetworkSelect stays disabled until firstRecipient is set.
+    // Empty until the user picks a destination. Entering a recipient clears it.
     const [destinationNetworkId, setDestinationNetworkId] =
         useState<string>("");
     const [destinationAssetId, setDestinationAssetId] = useState<string | null>(
@@ -181,8 +183,8 @@ export default function BulkPaymentPage() {
         return buildPrepareRequest({
             daoId: selectedTreasury,
             token: {
-                address: selectedToken.address,
-                decimals: selectedToken.decimals,
+                address: selectedToken.balanceAssetId || selectedToken.address,
+                decimals: holdingDecimals(selectedToken),
             },
             payments: paymentData,
             networkFeePerRecipient,
@@ -442,8 +444,11 @@ export default function BulkPaymentPage() {
                 selectedToken.address === default_near_token(false).address &&
                 selectedToken.residency?.toLowerCase() === NEAR_NETWORK_ID;
 
-            const tokenIdForHash = isNEAR ? "native" : selectedToken.address;
-            const tokenIdForProposal = selectedToken.address;
+            const spendAssetId =
+                selectedToken.balanceAssetId || selectedToken.address;
+            const spendDecimals = holdingDecimals(selectedToken);
+            const tokenIdForHash = isNEAR ? "native" : spendAssetId;
+            const tokenIdForProposal = spendAssetId;
 
             // Convert amounts to smallest units. nearcom: is FE display only —
             // list / backend get the bare NEAR account (same as single payment).
@@ -455,7 +460,7 @@ export default function BulkPaymentPage() {
             const payments = paymentData.map((payment) => ({
                 recipient: stripNearComAddressPrefix(payment.recipient),
                 amount: Big(payment.amount || "0")
-                    .times(Big(10).pow(selectedToken.decimals))
+                    .times(Big(10).pow(spendDecimals))
                     .toFixed(0),
             }));
 
@@ -485,7 +490,7 @@ export default function BulkPaymentPage() {
 
             // Build proposal
             const totalAmountInSmallestUnits = Big(totalAmount)
-                .times(Big(10).pow(selectedToken.decimals))
+                .times(Big(10).pow(spendDecimals))
                 .toFixed();
 
             const proposal = await buildApproveListProposal({
@@ -735,9 +740,6 @@ export default function BulkPaymentPage() {
                                         )}
                                         placeholder={tRecipientNetwork(
                                             "selectPlaceholder",
-                                        )}
-                                        recipientRequiredPlaceholder={tBulk(
-                                            "upload.uploadFileFirst",
                                         )}
                                         modalTitle={tRecipientNetwork(
                                             "selectPlaceholder",
