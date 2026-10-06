@@ -10,7 +10,7 @@ import {
     useState,
 } from "react";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
-import { Dialog } from "@/components/modal";
+import { Dialog, useSheetDragToClose } from "@/components/modal";
 import {
     DialogClose,
     DialogOverlay,
@@ -61,6 +61,8 @@ function SideSheetContent({
     const popOverlay = useUiStore((s) => s.popOverlay);
     const pushed = useRef(false);
     const contentRef = useRef<HTMLDivElement>(null);
+    // Below `lg` the panel is a sheet rising from the bottom edge.
+    const dragToClose = useSheetDragToClose("(width < 64rem)");
     const [scroll, setScroll] = useState(NOT_SCROLLED);
     const report = useCallback((next: SideSheetScrollState) => {
         setScroll((prev) =>
@@ -90,6 +92,7 @@ function SideSheetContent({
                 // The header carries the title; there is no separate blurb to
                 // describe the panel, so opt out of Radix's description check.
                 aria-describedby={undefined}
+                {...dragToClose}
                 {...props}
                 onOpenAutoFocus={(e) => {
                     handleStateChange(true);
@@ -122,7 +125,10 @@ function SideSheetContent({
             >
                 {/* Every bottom-sheet in the app leads with the drag handle;
                     the desktop panel slides in from the side, so it drops. */}
-                <div className="shrink-0 pt-4 lg:hidden">
+                <div
+                    data-sheet-drag-area
+                    className="shrink-0 touch-none pt-4 lg:hidden"
+                >
                     <SheetHandle />
                 </div>
                 <SideSheetScrollContext.Provider value={{ scroll, report }}>
@@ -146,8 +152,9 @@ function SideSheetHeader({
     const { scroll } = useContext(SideSheetScrollContext);
     return (
         <div
+            data-sheet-drag-area
             className={cn(
-                "flex shrink-0 items-center justify-between gap-4 border-transparent border-b px-5 py-4",
+                "flex shrink-0 items-center justify-between gap-4 border-transparent border-b px-5 py-4 max-lg:touch-none",
                 scroll.hasContentAbove && "border-general-border",
                 className,
             )}
