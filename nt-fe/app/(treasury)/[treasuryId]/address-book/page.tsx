@@ -55,6 +55,7 @@ import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
+import { useHideMobileBottomNav } from "@/hooks/use-hide-mobile-bottom-nav";
 import { useTreasury } from "@/hooks/use-treasury";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -62,6 +63,11 @@ import { cn } from "@/lib/utils";
 // ─── Empty state ──────────────────────────────────────────────────────────────
 
 const TOOLBAR_BUTTON_CLASS = "h-10 gap-2 rounded-lg text-sm";
+
+function HideMobileBottomNav() {
+    useHideMobileBottomNav();
+    return null;
+}
 
 function AddressBookEmptyState({
     onAdd,
@@ -769,6 +775,7 @@ export default function AddressBookPage() {
                 hideMobileShellControls
                 reserveHeaderSpace
             >
+                <HideMobileBottomNav />
                 <div className="mx-auto w-full max-w-lg">
                     <RecipientFlow
                         mode="import"
@@ -805,6 +812,7 @@ export default function AddressBookPage() {
                     </AuthButton>
                 }
             >
+                <HideMobileBottomNav />
                 <div className="mx-auto w-full max-w-lg">
                     <RecipientFlow
                         mode="add"
