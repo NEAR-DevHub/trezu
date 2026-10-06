@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Wird geladen...",
+        "loading": "Wird geladen",
         "notAvailable": "k. A.",
-        "connecting": "Wird verbunden...",
+        "connecting": "Wird verbunden",
         "save": "Speichern",
         "cancel": "Abbrechen",
         "submit": "Absenden",
@@ -18,7 +18,7 @@
         "exporting": "Wird exportiert",
         "import": "Importieren",
         "remove": "Entfernen",
-        "removing": "Wird entfernt...",
+        "removing": "Wird entfernt",
         "edit": "Bearbeiten",
         "continue": "Weiter",
         "select": "Auswählen",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Sie haben keine Berechtigung zum Exportieren",
             "quotaExhausted": "Sie haben Ihr gesamtes Kontingent aufgebraucht",
-            "exporting": "Wird exportiert...",
+            "exporting": "Wird exportiert",
             "export": "Exportieren"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "Ihre Angaben kommen vorausgefüllt an. Du erstellst die Anfrage, und das Team stimmt ab."
             },
             "generateLink": "Einladungslink erstellen",
-            "generating": "Wird erstellt…",
+            "generating": "Wird erstellt",
             "generateFailed": "Einladungslink konnte nicht erstellt werden. Bitte versuche es erneut.",
             "readyTitle": "Dein Einladungslink ist bereit",
             "readyDescription": "Sende ihn an die Person, die du hinzufügen möchtest. Sie verbindet eine Wallet und bittet um Beitritt.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# neues Mitglied} other {# neue Mitglieder}}",
             "updatedMembers": "Aktualisierte Mitglieder",
             "newMembers": "Neue Mitglieder",
-            "creatingProposal": "Vorschlag wird erstellt...",
+            "creatingProposal": "Vorschlag wird erstellt",
             "confirmSubmit": "Antrag erstellen"
         },
         "removeDialog": {
             "title": "{count, plural, one {Mitglied} other {Mitglieder}} entfernen?",
             "nearnBody": "Nach Genehmigung wird {account} dauerhaft aus der Treasury entfernt und alle zugehörigen Berechtigungen werden widerrufen. Nach der Entfernung kann dieses Konto keine Anfragen mehr aus NEARN erstellen.",
             "genericBody": "Nach Genehmigung wird durch diese Aktion <bold>{accounts}</bold> dauerhaft aus der Treasury entfernt und alle zugewiesenen Berechtigungen werden widerrufen.",
-            "creatingProposal": "Vorschlag wird erstellt..."
+            "creatingProposal": "Vorschlag wird erstellt"
         },
         "validation": {
             "accountIdRequired": "Konto-ID ist erforderlich",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Anzeigenamen eingeben",
             "logo": "Logo",
             "logoDescription": "Laden Sie ein Logo für Ihre Treasury hoch. Empfohlen sind SVG, PNG oder JPG (256x256 px).",
-            "uploading": "Wird hochgeladen...",
+            "uploading": "Wird hochgeladen",
             "removeLogo": "Entfernen",
             "logoUploaded": "Logo erfolgreich hochgeladen",
             "uploadError": "Beim Hochladen des Bildes ist ein Fehler aufgetreten. Bitte erneut versuchen.",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{duplicates, plural, =1 {# von {total} Kontakten existiert bereits in Ihrem Adressbuch.} other {# von {total} Kontakten existieren bereits in Ihrem Adressbuch.}} Es werden nur neue Kontakte gespeichert.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Dieser Kontakt ist bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.} other {Diese Kontakte sind bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.}}",
             "duplicateActionTooltip": "Aktivieren Sie das Überspringen von Duplikaten oder entfernen Sie doppelte Empfänger, um fortzufahren.",
-            "adding": "Wird hinzugefügt…",
+            "adding": "Wird hinzugefügt",
             "nothingNew": "Nichts Neues zu importieren",
             "addRecipientsButton": "Kontakte speichern"
         },
@@ -1143,7 +1143,8 @@
             "title": "Empfänger entfernen",
             "body": "Hierdurch wird <bold>{names}</bold> aus Ihren Kontakten entfernt. Sie können sie jederzeit wieder hinzufügen.",
             "bulk": "Hierdurch werden <bold>{count, plural, one {# Empfänger} other {# Empfänger}}</bold> aus Ihrem Adressbuch entfernt. Sie können sie jederzeit wieder hinzufügen.",
-            "single": "Hierdurch wird <bold>{name}</bold> aus Ihrem Adressbuch entfernt. Sie können diesen Empfänger jederzeit wieder hinzufügen."
+            "single": "Hierdurch wird <bold>{name}</bold> aus Ihrem Adressbuch entfernt. Sie können diesen Empfänger jederzeit wieder hinzufügen.",
+            "removing": "Wird entfernt"
         },
         "importFlow": {
             "title": "Empfänger importieren",
@@ -1561,7 +1562,7 @@
         "proposalDescriptionLabel": "Vorschlagsbeschreibung (optional)",
         "proposalDescriptionPlaceholder": "Beschreiben Sie diesen Vorschlag...",
         "createProposal": "Vorschlag erstellen",
-        "creatingProposal": "Vorschlag wird erstellt...",
+        "creatingProposal": "Vorschlag wird erstellt",
         "confirmInWallet": "Bitte bestätigen Sie in Ihrer Wallet",
         "proposalSubmitted": "Vorschlag übermittelt",
         "shareProposal": "Ihr Vorschlag wurde erstellt. Teilen Sie den untenstehenden Link mit den Treasury-Mitgliedern zur Abstimmung.",
@@ -1611,7 +1612,7 @@
         "relinking": "{count, plural, one {# ausgewählte Treasury ist mit einem anderen Telegram-Chat verknüpft. Beim Verbinden wird sie neu verbunden und ihre Chat-ID-Verknüpfung auf diesen Chat umgestellt.} other {# ausgewählte Treasuries sind mit anderen Telegram-Chats verknüpft. Beim Verbinden werden sie neu verbunden und ihre Chat-ID-Verknüpfungen auf diesen Chat umgestellt.}}",
         "connectedToAnother": "Mit einem anderen Chat verbunden",
         "notMember": "Sie sind kein Richtlinienmitglied einer Treasury.",
-        "connecting": "Wird verbunden…",
+        "connecting": "Wird verbunden",
         "connect": "Verbinden",
         "settings": {
             "title": "Telegram",
@@ -1822,7 +1823,7 @@
         "noDownloadPermission": "Sie haben keine Berechtigung, die Datei herunterzuladen.",
         "noExportPermission": "Sie haben keine Berechtigung zum Exportieren",
         "quotaUsed": "Sie haben Ihr gesamtes Kontingent aufgebraucht",
-        "exporting": "Wird exportiert...",
+        "exporting": "Wird exportiert",
         "export": "Exportieren",
         "columnSubmissionTime": "Einreichungszeit",
         "columnDateRange": "Datumsbereich",
@@ -2511,7 +2512,7 @@
             "title": "Vorlage löschen",
             "body": "<b>{name}</b> löschen? Mitglieder können daraus keine Anträge mehr einreichen. Dies kann nicht rückgängig gemacht werden.",
             "confirm": "Löschen",
-            "deleting": "Wird gelöscht…"
+            "deleting": "Wird gelöscht"
         },
         "editor": {
             "nameLabel": "Name",
@@ -2655,7 +2656,7 @@
         "save": "Speichern",
         "edit": "Bearbeiten",
         "remove": "Entfernen",
-        "uploading": "Wird hochgeladen...",
+        "uploading": "Wird hochgeladen",
         "saveSuccess": "Deine Änderungen wurden gespeichert.",
         "saveError": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
         "invalidImage": "Bitte wähle eine gültige Bilddatei.",

@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Chargement...",
+        "loading": "Chargement",
         "notAvailable": "N/D",
-        "connecting": "Connexion...",
+        "connecting": "Connexion",
         "save": "Enregistrer",
         "cancel": "Annuler",
         "submit": "Envoyer",
@@ -18,7 +18,7 @@
         "exporting": "Exportation",
         "import": "Importer",
         "remove": "Supprimer",
-        "removing": "Suppression...",
+        "removing": "Suppression",
         "edit": "Modifier",
         "continue": "Continuer",
         "select": "Sélectionner",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Vous n'avez pas l'autorisation d'exporter",
             "quotaExhausted": "Vous avez utilisé tout votre quota",
-            "exporting": "Exportation...",
+            "exporting": "Exportation",
             "export": "Exporter"
         },
         "empty": {
@@ -939,7 +939,7 @@
                 "voteDescription": "Leurs infos arrivent préremplies. Vous créez la demande, l’équipe vote."
             },
             "generateLink": "Générer le lien d’invitation",
-            "generating": "Génération…",
+            "generating": "Génération",
             "generateFailed": "Échec de la génération du lien d’invitation. Réessayez.",
             "readyTitle": "Votre lien d’invitation est prêt",
             "readyDescription": "Envoyez-le à la personne à ajouter. Elle connectera un portefeuille et demandera à rejoindre.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# nouveau membre} other {# nouveaux membres}}",
             "updatedMembers": "Membres mis à jour",
             "newMembers": "Nouveaux membres",
-            "creatingProposal": "Création de la proposition...",
+            "creatingProposal": "Création de la proposition",
             "confirmSubmit": "Créer une demande"
         },
         "removeDialog": {
             "title": "Supprimer {count, plural, one {le membre} other {les membres}} ?",
             "nearnBody": "Une fois approuvé, {account} sera définitivement supprimé de la trésorerie et toutes les autorisations associées seront révoquées. Après la suppression, ce compte ne pourra plus créer de demandes depuis NEARN.",
             "genericBody": "Une fois approuvée, cette action supprimera définitivement <bold>{accounts}</bold> de la trésorerie et révoquera toutes les autorisations attribuées.",
-            "creatingProposal": "Création de la proposition..."
+            "creatingProposal": "Création de la proposition"
         },
         "validation": {
             "accountIdRequired": "L'ID du compte est requis",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Saisir le nom d'affichage",
             "logo": "Logo",
             "logoDescription": "Téléchargez un logo pour votre trésorerie. SVG, PNG ou JPG recommandés (256x256 px).",
-            "uploading": "Téléchargement...",
+            "uploading": "Téléchargement",
             "removeLogo": "Supprimer",
             "logoUploaded": "Logo téléchargé avec succès",
             "uploadError": "Une erreur s'est produite lors du téléchargement de l'image, veuillez réessayer.",
@@ -1135,7 +1135,7 @@
             "manualSomeDuplicates": "{duplicates, plural, =1 {# contact sur {total} existe déjà dans votre carnet d'adresses.} other {# contacts sur {total} existent déjà dans votre carnet d'adresses.}} Seuls les nouveaux contacts seront enregistrés.",
             "manualAllDuplicatesTooltip": "{count, plural, =1 {Ce contact est déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à enregistrer.} other {Ces contacts sont déjà dans votre carnet d'adresses, il n'y a donc rien de nouveau à enregistrer.}}",
             "duplicateActionTooltip": "Activez le saut des doublons ou supprimez les destinataires en double pour continuer.",
-            "adding": "Ajout…",
+            "adding": "Ajout",
             "nothingNew": "Rien de nouveau à importer",
             "addRecipientsButton": "Enregistrer les contacts"
         },
@@ -1143,7 +1143,8 @@
             "title": "Supprimer le destinataire",
             "body": "Cela supprimera <bold>{names}</bold> de vos contacts. Vous pourrez les ajouter à nouveau à tout moment.",
             "bulk": "Cela supprimera <bold>{count, plural, one {# destinataire} other {# destinataires}}</bold> de votre carnet d'adresses. Vous pourrez les ajouter à nouveau à tout moment.",
-            "single": "Cela supprimera <bold>{name}</bold> de votre carnet d'adresses. Vous pourrez ajouter ce destinataire à nouveau à tout moment."
+            "single": "Cela supprimera <bold>{name}</bold> de votre carnet d'adresses. Vous pourrez ajouter ce destinataire à nouveau à tout moment.",
+            "removing": "Suppression"
         },
         "importFlow": {
             "title": "Importer des destinataires",
@@ -1561,7 +1562,7 @@
         "proposalDescriptionLabel": "Description de la proposition (facultatif)",
         "proposalDescriptionPlaceholder": "Décrivez cette proposition...",
         "createProposal": "Créer la proposition",
-        "creatingProposal": "Création de la proposition...",
+        "creatingProposal": "Création de la proposition",
         "confirmInWallet": "Veuillez confirmer dans votre portefeuille",
         "proposalSubmitted": "Proposition soumise",
         "shareProposal": "Votre proposition a été créée. Partagez le lien ci-dessous avec les membres de la trésorerie pour voter.",
@@ -1611,7 +1612,7 @@
         "relinking": "{count, plural, one {# trésorerie sélectionnée est liée à un autre chat Telegram. La connexion la reconnectera et changera son lien d'ID de chat vers ce chat.} other {# trésoreries sélectionnées sont liées à d'autres chats Telegram. La connexion les reconnectera et changera leurs liens d'ID de chat vers ce chat.}}",
         "connectedToAnother": "Connecté à un autre chat",
         "notMember": "Vous n'êtes membre de la politique d'aucune trésorerie.",
-        "connecting": "Connexion…",
+        "connecting": "Connexion",
         "connect": "Connecter",
         "settings": {
             "title": "Telegram",
@@ -1822,7 +1823,7 @@
         "noDownloadPermission": "Vous n'avez pas l'autorisation de télécharger le fichier.",
         "noExportPermission": "Vous n'avez pas l'autorisation d'exporter",
         "quotaUsed": "Vous avez utilisé tout votre quota",
-        "exporting": "Exportation...",
+        "exporting": "Exportation",
         "export": "Exporter",
         "columnSubmissionTime": "Heure de soumission",
         "columnDateRange": "Plage de dates",
@@ -2511,7 +2512,7 @@
             "title": "Supprimer le modèle",
             "body": "Supprimer <b>{name}</b> ? Les membres ne pourront plus déposer de propositions à partir de ce modèle. Cette action est irréversible.",
             "confirm": "Supprimer",
-            "deleting": "Suppression…"
+            "deleting": "Suppression"
         },
         "editor": {
             "nameLabel": "Nom",
@@ -2655,7 +2656,7 @@
         "save": "Enregistrer",
         "edit": "Modifier",
         "remove": "Supprimer",
-        "uploading": "Téléversement...",
+        "uploading": "Téléversement",
         "saveSuccess": "Vos modifications ont été enregistrées.",
         "saveError": "Impossible d'enregistrer vos modifications. Réessayez.",
         "invalidImage": "Veuillez choisir un fichier image valide.",

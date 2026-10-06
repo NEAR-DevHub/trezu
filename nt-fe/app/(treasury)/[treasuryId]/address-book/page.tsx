@@ -55,6 +55,7 @@ import {
     buildNetworkLookup,
     resolveNetworkName,
 } from "@/features/address-book/utils/resolve-network";
+import { useHideMobileBottomNav } from "@/hooks/use-hide-mobile-bottom-nav";
 import { useTreasury } from "@/hooks/use-treasury";
 import { trackEvent } from "@/lib/analytics";
 import { cn } from "@/lib/utils";
@@ -681,6 +682,7 @@ export default function AddressBookPage() {
     const { data: entries, isLoading } = useAddressBook();
     const { data: chains = [], isLoading: isChainsLoading } = useChains();
     const [flowMode, setFlowMode] = useState<"add" | "import" | null>(null);
+    useHideMobileBottomNav(flowMode === "add" || flowMode === "import");
     const [initialRecipient, setInitialRecipient] =
         useState<RecipientDraft | null>(null);
 
