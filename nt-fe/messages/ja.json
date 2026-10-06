@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "読み込み中...",
+        "loading": "読み込み中",
         "notAvailable": "該当なし",
         "connecting": "接続中",
         "save": "保存",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "表示名を入力",
             "logo": "ロゴ",
             "logoDescription": "トレジャリーのロゴをアップロードしてください。SVG、PNG、またはJPG(256x256ピクセル)を推奨します。",
-            "uploading": "アップロード中...",
+            "uploading": "アップロード中",
             "removeLogo": "削除",
             "logoUploaded": "ロゴが正常にアップロードされました",
             "uploadError": "画像のアップロード中にエラーが発生しました。もう一度お試しください。",
@@ -2656,7 +2656,7 @@
         "save": "保存",
         "edit": "編集",
         "remove": "削除",
-        "uploading": "アップロード中...",
+        "uploading": "アップロード中",
         "saveSuccess": "変更を保存しました。",
         "saveError": "変更を保存できませんでした。もう一度お試しください。",
         "invalidImage": "有効な画像ファイルを選択してください。",

@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Chargement...",
+        "loading": "Chargement",
         "notAvailable": "N/D",
         "connecting": "Connexion",
         "save": "Enregistrer",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Saisir le nom d'affichage",
             "logo": "Logo",
             "logoDescription": "Téléchargez un logo pour votre trésorerie. SVG, PNG ou JPG recommandés (256x256 px).",
-            "uploading": "Téléchargement...",
+            "uploading": "Téléchargement",
             "removeLogo": "Supprimer",
             "logoUploaded": "Logo téléchargé avec succès",
             "uploadError": "Une erreur s'est produite lors du téléchargement de l'image, veuillez réessayer.",
@@ -2656,7 +2656,7 @@
         "save": "Enregistrer",
         "edit": "Modifier",
         "remove": "Supprimer",
-        "uploading": "Téléversement...",
+        "uploading": "Téléversement",
         "saveSuccess": "Vos modifications ont été enregistrées.",
         "saveError": "Impossible d'enregistrer vos modifications. Réessayez.",
         "invalidImage": "Veuillez choisir un fichier image valide.",

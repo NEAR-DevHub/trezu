@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Đang tải...",
+        "loading": "Đang tải",
         "notAvailable": "N/A",
         "connecting": "Đang kết nối",
         "save": "Lưu",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Nhập tên hiển thị",
             "logo": "Logo",
             "logoDescription": "Tải lên logo cho ngân quỹ của bạn. Khuyến nghị SVG, PNG hoặc JPG (256x256 px).",
-            "uploading": "Đang tải lên...",
+            "uploading": "Đang tải lên",
             "removeLogo": "Xóa",
             "logoUploaded": "Đã tải lên logo thành công",
             "uploadError": "Đã xảy ra lỗi khi tải lên hình ảnh, vui lòng thử lại.",
@@ -2656,7 +2656,7 @@
         "save": "Lưu",
         "edit": "Chỉnh sửa",
         "remove": "Xóa",
-        "uploading": "Đang tải lên...",
+        "uploading": "Đang tải lên",
         "saveSuccess": "Các thay đổi của bạn đã được lưu.",
         "saveError": "Không thể lưu thay đổi. Vui lòng thử lại.",
         "invalidImage": "Vui lòng chọn tệp hình ảnh hợp lệ.",

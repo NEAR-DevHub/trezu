@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Wird geladen...",
+        "loading": "Wird geladen",
         "notAvailable": "k. A.",
         "connecting": "Wird verbunden",
         "save": "Speichern",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Anzeigenamen eingeben",
             "logo": "Logo",
             "logoDescription": "Laden Sie ein Logo für Ihre Treasury hoch. Empfohlen sind SVG, PNG oder JPG (256x256 px).",
-            "uploading": "Wird hochgeladen...",
+            "uploading": "Wird hochgeladen",
             "removeLogo": "Entfernen",
             "logoUploaded": "Logo erfolgreich hochgeladen",
             "uploadError": "Beim Hochladen des Bildes ist ein Fehler aufgetreten. Bitte erneut versuchen.",
@@ -2656,7 +2656,7 @@
         "save": "Speichern",
         "edit": "Bearbeiten",
         "remove": "Entfernen",
-        "uploading": "Wird hochgeladen...",
+        "uploading": "Wird hochgeladen",
         "saveSuccess": "Deine Änderungen wurden gespeichert.",
         "saveError": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
         "invalidImage": "Bitte wähle eine gültige Bilddatei.",

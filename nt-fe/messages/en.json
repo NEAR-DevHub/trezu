@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Loading...",
+        "loading": "Loading",
         "notAvailable": "N/A",
         "connecting": "Connecting",
         "save": "Save",
@@ -1059,7 +1059,7 @@
             "displayNamePlaceholder": "Enter display name",
             "logo": "Logo",
             "logoDescription": "Upload a logo for your treasury. Recommended SVG, PNG, or JPG (256x256 px).",
-            "uploading": "Uploading...",
+            "uploading": "Uploading",
             "removeLogo": "Remove",
             "logoUploaded": "Logo uploaded successfully",
             "uploadError": "Error occurred while uploading image, please try again.",
@@ -2654,7 +2654,7 @@
         "save": "Save",
         "edit": "Edit",
         "remove": "Remove",
-        "uploading": "Uploading...",
+        "uploading": "Uploading",
         "saveSuccess": "Your changes are saved.",
         "saveError": "Couldn't save your changes. Try again.",
         "invalidImage": "Please choose a valid image file.",

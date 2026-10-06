@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Yükleniyor...",
+        "loading": "Yükleniyor",
         "notAvailable": "Yok",
         "connecting": "Bağlanıyor",
         "save": "Kaydet",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Görünen adı girin",
             "logo": "Logo",
             "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
-            "uploading": "Yükleniyor...",
+            "uploading": "Yükleniyor",
             "removeLogo": "Kaldır",
             "logoUploaded": "Logo başarıyla yüklendi",
             "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
@@ -2656,7 +2656,7 @@
         "save": "Kaydet",
         "edit": "Düzenle",
         "remove": "Kaldır",
-        "uploading": "Yükleniyor...",
+        "uploading": "Yükleniyor",
         "saveSuccess": "Değişiklikleriniz kaydedildi.",
         "saveError": "Değişiklikler kaydedilemedi. Tekrar deneyin.",
         "invalidImage": "Lütfen geçerli bir görsel dosyası seçin.",

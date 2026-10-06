@@ -64,11 +64,6 @@ import { cn } from "@/lib/utils";
 
 const TOOLBAR_BUTTON_CLASS = "h-10 gap-2 rounded-lg text-sm";
 
-function HideMobileBottomNav() {
-    useHideMobileBottomNav();
-    return null;
-}
-
 function AddressBookEmptyState({
     onAdd,
     onImport,
@@ -687,6 +682,7 @@ export default function AddressBookPage() {
     const { data: entries, isLoading } = useAddressBook();
     const { data: chains = [], isLoading: isChainsLoading } = useChains();
     const [flowMode, setFlowMode] = useState<"add" | "import" | null>(null);
+    useHideMobileBottomNav(flowMode === "add" || flowMode === "import");
     const [initialRecipient, setInitialRecipient] =
         useState<RecipientDraft | null>(null);
 
@@ -775,7 +771,6 @@ export default function AddressBookPage() {
                 hideMobileShellControls
                 reserveHeaderSpace
             >
-                <HideMobileBottomNav />
                 <div className="mx-auto w-full max-w-lg">
                     <RecipientFlow
                         mode="import"
@@ -812,7 +807,6 @@ export default function AddressBookPage() {
                     </AuthButton>
                 }
             >
-                <HideMobileBottomNav />
                 <div className="mx-auto w-full max-w-lg">
                     <RecipientFlow
                         mode="add"

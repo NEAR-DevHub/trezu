@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "טוען...",
+        "loading": "טוען",
         "notAvailable": "לא זמין",
         "connecting": "מתחבר",
         "save": "שמירה",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "הזן שם תצוגה",
             "logo": "לוגו",
             "logoDescription": "העלה לוגו עבור האוצר שלך. מומלץ SVG, PNG או JPG (256x256 פיקסלים).",
-            "uploading": "מעלה...",
+            "uploading": "מעלה",
             "removeLogo": "הסרה",
             "logoUploaded": "הלוגו הועלה בהצלחה",
             "uploadError": "אירעה שגיאה בעת העלאת התמונה, אנא נסה שוב.",
@@ -2656,7 +2656,7 @@
         "save": "שמור",
         "edit": "ערוך",
         "remove": "הסר",
-        "uploading": "מעלה...",
+        "uploading": "מעלה",
         "saveSuccess": "השינויים שלך נשמרו.",
         "saveError": "לא ניתן לשמור את השינויים. נסה שוב.",
         "invalidImage": "בחר קובץ תמונה תקין.",

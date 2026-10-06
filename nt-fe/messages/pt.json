@@ -1,6 +1,6 @@
 {
     "common": {
-        "loading": "Carregando...",
+        "loading": "Carregando",
         "notAvailable": "N/D",
         "connecting": "Conectando",
         "save": "Salvar",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Insira o nome de exibição",
             "logo": "Logotipo",
             "logoDescription": "Faça upload de um logotipo para sua tesouraria. Recomendado SVG, PNG ou JPG (256x256 px).",
-            "uploading": "Enviando...",
+            "uploading": "Enviando",
             "removeLogo": "Remover",
             "logoUploaded": "Logotipo enviado com sucesso",
             "uploadError": "Ocorreu um erro ao enviar a imagem, por favor tente novamente.",
@@ -2656,7 +2656,7 @@
         "save": "Salvar",
         "edit": "Editar",
         "remove": "Remover",
-        "uploading": "Enviando...",
+        "uploading": "Enviando",
         "saveSuccess": "Suas alterações foram salvas.",
         "saveError": "Não foi possível salvar as alterações. Tente novamente.",
         "invalidImage": "Escolha um arquivo de imagem válido.",
