@@ -369,7 +369,7 @@ export function UploadDataStep({
                     triggerLabel={t("token")}
                     classNames={{
                         trigger:
-                            "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:bg-card",
+                            "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:border-general-unofficial-border-4 hover:bg-card",
                     }}
                 />
                 {showTokenWarning && (
