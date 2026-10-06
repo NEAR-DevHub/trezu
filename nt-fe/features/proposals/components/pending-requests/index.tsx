@@ -228,11 +228,11 @@ export function PendingRequestItem({
                                     }}
                                     disabled={isUserVoter || rejectSlot.blocked}
                                     tooltip={
-                                        rejectSlot.inlineTooltip
-                                            ? rejectSlot.inlineTooltip
-                                            : isUserVoter
-                                              ? noVoteMessage
-                                              : undefined
+                                        rejectSlot.hoverTooltip ??
+                                        rejectSlot.inlineTooltip ??
+                                        (isUserVoter
+                                            ? noVoteMessage
+                                            : undefined)
                                     }
                                 >
                                     <Icon icon={Cancel01Icon} />
@@ -276,11 +276,11 @@ export function PendingRequestItem({
                                             insufficientBalanceInfo.hasInsufficientBalance
                                         }
                                         tooltip={
-                                            approveSlot.inlineTooltip
-                                                ? approveSlot.inlineTooltip
-                                                : isUserVoter
-                                                  ? noVoteMessage
-                                                  : undefined
+                                            approveSlot.hoverTooltip ??
+                                            approveSlot.inlineTooltip ??
+                                            (isUserVoter
+                                                ? noVoteMessage
+                                                : undefined)
                                         }
                                     >
                                         <Icon icon={CheckIcon} />
