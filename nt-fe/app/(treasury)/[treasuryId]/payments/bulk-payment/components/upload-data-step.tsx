@@ -369,7 +369,7 @@ export function UploadDataStep({
                     triggerLabel={t("token")}
                     classNames={{
                         trigger:
-                            "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:border-general-border hover:bg-card",
+                            "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:border-general-unofficial-border-4 hover:bg-card",
                     }}
                 />
                 {showTokenWarning && (
@@ -555,8 +555,11 @@ export function UploadDataStep({
                         <div className="flex flex-col gap-1">
                             <div
                                 className={cn(
-                                    "rounded-3xl border border-general-border bg-card",
-                                    hasDataErrors && "border-destructive",
+                                    "rounded-3xl border border-general-border bg-card transition-colors",
+                                    hasDataErrors
+                                        ? "border-destructive"
+                                        : availableCredits !== 0 &&
+                                              "hover:border-general-unofficial-border-4 focus-within:border-general-unofficial-border-4",
                                 )}
                             >
                                 <Textarea

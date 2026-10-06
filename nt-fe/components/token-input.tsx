@@ -611,6 +611,11 @@ export function TokenInput<
                     : isAmountCard
                       ? "mt-1 text-center"
                       : "mt-2";
+                // Card variants own their border: error wins, otherwise darken on hover / focus.
+                const cardBorderClassName = displayError
+                    ? "border-destructive"
+                    : !readOnly &&
+                      "hover:border-general-unofficial-border-4 focus-within:border-general-unofficial-border-4";
                 const amountMessages = displayError ? (
                     <p
                         className={cn(
@@ -791,9 +796,9 @@ export function TokenInput<
                     return (
                         <div
                             className={cn(
-                                "flex flex-col rounded-2xl border border-general-border bg-card p-5",
+                                "flex flex-col rounded-2xl border border-general-border bg-card p-5 transition-colors",
                                 !readOnly && "cursor-text",
-                                displayError && "border-destructive",
+                                cardBorderClassName,
                             )}
                             onClick={(event) =>
                                 focusCardAmountInput(event, readOnly)
@@ -854,9 +859,9 @@ export function TokenInput<
                     return (
                         <div
                             className={cn(
-                                "flex h-60 w-full flex-col items-stretch self-stretch rounded-3xl border border-general-border bg-card p-4",
+                                "flex h-60 w-full flex-col items-stretch self-stretch rounded-3xl border border-general-border bg-card p-4 transition-colors",
                                 !readOnly && "cursor-text",
-                                displayError && "border-destructive",
+                                cardBorderClassName,
                             )}
                             onClick={(event) =>
                                 focusCardAmountInput(event, readOnly)
