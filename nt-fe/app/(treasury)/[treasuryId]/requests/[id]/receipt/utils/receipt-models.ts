@@ -92,8 +92,13 @@ export function buildReceiptAmountModel({
               unitPriceUsd: sourceToken.tokenPrice,
           }).display
         : sourceToken.amountDisplay;
+    // A native or FT payment has no receive quote. The amount row still shows
+    // the tokens that were transferred. Exchange legs stay independent.
+    const displayedDestinationAmount = isExchangeReceipt
+        ? destinationAmountValue
+        : (destinationAmountValue ?? sourceAmountValue);
     const destinationAmountDisplay = formatTokenQuantity(
-        destinationAmountValue,
+        displayedDestinationAmount,
         {
             locale,
             profile: "standard",
