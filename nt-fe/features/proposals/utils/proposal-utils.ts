@@ -1,5 +1,5 @@
 import { getKindFromProposal } from "@/lib/config-utils";
-import { Proposal } from "@/lib/proposals-api";
+import { Proposal, SwapStatus } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
 import {
     BatchPaymentRequestData,
@@ -317,6 +317,7 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
 
 export type UIProposalStatus =
     | "Executed"
+    | "Processing"
     | "Rejected"
     | "Pending"
     | "Failed"
@@ -364,13 +365,33 @@ export function isQuoteDeadlineBeforeVotingPeriod(
     return byPeriod - quoteDeadlineMs > 2 * 60 * 60 * 1000;
 }
 
+/**
+ * An approved intents-routed request has only handed its tokens to the 1Click
+ * deposit address — it is done once the swap settles. Without a swap status
+ * (not intents-routed, or not loaded yet) the on-chain approval is the outcome.
+ */
+function getApprovedStatus(swapStatus?: SwapStatus | null): UIProposalStatus {
+    switch (swapStatus) {
+        case undefined:
+        case null:
+        case "SUCCESS":
+            return "Executed";
+        case "FAILED":
+        case "REFUNDED":
+            return "Failed";
+        default:
+            return "Processing";
+    }
+}
+
 export function getProposalStatus(
     proposal: Proposal,
     policy: Policy,
+    swapStatus?: SwapStatus | null,
 ): UIProposalStatus {
     switch (proposal.status) {
         case "Approved":
-            return "Executed";
+            return getApprovedStatus(swapStatus);
         case "Rejected":
             return "Rejected";
         case "Failed":
