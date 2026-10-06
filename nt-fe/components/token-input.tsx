@@ -505,7 +505,8 @@ export function TokenInput<
                     field.value
                         ? `${
                               amountFormat.token(field.value, {
-                                  tokenDecimals: tokenDecimals ?? token.decimals,
+                                  tokenDecimals:
+                                      tokenDecimals ?? token.decimals,
                                   unitPriceUsd: tokenPrice,
                               }).display
                           } ${token.symbol}`

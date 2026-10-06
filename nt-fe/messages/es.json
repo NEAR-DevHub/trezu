@@ -1349,6 +1349,7 @@
             "enterAmount": "Introduce un importe"
         },
         "review": "Revisar intercambio",
+        "chainDeliveryUnsupported": "Esta red no está disponible en el intercambio.",
         "poweredBy": "Impulsado por",
         "info": {
             "priceDifference": "Diferencia de precio",

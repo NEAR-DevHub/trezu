@@ -1349,6 +1349,7 @@
             "enterAmount": "Saisissez un montant"
         },
         "review": "Vérifier l'échange",
+        "chainDeliveryUnsupported": "Ce réseau n'est pas disponible pour l'échange.",
         "poweredBy": "Propulsé par",
         "info": {
             "priceDifference": "Différence de prix",

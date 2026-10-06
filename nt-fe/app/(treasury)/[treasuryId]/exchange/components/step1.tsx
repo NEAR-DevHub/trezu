@@ -2,6 +2,7 @@
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/button";
 import { CreateRequestButton } from "@/components/create-request-button";
@@ -125,6 +126,17 @@ export function Step1({
             });
 
         if (!isReceiveTokenValid) {
+            if (
+                isOffNearChainDelivery({
+                    id: receiveToken.address,
+                    balanceAssetId: receiveToken.balanceAssetId,
+                    quoteAssetId: receiveToken.quoteAssetId,
+                })
+            ) {
+                toast.info(tEx("chainDeliveryUnsupported"), {
+                    id: "chain-delivery-unsupported",
+                });
+            }
             // Reset to a default valid token (ETH or first available)
             form.setValue("receiveToken", ETH_TOKEN);
             onQuoteInputsChanged();
@@ -140,6 +152,7 @@ export function Step1({
         receiveToken.residency,
         filterReceiveTokens,
         onQuoteInputsChanged,
+        tEx,
     ]);
 
     // A chain-delivery sell row spends the held coin but is labeled as another
@@ -154,6 +167,9 @@ export function Step1({
         ) {
             return;
         }
+        toast.info(tEx("chainDeliveryUnsupported"), {
+            id: "chain-delivery-unsupported",
+        });
         form.setValue("sellToken", BTC_TOKEN);
         onQuoteInputsChanged();
         // eslint-disable-next-line react-hooks/exhaustive-deps -- form.setValue is stable
@@ -162,6 +178,7 @@ export function Step1({
         sellToken.balanceAssetId,
         sellToken.quoteAssetId,
         onQuoteInputsChanged,
+        tEx,
     ]);
 
     // Validate tokens when they change

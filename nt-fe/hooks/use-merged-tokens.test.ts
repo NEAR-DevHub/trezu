@@ -6,7 +6,8 @@ import {
     overlayChainDeliveryHoldings,
 } from "./use-merged-tokens";
 
-const SOLANA_NEAR = "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG";
+const SOLANA_NEAR =
+    "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG";
 
 const holding = {
     availableBalanceRaw: "333187681653139407244785",

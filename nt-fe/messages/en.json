@@ -1350,6 +1350,7 @@
             "differentTokens": "Tokens must be different",
             "enterAmount": "Enter an amount"
         },
+        "chainDeliveryUnsupported": "This network isn't available on Swap.",
         "review": "Review swap",
         "poweredBy": "Powered by",
         "info": {

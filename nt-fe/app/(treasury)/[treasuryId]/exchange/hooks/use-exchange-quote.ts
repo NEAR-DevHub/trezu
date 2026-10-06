@@ -11,7 +11,7 @@ import Big from "@/lib/big";
 import {
     formatAssetForIntentsAPI,
     holdingDecimals,
-    isOneClickRoutingAsset,
+    isNearAccountDeliveryQuote,
 } from "@/lib/oneclick-asset-routing";
 import { nanosToMs } from "@/lib/utils";
 import { formatQuoteErrorMessage, isAbortError } from "../quote-errors";
@@ -153,18 +153,13 @@ export function useExchangeQuote({
                 const chainQuoteId = receiveToken.quoteAssetId;
                 const holdableReceiveId =
                     receiveToken.balanceAssetId || receiveToken.address;
-                // Chain route: balance is the asset the treasury holds, quote is
-                // the id that delivers on that chain (`1cs_v1:` or NEAR on BSC).
-                // Exchange pays the treasury account, so 1Click accepts this when
-                // that chain accepts a NEAR account (ZEC on NEAR). Other chains
-                // reject it.
+                // Only ZEC-on-NEAR (`1cs_v1:near:`) delivers to the treasury's
+                // NEAR account. Other 1cs quotes, including nBTC's
+                // `1cs_v1:btc:native:coin`, must stay an Intents credit of the
+                // holdable id.
                 const deliversOnChain =
                     !isConfidential &&
-                    !!chainQuoteId &&
-                    chainQuoteId !== holdableReceiveId &&
-                    (isOneClickRoutingAsset(chainQuoteId) ||
-                        receiveToken.address.toLowerCase() !==
-                            holdableReceiveId.toLowerCase());
+                    isNearAccountDeliveryQuote(chainQuoteId, holdableReceiveId);
                 const recipientType = deliversOnChain
                     ? ("DESTINATION_CHAIN" as const)
                     : getRecipientType(

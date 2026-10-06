@@ -1349,6 +1349,7 @@
             "enterAmount": "הזן סכום"
         },
         "review": "סקור החלפה",
+        "chainDeliveryUnsupported": "רשת זו אינה זמינה בהחלפה.",
         "poweredBy": "מופעל על ידי",
         "info": {
             "priceDifference": "הפרש מחיר",

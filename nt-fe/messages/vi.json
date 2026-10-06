@@ -1332,6 +1332,7 @@
             "enterAmount": "Nhập số tiền"
         },
         "review": "Xem lại hoán đổi",
+        "chainDeliveryUnsupported": "Mạng này không khả dụng khi trao đổi.",
         "poweredBy": "Cung cấp bởi",
         "info": {
             "priceDifference": "Chênh lệch giá",

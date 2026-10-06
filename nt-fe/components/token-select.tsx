@@ -334,7 +334,12 @@ export default function TokenSelect({
         }
 
         return selectable;
-    }, [tokens, filterTokens, hideOffNearChainDelivery, hideChainDeliveryRoutes]);
+    }, [
+        tokens,
+        filterTokens,
+        hideOffNearChainDelivery,
+        hideChainDeliveryRoutes,
+    ]);
 
     const filteredTokens = useMemo(() => {
         const searchLower = search.toLowerCase();

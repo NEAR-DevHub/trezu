@@ -1332,6 +1332,7 @@
             "enterAmount": "请输入金额"
         },
         "review": "审核兑换",
+        "chainDeliveryUnsupported": "此网络无法用于兑换。",
         "poweredBy": "技术支持:",
         "info": {
             "priceDifference": "价差",

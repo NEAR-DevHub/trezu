@@ -1349,6 +1349,7 @@
             "enterAmount": "Betrag eingeben"
         },
         "review": "Tausch prüfen",
+        "chainDeliveryUnsupported": "Dieses Netzwerk ist beim Tauschen nicht verfügbar.",
         "poweredBy": "Bereitgestellt von",
         "info": {
             "priceDifference": "Preisunterschied",

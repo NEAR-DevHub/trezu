@@ -1349,6 +1349,7 @@
             "enterAmount": "Masukkan jumlah"
         },
         "review": "Tinjau tukar",
+        "chainDeliveryUnsupported": "Jaringan ini tidak tersedia di Tukar.",
         "poweredBy": "Didukung oleh",
         "info": {
             "priceDifference": "Selisih Harga",

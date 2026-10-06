@@ -12,7 +12,7 @@
 use crate::{
     constants::{
         intents_tokens::{
-            BaseTokenInfo, TokenDeployment, UnifiedTokenInfo, find_unified_asset_id, get_tokens_map,
+            find_unified_asset_id, get_tokens_map, BaseTokenInfo, TokenDeployment, UnifiedTokenInfo,
         },
         nearcom_ranking::{
             is_hidden_catalog_token, is_near_network, is_swap_excluded_symbol, network_volume_rank,
@@ -21,19 +21,19 @@ use crate::{
     },
     utils::cache::CacheTier,
 };
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{extract::State, http::StatusCode, Json};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 
 use crate::{
-    AppState,
-    constants::intents_chains::{ChainIcons, get_chain_metadata_by_name},
+    constants::intents_chains::{get_chain_metadata_by_name, ChainIcons},
     handlers::intents::supported_tokens::fetch_supported_tokens_data,
     services::oneclick_asset_routing::{
-        NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
+        is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id, NBTC_BALANCE_ASSET_ID,
     },
     services::oneclick_tokens::fetch_oneclick_tokens,
+    AppState,
 };
 use serde_json::Value;
 
@@ -222,7 +222,7 @@ fn holdable_sibling_id<'a>(routing_id: &str, grouped: &'a [BaseTokenInfo]) -> Op
     let mut matches: Vec<&BaseTokenInfo> = grouped
         .iter()
         .filter(|token| {
-            token.symbol.eq_ignore_ascii_case(symbol)
+            token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
                 && (token.defuse_asset_id.starts_with("nep141:")
                     || token.defuse_asset_id.starts_with("nep245:"))
         })
@@ -258,7 +258,7 @@ fn same_symbol_holdable_sibling<'a>(
         .iter()
         .filter(|token| {
             token.defuse_asset_id != routing_id
-                && token.symbol.eq_ignore_ascii_case(symbol)
+                && token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
                 && (token.defuse_asset_id.starts_with("nep141:")
                     || token.defuse_asset_id.starts_with("nep245:"))
         })
@@ -276,6 +276,21 @@ fn same_symbol_holdable_sibling<'a>(
         )
     });
     matches.first().map(|token| token.defuse_asset_id.as_str())
+}
+
+/// Log once per asset id when a delivery row cannot find the coin the treasury holds.
+fn warn_missing_holdable_sibling(routing_id: &str) {
+    use std::sync::Mutex;
+
+    static SEEN: Mutex<Option<HashSet<String>>> = Mutex::new(None);
+    let mut guard = SEEN.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let seen = guard.get_or_insert_with(HashSet::new);
+    if seen.insert(routing_id.to_string()) {
+        tracing::warn!(
+            asset_id = routing_id,
+            "chain delivery row has no holdable nep141/nep245 sibling"
+        );
+    }
 }
 
 fn has_tag(tags: &Option<Vec<String>>, tag: &str) -> bool {
@@ -554,10 +569,19 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
 
             let delivery_chain = off_origin_deployment_chain(base);
             let balance_id = if delivery_chain.is_some() {
-                same_symbol_holdable_sibling(routing_id, &unified.grouped_tokens)
-                    .unwrap_or(routing_id)
+                same_symbol_holdable_sibling(routing_id, &unified.grouped_tokens).unwrap_or_else(
+                    || {
+                        warn_missing_holdable_sibling(routing_id);
+                        routing_id
+                    },
+                )
             } else {
-                holdable_sibling_id(routing_id, &unified.grouped_tokens).unwrap_or(routing_id)
+                holdable_sibling_id(routing_id, &unified.grouped_tokens).unwrap_or_else(|| {
+                    if is_one_click_routing_asset(routing_id) {
+                        warn_missing_holdable_sibling(routing_id);
+                    }
+                    routing_id
+                })
             };
             let quote_id = if is_one_click_routing_asset(routing_id) || delivery_chain.is_some() {
                 routing_id.to_string()

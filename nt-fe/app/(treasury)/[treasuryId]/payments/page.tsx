@@ -397,13 +397,7 @@ function Step2({
                 ? enteredAmount.mul(price)
                 : null,
         };
-    }, [
-        amount,
-        liveQuote,
-        quotedOutputDecimals,
-        token,
-        tokenData?.price,
-    ]);
+    }, [amount, liveQuote, quotedOutputDecimals, token, tokenData?.price]);
 
     const isQuoteLoading =
         isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);

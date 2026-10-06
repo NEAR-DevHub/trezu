@@ -1332,6 +1332,7 @@
             "enterAmount": "Введіть суму"
         },
         "review": "Переглянути обмін",
+        "chainDeliveryUnsupported": "Ця мережа недоступна для обміну.",
         "poweredBy": "Працює на",
         "info": {
             "priceDifference": "Різниця в ціні",

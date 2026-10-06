@@ -266,7 +266,9 @@ export function Step2({ handleBack }: StepProps) {
                                         kind="token"
                                         value={feeAmount}
                                         symbol={sellToken.symbol}
-                                        tokenDecimals={holdingDecimals(sellToken)}
+                                        tokenDecimals={holdingDecimals(
+                                            sellToken,
+                                        )}
                                         unitPriceUsd={sellToken.price}
                                         profile="standard"
                                         rounding="up"

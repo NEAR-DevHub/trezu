@@ -58,6 +58,22 @@ export function isChainDeliveryRoute(network: {
 }
 
 /**
+ * Public swap may ask 1Click to deliver on-chain only for a `1cs_v1:near:`
+ * quote (ZEC on NEAR). A NEAR account is a valid recipient there.
+ * nBTC's quote is `1cs_v1:btc:native:coin` while the treasury holds
+ * `nep141:nbtc.bridge.near` — that credit must stay on Intents, not this path.
+ */
+export function isNearAccountDeliveryQuote(
+    quoteAssetId: string | null | undefined,
+    holdableAssetId: string,
+): boolean {
+    if (!quoteAssetId) return false;
+    const quote = quoteAssetId.toLowerCase();
+    if (quote === holdableAssetId.toLowerCase()) return false;
+    return quote.startsWith("1cs_v1:near:");
+}
+
+/**
  * Delivery lands on a NEAR account. Swap can quote these because the only
  * recipient it has is the treasury's NEAR account. ZEC on NEAR is this case.
  */

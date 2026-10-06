@@ -5,6 +5,7 @@ import {
     formatAssetForIntentsAPI,
     holdingDecimals,
     isChainDeliveryRoute,
+    isNearAccountDeliveryQuote,
     isOffNearChainDelivery,
     isOneClickRoutingAsset,
     NBTC_BALANCE_ASSET_ID,
@@ -90,6 +91,27 @@ describe("oneclick-asset-routing", () => {
                 quoteAssetId: "nep141:wrap.near",
                 chainId: "near:mainnet",
             }),
+        ).toBe(false);
+    });
+
+    it("delivers on-chain only for a NEAR 1cs quote, not nBTC", () => {
+        expect(
+            isNearAccountDeliveryQuote(
+                "1cs_v1:near:nep141:zec.omft.near",
+                "nep141:zec.omft.near",
+            ),
+        ).toBe(true);
+        expect(
+            isNearAccountDeliveryQuote(
+                ONE_CLICK_BTC_NATIVE_ASSET_ID,
+                NBTC_BALANCE_ASSET_ID,
+            ),
+        ).toBe(false);
+        expect(
+            isNearAccountDeliveryQuote(
+                "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG",
+                "nep141:wrap.near",
+            ),
         ).toBe(false);
     });
 
