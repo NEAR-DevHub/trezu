@@ -1,6 +1,13 @@
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
-import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useRef,
+    useState,
+    useSyncExternalStore,
+} from "react";
 import { Icon } from "@/components/icon";
 import {
     Dialog as BaseDialog,
@@ -133,12 +140,175 @@ function Dialog({
     };
 
     return (
-        <BaseDialog
-            {...props}
-            open={effectiveOpen}
-            onOpenChange={handleOpenChange}
-        />
+        <DialogDismissContext.Provider value={() => handleOpenChange(false)}>
+            <BaseDialog
+                {...props}
+                open={effectiveOpen}
+                onOpenChange={handleOpenChange}
+            />
+        </DialogDismissContext.Provider>
     );
+}
+
+/**
+ * Closes the enclosing dialog the same way Escape or an outside click would,
+ * so owners that keep a dialog open (a tour, an unskippable prompt) still get
+ * the final say.
+ */
+const DialogDismissContext = createContext<(() => void) | null>(null);
+
+/** Movement before a press counts as a pull rather than a tap. */
+const DRAG_SLOP_PX = 8;
+/** A pull past this share of the sheet's height, or this fast, dismisses it. */
+const DISMISS_DISTANCE_RATIO = 0.25;
+const DISMISS_VELOCITY_PX_PER_MS = 0.5;
+/** A finger held still this long before lifting isn't flicking anymore. */
+const FLICK_MAX_PAUSE_MS = 100;
+
+type SheetPointerHandlers = Pick<
+    React.ComponentProps<"div">,
+    "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel"
+>;
+
+interface SheetDrag {
+    pointerId: number;
+    startX: number;
+    startY: number;
+    offset: number;
+    lastY: number;
+    lastTime: number;
+    velocity: number;
+    pulling: boolean;
+}
+
+/** Springs a released sheet back to where it rests. */
+function settleSheet(sheet: HTMLElement, offset: number) {
+    const clear = () => {
+        sheet.style.transition = "";
+        sheet.style.translate = "";
+    };
+    // Already in place: there's nothing to animate, so no `transitionend`.
+    if (offset === 0) {
+        clear();
+        return;
+    }
+    sheet.style.transition = "translate 200ms ease-out";
+    sheet.style.translate = "0px";
+    sheet.addEventListener("transitionend", clear, { once: true });
+}
+
+/**
+ * Pull-to-close for a bottom sheet: dragging its handle or title bar (anything
+ * marked `data-sheet-drag-area`) down moves the sheet with the finger, and
+ * letting go far or fast enough closes it — otherwise it springs back. The sheet keeps its offset as it closes, so
+ * the exit animation carries on from where the finger left it.
+ *
+ * Only active while `mobileQuery` matches, i.e. while the dialog is laid out
+ * as a bottom sheet rather than a centered modal or side panel.
+ */
+function useSheetDragToClose(
+    mobileQuery: string,
+    // The sheet's own pointer handlers still run, ahead of the gesture.
+    handlers: SheetPointerHandlers,
+) {
+    const dismiss = useContext(DialogDismissContext);
+    if (!dismiss) {
+        throw new Error(
+            "useSheetDragToClose must be used inside <Dialog> from @/components/modal",
+        );
+    }
+    const drag = useRef<SheetDrag | null>(null);
+
+    const release = (sheet: HTMLElement, shouldDismiss: boolean) => {
+        const current = drag.current;
+        drag.current = null;
+        if (!current?.pulling) return;
+        if (!shouldDismiss) {
+            settleSheet(sheet, current.offset);
+            return;
+        }
+        dismiss();
+        // A dialog its owner keeps open has to come back into place.
+        requestAnimationFrame(() => {
+            if (sheet.dataset.state === "open") {
+                settleSheet(sheet, current.offset);
+            }
+        });
+    };
+
+    return {
+        onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerDown?.(e);
+            if (!e.isPrimary || e.button !== 0) return;
+            if (!window.matchMedia(mobileQuery).matches) return;
+            if (!(e.target instanceof Element)) return;
+            // React bubbles events out of portals, so a sheet stacked on top of
+            // this one would otherwise drag both.
+            const area = e.target.closest("[data-sheet-drag-area]");
+            if (area?.closest('[role="dialog"]') !== e.currentTarget) return;
+            drag.current = {
+                pointerId: e.pointerId,
+                startX: e.clientX,
+                startY: e.clientY,
+                offset: 0,
+                lastY: e.clientY,
+                lastTime: e.timeStamp,
+                velocity: 0,
+                pulling: false,
+            };
+        },
+        onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerMove?.(e);
+            const current = drag.current;
+            if (current?.pointerId !== e.pointerId) return;
+            const dy = e.clientY - current.startY;
+            const sheet = e.currentTarget;
+
+            if (!current.pulling) {
+                const sideways =
+                    Math.abs(e.clientX - current.startX) > DRAG_SLOP_PX;
+                if (sideways || dy < -DRAG_SLOP_PX) {
+                    drag.current = null;
+                    return;
+                }
+                if (dy < DRAG_SLOP_PX) return;
+                current.pulling = true;
+                // Capturing also retargets the release, so the header button
+                // the pull started on doesn't get clicked.
+                sheet.setPointerCapture(e.pointerId);
+                sheet.style.transition = "none";
+            }
+
+            const elapsed = e.timeStamp - current.lastTime;
+            if (elapsed > 0) {
+                current.velocity = (e.clientY - current.lastY) / elapsed;
+            }
+            current.lastY = e.clientY;
+            current.lastTime = e.timeStamp;
+            current.offset = Math.max(0, dy);
+            sheet.style.translate = `0 ${current.offset}px`;
+        },
+        onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerUp?.(e);
+            const current = drag.current;
+            if (current?.pointerId !== e.pointerId) return;
+            const sheet = e.currentTarget;
+            const flicked =
+                e.timeStamp - current.lastTime < FLICK_MAX_PAUSE_MS &&
+                current.velocity > DISMISS_VELOCITY_PX_PER_MS;
+            release(
+                sheet,
+                flicked ||
+                    current.offset >
+                        sheet.offsetHeight * DISMISS_DISTANCE_RATIO,
+            );
+        },
+        onPointerCancel(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerCancel?.(e);
+            if (drag.current?.pointerId !== e.pointerId) return;
+            release(e.currentTarget, false);
+        },
+    };
 }
 
 interface DialogHeaderProps
@@ -157,9 +327,10 @@ function DialogHeader({
     const t = useTranslations("common");
     return (
         <BaseDialogHeader
+            data-sheet-drag-area
             {...props}
             className={cn(
-                "border-b border-border -mx-4 px-4 flex flex-row items-center justify-between text-center gap-2 sticky top-0 z-10 bg-card sm:static",
+                "border-b border-border -mx-4 px-4 flex flex-row items-center justify-between text-center gap-2 sticky top-0 z-10 bg-card sm:static max-sm:touch-none",
                 className,
             )}
         >
@@ -216,6 +387,8 @@ function DialogContent({
     const pushed = useRef(false);
     const hasSidebarRail = useHasSidebarRail();
     const isSidebarOpen = useSidebarStore((s) => s.isSidebarOpen);
+    // Below `sm` the dialog is a bottom sheet.
+    const dragToClose = useSheetDragToClose("(width < 40rem)", props);
 
     // Track open/close via the `data-state` attribute change on the content element.
     // We use onAnimationStart which fires when the open animation begins.
@@ -239,6 +412,7 @@ function DialogContent({
     return (
         <BaseDialogContent
             {...props}
+            {...dragToClose}
             showCloseButton={false}
             onOpenAutoFocus={(e) => {
                 handleStateChange(true);
@@ -279,4 +453,5 @@ export {
     DialogTrigger,
     DialogDescription,
     useConnectorPopupVisible,
+    useSheetDragToClose,
 };
