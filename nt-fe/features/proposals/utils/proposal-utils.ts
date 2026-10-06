@@ -1,7 +1,11 @@
+import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import { PUBLIC_TO_CONFIDENTIAL_ACTION } from "@/constants/proposal-actions";
 import { getKindFromProposal } from "@/lib/config-utils";
-import { Proposal, SwapStatus } from "@/lib/proposals-api";
-import { Policy } from "@/types/policy";
-import {
+import { isIntentsDepositKind } from "@/lib/near-proposal-builders";
+import type { Proposal, SwapStatus } from "@/lib/proposals-api";
+import { decodeArgs, decodeProposalDescription, nanosToMs } from "@/lib/utils";
+import type { Policy } from "@/types/policy";
+import type {
     BatchPaymentRequestData,
     ConfidentialRequestData,
     PaymentRequestData,
@@ -10,11 +14,7 @@ import {
     SwapRequestData,
     VestingData,
 } from "../types/index";
-import { decodeArgs, decodeProposalDescription, nanosToMs } from "@/lib/utils";
 import { extractProposalData } from "./proposal-extractors";
-import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
-import { PUBLIC_TO_CONFIDENTIAL_ACTION } from "@/constants/proposal-actions";
-import { isIntentsDepositKind } from "@/lib/near-proposal-builders";
 
 const BULK_PAYMENT_CONTRACT_ID =
     process.env.NEXT_PUBLIC_BULK_PAYMENT_CONTRACT_ID || "bulkpayment.near";
@@ -470,6 +470,36 @@ export function getProposalStatusDateInfo(
         default:
             return { date: submissionDate, isFuture: false, labelKey: null };
     }
+}
+
+const FEATURE_WARNING_SLOT: Partial<Record<ProposalUIKind, string>> = {
+    "Payment Request": "payments",
+    "Batch Payment Request": "payments",
+    "Move to Confidential": "payments",
+    Exchange: "exchange",
+};
+
+/**
+ * Feature warning slot for this request. Payments and exchanges only.
+ * A confidential swap uses the exchange slot. A confidential payment or
+ * bulk payment uses payments. A confidential request with no mapped quote
+ * has no feature slot. Other kinds have no feature slot.
+ */
+export function getProposalFeatureWarningSlot(
+    proposal: Proposal,
+    treasuryId?: string,
+): string | null {
+    const uiKind = getProposalUIKind(proposal);
+    if (uiKind === "Confidential Request") {
+        const data = extractProposalData(proposal, treasuryId)
+            .data as ConfidentialRequestData;
+        if (data.mapped?.type === "swap") return "exchange";
+        if (data.mapped?.type === "payment" || data.mapped?.type === "bulk") {
+            return "payments";
+        }
+        return null;
+    }
+    return FEATURE_WARNING_SLOT[uiKind] ?? null;
 }
 
 /**

@@ -2403,8 +2403,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Зрозуміло",
         "offlineBadge": "Офлайн",
-        "statusPageLink": "[Сторінка статусу](https://status.trezu.org/)",
+        "statusPageLink": "[Сторінка статусу](https://status.business.near.com)",
         "schedule": {
             "on": "о",
             "until": "до"

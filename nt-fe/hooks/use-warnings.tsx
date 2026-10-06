@@ -12,10 +12,11 @@ import {
 import { useFormatDate } from "@/components/formatted-date";
 import { networksMatchAliased } from "@/components/token-display";
 import {
+    getProposalFeatureWarningSlot,
     getProposalRequiredFunds,
-    getProposalUIKind,
 } from "@/features/proposals/utils/proposal-utils";
 import { type BridgeAsset, useTokenCatalog } from "@/hooks/use-bridge-tokens";
+import { useTreasury } from "@/hooks/use-treasury";
 import {
     type BridgeScope,
     resolveBridgeScope,
@@ -580,19 +581,6 @@ export function useHasTokenOrNetworkWarning(slot: string): boolean {
     );
 }
 
-/**
- * Maps a proposal's UI kind to the feature warning slot that governs it. Only
- * payments and exchange proposals can be paused; other kinds have no feature
- * slot and are never blocked by maintenance.
- */
-const PROPOSAL_KIND_TO_SLOT: Record<string, string> = {
-    "Payment Request": "payments",
-    "Batch Payment Request": "payments",
-    "Confidential Request": "payments",
-    "Move to Confidential": "payments",
-    Exchange: "exchange",
-};
-
 export interface ProposalApproveBlock {
     /** True when at least one proposal can't be approved right now. */
     anyBlocked: boolean;
@@ -600,17 +588,23 @@ export interface ProposalApproveBlock {
     blockedCount: number;
     /** Unique paused warnings (with their messages) causing the block. */
     blockedWarnings: Warning[];
+    /**
+     * Matching slow/notice warnings. Shown on the request, but they do not
+     * block approval.
+     */
+    noticeWarnings: Warning[];
 }
 
 /**
- * Determine whether approving the given proposals is blocked because their
- * feature (payments / exchange) currently has a paused warning. Rejection is
- * never blocked, so callers should only apply this for the "Approve" action.
+ * Feature warnings for these proposals (payments / exchange, including a
+ * token or network scope). A `paused` warning blocks approval. A `notice`
+ * is returned for display only. Rejection is never blocked.
  */
 export function useProposalApproveBlock(
     proposals: Proposal[],
 ): ProposalApproveBlock {
     const { getWarning } = useWarnings();
+    const { treasuryId } = useTreasury();
     // Bridge tokens are only needed to resolve a proposal's token to the asset /
     // network ids a scoped warning is stored against. Skip that fetch entirely
     // unless a token/network-scoped payments/exchange warning is actually live.
@@ -627,17 +621,17 @@ export function useProposalApproveBlock(
     return useMemo(() => {
         let blockedCount = 0;
         const warningsById = new Map<number, Warning>();
+        const noticeWarningsById = new Map<number, Warning>();
 
         for (const proposal of proposals) {
-            const uiKind = getProposalUIKind(proposal);
-            const slot = PROPOSAL_KIND_TO_SLOT[uiKind];
+            const slot = getProposalFeatureWarningSlot(proposal, treasuryId);
             if (!slot) continue;
 
             // Resolve the proposal's token to the bridge asset/network ids so a
-            // warning scoped to a specific token or network only blocks
+            // warning scoped to a specific token or network only matches
             // proposals that actually use it. A feature-wide warning (no
             // token/network) still matches every proposal of that type.
-            const funds = getProposalRequiredFunds(proposal);
+            const funds = getProposalRequiredFunds(proposal, treasuryId);
             const scope = resolveBridgeScope(bridgeAssets, funds?.tokenId);
 
             const warning = getWarning(
@@ -648,6 +642,8 @@ export function useProposalApproveBlock(
             if (warning?.response === "paused") {
                 blockedCount += 1;
                 warningsById.set(warning.id, warning);
+            } else if (warning?.response === "notice") {
+                noticeWarningsById.set(warning.id, warning);
             }
         }
 
@@ -655,6 +651,7 @@ export function useProposalApproveBlock(
             anyBlocked: blockedCount > 0,
             blockedCount,
             blockedWarnings: Array.from(warningsById.values()),
+            noticeWarnings: Array.from(noticeWarningsById.values()),
         };
-    }, [proposals, getWarning, bridgeAssets]);
+    }, [proposals, getWarning, bridgeAssets, treasuryId]);
 }

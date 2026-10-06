@@ -2403,8 +2403,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Đã hiểu",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "vào",
             "until": "đến"

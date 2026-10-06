@@ -12,13 +12,13 @@ import {
 } from "@/components/modal";
 import { Tooltip } from "@/components/tooltip";
 import { SlotWarning } from "@/components/warning-message";
+import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock, useSlotBlock } from "@/hooks/use-warnings";
 import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
-import { stripMessageForTooltip } from "@/lib/warnings";
-import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
 import { WALLET_IDS } from "@/lib/wallets";
+import { stripMessageForTooltip } from "@/lib/warnings";
 import { useNear } from "@/stores/near-store";
 
 interface VoteModalProps {
@@ -62,10 +62,14 @@ export function VoteModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Approving a payment/exchange proposal is blocked when that feature has a
-    // critical warning. Rejection (and removal) is never blocked.
+    // paused warning. A notice is shown and does not block. Rejection (and
+    // removal) is never blocked.
     const isApprove = vote === "Approve";
     const approveBlocked = isApprove && approveBlock.anyBlocked;
     const blockedWarnings = approveBlock.blockedWarnings.filter(
+        (warning) => warning.slot,
+    );
+    const noticeWarnings = approveBlock.noticeWarnings.filter(
         (warning) => warning.slot,
     );
 
@@ -157,6 +161,18 @@ export function VoteModal({
                         ))}
                     </div>
                 )}
+                {isApprove &&
+                    noticeWarnings.map(
+                        (warning) =>
+                            warning.slot && (
+                                <SlotWarning
+                                    key={warning.id}
+                                    slot={warning.slot}
+                                    token={warning.token ?? undefined}
+                                    network={warning.network ?? undefined}
+                                />
+                            ),
+                    )}
                 {hasInsufficientBalance && (
                     <InfoAlert
                         message={

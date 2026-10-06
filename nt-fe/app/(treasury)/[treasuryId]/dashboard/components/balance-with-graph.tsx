@@ -40,6 +40,7 @@ import { HistoryRefreshButton } from "@/features/activity/components/history-ref
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBalanceChart } from "@/hooks/use-treasury-queries";
+import { useSlotBlock } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
 import type { ChartInterval, TreasuryAsset } from "@/lib/api";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
@@ -53,6 +54,7 @@ import {
     getDashboardBucketVisibility,
 } from "@/lib/dashboard-balance-view";
 import { cn, formatCurrencyWithSubCent } from "@/lib/utils";
+import { stripMessageForTooltip } from "@/lib/warnings";
 import BalanceChart from "./chart";
 import { FundAccountEmpty } from "./fund-account-empty";
 
@@ -170,6 +172,21 @@ export default function BalanceWithGraph({
         useBalanceMask();
     const router = useRouter();
     const isNarrow = useMediaQuery("(max-width: 1023px)");
+    const { blocked: depositPaused, message: depositPausedMessage } =
+        useSlotBlock("deposit");
+    const { blocked: paymentsPaused, message: paymentsPausedMessage } =
+        useSlotBlock("payments");
+    const { blocked: swapPaused, message: swapPausedMessage } =
+        useSlotBlock("exchange");
+    const depositPauseTooltip = depositPaused
+        ? stripMessageForTooltip(depositPausedMessage) || undefined
+        : undefined;
+    const paymentsPauseTooltip = paymentsPaused
+        ? stripMessageForTooltip(paymentsPausedMessage) || undefined
+        : undefined;
+    const swapPauseTooltip = swapPaused
+        ? stripMessageForTooltip(swapPausedMessage) || undefined
+        : undefined;
     const handleChartMouseEnter = useCallback(
         () => setIsChartHovered(true),
         [],
@@ -563,7 +580,11 @@ export default function BalanceWithGraph({
                 id="balance-with-graph"
                 className="max-lg:-mx-4 max-lg:rounded-none max-lg:border-x-0 max-lg:border-y max-lg:border-gray-200 max-lg:bg-card dark:max-lg:border-general-border"
             >
-                <FundAccountEmpty onReceiveClick={onDepositClick} />
+                <FundAccountEmpty
+                    onReceiveClick={onDepositClick}
+                    receiveDisabled={depositPaused}
+                    receiveTooltip={depositPauseTooltip}
+                />
             </PageCard>
         );
     }
@@ -856,6 +877,7 @@ export default function BalanceWithGraph({
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 lg:gap-4">
                 <Button
                     onClick={() => {
+                        if (depositPaused) return;
                         trackEvent("nav_click", {
                             destination: "deposit",
                             source: "dashboard",
@@ -863,9 +885,11 @@ export default function BalanceWithGraph({
                         });
                         onDepositClick();
                     }}
+                    disabled={depositPaused}
+                    tooltipContent={depositPauseTooltip}
                     id="dashboard-step1"
                     size="xl"
-                    className="h-11 max-lg:px-3 max-lg:text-sm"
+                    className="h-11 w-full max-lg:px-3 max-lg:text-sm"
                 >
                     <Icon icon={ArrowDown02Icon} /> {t("receive")}
                 </Button>
@@ -875,7 +899,10 @@ export default function BalanceWithGraph({
                     size="xl"
                     className="h-11 w-full max-lg:rounded-2xl max-lg:px-3 max-lg:text-sm"
                     id="dashboard-step2"
+                    disabled={paymentsPaused}
+                    tooltipContent={paymentsPauseTooltip}
                     onClick={() => {
+                        if (paymentsPaused) return;
                         trackEvent("nav_click", {
                             destination: "payments",
                             source: "dashboard",
@@ -893,7 +920,10 @@ export default function BalanceWithGraph({
                     size="xl"
                     className="hidden h-11 w-full max-lg:px-3 max-lg:text-sm lg:inline-flex"
                     id="dashboard-step3"
+                    disabled={swapPaused}
+                    tooltipContent={swapPauseTooltip}
                     onClick={() => {
+                        if (swapPaused) return;
                         trackEvent("nav_click", {
                             destination: "exchange",
                             source: "dashboard",

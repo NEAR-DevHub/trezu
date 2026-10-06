@@ -34,6 +34,10 @@ const buttonVariants = cva(
                 ghost: "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
                 link: "text-primary underline-offset-4 hover:underline",
                 pill: "rounded-full bg-gray-100 text-gray-700 hover:bg-gray-200 hover:text-gray-900 dark:bg-white/10 dark:text-gray-200 dark:hover:bg-white/20",
+                // general/warning surface: faded background, border, and
+                // foreground. Same tokens in both themes via the CSS variables.
+                warning:
+                    "border border-general-warning-border bg-general-warning-background-faded text-general-warning-foreground hover:bg-general-warning-background-faded",
                 unstyled: "",
             },
             size: {

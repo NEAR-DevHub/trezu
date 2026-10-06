@@ -395,7 +395,7 @@ export function RecipientNetworkSelect({
                 <WarningMessage
                     variant="inline"
                     message={warningMessage}
-                    className="text-sm"
+                    className="ml-4 text-sm"
                 />
             ) : null}
             {errorMessage && (
