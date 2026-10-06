@@ -8,7 +8,11 @@ import {
     type IntentsQuoteResponse,
 } from "@/lib/api";
 import Big from "@/lib/big";
-import { formatAssetForIntentsAPI } from "@/lib/oneclick-asset-routing";
+import {
+    formatAssetForIntentsAPI,
+    holdingDecimals,
+    isOneClickRoutingAsset,
+} from "@/lib/oneclick-asset-routing";
 import { nanosToMs } from "@/lib/utils";
 import { formatQuoteErrorMessage, isAbortError } from "../quote-errors";
 import {
@@ -55,6 +59,12 @@ export function useExchangeQuote({
 }: UseExchangeQuoteParams) {
     const tEx = useTranslations("exchangeErrors");
     const amountToken = swapType === "EXACT_INPUT" ? sellToken : receiveToken;
+    // Sell spends the held token (sibling decimals). A typed receive amount is
+    // the destination asset, which keeps the chain decimals.
+    const amountDecimals =
+        swapType === "EXACT_INPUT"
+            ? holdingDecimals(sellToken)
+            : receiveToken.decimals;
 
     const query = useQuery({
         queryKey: [
@@ -63,6 +73,7 @@ export function useExchangeQuote({
             sellToken.address,
             receiveToken.address,
             amount,
+            amountDecimals,
             swapType,
             slippageTolerance,
             isConfidential,
@@ -82,7 +93,7 @@ export function useExchangeQuote({
                 if (isDeposit || isWithdraw) {
                     // Scale with the driving side (sell for EXACT_INPUT, receive for EXACT_OUTPUT).
                     const amountInRaw = Big(amount)
-                        .mul(Big(10).pow(amountToken.decimals))
+                        .mul(Big(10).pow(amountDecimals))
                         .toFixed();
 
                     const tokenMetadata =
@@ -129,7 +140,7 @@ export function useExchangeQuote({
                 }
 
                 const parsedAmount = Big(amount)
-                    .mul(Big(10).pow(amountToken.decimals))
+                    .mul(Big(10).pow(amountDecimals))
                     .toFixed();
 
                 const originAsset = formatAssetForIntentsAPI(
@@ -139,20 +150,31 @@ export function useExchangeQuote({
                     sellToken.residency || "",
                     isConfidential,
                 );
-                const recipientType = getRecipientType(
-                    receiveToken.residency || "",
-                    isConfidential,
-                );
-                // INTENTS / CONFIDENTIAL_INTENTS: credit the holdable balance id.
-                // Never send a chain-specific 1cs_v1 destination — 1Click collapses
-                // it to the underlying nep141 and history matching breaks.
-                // DESTINATION_CHAIN (wrap/unwrap edge cases): may use quoteAssetId.
+                const chainQuoteId = receiveToken.quoteAssetId;
+                const holdableReceiveId =
+                    receiveToken.balanceAssetId || receiveToken.address;
+                // Chain route: balance is the asset the treasury holds, quote is
+                // the id that delivers on that chain (`1cs_v1:` or NEAR on BSC).
+                // Exchange pays the treasury account, so 1Click accepts this when
+                // that chain accepts a NEAR account (ZEC on NEAR). Other chains
+                // reject it.
+                const deliversOnChain =
+                    !isConfidential &&
+                    !!chainQuoteId &&
+                    chainQuoteId !== holdableReceiveId &&
+                    (isOneClickRoutingAsset(chainQuoteId) ||
+                        receiveToken.address.toLowerCase() !==
+                            holdableReceiveId.toLowerCase());
+                const recipientType = deliversOnChain
+                    ? ("DESTINATION_CHAIN" as const)
+                    : getRecipientType(
+                          receiveToken.residency || "",
+                          isConfidential,
+                      );
                 const destinationAsset = formatAssetForIntentsAPI(
                     recipientType === "DESTINATION_CHAIN"
-                        ? receiveToken.quoteAssetId ||
-                              receiveToken.balanceAssetId ||
-                              receiveToken.address
-                        : receiveToken.balanceAssetId || receiveToken.address,
+                        ? chainQuoteId || holdableReceiveId
+                        : holdableReceiveId,
                 );
 
                 return await getIntentsQuote(
@@ -180,7 +202,11 @@ export function useExchangeQuote({
                 }
                 console.error("Error fetching quote:", error);
                 throw new Error(
-                    formatQuoteErrorMessage(error, amountToken, tEx),
+                    formatQuoteErrorMessage(
+                        error,
+                        { ...amountToken, decimals: amountDecimals },
+                        tEx,
+                    ),
                 );
             }
         },

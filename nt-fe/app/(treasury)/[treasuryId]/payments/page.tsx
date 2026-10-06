@@ -81,7 +81,10 @@ import {
     buildNativeNearIntentsKind,
     buildNearFtIntentsKind,
 } from "@/lib/near-proposal-builders";
-import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
+import {
+    findQuoteAssetIdForDestination,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import {
     classifyPaymentToken,
     normalizePaymentRecipient,
@@ -320,6 +323,19 @@ function Step2({
         }
         return undefined;
     }, [bridgeAssets, destinationNetwork]);
+    const quotedOutputDecimals = useMemo(() => {
+        if (!token) return undefined;
+        if (!destinationNetwork || isNearComNetwork(destinationNetwork)) {
+            return holdingDecimals(token);
+        }
+        for (const asset of bridgeAssets) {
+            const network = asset.networks.find(
+                (n) => n.id === destinationNetwork,
+            );
+            if (network) return network.decimals;
+        }
+        return token.decimals;
+    }, [bridgeAssets, destinationNetwork, token]);
     const {
         totalAmountWithFees,
         recipientAmount,
@@ -344,7 +360,7 @@ function Step2({
             const quotedTotal =
                 decimalFromBaseUnitsOrNull(
                     liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
-                    token.decimals,
+                    holdingDecimals(token),
                 ) ??
                 groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
                 Big(0);
@@ -352,7 +368,7 @@ function Step2({
                 groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
                 decimalFromBaseUnitsOrNull(
                     liveQuote.quote.amountOut || liveQuote.quote.minAmountOut,
-                    token.decimals,
+                    quotedOutputDecimals ?? token.decimals,
                 ) ??
                 Big(0);
             const feeValue =
@@ -381,7 +397,13 @@ function Step2({
                 ? enteredAmount.mul(price)
                 : null,
         };
-    }, [amount, liveQuote, token, tokenData?.price]);
+    }, [
+        amount,
+        liveQuote,
+        quotedOutputDecimals,
+        token,
+        tokenData?.price,
+    ]);
 
     const isQuoteLoading =
         isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);
@@ -397,7 +419,7 @@ function Step2({
                 <AmountSummary
                     total={totalAmountWithFees}
                     totalUSD={estimatedUSDValue}
-                    token={token}
+                    token={{ ...token, decimals: holdingDecimals(token) }}
                     title=""
                     showNetworkIcon={true}
                 />
@@ -424,7 +446,10 @@ function Step2({
                                         kind="token"
                                         value={recipientAmount}
                                         symbol={token.symbol}
-                                        tokenDecimals={token.decimals}
+                                        tokenDecimals={
+                                            quotedOutputDecimals ??
+                                            token.decimals
+                                        }
                                         unitPriceUsd={tokenData?.price}
                                         profile="standard"
                                     />
@@ -495,7 +520,7 @@ function Step2({
                                     kind="token"
                                     value={displayNetworkFee}
                                     symbol={token.symbol}
-                                    tokenDecimals={token.decimals}
+                                    tokenDecimals={holdingDecimals(token)}
                                     unitPriceUsd={tokenData?.price}
                                     profile="standard"
                                     rounding="up"
@@ -547,13 +572,13 @@ function getQuoteAmountDecimals(
     amountMode: IntentsAmountMode,
     bridgeAssets: BridgeAsset[],
 ): number | undefined {
-    // EXACT_INPUT (MAX) and near.com routes use the origin token's decimals.
+    // EXACT_INPUT (MAX) and near.com routes use the held token's decimals.
     if (
         amountMode !== "recipient" ||
         !destinationNetwork ||
         isNearComNetwork(destinationNetwork)
     ) {
-        return token.decimals;
+        return holdingDecimals(token);
     }
 
     const bridgeAsset = findBridgeAssetForToken(bridgeAssets, token);

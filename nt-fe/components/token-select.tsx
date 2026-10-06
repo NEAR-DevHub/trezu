@@ -27,6 +27,10 @@ import {
     getNetworkDisplayCaseClass,
     getNetworkDisplayName,
 } from "@/lib/intents-network";
+import {
+    isChainDeliveryRoute,
+    isOffNearChainDelivery,
+} from "@/lib/oneclick-asset-routing";
 import { pickDefaultSelectedToken } from "@/lib/pick-default-token";
 import {
     canonicalizeTokenIdForMatch,
@@ -95,6 +99,7 @@ export interface SelectedTokenData {
     minDepositAmount?: string;
     balance?: string;
     price?: number;
+    balanceDecimals?: number;
     balanceAssetId?: string;
     quoteAssetId?: string;
 }
@@ -148,6 +153,18 @@ interface TokenSelectProps {
      * that seeds its own tokens).
      */
     autoSelect?: boolean;
+    /**
+     * Hide chain-delivery networks that need a non-NEAR address (Solana,
+     * Hyperliquid, BNB, and the rest). Swap sets this. Send leaves it off.
+     */
+    hideOffNearChainDelivery?: boolean;
+    /**
+     * Hide every chain-delivery network, including ones that deliver on NEAR.
+     * Those rows repeat a balance the treasury already holds. Send sets this
+     * so the token network is only the real holding. The recipient network
+     * picker still lists them.
+     */
+    hideChainDeliveryRoutes?: boolean;
     /** Balance column layout on asset rows. */
     balanceLayout?: "usdPrimary" | "tokenPrimary";
     /** Hide network subtitle under the trigger symbol. */
@@ -177,6 +194,8 @@ export default function TokenSelect({
     filterTokens,
     showPopularAssets = false,
     autoSelect = true,
+    hideOffNearChainDelivery = false,
+    hideChainDeliveryRoutes = false,
     balanceLayout = "tokenPrimary",
     hideNetworkSubtitle = false,
     appearance = "default",
@@ -239,23 +258,47 @@ export default function TokenSelect({
     // every keystroke re-totals the whole bridge catalog.
     const selectableTokens = useMemo(() => {
         const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
-            if (!filterTokens) return t;
-            const filtered = t.networks.filter((n) =>
-                filterTokens({
+            if (
+                !filterTokens &&
+                !hideOffNearChainDelivery &&
+                !hideChainDeliveryRoutes
+            ) {
+                return t;
+            }
+            const filtered = t.networks.filter((n) => {
+                if (hideChainDeliveryRoutes && isChainDeliveryRoute(n)) {
+                    return false;
+                }
+                if (hideOffNearChainDelivery && isOffNearChainDelivery(n)) {
+                    return false;
+                }
+                if (!filterTokens) return true;
+                return filterTokens({
                     address: n.id,
                     symbol: n.symbol,
                     network: n.name,
                     residency: n.residency,
-                }),
-            );
+                });
+            });
             if (filtered.length === 0) return null;
             let totalBalance = 0;
             let totalBalanceUSD = 0;
-            for (const n of filtered) {
+            // Chain-delivery rows repeat a sibling holding. Count that holding
+            // once, preferring the real balance row over the copies.
+            const claimedHoldings = new Set<string>();
+            const ordered = [
+                ...filtered.filter((n) => !isChainDeliveryRoute(n)),
+                ...filtered.filter((n) => isChainDeliveryRoute(n)),
+            ];
+            for (const n of ordered) {
+                const holdingKey = (n.balanceAssetId || n.id).toLowerCase();
+                if (claimedHoldings.has(holdingKey)) continue;
+                claimedHoldings.add(holdingKey);
                 totalBalanceUSD += n.balanceUSD ?? 0;
+                const decimals = n.balanceDecimals ?? n.decimals;
                 try {
                     totalBalance += Big(n.balance || "0")
-                        .div(Big(10).pow(n.decimals))
+                        .div(Big(10).pow(decimals))
                         .toNumber();
                 } catch {
                     /* skip */
@@ -291,7 +334,7 @@ export default function TokenSelect({
         }
 
         return selectable;
-    }, [tokens, filterTokens]);
+    }, [tokens, filterTokens, hideOffNearChainDelivery, hideChainDeliveryRoutes]);
 
     const filteredTokens = useMemo(() => {
         const searchLower = search.toLowerCase();
@@ -384,6 +427,7 @@ export default function TokenSelect({
                 minDepositAmount: network.minDepositAmount,
                 balance: network.balance,
                 price: network.price,
+                balanceDecimals: network.balanceDecimals,
                 balanceAssetId: network.balanceAssetId || network.id,
                 quoteAssetId:
                     network.quoteAssetId ||
@@ -758,10 +802,12 @@ export default function TokenSelect({
                         >
                             {(() => {
                                 const hasBalance = (item: MergedNetwork) => {
+                                    const decimals =
+                                        item.balanceDecimals ?? item.decimals;
                                     if (
                                         !item.balance ||
                                         item.balance.trim() === "" ||
-                                        item.decimals === undefined
+                                        decimals === undefined
                                     ) {
                                         return false;
                                     }
@@ -769,7 +815,7 @@ export default function TokenSelect({
                                     return (
                                         decimalFromBaseUnitsOrNull(
                                             item.balance,
-                                            item.decimals,
+                                            decimals,
                                         )?.gt(0) ?? false
                                     );
                                 };
@@ -859,7 +905,9 @@ export default function TokenSelect({
                                                     <SelectorOptionBalance
                                                         primary={formatBalance(
                                                             item.balance ?? "0",
-                                                            item.decimals ?? 0,
+                                                            item.balanceDecimals ??
+                                                                item.decimals ??
+                                                                0,
                                                         )}
                                                         secondary={`≈${formatCurrencyWithSubCent(
                                                             item.balanceUSD ||

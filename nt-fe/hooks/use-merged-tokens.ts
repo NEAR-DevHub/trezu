@@ -14,6 +14,7 @@ import {
 } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import type { ChainIcons } from "@/lib/api";
+import { isChainDeliveryRoute } from "@/lib/oneclick-asset-routing";
 import { normalizeNearAssetId } from "@/lib/utils";
 
 export interface MergedNetwork {
@@ -23,6 +24,11 @@ export interface MergedNetwork {
     chainIcons: ChainIcons | null;
     chainId: string;
     decimals: number;
+    /**
+     * Decimals of `balance` when this row delivers a different asset than the
+     * one the treasury holds. `decimals` stays the chain quote decimals.
+     */
+    balanceDecimals?: number;
     /** "Intents" for bridge networks; "Near" | "Ft" | "Lockup" | "Staked" for treasury networks */
     residency?: string;
     balance?: string;
@@ -168,6 +174,35 @@ const toBridgeVariants = (
     return variants;
 };
 
+/**
+ * Chain-delivery rows (NEAR on Solana, and the rest of the 1cs routes) are not
+ * a second balance. Copy the held sibling onto them so the picker shows the
+ * same spendable amount, and remember that sibling's decimals.
+ */
+export function overlayChainDeliveryHoldings(
+    networks: MergedNetwork[],
+    holdingsByBalanceId: ReadonlyMap<string, TreasuryNetwork>,
+): MergedNetwork[] {
+    return networks.map((network) => {
+        if (!isChainDeliveryRoute(network) || !network.balanceAssetId) {
+            return network;
+        }
+        const holding = holdingsByBalanceId.get(network.balanceAssetId);
+        if (!holding) return network;
+        return {
+            ...network,
+            balance: holding.availableBalanceRaw,
+            balanceUSD: holding.availableBalanceUSD,
+            price: holding.price,
+            balanceDecimals: holding.decimals,
+            lockedBalance:
+                holding.balance.type === "Standard"
+                    ? holding.balance.locked.toFixed(0)
+                    : undefined,
+        };
+    });
+}
+
 // Merge one owned token with bridge networks if bridge data exists.
 const mergeOwnedTokenWithBridge = (
     treasuryToken: AggregatedAsset,
@@ -263,7 +298,7 @@ const mergeOwnedTokenWithBridge = (
         name: bridgeAsset.name,
         symbol: bridgeAsset.symbol,
         icon: treasuryToken.icon || bridgeAsset.icon || "",
-        networks,
+        networks: overlayChainDeliveryHoldings(networks, byContractId),
         totalBalance: Number(treasuryToken.availableTotalBalance),
         totalBalanceUSD: treasuryToken.availableTotalBalanceUSD,
     };
