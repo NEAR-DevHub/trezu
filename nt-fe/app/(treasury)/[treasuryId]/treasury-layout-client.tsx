@@ -48,9 +48,11 @@ function isDashboardSubpagePath(pathname: string | null): boolean {
     return /\/dashboard\/(?:deposit|activity)(?:\/|$)/.test(pathname ?? "");
 }
 
-/** Add Member and Edit Member are sub-flows; the members list keeps the tab bar. */
-function isMemberEditorPath(pathname: string | null): boolean {
-    return /\/members\/(?:add|edit)(?:\/|$)/.test(pathname ?? "");
+/** Screens opened from the members list. The list itself keeps the tab bar. */
+function isMemberSubflowPath(pathname: string | null): boolean {
+    return /\/members\/(?:add|edit|invite|join-requests)(?:\/|$)/.test(
+        pathname ?? "",
+    );
 }
 
 export function TreasuryLayoutClient({
@@ -112,7 +114,7 @@ export function TreasuryLayoutClient({
                         {!isRequestDetailPath(pathname) &&
                             !isBulkPaymentPath(pathname) &&
                             !isDashboardSubpagePath(pathname) &&
-                            !isMemberEditorPath(pathname) &&
+                            !isMemberSubflowPath(pathname) &&
                             !isSideSheetOpen && <MobileBottomNav />}
                         <MobileMenuSheet />
                         <MobileUserSheet />

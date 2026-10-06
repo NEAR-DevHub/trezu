@@ -166,7 +166,7 @@ export function PageComponentLayout({
         }
         // My account opens from the user sheet on the current screen, so Back
         // returns there. A direct visit falls through to the configured path.
-        if ((backKind === "section" || backKind === "mobile") && cameFromApp) {
+        if (backKind === "mobile" && cameFromApp) {
             router.back();
             return;
         }
