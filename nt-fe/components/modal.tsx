@@ -165,6 +165,11 @@ const DISMISS_VELOCITY_PX_PER_MS = 0.5;
 /** A finger held still this long before lifting isn't flicking anymore. */
 const FLICK_MAX_PAUSE_MS = 100;
 
+type SheetPointerHandlers = Pick<
+    React.ComponentProps<"div">,
+    "onPointerDown" | "onPointerMove" | "onPointerUp" | "onPointerCancel"
+>;
+
 interface SheetDrag {
     pointerId: number;
     startX: number;
@@ -201,7 +206,11 @@ function settleSheet(sheet: HTMLElement, offset: number) {
  * Only active while `mobileQuery` matches, i.e. while the dialog is laid out
  * as a bottom sheet rather than a centered modal or side panel.
  */
-function useSheetDragToClose(mobileQuery: string) {
+function useSheetDragToClose(
+    mobileQuery: string,
+    // The sheet's own pointer handlers still run, ahead of the gesture.
+    handlers: SheetPointerHandlers,
+) {
     const dismiss = useContext(DialogDismissContext);
     const drag = useRef<SheetDrag | null>(null);
 
@@ -223,7 +232,8 @@ function useSheetDragToClose(mobileQuery: string) {
     }
 
     return {
-        onPointerDown(e: React.PointerEvent<HTMLElement>) {
+        onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerDown?.(e);
             if (!dismiss || !e.isPrimary || e.button !== 0) return;
             if (!window.matchMedia(mobileQuery).matches) return;
             if (!(e.target instanceof Element)) return;
@@ -242,7 +252,8 @@ function useSheetDragToClose(mobileQuery: string) {
                 pulling: false,
             };
         },
-        onPointerMove(e: React.PointerEvent<HTMLElement>) {
+        onPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerMove?.(e);
             const current = drag.current;
             if (current?.pointerId !== e.pointerId) return;
             const dy = e.clientY - current.startY;
@@ -272,7 +283,8 @@ function useSheetDragToClose(mobileQuery: string) {
             current.offset = Math.max(0, dy);
             sheet.style.translate = `0 ${current.offset}px`;
         },
-        onPointerUp(e: React.PointerEvent<HTMLElement>) {
+        onPointerUp(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerUp?.(e);
             const current = drag.current;
             if (current?.pointerId !== e.pointerId) return;
             const sheet = e.currentTarget;
@@ -286,7 +298,8 @@ function useSheetDragToClose(mobileQuery: string) {
                         sheet.offsetHeight * DISMISS_DISTANCE_RATIO,
             );
         },
-        onPointerCancel(e: React.PointerEvent<HTMLElement>) {
+        onPointerCancel(e: React.PointerEvent<HTMLDivElement>) {
+            handlers.onPointerCancel?.(e);
             if (drag.current?.pointerId !== e.pointerId) return;
             release(e.currentTarget, false);
         },
@@ -370,7 +383,7 @@ function DialogContent({
     const hasSidebarRail = useHasSidebarRail();
     const isSidebarOpen = useSidebarStore((s) => s.isSidebarOpen);
     // Below `sm` the dialog is a bottom sheet.
-    const dragToClose = useSheetDragToClose("(width < 40rem)");
+    const dragToClose = useSheetDragToClose("(width < 40rem)", props);
 
     // Track open/close via the `data-state` attribute change on the content element.
     // We use onAnimationStart which fires when the open animation begins.
@@ -393,8 +406,8 @@ function DialogContent({
 
     return (
         <BaseDialogContent
-            {...dragToClose}
             {...props}
+            {...dragToClose}
             showCloseButton={false}
             onOpenAutoFocus={(e) => {
                 handleStateChange(true);

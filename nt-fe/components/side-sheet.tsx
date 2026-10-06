@@ -62,7 +62,7 @@ function SideSheetContent({
     const pushed = useRef(false);
     const contentRef = useRef<HTMLDivElement>(null);
     // Below `lg` the panel is a sheet rising from the bottom edge.
-    const dragToClose = useSheetDragToClose("(width < 64rem)");
+    const dragToClose = useSheetDragToClose("(width < 64rem)", props);
     const [scroll, setScroll] = useState(NOT_SCROLLED);
     const report = useCallback((next: SideSheetScrollState) => {
         setScroll((prev) =>
@@ -92,8 +92,8 @@ function SideSheetContent({
                 // The header carries the title; there is no separate blurb to
                 // describe the panel, so opt out of Radix's description check.
                 aria-describedby={undefined}
-                {...dragToClose}
                 {...props}
+                {...dragToClose}
                 onOpenAutoFocus={(e) => {
                     handleStateChange(true);
                     // Radix would focus the first control in the header, which
