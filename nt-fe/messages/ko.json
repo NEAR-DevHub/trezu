@@ -1255,7 +1255,6 @@
             "orDragDrop": "또는 드래그 앤 드롭",
             "token": "토큰",
             "destinationNetwork": "대상 네트워크",
-            "uploadFileFirst": "먼저 파일을 업로드하세요",
             "removeFile": "파일 삭제",
             "maxFileSize": "최대 1개 파일, 1.5 MB까지, CSV 파일만 가능",
             "noFilePrompt": "업로드할 파일이 없으신가요?",

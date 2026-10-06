@@ -1255,7 +1255,6 @@
             "orDragDrop": "或拖放至此",
             "token": "代币",
             "destinationNetwork": "目标网络",
-            "uploadFileFirst": "请先上传文件",
             "removeFile": "移除文件",
             "maxFileSize": "最多 1 个文件,最大 1.5 MB,仅限 CSV 文件",
             "noFilePrompt": "没有文件可上传?",

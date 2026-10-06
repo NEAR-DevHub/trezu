@@ -72,7 +72,6 @@ interface RecipientNetworkSelectProps {
     /** Optional copy overrides for flows with different picker semantics. */
     label?: string;
     placeholder?: string;
-    recipientRequiredPlaceholder?: string;
     modalTitle?: string;
     /** Display-only: selection cannot change (bulk edit). */
     locked?: boolean;

@@ -1255,7 +1255,6 @@
             "orDragDrop": "hoặc kéo và thả",
             "token": "Token",
             "destinationNetwork": "Mạng đích",
-            "uploadFileFirst": "Hãy tải tệp lên trước",
             "removeFile": "Xóa tệp",
             "maxFileSize": "tối đa 1 tệp lên đến 1.5 MB, chỉ chấp nhận tệp CSV",
             "noFilePrompt": "Không có tệp để tải lên?",

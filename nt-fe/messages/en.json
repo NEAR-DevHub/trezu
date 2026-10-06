@@ -1253,7 +1253,6 @@
             "orDragDrop": "or drag and drop",
             "token": "Token",
             "destinationNetwork": "Destination network",
-            "uploadFileFirst": "Upload a file first",
             "removeFile": "Remove file",
             "maxFileSize": "max 1 file up to 1.5 MB, CSV file only",
             "noFilePrompt": "Don't have a file to upload?",

@@ -1255,7 +1255,6 @@
             "orDragDrop": "atau seret dan lepas",
             "token": "Token",
             "destinationNetwork": "Jaringan tujuan",
-            "uploadFileFirst": "Unggah file terlebih dahulu",
             "removeFile": "Hapus file",
             "maxFileSize": "maks 1 file hingga 1.5 MB, hanya file CSV",
             "noFilePrompt": "Tidak punya file untuk diunggah?",

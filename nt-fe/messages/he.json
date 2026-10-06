@@ -1255,7 +1255,6 @@
             "orDragDrop": "או גרור ושחרר",
             "token": "אסימון",
             "destinationNetwork": "רשת יעד",
-            "uploadFileFirst": "תחילה יש להעלות קובץ",
             "removeFile": "הסרת הקובץ",
             "maxFileSize": "מקסימום קובץ אחד עד 1.5 MB, קובץ CSV בלבד",
             "noFilePrompt": "אין לך קובץ להעלות?",

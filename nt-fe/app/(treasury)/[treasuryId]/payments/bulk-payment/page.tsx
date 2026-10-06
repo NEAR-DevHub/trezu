@@ -85,8 +85,7 @@ export default function BulkPaymentPage() {
         useTokenCatalog({ kind: "swap" });
 
     const [step, setStep] = useState(0);
-    // Empty until the user adds a recipient address and picks a network —
-    // RecipientNetworkSelect stays disabled until firstRecipient is set.
+    // Empty until the user picks a destination. Entering a recipient clears it.
     const [destinationNetworkId, setDestinationNetworkId] =
         useState<string>("");
     const [destinationAssetId, setDestinationAssetId] = useState<string | null>(
@@ -741,9 +740,6 @@ export default function BulkPaymentPage() {
                                         )}
                                         placeholder={tRecipientNetwork(
                                             "selectPlaceholder",
-                                        )}
-                                        recipientRequiredPlaceholder={tBulk(
-                                            "upload.uploadFileFirst",
                                         )}
                                         modalTitle={tRecipientNetwork(
                                             "selectPlaceholder",

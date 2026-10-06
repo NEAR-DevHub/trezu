@@ -1255,7 +1255,6 @@
             "orDragDrop": "o arrastrar y soltar",
             "token": "Token",
             "destinationNetwork": "Red de destino",
-            "uploadFileFirst": "Primero sube un archivo",
             "removeFile": "Eliminar archivo",
             "maxFileSize": "máximo 1 archivo de hasta 1,5 MB, solo CSV",
             "noFilePrompt": "¿No tienes un archivo que subir?",
