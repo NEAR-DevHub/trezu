@@ -4,7 +4,6 @@ import {
     Cancel01Icon,
     CheckIcon,
 } from "@hugeicons/core-free-icons";
-import { Icon } from "@/components/icon";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -18,14 +17,15 @@ import { PageCard } from "@/components/card";
 import { ConfidentialState } from "@/components/confidential-state";
 import { EmptyState, emptyRowFadeMaskStyle } from "@/components/empty-state";
 import { FormattedDate } from "@/components/formatted-date";
+import { Icon } from "@/components/icon";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotWarning } from "@/components/warning-message";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
-import type { Proposal } from "@/lib/proposals-api";
 import { trackEvent } from "@/lib/analytics";
+import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
@@ -147,7 +147,10 @@ export function PendingRequestItem({
     // critical warning. Rejection is never blocked by feature pauses.
     const approveBlock = useProposalApproveBlock([proposal]);
     const approveBlocked = approveBlock.anyBlocked;
-    const approveBlockedWarning = approveBlock.blockedWarnings[0] ?? null;
+    const featureWarning =
+        approveBlock.blockedWarnings[0] ??
+        approveBlock.noticeWarnings[0] ??
+        null;
     const {
         approve: approveSlot,
         reject: rejectSlot,
@@ -203,22 +206,16 @@ export function PendingRequestItem({
                             {voteBannerSlot && (
                                 <SlotWarning slot={voteBannerSlot} />
                             )}
-                            {/* Feature-maintenance warning — approval paused, rejection still works */}
-                            {!voteBannerSlot &&
-                                approveBlocked &&
-                                approveBlockedWarning?.slot && (
-                                    <SlotWarning
-                                        slot={approveBlockedWarning.slot}
-                                        token={
-                                            approveBlockedWarning.token ??
-                                            undefined
-                                        }
-                                        network={
-                                            approveBlockedWarning.network ??
-                                            undefined
-                                        }
-                                    />
-                                )}
+                            {/* Feature warning — a pause disables approve; a notice does not. */}
+                            {!voteBannerSlot && featureWarning?.slot && (
+                                <SlotWarning
+                                    slot={featureWarning.slot}
+                                    token={featureWarning.token ?? undefined}
+                                    network={
+                                        featureWarning.network ?? undefined
+                                    }
+                                />
+                            )}
                             <div className="flex gap-3 w-full sm:invisible sm:group-hover:visible transition-opacity duration-300 ease-in-out">
                                 <AuthButtonWithProposal
                                     proposalKind={proposal.kind}

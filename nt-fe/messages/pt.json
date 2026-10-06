@@ -2422,7 +2422,7 @@
     "warnings": {
         "gotIt": "Entendi",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Página de status](https://status.trezu.org/)",
+        "statusPageLink": "[Página de status](https://status.business.near.com)",
         "schedule": {
             "on": "em",
             "until": "até"

@@ -409,23 +409,18 @@ export function PageComponentLayout({
                     mainClassName,
                 )}
             >
-                {!hideAppWarningBanner && (
+                {!hideAppWarningBanner && !hasSidebarRail && (
                     <>
+                        {/* Inside the treasury shell these are the header
+                            button on small screens and the sidebar banners on
+                            large ones. Pages without that shell keep the
+                            inline banners. */}
                         <SlotWarning
                             slot="data.balances"
                             className="lg:hidden mb-3"
                             headingClassName="font-medium"
                         />
-                        {/* Inside the treasury shell the app warning is the
-                            header icon on small screens and the sidebar banner
-                            on large ones. Pages without that shell keep the
-                            inline banner. */}
-                        {!hasSidebarRail && (
-                            <SlotWarning
-                                slot="app"
-                                className="lg:hidden mb-3"
-                            />
-                        )}
+                        <SlotWarning slot="app" className="lg:hidden mb-3" />
                     </>
                 )}
                 {children}

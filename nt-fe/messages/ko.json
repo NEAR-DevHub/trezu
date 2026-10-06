@@ -2422,7 +2422,7 @@
     "warnings": {
         "gotIt": "확인",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "에",
             "until": "까지"

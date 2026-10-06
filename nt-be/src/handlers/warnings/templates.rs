@@ -266,7 +266,7 @@ mod tests {
             Some("features_paused"),
         )
         .expect("message");
-        assert!(message.contains("Exchange is temporarily paused"));
+        assert!(message.contains("Swap is temporarily paused"));
     }
 
     #[test]

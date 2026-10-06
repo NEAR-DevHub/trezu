@@ -2420,7 +2420,7 @@
     "warnings": {
         "gotIt": "Got it",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "on",
             "until": "until"
@@ -2462,7 +2462,7 @@
             },
             "features_paused": {
                 "payments": "### Payments are temporarily paused.\nWe're working on it.",
-                "exchange": "### Exchange is temporarily paused.\nWe're working on it.",
+                "exchange": "### Swap is temporarily paused.\nWe're working on it.",
                 "deposit": "### Deposits are temporarily paused.\nWe're working on it.",
                 "features": "### Some features are temporarily paused.\nWe're working on it."
             },
@@ -2482,8 +2482,8 @@
                 "default": "Approving requests is paused right now while a network provider recovers.\n You can still reject pending requests, and approvals will work again once it's back."
             },
             "wallet_login_unavailable": {
-                "login": "### Signing in isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back.",
-                "loginWallet": "### Signing in with {wallet} isn't available right now.\nYour funds are on-chain and untouched – you can sign in again once it's back."
+                "login": "### Wallet sign-in is paused right now\nYour treasury and funds are safe on-chain. Updates: {statusPageLink}",
+                "loginWallet": "### This wallet isn't working right now.\nIt'll be back soon, or pick another"
             },
             "backend_down": {
                 "default": "### We're having a temporary issue\nSome data may not load. Your funds are on-chain and unaffected – try again shortly."
