@@ -212,13 +212,18 @@ function useSheetDragToClose(
     handlers: SheetPointerHandlers,
 ) {
     const dismiss = useContext(DialogDismissContext);
+    if (!dismiss) {
+        throw new Error(
+            "useSheetDragToClose must be used inside <Dialog> from @/components/modal",
+        );
+    }
     const drag = useRef<SheetDrag | null>(null);
 
-    function release(sheet: HTMLElement, shouldDismiss: boolean) {
+    const release = (sheet: HTMLElement, shouldDismiss: boolean) => {
         const current = drag.current;
         drag.current = null;
         if (!current?.pulling) return;
-        if (!shouldDismiss || !dismiss) {
+        if (!shouldDismiss) {
             settleSheet(sheet, current.offset);
             return;
         }
@@ -229,12 +234,12 @@ function useSheetDragToClose(
                 settleSheet(sheet, current.offset);
             }
         });
-    }
+    };
 
     return {
         onPointerDown(e: React.PointerEvent<HTMLDivElement>) {
             handlers.onPointerDown?.(e);
-            if (!dismiss || !e.isPrimary || e.button !== 0) return;
+            if (!e.isPrimary || e.button !== 0) return;
             if (!window.matchMedia(mobileQuery).matches) return;
             if (!(e.target instanceof Element)) return;
             // React bubbles events out of portals, so a sheet stacked on top of
