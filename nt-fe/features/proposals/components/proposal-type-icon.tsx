@@ -15,7 +15,6 @@ import {
     UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { Icon } from "@/components/icon";
-import { TreasuryTypeIcon } from "@/components/icons/shield";
 import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
 import { extractConfidentialRequestData } from "../utils/proposal-extractors";
@@ -63,6 +62,22 @@ function ExchangeIcon() {
     );
 }
 
+function ConfidentialIcon() {
+    return (
+        <div
+            className={cn(
+                TYPE_ICON_CLASS,
+                "border-general-bg-primary bg-general-bg-primary",
+            )}
+        >
+            <Icon
+                icon={Shield01Icon}
+                className="size-4 shrink-0 text-primary-foreground"
+            />
+        </div>
+    );
+}
+
 export function ProposalTypeIcon({
     proposal,
     treasuryId,
@@ -85,11 +100,11 @@ export function ProposalTypeIcon({
             } else if (mappedType) {
                 return <ExchangeIcon />;
             } else {
-                return <TreasuryTypeIcon type="confidential" />;
+                return <ConfidentialIcon />;
             }
         }
         case "Move to Confidential":
-            return <TreasuryTypeIcon type="confidential" />;
+            return <ConfidentialIcon />;
         case "Function Call":
             return (
                 <div
