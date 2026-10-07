@@ -194,14 +194,11 @@
             "title": "Adres Defteri"
         },
         "payments": {
-            "title": "Odemeler",
-            "confidentialTitle": "Gizli odemeler",
-            "description": "Fonlari guvenli ve emniyetli sekilde gonderin."
+            "title": "Odemeler"
         },
         "exchange": {
             "title": "Takas",
-            "confidentialTitle": "Takas",
-            "description": "Tokenlerinizi güvenli ve verimli bir şekilde takas edin"
+            "confidentialTitle": "Takas"
         },
         "vesting": {
             "title": "Vesting",
@@ -339,13 +336,11 @@
         "anythingElseLost": "Başka yerden gönderilen her şey kaybolur",
         "anythingElseLostSub": "Borsalar, genel cüzdanlar, diğer ağlar – kurtarılamaz.",
         "confidentialAckCheckbox": "near.com veya near business dışından yapılan yatırmaların kaybolacağını anlıyorum.",
-        "onlyFromNearBusiness": "Yalnızca <bold>near business</bold>’tan",
+        "onlyFromNearBusiness": "Yalnızca <bold>near business</bold> veya <bold>near.com</bold>’dan",
         "onlyFromConfidentialNearcom": "Yalnızca <bold>gizli near.com</bold>’dan",
-        "onlyFromNearBusinessOrNearcom": "Yalnızca <bold>near business</bold> veya <bold>near.com</bold>’dan",
         "reusableDoesntExpire": "<bold>Yeniden kullanılabilir.</bold> Süresi dolmaz",
-        "fundsOutsideNearBusinessLost": "<bold>near business</bold> dışından gönderilen fonlar kaybolur",
+        "fundsOutsideNearBusinessLost": "<bold>near business</bold> veya <bold>near.com</bold> dışından gönderilen fonlar kaybolur.",
         "fundsOutsideNearcomLost": "<bold>gizli near.com</bold> dışından gönderilen fonlar kaybolur",
-        "fundsOutsideNearBusinessOrNearcomLost": "<bold>near business</bold> veya <bold>near.com</bold> dışından gönderilen fonlar kaybolur.",
         "publicNetworkRecommendation": "Yalnızca <bold>{network}</bold> ağından yatırın. Tam tutarı göndermeden önce küçük bir test işlemiyle başlayın.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "Ağırlık",
         "source": "Kaynak",
         "send": "Gönder",
-        "exchange": "Takas",
         "swap": "Takas",
         "comingSoon": "Yakında",
         "vesting": "Vesting",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "Onayla",
             "reject": "Reddet",
-            "deposit": "Para Yatır",
             "viewRequest": "Talebi Görüntüle"
         },
         "table": {
@@ -1725,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Başka üye ekle",
         "validation": {
-            "rolesRequired": "En az bir rol gereklidir",
-            "duplicateAddress": "Adres zaten bir üye"
+            "rolesRequired": "En az bir rol gereklidir"
         },
         "enterAddress": "Adres girin",
         "clearAddress": "Adresi temizle",
@@ -1895,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Alıcı Ağı",
         "placeholder": "Alıcı ağını seçin",
-        "enterAddressFirst": "Önce alıcı adresini girin",
         "noCompatibleNetwork": "Bu adresle eşleşen ağ yok",
         "selectPlaceholder": "Ağ seçin",
         "title": "Ağ Seç",
@@ -1903,8 +1894,6 @@
         "fromAddressBook": "Adres Defterinden",
         "otherAvailable": "Diğer Kullanılabilir",
         "incompatible": "Uyumsuz",
-        "comingSoon": "Yakında",
-        "forMembersOnly": "Yalnızca Üyelere Özel",
         "nearComDescription": "near business ve near.com için ağ",
         "internalTag": "Dahili"
     },
@@ -2078,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Kişilere kaydet",
-        "walletCopiedToast": "Cüzdan adresi panoya kopyalandı",
         "copyWalletAddress": "Cüzdan Adresini Kopyala"
     },
     "infoDisplay": {
@@ -2181,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Maks. kullan",
-        "max": "MAX",
         "insufficientTokens": "Yetersiz bakiye. Onaydan önce yükleyin.",
         "insufficientTokensForFee": "Ağ ücretini ({fee} {symbol}) karşılamak için yetersiz token. Talebi gönderebilir ve onaydan önce yükleyebilirsiniz.",
         "balance": "Bakiye: {amount} {symbol}",
@@ -2192,9 +2179,6 @@
         "noPermission": "Talep oluşturma izniniz yok",
         "paused": "Geçici olarak duraklatıldı",
         "brieflyUnavailable": "Kısa süreliğine kullanılamıyor"
-    },
-    "address": {
-        "copied": "Adres panoya kopyalandı"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Oy kullanabilen üyeler",
@@ -2359,15 +2343,7 @@
             "back": "Geri"
         },
         "progress": {
-            "title": "Hazineyi Keşfetmek İçin Hızlı Adımları İzleyin",
             "addAssetsTitle": "Varlıklarınızı Ekleyin",
-            "addAssetsDescription": "Onları iş başında görmek için varlıklar ekleyerek başlayın.",
-            "deposit": "Para Yatır",
-            "createPaymentTitle": "Ödeme Talebi Oluşturun",
-            "createPaymentDescription": "Kurulumunuzu tamamlamak için bir ödeme talebi oluşturun.",
-            "send": "Gönder",
-            "useSolo": "Solo kullan",
-            "addTeamMemberDescription": "Hesabınızı başarıyla kurdunuz. Harika bir başlangıç!",
             "addTeamMemberTitle": "Hazine hesabı oluştur",
             "getStarted": "Başla",
             "setupThresholdTitle": "Eşik ayarla",

@@ -194,14 +194,11 @@
             "title": "Sổ địa chỉ"
         },
         "payments": {
-            "title": "Thanh toan",
-            "confidentialTitle": "Thanh toan bao mat",
-            "description": "Gui tien an toan va bao mat."
+            "title": "Thanh toan"
         },
         "exchange": {
             "title": "Hoán đổi",
-            "confidentialTitle": "Hoán đổi",
-            "description": "Trao đổi token một cách an toàn và hiệu quả"
+            "confidentialTitle": "Hoán đổi"
         },
         "vesting": {
             "title": "Vesting",
@@ -339,13 +336,11 @@
         "anythingElseLost": "Mọi thứ gửi từ nơi khác sẽ bị mất",
         "anythingElseLostSub": "Sàn giao dịch, ví công khai, mạng khác – không thể khôi phục.",
         "confidentialAckCheckbox": "Tôi hiểu các khoản nạp từ ngoài near.com hoặc near business sẽ bị mất.",
-        "onlyFromNearBusiness": "Chỉ từ <bold>near business</bold>",
+        "onlyFromNearBusiness": "Chỉ từ <bold>near business</bold> hoặc <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Chỉ từ <bold>near.com bảo mật</bold>",
-        "onlyFromNearBusinessOrNearcom": "Chỉ từ <bold>near business</bold> hoặc <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Dùng lại được.</bold> Không hết hạn",
-        "fundsOutsideNearBusinessLost": "Tiền gửi từ ngoài <bold>near business</bold> sẽ bị mất",
+        "fundsOutsideNearBusinessLost": "Tiền gửi từ ngoài <bold>near business</bold> hoặc <bold>near.com</bold> sẽ bị mất.",
         "fundsOutsideNearcomLost": "Tiền gửi từ ngoài <bold>near.com bảo mật</bold> sẽ bị mất",
-        "fundsOutsideNearBusinessOrNearcomLost": "Tiền gửi từ ngoài <bold>near business</bold> hoặc <bold>near.com</bold> sẽ bị mất.",
         "publicNetworkRecommendation": "Chỉ nạp từ mạng <bold>{network}</bold>. Hãy bắt đầu bằng một giao dịch thử nhỏ trước khi gửi toàn bộ số tiền.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "Trọng số",
         "source": "Nguồn",
         "send": "Gửi",
-        "exchange": "Trao đổi",
         "swap": "Hoán đổi",
         "comingSoon": "Sắp ra mắt",
         "vesting": "Vesting",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "Phê duyệt",
             "reject": "Từ chối",
-            "deposit": "Nạp tiền",
             "viewRequest": "Xem yêu cầu"
         },
         "table": {
@@ -1708,8 +1701,7 @@
     "memberInput": {
         "addNewMember": "Thêm thành viên khác",
         "validation": {
-            "rolesRequired": "Cần ít nhất một vai trò",
-            "duplicateAddress": "Địa chỉ đã là một thành viên"
+            "rolesRequired": "Cần ít nhất một vai trò"
         },
         "enterAddress": "Nhập địa chỉ",
         "clearAddress": "Xoá địa chỉ",
@@ -1878,7 +1870,6 @@
     "recipientNetworkSelect": {
         "label": "Mạng người nhận",
         "placeholder": "Chọn mạng người nhận",
-        "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
         "noCompatibleNetwork": "Không có mạng nào phù hợp với địa chỉ này",
         "selectPlaceholder": "Chọn mạng",
         "title": "Chọn mạng",
@@ -1886,8 +1877,6 @@
         "fromAddressBook": "Từ sổ địa chỉ",
         "otherAvailable": "Khác khả dụng",
         "incompatible": "Không tương thích",
-        "comingSoon": "Sắp ra mắt",
-        "forMembersOnly": "Chỉ dành cho thành viên",
         "nearComDescription": "Mạng cho near business và near.com",
         "internalTag": "Nội bộ"
     },
@@ -2061,7 +2050,6 @@
     },
     "user": {
         "saveToAddressBook": "Lưu vào danh bạ",
-        "walletCopiedToast": "Đã sao chép địa chỉ ví vào bộ nhớ tạm",
         "copyWalletAddress": "Sao chép địa chỉ ví"
     },
     "infoDisplay": {
@@ -2164,7 +2152,6 @@
     },
     "tokenInput": {
         "useMax": "Dùng tối đa",
-        "max": "MAX",
         "insufficientTokens": "Số dư không đủ. Nạp thêm trước khi phê duyệt.",
         "insufficientTokensForFee": "Không đủ token để trang trả phí mạng ({fee} {symbol}). Bạn có thể gửi yêu cầu và nạp thêm trước khi phê duyệt.",
         "balance": "Số dư: {amount} {symbol}",
@@ -2175,9 +2162,6 @@
         "noPermission": "Bạn không có quyền tạo yêu cầu",
         "paused": "Tạm dừng",
         "brieflyUnavailable": "Tạm thời không khả dụng"
-    },
-    "address": {
-        "copied": "Đã sao chép địa chỉ vào bộ nhớ tạm"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
@@ -2342,15 +2326,7 @@
             "back": "Quay lại"
         },
         "progress": {
-            "title": "Làm theo các bước nhanh để khám phá Ngân quỹ",
             "addAssetsTitle": "Thêm tài sản của bạn",
-            "addAssetsDescription": "Bắt đầu bằng cách thêm tài sản để xem chúng hoạt động.",
-            "deposit": "Nạp tiền",
-            "createPaymentTitle": "Tạo yêu cầu thanh toán",
-            "createPaymentDescription": "Tạo một yêu cầu thanh toán để hoàn tất thiết lập của bạn.",
-            "send": "Gửi",
-            "useSolo": "Dùng Solo",
-            "addTeamMemberDescription": "Bạn đã thiết lập tài khoản thành công. Khởi đầu tuyệt vời!",
             "addTeamMemberTitle": "Tạo tài khoản Ngân quỹ",
             "getStarted": "Bắt đầu",
             "setupThresholdTitle": "Thiết lập ngưỡng",
