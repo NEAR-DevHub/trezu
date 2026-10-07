@@ -24,8 +24,6 @@ const INVITE_ENTRY_PATHS = new Set(["/create", "/login"]);
 export interface InviteGateConfig {
     enabled: boolean;
     codes: ReadonlySet<string>;
-    /** Where the access message sends people to request early access. */
-    earlyAccessUrl: string;
 }
 
 export function parseInviteCodes(raw: string | undefined): Set<string> {
@@ -44,7 +42,6 @@ export function readInviteGateConfig(
     return {
         enabled: env.INVITE_ONLY_ENABLED === "true",
         codes: parseInviteCodes(env.INVITE_CODES),
-        earlyAccessUrl: env.EARLY_ACCESS_LANDING_URL?.trim() || "/",
     };
 }
 

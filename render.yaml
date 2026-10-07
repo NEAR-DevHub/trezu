@@ -86,8 +86,6 @@ services:
         sync: false
       - key: INVITE_CODES
         sync: false
-      - key: EARLY_ACCESS_LANDING_URL
-        sync: false
       - key: NEXT_PUBLIC_HELPSCOUT_BEACON_ID
         value: fafa62c2-1d85-4964-a894-559473b9ce79
     healthCheckPath: /
@@ -170,8 +168,6 @@ services:
       - key: INVITE_ONLY_ENABLED
         sync: false
       - key: INVITE_CODES
-        sync: false
-      - key: EARLY_ACCESS_LANDING_URL
         sync: false
       - key: NEXT_PUBLIC_HELPSCOUT_BEACON_ID
         value: fafa62c2-1d85-4964-a894-559473b9ce79
