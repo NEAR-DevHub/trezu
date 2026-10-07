@@ -22,11 +22,10 @@ describe("parseInviteCodes", () => {
 });
 
 describe("readInviteGateConfig", () => {
-    it("defaults to disabled with the landing page at /", () => {
+    it("defaults to disabled", () => {
         expect(readInviteGateConfig({})).toEqual({
             enabled: false,
             codes: new Set(),
-            earlyAccessUrl: "/",
         });
     });
 
@@ -34,11 +33,9 @@ describe("readInviteGateConfig", () => {
         const config = readInviteGateConfig({
             INVITE_ONLY_ENABLED: "true",
             INVITE_CODES: "alpha",
-            EARLY_ACCESS_LANDING_URL: " https://near.com/business ",
         });
         expect(config.enabled).toBe(true);
         expect(config.codes.has("alpha")).toBe(true);
-        expect(config.earlyAccessUrl).toBe("https://near.com/business");
     });
 });
 

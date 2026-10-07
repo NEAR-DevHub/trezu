@@ -27,7 +27,7 @@ export default async function CreatePage({
             <>
                 <NearInitializer />
                 <AuthProvider>
-                    <InviteRequired landingUrl={gate.earlyAccessUrl} />
+                    <InviteRequired />
                 </AuthProvider>
             </>
         );

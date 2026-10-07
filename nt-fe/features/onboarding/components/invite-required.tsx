@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { useState } from "react";
 import { Button } from "@/components/button";
 import { NearBusinessLogo } from "@/components/icons/near-business-logo";
+import { EarlyAccessModal } from "@/features/landing/components/early-access";
 import { useNear } from "@/stores/near-store";
 import { ConnectedAccountCard } from "./connected-account-card";
 
@@ -11,10 +13,11 @@ import { ConnectedAccountCard } from "./connected-account-card";
  * Shown on `/create` when the deployment is invite-only and the visitor holds
  * no accepted invite. Login and existing treasuries stay reachable.
  */
-export function InviteRequired({ landingUrl }: { landingUrl: string }) {
+export function InviteRequired() {
     const t = useTranslations("inviteRequired");
     const { accountId } = useNear();
     const router = useRouter();
+    const [isRequestOpen, setIsRequestOpen] = useState(false);
 
     return (
         <main className="flex min-h-screen flex-col items-center px-4 py-12 sm:px-8">
@@ -29,10 +32,10 @@ export function InviteRequired({ landingUrl }: { landingUrl: string }) {
                     </p>
                 </div>
                 <Button
-                    asChild
+                    onClick={() => setIsRequestOpen(true)}
                     className="mt-3 w-full max-w-60 rounded-xl bg-general-bg-primary hover:bg-general-bg-primary/90"
                 >
-                    <a href={landingUrl}>{t("cta")}</a>
+                    {t("cta")}
                 </Button>
             </div>
             {accountId && (
@@ -43,6 +46,10 @@ export function InviteRequired({ landingUrl }: { landingUrl: string }) {
                     />
                 </div>
             )}
+            <EarlyAccessModal
+                open={isRequestOpen}
+                onOpenChange={setIsRequestOpen}
+            />
         </main>
     );
 }
