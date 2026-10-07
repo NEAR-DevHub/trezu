@@ -12,12 +12,13 @@ import {
 } from "@/components/modal";
 import { Tooltip } from "@/components/tooltip";
 import { SlotWarning } from "@/components/warning-message";
+import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock, useSlotBlock } from "@/hooks/use-warnings";
 import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
+import { WALLET_IDS } from "@/lib/wallets";
 import { stripMessageForTooltip } from "@/lib/warnings";
-import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
 import { useNear } from "@/stores/near-store";
 
 interface VoteModalProps {
@@ -40,7 +41,7 @@ export function VoteModal({
     const t = useTranslations("proposals.voteModal");
     const tCreate = useTranslations("createRequestButton");
     const { treasuryId } = useTreasury();
-    const { voteProposals } = useNear();
+    const { voteProposals, walletId } = useNear();
     // Each vote action has its own slot, so ops can pause approving without
     // touching reject/remove (and vice-versa). Approve → action.approve, etc.
     const voteSlot = `action.${vote.toLowerCase()}`;
@@ -61,10 +62,14 @@ export function VoteModal({
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Approving a payment/exchange proposal is blocked when that feature has a
-    // critical warning. Rejection (and removal) is never blocked.
+    // paused warning. A notice is shown and does not block. Rejection (and
+    // removal) is never blocked.
     const isApprove = vote === "Approve";
     const approveBlocked = isApprove && approveBlock.anyBlocked;
     const blockedWarnings = approveBlock.blockedWarnings.filter(
+        (warning) => warning.slot,
+    );
+    const noticeWarnings = approveBlock.noticeWarnings.filter(
         (warning) => warning.slot,
     );
 
@@ -129,9 +134,11 @@ export function VoteModal({
                         {title}
                     </DialogTitle>
                     <DialogDescription className="text-sm font-medium text-general-secondary-foreground">
-                        {isBulk
-                            ? t("bulkBody", { action })
-                            : t("singleBody", { action })}
+                        {walletId === WALLET_IDS.LEDGER
+                            ? t("ledgerBody")
+                            : isBulk
+                              ? t("bulkBody", { action })
+                              : t("singleBody", { action })}
                     </DialogDescription>
                 </div>
                 <SlotWarning slot={voteSlot} />
@@ -154,6 +161,18 @@ export function VoteModal({
                         ))}
                     </div>
                 )}
+                {isApprove &&
+                    noticeWarnings.map(
+                        (warning) =>
+                            warning.slot && (
+                                <SlotWarning
+                                    key={warning.id}
+                                    slot={warning.slot}
+                                    token={warning.token ?? undefined}
+                                    network={warning.network ?? undefined}
+                                />
+                            ),
+                    )}
                 {hasInsufficientBalance && (
                     <InfoAlert
                         message={

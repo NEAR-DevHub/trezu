@@ -10,7 +10,7 @@ use tower_http::timeout::TimeoutLayer;
 
 use crate::{AppState, auth, handlers};
 
-/// Comfortably past the ~7s of retry backoff a lead capture can spend, so an
+/// Comfortably past the ~3.5s of retry backoff a lead capture can spend, so an
 /// Attio blip still gets its retries, while a sustained outage stops holding
 /// connections open for as long as it feels like. Answered as a 504 to match
 /// the 502 the handler gives for an Attio failure it did hear back from.
@@ -90,9 +90,9 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route("/api/app-events", get(handlers::events::app_events))
         // Landing page early-access form (public, syncs to Attio). Capturing a
-        // lead retries Attio twice over, so a sustained outage there would
-        // otherwise hold this connection open for the length of both backoffs.
-        // The work is idempotent, so a timed-out submission is safe to resend.
+        // lead retries Attio, so a sustained outage there would otherwise hold
+        // this connection open for the length of the backoff. The workflow
+        // upserts on email, so a timed-out submission is safe to resend.
         .route(
             "/api/early-access",
             post(handlers::early_access::submit_early_access)

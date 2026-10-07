@@ -1,12 +1,7 @@
 "use client";
 
-import { Icon } from "@/components/icon";
-import {
-    Coins01Icon,
-    LoaderCircleIcon,
-    CheckIcon,
-} from "@hugeicons/core-free-icons";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { CheckIcon, Coins01Icon } from "@hugeicons/core-free-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
@@ -15,23 +10,25 @@ import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import z from "zod";
-import { APP_ACTIVE_TREASURY } from "@/constants/config";
 import { Button } from "@/components/button";
+import { PageCard } from "@/components/card";
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import {
     CreationProgressModal,
     type CreationStep,
 } from "@/components/creation-progress-modal";
-import { NameField } from "@/components/name-field";
-import { LargeInput } from "@/components/large-input";
-import { LoadingScreen } from "@/components/loading-screen";
-import { PageCard } from "@/components/card";
-import { PageComponentLayout } from "@/components/page-component-layout";
+import { Icon } from "@/components/icon";
 import Logo from "@/components/icons/logo";
 import { NearBusinessLogo } from "@/components/icons/near-business-logo";
+import { LargeInput } from "@/components/large-input";
+import { LoadingScreen } from "@/components/loading-screen";
+import { NameField } from "@/components/name-field";
+import { PageComponentLayout } from "@/components/page-component-layout";
 import { Form, FormField, FormMessage } from "@/components/ui/form";
+import { APP_ACTIVE_TREASURY } from "@/constants/config";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useWarnings } from "@/hooks/use-warnings";
+import { trackEvent } from "@/lib/analytics";
 import {
     type CreateTreasuryRequest,
     type CreationProgressEvent,
@@ -39,15 +36,14 @@ import {
     createTreasuryStream,
     submitWhitelistRequest,
 } from "@/lib/api";
-import { trackEvent } from "@/lib/analytics";
 import { sanitizeReturnTo } from "@/lib/auth-redirect";
 import { resolvePreferredMemberTreasuryId } from "@/lib/treasury-home";
+import { cn } from "@/lib/utils";
 import {
+    isWelcomeEntry,
     LANDING_HREF,
     WELCOME_QUERY,
-    isWelcomeEntry,
 } from "@/lib/welcome-entry";
-import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { ConnectedAccountCard } from "./connected-account-card";
 
@@ -320,8 +316,6 @@ export function TreasuryOnboardingPage({
         },
     });
     const treasuryName = form.watch("treasuryName");
-    const isSubmitDisabled =
-        isAuthenticating || isCheckingHandle || !treasuryName.trim();
 
     useEffect(() => {
         if (!accountId) return;
@@ -604,15 +598,14 @@ export function TreasuryOnboardingPage({
                     <Button
                         type="submit"
                         size="xl"
-                        className="w-full disabled:bg-general-unofficial-border-3 disabled:text-general-muted-foreground disabled:opacity-100"
-                        disabled={isSubmitDisabled}
-                    >
-                        {(isAuthenticating || isCheckingHandle) && (
-                            <Icon
-                                icon={LoaderCircleIcon}
-                                className="animate-spin"
-                            />
+                        className={cn(
+                            "w-full",
+                            !(isAuthenticating || isCheckingHandle) &&
+                                "disabled:bg-general-unofficial-border-3 disabled:text-general-muted-foreground disabled:opacity-100",
                         )}
+                        loading={isAuthenticating || isCheckingHandle}
+                        disabled={!treasuryName.trim()}
+                    >
                         {accountId ? t("createCta") : t("continueToWallet")}
                     </Button>
 
@@ -725,17 +718,9 @@ export function TreasuryOnboardingPage({
                                             setIsSubmittingWaitlist(false);
                                         }
                                     }}
-                                    disabled={
-                                        isSubmittingWaitlist ||
-                                        !waitlistContact.trim()
-                                    }
+                                    loading={isSubmittingWaitlist}
+                                    disabled={!waitlistContact.trim()}
                                 >
-                                    {isSubmittingWaitlist && (
-                                        <Icon
-                                            icon={LoaderCircleIcon}
-                                            className="animate-spin"
-                                        />
-                                    )}
                                     {tLanding("waitlistSubmit")}
                                 </WaitlistActionButton>
 

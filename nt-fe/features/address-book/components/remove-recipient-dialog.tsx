@@ -51,8 +51,8 @@ export function RemoveRecipientDialog({
         >
             <DialogContent
                 className={cn(
-                    mobileInsetSheetClassName,
                     "gap-4 max-sm:gap-4 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:max-w-md!",
+                    mobileInsetSheetClassName,
                 )}
             >
                 <DialogHeader className="mx-0 border-0 px-0 pb-0" />
@@ -75,11 +75,12 @@ export function RemoveRecipientDialog({
                     <Button
                         type="button"
                         variant="destructive"
-                        className="h-10 w-full rounded-2xl bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
+                        size="xl"
+                        className="w-full flex-1"
                         loading={isSubmitting}
                         onClick={handleConfirm}
                     >
-                        {isSubmitting ? tCommon("removing") : tCommon("remove")}
+                        {isSubmitting ? t("removing") : tCommon("remove")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

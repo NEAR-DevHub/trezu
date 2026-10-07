@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Wird geladen...",
+        "loading": "Wird geladen",
         "notAvailable": "k. A.",
-        "connecting": "Wird verbunden...",
+        "connecting": "Wird verbunden",
         "save": "Speichern",
         "cancel": "Abbrechen",
         "submit": "Absenden",
@@ -18,7 +18,7 @@
         "exporting": "Wird exportiert",
         "import": "Importieren",
         "remove": "Entfernen",
-        "removing": "Wird entfernt...",
+        "removing": "Wird entfernt",
         "edit": "Bearbeiten",
         "continue": "Weiter",
         "select": "Auswählen",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "Sie haben keine Berechtigung zum Exportieren",
             "quotaExhausted": "Sie haben Ihr gesamtes Kontingent aufgebraucht",
-            "exporting": "Wird exportiert...",
+            "exporting": "Wird exportiert",
             "export": "Exportieren"
         },
         "empty": {
@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "Ausstehend",
+            "processing": "Wird verarbeitet",
             "approved": "Genehmigt",
             "rejected": "Abgelehnt",
             "executed": "Ausgeführt",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "Diese Anfrage ist noch ausstehend und hat die zur Ausführung erforderliche Anzahl an Stimmen noch nicht erreicht.",
+            "processing": "Genehmigt und wird jetzt verarbeitet. Das dauert nur wenige Sekunden.",
             "executed": "Ausgeführt, nachdem {approved} von {required} Mitgliedern die Anfrage genehmigt haben.",
             "rejected": "Abgelehnt, nachdem {rejected} von {required} Mitgliedern für die Ablehnung der Anfrage gestimmt haben.",
             "expired": "Abgelaufen, da nicht genügend Stimmen zur Ausführung erhalten wurden.",
@@ -715,6 +717,7 @@
             "removeTitle": "Anfrage entfernen",
             "bulkBody": "Sie sind dabei, mehrere Anfragen zu {action}. Nach dem Absenden kann diese Entscheidung nicht mehr geändert werden.",
             "singleBody": "Sie sind dabei, diese Anfrage zu {action}. Nach der Bestätigung kann diese Aktion nicht rückgängig gemacht werden.",
+            "ledgerBody": "Lassen Sie Ihren Ledger entsperrt. Als Nächstes bestätigen Sie dort Ihre Abstimmung.",
             "actionApprove": "genehmigen",
             "actionReject": "ablehnen",
             "actionRemove": "entfernen",
@@ -867,8 +870,7 @@
             "approvalsReceived": "{received}/{required} Genehmigungen erhalten",
             "expiresAt": "Läuft ab am",
             "expiredAt": "Abgelaufen am",
-            "exchangingTokens": "Token werden getauscht",
-            "exchangingTokensBody": "Diese Anfrage wurde vom Team genehmigt. Der Token-Tausch ist nun in Bearbeitung und kann einige Zeit in Anspruch nehmen.",
+            "processing": "Ihre Anfrage wurde genehmigt und wird verarbeitet – nur wenige Sekunden.",
             "requestFailed": "Anfrage fehlgeschlagen",
             "requestFailedBody": "Das Team hat diese Anfrage genehmigt, sie ist jedoch aufgrund von Kursschwankungen fehlgeschlagen. Bitte erstellen Sie eine neue Anfrage und versuchen Sie es erneut.",
             "votingPeriod24h": "Abstimmungszeitraum: 24 Stunden",
@@ -876,8 +878,6 @@
             "reject": "Ablehnen",
             "approve": "Genehmigen",
             "destinationNetwork": "Zielnetzwerk",
-            "processingPayment": "Zahlung wird verarbeitet",
-            "processingPaymentBody": "Diese Zahlung wurde vom Team genehmigt und wird jetzt verarbeitet. Dies kann einige Zeit dauern.",
             "addMember": "Mitglied hinzufügen",
             "removeMember": "Mitglied entfernen",
             "member": "Mitglied",
@@ -939,7 +939,7 @@
                 "voteDescription": "Ihre Angaben kommen vorausgefüllt an. Du erstellst die Anfrage, und das Team stimmt ab."
             },
             "generateLink": "Einladungslink erstellen",
-            "generating": "Wird erstellt…",
+            "generating": "Wird erstellt",
             "generateFailed": "Einladungslink konnte nicht erstellt werden. Bitte versuche es erneut.",
             "readyTitle": "Dein Einladungslink ist bereit",
             "readyDescription": "Sende ihn an die Person, die du hinzufügen möchtest. Sie verbindet eine Wallet und bittet um Beitritt.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# neues Mitglied} other {# neue Mitglieder}}",
             "updatedMembers": "Aktualisierte Mitglieder",
             "newMembers": "Neue Mitglieder",
-            "creatingProposal": "Vorschlag wird erstellt...",
+            "creatingProposal": "Vorschlag wird erstellt",
             "confirmSubmit": "Antrag erstellen"
         },
         "removeDialog": {
             "title": "{count, plural, one {Mitglied} other {Mitglieder}} entfernen?",
             "nearnBody": "Nach Genehmigung wird {account} dauerhaft aus der Treasury entfernt und alle zugehörigen Berechtigungen werden widerrufen. Nach der Entfernung kann dieses Konto keine Anfragen mehr aus NEARN erstellen.",
             "genericBody": "Nach Genehmigung wird durch diese Aktion <bold>{accounts}</bold> dauerhaft aus der Treasury entfernt und alle zugewiesenen Berechtigungen werden widerrufen.",
-            "creatingProposal": "Vorschlag wird erstellt..."
+            "creatingProposal": "Vorschlag wird erstellt"
         },
         "validation": {
             "accountIdRequired": "Konto-ID ist erforderlich",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "Anzeigenamen eingeben",
             "logo": "Logo",
             "logoDescription": "Laden Sie ein Logo für Ihre Treasury hoch. Empfohlen sind SVG, PNG oder JPG (256x256 px).",
-            "uploading": "Wird hochgeladen...",
+            "uploading": "Wird hochgeladen",
             "removeLogo": "Entfernen",
             "logoUploaded": "Logo erfolgreich hochgeladen",
             "uploadError": "Beim Hochladen des Bildes ist ein Fehler aufgetreten. Bitte erneut versuchen.",
@@ -1131,16 +1131,20 @@
             "notePlaceholder": "Fügen Sie eine Notiz hinzu, um diesen Empfänger zu identifizieren (z. B. Auftragnehmer-Zahlung, Vesting-Verteilung).",
             "skipDuplicates": "Duplikate überspringen und nur neue importieren.",
             "allDuplicatesTooltip": "Alle importierten Empfänger sind bereits in Ihrem Adressbuch, sodass es nichts Neues zu importieren gibt.",
+            "manualAllDuplicates": "{count, plural, =1 {Dieser Kontakt existiert bereits in Ihrem Adressbuch.} other {Diese Kontakte existieren bereits in Ihrem Adressbuch.}}",
+            "manualSomeDuplicates": "{duplicates, plural, =1 {# von {total} Kontakten existiert bereits in Ihrem Adressbuch.} other {# von {total} Kontakten existieren bereits in Ihrem Adressbuch.}} Es werden nur neue Kontakte gespeichert.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Dieser Kontakt ist bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.} other {Diese Kontakte sind bereits in Ihrem Adressbuch, daher gibt es nichts Neues zu speichern.}}",
             "duplicateActionTooltip": "Aktivieren Sie das Überspringen von Duplikaten oder entfernen Sie doppelte Empfänger, um fortzufahren.",
-            "adding": "Wird hinzugefügt…",
+            "adding": "Wird hinzugefügt",
             "nothingNew": "Nichts Neues zu importieren",
-            "addRecipientsButton": "{count, plural, one {Empfänger hinzufügen} other {Empfänger hinzufügen}}"
+            "addRecipientsButton": "Kontakte speichern"
         },
         "removeDialog": {
             "title": "Empfänger entfernen",
             "body": "Hierdurch wird <bold>{names}</bold> aus Ihren Kontakten entfernt. Sie können sie jederzeit wieder hinzufügen.",
             "bulk": "Hierdurch werden <bold>{count, plural, one {# Empfänger} other {# Empfänger}}</bold> aus Ihrem Adressbuch entfernt. Sie können sie jederzeit wieder hinzufügen.",
-            "single": "Hierdurch wird <bold>{name}</bold> aus Ihrem Adressbuch entfernt. Sie können diesen Empfänger jederzeit wieder hinzufügen."
+            "single": "Hierdurch wird <bold>{name}</bold> aus Ihrem Adressbuch entfernt. Sie können diesen Empfänger jederzeit wieder hinzufügen.",
+            "removing": "Wird entfernt"
         },
         "importFlow": {
             "title": "Empfänger importieren",
@@ -1148,7 +1152,7 @@
             "foundSummary": "{count, plural, one {# Empfänger} other {# Empfänger}} auf {networkCount, plural, one {# Netzwerk} other {# Netzwerken}} gefunden",
             "uploadPrompt": "Empfängerdaten hochladen oder einfügen",
             "fixErrors": "Fehler beheben, um fortzufahren",
-            "continueReview": "Weiter zur Prüfung"
+            "continueReview": "Details prüfen"
         },
         "form": {
             "editRecipient": "Empfänger bearbeiten",
@@ -1251,7 +1255,6 @@
             "orDragDrop": "oder per Drag & Drop",
             "token": "Token",
             "destinationNetwork": "Zielnetzwerk",
-            "uploadFileFirst": "Laden Sie zuerst eine Datei hoch",
             "removeFile": "Datei entfernen",
             "maxFileSize": "max. 1 Datei bis zu 1,5 MB, nur CSV-Datei",
             "noFilePrompt": "Keine Datei zum Hochladen?",
@@ -1346,6 +1349,7 @@
             "enterAmount": "Betrag eingeben"
         },
         "review": "Tausch prüfen",
+        "chainDeliveryUnsupported": "Dieses Netzwerk ist beim Tauschen nicht verfügbar.",
         "poweredBy": "Bereitgestellt von",
         "info": {
             "priceDifference": "Preisunterschied",
@@ -1558,7 +1562,7 @@
         "proposalDescriptionLabel": "Vorschlagsbeschreibung (optional)",
         "proposalDescriptionPlaceholder": "Beschreiben Sie diesen Vorschlag...",
         "createProposal": "Vorschlag erstellen",
-        "creatingProposal": "Vorschlag wird erstellt...",
+        "creatingProposal": "Vorschlag wird erstellt",
         "confirmInWallet": "Bitte bestätigen Sie in Ihrer Wallet",
         "proposalSubmitted": "Vorschlag übermittelt",
         "shareProposal": "Ihr Vorschlag wurde erstellt. Teilen Sie den untenstehenden Link mit den Treasury-Mitgliedern zur Abstimmung.",
@@ -1608,7 +1612,7 @@
         "relinking": "{count, plural, one {# ausgewählte Treasury ist mit einem anderen Telegram-Chat verknüpft. Beim Verbinden wird sie neu verbunden und ihre Chat-ID-Verknüpfung auf diesen Chat umgestellt.} other {# ausgewählte Treasuries sind mit anderen Telegram-Chats verknüpft. Beim Verbinden werden sie neu verbunden und ihre Chat-ID-Verknüpfungen auf diesen Chat umgestellt.}}",
         "connectedToAnother": "Mit einem anderen Chat verbunden",
         "notMember": "Sie sind kein Richtlinienmitglied einer Treasury.",
-        "connecting": "Wird verbunden…",
+        "connecting": "Wird verbunden",
         "connect": "Verbinden",
         "settings": {
             "title": "Telegram",
@@ -1819,7 +1823,7 @@
         "noDownloadPermission": "Sie haben keine Berechtigung, die Datei herunterzuladen.",
         "noExportPermission": "Sie haben keine Berechtigung zum Exportieren",
         "quotaUsed": "Sie haben Ihr gesamtes Kontingent aufgebraucht",
-        "exporting": "Wird exportiert...",
+        "exporting": "Wird exportiert",
         "export": "Exportieren",
         "columnSubmissionTime": "Einreichungszeit",
         "columnDateRange": "Datumsbereich",
@@ -2198,14 +2202,14 @@
         "moreMembers": "+{count, plural, one {# Mitglied} other {# Mitglieder}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Empfänger hinzugefügt} other {# Empfänger hinzugefügt}}",
-        "alreadyExistsToast": "Empfänger ist bereits im Adressbuch",
-        "addedSingleToast": "Empfänger hinzugefügt",
-        "addFailedToast": "Hinzufügen der Empfänger fehlgeschlagen",
-        "addSingleFailedToast": "Hinzufügen des Empfängers fehlgeschlagen",
-        "removedToast": "{count, plural, one {Empfänger entfernt} other {# Empfänger entfernt}}",
-        "removeFailedToast": "Entfernen der Empfänger fehlgeschlagen",
-        "exportFailedToast": "Export der Empfänger fehlgeschlagen"
+        "addedToast": "{count, plural, =1 {Kontakt erfolgreich gespeichert} other {# Kontakte hinzugefügt}}",
+        "alreadyExistsToast": "Kontakt ist bereits im Adressbuch",
+        "addedSingleToast": "Kontakt hinzugefügt",
+        "addFailedToast": "Hinzufügen der Kontakte fehlgeschlagen",
+        "addSingleFailedToast": "Hinzufügen des Kontakts fehlgeschlagen",
+        "removedToast": "{count, plural, =1 {Kontakt erfolgreich entfernt} other {# Kontakte entfernt}}",
+        "removeFailedToast": "Entfernen der Kontakte fehlgeschlagen",
+        "exportFailedToast": "Export der Kontakte fehlgeschlagen"
     },
     "treasuryMutations": {
         "savedToast": "Treasury in Ihrer Liste gespeichert",
@@ -2416,8 +2420,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Verstanden",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "am",
             "until": "bis"
@@ -2508,7 +2513,7 @@
             "title": "Vorlage löschen",
             "body": "<b>{name}</b> löschen? Mitglieder können daraus keine Anträge mehr einreichen. Dies kann nicht rückgängig gemacht werden.",
             "confirm": "Löschen",
-            "deleting": "Wird gelöscht…"
+            "deleting": "Wird gelöscht"
         },
         "editor": {
             "nameLabel": "Name",
@@ -2652,7 +2657,7 @@
         "save": "Speichern",
         "edit": "Bearbeiten",
         "remove": "Entfernen",
-        "uploading": "Wird hochgeladen...",
+        "uploading": "Wird hochgeladen",
         "saveSuccess": "Deine Änderungen wurden gespeichert.",
         "saveError": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
         "invalidImage": "Bitte wähle eine gültige Bilddatei.",

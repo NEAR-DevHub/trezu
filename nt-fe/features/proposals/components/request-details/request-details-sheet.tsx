@@ -28,6 +28,7 @@ import { ApprovalWorkflow } from "./approval-workflow";
 import {
     REQUEST_ACTION_ROW_CLASS,
     RequestDetailsBody,
+    RequestFeatureWarning,
     RequestNotices,
     useRequestActions,
 } from "./request-details-content";
@@ -150,6 +151,7 @@ function RequestDetails({
             />
 
             <SideSheetBody>
+                <RequestFeatureWarning proposal={proposal} details={details} />
                 <RequestDetailsBody proposal={proposal} details={details} />
                 <ApprovalWorkflow
                     proposal={proposal}

@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "טוען...",
+        "loading": "טוען",
         "notAvailable": "לא זמין",
-        "connecting": "מתחבר...",
+        "connecting": "מתחבר",
         "save": "שמירה",
         "cancel": "ביטול",
         "submit": "שליחה",
@@ -18,7 +18,7 @@
         "exporting": "מייצא",
         "import": "ייבוא",
         "remove": "הסרה",
-        "removing": "מסיר...",
+        "removing": "מסיר",
         "edit": "עריכה",
         "continue": "המשך",
         "select": "בחירה",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "אין לך הרשאה לייצא",
             "quotaExhausted": "ניצלת את כל המכסה שלך",
-            "exporting": "מייצא...",
+            "exporting": "מייצא",
             "export": "ייצוא"
         },
         "empty": {
@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "ממתין",
+            "processing": "בעיבוד",
             "approved": "אושר",
             "rejected": "נדחה",
             "executed": "בוצע",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "בקשה זו עדיין ממתינה ולא הגיעה למספר ההצבעות הנדרש לביצוע.",
+            "processing": "אושרה ונמצאת כעת בעיבוד. זה ייקח רק כמה שניות.",
             "executed": "בוצעה לאחר ש-{approved} מתוך {required} חברים אישרו את הבקשה.",
             "rejected": "נדחתה לאחר ש-{rejected} מתוך {required} חברים הצביעו לדחיית הבקשה.",
             "expired": "פג תוקף מכיוון שלא התקבלו מספיק הצבעות לביצוע.",
@@ -715,6 +717,7 @@
             "removeTitle": "הסר בקשה",
             "bulkBody": "אתה עומד {action} מספר בקשות. לאחר השליחה, לא ניתן לשנות החלטה זו.",
             "singleBody": "אתה עומד {action} בקשה זו. לאחר האישור, לא ניתן לבטל פעולה זו.",
+            "ledgerBody": "השאר את ה-Ledger שלך פתוח. בשלב הבא תאשר בו את ההצבעה שלך.",
             "actionApprove": "לאשר",
             "actionReject": "לדחות",
             "actionRemove": "להסיר",
@@ -867,8 +870,7 @@
             "approvalsReceived": "{received}/{required} אישורים התקבלו",
             "expiresAt": "פג תוקף ב-",
             "expiredAt": "פג תוקף ב-",
-            "exchangingTokens": "מחליף טוקנים",
-            "exchangingTokensBody": "בקשה זו אושרה על ידי הצוות. החלפת הטוקנים מתבצעת כעת ועשויה לקחת זמן מה.",
+            "processing": "הבקשה שלך אושרה ונמצאת בעיבוד – רק כמה שניות.",
             "requestFailed": "הבקשה נכשלה",
             "requestFailedBody": "הצוות אישר את הבקשה, אך היא נכשלה עקב תנודות בשער. אנא צור בקשה חדשה ונסה שוב.",
             "votingPeriod24h": "תקופת הצבעה: 24 שעות",
@@ -876,8 +878,6 @@
             "reject": "דחייה",
             "approve": "אישור",
             "destinationNetwork": "רשת יעד",
-            "processingPayment": "עיבוד תשלום",
-            "processingPaymentBody": "התשלום אושר על ידי הצוות ומעובד כעת. ייתכן שייקח קצת זמן להשלים.",
             "addMember": "הוספת חבר",
             "removeMember": "הסרת חבר",
             "member": "חבר",
@@ -939,7 +939,7 @@
                 "voteDescription": "הפרטים מגיעים ממולאים מראש. אתם יוצרים את הבקשה, והצוות מצביע."
             },
             "generateLink": "יצירת קישור הזמנה",
-            "generating": "יוצר...",
+            "generating": "יוצר",
             "generateFailed": "יצירת קישור ההזמנה נכשלה. נסו שוב.",
             "readyTitle": "קישור ההזמנה מוכן",
             "readyDescription": "שלחו אותו לאדם שתרצו להוסיף. הוא יחבר ארנק ויבקש להצטרף.",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, one {# חבר חדש} two {# חברים חדשים} many {# חברים חדשים} other {# חברים חדשים}}",
             "updatedMembers": "חברים מעודכנים",
             "newMembers": "חברים חדשים",
-            "creatingProposal": "יוצר הצעה...",
+            "creatingProposal": "יוצר הצעה",
             "confirmSubmit": "צור בקשה"
         },
         "removeDialog": {
             "title": "להסיר {count, plural, one {חבר} other {חברים}}?",
             "nearnBody": "לאחר האישור, {account} יוסר לצמיתות מהאוצר וכל ההרשאות הקשורות יבוטלו. לאחר ההסרה, חשבון זה לא יוכל עוד ליצור בקשות מ-NEARN.",
             "genericBody": "לאחר האישור, פעולה זו תסיר לצמיתות את <bold>{accounts}</bold> מהאוצר ותבטל את כל ההרשאות שהוקצו.",
-            "creatingProposal": "יוצר הצעה..."
+            "creatingProposal": "יוצר הצעה"
         },
         "validation": {
             "accountIdRequired": "מזהה חשבון נדרש",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "הזן שם תצוגה",
             "logo": "לוגו",
             "logoDescription": "העלה לוגו עבור האוצר שלך. מומלץ SVG, PNG או JPG (256x256 פיקסלים).",
-            "uploading": "מעלה...",
+            "uploading": "מעלה",
             "removeLogo": "הסרה",
             "logoUploaded": "הלוגו הועלה בהצלחה",
             "uploadError": "אירעה שגיאה בעת העלאת התמונה, אנא נסה שוב.",
@@ -1131,16 +1131,20 @@
             "notePlaceholder": "הוסף הערה כדי לזהות את הנמען הזה (למשל תשלום לקבלן, חלוקת הבשלה).",
             "skipDuplicates": "דלג על כפילויות וייבא רק חדשים.",
             "allDuplicatesTooltip": "כל הנמענים המיובאים כבר בספר הכתובות שלך, אז אין מה לייבא חדש.",
+            "manualAllDuplicates": "{count, plural, =1 {איש קשר זה כבר קיים בספר הכתובות שלך.} other {אנשי קשר אלה כבר קיימים בספר הכתובות שלך.}}",
+            "manualSomeDuplicates": "{duplicates} מתוך {total} אנשי קשר כבר קיימים בספר הכתובות שלך. יישמרו רק אנשי קשר חדשים.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {איש קשר זה כבר נמצא בספר הכתובות שלך, כך שאין מה חדש לשמור.} other {אנשי קשר אלה כבר נמצאים בספר הכתובות שלך, כך שאין מה חדש לשמור.}}",
             "duplicateActionTooltip": "הפעל דילוג על כפילויות או הסר נמענים כפולים כדי להמשיך.",
-            "adding": "מוסיף…",
+            "adding": "מוסיף",
             "nothingNew": "אין חדש לייבא",
-            "addRecipientsButton": "{count, plural, one {הוסף נמען} two {הוסף נמענים} many {הוסף נמענים} other {הוסף נמענים}}"
+            "addRecipientsButton": "שמור אנשי קשר"
         },
         "removeDialog": {
             "title": "הסר נמען",
             "body": "פעולה זו תסיר את <bold>{names}</bold> מספר הכתובות שלך. תוכל להוסיף אותם שוב בכל עת.",
             "bulk": "זה יסיר <bold>{count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}}</bold> מספר הכתובות שלך. תוכל להוסיף אותם שוב בכל עת.",
-            "single": "זה יסיר את <bold>{name}</bold> מספר הכתובות שלך. תוכל להוסיף נמען זה שוב בכל עת."
+            "single": "זה יסיר את <bold>{name}</bold> מספר הכתובות שלך. תוכל להוסיף נמען זה שוב בכל עת.",
+            "removing": "מסיר"
         },
         "importFlow": {
             "title": "ייבוא נמענים",
@@ -1148,7 +1152,7 @@
             "foundSummary": "נמצאו {count, plural, one {# נמען} two {# נמענים} many {# נמענים} other {# נמענים}} ב-{networkCount, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}",
             "uploadPrompt": "העלה או הדבק נתוני נמענים",
             "fixErrors": "תקן שגיאות כדי להמשיך",
-            "continueReview": "המשך לסקירה"
+            "continueReview": "סקירת פרטים"
         },
         "form": {
             "editRecipient": "ערוך נמען",
@@ -1251,7 +1255,6 @@
             "orDragDrop": "או גרור ושחרר",
             "token": "אסימון",
             "destinationNetwork": "רשת יעד",
-            "uploadFileFirst": "תחילה יש להעלות קובץ",
             "removeFile": "הסרת הקובץ",
             "maxFileSize": "מקסימום קובץ אחד עד 1.5 MB, קובץ CSV בלבד",
             "noFilePrompt": "אין לך קובץ להעלות?",
@@ -1346,6 +1349,7 @@
             "enterAmount": "הזן סכום"
         },
         "review": "סקור החלפה",
+        "chainDeliveryUnsupported": "רשת זו אינה זמינה בהחלפה.",
         "poweredBy": "מופעל על ידי",
         "info": {
             "priceDifference": "הפרש מחיר",
@@ -1558,7 +1562,7 @@
         "proposalDescriptionLabel": "תיאור הצעה (אופציונלי)",
         "proposalDescriptionPlaceholder": "תאר הצעה זו...",
         "createProposal": "צור הצעה",
-        "creatingProposal": "יוצר הצעה...",
+        "creatingProposal": "יוצר הצעה",
         "confirmInWallet": "אנא אשר בארנק שלך",
         "proposalSubmitted": "ההצעה נשלחה",
         "shareProposal": "ההצעה שלך נוצרה. שתף את הקישור למטה עם חברי האוצר כדי להצביע.",
@@ -1608,7 +1612,7 @@
         "relinking": "{count, plural, one {# אוצר נבחר מקושר לצ'אט Telegram אחר. חיבור יחבר אותו מחדש וישנה את הקישור לצ'אט זה.} two {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} many {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.} other {# אוצרות נבחרים מקושרים לצ'אטים אחרים של Telegram. חיבור יחבר אותם מחדש וישנה את הקישורים לצ'אט זה.}}",
         "connectedToAnother": "מחובר לצ'אט אחר",
         "notMember": "אינך חבר מדיניות באף אוצר.",
-        "connecting": "מתחבר…",
+        "connecting": "מתחבר",
         "connect": "חיבור",
         "settings": {
             "title": "Telegram",
@@ -1819,7 +1823,7 @@
         "noDownloadPermission": "אין לך הרשאה להוריד את הקובץ.",
         "noExportPermission": "אין לך הרשאה לייצא",
         "quotaUsed": "ניצלת את כל המכסה שלך",
-        "exporting": "מייצא...",
+        "exporting": "מייצא",
         "export": "ייצוא",
         "columnSubmissionTime": "שעת שליחה",
         "columnDateRange": "טווח תאריכים",
@@ -2198,14 +2202,14 @@
         "moreMembers": "+{count, plural, one {# חבר} two {# חברים} many {# חברים} other {# חברים}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {נמען נוסף} two {# נמענים נוספו} many {# נמענים נוספו} other {# נמענים נוספו}}",
-        "alreadyExistsToast": "הנמען כבר קיים בספר הכתובות",
-        "addedSingleToast": "נמען נוסף",
-        "addFailedToast": "הוספת הנמענים נכשלה",
-        "addSingleFailedToast": "הוספת הנמען נכשלה",
-        "removedToast": "{count, plural, one {נמען הוסר} two {# נמענים הוסרו} many {# נמענים הוסרו} other {# נמענים הוסרו}}",
-        "removeFailedToast": "הסרת הנמענים נכשלה",
-        "exportFailedToast": "ייצוא הנמענים נכשל"
+        "addedToast": "{count, plural, =1 {איש הקשר נשמר בהצלחה} two {# אנשי קשר נוספו} many {# אנשי קשר נוספו} other {# אנשי קשר נוספו}}",
+        "alreadyExistsToast": "איש הקשר כבר קיים בספר הכתובות",
+        "addedSingleToast": "איש קשר נוסף",
+        "addFailedToast": "הוספת אנשי הקשר נכשלה",
+        "addSingleFailedToast": "הוספת איש הקשר נכשלה",
+        "removedToast": "{count, plural, =1 {איש הקשר הוסר בהצלחה} two {# אנשי קשר הוסרו} many {# אנשי קשר הוסרו} other {# אנשי קשר הוסרו}}",
+        "removeFailedToast": "הסרת אנשי הקשר נכשלה",
+        "exportFailedToast": "ייצוא אנשי הקשר נכשל"
     },
     "treasuryMutations": {
         "savedToast": "האוצר נשמר לרשימה שלך",
@@ -2416,8 +2420,9 @@
         }
     },
     "warnings": {
+        "gotIt": "הבנתי",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "בתאריך",
             "until": "עד"
@@ -2508,7 +2513,7 @@
             "title": "מחיקת תבנית",
             "body": "למחוק את <b>{name}</b>? חברים לא יוכלו עוד להגיש הצעות באמצעותה. לא ניתן לבטל פעולה זו.",
             "confirm": "מחק",
-            "deleting": "מוחק…"
+            "deleting": "מוחק"
         },
         "editor": {
             "nameLabel": "שם",
@@ -2652,7 +2657,7 @@
         "save": "שמור",
         "edit": "ערוך",
         "remove": "הסר",
-        "uploading": "מעלה...",
+        "uploading": "מעלה",
         "saveSuccess": "השינויים שלך נשמרו.",
         "saveError": "לא ניתן לשמור את השינויים. נסה שוב.",
         "invalidImage": "בחר קובץ תמונה תקין.",

@@ -47,10 +47,12 @@ function parseOptionalDate(value?: string | null) {
 export function useProposalDetails(proposal: Proposal, policy: Policy) {
     const { treasuryId, isConfidential, isGuestTreasury } = useTreasury();
 
-    const status = getProposalStatus(proposal, policy);
+    const onChainStatus = getProposalStatus(proposal, policy);
     const proposalType = getProposalUIKind(proposal);
-    const isPending = status === "Pending";
-    const isExecuted = status === "Executed";
+    const isPending = onChainStatus === "Pending";
+    // Approved on-chain. An intents-routed request may still be settling —
+    // `status` below tells whether it actually executed.
+    const isExecuted = onChainStatus === "Executed";
 
     const isExchangeProposal = proposalType === "Exchange";
     const isPaymentProposal =
@@ -115,7 +117,6 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
             }
         } catch {}
     }
-    const isPaymentLikeProposal = isPaymentProposal || isConfidentialPayment;
 
     // Whether this proposal used the Intents protocol (has a deposit address)
     const hasDepositAddress = !!depositAddress;
@@ -165,6 +166,7 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
             fallbackDate: confidentialExecutedAt ?? publicExecutedAt,
         });
     const isDateLoading = isExecuted && resolvedDateLoading;
+    const status = getProposalStatus(proposal, policy, swapStatus?.status);
     const isHidden = isConfidential && isGuestTreasury;
 
     // Swap is still settling (no finalized transaction yet).
@@ -246,6 +248,5 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
         hideTransactionLink,
         canShowReceipt,
         receiptHref: `/${treasuryId}/requests/${proposal.id}/receipt`,
-        isPaymentLikeProposal,
     };
 }

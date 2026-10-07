@@ -156,7 +156,7 @@ export default function EditTemplatePage() {
                         <Button
                             variant="destructive"
                             className="flex-1"
-                            disabled={deleteTemplate.isPending}
+                            loading={deleteTemplate.isPending}
                             onClick={handleDelete}
                         >
                             {deleteTemplate.isPending

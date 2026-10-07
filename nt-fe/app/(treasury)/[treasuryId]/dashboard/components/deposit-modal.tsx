@@ -267,18 +267,26 @@ export function DepositModal({
     const isDepositSlotWideBlocked =
         depositBlocked && !depositTokenNetworkScoped;
     const isConfidentialUserSource = depositSource === "confidential_user";
-    // Public wallet (or public treasury): scoped pause/slow placement.
+    // Public wallet (or public treasury): a pause is a banner under both
+    // selectors. A slow notice stays inline on the matching selector.
     const showPublicSelectWarnings =
-        step === "select" && !isConfidentialUserSource && depositBlocked;
-    const showSelectTokenNetworkBannerBelow =
-        showPublicSelectWarnings &&
-        Boolean(depositScopeWarning?.token && depositScopeWarning?.network);
-    const showSelectTokenPausedInline =
-        showPublicSelectWarnings &&
+        step === "select" &&
+        !isConfidentialUserSource &&
+        depositTokenNetworkScoped;
+    const scopedPause =
+        showPublicSelectWarnings && depositScopeWarning?.response === "paused";
+    const scopedNotice =
+        showPublicSelectWarnings && depositScopeWarning?.response === "notice";
+    const showSelectPausedBanner = scopedPause;
+    const showSelectTokenNoticeInline =
+        scopedNotice &&
         Boolean(depositScopeWarning?.token && !depositScopeWarning?.network);
-    const showSelectNetworkPausedInline =
-        showPublicSelectWarnings &&
+    const showSelectNetworkNoticeInline =
+        scopedNotice &&
         Boolean(depositScopeWarning?.network && !depositScopeWarning?.token);
+    const showSelectNoticeBothBanner =
+        scopedNotice &&
+        Boolean(depositScopeWarning?.token && depositScopeWarning?.network);
     const showSelectSlotWideBanner =
         step === "select" && isDepositSlotWideBlocked;
     const showAddressWarningBanner =
@@ -290,7 +298,7 @@ export function DepositModal({
     let inlineScopedMessage: string | null = null;
     if (
         depositScopedMessage &&
-        (showSelectTokenPausedInline || showSelectNetworkPausedInline)
+        (showSelectTokenNoticeInline || showSelectNetworkNoticeInline)
     ) {
         const { heading, body } = parseWarningCopy(depositScopedMessage);
         inlineScopedMessage =
@@ -971,7 +979,7 @@ export function DepositModal({
                     onOpenAssetModal={() => setModalType("asset")}
                     onOpenNetworkModal={() => setModalType("network")}
                     tokenWarning={
-                        showSelectTokenPausedInline ? (
+                        showSelectTokenNoticeInline ? (
                             <WarningMessage
                                 variant="inline"
                                 message={inlineScopedMessage}
@@ -980,7 +988,7 @@ export function DepositModal({
                         ) : null
                     }
                     networkWarning={
-                        showSelectNetworkPausedInline ? (
+                        showSelectNetworkNoticeInline ? (
                             <WarningMessage
                                 variant="inline"
                                 message={inlineScopedMessage}
@@ -991,8 +999,8 @@ export function DepositModal({
                 />
             )}
 
-            {/* Token + one network paused (public wallet) → banner below selectors */}
-            {showSelectTokenNetworkBannerBelow && (
+            {/* Paused token/network, or a notice scoped to both → banner below selectors */}
+            {(showSelectPausedBanner || showSelectNoticeBothBanner) && (
                 <SlotWarning
                     slot={depositScopeWarning?.slot ?? "deposit"}
                     token={depositScopeWarning?.token ?? undefined}

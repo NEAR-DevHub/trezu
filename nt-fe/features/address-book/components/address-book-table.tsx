@@ -7,6 +7,7 @@ import {
     Wallet03Icon,
 } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
+import type { ReactNode } from "react";
 import { Button } from "@/components/button";
 import { EmptyState } from "@/components/empty-state";
 import { FormattedDate } from "@/components/formatted-date";
@@ -46,7 +47,7 @@ interface AddressBookTableProps {
     onDelete?: (entry: AddressBookEntry) => void;
     onSend?: (entry: AddressBookEntry) => void;
     onOpen?: (entry: AddressBookEntry) => void;
-    /** Mobile cards show checkboxes instead of the open chevron. */
+    /** On small screens, select mode shows a checkbox in place of the avatar. */
     isMobileSelectMode?: boolean;
     /** Active search query — used to highlight matching text. */
     searchQuery?: string;
@@ -70,15 +71,18 @@ function ContactAvatar() {
 function ContactCell({
     entry,
     searchQuery,
+    leading,
 }: {
     entry: AddressBookEntry;
     searchQuery: string;
+    /** Replaces the avatar. Bulk edit on small screens puts the checkbox here. */
+    leading?: ReactNode;
 }) {
     const displayAddress = formatAddressBookDisplayAddress(entry);
 
     return (
         <div className="flex min-w-0 items-center gap-3">
-            <ContactAvatar />
+            {leading ?? <ContactAvatar />}
             <div className="flex min-w-0 flex-col">
                 <HighlightedText
                     text={entry.name}
@@ -107,7 +111,7 @@ function NoteCell({ note }: { note?: string }) {
             }}
         >
             <span className="inline-block w-full max-w-full">
-                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-general-foreground">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-semibold text-general-foreground">
                     {trimmed}
                 </span>
             </span>
@@ -178,7 +182,7 @@ export function AddressBookTable({
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2 md:hidden">
+            <div className="flex flex-col md:hidden">
                 {entries.map((entry) => {
                     const entryChains = chains.filter((chain) =>
                         entry.networks.includes(chain.key),
@@ -197,47 +201,50 @@ export function AddressBookTable({
                                 onOpen?.(entry);
                             }}
                             className={cn(
-                                "w-full rounded-3xl border border-general-border bg-card p-4 text-left",
+                                "flex w-full items-center gap-3 py-3 text-left",
                                 selected && "bg-general-tertiary",
                             )}
                         >
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-3">
-                                    {isMobileSelectMode ? (
-                                        <Checkbox
-                                            checked={selected}
-                                            onClick={(event) =>
-                                                event.stopPropagation()
-                                            }
-                                            onCheckedChange={() =>
-                                                toggleOne(entry.id)
-                                            }
-                                            aria-label={t("selectEntry", {
-                                                name: entry.name,
-                                            })}
-                                        />
-                                    ) : null}
-                                    <div className="min-w-0 flex-1">
-                                        <ContactCell
-                                            entry={entry}
-                                            searchQuery={searchQuery}
-                                        />
-                                    </div>
-                                    {isMobileSelectMode ? null : (
-                                        <Icon
-                                            icon={ArrowRight01Icon}
-                                            className="size-5 shrink-0 text-general-secondary-foreground"
-                                        />
-                                    )}
-                                </div>
-                                <NetworkList
-                                    chains={entryChains}
-                                    maxVisible={2}
-                                    badgeVariant="outline"
-                                    overflow="tooltip"
-                                    className="flex-wrap"
+                            <div className="min-w-0 flex-1">
+                                <ContactCell
+                                    entry={entry}
+                                    searchQuery={searchQuery}
+                                    leading={
+                                        isMobileSelectMode ? (
+                                            <span className="flex size-9 shrink-0 items-center justify-center">
+                                                <Checkbox
+                                                    checked={selected}
+                                                    onClick={(event) =>
+                                                        event.stopPropagation()
+                                                    }
+                                                    onCheckedChange={() =>
+                                                        toggleOne(entry.id)
+                                                    }
+                                                    aria-label={t(
+                                                        "selectEntry",
+                                                        {
+                                                            name: entry.name,
+                                                        },
+                                                    )}
+                                                />
+                                            </span>
+                                        ) : undefined
+                                    }
                                 />
                             </div>
+                            <NetworkList
+                                chains={entryChains}
+                                maxVisible={1}
+                                badgeVariant="outline"
+                                overflow="tooltip"
+                                className="shrink-0 flex-nowrap"
+                            />
+                            {isMobileSelectMode ? null : (
+                                <Icon
+                                    icon={ArrowRight01Icon}
+                                    className="size-5 shrink-0 text-general-secondary-foreground"
+                                />
+                            )}
                         </button>
                     );
                 })}
@@ -368,7 +375,7 @@ export function AddressBookTable({
                                                 <User
                                                     accountId={entry.createdBy}
                                                     size="md"
-                                                    avatarClassName="size-9!"
+                                                    avatarClassName="rounded-lg"
                                                     withHoverCard
                                                     withLink={false}
                                                 />
@@ -385,7 +392,7 @@ export function AddressBookTable({
                                             <FormattedDate
                                                 date={entry.createdAt}
                                                 relative
-                                                className="text-sm text-foreground"
+                                                className="text-sm font-semibold text-general-foreground"
                                             />
                                         </TableCell>
                                         <TableCell

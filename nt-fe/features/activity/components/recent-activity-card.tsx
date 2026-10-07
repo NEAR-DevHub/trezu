@@ -179,11 +179,11 @@ function RecentActivityUnavailableOverlay({
     body: string;
 }) {
     return (
-        <div className="relative min-h-[24rem]">
-            <RecentActivitySkeleton />
+        <div className="relative **:data-[slot=skeleton]:animate-none!">
+            <RecentActivitySkeleton rows={5} fade />
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center px-6 py-8">
                 <div className="pointer-events-auto flex max-w-lg flex-col items-center gap-3 text-center">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-general-orange-background">
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-full border border-general-orange-border bg-general-orange-background">
                         <Icon
                             icon={Alert01Icon}
                             className="text-general-orange-foreground"

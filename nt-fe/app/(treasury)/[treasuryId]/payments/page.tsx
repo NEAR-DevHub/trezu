@@ -70,11 +70,7 @@ import {
     SHORT_ADDRESS_PREFIX_LENGTH,
     SHORT_ADDRESS_SUFFIX_LENGTH,
 } from "@/lib/format-short-address";
-import {
-    computeQuoteNetworkFee,
-    isIntentsCrossChainToken,
-    isIntentsToken,
-} from "@/lib/intents-fee";
+import { computeQuoteNetworkFee, isIntentsToken } from "@/lib/intents-fee";
 import {
     getNearComChainIcons,
     getNetworkDisplayCaseClass,
@@ -85,10 +81,14 @@ import {
     buildNativeNearIntentsKind,
     buildNearFtIntentsKind,
 } from "@/lib/near-proposal-builders";
-import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
+import {
+    findQuoteAssetIdForDestination,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import {
     classifyPaymentToken,
     normalizePaymentRecipient,
+    paymentIntentsAmountModeForInput,
     shouldUseDirectPaymentTransfer,
 } from "@/lib/payment-route";
 import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
@@ -323,66 +323,81 @@ function Step2({
         }
         return undefined;
     }, [bridgeAssets, destinationNetwork]);
-    const { recipientAmount, displayNetworkFee, recipientEstimatedUSDValue } =
-        useMemo(() => {
-            if (!token) {
-                return {
-                    totalAmountWithFees: Big(0),
-                    recipientAmount: Big(0),
-                    displayNetworkFee: Big(0),
-                    estimatedUSDValue: null,
-                    recipientEstimatedUSDValue: null,
-                };
-            }
+    const quotedOutputDecimals = useMemo(() => {
+        if (!token) return undefined;
+        if (!destinationNetwork || isNearComNetwork(destinationNetwork)) {
+            return holdingDecimals(token);
+        }
+        for (const asset of bridgeAssets) {
+            const network = asset.networks.find(
+                (n) => n.id === destinationNetwork,
+            );
+            if (network) return network.decimals;
+        }
+        return token.decimals;
+    }, [bridgeAssets, destinationNetwork, token]);
+    const {
+        totalAmountWithFees,
+        recipientAmount,
+        displayNetworkFee,
+        estimatedUSDValue,
+        recipientEstimatedUSDValue,
+    } = useMemo(() => {
+        if (!token) {
+            return {
+                totalAmountWithFees: Big(0),
+                recipientAmount: Big(0),
+                displayNetworkFee: Big(0),
+                estimatedUSDValue: null,
+                recipientEstimatedUSDValue: null,
+            };
+        }
 
-            const enteredAmount = decimalOrNull(amount) ?? Big(0);
-            const price = decimalOrNull(tokenData?.price);
+        const enteredAmount = decimalOrNull(amount) ?? Big(0);
+        const price = decimalOrNull(tokenData?.price);
 
-            if (liveQuote?.quote) {
-                const quotedTotal =
-                    decimalFromBaseUnitsOrNull(
-                        liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
-                        token.decimals,
-                    ) ??
-                    groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
-                    Big(0);
-                const quotedRecipient =
-                    groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
-                    decimalFromBaseUnitsOrNull(
-                        liveQuote.quote.amountOut ||
-                            liveQuote.quote.minAmountOut,
-                        token.decimals,
-                    ) ??
-                    Big(0);
-                const feeValue =
-                    decimalOrNull(computeQuoteNetworkFee(liveQuote.quote)) ??
-                    Big(0);
-
-                return {
-                    totalAmountWithFees: quotedTotal,
-                    recipientAmount: quotedRecipient,
-                    displayNetworkFee: feeValue,
-                    estimatedUSDValue:
-                        decimalOrNull(liveQuote.quote.amountInUsd) ??
-                        (price?.gt(0) ? quotedTotal.mul(price) : null),
-                    recipientEstimatedUSDValue:
-                        decimalOrNull(liveQuote.quote.amountOutUsd) ??
-                        (price?.gt(0) ? quotedRecipient.mul(price) : null),
-                };
-            }
+        if (liveQuote?.quote) {
+            const quotedTotal =
+                decimalFromBaseUnitsOrNull(
+                    liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
+                    holdingDecimals(token),
+                ) ??
+                groupedDecimalOrNull(liveQuote.quote.amountInFormatted) ??
+                Big(0);
+            const quotedRecipient =
+                groupedDecimalOrNull(liveQuote.quote.amountOutFormatted) ??
+                decimalFromBaseUnitsOrNull(
+                    liveQuote.quote.amountOut || liveQuote.quote.minAmountOut,
+                    quotedOutputDecimals ?? token.decimals,
+                ) ??
+                Big(0);
+            const feeValue =
+                decimalOrNull(computeQuoteNetworkFee(liveQuote.quote)) ??
+                Big(0);
 
             return {
-                totalAmountWithFees: enteredAmount,
-                recipientAmount: enteredAmount,
-                displayNetworkFee: Big(0),
-                estimatedUSDValue: price?.gt(0)
-                    ? enteredAmount.mul(price)
-                    : null,
-                recipientEstimatedUSDValue: price?.gt(0)
-                    ? enteredAmount.mul(price)
-                    : null,
+                totalAmountWithFees: quotedTotal,
+                recipientAmount: quotedRecipient,
+                displayNetworkFee: feeValue,
+                estimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountInUsd) ??
+                    (price?.gt(0) ? quotedTotal.mul(price) : null),
+                recipientEstimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountOutUsd) ??
+                    (price?.gt(0) ? quotedRecipient.mul(price) : null),
             };
-        }, [amount, liveQuote, token, tokenData?.price]);
+        }
+
+        return {
+            totalAmountWithFees: enteredAmount,
+            recipientAmount: enteredAmount,
+            displayNetworkFee: Big(0),
+            estimatedUSDValue: price?.gt(0) ? enteredAmount.mul(price) : null,
+            recipientEstimatedUSDValue: price?.gt(0)
+                ? enteredAmount.mul(price)
+                : null,
+        };
+    }, [amount, liveQuote, quotedOutputDecimals, token, tokenData?.price]);
 
     const isQuoteLoading =
         isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);
@@ -396,9 +411,9 @@ function Step2({
                 handleBack={handleBack}
             >
                 <AmountSummary
-                    total={recipientAmount}
-                    totalUSD={recipientEstimatedUSDValue}
-                    token={token}
+                    total={totalAmountWithFees}
+                    totalUSD={estimatedUSDValue}
+                    token={{ ...token, decimals: holdingDecimals(token) }}
                     title=""
                     showNetworkIcon={true}
                 />
@@ -425,7 +440,10 @@ function Step2({
                                         kind="token"
                                         value={recipientAmount}
                                         symbol={token.symbol}
-                                        tokenDecimals={token.decimals}
+                                        tokenDecimals={
+                                            quotedOutputDecimals ??
+                                            token.decimals
+                                        }
                                         unitPriceUsd={tokenData?.price}
                                         profile="standard"
                                     />
@@ -496,7 +514,7 @@ function Step2({
                                     kind="token"
                                     value={displayNetworkFee}
                                     symbol={token.symbol}
-                                    tokenDecimals={token.decimals}
+                                    tokenDecimals={holdingDecimals(token)}
                                     unitPriceUsd={tokenData?.price}
                                     profile="standard"
                                     rounding="up"
@@ -548,13 +566,13 @@ function getQuoteAmountDecimals(
     amountMode: IntentsAmountMode,
     bridgeAssets: BridgeAsset[],
 ): number | undefined {
-    // EXACT_INPUT (MAX) and near.com routes use the origin token's decimals.
+    // EXACT_INPUT (MAX) and near.com routes use the held token's decimals.
     if (
         amountMode !== "recipient" ||
         !destinationNetwork ||
         isNearComNetwork(destinationNetwork)
     ) {
-        return token.decimals;
+        return holdingDecimals(token);
     }
 
     const bridgeAsset = findBridgeAssetForToken(bridgeAssets, token);
@@ -860,8 +878,6 @@ export default function PaymentsPage() {
         ],
     );
 
-    const isCrossChainIntentsToken =
-        !!watchedToken && isIntentsCrossChainToken(watchedToken);
     const quoteAmountDecimals = useMemo(
         () =>
             quoteToken
@@ -1109,14 +1125,12 @@ export default function PaymentsPage() {
     }, [ensureBeforeReview, form, quoteToken, intentsAmountMode]);
 
     const handleAmountInput = useCallback(() => {
-        setIntentsAmountMode("recipient");
+        setIntentsAmountMode(paymentIntentsAmountModeForInput("typed"));
     }, []);
 
     const handleMaxSet = useCallback(() => {
-        if (isCrossChainIntentsToken) {
-            setIntentsAmountMode("total");
-        }
-    }, [isCrossChainIntentsToken]);
+        setIntentsAmountMode(paymentIntentsAmountModeForInput("max"));
+    }, []);
 
     // ── Effects ───────────────────────────────────────────────────────────────
 
@@ -1212,12 +1226,6 @@ export default function PaymentsPage() {
             shouldValidate: true,
         });
     }, [defaultAddress, form]);
-
-    useEffect(() => {
-        if (!isCrossChainIntentsToken) {
-            setIntentsAmountMode("recipient");
-        }
-    }, [isCrossChainIntentsToken]);
 
     // ── Submit ────────────────────────────────────────────────────────────────
 

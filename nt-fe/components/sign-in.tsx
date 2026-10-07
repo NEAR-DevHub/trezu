@@ -2,7 +2,6 @@
 import {
     ArrowDown01Icon,
     File01Icon,
-    LoaderCircleIcon,
     Login01Icon,
     LogoutSquare01Icon,
     UserIcon,
@@ -165,16 +164,12 @@ export function ConnectWalletButton({
         return (
             <Button
                 onClick={connect}
-                disabled={isConnecting}
+                loading={isConnecting}
                 size="icon"
                 className={className}
                 aria-label={label}
             >
-                {isConnecting ? (
-                    <Icon icon={LoaderCircleIcon} className="animate-spin" />
-                ) : (
-                    <Icon icon={Login01Icon} />
-                )}
+                {isConnecting ? null : <Icon icon={Login01Icon} />}
             </Button>
         );
     }
@@ -182,14 +177,11 @@ export function ConnectWalletButton({
     return (
         <Button
             onClick={connect}
-            disabled={isConnecting}
+            loading={isConnecting}
             className={cn("items-center gap-2", className)}
         >
             {isConnecting ? (
-                <>
-                    <Icon icon={LoaderCircleIcon} className="animate-spin" />
-                    {tCommon("connecting")}
-                </>
+                tCommon("connecting")
             ) : (
                 <>
                     <Icon icon={Login01Icon} />
@@ -214,15 +206,12 @@ export function SignIn() {
         return (
             <>
                 <Button
-                    disabled
+                    loading
                     size="icon"
                     className="md:hidden"
                     aria-label={tCommon("loading")}
-                >
-                    <Icon icon={LoaderCircleIcon} className="animate-spin" />
-                </Button>
-                <Button disabled className="hidden md:flex items-center gap-2">
-                    <Icon icon={LoaderCircleIcon} className="animate-spin" />
+                />
+                <Button loading className="hidden md:flex items-center gap-2">
                     {tCommon("loading")}
                 </Button>
             </>

@@ -1,7 +1,7 @@
 //! The landing page's "Request Early Access" form.
 //!
 //! Public and unauthenticated: the browser posts here rather than to Attio so
-//! the API key stays server-side.
+//! the webhook URL stays server-side.
 
 use std::num::NonZeroU32;
 use std::sync::{Arc, LazyLock, Once};
@@ -17,7 +17,7 @@ use serde::Deserialize;
 use crate::{
     AppState,
     error_event::ErrorCode,
-    services::attio::{AttioClient, Attribution, EarlyAccessLead},
+    services::attio::{AttioClient, EarlyAccessLead},
     utils::rate_limiter::RateLimiter,
 };
 
@@ -37,7 +37,7 @@ static PER_CLIENT: LazyLock<DefaultKeyedRateLimiter<String>> = LazyLock::new(|| 
     ))
 });
 
-/// Guards the credentials alert so a misconfigured deploy pages once.
+/// Guards the misconfiguration alert so a misconfigured deploy pages once.
 static MISCONFIGURATION_ALERT: Once = Once::new();
 
 static OVERALL: LazyLock<RateLimiter> = LazyLock::new(|| {
@@ -60,8 +60,9 @@ pub struct EarlyAccessRequest {
     /// choice, so there is nothing to withhold and nothing to enforce here.
     #[serde(default)]
     pub marketing_opt_in: bool,
-    #[serde(default)]
-    pub attribution: Attribution,
+    /// Full URL of the page the form was submitted from, without the
+    /// querystring or fragment.
+    pub landing_page: Option<String>,
 }
 
 pub async fn submit_early_access(
@@ -69,8 +70,8 @@ pub async fn submit_early_access(
     headers: HeaderMap,
     Json(payload): Json<EarlyAccessRequest>,
 ) -> Result<StatusCode, (StatusCode, String)> {
-    // Public, unauthenticated, and every accepted submission spends two Attio
-    // calls, so the endpoint is worth throttling before it is worth parsing.
+    // Public, unauthenticated, and every accepted submission spends an Attio
+    // call, so the endpoint is worth throttling before it is worth parsing.
     // Keys stop being tracked once their bucket has refilled.
     PER_CLIENT.retain_recent();
     let throttled = PER_CLIENT.check_key(&client_key(&headers)).is_err() || !OVERALL.try_acquire();
@@ -83,11 +84,11 @@ pub async fn submit_early_access(
 
     let lead = validate(payload).map_err(|message| (StatusCode::BAD_REQUEST, message))?;
 
-    // Missing credentials drop every lead, so this fails loudly rather than
+    // A missing webhook URL drops every lead, so this fails loudly rather than
     // answering 2xx to a submission that went nowhere: the visitor is told to
     // try again, and the alert says whose problem it is.
     let Some(attio) = AttioClient::from_env(state.http_client.clone(), &state.env_vars) else {
-        // Once per process, not once per request. The credentials are read at
+        // Once per process, not once per request. The URL is read at
         // startup, so a misconfigured deploy is one standing fact rather than
         // news each time somebody submits — and this is a P1, which at the
         // endpoint's own ceiling would otherwise page 60 times a minute.
@@ -153,9 +154,9 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
 
     Ok(EarlyAccessLead {
         name: required("Name", payload.name)?,
-        company: required("Company", payload.company)?,
         email,
         telegram: optional(payload.telegram),
+        company_name: required("Company", payload.company)?,
         business_type: required(
             "Vertical / type of business",
             payload.business_type.unwrap_or_default(),
@@ -165,7 +166,7 @@ fn validate(payload: EarlyAccessRequest) -> Result<EarlyAccessLead, String> {
             payload.referral_source.unwrap_or_default(),
         )?,
         marketing_opt_in: payload.marketing_opt_in,
-        attribution: payload.attribution,
+        landing_page: optional(payload.landing_page),
     })
 }
 
@@ -182,7 +183,7 @@ mod tests {
             business_type: Some("Treasury".to_string()),
             referral_source: Some("Word of Mouth".to_string()),
             marketing_opt_in: true,
-            attribution: Attribution::default(),
+            landing_page: Some(" /business ".to_string()),
         }
     }
 
@@ -206,6 +207,7 @@ mod tests {
 
         assert_eq!(lead.name, "Ada");
         assert_eq!(lead.telegram, None);
+        assert_eq!(lead.landing_page.as_deref(), Some("/business"));
     }
 
     #[test]

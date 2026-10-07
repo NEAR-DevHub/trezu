@@ -36,9 +36,7 @@ export function BulkPaymentToast({ steps }: BulkPaymentToastProps) {
                     ) : (
                         <div className="w-4 h-4 shrink-0" />
                     )}
-                    <span className="text-sm">
-                        {index + 1}/{steps.length} {step.label}
-                    </span>
+                    <span className="text-sm">{step.label}</span>
                 </div>
             ))}
         </div>

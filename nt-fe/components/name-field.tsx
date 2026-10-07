@@ -90,7 +90,7 @@ export const NameField = forwardRef<HTMLInputElement, NameFieldProps>(
                     variant === "hero" && "py-2",
                     invalid
                         ? "border-destructive"
-                        : "border-general-border focus-within:border-general-unofficial-border-4",
+                        : "border-general-border hover:border-general-unofficial-border-4 focus-within:border-general-unofficial-border-4",
                 )}
             >
                 <FieldIcon icon={icon} variant={variant} />
@@ -185,7 +185,7 @@ export const NoteField = forwardRef<HTMLTextAreaElement, NoteFieldProps>(
                     multiline && "h-auto min-h-16 py-3",
                     invalid
                         ? "border-destructive"
-                        : "border-general-border focus-within:border-general-unofficial-border-4",
+                        : "border-general-border hover:border-general-unofficial-border-4 focus-within:border-general-unofficial-border-4",
                 )}
             >
                 <FieldIcon icon={icon} variant="default" />

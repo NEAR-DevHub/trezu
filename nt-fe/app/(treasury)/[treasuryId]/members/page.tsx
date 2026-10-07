@@ -16,10 +16,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
 import { AuthButton } from "@/components/auth-button";
 import { Button } from "@/components/button";
-import { FormattedDate } from "@/components/formatted-date";
 import { EmptyState } from "@/components/empty-state";
+import { FormattedDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
 import { NumberBadge } from "@/components/number-badge";
 import { PageComponentLayout } from "@/components/page-component-layout";
@@ -51,7 +52,6 @@ import {
     usePageTour,
 } from "@/features/onboarding/steps/page-tours";
 import { HEAD_CLASS } from "@/features/proposals/components/proposals-table-layout";
-import { buildPaymentsDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { useMemberAddedAt } from "@/hooks/use-member-added-at";
 import { useMemberJoinRequests } from "@/hooks/use-member-invites";
@@ -634,25 +634,28 @@ export default function MembersPage() {
                             <div className="flex flex-col gap-2">
                                 <div className="flex items-center gap-3">
                                     {isMobileSelectMode ? (
-                                        <Checkbox
-                                            checked={selected}
-                                            onClick={(event) =>
-                                                event.stopPropagation()
-                                            }
-                                            onCheckedChange={() =>
-                                                handleToggleMember(
-                                                    member.accountId,
-                                                )
-                                            }
+                                        <span className="flex size-9 shrink-0 items-center justify-center">
+                                            <Checkbox
+                                                checked={selected}
+                                                onClick={(event) =>
+                                                    event.stopPropagation()
+                                                }
+                                                onCheckedChange={() =>
+                                                    handleToggleMember(
+                                                        member.accountId,
+                                                    )
+                                                }
+                                            />
+                                        </span>
+                                    ) : (
+                                        <User
+                                            accountId={member.accountId}
+                                            size="md"
+                                            variant="avatar"
+                                            withLink={false}
+                                            avatarClassName="size-9 rounded-lg"
                                         />
-                                    ) : null}
-                                    <User
-                                        accountId={member.accountId}
-                                        size="md"
-                                        variant="avatar"
-                                        withLink={false}
-                                        avatarClassName="size-9 rounded-lg"
-                                    />
+                                    )}
                                     <div className="min-w-0 flex-1">
                                         <User
                                             accountId={member.accountId}
@@ -1357,7 +1360,6 @@ export default function MembersPage() {
                                             isMemberActionsDisabled ||
                                             !bulkDeleteValidation.canModify
                                         }
-                                        className="rounded-lg bg-general-error-foreground hover:bg-general-error-foreground/90 dark:bg-general-error-foreground"
                                     >
                                         <Icon icon={Delete01Icon} />
                                         {tMembers("remove")}

@@ -3,6 +3,10 @@ import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { quoteHasAppFee } from "@/lib/exchange-fee";
+import {
+    formatAssetForIntentsAPI,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
 import { buildIntentsTransferProposal } from "@/lib/near-proposal-builders";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
@@ -66,7 +70,7 @@ export function buildProposalDescription(
         tokenOutAddress: receiveToken.address,
         amountIn: decimalFromBaseUnits(
             proposalData.quote.amountIn,
-            sellToken.decimals,
+            holdingDecimals(sellToken),
         ).toFixed(),
         amountOut: decimalFromBaseUnits(
             proposalData.quote.amountOut,
@@ -149,7 +153,9 @@ export function buildFungibleTokenProposal(
         comment,
     } = params;
     const amountInSmallestUnit = proposalData.quote.amountIn;
-    const originAsset = sellToken.address;
+    const originAsset = formatAssetForIntentsAPI(
+        sellToken.balanceAssetId || sellToken.address,
+    );
     const isNearToken =
         sellToken.network === NEAR_NETWORK_ID &&
         !sellToken.address.startsWith("nep141:") &&

@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "加载中...",
+        "loading": "加载中",
         "notAvailable": "不适用",
-        "connecting": "连接中...",
+        "connecting": "连接中",
         "save": "保存",
         "cancel": "取消",
         "submit": "提交",
@@ -18,7 +18,7 @@
         "exporting": "导出中",
         "import": "导入",
         "remove": "移除",
-        "removing": "移除中...",
+        "removing": "移除中",
         "edit": "编辑",
         "continue": "继续",
         "select": "选择",
@@ -577,7 +577,7 @@
         "buttons": {
             "noPermissionExport": "您没有导出权限",
             "quotaExhausted": "您的配额已用完",
-            "exporting": "导出中...",
+            "exporting": "导出中",
             "export": "导出"
         },
         "empty": {
@@ -694,6 +694,7 @@
     "proposals": {
         "status": {
             "pending": "待处理",
+            "processing": "处理中",
             "approved": "已批准",
             "rejected": "已拒绝",
             "executed": "已执行",
@@ -704,6 +705,7 @@
         },
         "statusTooltip": {
             "pending": "此请求仍待处理,尚未达到执行所需的投票数。",
+            "processing": "已批准,正在处理中。只需几秒钟。",
             "executed": "在 {required} 名成员中有 {approved} 人批准后已执行。",
             "rejected": "在 {required} 名成员中有 {rejected} 人投票拒绝后已被拒绝。",
             "expired": "由于未获得足够的投票而过期。",
@@ -715,6 +717,7 @@
             "removeTitle": "移除请求",
             "bulkBody": "您即将{action}多个请求。提交后,此决定无法更改。",
             "singleBody": "您即将{action}此请求。确认后,此操作无法撤销。",
+            "ledgerBody": "请保持 Ledger 处于解锁状态。接下来你将在 Ledger 上确认投票。",
             "actionApprove": "批准",
             "actionReject": "拒绝",
             "actionRemove": "移除",
@@ -867,8 +870,7 @@
             "approvalsReceived": "已收到 {received}/{required} 个批准",
             "expiresAt": "过期时间",
             "expiredAt": "已过期于",
-            "exchangingTokens": "正在兑换代币",
-            "exchangingTokensBody": "此请求已获团队批准。代币兑换正在进行中,可能需要一些时间。",
+            "processing": "您的请求已批准,正在处理中 - 只需几秒钟。",
             "requestFailed": "请求失败",
             "requestFailedBody": "团队已批准此请求,但因汇率波动而失败。请创建新请求并再次尝试。",
             "votingPeriod24h": "投票期:24 小时",
@@ -876,8 +878,6 @@
             "reject": "拒绝",
             "approve": "批准",
             "destinationNetwork": "目标网络",
-            "processingPayment": "处理付款中",
-            "processingPaymentBody": "此付款已获团队批准，正在处理中，可能需要一些时间才能完成。",
             "addMember": "添加成员",
             "removeMember": "移除成员",
             "member": "成员",
@@ -939,7 +939,7 @@
                 "voteDescription": "信息会预填好。你创建请求，团队进行投票。"
             },
             "generateLink": "生成邀请链接",
-            "generating": "生成中...",
+            "generating": "生成中",
             "generateFailed": "生成邀请链接失败，请重试。",
             "readyTitle": "邀请链接已就绪",
             "readyDescription": "发给你想添加的人。对方会连接钱包并申请加入。",
@@ -1009,14 +1009,14 @@
             "newMembersCount": "{count, plural, other {# 名新成员}}",
             "updatedMembers": "已更新成员",
             "newMembers": "新成员",
-            "creatingProposal": "正在创建提案...",
+            "creatingProposal": "正在创建提案",
             "confirmSubmit": "创建请求"
         },
         "removeDialog": {
             "title": "移除{count, plural, one {成员} other {成员}}？",
             "nearnBody": "一旦获批,{account} 将从金库中被永久移除,所有相关权限也将被撤销。移除后,此账户将无法再从 NEARN 创建请求。",
             "genericBody": "一旦获批,此操作将从金库中永久移除 <bold>{accounts}</bold>,并撤销所有已分配的权限。",
-            "creatingProposal": "正在创建提案..."
+            "creatingProposal": "正在创建提案"
         },
         "validation": {
             "accountIdRequired": "账户 ID 为必填项",
@@ -1061,7 +1061,7 @@
             "displayNamePlaceholder": "输入显示名称",
             "logo": "标志",
             "logoDescription": "为您的金库上传标志。建议使用 SVG、PNG 或 JPG 格式(256x256 像素)。",
-            "uploading": "上传中...",
+            "uploading": "上传中",
             "removeLogo": "移除",
             "logoUploaded": "标志上传成功",
             "uploadError": "上传图片时出错,请再试一次。",
@@ -1131,16 +1131,20 @@
             "notePlaceholder": "添加备注以便识别此收款人(例如承包商付款、归属分发)。",
             "skipDuplicates": "跳过重复项,仅导入新收款人。",
             "allDuplicatesTooltip": "所有导入的收款人均已在您的地址簿中,因此没有新的可导入项。",
+            "manualAllDuplicates": "{count, plural, =1 {此联系人已存在于您的地址簿中。} other {这些联系人已存在于您的地址簿中。}}",
+            "manualSomeDuplicates": "{total} 个联系人中有 {duplicates} 个已存在于地址簿中。将仅保存新的联系人。",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {此联系人已在您的地址簿中，因此没有新的可保存项。} other {这些联系人已在您的地址簿中，因此没有新的可保存项。}}",
             "duplicateActionTooltip": "启用跳过重复项或移除重复收款人后即可继续。",
-            "adding": "正在添加…",
+            "adding": "正在添加",
             "nothingNew": "没有可导入的新内容",
-            "addRecipientsButton": "{count, plural, other {添加收款人}}"
+            "addRecipientsButton": "保存联系人"
         },
         "removeDialog": {
             "title": "移除收款人",
             "body": "这将从您的联系人中移除 <bold>{names}</bold>。您可以随时再次添加。",
             "bulk": "这将从您的地址簿中移除 <bold>{count, plural, other {# 个收款人}}</bold>。您可以随时再次添加。",
-            "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。"
+            "single": "这将从您的地址簿中移除 <bold>{name}</bold>。您可以随时再次添加此收款人。",
+            "removing": "移除中"
         },
         "importFlow": {
             "title": "导入收款人",
@@ -1148,7 +1152,7 @@
             "foundSummary": "在 {networkCount, plural, other {# 个网络}}上找到 {count, plural, other {# 个收款人}}",
             "uploadPrompt": "上传或粘贴收款人数据",
             "fixErrors": "修复错误以继续",
-            "continueReview": "继续审核"
+            "continueReview": "审核详情"
         },
         "form": {
             "editRecipient": "编辑收款人",
@@ -1251,7 +1255,6 @@
             "orDragDrop": "或拖放至此",
             "token": "代币",
             "destinationNetwork": "目标网络",
-            "uploadFileFirst": "请先上传文件",
             "removeFile": "移除文件",
             "maxFileSize": "最多 1 个文件,最大 1.5 MB,仅限 CSV 文件",
             "noFilePrompt": "没有文件可上传?",
@@ -1329,6 +1332,7 @@
             "enterAmount": "请输入金额"
         },
         "review": "审核兑换",
+        "chainDeliveryUnsupported": "此网络无法用于兑换。",
         "poweredBy": "技术支持:",
         "info": {
             "priceDifference": "价差",
@@ -1541,7 +1545,7 @@
         "proposalDescriptionLabel": "提案描述(可选)",
         "proposalDescriptionPlaceholder": "描述此提案...",
         "createProposal": "创建提案",
-        "creatingProposal": "正在创建提案...",
+        "creatingProposal": "正在创建提案",
         "confirmInWallet": "请在您的钱包中确认",
         "proposalSubmitted": "提案已提交",
         "shareProposal": "您的提案已创建。请将下方链接分享给金库成员进行投票。",
@@ -1591,7 +1595,7 @@
         "relinking": "{count, plural, other {# 个所选金库当前已链接到其他 Telegram 聊天。连接将重新链接它们,并将其聊天 ID 更改为此聊天。}}",
         "connectedToAnother": "已连接到其他聊天",
         "notMember": "您不是任何金库的策略成员。",
-        "connecting": "连接中…",
+        "connecting": "连接中",
         "connect": "连接",
         "settings": {
             "title": "Telegram",
@@ -1802,7 +1806,7 @@
         "noDownloadPermission": "您没有下载此文件的权限。",
         "noExportPermission": "您没有导出权限",
         "quotaUsed": "您的配额已用完",
-        "exporting": "导出中...",
+        "exporting": "导出中",
         "export": "导出",
         "columnSubmissionTime": "提交时间",
         "columnDateRange": "日期范围",
@@ -2181,14 +2185,14 @@
         "moreMembers": "+{count, plural, other {# 名成员}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {已添加 # 个收款人}}",
-        "alreadyExistsToast": "收款人已在地址簿中",
-        "addedSingleToast": "已添加收款人",
-        "addFailedToast": "添加收款人失败",
-        "addSingleFailedToast": "添加收款人失败",
-        "removedToast": "{count, plural, other {已移除 # 个收款人}}",
-        "removeFailedToast": "移除收款人失败",
-        "exportFailedToast": "导出收款人失败"
+        "addedToast": "{count, plural, =1 {联系人已成功保存} other {已添加 # 个联系人}}",
+        "alreadyExistsToast": "联系人已在地址簿中",
+        "addedSingleToast": "已添加联系人",
+        "addFailedToast": "添加联系人失败",
+        "addSingleFailedToast": "添加联系人失败",
+        "removedToast": "{count, plural, =1 {联系人已成功移除} other {已移除 # 个联系人}}",
+        "removeFailedToast": "移除联系人失败",
+        "exportFailedToast": "导出联系人失败"
     },
     "treasuryMutations": {
         "savedToast": "金库已保存到您的列表",
@@ -2399,8 +2403,9 @@
         }
     },
     "warnings": {
+        "gotIt": "知道了",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "于",
             "until": "至"
@@ -2491,7 +2496,7 @@
             "title": "删除模板",
             "body": "确定删除 <b>{name}</b>？成员将无法再使用它发起提案。此操作无法撤销。",
             "confirm": "删除",
-            "deleting": "正在删除…"
+            "deleting": "正在删除"
         },
         "editor": {
             "nameLabel": "名称",
@@ -2652,7 +2657,7 @@
         "save": "保存",
         "edit": "编辑",
         "remove": "移除",
-        "uploading": "上传中...",
+        "uploading": "上传中",
         "saveSuccess": "您的更改已保存。",
         "saveError": "无法保存更改。请重试。",
         "invalidImage": "请选择有效的图片文件。",

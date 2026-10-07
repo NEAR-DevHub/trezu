@@ -12,22 +12,15 @@ import { CopyButton } from "@/components/copy-button";
 import { FormattedDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
 import { SheetHandle } from "@/components/mobile-shell/sheet-handle";
-import {
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    mobileInsetSheetClassName,
-} from "@/components/modal";
+import { Dialog, DialogContent, DialogTitle } from "@/components/modal";
 import { NetworkList } from "@/components/network-list";
 import { User } from "@/components/user";
 import { formatShortAddress } from "@/lib/format-short-address";
-import { cn } from "@/lib/utils";
 import { useChains } from "../chains";
 import type { AddressBookEntry } from "../types";
 import { formatAddressBookDisplayAddress } from "../utils/find-entry";
 
-const ACTION_CLASS =
-    "h-10 min-w-0 w-auto flex-1 overflow-hidden rounded-2xl bg-general-bg-secondary px-5 text-base font-semibold text-general-secondary-foreground shadow-none hover:bg-general-bg-secondary/80";
+const ACTION_CLASS = "min-w-0 flex-1 overflow-hidden";
 
 const SECTION_LABEL_CLASS =
     "text-sm font-semibold leading-normal text-general-secondary-foreground";
@@ -76,7 +69,7 @@ export function ContactActionSheet({
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                className={cn(mobileInsetSheetClassName, "gap-6")}
+                className="gap-6"
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <SheetHandle />
@@ -124,7 +117,7 @@ export function ContactActionSheet({
                                 size="md"
                                 withLink={false}
                                 withHoverCard={false}
-                                avatarClassName="size-9!"
+                                avatarClassName="rounded-lg"
                             />
                         </SheetSection>
                     ) : null}
@@ -149,7 +142,8 @@ export function ContactActionSheet({
                 <div className="mt-3 flex gap-3">
                     <Button
                         type="button"
-                        variant="unstyled"
+                        variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onSend}
                     >
@@ -158,7 +152,8 @@ export function ContactActionSheet({
                     </Button>
                     <Button
                         type="button"
-                        variant="unstyled"
+                        variant="secondary"
+                        size="lg"
                         className={ACTION_CLASS}
                         onClick={onRemove}
                     >

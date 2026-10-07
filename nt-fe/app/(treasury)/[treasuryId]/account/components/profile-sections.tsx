@@ -1,17 +1,12 @@
 "use client";
 
-import {
-    LoaderCircleIcon,
-    User02Icon,
-    User03Icon,
-} from "@hugeicons/core-free-icons";
+import { User02Icon, User03Icon } from "@hugeicons/core-free-icons";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
-import { Icon } from "@/components/icon";
 import { Input } from "@/components/input";
 import {
     disabledActionClasses,
@@ -214,16 +209,11 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             type="submit"
                             className={cn(
                                 "h-10 px-4 text-sm leading-none",
-                                disabledActionClasses,
+                                !savingName && disabledActionClasses,
                             )}
-                            disabled={busy || !canSaveName}
+                            loading={savingName}
+                            disabled={uploadingImage || !canSaveName}
                         >
-                            {savingName && (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin"
-                                />
-                            )}
                             {t("save")}
                         </Button>
                     </form>
@@ -253,14 +243,9 @@ export function ProfileSections({ accountId }: { accountId: string }) {
                             variant="secondary"
                             className="h-10 px-4 text-sm leading-none"
                             onClick={() => fileInputRef.current?.click()}
-                            disabled={busy}
+                            loading={uploadingImage}
+                            disabled={savingName}
                         >
-                            {uploadingImage && (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin"
-                                />
-                            )}
                             {uploadingImage ? t("uploading") : t("edit")}
                         </Button>
                         {avatarUrl && (

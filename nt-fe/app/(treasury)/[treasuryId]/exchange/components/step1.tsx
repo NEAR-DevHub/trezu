@@ -1,7 +1,8 @@
 "use client";
-import { ArrowDown01Icon, LoaderCircleIcon } from "@hugeicons/core-free-icons";
+import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/button";
 import { CreateRequestButton } from "@/components/create-request-button";
@@ -14,7 +15,9 @@ import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
-import { DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
+import { isOffNearChainDelivery } from "@/lib/oneclick-asset-routing";
+import { cn } from "@/lib/utils";
+import { BTC_TOKEN, DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
 import { useExchangeAmountQuote } from "../hooks/use-exchange-amount-quote";
 import { SwapQuoteDetails } from "./swap-quote-details";
@@ -109,14 +112,31 @@ export function Step1({
 
     // Reset receive token if it's no longer valid based on filter
     useEffect(() => {
-        const isReceiveTokenValid = filterReceiveTokens({
-            address: receiveToken.address,
-            symbol: receiveToken.symbol,
-            network: receiveToken.network,
-            residency: receiveToken.residency,
-        });
+        const isReceiveTokenValid =
+            filterReceiveTokens({
+                address: receiveToken.address,
+                symbol: receiveToken.symbol,
+                network: receiveToken.network,
+                residency: receiveToken.residency,
+            }) &&
+            !isOffNearChainDelivery({
+                id: receiveToken.address,
+                balanceAssetId: receiveToken.balanceAssetId,
+                quoteAssetId: receiveToken.quoteAssetId,
+            });
 
         if (!isReceiveTokenValid) {
+            if (
+                isOffNearChainDelivery({
+                    id: receiveToken.address,
+                    balanceAssetId: receiveToken.balanceAssetId,
+                    quoteAssetId: receiveToken.quoteAssetId,
+                })
+            ) {
+                toast.info(tEx("chainDeliveryUnsupported"), {
+                    id: "chain-delivery-unsupported",
+                });
+            }
             // Reset to a default valid token (ETH or first available)
             form.setValue("receiveToken", ETH_TOKEN);
             onQuoteInputsChanged();
@@ -125,11 +145,40 @@ export function Step1({
     }, [
         isSellTokenFTNEAR,
         receiveToken.address,
+        receiveToken.balanceAssetId,
+        receiveToken.quoteAssetId,
         receiveToken.symbol,
         receiveToken.network,
         receiveToken.residency,
         filterReceiveTokens,
         onQuoteInputsChanged,
+        tEx,
+    ]);
+
+    // A chain-delivery sell row spends the held coin but is labeled as another
+    // chain. Swap has no address for that chain, so fall back to BTC.
+    useEffect(() => {
+        if (
+            !isOffNearChainDelivery({
+                id: sellToken.address,
+                balanceAssetId: sellToken.balanceAssetId,
+                quoteAssetId: sellToken.quoteAssetId,
+            })
+        ) {
+            return;
+        }
+        toast.info(tEx("chainDeliveryUnsupported"), {
+            id: "chain-delivery-unsupported",
+        });
+        form.setValue("sellToken", BTC_TOKEN);
+        onQuoteInputsChanged();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- form.setValue is stable
+    }, [
+        sellToken.address,
+        sellToken.balanceAssetId,
+        sellToken.quoteAssetId,
+        onQuoteInputsChanged,
+        tEx,
     ]);
 
     // Validate tokens when they change
@@ -193,6 +242,7 @@ export function Step1({
                         tokenSelect={{
                             filterTokens: filterSellTokens,
                             autoSelect: false,
+                            hideOffNearChainDelivery: true,
                         }}
                         usdValueOverride={
                             quoteData?.quote
@@ -214,16 +264,15 @@ export function Step1({
                         <Button
                             type="button"
                             variant="unstyled"
-                            className="size-8 rounded-lg border border-general-border bg-card p-0 text-muted-foreground shadow-sm hover:bg-card"
+                            className={cn(
+                                "size-8 rounded-lg border border-general-border p-0 shadow-sm",
+                                !isQuoteBusy &&
+                                    "bg-card text-muted-foreground hover:bg-card",
+                            )}
                             onClick={handleSwapTokens}
-                            disabled={isQuoteBusy}
+                            loading={isQuoteBusy}
                         >
-                            {isQuoteBusy ? (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin text-muted-foreground"
-                                />
-                            ) : (
+                            {isQuoteBusy ? null : (
                                 <Icon icon={ArrowDown01Icon} />
                             )}
                         </Button>
@@ -247,6 +296,7 @@ export function Step1({
                         filterTokens: filterReceiveTokens,
                         showPopularAssets: true,
                         autoSelect: false,
+                        hideOffNearChainDelivery: true,
                     }}
                     usdValueOverride={
                         quoteData?.quote

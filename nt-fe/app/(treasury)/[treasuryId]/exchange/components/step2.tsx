@@ -24,6 +24,7 @@ import {
     quoteHasAppFee,
 } from "@/lib/exchange-fee";
 import { minimumReceivedFromRaw } from "@/lib/minimum-received";
+import { holdingDecimals } from "@/lib/oneclick-asset-routing";
 import { cn } from "@/lib/utils";
 import { PROPOSAL_REFRESH_INTERVAL } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
@@ -101,7 +102,7 @@ export function Step2({ handleBack }: StepProps) {
             ? {
                   amount: localLiveQuoteData.quote.amountIn,
                   amountFormatted: localLiveQuoteData.quote.amountInFormatted,
-                  tokenDecimals: sellToken.decimals,
+                  tokenDecimals: holdingDecimals(sellToken),
               }
             : null,
     );
@@ -167,7 +168,10 @@ export function Step2({ handleBack }: StepProps) {
                     <>
                         <div className="relative flex flex-col gap-2 sm:flex-row sm:items-stretch">
                             <ExchangeSummaryCard
-                                token={sellToken}
+                                token={{
+                                    ...sellToken,
+                                    decimals: holdingDecimals(sellToken),
+                                }}
                                 amount={sellAmount}
                                 usdValue={localLiveQuoteData.quote.amountInUsd}
                             />
@@ -262,7 +266,9 @@ export function Step2({ handleBack }: StepProps) {
                                         kind="token"
                                         value={feeAmount}
                                         symbol={sellToken.symbol}
-                                        tokenDecimals={sellToken.decimals}
+                                        tokenDecimals={holdingDecimals(
+                                            sellToken,
+                                        )}
                                         unitPriceUsd={sellToken.price}
                                         profile="standard"
                                         rounding="up"

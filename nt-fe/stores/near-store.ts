@@ -8,8 +8,10 @@ import {
 import type { SignDelegateActionsParams } from "@hot-labs/near-connect/build/types";
 import { useQueryClient } from "@tanstack/react-query";
 import SignClient from "@walletconnect/sign-client";
+import { createElement } from "react";
 import { toast } from "sonner";
 import { create } from "zustand";
+import { ToastActionButton } from "@/components/toaster";
 import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getNearStoreMessages } from "@/i18n/store-messages";
@@ -19,10 +21,6 @@ import {
     trackEvent,
 } from "@/lib/analytics";
 import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
-import {
-    isMemberAddedProposalKind,
-    memberAddedAtQueryKey,
-} from "@/lib/member-added-at";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -36,6 +34,10 @@ import {
     getKindFromProposal,
     type ProposalPermissionKind,
 } from "@/lib/config-utils";
+import {
+    isMemberAddedProposalKind,
+    memberAddedAtQueryKey,
+} from "@/lib/member-added-at";
 import { ensurePasskeyWallet } from "@/lib/passkey-wallet";
 import {
     getLastProposalId,
@@ -224,6 +226,7 @@ interface NearStore {
     // with; used to decide whether it can be reused or must be rebuilt.
     connectorExcludeKey: string | null;
     walletAccountId: string | null; // Raw wallet account ID
+    walletId: string | null; // Connected wallet's manifest id, e.g. "ledger"
     isInitializing: boolean;
 
     // Auth state
@@ -277,6 +280,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
     connector: null,
     connectorExcludeKey: null,
     walletAccountId: null,
+    walletId: null,
     isInitializing: true,
 
     // Auth state
@@ -359,6 +363,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             clearSessionHint();
             set({
                 walletAccountId: null,
+                walletId: null,
                 isAuthenticated: false,
                 hasAcceptedTerms: false,
                 isAuthenticating: false,
@@ -448,6 +453,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
             markSessionHint();
             set({
                 walletAccountId: accountId,
+                walletId: wallet.manifest.id,
                 isAuthenticated: true,
                 hasAcceptedTerms: loginResponse.termsAccepted,
                 user: {
@@ -501,6 +507,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
         clearSessionHint();
         set({
             walletAccountId: null,
+            walletId: null,
             isAuthenticated: false,
             hasAcceptedTerms: false,
             isAuthenticating: false,
@@ -552,17 +559,16 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 // If wallet state is gone, the session cookie is useless — log out.
                 const { connector, init } = get();
                 const conn = connector ?? (await init());
-                let walletValid = false;
+                let walletId: string | null = null;
                 if (conn) {
                     try {
-                        await conn.wallet();
-                        walletValid = true;
+                        walletId = (await conn.wallet()).manifest.id;
                     } catch {
                         // Wallet has no accounts — localStorage was likely cleared
                     }
                 }
 
-                if (!walletValid) {
+                if (!walletId) {
                     try {
                         await authLogout();
                     } catch {
@@ -574,6 +580,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         hasAcceptedTerms: false,
                         user: null,
                         walletAccountId: null,
+                        walletId: null,
                     });
                     return;
                 }
@@ -587,6 +594,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                         hasAcceptedV1Terms: user.hasAcceptedV1Terms ?? false,
                     },
                     walletAccountId: user.accountId,
+                    walletId,
                 });
                 identifyAnalyticsUser(user.accountId);
             } else {
@@ -596,6 +604,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                     hasAcceptedTerms: false,
                     user: null,
                     walletAccountId: null,
+                    walletId: null,
                 });
             }
         } catch (error) {
@@ -605,6 +614,7 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 hasAcceptedTerms: false,
                 user: null,
                 walletAccountId: null,
+                walletId: null,
             });
         }
     },
@@ -838,6 +848,7 @@ export const useNear = () => {
     const {
         connector,
         walletAccountId,
+        walletId,
         isInitializing,
         isAuthenticated,
         hasAcceptedTerms,
@@ -899,14 +910,15 @@ export const useNear = () => {
         // Show toast after invalidation
         if (showToast) {
             toast.success(toastMessage, {
-                duration: 10000,
-                action: {
-                    label: getNearStoreMessages().viewRequest,
-                    onClick: () =>
+                duration: 5000,
+                action: createElement(ToastActionButton, {
+                    onClick: () => {
                         window.open(
                             `/${params.treasuryId}/requests?tab=InProgress`,
-                        ),
-                },
+                        );
+                    },
+                    children: getNearStoreMessages().viewRequest,
+                }),
             });
         }
     };
@@ -925,13 +937,14 @@ export const useNear = () => {
         // Show toast at the same time as UI updates
         const toastAction =
             votes.length === 1 && votes[0].vote !== "Remove"
-                ? {
-                      label: getNearStoreMessages().viewRequest,
-                      onClick: () =>
+                ? createElement(ToastActionButton, {
+                      onClick: () => {
                           window.open(
                               `/${treasuryId}/requests/${votes[0].proposalId}`,
-                          ),
-                  }
+                          );
+                      },
+                      children: getNearStoreMessages().viewRequest,
+                  })
                 : undefined;
         const messages = getNearStoreMessages();
         const text =
@@ -941,7 +954,7 @@ export const useNear = () => {
                   ? messages.votesSubmitted
                   : messages.voteSubmitted;
         toast.success(text, {
-            duration: 10000,
+            duration: 5000,
             action: toastAction,
         });
 
@@ -1015,6 +1028,7 @@ export const useNear = () => {
         connector,
         accountId,
         walletAccountId,
+        walletId,
         isInitializing,
         isAuthenticated,
         hasAcceptedTerms,
