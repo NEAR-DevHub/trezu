@@ -15,7 +15,10 @@ import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
-import { isOffNearChainDelivery } from "@/lib/oneclick-asset-routing";
+import {
+    isChainDeliveryRoute,
+    isOffNearChainDelivery,
+} from "@/lib/oneclick-asset-routing";
 import { cn } from "@/lib/utils";
 import { BTC_TOKEN, DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
@@ -155,11 +158,12 @@ export function Step1({
         tEx,
     ]);
 
-    // A chain-delivery sell row spends the held coin but is labeled as another
-    // chain. Swap has no address for that chain, so fall back to BTC.
+    // A chain-delivery sell row repeats a held balance under another network
+    // (ZEC on NEAR, NEAR on Solana). The flip button can still put one here
+    // from the receive side, so fall back to BTC.
     useEffect(() => {
         if (
-            !isOffNearChainDelivery({
+            !isChainDeliveryRoute({
                 id: sellToken.address,
                 balanceAssetId: sellToken.balanceAssetId,
                 quoteAssetId: sellToken.quoteAssetId,
@@ -243,6 +247,7 @@ export function Step1({
                             filterTokens: filterSellTokens,
                             autoSelect: false,
                             hideOffNearChainDelivery: true,
+                            hideChainDeliveryRoutes: true,
                         }}
                         usdValueOverride={
                             quoteData?.quote
