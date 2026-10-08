@@ -19,6 +19,7 @@ import {
     getProposalStatusDateInfo,
     getProposalUIKind,
     isQuoteDeadlineBeforeVotingPeriod,
+    type UIProposalStatus,
 } from "../utils/proposal-utils";
 import {
     extractReceiptProposalData,
@@ -139,7 +140,11 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
 
     // Fetch swap status for executed intents proposals (exchange or payment).
     const shouldFetchSwapStatus = isExecuted && hasDepositAddress;
-    const { data: swapStatus, isLoading: isLoadingSwapStatus } = useSwapStatus(
+    const {
+        data: swapStatus,
+        isLoading: isLoadingSwapStatus,
+        isPending: isSwapStatusPending,
+    } = useSwapStatus(
         depositAddress || null,
         undefined,
         shouldFetchSwapStatus,
@@ -166,26 +171,27 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
             fallbackDate: confidentialExecutedAt ?? publicExecutedAt,
         });
     const isDateLoading = isExecuted && resolvedDateLoading;
-    const status = getProposalStatus(proposal, policy, swapStatus?.status);
+    // `undefined` until the swap query resolves, matching `useProposalStatus`.
+    const status: UIProposalStatus | undefined =
+        shouldFetchSwapStatus && isSwapStatusPending
+            ? undefined
+            : getProposalStatus(proposal, policy, swapStatus?.status);
     const isHidden = isConfidential && isGuestTreasury;
 
     // Swap is still settling (no finalized transaction yet).
     const isSwapProcessing = swapStatus?.status === "PROCESSING";
-    // Confidential swaps use the NEAR Intents /mask explorer, which does
-    // not resolve. Hide that link and leave the PDF receipt as the artifact.
-    // Also hide the link for confidential requests while the swap is still
-    // processing — there is no finalized transaction to link to yet.
-    const hideTransactionLink =
-        (isConfidentialSwap && hasDepositAddress) ||
-        (isConfidentialRequestProposal && isSwapProcessing);
-    // near.com confidential payments link to NEAR Blocks; all other
-    // intents-routed proposals use the NEAR Intents explorer (masked for
-    // confidential).
+    // The NEAR Intents /mask explorer has no page when both sides are
+    // confidential (swaps and near.com payments), so those leave the PDF
+    // receipt as the only artifact. Also hide the link for confidential
+    // requests while the swap is still processing — there is no finalized
+    // transaction to link to yet.
     const isConfidentialNearComPayment =
         isConfidentialPayment &&
         isNearComPaymentRoute(confidentialPaymentData ?? {});
-    const useNearblocksLink =
-        !hasDepositAddress || isConfidentialNearComPayment;
+    const hideTransactionLink =
+        ((isConfidentialSwap || isConfidentialNearComPayment) &&
+            hasDepositAddress) ||
+        (isConfidentialRequestProposal && isSwapProcessing);
     // Receipt button visibility rules:
     // - Proposal must be executed and of a receipt-eligible kind.
     // - For intents-routed proposals (with depositAddress), swap status must be SUCCESS.
@@ -222,7 +228,7 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
 
     const transactionUrl =
         getTransactionExplorerLink({
-            depositAddress: useNearblocksLink ? null : depositAddress,
+            depositAddress,
             isConfidential: isConfidentialRequestProposal,
             transactionHash: transaction?.transaction_hash,
         })?.url ?? null;

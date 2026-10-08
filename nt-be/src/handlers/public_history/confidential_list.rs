@@ -58,6 +58,7 @@ struct ConfidentialBalanceChangeRow {
     quote_deposit_address: Option<String>,
     quote_metadata: Option<serde_json::Value>,
     notes: Option<String>,
+    fully_confidential: Option<bool>,
 }
 
 impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for ConfidentialBalanceChangeRow {
@@ -98,6 +99,7 @@ impl sqlx::FromRow<'_, sqlx::postgres::PgRow> for ConfidentialBalanceChangeRow {
             quote_deposit_address: row.try_get("quote_deposit_address")?,
             quote_metadata: row.try_get("quote_metadata")?,
             notes: row.try_get("notes")?,
+            fully_confidential: row.try_get("fully_confidential")?,
         })
     }
 }
@@ -266,6 +268,18 @@ fn build_filtered_legs_query(
                         LIMIT 1
                     )
                 ) AS notes,
+                (
+                    SELECT b.deposit_type = 'CONFIDENTIAL_INTENTS'
+                        AND b.recipient_type IS NOT DISTINCT FROM 'CONFIDENTIAL_INTENTS'
+                    FROM bronze_confidential_history_events b
+                    WHERE b.id = CASE
+                        WHEN gold_treasury_ledger_events.gold_event_key
+                            ~ '^confidential:[0-9]+$'
+                        THEN split_part(
+                            gold_treasury_ledger_events.gold_event_key, ':', 2
+                        )::bigint
+                    END
+                ) AS fully_confidential,
                 COALESCE(proposal_executed_at, event_time) AS event_time_display,
                 CASE
                     WHEN transaction_type = 'sent' THEN token_out
@@ -318,6 +332,7 @@ fn build_filtered_legs_query(
                 quote_deposit_address,
                 quote_metadata,
                 notes,
+                fully_confidential,
                 event_time_display
             FROM legs
             WHERE 1 = 1
@@ -610,6 +625,7 @@ struct LegRow {
     created_at: DateTime<Utc>,
     proposal_id: Option<i64>,
     quote_deposit_address: Option<String>,
+    fully_confidential: Option<bool>,
     notes: Option<String>,
     has_app_fee: Option<bool>,
     usd_value: Option<BigDecimal>,
@@ -651,6 +667,7 @@ impl LegRow {
             quote_deposit_address,
             quote_metadata,
             notes,
+            fully_confidential,
         } = row;
         let has_app_fee = stored_has_app_fee(quote_metadata.as_ref());
 
@@ -680,6 +697,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    fully_confidential,
                     notes,
                     has_app_fee,
                     usd_value: amount_out_usd,
@@ -722,6 +740,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    fully_confidential,
                     notes,
                     has_app_fee,
                     usd_value: amount_in_usd,
@@ -760,6 +779,7 @@ impl LegRow {
                     created_at,
                     proposal_id,
                     quote_deposit_address,
+                    fully_confidential,
                     notes,
                     has_app_fee,
                     usd_value: amount_in_usd.clone(),
@@ -809,6 +829,7 @@ impl LegRow {
             usd_value: self.usd_value.clone(),
             proposal_id: self.proposal_id,
             quote_deposit_address: self.quote_deposit_address.clone(),
+            fully_confidential: self.fully_confidential,
             has_app_fee: self.has_app_fee,
             notes: self.notes.clone(),
         }
@@ -1183,6 +1204,29 @@ mod tests {
         let mut unrelated = test_params(&dao_id, None, None);
         unrelated.token_ids = Some(vec!["nep141:other.near".to_string()]);
         assert_eq!(count_balance_change_legs(&pool, &unrelated).await?, 0);
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn fully_confidential_requires_both_sides_confidential(pool: PgPool) -> sqlx::Result<()> {
+        let state = test_state(pool.clone()).await;
+
+        let send_dao = format!("conf-list-{}.sputnik-dao.near", Uuid::new_v4());
+        seed_sent_confidential_change(&pool, &send_dao, "bob.near").await?;
+        let send = fetch_balance_change_legs(&state, &test_params(&send_dao, None, None))
+            .await
+            .expect("send leg should load");
+        assert_eq!(send.len(), 1);
+        assert_eq!(send[0].fully_confidential, Some(false));
+
+        let swap_dao = format!("conf-list-{}.sputnik-dao.near", Uuid::new_v4());
+        seed_exchange_confidential_change(&pool, &swap_dao).await?;
+        let swap = fetch_balance_change_legs(&state, &test_params(&swap_dao, None, None))
+            .await
+            .expect("exchange leg should load");
+        assert_eq!(swap.len(), 1);
+        assert_eq!(swap[0].fully_confidential, Some(true));
 
         Ok(())
     }

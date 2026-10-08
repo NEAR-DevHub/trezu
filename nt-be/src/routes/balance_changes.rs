@@ -119,6 +119,11 @@ pub struct EnrichedBalanceChange {
     /// row as intents-routed so clients can link the intents explorer.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub quote_deposit_address: Option<String>,
+    /// Both the deposit and recipient side of the 1Click transfer are
+    /// confidential. The public intents explorer has no page for these, so
+    /// clients must not link `/mask/{quote_deposit_address}`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fully_confidential: Option<bool>,
     /// From the stored 1Click quote / proposal description. Missing on older
     /// swaps, which always charged an app fee.
     #[serde(skip_serializing_if = "Option::is_none")]

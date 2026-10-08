@@ -1,10 +1,10 @@
-import type { ChainIcons } from "@/lib/api";
-import { NEAR_COM_ICON } from "@/constants/token";
 import {
     NEAR_COM_DIRECT_NETWORK_ID,
     NEAR_COM_NETWORK_ID,
     NEAR_COM_NETWORK_NAME,
 } from "@/constants/network-ids";
+import { NEAR_COM_ICON } from "@/constants/token";
+import type { ChainIcons } from "@/lib/api";
 
 /**
  * Display labels aligned with near.com / defuse-frontend
@@ -73,6 +73,10 @@ const NETWORK_DISPLAY_NAMES: Record<string, string> = {
     aleo: "Aleo",
     dash: "Dash",
     adi: "ADI",
+    hood: "Robinhood",
+    robinhood: "Robinhood",
+    qtc: "Quantus",
+    quantus: "Quantus",
 };
 
 export function getNetworkDisplayName(name: string): string {

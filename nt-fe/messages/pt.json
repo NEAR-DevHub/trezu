@@ -194,14 +194,11 @@
             "title": "Catálogo de endereços"
         },
         "payments": {
-            "title": "Pagamentos",
-            "confidentialTitle": "Pagamentos confidenciais",
-            "description": "Envie fundos com segurança e proteção."
+            "title": "Pagamentos"
         },
         "exchange": {
             "title": "Trocar",
-            "confidentialTitle": "Trocar",
-            "description": "Troque seus tokens de forma segura e eficiente"
+            "confidentialTitle": "Trocar"
         },
         "vesting": {
             "title": "Vesting",
@@ -339,13 +336,11 @@
         "anythingElseLost": "Tudo enviado de outro lugar é perdido",
         "anythingElseLostSub": "Exchanges, carteiras públicas, outras redes – não pode ser recuperado.",
         "confidentialAckCheckbox": "Entendo que depósitos de fora do near.com ou near business serão perdidos.",
-        "onlyFromNearBusiness": "Apenas do <bold>near business</bold>",
+        "onlyFromNearBusiness": "Apenas do <bold>near business</bold> ou <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Apenas do <bold>near.com confidencial</bold>",
-        "onlyFromNearBusinessOrNearcom": "Apenas do <bold>near business</bold> ou <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Reutilizável.</bold> Não expira",
-        "fundsOutsideNearBusinessLost": "Fundos enviados de fora do <bold>near business</bold> serão perdidos",
+        "fundsOutsideNearBusinessLost": "Fundos enviados de fora do <bold>near business</bold> ou <bold>near.com</bold> serão perdidos.",
         "fundsOutsideNearcomLost": "Fundos enviados de fora do <bold>near.com confidencial</bold> serão perdidos",
-        "fundsOutsideNearBusinessOrNearcomLost": "Fundos enviados de fora do <bold>near business</bold> ou <bold>near.com</bold> serão perdidos.",
         "publicNetworkRecommendation": "Deposite apenas da rede <bold>{network}</bold>. Comece com uma pequena transação de teste antes de enviar o valor total.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "Peso",
         "source": "Origem",
         "send": "Enviar",
-        "exchange": "Trocar",
         "swap": "Trocar",
         "comingSoon": "Em breve",
         "vesting": "Vesting",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "Aprovar",
             "reject": "Rejeitar",
-            "deposit": "Depositar",
             "viewRequest": "Ver solicitação"
         },
         "table": {
@@ -1725,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Adicionar outro membro",
         "validation": {
-            "rolesRequired": "Pelo menos uma função é obrigatória",
-            "duplicateAddress": "O endereço já é membro"
+            "rolesRequired": "Pelo menos uma função é obrigatória"
         },
         "enterAddress": "Inserir endereço",
         "clearAddress": "Limpar endereço",
@@ -1895,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Rede do destinatário",
         "placeholder": "Selecionar rede do destinatário",
-        "enterAddressFirst": "Insira primeiro o endereço do destinatário",
         "noCompatibleNetwork": "Nenhuma rede corresponde a este endereço",
         "selectPlaceholder": "Selecionar rede",
         "title": "Selecionar rede",
@@ -1903,8 +1894,6 @@
         "fromAddressBook": "Do catálogo de endereços",
         "otherAvailable": "Outras disponíveis",
         "incompatible": "Incompatível",
-        "comingSoon": "Em breve",
-        "forMembersOnly": "Apenas para membros",
         "nearComDescription": "Rede para near business e near.com",
         "internalTag": "Interno"
     },
@@ -2078,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Salvar nos contatos",
-        "walletCopiedToast": "Endereço da carteira copiado para a área de transferência",
         "copyWalletAddress": "Copiar endereço da carteira"
     },
     "infoDisplay": {
@@ -2181,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Usar máx.",
-        "max": "MAX",
         "insufficientTokens": "Saldo insuficiente. Complete o saldo antes da aprovação.",
         "insufficientTokensForFee": "Tokens insuficientes para cobrir a taxa de rede ({fee} {symbol}). Você pode enviar a solicitação e completar o saldo antes da aprovação.",
         "balance": "Saldo: {amount} {symbol}",
@@ -2192,9 +2179,6 @@
         "noPermission": "Você não tem permissão para criar uma solicitação",
         "paused": "Pausado temporariamente",
         "brieflyUnavailable": "Brevemente indisponível"
-    },
-    "address": {
-        "copied": "Endereço copiado para a área de transferência"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Membros que podem votar",
@@ -2359,15 +2343,7 @@
             "back": "Voltar"
         },
         "progress": {
-            "title": "Siga passos rápidos para explorar a tesouraria",
             "addAssetsTitle": "Adicione seus ativos",
-            "addAssetsDescription": "Comece adicionando ativos para vê-los em ação.",
-            "deposit": "Depositar",
-            "createPaymentTitle": "Crie uma solicitação de pagamento",
-            "createPaymentDescription": "Crie uma solicitação de pagamento para concluir sua configuração.",
-            "send": "Enviar",
-            "useSolo": "Usar Solo",
-            "addTeamMemberDescription": "Você configurou sua conta com sucesso. Ótimo começo!",
             "addTeamMemberTitle": "Criar conta da tesouraria",
             "getStarted": "Começar",
             "setupThresholdTitle": "Definir limite",
