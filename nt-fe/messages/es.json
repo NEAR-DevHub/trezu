@@ -2096,15 +2096,22 @@
         "nativeToken": "Token nativo"
     },
     "exchangeErrors": {
-        "noRoute": "No se encontró intercambio. Prueba con un importe menor u otro token.",
+        "noRoute": "No se encontró intercambio. Prueba con otro importe u otro token.",
         "amountTooLow": "Importe demasiado bajo para el swap. Los swaps entre cadenas requieren un mínimo mayor para cubrir tarifas de red.",
         "amountTooLowWithMin": "El importe es demasiado bajo para cubrir las comisiones de red. Introduce al menos {min} {token}.",
         "insufficientBalance": "Saldo insuficiente para este swap.",
         "networkError": "Error de red. Comprueba tu conexión e inténtalo de nuevo.",
-        "marketClosed": "El mercado de esta acción está cerrado. La negociación se reanudará cuando el mercado vuelva a abrir.",
         "stockMinimum": "Los intercambios de acciones requieren al menos {min}. Introduce un importe mayor.",
-        "stockNoQuote": "No hay cotización para esta acción con este importe. Los intercambios de acciones suelen requerir {amount} o más, así que prueba con un importe mayor.",
         "fetchFailed": "No se pudo obtener la cotización"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} cotiza de domingo a las 20:00 a viernes a las 20:00 ET. Puedes crear esta solicitud en cualquier momento, pero solo se puede aprobar con el mercado abierto.",
+        "marketClosed": "El mercado de {symbol} está cerrado hasta el {reopensAt}. Aun así puedes crear esta solicitud, pero no se podrá aprobar hasta que el mercado reabra.",
+        "createRegion": "Los swaps de acciones no están disponibles en tu región.",
+        "unavailableInRegion": "No disponible en tu región",
+        "approveRegion": "Los swaps de acciones no están disponibles en tu región, así que no puedes aprobar {count, plural, one {esta solicitud} other {# de estas solicitudes}}.",
+        "approveMarketClosed": "El mercado está cerrado hasta el {reopensAt}, así que {count, plural, one {este swap de acciones aún no se puede aprobar} other {# swaps de acciones aún no se pueden aprobar}}. Aprueba cuando reabra.",
+        "approveMarketClosedNoTime": "El mercado está cerrado, así que {count, plural, one {este swap de acciones aún no se puede aprobar} other {# swaps de acciones aún no se pueden aprobar}}. Aprueba cuando reabra."
     },
     "tokenSelectDialog": {
         "selectToken": "Seleccionar token",

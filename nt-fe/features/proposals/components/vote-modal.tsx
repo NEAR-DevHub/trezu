@@ -13,6 +13,7 @@ import {
 import { Tooltip } from "@/components/tooltip";
 import { SlotWarning } from "@/components/warning-message";
 import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
+import { useStockApproveBlock } from "@/hooks/use-stock-restrictions";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock, useSlotBlock } from "@/hooks/use-warnings";
 import type { Proposal } from "@/lib/proposals-api";
@@ -59,13 +60,16 @@ export function VoteModal({
         voteWarning,
     );
     const approveBlock = useProposalApproveBlock(proposals);
+    const stockBlock = useStockApproveBlock(proposals);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Approving a payment/exchange proposal is blocked when that feature has a
-    // paused warning. A notice is shown and does not block. Rejection (and
-    // removal) is never blocked.
+    // paused warning, or by the stock region / market-hours rules. A notice is
+    // shown and does not block. Rejection (and removal) is never blocked.
     const isApprove = vote === "Approve";
-    const approveBlocked = isApprove && approveBlock.anyBlocked;
+    const stockApproveBlocked = isApprove && stockBlock.anyBlocked;
+    const approveBlocked =
+        isApprove && (approveBlock.anyBlocked || stockBlock.anyBlocked);
     const blockedWarnings = approveBlock.blockedWarnings.filter(
         (warning) => warning.slot,
     );
@@ -142,7 +146,10 @@ export function VoteModal({
                     </DialogDescription>
                 </div>
                 <SlotWarning slot={voteSlot} />
-                {approveBlocked && (
+                {stockApproveBlocked && stockBlock.message && (
+                    <InfoAlert message={stockBlock.message} />
+                )}
+                {isApprove && approveBlock.anyBlocked && (
                     <div className="flex flex-col gap-2">
                         {isBulk && (
                             <InfoAlert
@@ -210,7 +217,8 @@ export function VoteModal({
                                 loading={isSubmitting}
                                 disabled={voteSlotBlocked || approveBlocked}
                             >
-                                {voteSlotBlocked || approveBlocked
+                                {voteSlotBlocked ||
+                                (isApprove && approveBlock.anyBlocked)
                                     ? tCreate("brieflyUnavailable")
                                     : isSubmitting
                                       ? vote === "Remove"

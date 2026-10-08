@@ -155,12 +155,6 @@ export function calculateMarketPriceDifference(
 export const STOCK_MIN_SWAP_USD = 20;
 
 /**
- * Solvers answer "No liquidity available" for stock swaps below roughly this
- * amount, before any USD value comes back to compare with the floor above.
- */
-export const STOCK_USUAL_MIN_QUOTE_USD = 30;
-
-/**
  * True when a stock side of the quote is worth less than
  * `STOCK_MIN_SWAP_USD`. A missing or unparsable USD value is not "below".
  */
@@ -176,12 +170,29 @@ export function isBelowStockMinimum(
     );
 }
 
+/**
+ * True when the typed amount of a stock swap is already worth less than
+ * `STOCK_MIN_SWAP_USD`. Checked before quoting because solvers usually answer
+ * "No liquidity available" below the floor, which would hide the minimum.
+ * A missing price or unparsable amount is not "below".
+ */
+export function isAmountBelowStockMinimum(
+    amount: string,
+    unitPriceUsd: number | null | undefined,
+    stockSide: { sell: boolean; receive: boolean },
+): boolean {
+    if (!stockSide.sell && !stockSide.receive) return false;
+    if (!unitPriceUsd) return false;
+    return (
+        decimalOrNull(amount)?.mul(unitPriceUsd).lt(STOCK_MIN_SWAP_USD) ?? false
+    );
+}
+
 export type ExchangeErrorCode =
     | "noRoute"
     | "amountTooLow"
     | "insufficientBalance"
     | "networkError"
-    | "marketClosed"
     | "unknown";
 
 /**
@@ -195,9 +206,6 @@ export function classifyExchangeError(errorMessage: string): {
 } {
     const lowerError = errorMessage.toLowerCase();
 
-    if (lowerError.includes("market is closed")) {
-        return { code: "marketClosed", raw: errorMessage };
-    }
     if (
         lowerError.includes("no route") ||
         lowerError.includes("no swap") ||

@@ -8,7 +8,6 @@ export function formatQuoteErrorMessage(
     error: unknown,
     amountToken: { decimals: number; symbol: string },
     tEx: (key: string, values?: Record<string, string>) => string,
-    options: { isStockSwap?: boolean; stockUsualMin?: string } = {},
 ): string {
     const rawMessage =
         error instanceof Error
@@ -18,9 +17,6 @@ export function formatQuoteErrorMessage(
               : tEx("fetchFailed");
 
     const { code, raw, minAmountRaw } = classifyExchangeError(rawMessage);
-    if (code === "noRoute" && options.isStockSwap && options.stockUsualMin) {
-        return tEx("stockNoQuote", { amount: options.stockUsualMin });
-    }
     let message = code === "unknown" ? raw : tEx(code);
 
     if (code === "amountTooLow" && minAmountRaw) {

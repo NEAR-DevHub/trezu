@@ -15,6 +15,10 @@ import {
     readInviteGateConfig,
     resolveInviteRedirect,
 } from "@/lib/invite-gate";
+import {
+    STOCK_REGION_COOKIE,
+    STOCK_RESTRICTED_COUNTRY_CODES,
+} from "@/lib/stock-restrictions";
 
 const ATTRIBUTION_KEYS = [
     "utm_source",
@@ -181,6 +185,19 @@ function handleRequest(
     }
 
     const response = NextResponse.next();
+    const stocksRestricted =
+        !!countryCode && STOCK_RESTRICTED_COUNTRY_CODES.has(countryCode);
+    const hasStockRegionCookie =
+        request.cookies.get(STOCK_REGION_COOKIE)?.value === "1";
+    if (stocksRestricted && !hasStockRegionCookie) {
+        response.cookies.set(STOCK_REGION_COOKIE, "1", {
+            path: "/",
+            sameSite: "lax",
+            secure: request.nextUrl.protocol === "https:",
+        });
+    } else if (!stocksRestricted && hasStockRegionCookie) {
+        response.cookies.delete(STOCK_REGION_COOKIE);
+    }
     const existingLocale = request.cookies.get(LOCALE_COOKIE)?.value;
     if (!isEnabledLocale(existingLocale)) {
         const detected = pickLocaleFromAcceptLanguage(

@@ -21,8 +21,8 @@ import { InfoAlert } from "@/components/info-alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SlotWarning } from "@/components/warning-message";
 import { useTreasury } from "@/hooks/use-treasury";
+import { useStockApproveBlock } from "@/hooks/use-stock-restrictions";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
-import { getApproversAndThreshold } from "@/lib/config-utils";
 import type { Proposal } from "@/lib/proposals-api";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
@@ -43,6 +43,7 @@ import type {
     SwapRequestData,
 } from "../../types/index";
 import { extractProposalData } from "../../utils/proposal-extractors";
+import { isFinalApprovingVote } from "../../utils/proposal-utils";
 import { ExpandedViewInternal } from "../expanded-view";
 import { RequestDisplayProvider } from "../expanded-view/common/request-display-context";
 import { NotEnoughBalance } from "../not-enough-balance";
@@ -265,9 +266,16 @@ export function RequestNotices({
         proposal,
         treasuryId,
     );
+    const stockBlock = useStockApproveBlock([proposal]);
 
     return (
         <>
+            {isPending && stockBlock.message && (
+                <InfoAlert
+                    className="inline-flex"
+                    message={stockBlock.message}
+                />
+            )}
             {status === "Processing" && (
                 <InfoAlert className="inline-flex" message={t("processing")} />
             )}
@@ -346,21 +354,13 @@ export function useRequestActions({
         treasuryId,
     );
     const { approve: approveSlot, reject: rejectSlot } = useVoteActionSlots();
-    const approveBlocked = useProposalApproveBlock([proposal]).anyBlocked;
+    const stockBlock = useStockApproveBlock([proposal]);
+    const approveBlocked =
+        useProposalApproveBlock([proposal]).anyBlocked || stockBlock.anyBlocked;
     const hasVoted = !!proposal.votes[accountId ?? ""];
 
-    const isLastApprovingVote = () => {
-        const currentApprovals = Object.values(proposal.votes).filter(
-            (v) => v === "Approve",
-        ).length;
-        const { requiredVotes } = getApproversAndThreshold(
-            policy,
-            accountId ?? "",
-            proposal.kind,
-            false,
-        );
-        return requiredVotes !== null && currentApprovals + 1 >= requiredVotes;
-    };
+    const isLastApprovingVote = () =>
+        isFinalApprovingVote(proposal, policy, accountId ?? "");
     const {
         handleApprove,
         isChecking,
@@ -461,7 +461,9 @@ export function useRequestActions({
                     tooltip={
                         approveSlot.hoverTooltip ??
                         approveSlot.inlineTooltip ??
-                        (hasVoted ? noVoteMessage : undefined)
+                        (hasVoted ? noVoteMessage : undefined) ??
+                        stockBlock.message ??
+                        undefined
                     }
                 >
                     {isChecking ? null : <Icon icon={CheckIcon} />}

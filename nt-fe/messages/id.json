@@ -2096,15 +2096,22 @@
         "nativeToken": "Token Native"
     },
     "exchangeErrors": {
-        "noRoute": "Tidak ada pertukaran ditemukan. Coba jumlah lebih kecil atau token berbeda.",
+        "noRoute": "Tidak ada pertukaran ditemukan. Coba jumlah atau token yang berbeda.",
         "amountTooLow": "Jumlah terlalu rendah untuk swap. Swap lintas-rantai memerlukan minimum lebih tinggi untuk menutupi biaya jaringan.",
         "amountTooLowWithMin": "Jumlah terlalu rendah untuk menutupi biaya jaringan. Masukkan minimal {min} {token}.",
         "insufficientBalance": "Saldo tidak mencukupi untuk swap ini.",
         "networkError": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
-        "marketClosed": "Pasar saham ini sedang tutup. Perdagangan dilanjutkan saat pasar dibuka kembali.",
         "stockMinimum": "Swap saham memerlukan minimal {min}. Masukkan jumlah yang lebih besar.",
-        "stockNoQuote": "Tidak ada kuotasi untuk saham ini pada jumlah ini. Swap saham biasanya memerlukan {amount} atau lebih, jadi coba jumlah yang lebih besar.",
         "fetchFailed": "Gagal mengambil kuotasi"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} diperdagangkan dari Minggu pukul 20.00 hingga Jumat pukul 20.00 ET. Anda bisa membuat permintaan ini kapan saja, tetapi permintaan hanya bisa disetujui saat pasar buka.",
+        "marketClosed": "Pasar {symbol} tutup hingga {reopensAt}. Anda tetap bisa membuat permintaan ini, tetapi permintaan tidak bisa disetujui sampai pasar buka kembali.",
+        "createRegion": "Swap saham tidak tersedia di wilayah Anda.",
+        "unavailableInRegion": "Tidak tersedia di wilayah Anda",
+        "approveRegion": "Swap saham tidak tersedia di wilayah Anda, jadi Anda tidak dapat menyetujui {count, plural, other {# permintaan ini}}.",
+        "approveMarketClosed": "Pasar tutup hingga {reopensAt}, jadi {count, plural, other {# swap saham}} belum bisa disetujui. Setujui setelah pasar buka kembali.",
+        "approveMarketClosedNoTime": "Pasar sedang tutup, jadi {count, plural, other {# swap saham}} belum bisa disetujui. Setujui setelah pasar buka kembali."
     },
     "tokenSelectDialog": {
         "selectToken": "Pilih token",

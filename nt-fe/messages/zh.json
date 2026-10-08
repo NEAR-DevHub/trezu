@@ -2079,15 +2079,22 @@
         "nativeToken": "原生代币"
     },
     "exchangeErrors": {
-        "noRoute": "未找到兑换路径。请尝试更小的金额或不同的代币。",
+        "noRoute": "未找到兑换路径。请尝试其他金额或其他代币。",
         "amountTooLow": "兑换金额过低。跨链兑换需要更高的最低金额以支付网络手续费。",
         "amountTooLowWithMin": "金额过低,无法支付网络手续费。请输入至少 {min} {token}。",
         "insufficientBalance": "此次兑换余额不足。",
         "networkError": "网络错误。请检查您的连接并再试一次。",
-        "marketClosed": "该股票的市场已休市。市场重新开盘后即可恢复交易。",
         "stockMinimum": "股票兑换至少需要 {min}。请输入更大的金额。",
-        "stockNoQuote": "此金额下没有该股票的报价。股票兑换通常需要 {amount} 或以上，请尝试更大的金额。",
         "fetchFailed": "获取报价失败"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} 的交易时间为周日 20:00 至周五 20:00(美东时间)。你可以随时创建此请求,但只能在市场开放时批准。",
+        "marketClosed": "{symbol} 的市场在 {reopensAt} 之前关闭。你仍可创建此请求,但在市场重新开放前无法批准。",
+        "createRegion": "你所在的地区无法使用股票兑换。",
+        "unavailableInRegion": "你所在的地区不可用",
+        "approveRegion": "你所在的地区无法使用股票兑换,因此你无法批准{count, plural, other {这 # 个请求}}。",
+        "approveMarketClosed": "市场在 {reopensAt} 之前关闭,因此{count, plural, other { # 笔股票兑换}}暂时无法批准。请在市场重新开放后批准。",
+        "approveMarketClosedNoTime": "市场当前关闭,因此{count, plural, other { # 笔股票兑换}}暂时无法批准。请在市场重新开放后批准。"
     },
     "tokenSelectDialog": {
         "selectToken": "选择代币",

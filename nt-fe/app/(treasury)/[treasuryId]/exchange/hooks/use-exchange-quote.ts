@@ -19,11 +19,11 @@ import { formatQuoteErrorMessage, isAbortError } from "../quote-errors";
 import {
     getDepositAndRefundType,
     getRecipientType,
+    isAmountBelowStockMinimum,
     isBelowStockMinimum,
     isNEARDeposit,
     isNEARWithdraw,
     STOCK_MIN_SWAP_USD,
-    STOCK_USUAL_MIN_QUOTE_USD,
 } from "../utils";
 
 export type ExchangeSwapType = "EXACT_INPUT" | "EXACT_OUTPUT";
@@ -90,6 +90,18 @@ export function useExchangeQuote({
         ],
         queryFn: async ({ signal }): Promise<IntentsQuoteResponse | null> => {
             if (!selectedTreasury || !proposalPeriod) return null;
+
+            const stockMinimumError = () =>
+                new Error(
+                    tEx("stockMinimum", {
+                        min: fiat(STOCK_MIN_SWAP_USD).display,
+                    }),
+                );
+            if (
+                isAmountBelowStockMinimum(amount, amountToken.price, stockSide)
+            ) {
+                throw stockMinimumError();
+            }
 
             const deadline = new Date(
                 Date.now() + nanosToMs(proposalPeriod),
@@ -211,11 +223,6 @@ export function useExchangeQuote({
                         error,
                         { ...amountToken, decimals: amountDecimals },
                         tEx,
-                        {
-                            isStockSwap: stockSide.sell || stockSide.receive,
-                            stockUsualMin: fiat(STOCK_USUAL_MIN_QUOTE_USD)
-                                .display,
-                        },
                     ),
                 );
             }
@@ -224,11 +231,7 @@ export function useExchangeQuote({
                 response?.quote &&
                 isBelowStockMinimum(response.quote, stockSide)
             ) {
-                throw new Error(
-                    tEx("stockMinimum", {
-                        min: fiat(STOCK_MIN_SWAP_USD).display,
-                    }),
-                );
+                throw stockMinimumError();
             }
             return response;
         },

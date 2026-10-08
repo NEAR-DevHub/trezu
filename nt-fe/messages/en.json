@@ -2094,15 +2094,22 @@
         "nativeToken": "Native Token"
     },
     "exchangeErrors": {
-        "noRoute": "No exchange found. Try a smaller amount or a different token.",
+        "noRoute": "No exchange found. Try a different amount or token.",
         "amountTooLow": "Amount too low for swap. Cross-chain swaps require a higher minimum to cover network fees.",
         "amountTooLowWithMin": "Amount is too low to cover network fees. Enter at least {min} {token}.",
         "insufficientBalance": "Insufficient balance for this swap.",
         "networkError": "Network error. Please check your connection and try again.",
-        "marketClosed": "This stock's market is closed. Trading resumes when the market reopens.",
         "stockMinimum": "Stock swaps need at least {min}. Enter a larger amount.",
-        "stockNoQuote": "No quote for this stock at this amount. Stock swaps usually need {amount} or more, so try a larger amount.",
         "fetchFailed": "Failed to fetch quote"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} trades from Sunday 8 PM to Friday 8 PM ET. You can create this request anytime, but it can only be approved while the market is open.",
+        "marketClosed": "The market for {symbol} is closed until {reopensAt}. You can still create this request, but it can't be approved until the market reopens.",
+        "createRegion": "Stock swaps aren't available in your region.",
+        "unavailableInRegion": "Not available in your region",
+        "approveRegion": "Stock swaps aren't available in your region, so you can't approve {count, plural, one {this request} other {# of these requests}}.",
+        "approveMarketClosed": "The market is closed until {reopensAt}, so {count, plural, one {this stock swap} other {# stock swaps}} can't be approved yet. Approve after it reopens.",
+        "approveMarketClosedNoTime": "The market is closed, so {count, plural, one {this stock swap} other {# stock swaps}} can't be approved yet. Approve after it reopens."
     },
     "tokenSelectDialog": {
         "selectToken": "Select token",

@@ -2096,15 +2096,22 @@
         "nativeToken": "ネイティブトークン"
     },
     "exchangeErrors": {
-        "noRoute": "交換が見つかりません。より少ない金額または別のトークンをお試しください。",
+        "noRoute": "交換が見つかりません。別の金額または別のトークンをお試しください。",
         "amountTooLow": "金額がスワップに低すぎます。クロスチェーンスワップではネットワーク手数料を賄うために高い最小額が必要です。",
         "amountTooLowWithMin": "金額がネットワーク手数料を賄うのに低すぎます。少なくとも{min} {token}を入力してください。",
         "insufficientBalance": "このスワップに対して残高が不足しています。",
         "networkError": "ネットワークエラーです。接続を確認してもう一度お試しください。",
-        "marketClosed": "この株式の市場は閉まっています。市場が再開すると取引が再開されます。",
         "stockMinimum": "株式のスワップには最低 {min} が必要です。より大きな金額を入力してください。",
-        "stockNoQuote": "この金額ではこの株式の見積もりがありません。株式のスワップには通常 {amount} 以上が必要です。より大きな金額でお試しください。",
         "fetchFailed": "見積りの取得に失敗しました"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} の取引時間は日曜 20:00 から金曜 20:00(米国東部時間)です。このリクエストはいつでも作成できますが、承認できるのは市場が開いている間のみです。",
+        "marketClosed": "{symbol} の市場は {reopensAt} まで閉まっています。このリクエストは作成できますが、市場が再開するまで承認できません。",
+        "createRegion": "お住まいの地域では株式スワップを利用できません。",
+        "unavailableInRegion": "お住まいの地域では利用できません",
+        "approveRegion": "お住まいの地域では株式スワップを利用できないため、{count, plural, other {# 件のリクエスト}}を承認できません。",
+        "approveMarketClosed": "市場は {reopensAt} まで閉まっているため、{count, plural, other {# 件の株式スワップ}}はまだ承認できません。再開後に承認してください。",
+        "approveMarketClosedNoTime": "市場が閉まっているため、{count, plural, other {# 件の株式スワップ}}はまだ承認できません。再開後に承認してください。"
     },
     "tokenSelectDialog": {
         "selectToken": "トークンを選択",
