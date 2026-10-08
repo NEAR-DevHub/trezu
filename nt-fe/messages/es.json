@@ -444,7 +444,8 @@
             "to": "A",
             "transactionHash": "HASH DE TRANSACCIÓN",
             "hashTooltip": "Identificador único (hash) de esta transacción",
-            "processing": "Procesando"
+            "processing": "Procesando",
+            "notes": "NOTAS"
         },
         "empty": {
             "title": "No se encontraron transacciones",
@@ -482,7 +483,8 @@
             "failed": "Fallido",
             "exchangeTransaction": "Transacción de intercambio",
             "transferTransaction": "Transacción de transferencia",
-            "rate": "Tasa"
+            "rate": "Tasa",
+            "notes": "Notas"
         },
         "refresh": {
             "ariaLabel": "Actualizar historial confidencial",
@@ -493,7 +495,8 @@
             "checking": "Comprobando estado de actualización…",
             "unavailable": "Estado de actualización no disponible",
             "updateTreasuryData": "Actualizar datos de tesorería"
-        }
+        },
+        "pdfReceipt": "Recibo en PDF"
     },
     "apiDocs": {
         "endpoint": "Endpoint",

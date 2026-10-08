@@ -2,6 +2,23 @@
   "$schema": "schema/tokenlist.schema.json",
   "tokens": [
     {
+      "defuseAssetId": "nep141:sol-0xa69aa1bcb03a369e338156a8718ad60271145803.omdep.near",
+      "symbol": "kV-gtSOLb",
+      "name": "Gauntlet SOL",
+      "decimals": 9,
+      "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/5426.png",
+      "originChainName": "solana",
+      "deployments": [
+        {
+          "address": "5EBsGgVTubrd7ShJgE89k6nC2bnLzqGCjXb2ejrhtdBK",
+          "decimals": 9,
+          "chainName": "solana",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": ["category:earn-vault", "swap:input-only"]
+    },
+    {
       "defuseAssetId": "nep141:eth-0xaf08e292d62df255f7953665a44ed65f0380aa60.omft.near",
       "symbol": "steakUSDC",
       "name": "steakUSDC",
@@ -21,7 +38,7 @@
     {
       "defuseAssetId": "nep141:base-0x0bb69b79bc829e1cfcc34a740110886d98d2bd14.omft.near",
       "symbol": "gtUSDCp",
-      "name": "gtUSDCp",
+      "name": "Gauntlet USDC",
       "decimals": 18,
       "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
       "originChainName": "base",
@@ -33,12 +50,12 @@
           "bridge": "poa"
         }
       ],
-      "tags": ["category:earn-vault"]
+      "tags": ["category:earn-vault", "swap:input-only"]
     },
     {
       "defuseAssetId": "nep141:eth-0x0f38f1ce62776d4a0038bc6cac66877a5687383b.omft.near",
       "symbol": "TLO",
-      "name": "TLO",
+      "name": "Taler USDC",
       "decimals": 8,
       "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/3408.png",
       "originChainName": "eth",
@@ -50,7 +67,7 @@
           "bridge": "poa"
         }
       ],
-      "tags": ["category:earn-vault"]
+      "tags": ["category:earn-vault", "swap:input-only"]
     },
     {
       "unifiedAssetId": "usdc",
@@ -526,11 +543,39 @@
               "decimals": 24,
               "chainName": "optima",
               "bridge": "aurora_engine"
-            },
+            }
+          ],
+          "tags": ["mc:31", "tvol:2", "aid:near"]
+        },
+        {
+          "defuseAssetId": "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG",
+          "symbol": "NEAR",
+          "name": "NEAR Protocol",
+          "decimals": 9,
+          "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+          "originChainName": "solana",
+          "deployments": [
             {
               "address": "3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG",
               "decimals": 9,
               "chainName": "solana",
+              "bridge": "near_omni"
+            }
+          ],
+          "tags": ["mc:31", "tvol:2", "aid:near"]
+        },
+        {
+          "defuseAssetId": "1cs_v1:hypercore:hip1:0x20b8c9d2f022ffd2aea4f7962b7b1d8b",
+          "symbol": "NEAR",
+          "name": "NEAR Protocol",
+          "decimals": 8,
+          "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png",
+          "originChainName": "hyperliquid",
+          "deployments": [
+            {
+              "address": "0x20b8c9d2f022ffd2aea4f7962b7b1d8b",
+              "decimals": 8,
+              "chainName": "hyperliquid",
               "bridge": "near_omni"
             }
           ],
@@ -1085,6 +1130,23 @@
               "type": "native",
               "decimals": 18,
               "chainName": "arbitrum",
+              "bridge": "poa"
+            }
+          ],
+          "tags": ["mc:2", "tvol:7", "aid:eth"]
+        },
+        {
+          "defuseAssetId": "nep141:eth-0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2.omft.near",
+          "symbol": "wETH",
+          "name": "wETH",
+          "decimals": 18,
+          "icon": "https://near.com/static/icons/network/ethereum.png",
+          "originChainName": "eth",
+          "deployments": [
+            {
+              "address": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+              "decimals": 18,
+              "chainName": "eth",
               "bridge": "poa"
             }
           ],
@@ -2601,23 +2663,6 @@
       "tags": []
     },
     {
-      "defuseAssetId": "nep141:kat.token0.near",
-      "symbol": "KAT",
-      "name": "NEARKAT",
-      "decimals": 18,
-      "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/34150.png",
-      "originChainName": "near",
-      "deployments": [
-        {
-          "address": "kat.token0.near",
-          "decimals": 18,
-          "chainName": "near",
-          "bridge": "direct"
-        }
-      ],
-      "tags": []
-    },
-    {
       "defuseAssetId": "nep141:aptos.omft.near",
       "symbol": "APT",
       "name": "Aptos",
@@ -2952,7 +2997,18 @@
               "decimals": 18,
               "chainName": "starknet",
               "bridge": "poa"
-            },
+            }
+          ],
+          "tags": ["mc:95", "aid:strk"]
+        },
+        {
+          "defuseAssetId": "1cs_v1:sol:spl:HsRpHQn6VbyMs5b5j5SV6xQ2VvpvvCCzu19GjytVSCoz",
+          "symbol": "STRK",
+          "name": "Starknet",
+          "decimals": 9,
+          "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/22691.png",
+          "originChainName": "solana",
+          "deployments": [
             {
               "address": "HsRpHQn6VbyMs5b5j5SV6xQ2VvpvvCCzu19GjytVSCoz",
               "decimals": 9,
@@ -3324,6 +3380,27 @@
       ]
     },
     {
+      "defuseAssetId": "nep141:bnb-0x992879cd8ce0c312d98648875b5a8d6d042cbf34.omdep.near",
+      "symbol": "CRCL",
+      "name": "Circle Internet Group (Ondo)",
+      "decimals": 18,
+      "icon": "https://cdn.ondo.finance/tokens/logos/crclon_160x160.png",
+      "originChainName": "bsc",
+      "deployments": [
+        {
+          "address": "0x992879cd8ce0c312d98648875b5a8d6d042cbf34",
+          "decimals": 18,
+          "chainName": "bsc",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": [
+        "aid:crclon",
+        "type:rwa",
+        "provider:ondo"
+      ]
+    },
+    {
       "defuseAssetId": "nep141:bnb-0xfa9a1e901085e269f6d428f79cd5252d8b919344.omdep.near",
       "symbol": "GLD",
       "name": "SPDR Gold Shares (Ondo)",
@@ -3366,6 +3443,27 @@
       ]
     },
     {
+      "defuseAssetId": "nep141:bnb-0x19601179a60f55ff6636f5d1a8b6671053bd60a8.omdep.near",
+      "symbol": "HOOD",
+      "name": "Robinhood Markets (Ondo)",
+      "decimals": 18,
+      "icon": "https://cdn.ondo.finance/tokens/logos/hoodon_160x160.png",
+      "originChainName": "bsc",
+      "deployments": [
+        {
+          "address": "0x19601179a60f55ff6636f5d1a8b6671053bd60a8",
+          "decimals": 18,
+          "chainName": "bsc",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": [
+        "aid:hoodon",
+        "type:rwa",
+        "provider:ondo"
+      ]
+    },
+    {
       "defuseAssetId": "nep141:bnb-0xcb2a0f46f67dc4c58a316f1c008edef5c2311795.omdep.near",
       "symbol": "IAU",
       "name": "iShares Gold Trust (Ondo)",
@@ -3387,6 +3485,27 @@
       ]
     },
     {
+      "defuseAssetId": "nep141:bnb-0xa528caaa2f96090e379d43f90834c75df54d6e74.omdep.near",
+      "symbol": "INTC",
+      "name": "Intel (Ondo)",
+      "decimals": 18,
+      "icon": "https://cdn.ondo.finance/tokens/logos/intcon_160x160.png",
+      "originChainName": "bsc",
+      "deployments": [
+        {
+          "address": "0xa528caaa2f96090e379d43f90834c75df54d6e74",
+          "decimals": 18,
+          "chainName": "bsc",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": [
+        "aid:intcon",
+        "type:rwa",
+        "provider:ondo"
+      ]
+    },
+    {
       "defuseAssetId": "nep141:bnb-0xd7df5863a3e742f0c767768cdfcb63f09e0422f6.omdep.near",
       "symbol": "META",
       "name": "Meta Platforms (Ondo)",
@@ -3403,6 +3522,27 @@
       ],
       "tags": [
         "aid:metaon",
+        "type:rwa",
+        "provider:ondo"
+      ]
+    },
+    {
+      "defuseAssetId": "nep141:bnb-0x1501ec83ffef405b4331cc4f73277a40fb0c627d.omdep.near",
+      "symbol": "MRVL",
+      "name": "Marvell Technology (Ondo)",
+      "decimals": 18,
+      "icon": "https://cdn.ondo.finance/tokens/logos/mrvlon_160x160.png",
+      "originChainName": "bsc",
+      "deployments": [
+        {
+          "address": "0x1501ec83ffef405b4331cc4f73277a40fb0c627d",
+          "decimals": 18,
+          "chainName": "bsc",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": [
+        "aid:mrvlon",
         "type:rwa",
         "provider:ondo"
       ]
@@ -3466,6 +3606,27 @@
       ],
       "tags": [
         "aid:qqqon",
+        "type:rwa",
+        "provider:ondo"
+      ]
+    },
+    {
+      "defuseAssetId": "nep141:bnb-0xc008c5f579ec1450f20099c39f587547e27c7523.omdep.near",
+      "symbol": "SGOV",
+      "name": "iShares 0-3 Month Treasury Bond ETF (Ondo)",
+      "decimals": 18,
+      "icon": "https://cdn.ondo.finance/tokens/logos/sgovon_160x160.png",
+      "originChainName": "bsc",
+      "deployments": [
+        {
+          "address": "0xc008c5f579ec1450f20099c39f587547e27c7523",
+          "decimals": 18,
+          "chainName": "bsc",
+          "bridge": "near_omni"
+        }
+      ],
+      "tags": [
+        "aid:sgovon",
         "type:rwa",
         "provider:ondo"
       ]

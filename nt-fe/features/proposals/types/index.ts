@@ -1,8 +1,8 @@
-import { ProposalPermissionKind } from "@/lib/config-utils";
-import { Proposal } from "@/lib/proposals-api";
-import { Policy } from "@/types/policy";
-import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import type { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import type { OmniProposalData } from "@/features/omni/types";
+import type { ProposalPermissionKind } from "@/lib/config-utils";
+import type { Proposal } from "@/lib/proposals-api";
+import type { Policy } from "@/types/policy";
 
 /**
  * UI representation of proposal kinds
@@ -224,6 +224,8 @@ export interface SwapRequestData {
     amountOutUsd?: number | null;
     slippage?: string;
     quoteDeadline?: string;
+    /** Absent on proposals created before the flag was stored. */
+    hasAppFee?: boolean;
 }
 
 /**

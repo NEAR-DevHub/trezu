@@ -444,7 +444,8 @@
             "to": "אל",
             "transactionHash": "גיבוב עסקה",
             "hashTooltip": "מזהה ייחודי (גיבוב) של עסקה זו",
-            "processing": "מעבד"
+            "processing": "מעבד",
+            "notes": "הערות"
         },
         "empty": {
             "title": "לא נמצאו עסקאות",
@@ -482,7 +483,8 @@
             "failed": "נכשל",
             "exchangeTransaction": "עסקת המרה",
             "transferTransaction": "עסקת העברה",
-            "rate": "שער"
+            "rate": "שער",
+            "notes": "הערות"
         },
         "refresh": {
             "ariaLabel": "רענון היסטוריה חסויה",
@@ -493,7 +495,8 @@
             "checking": "בודק סטטוס רענון…",
             "unavailable": "סטטוס הרענון אינו זמין",
             "updateTreasuryData": "עדכון נתוני האוצר"
-        }
+        },
+        "pdfReceipt": "קבלה ב-PDF"
     },
     "apiDocs": {
         "endpoint": "נקודת קצה",

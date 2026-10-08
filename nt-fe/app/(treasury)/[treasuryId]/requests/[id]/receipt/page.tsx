@@ -1084,7 +1084,10 @@ export default function RequestReceiptPage({
         () =>
             buildTokenReceiptInfo({
                 token: {
-                    ...destinationToken,
+                    // Same-chain FT sends have no destination asset id. Badge
+                    // the amount with the token that was transferred.
+                    ...(destinationToken ??
+                        (destinationTokenId ? null : sourceToken)),
                     tokenId: destinationTokenId ?? destinationToken?.tokenId,
                     network: isNearComDestination
                         ? NEAR_COM_NETWORK_ID
@@ -1103,6 +1106,7 @@ export default function RequestReceiptPage({
         [
             destinationTokenId,
             destinationToken,
+            sourceToken,
             sourceToken?.network,
             sourceToken?.chainIcons,
             destinationAmountDisplay,

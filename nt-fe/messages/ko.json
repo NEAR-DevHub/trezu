@@ -444,7 +444,8 @@
             "to": "받는 사람",
             "transactionHash": "트랜잭션 해시",
             "hashTooltip": "이 트랜잭션의 고유 식별자(해시)",
-            "processing": "처리 중"
+            "processing": "처리 중",
+            "notes": "메모"
         },
         "empty": {
             "title": "트랜잭션을 찾을 수 없습니다",
@@ -482,7 +483,8 @@
             "failed": "실패",
             "exchangeTransaction": "교환 트랜잭션",
             "transferTransaction": "이체 트랜잭션",
-            "rate": "환율"
+            "rate": "환율",
+            "notes": "메모"
         },
         "refresh": {
             "ariaLabel": "기밀 기록 새로 고침",
@@ -493,7 +495,8 @@
             "checking": "새로 고침 상태 확인 중…",
             "unavailable": "새로 고침 상태를 사용할 수 없음",
             "updateTreasuryData": "트레저리 데이터 업데이트"
-        }
+        },
+        "pdfReceipt": "PDF 영수증"
     },
     "apiDocs": {
         "endpoint": "엔드포인트",

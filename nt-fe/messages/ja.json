@@ -444,7 +444,8 @@
             "to": "送信先",
             "transactionHash": "トランザクションハッシュ",
             "hashTooltip": "このトランザクションの一意な識別子(ハッシュ)",
-            "processing": "処理中"
+            "processing": "処理中",
+            "notes": "メモ"
         },
         "empty": {
             "title": "トランザクションが見つかりません",
@@ -482,7 +483,8 @@
             "failed": "失敗",
             "exchangeTransaction": "交換トランザクション",
             "transferTransaction": "送金トランザクション",
-            "rate": "レート"
+            "rate": "レート",
+            "notes": "メモ"
         },
         "refresh": {
             "ariaLabel": "機密履歴を更新",
@@ -493,7 +495,8 @@
             "checking": "更新ステータスを確認中…",
             "unavailable": "更新ステータスを利用できません",
             "updateTreasuryData": "トレジャリーのデータを更新"
-        }
+        },
+        "pdfReceipt": "PDF領収書"
     },
     "apiDocs": {
         "endpoint": "エンドポイント",

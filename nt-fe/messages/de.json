@@ -444,7 +444,8 @@
             "to": "AN",
             "transactionHash": "TRANSAKTIONS-HASH",
             "hashTooltip": "Eindeutige Kennung (Hash) dieser Transaktion",
-            "processing": "In Bearbeitung"
+            "processing": "In Bearbeitung",
+            "notes": "NOTIZEN"
         },
         "empty": {
             "title": "Keine Transaktionen gefunden",
@@ -482,7 +483,8 @@
             "failed": "Fehlgeschlagen",
             "exchangeTransaction": "Umtauschtransaktion",
             "transferTransaction": "Überweisungstransaktion",
-            "rate": "Kurs"
+            "rate": "Kurs",
+            "notes": "Notizen"
         },
         "refresh": {
             "ariaLabel": "Vertraulichen Verlauf aktualisieren",
@@ -493,7 +495,8 @@
             "checking": "Aktualisierungsstatus wird geprüft…",
             "unavailable": "Aktualisierungsstatus nicht verfügbar",
             "updateTreasuryData": "Treasury-Daten aktualisieren"
-        }
+        },
+        "pdfReceipt": "PDF-Beleg"
     },
     "apiDocs": {
         "endpoint": "Endpunkt",

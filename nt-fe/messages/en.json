@@ -444,7 +444,8 @@
             "to": "TO",
             "transactionHash": "TRANSACTION HASH",
             "hashTooltip": "Unique identifier (hash) of this transaction",
-            "processing": "Processing"
+            "processing": "Processing",
+            "notes": "NOTES"
         },
         "empty": {
             "title": "No transactions found",
@@ -482,7 +483,8 @@
             "failed": "Failed",
             "exchangeTransaction": "Exchange Transaction",
             "transferTransaction": "Transfer Transaction",
-            "rate": "Rate"
+            "rate": "Rate",
+            "notes": "Notes"
         },
         "refresh": {
             "ariaLabel": "Refresh confidential history",
@@ -493,7 +495,8 @@
             "checking": "Checking refresh status…",
             "unavailable": "Refresh status unavailable",
             "updateTreasuryData": "Update treasury data"
-        }
+        },
+        "pdfReceipt": "PDF Receipt"
     },
     "apiDocs": {
         "endpoint": "Endpoint",
