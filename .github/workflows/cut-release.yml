@@ -3,6 +3,13 @@ name: Cut Release
 on:
   workflow_dispatch:
     inputs:
+      target:
+        description: 'Which product to release'
+        required: true
+        type: choice
+        options:
+          - main
+          - nearcom
       bump:
         description: 'Version bump type'
         required: true
@@ -12,7 +19,7 @@ on:
           - minor
           - major
       commit_sha:
-        description: 'Optional commit SHA to release from (defaults to HEAD of main)'
+        description: 'Optional commit SHA to release from (defaults to HEAD of the target branch)'
         required: false
         type: string
 
@@ -22,13 +29,19 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      issues: write
+    env:
+      # main: production follows release-* branches via render.yaml, issues tracked in org project 23 (trezu).
+      # nearcom: production deploys nearcom_redesign_v1 directly, issues tracked in org project 24 (nearcom).
+      RELEASE_BRANCH: ${{ inputs.target == 'nearcom' && 'nearcom_redesign_v1' || 'main' }}
+      TAG_PREFIX: ${{ inputs.target == 'nearcom' && 'nearcom-release-' || 'release-' }}
+      PROJECT_NUMBER: ${{ inputs.target == 'nearcom' && '24' || '23' }}
+      RELEASE_FIELD_NAME: Release
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ inputs.commit_sha || 'main' }}
+          ref: ${{ inputs.commit_sha || env.RELEASE_BRANCH }}
           token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
 
       - name: Capture release commit SHA
@@ -46,10 +59,21 @@ jobs:
         with:
           github_token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           default_bump: ${{ inputs.bump }}
-          tag_prefix: release-
+          tag_prefix: ${{ env.TAG_PREFIX }}
+          commit_sha: ${{ steps.release_commit.outputs.sha }}
           dry_run: true
 
+      - name: Require a previous release tag
+        env:
+          PREVIOUS_TAG: ${{ steps.version.outputs.previous_tag }}
+        run: |
+          if [ -z "$PREVIOUS_TAG" ]; then
+            echo "::error::No previous ${TAG_PREFIX}* tag found. Push a baseline tag (e.g. ${TAG_PREFIX}0.0.0) on the last deployed commit of ${RELEASE_BRANCH} first, otherwise the whole git history would be treated as part of this release."
+            exit 1
+          fi
+
       - name: Update render.yaml production branches
+        if: inputs.target == 'main'
         run: |
           BRANCH="${{ steps.version.outputs.new_tag }}"
           python3 - "$BRANCH" <<'EOF'
@@ -94,6 +118,7 @@ jobs:
           EOF
 
       - name: Commit render.yaml update to release branch and open PR
+        if: inputs.target == 'main'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
           BRANCH: ${{ steps.version.outputs.new_tag }}
@@ -122,10 +147,28 @@ jobs:
             --target "$BRANCH" \
             --notes "$CHANGELOGS"
 
-      - name: Assign linked issues to release milestone
+      - name: Tag nearcom release
+        if: inputs.target == 'nearcom'
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.new_tag }}
+          VERSION: ${{ steps.version.outputs.new_version }}
+          CHANGELOGS: ${{ steps.version.outputs.changelog }}
+          SHA: ${{ steps.release_commit.outputs.sha }}
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG"; then
+            echo "Error: tag $TAG already exists"
+            exit 1
+          fi
+          gh release create "$TAG" \
+            --title "nearcom v${VERSION}" \
+            --target "$SHA" \
+            --notes "$CHANGELOGS"
+
+      - name: Set release on linked issues in project
         uses: actions/github-script@v7
         with:
-          github-token: ${{ secrets.RELEASE_GITHUB_TOKEN }}
+          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
             const { execSync } = require("child_process");
 
@@ -135,7 +178,9 @@ jobs:
             const newTag = "${{ steps.version.outputs.new_tag }}";
             const previousTag = "${{ steps.version.outputs.previous_tag }}";
             const releaseSha = "${{ steps.release_commit.outputs.sha }}";
-            const milestoneTitle = `v${version}`;
+            const projectNumber = Number(process.env.PROJECT_NUMBER);
+            const fieldName = process.env.RELEASE_FIELD_NAME;
+            const releaseValue = `v${version}`;
 
             function extractIssueRefs(text) {
               const refs = new Set();
@@ -145,33 +190,9 @@ jobs:
               return refs;
             }
 
-            async function releaseDueOn() {
-              try {
-                const { data: release } = await github.rest.repos.getReleaseByTag({
-                  owner,
-                  repo,
-                  tag: newTag,
-                });
-                if (release.published_at) {
-                  return new Date(release.published_at).toISOString();
-                }
-              } catch (error) {
-                core.warning(
-                  `Could not read release ${newTag} for due date: ${error.message}`,
-                );
-              }
-              const commitDate = execSync(
-                `git log -1 --format=%cI ${releaseSha}`,
-                { encoding: "utf8" },
-              ).trim();
-              return new Date(commitDate).toISOString();
-            }
-
             // Collect PRs included in this release (merge commits AND squash commits).
             const prNumbers = new Set();
-            const logRange = previousTag
-              ? `refs/tags/${previousTag}..${releaseSha}`
-              : releaseSha;
+            const logRange = `refs/tags/${previousTag}..${releaseSha}`;
             let commitSubjects = "";
             try {
               commitSubjects = execSync(
@@ -216,60 +237,159 @@ jobs:
             );
             if (issueRefs.size === 0) return;
 
-            const dueOn = await releaseDueOn();
-            core.info(`Milestone due date: ${dueOn}`);
+            const { organization } = await github.graphql(`
+              query($org: String!, $number: Int!, $fieldName: String!) {
+                organization(login: $org) {
+                  projectV2(number: $number) {
+                    id
+                    title
+                    field(name: $fieldName) {
+                      ... on ProjectV2Field { id dataType }
+                      ... on ProjectV2SingleSelectField {
+                        id
+                        dataType
+                        options { id name color description }
+                      }
+                    }
+                  }
+                }
+              }
+            `, { org: owner, number: projectNumber, fieldName });
 
-            let milestone = null;
-            for await (const response of github.paginate.iterator(
-              github.rest.issues.listMilestones,
-              { owner, repo, state: "all", per_page: 100 },
-            )) {
-              milestone = response.data.find((m) => m.title === milestoneTitle);
-              if (milestone) break;
+            const project = organization?.projectV2;
+            if (!project) {
+              core.setFailed(`Project #${projectNumber} not found in ${owner}`);
+              return;
             }
 
-            if (!milestone) {
-              const { data: created } = await github.rest.issues.createMilestone({
-                owner,
-                repo,
-                title: milestoneTitle,
-                description: `Shipped in ${newTag}`,
-                state: "open",
-                due_on: dueOn,
+            const optionDescription = `Shipped in ${newTag}`;
+            let field = project.field;
+            if (!field?.id) {
+              const created = await github.graphql(`
+                mutation($projectId: ID!, $name: String!, $option: String!, $description: String!) {
+                  createProjectV2Field(input: {
+                    projectId: $projectId
+                    dataType: SINGLE_SELECT
+                    name: $name
+                    singleSelectOptions: [{ name: $option, color: BLUE, description: $description }]
+                  }) {
+                    projectV2Field {
+                      ... on ProjectV2SingleSelectField { id dataType options { id name color description } }
+                    }
+                  }
+                }
+              `, {
+                projectId: project.id,
+                name: fieldName,
+                option: releaseValue,
+                description: optionDescription,
               });
-              milestone = created;
-              core.info(
-                `Created milestone "${milestoneTitle}" (#${milestone.number}, due ${dueOn})`,
-              );
+              field = created.createProjectV2Field.projectV2Field;
+              core.info(`Created single-select field "${fieldName}" in "${project.title}"`);
+            }
+
+            // Value passed to updateProjectV2ItemFieldValue for every issue.
+            let fieldValue;
+            if (field.dataType === "TEXT") {
+              fieldValue = { text: releaseValue };
+            } else if (field.dataType === "SINGLE_SELECT") {
+              let option = field.options.find((o) => o.name === releaseValue);
+              if (!option) {
+                // updateProjectV2Field replaces the whole option list; existing options must be
+                // sent back with their ids or values already set on issues are wiped.
+                const singleSelectOptions = [
+                  { name: releaseValue, color: "BLUE", description: optionDescription },
+                  ...field.options.map(({ id, name, color, description }) => ({
+                    id,
+                    name,
+                    color,
+                    description: description || "",
+                  })),
+                ];
+                const updated = await github.graphql(`
+                  mutation($fieldId: ID!, $options: [ProjectV2SingleSelectFieldOptionInput!]) {
+                    updateProjectV2Field(input: { fieldId: $fieldId, singleSelectOptions: $options }) {
+                      projectV2Field {
+                        ... on ProjectV2SingleSelectField { options { id name } }
+                      }
+                    }
+                  }
+                `, { fieldId: field.id, options: singleSelectOptions });
+                const updatedOptions = updated.updateProjectV2Field.projectV2Field.options;
+                const lostOptions = field.options.filter(
+                  (o) => !updatedOptions.some((u) => u.id === o.id),
+                );
+                if (lostOptions.length > 0) {
+                  core.setFailed(
+                    `Option ids changed for ${lostOptions.map((o) => o.name).join(", ")} in "${project.title}" — check the ${fieldName} values`,
+                  );
+                  return;
+                }
+                option = updatedOptions.find((o) => o.name === releaseValue);
+                core.info(`Added option "${releaseValue}" to "${fieldName}" in "${project.title}"`);
+              }
+              fieldValue = { singleSelectOptionId: option.id };
             } else {
-              const { data: updated } = await github.rest.issues.updateMilestone({
-                owner,
-                repo,
-                milestone_number: milestone.number,
-                due_on: dueOn,
-              });
-              milestone = updated;
-              core.info(
-                `Using milestone "${milestoneTitle}" (#${milestone.number}, due ${dueOn})`,
+              core.setFailed(
+                `Field "${fieldName}" in "${project.title}" must be Text or Single select (found ${field.dataType})`,
               );
+              return;
             }
+            const fieldId = field.id;
 
             for (const issueNumber of issueRefs) {
+              let issue;
               try {
-                await github.rest.issues.get({ owner, repo, issue_number: issueNumber });
+                const data = await github.graphql(`
+                  query($owner: String!, $repo: String!, $num: Int!) {
+                    repository(owner: $owner, name: $repo) {
+                      issue(number: $num) {
+                        id
+                        projectItems(first: 50) {
+                          nodes { id project { id } }
+                        }
+                      }
+                    }
+                  }
+                `, { owner, repo, num: issueNumber });
+                issue = data.repository?.issue;
               } catch (error) {
-                if (error.status === 404) {
-                  core.warning(`Issue #${issueNumber} not found — skipping`);
-                  continue;
-                }
-                throw error;
+                core.info(`#${issueNumber} is not an issue — skipping`);
+                continue;
+              }
+              if (!issue) {
+                core.warning(`Issue #${issueNumber} not found — skipping`);
+                continue;
               }
 
-              await github.rest.issues.update({
-                owner,
-                repo,
-                issue_number: issueNumber,
-                milestone: milestone.number,
-              });
-              core.info(`Set milestone "${milestoneTitle}" on issue #${issueNumber}`);
+              let itemId = (issue.projectItems?.nodes || []).find(
+                (item) => item.project.id === project.id,
+              )?.id;
+              if (!itemId) {
+                const added = await github.graphql(`
+                  mutation($projectId: ID!, $contentId: ID!) {
+                    addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                      item { id }
+                    }
+                  }
+                `, { projectId: project.id, contentId: issue.id });
+                itemId = added.addProjectV2ItemById.item.id;
+                core.info(`Added issue #${issueNumber} to "${project.title}"`);
+              }
+
+              await github.graphql(`
+                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
+                  updateProjectV2ItemFieldValue(
+                    input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                      value: $value
+                    }
+                  ) {
+                    projectV2Item { id }
+                  }
+                }
+              `, { projectId: project.id, itemId, fieldId, value: fieldValue });
+              core.info(`Set ${fieldName}="${releaseValue}" on issue #${issueNumber} in "${project.title}"`);
             }
