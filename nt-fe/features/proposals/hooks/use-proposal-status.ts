@@ -14,8 +14,8 @@ import { extractReceiptProposalData } from "../utils/receipt-utils";
  * The status a request shows. An approved intents-routed request stays
  * "Processing" until its 1Click swap settles, then becomes "Executed" or
  * "Failed". Shares the swap-status query with the rest of the details views,
- * so it adds no requests of its own. `undefined` means the swap status has not
- * loaded yet, so the request could be either Processing or Executed.
+ * so it adds no requests of its own. `undefined` means the swap query has not
+ * resolved yet.
  */
 export function useProposalStatus(
     proposal: Proposal,

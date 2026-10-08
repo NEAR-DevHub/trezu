@@ -19,6 +19,7 @@ import {
     getProposalStatusDateInfo,
     getProposalUIKind,
     isQuoteDeadlineBeforeVotingPeriod,
+    type UIProposalStatus,
 } from "../utils/proposal-utils";
 import {
     extractReceiptProposalData,
@@ -139,7 +140,11 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
 
     // Fetch swap status for executed intents proposals (exchange or payment).
     const shouldFetchSwapStatus = isExecuted && hasDepositAddress;
-    const { data: swapStatus, isLoading: isLoadingSwapStatus } = useSwapStatus(
+    const {
+        data: swapStatus,
+        isLoading: isLoadingSwapStatus,
+        isPending: isSwapStatusPending,
+    } = useSwapStatus(
         depositAddress || null,
         undefined,
         shouldFetchSwapStatus,
@@ -166,7 +171,11 @@ export function useProposalDetails(proposal: Proposal, policy: Policy) {
             fallbackDate: confidentialExecutedAt ?? publicExecutedAt,
         });
     const isDateLoading = isExecuted && resolvedDateLoading;
-    const status = getProposalStatus(proposal, policy, swapStatus?.status);
+    // `undefined` until the swap query resolves, matching `useProposalStatus`.
+    const status: UIProposalStatus | undefined =
+        shouldFetchSwapStatus && isSwapStatusPending
+            ? undefined
+            : getProposalStatus(proposal, policy, swapStatus?.status);
     const isHidden = isConfidential && isGuestTreasury;
 
     // Swap is still settling (no finalized transaction yet).
