@@ -27,9 +27,9 @@ export interface BridgeAsset {
     /** Catalog full name (near.com `name`), e.g. Ethereum */
     name: string;
     icon: string;
-    /** Set for Ondo stocks and ETFs (`type:rwa`). */
+    /** Set for stocks and ETFs (`type:rwa`). */
     assetClass?: "stock";
-    /** Stock that can only be swapped while Ondo's market is open. */
+    /** Stock that can only be swapped while the stock market is open. */
     marketHoursOnly?: boolean;
     networks: BridgeNetwork[];
 }
@@ -109,7 +109,7 @@ export function formatCatalogAssets(
 }
 
 export type UseTokenCatalogOptions = {
-    /** deposit = catalog+Bridge; swap = ∩ 1Click; swap-ondo = swap plus stocks */
+    /** deposit = catalog+Bridge; swap = ∩ 1Click; swap-stocks = swap plus stocks */
     kind?: TokenCatalogKind;
     enabled?: boolean;
 };

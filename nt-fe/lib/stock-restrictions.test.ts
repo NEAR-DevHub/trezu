@@ -2,40 +2,40 @@ import { describe, expect, it } from "bun:test";
 import {
     buildStockIndex,
     findStock,
-    isOndoMarketOpen,
-    nextOndoMarketOpen,
+    isStockMarketOpen,
+    nextStockMarketOpen,
     readStockRegionCookie,
 } from "./stock-restrictions";
 
 const at = (iso: string) => new Date(iso);
 
-describe("isOndoMarketOpen", () => {
+describe("isStockMarketOpen", () => {
     it("follows the Sunday 20:00 to Friday 19:59 ET window in summer", () => {
-        expect(isOndoMarketOpen(at("2026-07-12T23:59:00Z"))).toBe(false);
-        expect(isOndoMarketOpen(at("2026-07-13T00:00:00Z"))).toBe(true);
-        expect(isOndoMarketOpen(at("2026-07-15T12:00:00Z"))).toBe(true);
-        expect(isOndoMarketOpen(at("2026-07-17T23:58:00Z"))).toBe(true);
-        expect(isOndoMarketOpen(at("2026-07-17T23:59:00Z"))).toBe(false);
-        expect(isOndoMarketOpen(at("2026-07-18T15:00:00Z"))).toBe(false);
+        expect(isStockMarketOpen(at("2026-07-12T23:59:00Z"))).toBe(false);
+        expect(isStockMarketOpen(at("2026-07-13T00:00:00Z"))).toBe(true);
+        expect(isStockMarketOpen(at("2026-07-15T12:00:00Z"))).toBe(true);
+        expect(isStockMarketOpen(at("2026-07-17T23:58:00Z"))).toBe(true);
+        expect(isStockMarketOpen(at("2026-07-17T23:59:00Z"))).toBe(false);
+        expect(isStockMarketOpen(at("2026-07-18T15:00:00Z"))).toBe(false);
     });
 
     it("shifts by an hour in winter", () => {
-        expect(isOndoMarketOpen(at("2026-01-12T00:59:00Z"))).toBe(false);
-        expect(isOndoMarketOpen(at("2026-01-12T01:00:00Z"))).toBe(true);
+        expect(isStockMarketOpen(at("2026-01-12T00:59:00Z"))).toBe(false);
+        expect(isStockMarketOpen(at("2026-01-12T01:00:00Z"))).toBe(true);
     });
 });
 
-describe("nextOndoMarketOpen", () => {
+describe("nextStockMarketOpen", () => {
     it("is null while open", () => {
-        expect(nextOndoMarketOpen(at("2026-07-15T12:00:00Z"))).toBeNull();
+        expect(nextStockMarketOpen(at("2026-07-15T12:00:00Z"))).toBeNull();
     });
 
     it("returns Sunday 20:00 ET during the weekend", () => {
         expect(
-            nextOndoMarketOpen(at("2026-10-10T05:30:00Z"))?.toISOString(),
+            nextStockMarketOpen(at("2026-10-10T05:30:00Z"))?.toISOString(),
         ).toBe("2026-10-12T00:00:00.000Z");
         expect(
-            nextOndoMarketOpen(at("2026-01-10T12:00:00Z"))?.toISOString(),
+            nextStockMarketOpen(at("2026-01-10T12:00:00Z"))?.toISOString(),
         ).toBe("2026-01-12T01:00:00.000Z");
     });
 });

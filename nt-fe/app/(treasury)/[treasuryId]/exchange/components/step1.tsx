@@ -15,7 +15,7 @@ import { SlotWarning } from "@/components/warning-message";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import {
-    useOndoMarketClock,
+    useStockMarketClock,
     useStockRegionRestricted,
 } from "@/hooks/use-stock-restrictions";
 import { useTreasury } from "@/hooks/use-treasury";
@@ -79,7 +79,7 @@ export function Step1({
     const tStock = useTranslations("stockRestrictions");
     const formatDate = useFormatDate();
     const stockRegionRestricted = useStockRegionRestricted();
-    const market = useOndoMarketClock();
+    const market = useStockMarketClock();
     const isStockSwap =
         sellToken.assetClass === "stock" || receiveToken.assetClass === "stock";
     const marketHoursStock = [sellToken, receiveToken].find(
@@ -274,7 +274,7 @@ export function Step1({
                             autoSelect: false,
                             hideOffNearChainDelivery: true,
                             hideChainDeliveryRoutes: true,
-                            allowStocks: true,
+                            stocks: "held",
                         }}
                         usdValueOverride={
                             quoteData?.quote
@@ -329,7 +329,7 @@ export function Step1({
                         showPopularAssets: true,
                         autoSelect: false,
                         hideOffNearChainDelivery: true,
-                        showStockTabs: true,
+                        stocks: "browse",
                     }}
                     usdValueOverride={
                         quoteData?.quote

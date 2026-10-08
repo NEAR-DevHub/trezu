@@ -46,9 +46,9 @@ export interface MergedToken {
     name: string;
     symbol: string;
     icon: string;
-    /** Set for Ondo stocks and ETFs. */
+    /** Set for stocks and ETFs. */
     assetClass?: "stock";
-    /** Stock that can only be swapped while Ondo's market is open. */
+    /** Stock that can only be swapped while the stock market is open. */
     marketHoursOnly?: boolean;
     networks: MergedNetwork[];
     /** Defined for treasury-held tokens; undefined for bridge-only tokens */
@@ -62,10 +62,10 @@ interface UseMergedTokensOptions {
     /** When true, skips bridge-only tokens and bridge fetch. Default: false */
     showOnlyOwned?: boolean;
     /**
-     * `swap-ondo` adds Ondo stocks. The swap receive picker uses it.
+     * `swap-stocks` adds stocks. The swap receive picker uses it.
      * Send stays on `swap`.
      */
-    catalogKind?: "swap" | "swap-ondo";
+    catalogKind?: "swap" | "swap-stocks";
 }
 
 type TreasuryNetwork = AggregatedAsset["networks"][number];
@@ -374,7 +374,7 @@ export function useMergedTokens({
     // Held stocks must be recognised even when the active catalog omits them.
     const { data: stockCatalog = [] } = useTokenCatalog({
         enabled,
-        kind: "swap-ondo",
+        kind: "swap-stocks",
     });
 
     const tokens = useMemo((): MergedToken[] => {

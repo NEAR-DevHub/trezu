@@ -26,20 +26,26 @@ pub struct OneClickToken {
     pub coingecko_id: Option<String>,
 }
 
-/// Fetch the 1Click token list (cached LongTerm), without Ondo stocks.
+/// Fetch the 1Click token list (cached LongTerm), without stocks.
 pub async fn fetch_oneclick_tokens(
     state: &Arc<AppState>,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
-    fetch_oneclick_token_list(state, false).await
+    fetch_cached(state, false).await
 }
 
-/// `include_ondo` sends `?ondoTokens=true`, which adds Ondo stocks and ETFs.
-pub async fn fetch_oneclick_token_list(
+/// Fetch the 1Click token list (cached LongTerm), including stocks and ETFs.
+pub async fn fetch_oneclick_tokens_with_stocks(
     state: &Arc<AppState>,
-    include_ondo: bool,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
-    let cache_key = if include_ondo {
-        "oneclick:v0:tokens:ondo".to_string()
+    fetch_cached(state, true).await
+}
+
+async fn fetch_cached(
+    state: &Arc<AppState>,
+    include_stocks: bool,
+) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
+    let cache_key = if include_stocks {
+        "oneclick:v0:tokens:stocks".to_string()
     } else {
         "oneclick:v0:tokens".to_string()
     };
@@ -47,21 +53,22 @@ pub async fn fetch_oneclick_token_list(
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            fetch_oneclick_tokens_uncached(&state_clone, include_ondo).await
+            fetch_oneclick_tokens_uncached(&state_clone, include_stocks).await
         })
         .await
 }
 
-pub async fn fetch_oneclick_tokens_uncached(
+/// `include_stocks` sends 1Click's `?ondoTokens=true`, which adds stocks and ETFs.
+async fn fetch_oneclick_tokens_uncached(
     state: &Arc<AppState>,
-    include_ondo: bool,
+    include_stocks: bool,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
     let mut url = format!(
         "{}{}",
         state.env_vars.oneclick_api_url.trim_end_matches('/'),
         ONECLICK_TOKENS_PATH
     );
-    if include_ondo {
+    if include_stocks {
         url.push_str("?ondoTokens=true");
     }
     let mut request = state

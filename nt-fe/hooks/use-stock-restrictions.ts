@@ -10,8 +10,8 @@ import type { Proposal } from "@/lib/proposals-api";
 import {
     buildStockIndex,
     findStock,
-    isOndoMarketOpen,
-    nextOndoMarketOpen,
+    isStockMarketOpen,
+    nextStockMarketOpen,
     readStockRegionCookie,
 } from "@/lib/stock-restrictions";
 
@@ -28,8 +28,8 @@ export function useStockRegionRestricted(): boolean {
     );
 }
 
-/** Ondo's market state, re-checked every minute. */
-export function useOndoMarketClock(): {
+/** Stock market state, re-checked every minute. */
+export function useStockMarketClock(): {
     isOpen: boolean;
     reopensAt: Date | null;
 } {
@@ -41,8 +41,8 @@ export function useOndoMarketClock(): {
     return useMemo(() => {
         const date = new Date(now);
         return {
-            isOpen: isOndoMarketOpen(date),
-            reopensAt: nextOndoMarketOpen(date),
+            isOpen: isStockMarketOpen(date),
+            reopensAt: nextStockMarketOpen(date),
         };
     }, [now]);
 }
@@ -57,14 +57,14 @@ export interface StockApproveBlock {
 /**
  * Stock swaps this member can't approve right now: any of them when the
  * member is in a restricted region, and swaps of a market-hours stock while
- * Ondo's market is closed. Rejection is never blocked.
+ * the stock market is closed. Rejection is never blocked.
  */
 export function useStockApproveBlock(proposals: Proposal[]): StockApproveBlock {
     const t = useTranslations("stockRestrictions");
     const formatDate = useFormatDate();
     const { treasuryId } = useTreasury();
     const regionRestricted = useStockRegionRestricted();
-    const market = useOndoMarketClock();
+    const market = useStockMarketClock();
 
     const swaps = useMemo(
         () =>
@@ -78,7 +78,7 @@ export function useStockApproveBlock(proposals: Proposal[]): StockApproveBlock {
         [proposals, treasuryId],
     );
     const { data: catalog } = useTokenCatalog({
-        kind: "swap-ondo",
+        kind: "swap-stocks",
         enabled: swaps.length > 0,
     });
     const stockIndex = useMemo(() => buildStockIndex(catalog ?? []), [catalog]);

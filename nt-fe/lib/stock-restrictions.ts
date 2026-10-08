@@ -1,11 +1,11 @@
 /**
- * near.com's rules for Ondo stocks (`swapRestrictions.ts`), applied per member.
+ * near.com's rules for stocks (`swapRestrictions.ts`), applied per member.
  *
  * Intents and 1Click are permissionless, so nothing here is enforced on chain:
  * the region rule only stops members in these countries from creating or
  * approving stock swaps in this UI, and the market-hours rule only stops
- * approvals while Ondo's market is closed. Creating a request is never blocked
- * by market hours.
+ * approvals while the stock market is closed. Creating a request is never
+ * blocked by market hours.
  */
 
 /** ISO 3166-1 alpha-2 codes, the same ones geoip-lite returns. */
@@ -39,10 +39,10 @@ const easternClock = new Intl.DateTimeFormat("en-US", {
 });
 
 /**
- * Ondo's 24/5 window: Sunday 20:00 ET through Friday 19:59 ET. Market holidays
- * are not modelled.
+ * The 24/5 stock window set by Ondo, the stock provider: Sunday 20:00 ET
+ * through Friday 19:59 ET. Market holidays are not modelled.
  */
-export function isOndoMarketOpen(now: Date = new Date()): boolean {
+export function isStockMarketOpen(now: Date = new Date()): boolean {
     const parts = easternClock.formatToParts(now);
     const part = (type: Intl.DateTimeFormatPartTypes) =>
         parts.find((p) => p.type === type)?.value ?? "";
@@ -63,13 +63,13 @@ export function isOndoMarketOpen(now: Date = new Date()): boolean {
  * When the market next opens, or `null` while it is open. US Eastern offsets
  * are whole hours, so Sunday 20:00 ET always falls on a UTC hour.
  */
-export function nextOndoMarketOpen(now: Date = new Date()): Date | null {
-    if (isOndoMarketOpen(now)) return null;
+export function nextStockMarketOpen(now: Date = new Date()): Date | null {
+    if (isStockMarketOpen(now)) return null;
     const candidate = new Date(now);
     candidate.setUTCMinutes(0, 0, 0);
     for (let hours = 0; hours < 24 * 8; hours++) {
         candidate.setTime(candidate.getTime() + HOUR_MS);
-        if (isOndoMarketOpen(candidate)) return candidate;
+        if (isStockMarketOpen(candidate)) return candidate;
     }
     return null;
 }

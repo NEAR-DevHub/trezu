@@ -4,8 +4,8 @@
 //!   `production.json` only. Bridge RPC is fetched to fill mins / public-deposit
 //!   flags on those rows — never to add Bridge-only tokens. Cached as one catalog.
 //! - **Swap** (`/swap-tokens`): derived from the deposit catalog by filtering
-//!   to assets present in 1Click `/v0/tokens`. `?ondoTokens=true` also keeps
-//!   Ondo stocks (`type:rwa`) for the swap receive picker.
+//!   to assets present in 1Click `/v0/tokens`. `?includeStocks=true` also keeps
+//!   stocks (`type:rwa`) for the swap receive picker.
 //!
 //! Each network exposes `balanceAssetId` (Intents ledger) and `quoteAssetId`
 //! (1Click routing; may be a `1cs_v1:` id).
@@ -39,7 +39,8 @@ use crate::{
         NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
     services::{
-        ondo_market::is_market_hours_stock_tags, oneclick_tokens::fetch_oneclick_token_list,
+        oneclick_tokens::{fetch_oneclick_tokens, fetch_oneclick_tokens_with_stocks},
+        stock_market::is_market_hours_stock_tags,
     },
 };
 use serde_json::Value;
@@ -388,10 +389,10 @@ pub struct AssetOption {
     pub asset_name: String,
     pub name: String,
     pub icon: Option<String>,
-    /// `"stock"` for catalog `type:rwa` (Ondo stocks and ETFs).
+    /// `"stock"` for catalog `type:rwa` (stocks and ETFs).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub asset_class: Option<String>,
-    /// Stocks that can only be swapped while Ondo's market is open.
+    /// Stocks that can only be swapped while the stock market is open.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub market_hours_only: Option<bool>,
     pub networks: Vec<NetworkOption>,
@@ -401,7 +402,7 @@ pub struct AssetOption {
 #[serde(rename_all = "camelCase")]
 pub struct SwapTokensQuery {
     #[serde(default)]
-    pub ondo_tokens: bool,
+    pub include_stocks: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -487,15 +488,15 @@ pub async fn get_deposit_tokens(
 /// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`,
 /// excluding chain-only `1cs_v1:` networks (INTENTS holds nep141/nep245 only).
 ///
-/// `?ondoTokens=true` intersects with the Ondo-inclusive 1Click list so stocks
-/// stay available to the swap receive picker without entering Send.
+/// `?includeStocks=true` intersects with the stock-inclusive 1Click list so
+/// stocks stay available to the swap receive picker without entering Send.
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SwapTokensQuery>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
     let state_clone = state.clone();
-    let cache_key = if query.ondo_tokens {
-        "swap-tokens:ondo".to_string()
+    let cache_key = if query.include_stocks {
+        "swap-tokens:stocks".to_string()
     } else {
         "swap-tokens".to_string()
     };
@@ -506,9 +507,12 @@ pub async fn get_swap_tokens(
             cache_key,
             async move {
                 let deposit = load_deposit_catalog(state_clone.clone()).await?;
-                let oneclick_tokens = fetch_oneclick_token_list(&state_clone, query.ondo_tokens)
-                    .await
-                    .unwrap_or_default();
+                let oneclick_tokens = if query.include_stocks {
+                    fetch_oneclick_tokens_with_stocks(&state_clone).await
+                } else {
+                    fetch_oneclick_tokens(&state_clone).await
+                }
+                .unwrap_or_default();
                 let oneclick_ids: HashSet<String> =
                     oneclick_tokens.into_iter().map(|t| t.asset_id).collect();
                 Ok(filter_catalog_for_swap(deposit, &oneclick_ids))

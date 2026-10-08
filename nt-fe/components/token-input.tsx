@@ -48,7 +48,10 @@ import { Icon } from "./icon";
 import { InputBlock } from "./input-block";
 import { LargeInput } from "./large-input";
 import { TokenDisplay } from "./token-display-with-network";
-import TokenSelect, { type SelectedTokenData } from "./token-select";
+import TokenSelect, {
+    type SelectedTokenData,
+    type TokenSelectStocks,
+} from "./token-select";
 import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
 
@@ -144,12 +147,8 @@ interface TokenInputProps<
          * Swap's sell side sets this.
          */
         hideChainDeliveryRoutes?: boolean;
-        /**
-         * Swap receive picker. Shows All / Stocks and includes Ondo stocks.
-         */
-        showStockTabs?: boolean;
-        /** Swap sell side. Lists stocks the treasury holds. */
-        allowStocks?: boolean;
+        /** See `TokenSelect`'s `stocks`. */
+        stocks?: TokenSelectStocks;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -717,10 +716,7 @@ export function TokenInput<
                                         hideChainDeliveryRoutes={
                                             tokenSelect?.hideChainDeliveryRoutes
                                         }
-                                        showStockTabs={
-                                            tokenSelect?.showStockTabs
-                                        }
-                                        allowStocks={tokenSelect?.allowStocks}
+                                        stocks={tokenSelect?.stocks}
                                         balanceLayout={
                                             tokenSelectExtras?.balanceLayout
                                         }

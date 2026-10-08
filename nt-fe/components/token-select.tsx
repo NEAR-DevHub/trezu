@@ -185,16 +185,15 @@ interface TokenSelectProps {
      */
     tintTriggerFromIcon?: boolean;
     /**
-     * Receive picker on Swap. Loads Ondo stocks and shows All / Stocks tabs.
-     * Send leaves this off.
+     * Stocks are hidden unless set: like near.com, they can be swapped but not
+     * sent or withdrawn. `held` lists the ones the treasury holds (Swap sell
+     * side). `browse` loads every stock and shows All / Stocks tabs (Swap
+     * receive side).
      */
-    showStockTabs?: boolean;
-    /**
-     * List stocks the treasury holds (Swap sell side). Stocks are otherwise
-     * hidden: like near.com, they can be swapped but not sent or withdrawn.
-     */
-    allowStocks?: boolean;
+    stocks?: TokenSelectStocks;
 }
+
+export type TokenSelectStocks = "held" | "browse";
 
 export default function TokenSelect({
     selectedToken,
@@ -217,10 +216,10 @@ export default function TokenSelect({
     hideNetworkSubtitle = false,
     appearance = "default",
     tintTriggerFromIcon = false,
-    showStockTabs = false,
-    allowStocks = false,
+    stocks,
 }: TokenSelectProps) {
-    const stocksAllowed = allowStocks || showStockTabs;
+    const stocksAllowed = stocks !== undefined;
+    const showStockTabs = stocks === "browse";
     const t = useTranslations("tokenSelectDialog");
     const tDepositSections = useTranslations("depositModal.sections");
     const tResidency = useTranslations("residency");
@@ -246,7 +245,7 @@ export default function TokenSelect({
         // highest-USD default (and USDC fallback) can resolve immediately.
         enabled: !showOnlyOwnedAssets && (open || autoSelect),
         showOnlyOwned: showOnlyOwnedAssets,
-        catalogKind: showStockTabs ? "swap-ondo" : "swap",
+        catalogKind: showStockTabs ? "swap-stocks" : "swap",
     });
 
     // Wait for assets cache/fetch before picking — avoids flashing USDC then
