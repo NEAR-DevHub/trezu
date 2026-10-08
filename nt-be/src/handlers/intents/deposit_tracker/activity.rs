@@ -14,6 +14,7 @@ use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange};
 
 use super::store::{InProcessDeposit, load_visible_deposits};
+use super::worker::LEDGER_MATCH_LOOKBACK;
 
 /// Selects which tracker rows a list request may show. Tracker rows only
 /// make sense on the first page of an unfiltered or incoming-only feed.
@@ -82,7 +83,9 @@ impl InProcessDeposit {
         metadata: &HashMap<String, TokenMetadata>,
     ) -> Option<EnrichedBalanceChange> {
         let action_kind = self.action_kind()?;
-        let amount = self.amount.clone().unwrap_or_else(BigDecimal::zero);
+        // Without an amount the feed would label the row a zero "Transaction";
+        // the modal panel still shows it as detected.
+        let amount = self.amount.clone()?;
         Some(EnrichedBalanceChange {
             id: -self.id,
             account_id: self.dao_id.clone(),
@@ -115,11 +118,34 @@ impl InProcessDeposit {
     }
 }
 
+/// Whether a ledger row already on the page represents this tracker row,
+/// even though the worker has not linked them yet. Mirrors
+/// `find_public_ledger_match`: the NEAR mint hash when the provider gave
+/// one (PoA, HOT), otherwise the same token and amount inside the lookback
+/// window (Omni rows arrive with an empty `mint_tx_hash`).
+fn served_by_ledger(deposit: &InProcessDeposit, ledger_rows: &[EnrichedBalanceChange]) -> bool {
+    if let Some(hash) = deposit.near_tx_hash.as_deref() {
+        return ledger_rows
+            .iter()
+            .any(|row| row.transaction_hashes.iter().any(|h| h == hash));
+    }
+    let Some(amount) = deposit.amount.as_ref() else {
+        return false;
+    };
+    let not_before = deposit.detected_at - LEDGER_MATCH_LOOKBACK;
+    ledger_rows.iter().any(|row| {
+        row.id > 0
+            && row.token_id == deposit.token_id
+            && row.amount == *amount
+            && row.block_time >= not_before
+    })
+}
+
 /// In-process deposit rows for the top of a recent-activity page, newest
 /// first. Empty when the request's page or filters exclude them.
 /// `ledger_rows` are the ledger rows already on the page: a tracker row
-/// whose NEAR hash is among them is served by the ledger, even if the
-/// worker has not linked it yet.
+/// the ledger already serves is dropped so "Processing" and "Completed"
+/// never show side by side.
 pub async fn in_process_activity_rows(
     state: &Arc<AppState>,
     params: &BalanceChangesQuery,
@@ -130,21 +156,12 @@ pub async fn in_process_activity_rows(
         return Ok(Vec::new());
     }
 
-    let ledger_hashes: std::collections::HashSet<&str> = ledger_rows
-        .iter()
-        .flat_map(|row| row.transaction_hashes.iter().map(String::as_str))
-        .collect();
     let deposits: Vec<InProcessDeposit> =
         load_visible_deposits(&state.db_pool, params.account_id.as_str())
             .await?
             .into_iter()
             .filter(|deposit| filter.allows_token(&deposit.token_id))
-            .filter(|deposit| {
-                deposit
-                    .near_tx_hash
-                    .as_deref()
-                    .is_none_or(|hash| !ledger_hashes.contains(hash))
-            })
+            .filter(|deposit| !served_by_ledger(deposit, ledger_rows))
             .collect();
     if deposits.is_empty() {
         return Ok(Vec::new());
@@ -198,6 +215,97 @@ mod tests {
             next_refresh_at: None,
             updated_at: Utc::now(),
         }
+    }
+
+    fn ledger_row(
+        id: i64,
+        token_id: &str,
+        amount: i64,
+        hashes: &[&str],
+        block_time: chrono::DateTime<Utc>,
+    ) -> EnrichedBalanceChange {
+        EnrichedBalanceChange {
+            id,
+            account_id: "dao.sputnik-dao.near".to_string(),
+            block_height: 1,
+            block_time,
+            token_id: token_id.to_string(),
+            receipt_id: Vec::new(),
+            transaction_hashes: hashes.iter().map(|h| h.to_string()).collect(),
+            counterparty: None,
+            signer_id: None,
+            receiver_id: None,
+            amount: BigDecimal::from(amount),
+            balance_before: BigDecimal::zero(),
+            balance_after: BigDecimal::zero(),
+            created_at: block_time,
+            token_metadata: None,
+            swap: None,
+            action_kind: None,
+            method_name: None,
+            actions: None,
+            usd_value: None,
+            proposal_id: None,
+            quote_deposit_address: None,
+        }
+    }
+
+    #[test]
+    fn hashed_row_is_served_by_matching_ledger_hash_only() {
+        let mut tracked = deposit(WatchKind::Public, DepositStatus::Finalized);
+        tracked.near_tx_hash = Some("mint".to_string());
+        let token = tracked.token_id.clone();
+        let now = Utc::now();
+        // Same token + amount but a different hash: not the same deposit.
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger_row(1, &token, 100, &["other"], now)]
+        ));
+        assert!(served_by_ledger(
+            &tracked,
+            &[ledger_row(1, &token, 100, &["other", "mint"], now)]
+        ));
+    }
+
+    #[test]
+    fn hashless_row_is_served_by_token_amount_inside_lookback() {
+        let tracked = deposit(WatchKind::Public, DepositStatus::Finalized);
+        let token = tracked.token_id.clone();
+        let now = Utc::now();
+        assert!(served_by_ledger(
+            &tracked,
+            &[ledger_row(1, &token, 100, &["mint"], now)]
+        ));
+        // Wrong amount, wrong token, too old, or another tracker row: no.
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger_row(1, &token, 99, &["mint"], now)]
+        ));
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger_row(1, "intents.near:nep141:x", 100, &["mint"], now)]
+        ));
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger_row(
+                1,
+                &token,
+                100,
+                &["mint"],
+                now - LEDGER_MATCH_LOOKBACK - chrono::Duration::minutes(1)
+            )]
+        ));
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger_row(-9, &token, 100, &[], now)]
+        ));
+    }
+
+    #[test]
+    fn rows_without_an_amount_stay_out_of_the_feed() {
+        let mut tracked = deposit(WatchKind::Confidential, DepositStatus::Detected);
+        tracked.amount = None;
+        assert!(tracked.to_enriched(&HashMap::new()).is_none());
     }
 
     #[test]

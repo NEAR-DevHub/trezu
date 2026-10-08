@@ -112,10 +112,13 @@ impl BridgeDeposit {
     }
 
     /// Ledger token id the gold mint row will carry
-    /// (`intents.near:nep141:<near_token_id>`). Falls back to the chain-scoped
-    /// defuse id when the bridge omits the NEAR contract.
+    /// (`intents.near:nep141:<contract>` or `intents.near:nep245:<contract>:<token>`).
+    /// NEAR account ids never contain `:`, so a colon in `near_token_id` means
+    /// a multi-token (HOT bridge `v2_1.omni.hot.tg:<chain>_<token>`). Falls back
+    /// to the chain-scoped defuse id when the bridge omits the NEAR contract.
     pub fn ledger_token_id(&self) -> String {
         match self.near_token_id.as_deref() {
+            Some(token) if token.contains(':') => format!("intents.near:nep245:{token}"),
             Some(contract) => format!("intents.near:nep141:{contract}"),
             None => format!("intents.near:{}", self.defuse_asset_id),
         }
@@ -277,6 +280,41 @@ mod tests {
         assert_eq!(deposit.amount, Some(BigDecimal::from_str("100").unwrap()));
         assert_eq!(deposit.status, BridgeDepositStatus::Completed);
         assert_eq!(deposit.status.tracker_status(), DepositStatus::Finalized);
+    }
+
+    #[test]
+    fn hot_bridge_multi_token_maps_to_nep245() {
+        let raw = serde_json::json!({
+            "result": { "deposits": [{
+                "tx_hash": "0x5397",
+                "mint_tx_hash": "4gfMyBb8iaRmB7cErbJDbGeUhDtxiDsSsCZkctrycWG2",
+                "chain": "eth:56",
+                "defuse_asset_identifier": "eth:56:0x55d398326f99059ff775485246999027b3197955",
+                "near_token_id": "v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g",
+                "decimals": 18,
+                "amount": 200000000000000000u64,
+                "status": "COMPLETED"
+            }, {
+                "tx_hash": "3EUrSr",
+                "mint_tx_hash": "",
+                "chain": "sol:mainnet",
+                "defuse_asset_identifier": "sol:mainnet:USD1ttGY1N17NEEHLmELoaybftRBUSErhqYiQzvEmuB",
+                "near_token_id": "sol-0x936420c6ae310eb29511d139991654f922456fbe.omdep.near",
+                "decimals": 6,
+                "amount": 200000,
+                "status": "COMPLETED"
+            }]}
+        });
+        let deposits = parse_recent_deposits(&raw).expect("parses");
+        assert_eq!(
+            deposits[0].ledger_token_id(),
+            "intents.near:nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g"
+        );
+        assert_eq!(
+            deposits[1].ledger_token_id(),
+            "intents.near:nep141:sol-0x936420c6ae310eb29511d139991654f922456fbe.omdep.near"
+        );
+        assert_eq!(deposits[1].near_tx_hash, None, "empty mint hash is None");
     }
 
     #[test]

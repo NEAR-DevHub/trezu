@@ -15,7 +15,9 @@ use crate::AppState;
 use crate::handlers::intents::confidential::bronze::api::fetch_history;
 use crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::bronze::store::upsert_history_events;
-use crate::handlers::intents::confidential::types::HistoryApiItem;
+use crate::handlers::intents::swap_status::{
+    FullSwapStatusResponse, SwapStatus, fetch_public_swap_status,
+};
 use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::api::fetch_latest_indexed_block_height;
 use crate::handlers::public_history::bronze::store::{PublicHistorySource, upsert_latest_demand};
@@ -48,7 +50,7 @@ const ERROR_BACKOFF_MAX: Duration = Duration::minutes(10);
 const MAX_REFRESH_ATTEMPTS: i32 = 12;
 const REFRESH_BACKOFF: [i64; 5] = [10, 30, 60, 120, 300];
 /// The bridge can mint slightly before the tracker first sees the deposit.
-const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
+pub(super) const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
 
 #[derive(Debug, Default, Clone)]
 pub struct TrackerTickSummary {
@@ -284,13 +286,36 @@ impl<'a> DepositTrackerWorker<'a> {
         let Some(status) = confidential_tracker_status(&newest.item.status) else {
             return Ok(result);
         };
+        // History reports the quote nominal as the amount until settlement.
+        // `/v0/status` (the quote was minted with the app key) carries the
+        // deposit 1Click actually saw; without it the amount stays unknown.
+        let amount = match fetch_public_swap_status(
+            &self.state.http_client,
+            &self.state.env_vars.confidential_api_url,
+            self.state.env_vars.oneclick_jwt_token.as_ref(),
+            quote_deposit_address,
+            newest.item.deposit_memo.as_deref(),
+        )
+        .await
+        {
+            Ok(full) => confidential_amount(&full),
+            Err((_, message)) => {
+                tracing::debug!(
+                    dao_id = %watch.dao_id,
+                    quote_deposit_address,
+                    error = %message,
+                    "deposit tracker: 1Click status unavailable, amount unknown"
+                );
+                None
+            }
+        };
         let observed = ObservedDeposit {
             provider_deposit_key: quote_deposit_address.to_string(),
             chain: watch.chain.clone(),
             origin_tx_hash: newest.item.first_quote_tx_hash().map(str::to_string),
             near_tx_hash: None,
             token_id: newest.item.destination_asset.clone(),
-            amount: confidential_amount(&newest.item),
+            amount,
             provider_status: newest.item.status.clone(),
             status,
         };
@@ -536,12 +561,20 @@ fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
     }
 }
 
-/// Credited amount when settled, otherwise the observed input amount.
-fn confidential_amount(item: &HistoryApiItem) -> Option<BigDecimal> {
-    item.amount_out_formatted
-        .as_deref()
-        .or(item.amount_in_formatted.as_deref())
-        .and_then(|text| BigDecimal::from_str(text.trim()).ok())
+/// Credited amount once settled, otherwise the deposit 1Click has observed
+/// on chain. Never the quote nominal: that is only what the address was
+/// minted with, not what the user sent.
+fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
+    let details = full.swap_details.as_ref()?;
+    let text = if matches!(full.status, SwapStatus::Success) {
+        details
+            .amount_out_formatted
+            .as_deref()
+            .or(details.deposited_amount_formatted.as_deref())
+    } else {
+        details.deposited_amount_formatted.as_deref()
+    };
+    text.and_then(|text| BigDecimal::from_str(text.trim()).ok())
 }
 
 #[cfg(test)]
@@ -644,6 +677,52 @@ mod tests {
         assert_eq!(error_backoff(20), ERROR_BACKOFF_MAX);
         assert_eq!(refresh_backoff(0), Duration::seconds(10));
         assert_eq!(refresh_backoff(9), Duration::seconds(300));
+    }
+
+    fn status_response(status: SwapStatus, details: serde_json::Value) -> FullSwapStatusResponse {
+        serde_json::from_value(serde_json::json!({
+            "status": status,
+            "updatedAt": "2026-10-08T00:00:00Z",
+            "swapDetails": details,
+        }))
+        .expect("status response parses")
+    }
+
+    #[test]
+    fn confidential_amount_is_the_observed_deposit_never_the_quote_nominal() {
+        // Deposit known but not settled: the on-chain amount, not the quote.
+        let processing = status_response(
+            SwapStatus::Processing,
+            serde_json::json!({
+                "depositedAmountFormatted": "5",
+                "amountInFormatted": "0.15",
+                "amountOutFormatted": "0.15"
+            }),
+        );
+        assert_eq!(confidential_amount(&processing), Some(BigDecimal::from(5)));
+
+        // Nothing observed yet: unknown, not the nominal.
+        let waiting = status_response(
+            SwapStatus::KnownDepositTx,
+            serde_json::json!({ "amountInFormatted": "0.15", "amountOutFormatted": "0.15" }),
+        );
+        assert_eq!(confidential_amount(&waiting), None);
+
+        // Settled: the credited amount.
+        let settled = status_response(
+            SwapStatus::Success,
+            serde_json::json!({ "depositedAmountFormatted": "5", "amountOutFormatted": "4.99" }),
+        );
+        assert_eq!(
+            confidential_amount(&settled),
+            Some(BigDecimal::from_str("4.99").unwrap())
+        );
+        let no_details: FullSwapStatusResponse = serde_json::from_value(serde_json::json!({
+            "status": "PENDING_DEPOSIT",
+            "updatedAt": "2026-10-08T00:00:00Z"
+        }))
+        .unwrap();
+        assert_eq!(confidential_amount(&no_details), None);
     }
 
     #[test]
