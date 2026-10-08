@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "הסכום נמוך מדי לכיסוי עמלות רשת. הזן לפחות {min} {token}.",
         "insufficientBalance": "יתרה לא מספקת להחלפה זו.",
         "networkError": "שגיאת רשת. אנא בדוק את החיבור שלך ונסה שוב.",
+        "marketClosed": "השוק של מניה זו סגור. המסחר יתחדש כשהשוק ייפתח מחדש.",
+        "stockMinimum": "החלפות מניות דורשות לפחות {min}. הזן סכום גבוה יותר.",
+        "stockNoQuote": "אין הצעת מחיר למניה זו בסכום הזה. החלפות מניות דורשות בדרך כלל {amount} או יותר, לכן נסה סכום גבוה יותר.",
         "fetchFailed": "אחזור הציטוט נכשל"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "רשתות עם נכסים",
         "supportedNetworks": "רשתות נתמכות",
         "comingSoon": "בקרוב",
+        "all": "הכל",
+        "stocks": "מניות",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}"
     },
     "intentsQuote": {

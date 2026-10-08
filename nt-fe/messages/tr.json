@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "Miktar ağ ücretlerini karşılamak için çok düşük. En az {min} {token} girin.",
         "insufficientBalance": "Bu takas için yetersiz bakiye.",
         "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.",
+        "marketClosed": "Bu hissenin piyasası kapalı. Piyasa yeniden açıldığında işlemler devam eder.",
+        "stockMinimum": "Hisse senedi takasları en az {min} gerektirir. Daha yüksek bir tutar girin.",
+        "stockNoQuote": "Bu tutarda bu hisse için teklif yok. Hisse takasları genellikle {amount} veya daha fazlasını gerektirir, bu yüzden daha yüksek bir tutar deneyin.",
         "fetchFailed": "Teklif alınamadı"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "Varlıkları olan ağlar",
         "supportedNetworks": "Desteklenen Ağlar",
         "comingSoon": "Yakında",
+        "all": "Tümü",
+        "stocks": "Hisseler",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Ağ} other {# Ağ}}"
     },
     "intentsQuote": {

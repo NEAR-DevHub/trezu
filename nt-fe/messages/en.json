@@ -2099,6 +2099,9 @@
         "amountTooLowWithMin": "Amount is too low to cover network fees. Enter at least {min} {token}.",
         "insufficientBalance": "Insufficient balance for this swap.",
         "networkError": "Network error. Please check your connection and try again.",
+        "marketClosed": "This stock's market is closed. Trading resumes when the market reopens.",
+        "stockMinimum": "Stock swaps need at least {min}. Enter a larger amount.",
+        "stockNoQuote": "No quote for this stock at this amount. Stock swaps usually need {amount} or more, so try a larger amount.",
         "fetchFailed": "Failed to fetch quote"
     },
     "tokenSelectDialog": {
@@ -2113,6 +2116,9 @@
         "networksWithAssets": "Networks with tokens",
         "supportedNetworks": "Supported networks",
         "comingSoon": "Coming soon",
+        "all": "All",
+        "stocks": "Stocks",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Network} other {# Networks}}"
     },
     "intentsQuote": {

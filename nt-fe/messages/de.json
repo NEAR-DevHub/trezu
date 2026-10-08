@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "Der Betrag ist zu niedrig, um die Netzwerkgebühren zu decken. Geben Sie mindestens {min} {token} ein.",
         "insufficientBalance": "Unzureichendes Guthaben für diesen Tausch.",
         "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "marketClosed": "Der Markt für diese Aktie ist geschlossen. Der Handel wird fortgesetzt, sobald der Markt wieder öffnet.",
+        "stockMinimum": "Aktien-Swaps erfordern mindestens {min}. Gib einen höheren Betrag ein.",
+        "stockNoQuote": "Für diese Aktie gibt es bei diesem Betrag kein Angebot. Aktien-Swaps benötigen in der Regel {amount} oder mehr. Versuche es mit einem höheren Betrag.",
         "fetchFailed": "Abrufen des Angebots fehlgeschlagen"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "Netzwerke mit Vermögenswerten",
         "supportedNetworks": "Unterstützte Netzwerke",
         "comingSoon": "Demnächst verfügbar",
+        "all": "Alle",
+        "stocks": "Aktien",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Netzwerk} other {# Netzwerke}}"
     },
     "intentsQuote": {

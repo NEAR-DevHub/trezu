@@ -9,6 +9,7 @@ pub mod ft_lockup_scheduler;
 pub mod goldsky_cursor;
 pub mod monitored_accounts;
 pub mod nearcom_catalog_watch;
+pub mod ondo_market;
 pub mod oneclick_asset_routing;
 pub mod oneclick_tokens;
 pub mod platform_metrics;

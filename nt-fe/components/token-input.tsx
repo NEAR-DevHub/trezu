@@ -90,6 +90,9 @@ export const tokenSchema = z.object({
      * one the treasury holds. `decimals` stays the destination asset's decimals.
      */
     balanceDecimals: z.number().optional(),
+    /** Stocks live on one network, so the UI shows no network for them. */
+    assetClass: z.literal("stock").optional(),
+    marketHoursOnly: z.boolean().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -136,6 +139,12 @@ interface TokenInputProps<
          * Exchange sets this. Send leaves it off.
          */
         hideOffNearChainDelivery?: boolean;
+        /**
+         * Swap receive picker. Shows All / Stocks and includes Ondo stocks.
+         */
+        showStockTabs?: boolean;
+        /** Swap sell side. Lists stocks the treasury holds. */
+        allowStocks?: boolean;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -700,6 +709,10 @@ export function TokenInput<
                                         hideOffNearChainDelivery={
                                             tokenSelect?.hideOffNearChainDelivery
                                         }
+                                        showStockTabs={
+                                            tokenSelect?.showStockTabs
+                                        }
+                                        allowStocks={tokenSelect?.allowStocks}
                                         balanceLayout={
                                             tokenSelectExtras?.balanceLayout
                                         }

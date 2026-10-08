@@ -2084,6 +2084,9 @@
         "amountTooLowWithMin": "金额过低,无法支付网络手续费。请输入至少 {min} {token}。",
         "insufficientBalance": "此次兑换余额不足。",
         "networkError": "网络错误。请检查您的连接并再试一次。",
+        "marketClosed": "该股票的市场已休市。市场重新开盘后即可恢复交易。",
+        "stockMinimum": "股票兑换至少需要 {min}。请输入更大的金额。",
+        "stockNoQuote": "此金额下没有该股票的报价。股票兑换通常需要 {amount} 或以上，请尝试更大的金额。",
         "fetchFailed": "获取报价失败"
     },
     "tokenSelectDialog": {
@@ -2098,6 +2101,9 @@
         "networksWithAssets": "包含资产的网络",
         "supportedNetworks": "支持的网络",
         "comingSoon": "即将推出",
+        "all": "全部",
+        "stocks": "股票",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {# 个网络}}"
     },
     "intentsQuote": {

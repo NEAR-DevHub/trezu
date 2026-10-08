@@ -2084,6 +2084,9 @@
         "amountTooLowWithMin": "Số tiền quá thấp để chi trả phí mạng. Hãy nhập ít nhất {min} {token}.",
         "insufficientBalance": "Số dư không đủ cho giao dịch hoán đổi này.",
         "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối và thử lại.",
+        "marketClosed": "Thị trường của cổ phiếu này đang đóng cửa. Giao dịch sẽ tiếp tục khi thị trường mở cửa trở lại.",
+        "stockMinimum": "Hoán đổi cổ phiếu cần tối thiểu {min}. Hãy nhập số tiền lớn hơn.",
+        "stockNoQuote": "Không có báo giá cho cổ phiếu này với số tiền này. Hoán đổi cổ phiếu thường cần {amount} trở lên, vì vậy hãy thử số tiền lớn hơn.",
         "fetchFailed": "Không thể lấy báo giá"
     },
     "tokenSelectDialog": {
@@ -2098,6 +2101,9 @@
         "networksWithAssets": "Mạng có tài sản",
         "supportedNetworks": "Mạng được hỗ trợ",
         "comingSoon": "Sắp ra mắt",
+        "all": "Tất cả",
+        "stocks": "Cổ phiếu",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {# Mạng}}"
     },
     "intentsQuote": {

@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "Jumlah terlalu rendah untuk menutupi biaya jaringan. Masukkan minimal {min} {token}.",
         "insufficientBalance": "Saldo tidak mencukupi untuk swap ini.",
         "networkError": "Kesalahan jaringan. Silakan periksa koneksi Anda dan coba lagi.",
+        "marketClosed": "Pasar saham ini sedang tutup. Perdagangan dilanjutkan saat pasar dibuka kembali.",
+        "stockMinimum": "Swap saham memerlukan minimal {min}. Masukkan jumlah yang lebih besar.",
+        "stockNoQuote": "Tidak ada kuotasi untuk saham ini pada jumlah ini. Swap saham biasanya memerlukan {amount} atau lebih, jadi coba jumlah yang lebih besar.",
         "fetchFailed": "Gagal mengambil kuotasi"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "Jaringan dengan aset",
         "supportedNetworks": "Jaringan yang Didukung",
         "comingSoon": "Segera hadir",
+        "all": "Semua",
+        "stocks": "Saham",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {# Jaringan}}"
     },
     "intentsQuote": {

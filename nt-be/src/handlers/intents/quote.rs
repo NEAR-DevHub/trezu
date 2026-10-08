@@ -10,6 +10,7 @@ use crate::AppState;
 use crate::auth::OptionalAuthUser;
 use crate::constants::intents_tokens::{is_stablecoin_to_stablecoin, same_quote_asset};
 use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
+use crate::services::ondo_market;
 
 /// Default DAO proposal period (7 days) used when policy is unavailable.
 const DEFAULT_PROPOSAL_PERIOD_NS: u64 = 604_800_000_000_000;
@@ -182,6 +183,17 @@ pub async fn get_quote(
     auth: OptionalAuthUser,
     Json(request): Json<QuoteRequest>,
 ) -> Result<Json<Value>, (StatusCode, String)> {
+    let involves_market_hours_stock =
+        !same_quote_asset(&request.origin_asset, &request.destination_asset)
+            && (ondo_market::is_market_hours_stock(&request.origin_asset)
+                || ondo_market::is_market_hours_stock(&request.destination_asset));
+    if involves_market_hours_stock && !ondo_market::is_ondo_weekly_market_open(chrono::Utc::now()) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            ondo_market::MARKET_CLOSED_MESSAGE.to_string(),
+        ));
+    }
+
     let body = build_quote_body(&state, &request);
 
     // Check confidentiality when dao_id is provided

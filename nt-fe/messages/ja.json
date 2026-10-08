@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "金額がネットワーク手数料を賄うのに低すぎます。少なくとも{min} {token}を入力してください。",
         "insufficientBalance": "このスワップに対して残高が不足しています。",
         "networkError": "ネットワークエラーです。接続を確認してもう一度お試しください。",
+        "marketClosed": "この株式の市場は閉まっています。市場が再開すると取引が再開されます。",
+        "stockMinimum": "株式のスワップには最低 {min} が必要です。より大きな金額を入力してください。",
+        "stockNoQuote": "この金額ではこの株式の見積もりがありません。株式のスワップには通常 {amount} 以上が必要です。より大きな金額でお試しください。",
         "fetchFailed": "見積りの取得に失敗しました"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "資産のあるネットワーク",
         "supportedNetworks": "対応ネットワーク",
         "comingSoon": "近日公開",
+        "all": "すべて",
+        "stocks": "株式",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {# 件のネットワーク}}"
     },
     "intentsQuote": {

@@ -1,6 +1,28 @@
 import { describe, expect, it } from "bun:test";
 import { formatQuoteErrorMessage } from "./quote-errors";
-import { classifyExchangeError } from "./utils";
+import { classifyExchangeError, isBelowStockMinimum } from "./utils";
+
+describe("isBelowStockMinimum", () => {
+    const quote = { amountInUsd: "50.10", amountOutUsd: "19.99" };
+
+    it("checks only the stock side", () => {
+        expect(isBelowStockMinimum(quote, { sell: false, receive: true })).toBe(
+            true,
+        );
+        expect(isBelowStockMinimum(quote, { sell: true, receive: false })).toBe(
+            false,
+        );
+        expect(
+            isBelowStockMinimum(quote, { sell: false, receive: false }),
+        ).toBe(false);
+    });
+
+    it("does not block when the USD value is missing", () => {
+        expect(isBelowStockMinimum({}, { sell: true, receive: true })).toBe(
+            false,
+        );
+    });
+});
 
 describe("classifyExchangeError", () => {
     it("maps liquidity failures to noRoute", () => {
@@ -55,6 +77,17 @@ describe("formatQuoteErrorMessage", () => {
                 tEx,
             ),
         ).toBe("No exchange found. Try a smaller amount or a different token.");
+    });
+
+    it("explains no-liquidity on a stock swap as a stock amount issue", () => {
+        expect(
+            formatQuoteErrorMessage(
+                new Error("No liquidity available"),
+                { decimals: 6, symbol: "USDC" },
+                tEx,
+                { isStockSwap: true, stockUsualMin: "$30.00" },
+            ),
+        ).toBe("stockNoQuote");
     });
 
     it("formats amountTooLow with token decimals", () => {

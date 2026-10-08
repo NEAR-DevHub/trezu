@@ -2,8 +2,8 @@
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
-import { toast } from "sonner";
 import { useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { CreateRequestButton } from "@/components/create-request-button";
 import { Icon } from "@/components/icon";
@@ -243,6 +243,7 @@ export function Step1({
                             filterTokens: filterSellTokens,
                             autoSelect: false,
                             hideOffNearChainDelivery: true,
+                            allowStocks: true,
                         }}
                         usdValueOverride={
                             quoteData?.quote
@@ -297,6 +298,7 @@ export function Step1({
                         showPopularAssets: true,
                         autoSelect: false,
                         hideOffNearChainDelivery: true,
+                        showStockTabs: true,
                     }}
                     usdValueOverride={
                         quoteData?.quote

@@ -26,28 +26,44 @@ pub struct OneClickToken {
     pub coingecko_id: Option<String>,
 }
 
-/// Fetch the 1Click token list (cached LongTerm).
+/// Fetch the 1Click token list (cached LongTerm), without Ondo stocks.
 pub async fn fetch_oneclick_tokens(
     state: &Arc<AppState>,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
-    let cache_key = "oneclick:v0:tokens".to_string();
+    fetch_oneclick_token_list(state, false).await
+}
+
+/// `include_ondo` sends `?ondoTokens=true`, which adds Ondo stocks and ETFs.
+pub async fn fetch_oneclick_token_list(
+    state: &Arc<AppState>,
+    include_ondo: bool,
+) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
+    let cache_key = if include_ondo {
+        "oneclick:v0:tokens:ondo".to_string()
+    } else {
+        "oneclick:v0:tokens".to_string()
+    };
     let state_clone = state.clone();
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            fetch_oneclick_tokens_uncached(&state_clone).await
+            fetch_oneclick_tokens_uncached(&state_clone, include_ondo).await
         })
         .await
 }
 
 pub async fn fetch_oneclick_tokens_uncached(
     state: &Arc<AppState>,
+    include_ondo: bool,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
-    let url = format!(
+    let mut url = format!(
         "{}{}",
         state.env_vars.oneclick_api_url.trim_end_matches('/'),
         ONECLICK_TOKENS_PATH
     );
+    if include_ondo {
+        url.push_str("?ondoTokens=true");
+    }
     let mut request = state
         .http_client
         .get(&url)

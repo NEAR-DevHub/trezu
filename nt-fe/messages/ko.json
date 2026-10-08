@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "네트워크 수수료를 충당하기에 금액이 너무 적습니다. 최소 {min} {token}을(를) 입력하세요.",
         "insufficientBalance": "이 스왑을 위한 잔액이 부족합니다.",
         "networkError": "네트워크 오류입니다. 연결을 확인하고 다시 시도해 주세요.",
+        "marketClosed": "이 주식의 시장이 마감되었습니다. 시장이 다시 열리면 거래가 재개됩니다.",
+        "stockMinimum": "주식 스왑은 최소 {min}이(가) 필요합니다. 더 큰 금액을 입력하세요.",
+        "stockNoQuote": "이 금액으로는 이 주식의 견적이 없습니다. 주식 스왑은 보통 {amount} 이상이 필요하므로 더 큰 금액으로 시도하세요.",
         "fetchFailed": "견적을 가져오지 못했습니다"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "자산이 있는 네트워크",
         "supportedNetworks": "지원 네트워크",
         "comingSoon": "출시 예정",
+        "all": "전체",
+        "stocks": "주식",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {#개의 네트워크}}"
     },
     "intentsQuote": {

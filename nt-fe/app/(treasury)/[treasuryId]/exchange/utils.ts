@@ -1,6 +1,7 @@
+import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import { decimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import { isNearChainFtToken, isNearChainNativeToken } from "@/lib/intents-fee";
-import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 
 /**
  * Checks if a token is native NEAR
@@ -150,11 +151,37 @@ export function calculateMarketPriceDifference(
     }
 }
 
+/** near.com's floor for the stock side of a swap (`RWA_MIN_SWAP_VALUE_USD`). */
+export const STOCK_MIN_SWAP_USD = 20;
+
+/**
+ * Solvers answer "No liquidity available" for stock swaps below roughly this
+ * amount, before any USD value comes back to compare with the floor above.
+ */
+export const STOCK_USUAL_MIN_QUOTE_USD = 30;
+
+/**
+ * True when a stock side of the quote is worth less than
+ * `STOCK_MIN_SWAP_USD`. A missing or unparsable USD value is not "below".
+ */
+export function isBelowStockMinimum(
+    quote: { amountInUsd?: string | null; amountOutUsd?: string | null },
+    stockSide: { sell: boolean; receive: boolean },
+): boolean {
+    const below = (usd: string | null | undefined) =>
+        decimalOrNull(usd)?.lt(STOCK_MIN_SWAP_USD) ?? false;
+    return (
+        (stockSide.sell && below(quote.amountInUsd)) ||
+        (stockSide.receive && below(quote.amountOutUsd))
+    );
+}
+
 export type ExchangeErrorCode =
     | "noRoute"
     | "amountTooLow"
     | "insufficientBalance"
     | "networkError"
+    | "marketClosed"
     | "unknown";
 
 /**
@@ -168,6 +195,9 @@ export function classifyExchangeError(errorMessage: string): {
 } {
     const lowerError = errorMessage.toLowerCase();
 
+    if (lowerError.includes("market is closed")) {
+        return { code: "marketClosed", raw: errorMessage };
+    }
     if (
         lowerError.includes("no route") ||
         lowerError.includes("no swap") ||

@@ -2101,6 +2101,9 @@
         "amountTooLowWithMin": "O valor é muito baixo para cobrir as taxas de rede. Insira pelo menos {min} {token}.",
         "insufficientBalance": "Saldo insuficiente para este swap.",
         "networkError": "Erro de rede. Por favor, verifique sua conexão e tente novamente.",
+        "marketClosed": "O mercado desta ação está fechado. As negociações serão retomadas quando o mercado reabrir.",
+        "stockMinimum": "Trocas de ações exigem pelo menos {min}. Insira um valor maior.",
+        "stockNoQuote": "Não há cotação para esta ação neste valor. Trocas de ações geralmente exigem {amount} ou mais, então tente um valor maior.",
         "fetchFailed": "Falha ao obter cotação"
     },
     "tokenSelectDialog": {
@@ -2115,6 +2118,9 @@
         "networksWithAssets": "Redes com ativos",
         "supportedNetworks": "Redes suportadas",
         "comingSoon": "Em breve",
+        "all": "Todos",
+        "stocks": "Ações",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Rede} other {# Redes}}"
     },
     "intentsQuote": {
