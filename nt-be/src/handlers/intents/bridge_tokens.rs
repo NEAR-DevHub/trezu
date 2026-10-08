@@ -103,6 +103,7 @@ fn fallback_chain_id_for_name(chain_name: &str) -> String {
         "dash" => "dash:mainnet".to_string(),
         "movement" => "movement:mainnet".to_string(),
         "fogo" => "fogo:mainnet".to_string(),
+        "hood" => "eth:4663".to_string(),
         // Live bridge `supported_tokens` uses `hypercore:mainnet` for both
         // NEAR and USDC on Hyperliquid (not the UI name `hyperliquid:999`).
         "hyperliquid" | "hypercore" => "hypercore:mainnet".to_string(),
