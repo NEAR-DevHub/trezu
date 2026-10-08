@@ -2,7 +2,7 @@ name: Backend Tests
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, nearcom_redesign]
     paths:
       - 'nt-be/**'
       - '.github/workflows/backend-tests.yml'
@@ -10,7 +10,7 @@ on:
       - 'render.yaml'
       - '.env.example'
   pull_request:
-    branches: [ main ]
+    branches: [main, nearcom_redesign]
     paths:
       - 'nt-be/**'
       - '.github/workflows/backend-tests.yml'
