@@ -194,14 +194,11 @@
             "title": "Адресна книга"
         },
         "payments": {
-            "title": "Платежі",
-            "confidentialTitle": "Конфіденційні платежі",
-            "description": "Надсилайте кошти безпечно та надійно."
+            "title": "Платежі"
         },
         "exchange": {
             "title": "Обмін",
-            "confidentialTitle": "Обмін",
-            "description": "Обмінюйте токени безпечно й ефективно"
+            "confidentialTitle": "Обмін"
         },
         "vesting": {
             "title": "Вестинг",
@@ -339,13 +336,11 @@
         "anythingElseLost": "Усе надіслане звідкись ще буде втрачено",
         "anythingElseLostSub": "Біржі, публічні гаманці, інші мережі – відновити неможливо.",
         "confidentialAckCheckbox": "Я розумію, що депозити з-поза near.com або near business буде втрачено.",
-        "onlyFromNearBusiness": "Лише з <bold>near business</bold>",
+        "onlyFromNearBusiness": "Лише з <bold>near business</bold> або <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Лише з <bold>конфіденційного near.com</bold>",
-        "onlyFromNearBusinessOrNearcom": "Лише з <bold>near business</bold> або <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Багаторазова.</bold> Не закінчується",
-        "fundsOutsideNearBusinessLost": "Кошти, надіслані з-поза <bold>near business</bold>, буде втрачено",
+        "fundsOutsideNearBusinessLost": "Кошти, надіслані з-поза <bold>near business</bold> або <bold>near.com</bold>, буде втрачено.",
         "fundsOutsideNearcomLost": "Кошти, надіслані з-поза <bold>конфіденційного near.com</bold>, буде втрачено",
-        "fundsOutsideNearBusinessOrNearcomLost": "Кошти, надіслані з-поза <bold>near business</bold> або <bold>near.com</bold>, буде втрачено.",
         "publicNetworkRecommendation": "Вносьте депозит лише з мережі <bold>{network}</bold>. Почніть із невеликої тестової транзакції, перш ніж надсилати повну суму.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "Вага",
         "source": "Джерело",
         "send": "Надіслати",
-        "exchange": "Обмін",
         "swap": "Обмін",
         "comingSoon": "Скоро",
         "vesting": "Вестинг",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "Схвалити",
             "reject": "Відхилити",
-            "deposit": "Поповнити",
             "viewRequest": "Переглянути запит"
         },
         "table": {
@@ -1708,8 +1701,7 @@
     "memberInput": {
         "addNewMember": "Додати ще одного учасника",
         "validation": {
-            "rolesRequired": "Потрібна щонайменше одна роль",
-            "duplicateAddress": "Ця адреса вже є учасником"
+            "rolesRequired": "Потрібна щонайменше одна роль"
         },
         "enterAddress": "Введіть адресу",
         "clearAddress": "Очистити адресу",
@@ -1878,7 +1870,6 @@
     "recipientNetworkSelect": {
         "label": "Мережа одержувача",
         "placeholder": "Оберіть мережу одержувача",
-        "enterAddressFirst": "Спочатку введіть адресу одержувача",
         "noCompatibleNetwork": "Жодна мережа не підходить для цієї адреси",
         "selectPlaceholder": "Обрати мережу",
         "title": "Обрати мережу",
@@ -1886,8 +1877,6 @@
         "fromAddressBook": "З адресної книги",
         "otherAvailable": "Інші доступні",
         "incompatible": "Несумісні",
-        "comingSoon": "Скоро",
-        "forMembersOnly": "Лише для учасників",
         "nearComDescription": "Мережа для near business і near.com",
         "internalTag": "Внутрішня"
     },
@@ -2061,7 +2050,6 @@
     },
     "user": {
         "saveToAddressBook": "Зберегти в контакти",
-        "walletCopiedToast": "Адресу гаманця скопійовано в буфер обміну",
         "copyWalletAddress": "Скопіювати адресу"
     },
     "infoDisplay": {
@@ -2177,7 +2165,6 @@
     },
     "tokenInput": {
         "useMax": "Використати макс.",
-        "max": "МАКС",
         "insufficientTokens": "Недостатній баланс. Поповніть перед затвердженням.",
         "insufficientTokensForFee": "Недостатньо токенів для покриття комісії мережі ({fee} {symbol}). Можете надіслати запит і поповнити перед затвердженням.",
         "balance": "Баланс: {amount} {symbol}",
@@ -2188,9 +2175,6 @@
         "noPermission": "У вас немає прав створювати запит",
         "paused": "Тимчасово призупинено",
         "brieflyUnavailable": "Короткочасово недоступно"
-    },
-    "address": {
-        "copied": "Адресу скопійовано в буфер"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Учасники, які можуть голосувати",
@@ -2355,15 +2339,7 @@
             "back": "Назад"
         },
         "progress": {
-            "title": "Швидкі кроки, щоб ознайомитись зі скарбницею",
             "addAssetsTitle": "Додайте активи",
-            "addAssetsDescription": "Почніть з додавання активів, щоб побачити їх у дії.",
-            "deposit": "Поповнити",
-            "createPaymentTitle": "Створити запит на платіж",
-            "createPaymentDescription": "Створіть запит на платіж, щоб завершити налаштування.",
-            "send": "Надіслати",
-            "useSolo": "Використовувати Solo",
-            "addTeamMemberDescription": "Ви успішно налаштували обліковий запис. Гарний початок!",
             "addTeamMemberTitle": "Створити обліковий запис скарбниці",
             "getStarted": "Почати",
             "setupThresholdTitle": "Налаштувати поріг",

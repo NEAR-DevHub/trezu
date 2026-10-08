@@ -110,6 +110,7 @@ fn fallback_chain_id_for_name(chain_name: &str) -> String {
         "dash" => "dash:mainnet".to_string(),
         "movement" => "movement:mainnet".to_string(),
         "fogo" => "fogo:mainnet".to_string(),
+        "hood" => "eth:4663".to_string(),
         // Live bridge `supported_tokens` uses `hypercore:mainnet` for both
         // NEAR and USDC on Hyperliquid (not the UI name `hyperliquid:999`).
         "hyperliquid" | "hypercore" => "hypercore:mainnet".to_string(),
@@ -158,10 +159,6 @@ fn network_name_for_chain(chain_name: &str) -> String {
     get_chain_metadata_by_name(chain_name)
         .map(|m| m.name.to_lowercase())
         .unwrap_or_else(|| chain_name.to_lowercase())
-}
-
-fn network_name_for_base(base: &BaseTokenInfo) -> String {
-    network_name_for_chain(&base.origin_chain_name)
 }
 
 /// Chain to label when every deployment sits on one chain other than
@@ -1198,7 +1195,7 @@ mod tests {
     #[test]
     fn every_catalog_chain_has_a_volume_rank() {
         for base in get_defuse_tokens_map().values() {
-            let name = network_name_for_base(base);
+            let name = network_name_for_chain(&base.origin_chain_name);
             assert_ne!(
                 network_volume_rank(&name),
                 999,

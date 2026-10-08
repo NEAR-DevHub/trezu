@@ -140,6 +140,11 @@ interface TokenInputProps<
          */
         hideOffNearChainDelivery?: boolean;
         /**
+         * Hide every chain-delivery network. They repeat a held balance, so
+         * Swap's sell side sets this.
+         */
+        hideChainDeliveryRoutes?: boolean;
+        /**
          * Swap receive picker. Shows All / Stocks and includes Ondo stocks.
          */
         showStockTabs?: boolean;
@@ -708,6 +713,9 @@ export function TokenInput<
                                         autoSelect={tokenSelect?.autoSelect}
                                         hideOffNearChainDelivery={
                                             tokenSelect?.hideOffNearChainDelivery
+                                        }
+                                        hideChainDeliveryRoutes={
+                                            tokenSelect?.hideChainDeliveryRoutes
                                         }
                                         showStockTabs={
                                             tokenSelect?.showStockTabs

@@ -760,6 +760,7 @@ impl LegRow {
             usd_value: self.usd_value.clone(),
             proposal_id: self.proposal_id,
             quote_deposit_address: self.quote_deposit_address.clone(),
+            fully_confidential: None,
             has_app_fee: self.has_app_fee,
             notes: self.notes.clone(),
         }

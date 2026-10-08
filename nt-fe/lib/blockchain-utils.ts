@@ -160,6 +160,8 @@ export function getBlockchainType(chainName: string): BlockchainType {
         "adi",
         "hyperliquid",
         "hypercore",
+        "hood",
+        "robinhood",
     ]);
     if (evmChains.has(compact)) {
         return "ethereum";

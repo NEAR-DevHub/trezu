@@ -55,7 +55,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
-    hidesSwapExplorerLink,
+    hidesIntentsExplorerLink,
     isProposalMethodCall,
     useGetFromAccount,
 } from "../utils/history-utils";
@@ -483,7 +483,7 @@ function useDetailItems(
     }
 
     if (
-        !hidesSwapExplorerLink(activity, isConfidential) &&
+        !hidesIntentsExplorerLink(activity, isConfidential) &&
         (activity.transactionHashes?.length ||
             activity.receiptIds?.length ||
             activity.quoteDepositAddress)
@@ -1069,7 +1069,7 @@ function ActivityRequestActions({
 
     return (
         <ModalSection className="gap-2">
-            {hidesSwapExplorerLink(activity, isConfidential) ? (
+            {hidesIntentsExplorerLink(activity, isConfidential) ? (
                 <ViewPdfReceiptButton
                     treasuryId={treasuryId}
                     proposalId={activity.proposalId}

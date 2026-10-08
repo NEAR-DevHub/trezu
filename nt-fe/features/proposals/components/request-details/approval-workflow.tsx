@@ -76,6 +76,7 @@ function Step({
     below,
     title,
     subtitle,
+    isTitleLoading = false,
     isSubtitleLoading = false,
 }: {
     dot: Tone;
@@ -83,15 +84,20 @@ function Step({
     below: Tone | "none";
     title: string;
     subtitle: string;
+    isTitleLoading?: boolean;
     isSubtitleLoading?: boolean;
 }) {
     return (
         <div className="flex w-full items-center">
             <Rail dot={dot} above={above} below={below} />
             <div className="flex min-w-0 flex-1 flex-col justify-center px-2 py-2">
-                <span className="text-sm font-semibold leading-[1.5]">
-                    {title}
-                </span>
+                {isTitleLoading ? (
+                    <Skeleton className="my-0.5 h-4 w-24" />
+                ) : (
+                    <span className="text-sm font-semibold leading-[1.5]">
+                        {title}
+                    </span>
+                )}
                 {isSubtitleLoading ? (
                     <Skeleton className="my-0.5 h-4 w-36" />
                 ) : (
@@ -174,6 +180,10 @@ export function ApprovalWorkflow({
     let outcomeTone: Tone;
     let outcomeTitle: string;
     switch (status) {
+        case undefined:
+            outcomeTone = "muted";
+            outcomeTitle = "";
+            break;
         case "Pending":
             outcomeTone = "muted";
             outcomeTitle = t("expiresAt");
@@ -261,7 +271,8 @@ export function ApprovalWorkflow({
                 below="none"
                 title={outcomeTitle}
                 subtitle={outcomeDate}
-                isSubtitleLoading={isDateLoading}
+                isTitleLoading={status === undefined}
+                isSubtitleLoading={isDateLoading || status === undefined}
             />
 
             {footer && (

@@ -194,14 +194,11 @@
             "title": "地址簿"
         },
         "payments": {
-            "title": "付款",
-            "confidentialTitle": "机密付款",
-            "description": "安全可靠地发送资金。"
+            "title": "付款"
         },
         "exchange": {
             "title": "兑换",
-            "confidentialTitle": "兑换",
-            "description": "安全高效地兑换您的代币"
+            "confidentialTitle": "兑换"
         },
         "vesting": {
             "title": "归属",
@@ -339,13 +336,11 @@
         "anythingElseLost": "从其他地方发送的资金将丢失",
         "anythingElseLostSub": "交易所、公开钱包、其他网络 – 无法找回。",
         "confidentialAckCheckbox": "我理解从 near.com 或 near business 以外充值将会丢失。",
-        "onlyFromNearBusiness": "仅来自 <bold>near business</bold>",
+        "onlyFromNearBusiness": "仅来自 <bold>near business</bold> 或 <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "仅来自 <bold>机密 near.com</bold>",
-        "onlyFromNearBusinessOrNearcom": "仅来自 <bold>near business</bold> 或 <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>可重复使用。</bold>不会过期",
-        "fundsOutsideNearBusinessLost": "从 <bold>near business</bold> 以外发送的资金将丢失",
+        "fundsOutsideNearBusinessLost": "从 <bold>near business</bold> 或 <bold>near.com</bold> 以外发送的资金将丢失。",
         "fundsOutsideNearcomLost": "从 <bold>机密 near.com</bold> 以外发送的资金将丢失",
-        "fundsOutsideNearBusinessOrNearcomLost": "从 <bold>near business</bold> 或 <bold>near.com</bold> 以外发送的资金将丢失。",
         "publicNetworkRecommendation": "请仅从 <bold>{network}</bold> 网络充值。建议先进行小额测试交易，再发送全额。",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "权重",
         "source": "来源",
         "send": "发送",
-        "exchange": "兑换",
         "swap": "兑换",
         "comingSoon": "即将推出",
         "vesting": "归属",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "批准",
             "reject": "拒绝",
-            "deposit": "存款",
             "viewRequest": "查看请求"
         },
         "table": {
@@ -1708,8 +1701,7 @@
     "memberInput": {
         "addNewMember": "添加另一位成员",
         "validation": {
-            "rolesRequired": "至少需要一个角色",
-            "duplicateAddress": "地址已是成员"
+            "rolesRequired": "至少需要一个角色"
         },
         "enterAddress": "输入地址",
         "clearAddress": "清除地址",
@@ -1878,7 +1870,6 @@
     "recipientNetworkSelect": {
         "label": "收款人网络",
         "placeholder": "选择收款人网络",
-        "enterAddressFirst": "请先输入收款人地址",
         "noCompatibleNetwork": "没有与此地址匹配的网络",
         "selectPlaceholder": "选择网络",
         "title": "选择网络",
@@ -1886,8 +1877,6 @@
         "fromAddressBook": "来自地址簿",
         "otherAvailable": "其他可用",
         "incompatible": "不兼容",
-        "comingSoon": "即将推出",
-        "forMembersOnly": "仅限成员",
         "nearComDescription": "near business 和 near.com 网络",
         "internalTag": "内部"
     },
@@ -2061,7 +2050,6 @@
     },
     "user": {
         "saveToAddressBook": "保存到联系人",
-        "walletCopiedToast": "钱包地址已复制到剪贴板",
         "copyWalletAddress": "复制钱包地址"
     },
     "infoDisplay": {
@@ -2177,7 +2165,6 @@
     },
     "tokenInput": {
         "useMax": "使用最大值",
-        "max": "MAX",
         "insufficientTokens": "余额不足。请在批准前充值。",
         "insufficientTokensForFee": "代币不足以支付网络手续费({fee} {symbol})。您可以提交请求,并在批准前充值。",
         "balance": "余额:{amount} {symbol}",
@@ -2188,9 +2175,6 @@
         "noPermission": "您没有创建请求的权限",
         "paused": "暂时暂停",
         "brieflyUnavailable": "暂时不可用"
-    },
-    "address": {
-        "copied": "地址已复制到剪贴板"
     },
     "memberAvatars": {
         "membersWhoCanVote": "可投票的成员",
@@ -2355,15 +2339,7 @@
             "back": "返回"
         },
         "progress": {
-            "title": "按照以下快捷步骤探索金库",
             "addAssetsTitle": "添加您的资产",
-            "addAssetsDescription": "首先添加资产以查看其运行情况。",
-            "deposit": "存款",
-            "createPaymentTitle": "创建付款请求",
-            "createPaymentDescription": "创建付款请求以完成您的设置。",
-            "send": "发送",
-            "useSolo": "使用 Solo",
-            "addTeamMemberDescription": "您已成功设置账户。开端不错!",
             "addTeamMemberTitle": "创建金库账户",
             "getStarted": "开始",
             "setupThresholdTitle": "设置阈值",

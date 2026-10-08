@@ -194,14 +194,11 @@
             "title": "ספר כתובות"
         },
         "payments": {
-            "title": "תשלומים",
-            "confidentialTitle": "תשלומים חסויים",
-            "description": "שלחו כספים בבטחה ובאופן מאובטח."
+            "title": "תשלומים"
         },
         "exchange": {
             "title": "החלפה",
-            "confidentialTitle": "החלפה",
-            "description": "החלף את הטוקנים שלך באופן מאובטח ויעיל"
+            "confidentialTitle": "החלפה"
         },
         "vesting": {
             "title": "הבשלה",
@@ -339,13 +336,11 @@
         "anythingElseLost": "כל דבר שנשלח ממקום אחר יאבד",
         "anythingElseLostSub": "בורסות, ארנקים ציבוריים, רשתות אחרות – לא ניתן לשחזר.",
         "confidentialAckCheckbox": "אני מבין שהפקדות מחוץ ל-near.com או near business יאבדו.",
-        "onlyFromNearBusiness": "רק מ-<bold>near business</bold>",
+        "onlyFromNearBusiness": "רק מ-<bold>near business</bold> או <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "רק מ-<bold>near.com חסוי</bold>",
-        "onlyFromNearBusinessOrNearcom": "רק מ-<bold>near business</bold> או <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>ניתן לשימוש חוזר.</bold> לא פג תוקף",
-        "fundsOutsideNearBusinessLost": "כספים שנשלחו מחוץ ל-<bold>near business</bold> יאבדו",
+        "fundsOutsideNearBusinessLost": "כספים שנשלחו מחוץ ל-<bold>near business</bold> או <bold>near.com</bold> יאבדו.",
         "fundsOutsideNearcomLost": "כספים שנשלחו מחוץ ל-<bold>near.com חסוי</bold> יאבדו",
-        "fundsOutsideNearBusinessOrNearcomLost": "כספים שנשלחו מחוץ ל-<bold>near business</bold> או <bold>near.com</bold> יאבדו.",
         "publicNetworkRecommendation": "הפקד רק מרשת <bold>{network}</bold>. התחל בעסקה קטנה לבדיקה לפני שליחת הסכום המלא.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "משקל",
         "source": "מקור",
         "send": "שליחה",
-        "exchange": "החלפה",
         "swap": "החלפה",
         "comingSoon": "בקרוב",
         "vesting": "הבשלה",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "אישור",
             "reject": "דחייה",
-            "deposit": "הפקדה",
             "viewRequest": "הצג בקשה"
         },
         "table": {
@@ -1725,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "הוסף חבר נוסף",
         "validation": {
-            "rolesRequired": "לפחות תפקיד אחד נדרש",
-            "duplicateAddress": "הכתובת כבר חברה"
+            "rolesRequired": "לפחות תפקיד אחד נדרש"
         },
         "enterAddress": "הזן כתובת",
         "clearAddress": "נקה כתובת",
@@ -1895,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "רשת נמען",
         "placeholder": "בחר רשת נמען",
-        "enterAddressFirst": "הזן תחילה כתובת נמען",
         "noCompatibleNetwork": "אין רשת התואמת לכתובת זו",
         "selectPlaceholder": "בחר רשת",
         "title": "בחר רשת",
@@ -1903,8 +1894,6 @@
         "fromAddressBook": "מספר הכתובות",
         "otherAvailable": "זמינים אחרים",
         "incompatible": "לא תואם",
-        "comingSoon": "בקרוב",
-        "forMembersOnly": "לחברים בלבד",
         "nearComDescription": "רשת עבור near business ו-near.com",
         "internalTag": "פנימי"
     },
@@ -2078,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "שמור באנשי קשר",
-        "walletCopiedToast": "כתובת הארנק הועתקה ללוח",
         "copyWalletAddress": "העתק כתובת ארנק"
     },
     "infoDisplay": {
@@ -2194,7 +2182,6 @@
     },
     "tokenInput": {
         "useMax": "השתמש במקסימום",
-        "max": "MAX",
         "insufficientTokens": "יתרה לא מספקת. הטען לפני האישור.",
         "insufficientTokensForFee": "אין מספיק טוקנים לכיסוי עמלת הרשת ({fee} {symbol}). ניתן לשלוח את הבקשה ולהטעין לפני האישור.",
         "balance": "יתרה: {amount} {symbol}",
@@ -2205,9 +2192,6 @@
         "noPermission": "אין לך הרשאה ליצור בקשה",
         "paused": "מושהה זמנית",
         "brieflyUnavailable": "לא זמין לזמן קצר"
-    },
-    "address": {
-        "copied": "הכתובת הועתקה ללוח"
     },
     "memberAvatars": {
         "membersWhoCanVote": "חברים שיכולים להצביע",
@@ -2372,15 +2356,7 @@
             "back": "חזרה"
         },
         "progress": {
-            "title": "עקוב אחר שלבים מהירים כדי לחקור את האוצר",
             "addAssetsTitle": "הוסף את הנכסים שלך",
-            "addAssetsDescription": "התחל בהוספת נכסים כדי לראות אותם בפעולה.",
-            "deposit": "הפקדה",
-            "createPaymentTitle": "צור בקשת תשלום",
-            "createPaymentDescription": "צור בקשת תשלום להשלמת ההגדרה שלך.",
-            "send": "שליחה",
-            "useSolo": "להשתמש ב-Solo",
-            "addTeamMemberDescription": "הגדרת את החשבון שלך בהצלחה. התחלה מצוינת!",
             "addTeamMemberTitle": "צור חשבון אוצר",
             "getStarted": "להתחיל",
             "setupThresholdTitle": "הגדרת סף",
