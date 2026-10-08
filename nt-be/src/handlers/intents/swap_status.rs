@@ -57,7 +57,10 @@ pub struct SimplifiedSwapStatusResponse {
 pub struct QuoteByDepositAddressResponse {
     /// `swapDetails` only: the on-chain deposit 1Click observed. Absent until
     /// the deposit tx is known, and never set on the quote itself.
-    #[serde(rename = "depositedAmountFormatted", skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "depositedAmountFormatted",
+        skip_serializing_if = "Option::is_none"
+    )]
     pub deposited_amount_formatted: Option<String>,
     #[serde(rename = "amountInFormatted")]
     pub amount_in_formatted: Option<String>,
