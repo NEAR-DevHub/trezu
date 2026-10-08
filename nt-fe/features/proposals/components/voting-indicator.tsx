@@ -24,7 +24,7 @@ interface VotingIndicatorProps {
 }
 
 /** Approvals already cast take the colour of the request's outcome. */
-function approvedIndicatorClass(status: UIProposalStatus) {
+function approvedIndicatorClass(status: UIProposalStatus | undefined) {
     switch (status) {
         case "Executed":
         case "Failed":
@@ -41,7 +41,10 @@ function approvedIndicatorClass(status: UIProposalStatus) {
  * One of the bars: empty until an account fills it, then tinted by the vote
  * they cast. Rejections are the design's #C2410C wherever the request ends up.
  */
-function indicatorClass(vote: Vote | undefined, status: UIProposalStatus) {
+function indicatorClass(
+    vote: Vote | undefined,
+    status: UIProposalStatus | undefined,
+) {
     if (!vote) {
         return "bg-general-unofficial-border-3";
     }
