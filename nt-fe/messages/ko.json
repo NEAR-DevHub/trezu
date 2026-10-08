@@ -194,14 +194,11 @@
             "title": "주소록"
         },
         "payments": {
-            "title": "결제",
-            "confidentialTitle": "기밀 결제",
-            "description": "자금을 안전하고 확실하게 보냅니다."
+            "title": "결제"
         },
         "exchange": {
             "title": "스왑",
-            "confidentialTitle": "스왑",
-            "description": "토큰을 안전하고 효율적으로 교환하세요"
+            "confidentialTitle": "스왑"
         },
         "vesting": {
             "title": "베스팅",
@@ -339,13 +336,11 @@
         "anythingElseLost": "다른 곳에서 보낸 것은 모두 손실됩니다",
         "anythingElseLostSub": "거래소, 공개 지갑, 다른 네트워크 – 복구할 수 없습니다.",
         "confidentialAckCheckbox": "near.com 또는 near business 외부에서의 입금은 손실됨을 이해합니다.",
-        "onlyFromNearBusiness": "<bold>near business</bold>에서만",
+        "onlyFromNearBusiness": "<bold>near business</bold> 또는 <bold>near.com</bold>에서만",
         "onlyFromConfidentialNearcom": "<bold>기밀 near.com</bold>에서만",
-        "onlyFromNearBusinessOrNearcom": "<bold>near business</bold> 또는 <bold>near.com</bold>에서만",
         "reusableDoesntExpire": "<bold>재사용 가능.</bold> 만료되지 않음",
-        "fundsOutsideNearBusinessLost": "<bold>near business</bold> 외부에서 보낸 자금은 손실됩니다",
+        "fundsOutsideNearBusinessLost": "<bold>near business</bold> 또는 <bold>near.com</bold> 외부에서 보낸 자금은 손실됩니다.",
         "fundsOutsideNearcomLost": "<bold>기밀 near.com</bold> 외부에서 보낸 자금은 손실됩니다",
-        "fundsOutsideNearBusinessOrNearcomLost": "<bold>near business</bold> 또는 <bold>near.com</bold> 외부에서 보낸 자금은 손실됩니다.",
         "publicNetworkRecommendation": "<bold>{network}</bold> 네트워크에서만 입금하세요. 전액을 보내기 전에 소액 테스트 거래로 시작하세요.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "비중",
         "source": "출처",
         "send": "보내기",
-        "exchange": "교환",
         "swap": "스왑",
         "comingSoon": "출시 예정",
         "vesting": "베스팅",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "승인",
             "reject": "거부",
-            "deposit": "입금",
             "viewRequest": "요청 보기"
         },
         "table": {
@@ -1725,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "다른 멤버 추가",
         "validation": {
-            "rolesRequired": "최소 하나의 역할이 필요합니다",
-            "duplicateAddress": "주소가 이미 멤버입니다"
+            "rolesRequired": "최소 하나의 역할이 필요합니다"
         },
         "enterAddress": "주소 입력",
         "clearAddress": "주소 지우기",
@@ -1895,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "수신자 네트워크",
         "placeholder": "수신자 네트워크 선택",
-        "enterAddressFirst": "먼저 수신자 주소를 입력하세요",
         "noCompatibleNetwork": "이 주소와 일치하는 네트워크가 없습니다",
         "selectPlaceholder": "네트워크 선택",
         "title": "네트워크 선택",
@@ -1903,8 +1894,6 @@
         "fromAddressBook": "주소록에서",
         "otherAvailable": "기타 사용 가능",
         "incompatible": "호환되지 않음",
-        "comingSoon": "곧 제공",
-        "forMembersOnly": "회원 전용",
         "nearComDescription": "near business 및 near.com용 네트워크",
         "internalTag": "내부"
     },
@@ -2078,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "연락처에 저장",
-        "walletCopiedToast": "지갑 주소가 클립보드에 복사되었습니다",
         "copyWalletAddress": "지갑 주소 복사"
     },
     "infoDisplay": {
@@ -2181,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "최대 사용",
-        "max": "MAX",
         "insufficientTokens": "잔액이 부족합니다. 승인 전에 충전하세요.",
         "insufficientTokensForFee": "네트워크 수수료({fee} {symbol})를 충당할 토큰이 부족합니다. 요청을 제출하고 승인 전에 충전할 수 있습니다.",
         "balance": "잔액: {amount} {symbol}",
@@ -2192,9 +2179,6 @@
         "noPermission": "요청을 생성할 권한이 없습니다",
         "paused": "일시 중지됨",
         "brieflyUnavailable": "잠시 이용 불가"
-    },
-    "address": {
-        "copied": "주소가 클립보드에 복사되었습니다"
     },
     "memberAvatars": {
         "membersWhoCanVote": "투표할 수 있는 멤버",
@@ -2359,15 +2343,7 @@
             "back": "뒤로"
         },
         "progress": {
-            "title": "빠른 단계를 따라 트레저리 살펴보기",
             "addAssetsTitle": "자산 추가",
-            "addAssetsDescription": "자산을 추가하여 작동하는 모습을 확인하세요.",
-            "deposit": "입금",
-            "createPaymentTitle": "결제 요청 생성",
-            "createPaymentDescription": "설정을 완료하기 위해 결제 요청을 생성하세요.",
-            "send": "보내기",
-            "useSolo": "Solo 사용",
-            "addTeamMemberDescription": "계정 설정을 성공적으로 완료했습니다. 좋은 시작입니다!",
             "addTeamMemberTitle": "트레저리 계정 생성",
             "getStarted": "시작하기",
             "setupThresholdTitle": "임계값 설정",

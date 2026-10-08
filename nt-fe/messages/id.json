@@ -194,14 +194,11 @@
             "title": "Buku Alamat"
         },
         "payments": {
-            "title": "Pembayaran",
-            "confidentialTitle": "Pembayaran rahasia",
-            "description": "Kirim dana dengan aman dan terlindungi."
+            "title": "Pembayaran"
         },
         "exchange": {
             "title": "Tukar",
-            "confidentialTitle": "Tukar",
-            "description": "Tukar token Anda dengan aman dan efisien"
+            "confidentialTitle": "Tukar"
         },
         "vesting": {
             "title": "Vesting",
@@ -339,13 +336,11 @@
         "anythingElseLost": "Apa pun yang dikirim dari tempat lain akan hilang",
         "anythingElseLostSub": "Exchange, dompet publik, jaringan lain – tidak dapat dipulihkan.",
         "confidentialAckCheckbox": "Saya memahami deposit dari luar near.com atau near business akan hilang.",
-        "onlyFromNearBusiness": "Hanya dari <bold>near business</bold>",
+        "onlyFromNearBusiness": "Hanya dari <bold>near business</bold> atau <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Hanya dari <bold>near.com rahasia</bold>",
-        "onlyFromNearBusinessOrNearcom": "Hanya dari <bold>near business</bold> atau <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Dapat digunakan ulang.</bold> Tidak kedaluwarsa",
-        "fundsOutsideNearBusinessLost": "Dana yang dikirim dari luar <bold>near business</bold> akan hilang",
+        "fundsOutsideNearBusinessLost": "Dana yang dikirim dari luar <bold>near business</bold> atau <bold>near.com</bold> akan hilang.",
         "fundsOutsideNearcomLost": "Dana yang dikirim dari luar <bold>near.com rahasia</bold> akan hilang",
-        "fundsOutsideNearBusinessOrNearcomLost": "Dana yang dikirim dari luar <bold>near business</bold> atau <bold>near.com</bold> akan hilang.",
         "publicNetworkRecommendation": "Deposit hanya dari jaringan <bold>{network}</bold>. Mulai dengan transaksi uji kecil sebelum mengirim jumlah penuh.",
         "sourceCards": {
             "publicWallet": {
@@ -391,7 +386,6 @@
         "weight": "Bobot",
         "source": "Sumber",
         "send": "Kirim",
-        "exchange": "Tukar",
         "swap": "Tukar",
         "comingSoon": "Segera hadir",
         "vesting": "Vesting",
@@ -659,7 +653,6 @@
         "actions": {
             "approve": "Setujui",
             "reject": "Tolak",
-            "deposit": "Deposit",
             "viewRequest": "Lihat Permintaan"
         },
         "table": {
@@ -1725,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Tambah anggota lain",
         "validation": {
-            "rolesRequired": "Setidaknya satu peran diperlukan",
-            "duplicateAddress": "Alamat sudah menjadi anggota"
+            "rolesRequired": "Setidaknya satu peran diperlukan"
         },
         "enterAddress": "Masukkan alamat",
         "clearAddress": "Hapus alamat",
@@ -1895,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Jaringan Penerima",
         "placeholder": "Pilih jaringan penerima",
-        "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
         "noCompatibleNetwork": "Tidak ada jaringan yang cocok dengan alamat ini",
         "selectPlaceholder": "Pilih jaringan",
         "title": "Pilih Jaringan",
@@ -1903,8 +1894,6 @@
         "fromAddressBook": "Dari Buku Alamat",
         "otherAvailable": "Tersedia Lainnya",
         "incompatible": "Tidak Kompatibel",
-        "comingSoon": "Segera Hadir",
-        "forMembersOnly": "Hanya untuk anggota",
         "nearComDescription": "Jaringan untuk near business dan near.com",
         "internalTag": "Internal"
     },
@@ -2078,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Simpan ke Kontak",
-        "walletCopiedToast": "Alamat dompet disalin ke papan klip",
         "copyWalletAddress": "Salin Alamat Dompet"
     },
     "infoDisplay": {
@@ -2181,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Gunakan maks",
-        "max": "MAX",
         "insufficientTokens": "Saldo tidak mencukupi. Isi saldo sebelum persetujuan.",
         "insufficientTokensForFee": "Token tidak cukup untuk menutupi biaya jaringan ({fee} {symbol}). Anda dapat mengirim permintaan dan menambah saldo sebelum persetujuan.",
         "balance": "Saldo: {amount} {symbol}",
@@ -2192,9 +2179,6 @@
         "noPermission": "Anda tidak memiliki izin untuk membuat permintaan",
         "paused": "Dijeda sementara",
         "brieflyUnavailable": "Sementara tidak tersedia"
-    },
-    "address": {
-        "copied": "Alamat disalin ke papan klip"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Anggota yang dapat memilih",
@@ -2359,15 +2343,7 @@
             "back": "Kembali"
         },
         "progress": {
-            "title": "Ikuti Langkah Cepat untuk Menjelajahi Treasury",
             "addAssetsTitle": "Tambah Aset Anda",
-            "addAssetsDescription": "Mulailah dengan menambahkan aset untuk melihatnya beraksi.",
-            "deposit": "Setor",
-            "createPaymentTitle": "Buat Permintaan Pembayaran",
-            "createPaymentDescription": "Buat permintaan pembayaran untuk menyelesaikan pengaturan Anda.",
-            "send": "Kirim",
-            "useSolo": "Gunakan Solo",
-            "addTeamMemberDescription": "Anda telah berhasil menyiapkan akun Anda. Awal yang bagus!",
             "addTeamMemberTitle": "Buat akun Treasury",
             "getStarted": "Mulai",
             "setupThresholdTitle": "Atur ambang batas",

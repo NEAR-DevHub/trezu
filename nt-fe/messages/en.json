@@ -198,14 +198,11 @@
             "title": "Contacts"
         },
         "payments": {
-            "title": "Send",
-            "confidentialTitle": "Send",
-            "description": "Send funds safely and securely."
+            "title": "Send"
         },
         "exchange": {
             "title": "Swap",
-            "confidentialTitle": "Swap",
-            "description": "Exchange your tokens securely and efficiently"
+            "confidentialTitle": "Swap"
         },
         "vesting": {
             "title": "Vesting",
@@ -389,7 +386,6 @@
         "weight": "Weight",
         "source": "Source",
         "send": "Send",
-        "exchange": "Exchange",
         "swap": "Swap",
         "comingSoon": "Coming soon",
         "vesting": "Vesting",
@@ -657,7 +653,6 @@
         "actions": {
             "approve": "Approve",
             "reject": "Reject",
-            "deposit": "Deposit",
             "viewRequest": "View request"
         },
         "table": {
@@ -1727,8 +1722,7 @@
         "memberNumber": "Member {number}",
         "addNewMember": "Add another member",
         "validation": {
-            "rolesRequired": "At least one role is required",
-            "duplicateAddress": "Address is already a member"
+            "rolesRequired": "At least one role is required"
         }
     },
     "recipientInput": {
@@ -1893,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Destination network",
         "placeholder": "Select network",
-        "enterAddressFirst": "Enter recipient address first",
         "noCompatibleNetwork": "No network matches this address",
         "selectPlaceholder": "Select network",
         "title": "Select network",
@@ -1901,8 +1894,6 @@
         "fromAddressBook": "From address book",
         "otherAvailable": "Other available",
         "incompatible": "Incompatible",
-        "comingSoon": "Coming soon",
-        "forMembersOnly": "For members only",
         "nearComDescription": "Network for near business and near.com",
         "internalTag": "Internal"
     },
@@ -2076,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Save to contacts",
-        "walletCopiedToast": "Wallet address copied to clipboard",
         "copyWalletAddress": "Copy wallet address"
     },
     "infoDisplay": {
@@ -2178,7 +2168,6 @@
         "votesSubmitted": "Your votes have been submitted"
     },
     "tokenInput": {
-        "max": "MAX",
         "useMax": "Use max",
         "insufficientTokens": "Insufficient balance. Top up before approval.",
         "insufficientTokensForFee": "Insufficient tokens to cover the network fee ({fee} {symbol}). You can submit the request and top up before approval.",
@@ -2190,9 +2179,6 @@
         "noPermission": "You don't have permission to create a request",
         "paused": "Temporarily paused",
         "brieflyUnavailable": "Briefly unavailable"
-    },
-    "address": {
-        "copied": "Address copied to clipboard"
     },
     "memberAvatars": {
         "membersWhoCanVote": "Members who can vote",
@@ -2357,15 +2343,7 @@
             "back": "Back"
         },
         "progress": {
-            "title": "Set up your treasury",
             "addAssetsTitle": "Add your first assets",
-            "addAssetsDescription": "Fund your treasury to start making payments and swaps.",
-            "deposit": "Deposit",
-            "createPaymentTitle": "Create a first payment request",
-            "createPaymentDescription": "Create your first request to complete setup.",
-            "send": "Send",
-            "useSolo": "Use Solo",
-            "addTeamMemberDescription": "Protect your funds if your wallet is lost or compromised - add a teammate or your own second wallet so transactions need more than one approval.",
             "addTeamMemberTitle": "Add a team member",
             "getStarted": "Get started",
             "setupThresholdTitle": "Setup threshold",
