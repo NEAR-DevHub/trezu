@@ -12,7 +12,7 @@
 use crate::{
     constants::{
         intents_tokens::{
-            find_unified_asset_id, get_tokens_map, BaseTokenInfo, TokenDeployment, UnifiedTokenInfo,
+            BaseTokenInfo, TokenDeployment, UnifiedTokenInfo, find_unified_asset_id, get_tokens_map,
         },
         nearcom_ranking::{
             is_hidden_catalog_token, is_near_network, is_swap_excluded_symbol, network_volume_rank,
@@ -21,19 +21,19 @@ use crate::{
     },
     utils::cache::CacheTier,
 };
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 
 use crate::{
-    constants::intents_chains::{get_chain_metadata_by_name, ChainIcons},
+    AppState,
+    constants::intents_chains::{ChainIcons, get_chain_metadata_by_name},
     handlers::intents::supported_tokens::fetch_supported_tokens_data,
     services::oneclick_asset_routing::{
-        is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id, NBTC_BALANCE_ASSET_ID,
+        NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
     services::oneclick_tokens::fetch_oneclick_tokens,
-    AppState,
 };
 use serde_json::Value;
 
@@ -152,10 +152,6 @@ fn network_name_for_chain(chain_name: &str) -> String {
     get_chain_metadata_by_name(chain_name)
         .map(|m| m.name.to_lowercase())
         .unwrap_or_else(|| chain_name.to_lowercase())
-}
-
-fn network_name_for_base(base: &BaseTokenInfo) -> String {
-    network_name_for_chain(&base.origin_chain_name)
 }
 
 /// Chain to label when every deployment sits on one chain other than
@@ -1151,7 +1147,7 @@ mod tests {
     #[test]
     fn every_catalog_chain_has_a_volume_rank() {
         for base in get_defuse_tokens_map().values() {
-            let name = network_name_for_base(base);
+            let name = network_name_for_chain(&base.origin_chain_name);
             assert_ne!(
                 network_volume_rank(&name),
                 999,
