@@ -37,7 +37,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
-    hidesSwapExplorerLink,
+    hidesIntentsExplorerLink,
     useGetActivityLabel,
     useGetActivitySubLabel,
     useGetFromAccount,
@@ -555,18 +555,21 @@ export function ActivityTable({
                                             )}
                                         >
                                             <div className="flex items-center justify-end gap-1">
-                                                {hidesSwapExplorerLink(
+                                                {hidesIntentsExplorerLink(
                                                     activity,
                                                     isConfidential,
-                                                ) &&
-                                                activity.proposalId != null &&
-                                                treasuryId ? (
-                                                    <PdfReceiptCell
-                                                        treasuryId={treasuryId}
-                                                        proposalId={
-                                                            activity.proposalId
-                                                        }
-                                                    />
+                                                ) ? (
+                                                    activity.proposalId !=
+                                                        null && treasuryId ? (
+                                                        <PdfReceiptCell
+                                                            treasuryId={
+                                                                treasuryId
+                                                            }
+                                                            proposalId={
+                                                                activity.proposalId
+                                                            }
+                                                        />
+                                                    ) : null
                                                 ) : (
                                                     <TransactionHashCell
                                                         transactionHashes={

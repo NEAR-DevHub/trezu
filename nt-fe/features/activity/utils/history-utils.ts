@@ -84,18 +84,23 @@ export function isProposalMethodCall(activity: ActivityAccount): boolean {
 }
 
 /**
- * Confidential intents-routed swaps currently link to the NEAR Intents
- * /mask explorer, which does not resolve. Those rows hide the hash and
- * show a PDF receipt instead.
+ * The NEAR Intents /mask explorer only resolves transfers with a public side.
+ * Confidential swaps and transfers between two confidential accounts 404
+ * there, so those rows hide the hash and show a PDF receipt instead.
  */
-export function hidesSwapExplorerLink(
+export function hidesIntentsExplorerLink(
     activity: {
         swap?: unknown;
         quoteDepositAddress?: string | null;
+        fullyConfidential?: boolean | null;
     },
     isConfidential: boolean,
 ): boolean {
-    return isConfidential && !!activity.swap && !!activity.quoteDepositAddress;
+    return (
+        isConfidential &&
+        !!activity.quoteDepositAddress &&
+        (!!activity.swap || !!activity.fullyConfidential)
+    );
 }
 
 /**
