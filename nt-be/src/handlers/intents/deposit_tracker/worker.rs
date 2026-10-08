@@ -22,7 +22,7 @@ use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::api::fetch_latest_indexed_block_height;
 use crate::handlers::public_history::bronze::store::{PublicHistorySource, upsert_latest_demand};
 
-use super::bridge::BridgeDepositsClient;
+use super::bridge::{BridgeDeposit, BridgeDepositsClient};
 use super::store::{
     self, ACTIVE_DEPOSIT_MAX_AGE, DepositTransition, DepositWatch, InProcessDeposit,
     ObservedDeposit, WatchPollOutcome,
@@ -213,21 +213,26 @@ impl<'a> DepositTrackerWorker<'a> {
 
         let mut result = PollResult::default();
         let candidates: Vec<_> = match watch.baseline_keys.as_deref() {
-            // First read: everything already settled is history, not a new
-            // deposit. In-flight deposits are tracked from here on.
+            // First read: a settled deposit the bridge recorded before this
+            // watch existed is history. One recorded after it (settled while
+            // the first poll was failing) and anything in flight is tracked.
             None => {
+                let is_history = |deposit: &BridgeDeposit| {
+                    deposit.status.tracker_status() != DepositStatus::Detected
+                        && deposit
+                            .created_at
+                            .is_none_or(|recorded_at| recorded_at < watch.created_at)
+                };
                 result.baseline_keys = Some(
                     deposits
                         .iter()
-                        .filter(|deposit| {
-                            deposit.status.tracker_status() != DepositStatus::Detected
-                        })
+                        .filter(|deposit| is_history(deposit))
                         .map(|deposit| deposit.key.clone())
                         .collect(),
                 );
                 deposits
                     .iter()
-                    .filter(|deposit| deposit.status.tracker_status() == DepositStatus::Detected)
+                    .filter(|deposit| !is_history(deposit))
                     .collect()
             }
             Some(baseline) => deposits
@@ -485,8 +490,11 @@ impl<'a> DepositTrackerWorker<'a> {
 }
 
 impl InProcessDeposit {
+    /// Every poll re-upserts the row and bumps `updated_at`, so the age gate
+    /// reads the last real transition instead; a deposit the provider keeps
+    /// listing unchanged stops being "active" after the window.
     fn is_active(&self, now: DateTime<Utc>) -> bool {
-        !self.status.is_terminal() && self.updated_at > now - ACTIVE_DEPOSIT_MAX_AGE
+        !self.status.is_terminal() && self.last_transition_at() > now - ACTIVE_DEPOSIT_MAX_AGE
     }
 }
 

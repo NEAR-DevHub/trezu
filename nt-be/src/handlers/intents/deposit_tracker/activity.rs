@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use bigdecimal::{BigDecimal, Zero};
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 
 use crate::AppState;
 use crate::handlers::public_history::public_list::fallback_metadata;
@@ -25,6 +25,13 @@ pub struct InProcessActivityFilter<'a> {
     pub exclude_token_ids: Option<&'a [String]>,
     pub tx_hash: Option<&'a str>,
     pub has_account_filters: bool,
+    pub start_time: Option<DateTime<Utc>>,
+    pub end_time: Option<DateTime<Utc>>,
+}
+
+fn parse_time(raw: Option<&String>) -> Option<DateTime<Utc>> {
+    raw.and_then(|s| DateTime::parse_from_rfc3339(s).ok())
+        .map(|at| at.with_timezone(&Utc))
 }
 
 impl<'a> InProcessActivityFilter<'a> {
@@ -43,7 +50,15 @@ impl<'a> InProcessActivityFilter<'a> {
             ]
             .iter()
             .any(|filter| filter.as_ref().is_some_and(|v| !v.is_empty())),
+            start_time: parse_time(params.start_time.as_ref()),
+            end_time: parse_time(params.end_time.as_ref()),
         }
+    }
+
+    /// Same window the ledger query applies to `block_time`.
+    fn allows_time(&self, detected_at: DateTime<Utc>) -> bool {
+        self.start_time.is_none_or(|start| detected_at >= start)
+            && self.end_time.is_none_or(|end| detected_at <= end)
     }
 
     fn applies(&self) -> bool {
@@ -123,6 +138,13 @@ impl InProcessDeposit {
 /// `find_public_ledger_match`: the NEAR mint hash when the provider gave
 /// one (PoA, HOT), otherwise the same token and amount inside the lookback
 /// window (Omni rows arrive with an empty `mint_tx_hash`).
+///
+/// Accepted imprecision for the hashless path: Omni has no identity on
+/// either side (the bridge omits the mint hash, the NEAR mint carries no
+/// origin hash), so two equal deposits inside the window, or an unrelated
+/// transfer of the same token and amount, can hide a Processing row until
+/// its own mint lands. Cosmetic and bounded by the mint delay; the ledger
+/// is never affected.
 fn served_by_ledger(deposit: &InProcessDeposit, ledger_rows: &[EnrichedBalanceChange]) -> bool {
     if let Some(hash) = deposit.near_tx_hash.as_deref() {
         return ledger_rows
@@ -161,6 +183,7 @@ pub async fn in_process_activity_rows(
             .await?
             .into_iter()
             .filter(|deposit| filter.allows_token(&deposit.token_id))
+            .filter(|deposit| filter.allows_time(deposit.detected_at))
             .filter(|deposit| !served_by_ledger(deposit, ledger_rows))
             .collect();
     if deposits.is_empty() {
@@ -302,6 +325,35 @@ mod tests {
     }
 
     #[test]
+    fn date_range_applies_to_detection_time() {
+        let at = |text: &str| {
+            DateTime::parse_from_rfc3339(text)
+                .unwrap()
+                .with_timezone(&Utc)
+        };
+        let september = InProcessActivityFilter {
+            offset: 0,
+            transaction_types: None,
+            token_ids: None,
+            exclude_token_ids: None,
+            tx_hash: None,
+            has_account_filters: false,
+            start_time: parse_time(Some(&"2026-09-01T00:00:00Z".to_string())),
+            end_time: parse_time(Some(&"2026-09-30T23:59:59Z".to_string())),
+        };
+        assert!(september.allows_time(at("2026-09-15T12:00:00Z")));
+        assert!(!september.allows_time(at("2026-10-08T12:00:00Z")));
+        assert!(!september.allows_time(at("2026-08-31T23:59:59Z")));
+
+        let open = InProcessActivityFilter {
+            start_time: parse_time(None),
+            end_time: parse_time(Some(&"not a date".to_string())),
+            ..september
+        };
+        assert!(open.allows_time(at("2026-10-08T12:00:00Z")));
+    }
+
+    #[test]
     fn rows_without_an_amount_stay_out_of_the_feed() {
         let mut tracked = deposit(WatchKind::Confidential, DepositStatus::Detected);
         tracked.amount = None;
@@ -351,6 +403,8 @@ mod tests {
             exclude_token_ids: None,
             tx_hash: None,
             has_account_filters: false,
+            start_time: None,
+            end_time: None,
         };
         assert!(base.applies());
 

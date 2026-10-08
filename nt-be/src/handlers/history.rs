@@ -1337,21 +1337,23 @@ pub async fn get_recent_activity(
                 })),
             )
         })?;
-    let fetched_ledger_rows = enriched_changes.len() as i64;
-
     // Deposits the tracker has seen but the ledger has not projected yet lead
-    // the first page; they retire once the exact ledger row exists.
+    // the first page; they retire once the exact ledger row exists. They sit
+    // on top of the page's ledger rows rather than displacing them: later
+    // pages offset by ledger rows only, so trimming here would skip rows.
+    let mut in_process_rows = in_process_activity_rows(&state, &balance_query, &enriched_changes)
+        .await
+        .unwrap_or_else(|e| {
+            tracing::warn!("Failed to load in-process deposits: {}", e);
+            Vec::new()
+        });
+    let in_process_count = in_process_rows.len();
     let mut enriched_changes = {
-        let mut rows = in_process_activity_rows(&state, &balance_query, &enriched_changes)
-            .await
-            .unwrap_or_else(|e| {
-                tracing::warn!("Failed to load in-process deposits: {}", e);
-                Vec::new()
-            });
-        rows.append(&mut enriched_changes);
-        rows
+        in_process_rows.append(&mut enriched_changes);
+        in_process_rows
     };
-    let total = total + enriched_changes.len() as i64 - fetched_ledger_rows;
+    // `total` stays ledger-only: pages are offset by ledger rows, so counting
+    // the in-process rows would promise a trailing page with nothing on it.
 
     // Enrich all recent-activity rows with chain metadata
     let activity_token_ids: Vec<String> = enriched_changes
@@ -1443,14 +1445,17 @@ pub async fn get_recent_activity(
     // If we're filtering by USD, we need to return the actual filtered total
     // since we can't count USD-filtered items in SQL
     let actual_total = if params.min_usd_value.is_some() {
-        activities.len() as i64
+        activities.len().saturating_sub(in_process_count) as i64
     } else {
         total
     };
 
-    // Only return the requested number of results (pagination)
-    let paginated_activities: Vec<RecentActivity> =
-        activities.into_iter().take(limit as usize).collect();
+    // Only return the requested number of results (pagination), plus the
+    // in-process rows leading page one.
+    let paginated_activities: Vec<RecentActivity> = activities
+        .into_iter()
+        .take(limit as usize + in_process_count)
+        .collect();
 
     Ok(Json(RecentActivityResponse {
         data: paginated_activities,

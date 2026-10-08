@@ -69,6 +69,16 @@ pub struct InProcessDeposit {
     pub updated_at: DateTime<Utc>,
 }
 
+impl InProcessDeposit {
+    /// When the row last changed state while still in process: settlement
+    /// or first detection. Unlike `updated_at`, unchanged re-observations do
+    /// not move it.
+    pub fn last_transition_at(&self) -> DateTime<Utc> {
+        self.detected_at
+            .max(self.finalized_at.unwrap_or(self.detected_at))
+    }
+}
+
 impl FromRow<'_, PgRow> for InProcessDeposit {
     fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
         let kind: String = row.try_get("kind")?;
@@ -357,7 +367,7 @@ pub async fn load_visible_deposits(
         FROM in_process_deposits
         WHERE dao_id = $1
           AND status IN ('detected', 'finalized', 'failed')
-          AND updated_at > NOW() - $2
+          AND GREATEST(detected_at, COALESCE(finalized_at, detected_at)) > NOW() - $2
         ORDER BY detected_at DESC
         LIMIT 50
         "#,
@@ -382,7 +392,11 @@ pub async fn load_recent_deposits_for_scope(
         SELECT *
         FROM in_process_deposits
         WHERE dao_id = $1
-          AND updated_at > NOW() - $2
+          AND GREATEST(
+                detected_at,
+                COALESCE(finalized_at, detected_at),
+                COALESCE(ledger_confirmed_at, detected_at)
+              ) > NOW() - $2
           AND ($3::text IS NULL OR provider_deposit_key = $3)
           AND ($4::text IS NULL OR chain = $4)
         ORDER BY detected_at DESC
@@ -401,6 +415,12 @@ pub async fn load_recent_deposits_for_scope(
 /// tracker row. With the bridge mint hash the match is exact on the ledger
 /// NEAR hash; without it, token + decimal amount + time window is the
 /// strongest key available.
+/// Links a settled public deposit to its gold row: by NEAR mint hash when
+/// the bridge gave one, else by token + amount inside the lookback (Omni,
+/// see `activity::served_by_ledger`). The hashless path may pair two equal
+/// deposits with each other's rows or pick an unrelated equal transfer;
+/// the `NOT EXISTS` guard keeps each gold row linked at most once and the
+/// link is not user-visible, so the ledger stays correct either way.
 pub async fn find_public_ledger_match(
     pool: &PgPool,
     dao_id: &str,

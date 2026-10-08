@@ -7,11 +7,13 @@
 //! `defuse_asset_identifier` is the chain-scoped id (`eth:8453:0x…`), not the
 //! NEP-141 id; `near_token_id` is the omft contract the mint credits.
 //! `mint_tx_hash` is the NEAR mint transaction, the same hash the ledger row
-//! carries. There is no deposit id or pagination; `amount` is a JSON number.
+//! carries. There is no deposit id; the list is the newest 20 (`limit`,
+//! `offset`, `hasMore`), enough for recent deposits; `amount` is a JSON number.
 
 use std::sync::LazyLock;
 
 use bigdecimal::BigDecimal;
+use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use serde_json::Value;
 
@@ -65,6 +67,7 @@ struct RawBridgeDeposit {
     /// Kept as raw JSON so integer amounts are not forced through f64.
     amount: Option<Value>,
     status: String,
+    created_at: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -85,6 +88,8 @@ pub struct BridgeDeposit {
     pub amount: Option<BigDecimal>,
     pub provider_status: String,
     pub status: BridgeDepositStatus,
+    /// When the bridge first recorded the deposit (its service clock).
+    pub created_at: Option<DateTime<Utc>>,
 }
 
 impl BridgeDeposit {
@@ -108,6 +113,11 @@ impl BridgeDeposit {
             amount,
             provider_status: raw.status,
             status,
+            created_at: raw
+                .created_at
+                .as_deref()
+                .and_then(|text| DateTime::parse_from_rfc3339(text).ok())
+                .map(|at| at.with_timezone(&Utc)),
         })
     }
 
@@ -251,7 +261,8 @@ mod tests {
                 "amount": 100000000,
                 "account_id": "dao.sputnik-dao.near",
                 "address": "0xdeposit",
-                "status": "COMPLETED"
+                "status": "COMPLETED",
+                "created_at": "2026-10-05T11:33:25.492Z"
             }, {
                 "tx_hash": "0xdef",
                 "chain": "eth:8453",
@@ -280,6 +291,10 @@ mod tests {
         assert_eq!(deposit.amount, Some(BigDecimal::from_str("100").unwrap()));
         assert_eq!(deposit.status, BridgeDepositStatus::Completed);
         assert_eq!(deposit.status.tracker_status(), DepositStatus::Finalized);
+        assert_eq!(
+            deposit.created_at.map(|at| at.to_rfc3339()),
+            Some("2026-10-05T11:33:25.492+00:00".to_string())
+        );
     }
 
     #[test]
