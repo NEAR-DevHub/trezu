@@ -1,18 +1,19 @@
 "use client";
 
 import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
-import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Icon } from "@/components/icon";
-import { cn } from "@/lib/utils";
-import { UIProposalStatus } from "../utils/proposal-utils";
-import { useProposalStatus } from "../hooks/use-proposal-status";
 import { Tooltip } from "@/components/tooltip";
-import { Proposal, Vote } from "@/lib/proposals-api";
-import { Policy } from "@/types/policy";
-import { getApproversAndThreshold } from "@/lib/config-utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProposalTransaction } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
+import { getApproversAndThreshold } from "@/lib/config-utils";
+import type { Proposal, Vote } from "@/lib/proposals-api";
+import { cn } from "@/lib/utils";
+import type { Policy } from "@/types/policy";
+import { useProposalStatus } from "../hooks/use-proposal-status";
+import type { UIProposalStatus } from "../utils/proposal-utils";
 
 type PillStatus = UIProposalStatus | "Paid" | "Approved";
 
@@ -168,6 +169,10 @@ export function ProposalStatusPill({
     const rejectCount = Object.values(proposal.votes).filter(
         (v) => v === "Reject",
     ).length;
+
+    if (!status) {
+        return <Skeleton className={cn("h-6 w-20 rounded-sm", className)} />;
+    }
 
     let info: React.ReactNode | undefined;
     switch (status) {
