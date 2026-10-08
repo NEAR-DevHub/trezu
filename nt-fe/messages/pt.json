@@ -2084,12 +2084,22 @@
         "nativeToken": "Token nativo"
     },
     "exchangeErrors": {
-        "noRoute": "Nenhuma troca encontrada. Tente um valor menor ou um token diferente.",
+        "noRoute": "Nenhuma troca encontrada. Tente outro valor ou outro token.",
         "amountTooLow": "Valor muito baixo para o swap. Swaps multichain exigem um mínimo maior para cobrir as taxas de rede.",
         "amountTooLowWithMin": "O valor é muito baixo para cobrir as taxas de rede. Insira pelo menos {min} {token}.",
         "insufficientBalance": "Saldo insuficiente para este swap.",
         "networkError": "Erro de rede. Por favor, verifique sua conexão e tente novamente.",
+        "stockMinimum": "Trocas de ações exigem pelo menos {min}. Insira um valor maior.",
         "fetchFailed": "Falha ao obter cotação"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} é negociado de domingo às 20h a sexta às 20h ET. Você pode criar esta solicitação a qualquer momento, mas ela só pode ser aprovada com o mercado aberto.",
+        "marketClosed": "O mercado de {symbol} está fechado até {reopensAt}. Você ainda pode criar esta solicitação, mas ela não poderá ser aprovada até a reabertura.",
+        "createRegion": "Swaps de ações não estão disponíveis na sua região.",
+        "unavailableInRegion": "Indisponível na sua região",
+        "approveRegion": "Swaps de ações não estão disponíveis na sua região, então você não pode aprovar {count, plural, one {esta solicitação} other {# destas solicitações}}.",
+        "approveMarketClosed": "O mercado está fechado até {reopensAt}, então {count, plural, one {este swap de ações ainda não pode ser aprovado} other {# swaps de ações ainda não podem ser aprovados}}. Aprove após a reabertura.",
+        "approveMarketClosedNoTime": "O mercado está fechado, então {count, plural, one {este swap de ações ainda não pode ser aprovado} other {# swaps de ações ainda não podem ser aprovados}}. Aprove após a reabertura."
     },
     "tokenSelectDialog": {
         "selectToken": "Selecionar token",
@@ -2103,6 +2113,9 @@
         "networksWithAssets": "Redes com ativos",
         "supportedNetworks": "Redes suportadas",
         "comingSoon": "Em breve",
+        "all": "Todos",
+        "stocks": "Ações",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Rede} other {# Redes}}"
     },
     "intentsQuote": {

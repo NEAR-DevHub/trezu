@@ -18,6 +18,7 @@ pub mod price_sync;
 pub mod public_balance_reader;
 pub mod public_dashboard;
 pub mod sponsor_alerts;
+pub mod stock_market;
 pub mod testing_accounts;
 pub mod token_prices;
 pub mod usd_value_backfill;

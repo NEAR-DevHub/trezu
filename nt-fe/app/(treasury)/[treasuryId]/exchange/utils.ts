@@ -1,6 +1,7 @@
+import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import { type AmountValue, decimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 import { isNearChainFtToken, isNearChainNativeToken } from "@/lib/intents-fee";
-import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 
 /**
  * Checks if a token is native NEAR
@@ -148,6 +149,44 @@ export function calculateMarketPriceDifference(
             hasMarketData: false,
         };
     }
+}
+
+/** near.com's floor for the stock side of a swap (`RWA_MIN_SWAP_VALUE_USD`). */
+export const STOCK_MIN_SWAP_USD = 20;
+
+/** A missing or unparsable USD value is not "below". */
+function isUsdBelowStockMinimum(usd: AmountValue | null | undefined): boolean {
+    return decimalOrNull(usd)?.lt(STOCK_MIN_SWAP_USD) ?? false;
+}
+
+/**
+ * True when a stock side of the quote is worth less than
+ * `STOCK_MIN_SWAP_USD`. A missing or unparsable USD value is not "below".
+ */
+export function isBelowStockMinimum(
+    quote: { amountInUsd?: string | null; amountOutUsd?: string | null },
+    stockSide: { sell: boolean; receive: boolean },
+): boolean {
+    return (
+        (stockSide.sell && isUsdBelowStockMinimum(quote.amountInUsd)) ||
+        (stockSide.receive && isUsdBelowStockMinimum(quote.amountOutUsd))
+    );
+}
+
+/**
+ * True when the typed amount of a stock swap is already worth less than
+ * `STOCK_MIN_SWAP_USD`. Checked before quoting because solvers usually answer
+ * "No liquidity available" below the floor, which would hide the minimum.
+ * A missing price or unparsable amount is not "below".
+ */
+export function isAmountBelowStockMinimum(
+    amount: string,
+    unitPriceUsd: number | null | undefined,
+    stockSide: { sell: boolean; receive: boolean },
+): boolean {
+    if (!stockSide.sell && !stockSide.receive) return false;
+    if (!unitPriceUsd) return false;
+    return isUsdBelowStockMinimum(decimalOrNull(amount)?.mul(unitPriceUsd));
 }
 
 export type ExchangeErrorCode =

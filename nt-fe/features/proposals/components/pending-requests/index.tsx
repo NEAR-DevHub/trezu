@@ -23,6 +23,7 @@ import { SlotWarning } from "@/components/warning-message";
 import { useProposals } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
+import { useStockApproveBlock } from "@/hooks/use-stock-restrictions";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
 import type { Proposal } from "@/lib/proposals-api";
@@ -146,7 +147,8 @@ export function PendingRequestItem({
     // Approving payment/exchange proposals is blocked while that feature has a
     // critical warning. Rejection is never blocked by feature pauses.
     const approveBlock = useProposalApproveBlock([proposal]);
-    const approveBlocked = approveBlock.anyBlocked;
+    const stockBlock = useStockApproveBlock([proposal]);
+    const approveBlocked = approveBlock.anyBlocked || stockBlock.anyBlocked;
     const featureWarning =
         approveBlock.blockedWarnings[0] ??
         approveBlock.noticeWarnings[0] ??
@@ -280,7 +282,9 @@ export function PendingRequestItem({
                                             approveSlot.inlineTooltip ??
                                             (isUserVoter
                                                 ? noVoteMessage
-                                                : undefined)
+                                                : undefined) ??
+                                            stockBlock.message ??
+                                            undefined
                                         }
                                     >
                                         <Icon icon={CheckIcon} />

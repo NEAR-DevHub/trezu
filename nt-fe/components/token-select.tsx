@@ -46,7 +46,9 @@ import {
     PaymentSelectModalContent,
     PaymentSelectSearchRail,
 } from "./payment-select-modal-content";
+import { Pill } from "./pill";
 import { PopularTokenTiles } from "./popular-token-tiles";
+import { ScrollContainer } from "./scroll-container";
 import { SelectListIcon } from "./select-list";
 import {
     EmptySelectorIcon,
@@ -61,10 +63,13 @@ import {
 } from "./selector-option-row";
 import { TokenDisplay } from "./token-display-with-network";
 import { Tooltip } from "./tooltip";
-import { ScrollContainer } from "./scroll-container";
 import { Skeleton } from "./ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "./underline-tabs";
 
 const TOKEN_SKELETON_IDS = ["one", "two", "three", "four"] as const;
+
+const ASSET_TAB_TRIGGER_CLASS =
+    "px-0 pt-1 pb-3 text-lg font-semibold md:text-lg data-[state=active]:after:h-[2px] data-[state=active]:after:bg-foreground";
 
 function residencyDescription(
     residency: string | undefined,
@@ -102,6 +107,8 @@ export interface SelectedTokenData {
     balanceDecimals?: number;
     balanceAssetId?: string;
     quoteAssetId?: string;
+    assetClass?: "stock";
+    marketHoursOnly?: boolean;
 }
 
 interface TokenSelectProps {
@@ -177,7 +184,16 @@ interface TokenSelectProps {
      * be read — monochrome art, or a host that serves no CORS headers.
      */
     tintTriggerFromIcon?: boolean;
+    /**
+     * Stocks are hidden unless set: like near.com, they can be swapped but not
+     * sent or withdrawn. `held` lists the ones the treasury holds (Swap sell
+     * side). `browse` loads every stock and shows All / Stocks tabs (Swap
+     * receive side).
+     */
+    stocks?: TokenSelectStocks;
 }
+
+export type TokenSelectStocks = "held" | "browse";
 
 export default function TokenSelect({
     selectedToken,
@@ -200,7 +216,10 @@ export default function TokenSelect({
     hideNetworkSubtitle = false,
     appearance = "default",
     tintTriggerFromIcon = false,
+    stocks,
 }: TokenSelectProps) {
+    const stocksAllowed = stocks !== undefined;
+    const showStockTabs = stocks === "browse";
     const t = useTranslations("tokenSelectDialog");
     const tDepositSections = useTranslations("depositModal.sections");
     const tResidency = useTranslations("residency");
@@ -215,6 +234,7 @@ export default function TokenSelect({
         null,
     );
     const [step, setStep] = useState<"token" | "network">("token");
+    const [assetTab, setAssetTab] = useState<"all" | "stocks">("all");
     const { viewportRef, hasContentAbove } = useScrollOverflow();
     const { data: popularAssets = [] } = usePopularAssetsByActivity(
         showPopularAssets && open && step === "token",
@@ -225,6 +245,7 @@ export default function TokenSelect({
         // highest-USD default (and USDC fallback) can resolve immediately.
         enabled: !showOnlyOwnedAssets && (open || autoSelect),
         showOnlyOwned: showOnlyOwnedAssets,
+        catalogKind: showStockTabs ? "swap-stocks" : "swap",
     });
 
     // Wait for assets cache/fetch before picking — avoids flashing USDC then
@@ -233,14 +254,20 @@ export default function TokenSelect({
         if (!autoSelect || locked || selectedToken || !isAssetsReady) return;
 
         setSelectedToken(
-            pickDefaultSelectedToken(tokens, {
-                disableTokens: (candidate) => {
-                    if (disableTokens?.(candidate)) return true;
-                    // Respect list filters (e.g. confidential intents-only).
-                    if (filterTokens && !filterTokens(candidate)) return true;
-                    return false;
+            pickDefaultSelectedToken(
+                stocksAllowed
+                    ? tokens
+                    : tokens.filter((token) => token.assetClass !== "stock"),
+                {
+                    disableTokens: (candidate) => {
+                        if (disableTokens?.(candidate)) return true;
+                        // Respect list filters (e.g. confidential intents-only).
+                        if (filterTokens && !filterTokens(candidate))
+                            return true;
+                        return false;
+                    },
                 },
-            }),
+            ),
         );
     }, [
         autoSelect,
@@ -251,6 +278,7 @@ export default function TokenSelect({
         setSelectedToken,
         disableTokens,
         filterTokens,
+        stocksAllowed,
     ]);
 
     // Source-agnostic list for rendering/selecting. The network filter runs
@@ -315,6 +343,7 @@ export default function TokenSelect({
         const selectable: { token: MergedToken; haystack: string }[] = [];
 
         for (const token of tokens) {
+            if (!stocksAllowed && token.assetClass === "stock") continue;
             const filtered = applyNetworkFilter(token);
             if (!filtered) continue;
             // Built from the unfiltered token, matching the original search
@@ -339,15 +368,22 @@ export default function TokenSelect({
         filterTokens,
         hideOffNearChainDelivery,
         hideChainDeliveryRoutes,
+        stocksAllowed,
     ]);
 
     const filteredTokens = useMemo(() => {
         const searchLower = search.toLowerCase();
 
+        const stocksOnly = showStockTabs && assetTab === "stocks";
+
         return selectableTokens
-            .filter(({ haystack }) => haystack.includes(searchLower))
+            .filter(
+                ({ token, haystack }) =>
+                    haystack.includes(searchLower) &&
+                    (!stocksOnly || token.assetClass === "stock"),
+            )
             .map(({ token }) => token);
-    }, [selectableTokens, search]);
+    }, [selectableTokens, search, showStockTabs, assetTab]);
 
     const { yourAssets, otherAssets } = useMemo(() => {
         const yourAssetsFiltered = filteredTokens.filter(
@@ -410,23 +446,19 @@ export default function TokenSelect({
         });
     }, [selectedAsset]);
 
-    const handleTokenClick = useCallback((token: MergedToken) => {
-        setSelectedAsset(token);
-        setStep("network");
-    }, []);
-
-    const handleNetworkClick = useCallback(
-        (network: MergedNetwork) => {
-            if (!selectedAsset) return;
-
+    const selectNetwork = useCallback(
+        (asset: MergedToken, network: MergedNetwork) => {
             setSelectedToken({
                 address: network.id,
                 symbol: network.symbol,
                 decimals: network.decimals,
-                name: selectedAsset.name,
-                icon: selectedAsset.icon || "",
+                name: asset.name,
+                icon: asset.icon || "",
                 network: network.name,
-                chainIcons: network.chainIcons || undefined,
+                chainIcons:
+                    asset.assetClass === "stock"
+                        ? undefined
+                        : network.chainIcons || undefined,
                 residency: network.residency,
                 minWithdrawalAmount: network.minWithdrawalAmount,
                 minDepositAmount: network.minDepositAmount,
@@ -438,14 +470,42 @@ export default function TokenSelect({
                     network.quoteAssetId ||
                     network.balanceAssetId ||
                     network.id,
+                assetClass: asset.assetClass,
+                marketHoursOnly: asset.marketHoursOnly,
             });
 
             setOpen(false);
             setSearch("");
             setStep("token");
             setSelectedAsset(null);
+            setAssetTab("all");
         },
-        [selectedAsset, setSelectedToken],
+        [setSelectedToken],
+    );
+
+    const handleTokenClick = useCallback(
+        (token: MergedToken) => {
+            const stockNetwork =
+                token.assetClass === "stock"
+                    ? (token.networks.find((n) => n.residency === "Intents") ??
+                      token.networks[0])
+                    : undefined;
+            if (stockNetwork) {
+                selectNetwork(token, stockNetwork);
+                return;
+            }
+            setSelectedAsset(token);
+            setStep("network");
+        },
+        [selectNetwork],
+    );
+
+    const handleNetworkClick = useCallback(
+        (network: MergedNetwork) => {
+            if (!selectedAsset) return;
+            selectNetwork(selectedAsset, network);
+        },
+        [selectedAsset, selectNetwork],
     );
 
     const handleBack = useCallback(() => {
@@ -459,6 +519,7 @@ export default function TokenSelect({
             setStep("token");
             setSelectedAsset(null);
             setSearch("");
+            setAssetTab("all");
         }
     }, []);
 
@@ -654,11 +715,14 @@ export default function TokenSelect({
                                     >
                                         {selectedToken.symbol}
                                     </span>
-                                    {!triggerLabel && !hideNetworkSubtitle && (
-                                        <span className="text-xs font-normal text-muted-foreground uppercase">
-                                            {selectedToken.network}
-                                        </span>
-                                    )}
+                                    {!triggerLabel &&
+                                        !hideNetworkSubtitle &&
+                                        selectedToken.assetClass !==
+                                            "stock" && (
+                                            <span className="text-xs font-normal text-muted-foreground uppercase">
+                                                {selectedToken.network}
+                                            </span>
+                                        )}
                                 </div>
                             </>
                         ) : (
@@ -698,6 +762,41 @@ export default function TokenSelect({
                 </DialogHeader>
                 {step === "token" && (
                     <div className="mt-4 flex min-h-0 flex-1 flex-col sm:mt-0">
+                        {showStockTabs && (
+                            <div className="sticky top-0 z-10 -mx-4 shrink-0 bg-card px-4 mb-4">
+                                <Tabs
+                                    value={assetTab}
+                                    onValueChange={(value) => {
+                                        if (
+                                            value === "all" ||
+                                            value === "stocks"
+                                        ) {
+                                            setAssetTab(value);
+                                        }
+                                    }}
+                                >
+                                    <TabsList className="gap-5 border-general-border">
+                                        <TabsTrigger
+                                            value="all"
+                                            className={ASSET_TAB_TRIGGER_CLASS}
+                                        >
+                                            {t("all")}
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="stocks"
+                                            className={ASSET_TAB_TRIGGER_CLASS}
+                                        >
+                                            {t("stocks")}
+                                            <Pill
+                                                title={t("beta")}
+                                                variant="info"
+                                                className="rounded-full px-2 py-px text-xs font-medium leading-4"
+                                            />
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                            </div>
+                        )}
                         <PaymentSelectSearchRail scrolled={hasContentAbove}>
                             <Input
                                 placeholder={t("searchByName")}

@@ -1,6 +1,9 @@
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { PUBLIC_TO_CONFIDENTIAL_ACTION } from "@/constants/proposal-actions";
-import { getKindFromProposal } from "@/lib/config-utils";
+import {
+    getApproversAndThreshold,
+    getKindFromProposal,
+} from "@/lib/config-utils";
 import { isIntentsDepositKind } from "@/lib/near-proposal-builders";
 import type { Proposal, SwapStatus } from "@/lib/proposals-api";
 import { decodeArgs, decodeProposalDescription, nanosToMs } from "@/lib/utils";
@@ -500,6 +503,48 @@ export function getProposalFeatureWarningSlot(
         return null;
     }
     return FEATURE_WARNING_SLOT[uiKind] ?? null;
+}
+
+/** Whether `accountId` approving now would reach the threshold and execute it. */
+export function isFinalApprovingVote(
+    proposal: Proposal,
+    policy: Policy,
+    accountId: string,
+): boolean {
+    const currentApprovals = Object.values(proposal.votes).filter(
+        (v) => v === "Approve",
+    ).length;
+    const { requiredVotes } = getApproversAndThreshold(
+        policy,
+        accountId,
+        proposal.kind,
+        false,
+    );
+    return requiredVotes !== null && currentApprovals + 1 >= requiredVotes;
+}
+
+/**
+ * The sell and receive asset ids of a swap request (public or confidential),
+ * or `null` for any other kind.
+ */
+export function getSwapProposalAssetIds(
+    proposal: Proposal,
+    treasuryId?: string,
+): { tokenIn: string; tokenOut: string } | null {
+    if (typeof proposal.kind === "string") return null;
+    const { type: uiKind, data } = extractProposalData(proposal, treasuryId);
+    let swap: SwapRequestData | undefined;
+    if (uiKind === "Exchange") {
+        swap = data as SwapRequestData;
+    } else if (uiKind === "Confidential Request") {
+        const mapped = (data as ConfidentialRequestData).mapped;
+        if (mapped?.type === "swap") swap = mapped.data;
+    }
+    if (!swap) return null;
+    return {
+        tokenIn: swap.tokenInAddress || swap.tokenIn,
+        tokenOut: swap.tokenOutAddress || swap.tokenOut,
+    };
 }
 
 /**

@@ -48,7 +48,10 @@ import { Icon } from "./icon";
 import { InputBlock } from "./input-block";
 import { LargeInput } from "./large-input";
 import { TokenDisplay } from "./token-display-with-network";
-import TokenSelect, { type SelectedTokenData } from "./token-select";
+import TokenSelect, {
+    type SelectedTokenData,
+    type TokenSelectStocks,
+} from "./token-select";
 import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
 
@@ -90,6 +93,9 @@ export const tokenSchema = z.object({
      * one the treasury holds. `decimals` stays the destination asset's decimals.
      */
     balanceDecimals: z.number().optional(),
+    /** Stocks live on one network, so the UI shows no network for them. */
+    assetClass: z.literal("stock").optional(),
+    marketHoursOnly: z.boolean().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -141,6 +147,8 @@ interface TokenInputProps<
          * Swap's sell side sets this.
          */
         hideChainDeliveryRoutes?: boolean;
+        /** See `TokenSelect`'s `stocks`. */
+        stocks?: TokenSelectStocks;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -708,6 +716,7 @@ export function TokenInput<
                                         hideChainDeliveryRoutes={
                                             tokenSelect?.hideChainDeliveryRoutes
                                         }
+                                        stocks={tokenSelect?.stocks}
                                         balanceLayout={
                                             tokenSelectExtras?.balanceLayout
                                         }

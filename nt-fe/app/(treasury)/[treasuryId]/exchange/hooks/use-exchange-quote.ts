@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslations } from "next-intl";
 import type { Token } from "@/components/token-input";
 import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
+import { useAmountFormat } from "@/hooks/use-amount-format";
 import {
     getIntentsQuote,
     getTokenMetadata,
@@ -18,8 +19,11 @@ import { formatQuoteErrorMessage, isAbortError } from "../quote-errors";
 import {
     getDepositAndRefundType,
     getRecipientType,
+    isAmountBelowStockMinimum,
+    isBelowStockMinimum,
     isNEARDeposit,
     isNEARWithdraw,
+    STOCK_MIN_SWAP_USD,
 } from "../utils";
 
 export type ExchangeSwapType = "EXACT_INPUT" | "EXACT_OUTPUT";
@@ -58,6 +62,11 @@ export function useExchangeQuote({
     proposalPeriod,
 }: UseExchangeQuoteParams) {
     const tEx = useTranslations("exchangeErrors");
+    const { fiat } = useAmountFormat();
+    const stockSide = {
+        sell: sellToken.assetClass === "stock",
+        receive: receiveToken.assetClass === "stock",
+    };
     const amountToken = swapType === "EXACT_INPUT" ? sellToken : receiveToken;
     // Sell spends the held token (sibling decimals). A typed receive amount is
     // the destination asset, which keeps the chain decimals.
@@ -82,10 +91,23 @@ export function useExchangeQuote({
         queryFn: async ({ signal }): Promise<IntentsQuoteResponse | null> => {
             if (!selectedTreasury || !proposalPeriod) return null;
 
+            const stockMinimumError = () =>
+                new Error(
+                    tEx("stockMinimum", {
+                        min: fiat(STOCK_MIN_SWAP_USD).display,
+                    }),
+                );
+            if (
+                isAmountBelowStockMinimum(amount, amountToken.price, stockSide)
+            ) {
+                throw stockMinimumError();
+            }
+
             const deadline = new Date(
                 Date.now() + nanosToMs(proposalPeriod),
             ).toISOString();
 
+            let response: IntentsQuoteResponse | null;
             try {
                 const isDeposit = isNEARDeposit(sellToken, receiveToken);
                 const isWithdraw = isNEARWithdraw(sellToken, receiveToken);
@@ -172,7 +194,7 @@ export function useExchangeQuote({
                         : holdableReceiveId,
                 );
 
-                return await getIntentsQuote(
+                response = await getIntentsQuote(
                     {
                         daoId: selectedTreasury,
                         swapType,
@@ -204,6 +226,14 @@ export function useExchangeQuote({
                     ),
                 );
             }
+
+            if (
+                response?.quote &&
+                isBelowStockMinimum(response.quote, stockSide)
+            ) {
+                throw stockMinimumError();
+            }
+            return response;
         },
         enabled: enabled && !!proposalPeriod,
         refetchInterval,

@@ -2,16 +2,22 @@
 import { ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
-import { toast } from "sonner";
 import { useFormContext } from "react-hook-form";
+import { toast } from "sonner";
 import { Button } from "@/components/button";
 import { CreateRequestButton } from "@/components/create-request-button";
+import { useFormatDate } from "@/components/formatted-date";
 import { Icon } from "@/components/icon";
+import { InfoAlert } from "@/components/info-alert";
 import type { StepProps } from "@/components/step-wizard";
 import { TokenInput } from "@/components/token-input";
 import { SlotWarning } from "@/components/warning-message";
 import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
+import {
+    useStockMarketClock,
+    useStockRegionRestricted,
+} from "@/hooks/use-stock-restrictions";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
 import { trackEvent } from "@/lib/analytics";
@@ -69,6 +75,26 @@ export function Step1({
         isDryRun: true,
         refetchInterval: DRY_QUOTE_REFRESH_INTERVAL,
     });
+
+    const tStock = useTranslations("stockRestrictions");
+    const formatDate = useFormatDate();
+    const stockRegionRestricted = useStockRegionRestricted();
+    const market = useStockMarketClock();
+    const isStockSwap =
+        sellToken.assetClass === "stock" || receiveToken.assetClass === "stock";
+    const marketHoursStock = [sellToken, receiveToken].find(
+        (token) => token.marketHoursOnly,
+    );
+    const stockRegionBlocked = isStockSwap && stockRegionRestricted;
+    const marketHoursNotice =
+        !marketHoursStock || stockRegionBlocked
+            ? null
+            : market.isOpen || !market.reopensAt
+              ? tStock("marketHours", { symbol: marketHoursStock.symbol })
+              : tStock("marketClosed", {
+                    symbol: marketHoursStock.symbol,
+                    reopensAt: formatDate(market.reopensAt),
+                });
 
     // Check if sell token is wNEAR (FT NEAR with Ft residency, not Intents)
     const isSellTokenFTNEAR =
@@ -248,6 +274,7 @@ export function Step1({
                             autoSelect: false,
                             hideOffNearChainDelivery: true,
                             hideChainDeliveryRoutes: true,
+                            stocks: "held",
                         }}
                         usdValueOverride={
                             quoteData?.quote
@@ -302,6 +329,7 @@ export function Step1({
                         showPopularAssets: true,
                         autoSelect: false,
                         hideOffNearChainDelivery: true,
+                        stocks: "browse",
                     }}
                     usdValueOverride={
                         quoteData?.quote
@@ -321,6 +349,11 @@ export function Step1({
                 />
             </div>
 
+            {stockRegionBlocked && (
+                <InfoAlert message={tStock("createRegion")} />
+            )}
+            {marketHoursNotice && <InfoAlert message={marketHoursNotice} />}
+
             <CreateRequestButton
                 onClick={handleContinue}
                 className="w-full h-12"
@@ -330,16 +363,19 @@ export function Step1({
                     !hasValidAmount ||
                     !quoteData ||
                     !!quoteError ||
-                    exchangeSlotBlocked
+                    exchangeSlotBlocked ||
+                    stockRegionBlocked
                 }
                 idleMessage={
                     exchangeSlotBlocked
                         ? tCreate("brieflyUnavailable")
-                        : areSameTokens
-                          ? tEx("disabled.differentTokens")
-                          : !hasValidAmount
-                            ? tEx("disabled.enterAmount")
-                            : tEx("review")
+                        : stockRegionBlocked
+                          ? tStock("unavailableInRegion")
+                          : areSameTokens
+                            ? tEx("disabled.differentTokens")
+                            : !hasValidAmount
+                              ? tEx("disabled.enterAmount")
+                              : tEx("review")
                 }
             />
 

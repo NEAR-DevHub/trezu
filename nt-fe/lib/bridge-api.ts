@@ -2,16 +2,21 @@ import { http as axios } from "@/lib/http";
 
 const BACKEND_API_BASE = `${process.env.NEXT_PUBLIC_BACKEND_API_BASE}/api`;
 
-export type TokenCatalogKind = "deposit" | "swap";
+export type TokenCatalogKind = "deposit" | "swap" | "swap-stocks";
 
 /**
  * Fetch deposit or swap token catalogs.
  * - deposit: near.com catalog + Bridge (no 1Click ∩)
  * - swap: catalog ∩ 1Click `/v0/tokens`
+ * - swap-stocks: swap list plus stocks (`?includeStocks=true`)
  */
 export async function fetchTokenCatalog(kind: TokenCatalogKind = "deposit") {
     const path =
-        kind === "swap" ? "/intents/swap-tokens" : "/intents/deposit-tokens";
+        kind === "swap"
+            ? "/intents/swap-tokens"
+            : kind === "swap-stocks"
+              ? "/intents/swap-tokens?includeStocks=true"
+              : "/intents/deposit-tokens";
     try {
         const response = await axios.get(`${BACKEND_API_BASE}${path}`);
         return response.data.assets || [];

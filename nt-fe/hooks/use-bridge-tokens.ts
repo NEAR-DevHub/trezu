@@ -27,6 +27,10 @@ export interface BridgeAsset {
     /** Catalog full name (near.com `name`), e.g. Ethereum */
     name: string;
     icon: string;
+    /** Set for stocks and ETFs (`type:rwa`). */
+    assetClass?: "stock";
+    /** Stock that can only be swapped while the stock market is open. */
+    marketHoursOnly?: boolean;
     networks: BridgeNetwork[];
 }
 
@@ -55,6 +59,8 @@ export interface CatalogAssetDto {
     assetName?: string | null;
     name?: string | null;
     icon?: string | null;
+    assetClass?: string | null;
+    marketHoursOnly?: boolean | null;
     networks: CatalogNetworkDto[];
 }
 
@@ -77,6 +83,8 @@ export function formatCatalogAssets(
             symbol,
             name,
             icon,
+            assetClass: asset.assetClass === "stock" ? "stock" : undefined,
+            marketHoursOnly: asset.marketHoursOnly === true ? true : undefined,
             // Sole boundary where catalog JSON enters the app: strip `null` here
             // so downstream token shapes are honestly `T | undefined`.
             networks: asset.networks.map((network) => ({
@@ -101,7 +109,7 @@ export function formatCatalogAssets(
 }
 
 export type UseTokenCatalogOptions = {
-    /** deposit = catalog+Bridge; swap = ∩ 1Click `/v0/tokens` */
+    /** deposit = catalog+Bridge; swap = ∩ 1Click; swap-stocks = swap plus stocks */
     kind?: TokenCatalogKind;
     enabled?: boolean;
 };

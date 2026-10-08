@@ -4,7 +4,8 @@
 //!   `production.json` only. Bridge RPC is fetched to fill mins / public-deposit
 //!   flags on those rows — never to add Bridge-only tokens. Cached as one catalog.
 //! - **Swap** (`/swap-tokens`): derived from the deposit catalog by filtering
-//!   to assets present in 1Click `/v0/tokens` (no `?ondoTokens`).
+//!   to assets present in 1Click `/v0/tokens`. `?includeStocks=true` also keeps
+//!   stocks (`type:rwa`) for the swap receive picker.
 //!
 //! Each network exposes `balanceAssetId` (Intents ledger) and `quoteAssetId`
 //! (1Click routing; may be a `1cs_v1:` id).
@@ -21,7 +22,11 @@ use crate::{
     },
     utils::cache::CacheTier,
 };
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{Query, State},
+    http::StatusCode,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
@@ -33,7 +38,10 @@ use crate::{
     services::oneclick_asset_routing::{
         NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
-    services::oneclick_tokens::fetch_oneclick_tokens,
+    services::{
+        oneclick_tokens::{fetch_oneclick_tokens, fetch_oneclick_tokens_with_stocks},
+        stock_market::is_market_hours_stock_tags,
+    },
 };
 use serde_json::Value;
 
@@ -326,6 +334,18 @@ fn catalog_tags_for_asset(asset_id: &str) -> &[String] {
         .unwrap_or(&[])
 }
 
+fn stock_market_hours_only(tags: &[String]) -> Option<bool> {
+    is_market_hours_stock_tags(tags).then_some(true)
+}
+
+fn stock_asset_class(tags: &[String]) -> Option<String> {
+    if tags.iter().any(|tag| tag.eq_ignore_ascii_case("type:rwa")) {
+        Some("stock".to_string())
+    } else {
+        None
+    }
+}
+
 fn catalog_token_in_oneclick(balance_id: &str, oneclick_ids: &HashSet<String>) -> bool {
     let quote_id = quote_asset_id(balance_id);
     if oneclick_ids.contains(quote_id) || oneclick_ids.contains(balance_id) {
@@ -369,7 +389,20 @@ pub struct AssetOption {
     pub asset_name: String,
     pub name: String,
     pub icon: Option<String>,
+    /// `"stock"` for catalog `type:rwa` (stocks and ETFs).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub asset_class: Option<String>,
+    /// Stocks that can only be swapped while the stock market is open.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub market_hours_only: Option<bool>,
     pub networks: Vec<NetworkOption>,
+}
+
+#[derive(Debug, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapTokensQuery {
+    #[serde(default)]
+    pub include_stocks: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -454,20 +487,32 @@ pub async fn get_deposit_tokens(
 
 /// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`,
 /// excluding chain-only `1cs_v1:` networks (INTENTS holds nep141/nep245 only).
+///
+/// `?includeStocks=true` intersects with the stock-inclusive 1Click list so
+/// stocks stay available to the swap receive picker without entering Send.
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
+    Query(query): Query<SwapTokensQuery>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
     let state_clone = state.clone();
+    let cache_key = if query.include_stocks {
+        "swap-tokens:stocks".to_string()
+    } else {
+        "swap-tokens".to_string()
+    };
     state
         .cache
         .cached::<_, DepositAssetsResponse, (StatusCode, String)>(
             CacheTier::LongTerm,
-            "swap-tokens".to_string(),
+            cache_key,
             async move {
                 let deposit = load_deposit_catalog(state_clone.clone()).await?;
-                let oneclick_tokens = fetch_oneclick_tokens(&state_clone)
-                    .await
-                    .unwrap_or_default();
+                let oneclick_tokens = if query.include_stocks {
+                    fetch_oneclick_tokens_with_stocks(&state_clone).await
+                } else {
+                    fetch_oneclick_tokens(&state_clone).await
+                }
+                .unwrap_or_default();
                 let oneclick_ids: HashSet<String> =
                     oneclick_tokens.into_iter().map(|t| t.asset_id).collect();
                 Ok(filter_catalog_for_swap(deposit, &oneclick_ids))
@@ -621,15 +666,18 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
                 bridge.supported_chains.contains(&chain_id)
             };
 
-            let asset = asset_map
-                .entry(group_key.clone())
-                .or_insert_with(|| AssetOption {
+            let asset = asset_map.entry(group_key.clone()).or_insert_with(|| {
+                let tags = collected_catalog_tags(unified);
+                AssetOption {
                     id: group_key.clone(),
                     asset_name: unified.symbol.clone(),
                     name: unified.name.clone(),
                     icon: Some(unified.icon.clone()),
+                    asset_class: stock_asset_class(&tags),
+                    market_hours_only: stock_market_hours_only(&tags),
                     networks: Vec::new(),
-                });
+                }
+            });
 
             if asset.networks.iter().any(|n| n.id == routing_id) {
                 continue;
@@ -943,6 +991,8 @@ mod tests {
                     asset_name: "CFI".into(),
                     name: "ConsumerFi".into(),
                     icon: None,
+                    asset_class: None,
+                    market_hours_only: None,
                     networks: vec![
                         NetworkOption {
                             id: cfi_near.into(),
@@ -977,6 +1027,8 @@ mod tests {
                     asset_name: "BTC".into(),
                     name: "Bitcoin".into(),
                     icon: None,
+                    asset_class: None,
+                    market_hours_only: None,
                     networks: vec![NetworkOption {
                         id: NBTC_BALANCE_ASSET_ID.into(),
                         name: "bitcoin".into(),
@@ -1298,6 +1350,8 @@ mod tests {
                     asset_name: "REF".into(),
                     name: "Ref Finance".into(),
                     icon: None,
+                    asset_class: None,
+                    market_hours_only: None,
                     networks: vec![network(ref_id, "near", "REF")],
                 },
                 AssetOption {
@@ -1305,6 +1359,8 @@ mod tests {
                     asset_name: "USDC".into(),
                     name: "USD Coin".into(),
                     icon: None,
+                    asset_class: None,
+                    market_hours_only: None,
                     networks: vec![network(usdc_id, "near", "USDC")],
                 },
             ],
@@ -1317,6 +1373,63 @@ mod tests {
                 .map(|asset| asset.asset_name.as_str())
                 .collect::<Vec<_>>(),
             vec!["USDC"]
+        );
+    }
+
+    #[test]
+    fn rwa_tokens_are_stocks_and_join_swap_only_with_their_ids() {
+        let deposit = build_deposit_catalog(&BridgeLookup::default());
+        let aapl = deposit
+            .assets
+            .iter()
+            .find(|asset| asset.asset_name == "AAPL")
+            .expect("AAPL");
+        assert_eq!(aapl.asset_class.as_deref(), Some("stock"));
+        assert_eq!(aapl.market_hours_only, None);
+        let gld = deposit
+            .assets
+            .iter()
+            .find(|asset| asset.asset_name == "GLD")
+            .expect("GLD");
+        assert_eq!(gld.market_hours_only, Some(true));
+        let usdon = deposit
+            .assets
+            .iter()
+            .find(|asset| asset.asset_name == "USDon")
+            .expect("USDon");
+        assert!(usdon.asset_class.is_none());
+
+        let without = filter_catalog_for_swap(deposit.clone(), &HashSet::new());
+        assert!(
+            without
+                .assets
+                .iter()
+                .all(|asset| asset.asset_class.as_deref() != Some("stock"))
+        );
+
+        let stock_ids: HashSet<String> = deposit
+            .assets
+            .iter()
+            .filter(|asset| asset.asset_class.as_deref() == Some("stock"))
+            .flat_map(|asset| {
+                asset
+                    .networks
+                    .iter()
+                    .map(|network| network.balance_asset_id.clone())
+            })
+            .collect();
+        let with_stocks = filter_catalog_for_swap(deposit, &stock_ids);
+        assert!(
+            with_stocks
+                .assets
+                .iter()
+                .any(|asset| asset.asset_name == "AAPL")
+        );
+        assert!(
+            with_stocks
+                .assets
+                .iter()
+                .all(|asset| asset.asset_name != "USDon")
         );
     }
 }

@@ -46,6 +46,10 @@ export interface MergedToken {
     name: string;
     symbol: string;
     icon: string;
+    /** Set for stocks and ETFs. */
+    assetClass?: "stock";
+    /** Stock that can only be swapped while the stock market is open. */
+    marketHoursOnly?: boolean;
     networks: MergedNetwork[];
     /** Defined for treasury-held tokens; undefined for bridge-only tokens */
     totalBalance?: number;
@@ -57,6 +61,11 @@ interface UseMergedTokensOptions {
     enabled?: boolean;
     /** When true, skips bridge-only tokens and bridge fetch. Default: false */
     showOnlyOwned?: boolean;
+    /**
+     * `swap-stocks` adds stocks. The swap receive picker uses it.
+     * Send stays on `swap`.
+     */
+    catalogKind?: "swap" | "swap-stocks";
 }
 
 type TreasuryNetwork = AggregatedAsset["networks"][number];
@@ -298,6 +307,8 @@ const mergeOwnedTokenWithBridge = (
         name: bridgeAsset.name,
         symbol: bridgeAsset.symbol,
         icon: treasuryToken.icon || bridgeAsset.icon || "",
+        assetClass: bridgeAsset.assetClass,
+        marketHoursOnly: bridgeAsset.marketHoursOnly,
         networks: overlayChainDeliveryHoldings(networks, byContractId),
         totalBalance: Number(treasuryToken.availableTotalBalance),
         totalBalanceUSD: treasuryToken.availableTotalBalanceUSD,
@@ -320,6 +331,8 @@ const buildBridgeOnlyTokens = (
                 name: a.name,
                 symbol: a.symbol,
                 icon: a.icon,
+                assetClass: a.assetClass,
+                marketHoursOnly: a.marketHoursOnly,
                 networks: a.networks.flatMap((n) =>
                     toBridgeVariants(n, "Intents", {
                         includeFtDuplicate: !isConfidential,
@@ -343,6 +356,7 @@ const buildBridgeOnlyTokens = (
 export function useMergedTokens({
     enabled = true,
     showOnlyOwned = false,
+    catalogKind = "swap",
 }: UseMergedTokensOptions = {}) {
     const { treasuryId, isConfidential } = useTreasury();
 
@@ -355,19 +369,48 @@ export function useMergedTokens({
 
     const { data: bridgeAssets = [], isLoading } = useTokenCatalog({
         enabled: enabled && !showOnlyOwned,
-        kind: "swap",
+        kind: catalogKind,
+    });
+    // Held stocks must be recognised even when the active catalog omits them.
+    const { data: stockCatalog = [] } = useTokenCatalog({
+        enabled,
+        kind: "swap-stocks",
     });
 
     const tokens = useMemo((): MergedToken[] => {
         const bridgeAssetsMap = new Map(
             bridgeAssets.map((a) => [a.id.toLowerCase(), a]),
         );
+        const stockAssets = stockCatalog.filter(
+            (a) => a.assetClass === "stock",
+        );
+        const stockById = new Map(
+            stockAssets.map((a) => [a.id.toLowerCase(), a]),
+        );
+        const stockByAssetId = new Map(
+            stockAssets.flatMap((a) =>
+                a.networks.map((n) => [
+                    normalizeNearAssetId(n.balanceAssetId || n.id),
+                    a,
+                ]),
+            ),
+        );
+        const findStock = (treasuryToken: AggregatedAsset) =>
+            stockById.get(treasuryToken.id.toLowerCase()) ??
+            treasuryToken.networks
+                .map((n) =>
+                    stockByAssetId.get(
+                        normalizeNearAssetId(n.contractId ?? n.id),
+                    ),
+                )
+                .find((asset) => asset !== undefined);
 
         const ownedTokens = aggregatedTokens
             .map((treasuryToken) =>
                 mergeOwnedTokenWithBridge(
                     treasuryToken,
-                    bridgeAssetsMap.get(treasuryToken.id.toLowerCase()),
+                    bridgeAssetsMap.get(treasuryToken.id.toLowerCase()) ??
+                        findStock(treasuryToken),
                     isConfidential,
                 ),
             )
@@ -387,7 +430,13 @@ export function useMergedTokens({
                 isConfidential,
             ),
         ];
-    }, [aggregatedTokens, bridgeAssets, showOnlyOwned, isConfidential]);
+    }, [
+        aggregatedTokens,
+        bridgeAssets,
+        stockCatalog,
+        showOnlyOwned,
+        isConfidential,
+    ]);
 
     return {
         tokens,

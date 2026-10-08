@@ -2084,12 +2084,22 @@
         "nativeToken": "Native Token"
     },
     "exchangeErrors": {
-        "noRoute": "Takas bulunamadı. Daha küçük bir miktar veya farklı bir token deneyin.",
+        "noRoute": "Takas bulunamadı. Farklı bir miktar veya farklı bir token deneyin.",
         "amountTooLow": "Takas için miktar çok düşük. Zincirler arası takaslar ağ ücretlerini karşılamak için daha yüksek bir minimum gerektirir.",
         "amountTooLowWithMin": "Miktar ağ ücretlerini karşılamak için çok düşük. En az {min} {token} girin.",
         "insufficientBalance": "Bu takas için yetersiz bakiye.",
         "networkError": "Ağ hatası. Lütfen bağlantınızı kontrol edin ve tekrar deneyin.",
+        "stockMinimum": "Hisse senedi takasları en az {min} gerektirir. Daha yüksek bir tutar girin.",
         "fetchFailed": "Teklif alınamadı"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol}, Pazar 20:00 ile Cuma 20:00 ET arasında işlem görür. Bu talebi istediğiniz zaman oluşturabilirsiniz, ancak yalnızca piyasa açıkken onaylanabilir.",
+        "marketClosed": "{symbol} piyasası {reopensAt} tarihine kadar kapalı. Yine de bu talebi oluşturabilirsiniz, ancak piyasa yeniden açılana kadar onaylanamaz.",
+        "createRegion": "Hisse takasları bölgenizde kullanılamıyor.",
+        "unavailableInRegion": "Bölgenizde kullanılamıyor",
+        "approveRegion": "Hisse takasları bölgenizde kullanılamadığı için {count, plural, one {bu talebi} other {bu taleplerden #'ini}} onaylayamazsınız.",
+        "approveMarketClosed": "Piyasa {reopensAt} tarihine kadar kapalı, bu yüzden {count, plural, one {bu hisse takası} other {# hisse takası}} henüz onaylanamaz. Piyasa yeniden açıldıktan sonra onaylayın.",
+        "approveMarketClosedNoTime": "Piyasa kapalı, bu yüzden {count, plural, one {bu hisse takası} other {# hisse takası}} henüz onaylanamaz. Piyasa yeniden açıldıktan sonra onaylayın."
     },
     "tokenSelectDialog": {
         "selectToken": "Token seç",
@@ -2103,6 +2113,9 @@
         "networksWithAssets": "Varlıkları olan ağlar",
         "supportedNetworks": "Desteklenen Ağlar",
         "comingSoon": "Yakında",
+        "all": "Tümü",
+        "stocks": "Hisseler",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Ağ} other {# Ağ}}"
     },
     "intentsQuote": {

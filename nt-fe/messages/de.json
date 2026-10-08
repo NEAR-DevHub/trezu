@@ -2084,12 +2084,22 @@
         "nativeToken": "Natives Token"
     },
     "exchangeErrors": {
-        "noRoute": "Kein Tausch gefunden. Versuchen Sie einen kleineren Betrag oder ein anderes Token.",
+        "noRoute": "Kein Tausch gefunden. Versuchen Sie einen anderen Betrag oder ein anderes Token.",
         "amountTooLow": "Betrag zu niedrig für den Tausch. Cross-Chain-Tausche erfordern ein höheres Minimum, um Netzwerkgebühren abzudecken.",
         "amountTooLowWithMin": "Der Betrag ist zu niedrig, um die Netzwerkgebühren zu decken. Geben Sie mindestens {min} {token} ein.",
         "insufficientBalance": "Unzureichendes Guthaben für diesen Tausch.",
         "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+        "stockMinimum": "Aktien-Swaps erfordern mindestens {min}. Gib einen höheren Betrag ein.",
         "fetchFailed": "Abrufen des Angebots fehlgeschlagen"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} wird von Sonntag 20 Uhr bis Freitag 20 Uhr ET gehandelt. Du kannst diese Anfrage jederzeit erstellen, sie kann aber nur bei geöffnetem Markt genehmigt werden.",
+        "marketClosed": "Der Markt für {symbol} ist bis {reopensAt} geschlossen. Du kannst diese Anfrage trotzdem erstellen, sie kann aber erst nach der Wiedereröffnung genehmigt werden.",
+        "createRegion": "Aktien-Swaps sind in deiner Region nicht verfügbar.",
+        "unavailableInRegion": "In deiner Region nicht verfügbar",
+        "approveRegion": "Aktien-Swaps sind in deiner Region nicht verfügbar, daher kannst du {count, plural, one {diese Anfrage} other {# dieser Anfragen}} nicht genehmigen.",
+        "approveMarketClosed": "Der Markt ist bis {reopensAt} geschlossen, daher {count, plural, one {kann dieser Aktien-Swap} other {können # Aktien-Swaps}} noch nicht genehmigt werden. Genehmige nach der Wiedereröffnung.",
+        "approveMarketClosedNoTime": "Der Markt ist geschlossen, daher {count, plural, one {kann dieser Aktien-Swap} other {können # Aktien-Swaps}} noch nicht genehmigt werden. Genehmige nach der Wiedereröffnung."
     },
     "tokenSelectDialog": {
         "selectToken": "Token auswählen",
@@ -2103,6 +2113,9 @@
         "networksWithAssets": "Netzwerke mit Vermögenswerten",
         "supportedNetworks": "Unterstützte Netzwerke",
         "comingSoon": "Demnächst verfügbar",
+        "all": "Alle",
+        "stocks": "Aktien",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# Netzwerk} other {# Netzwerke}}"
     },
     "intentsQuote": {

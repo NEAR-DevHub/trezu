@@ -2067,12 +2067,22 @@
         "nativeToken": "Token gốc"
     },
     "exchangeErrors": {
-        "noRoute": "Không tìm thấy giao dịch trao đổi. Hãy thử số tiền nhỏ hơn hoặc token khác.",
+        "noRoute": "Không tìm thấy giao dịch trao đổi. Hãy thử số tiền hoặc token khác.",
         "amountTooLow": "Số tiền quá thấp để hoán đổi. Hoán đổi liên chuỗi yêu cầu mức tối thiểu cao hơn để chi trả phí mạng.",
         "amountTooLowWithMin": "Số tiền quá thấp để chi trả phí mạng. Hãy nhập ít nhất {min} {token}.",
         "insufficientBalance": "Số dư không đủ cho giao dịch hoán đổi này.",
         "networkError": "Lỗi mạng. Vui lòng kiểm tra kết nối và thử lại.",
+        "stockMinimum": "Hoán đổi cổ phiếu cần tối thiểu {min}. Hãy nhập số tiền lớn hơn.",
         "fetchFailed": "Không thể lấy báo giá"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} giao dịch từ 20:00 Chủ nhật đến 20:00 Thứ sáu (giờ ET). Bạn có thể tạo yêu cầu này bất cứ lúc nào, nhưng chỉ có thể phê duyệt khi thị trường mở cửa.",
+        "marketClosed": "Thị trường của {symbol} đóng cửa đến {reopensAt}. Bạn vẫn có thể tạo yêu cầu này, nhưng không thể phê duyệt cho đến khi thị trường mở lại.",
+        "createRegion": "Hoán đổi cổ phiếu không khả dụng ở khu vực của bạn.",
+        "unavailableInRegion": "Không khả dụng ở khu vực của bạn",
+        "approveRegion": "Hoán đổi cổ phiếu không khả dụng ở khu vực của bạn nên bạn không thể phê duyệt {count, plural, other {# yêu cầu này}}.",
+        "approveMarketClosed": "Thị trường đóng cửa đến {reopensAt}, nên chưa thể phê duyệt {count, plural, other {# giao dịch hoán đổi cổ phiếu}}. Hãy phê duyệt sau khi thị trường mở lại.",
+        "approveMarketClosedNoTime": "Thị trường đang đóng cửa, nên chưa thể phê duyệt {count, plural, other {# giao dịch hoán đổi cổ phiếu}}. Hãy phê duyệt sau khi thị trường mở lại."
     },
     "tokenSelectDialog": {
         "selectToken": "Chọn token",
@@ -2086,6 +2096,9 @@
         "networksWithAssets": "Mạng có tài sản",
         "supportedNetworks": "Mạng được hỗ trợ",
         "comingSoon": "Sắp ra mắt",
+        "all": "Tất cả",
+        "stocks": "Cổ phiếu",
+        "beta": "Beta",
         "networksCount": "{count, plural, other {# Mạng}}"
     },
     "intentsQuote": {

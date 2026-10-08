@@ -2084,12 +2084,22 @@
         "nativeToken": "טוקן מקורי"
     },
     "exchangeErrors": {
-        "noRoute": "לא נמצאה החלפה. נסה סכום קטן יותר או טוקן אחר.",
+        "noRoute": "לא נמצאה החלפה. נסה סכום אחר או טוקן אחר.",
         "amountTooLow": "הסכום נמוך מדי להחלפה. החלפות חוצות-רשתות דורשות מינימום גבוה יותר כדי לכסות את עמלות הרשת.",
         "amountTooLowWithMin": "הסכום נמוך מדי לכיסוי עמלות רשת. הזן לפחות {min} {token}.",
         "insufficientBalance": "יתרה לא מספקת להחלפה זו.",
         "networkError": "שגיאת רשת. אנא בדוק את החיבור שלך ונסה שוב.",
+        "stockMinimum": "החלפות מניות דורשות לפחות {min}. הזן סכום גבוה יותר.",
         "fetchFailed": "אחזור הציטוט נכשל"
+    },
+    "stockRestrictions": {
+        "marketHours": "{symbol} נסחר מיום ראשון ב-20:00 עד יום שישי ב-20:00 לפי שעון ET. אפשר ליצור את הבקשה בכל עת, אבל אפשר לאשר אותה רק כשהשוק פתוח.",
+        "marketClosed": "השוק של {symbol} סגור עד {reopensAt}. עדיין אפשר ליצור את הבקשה, אבל לא ניתן לאשר אותה עד שהשוק ייפתח מחדש.",
+        "createRegion": "החלפות מניות אינן זמינות באזור שלך.",
+        "unavailableInRegion": "לא זמין באזור שלך",
+        "approveRegion": "החלפות מניות אינן זמינות באזור שלך, ולכן אין באפשרותך לאשר {count, plural, one {את הבקשה הזו} other {# מהבקשות האלה}}.",
+        "approveMarketClosed": "השוק סגור עד {reopensAt}, ולכן עדיין לא ניתן לאשר {count, plural, one {את החלפת המניות הזו} other {# החלפות מניות}}. אשר/י אחרי שייפתח מחדש.",
+        "approveMarketClosedNoTime": "השוק סגור, ולכן עדיין לא ניתן לאשר {count, plural, one {את החלפת המניות הזו} other {# החלפות מניות}}. אשר/י אחרי שייפתח מחדש."
     },
     "tokenSelectDialog": {
         "selectToken": "בחר טוקן",
@@ -2103,6 +2113,9 @@
         "networksWithAssets": "רשתות עם נכסים",
         "supportedNetworks": "רשתות נתמכות",
         "comingSoon": "בקרוב",
+        "all": "הכל",
+        "stocks": "מניות",
+        "beta": "Beta",
         "networksCount": "{count, plural, one {# רשת} two {# רשתות} many {# רשתות} other {# רשתות}}"
     },
     "intentsQuote": {
