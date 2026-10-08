@@ -136,6 +136,11 @@ interface TokenInputProps<
          * Exchange sets this. Send leaves it off.
          */
         hideOffNearChainDelivery?: boolean;
+        /**
+         * Hide every chain-delivery network. They repeat a held balance, so
+         * Swap's sell side sets this.
+         */
+        hideChainDeliveryRoutes?: boolean;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -699,6 +704,9 @@ export function TokenInput<
                                         autoSelect={tokenSelect?.autoSelect}
                                         hideOffNearChainDelivery={
                                             tokenSelect?.hideOffNearChainDelivery
+                                        }
+                                        hideChainDeliveryRoutes={
+                                            tokenSelect?.hideChainDeliveryRoutes
                                         }
                                         balanceLayout={
                                             tokenSelectExtras?.balanceLayout
