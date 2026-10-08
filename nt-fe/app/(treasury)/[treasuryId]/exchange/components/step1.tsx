@@ -159,8 +159,8 @@ export function Step1({
     ]);
 
     // A chain-delivery sell row repeats a held balance under another network
-    // (ZEC on NEAR, NEAR on Solana). The flip button can still put one here
-    // from the receive side, so fall back to BTC.
+    // (ZEC on NEAR, NEAR on Solana). The `sellToken` query param can still
+    // put one here, so fall back to BTC.
     useEffect(() => {
         if (
             !isChainDeliveryRoute({
@@ -302,6 +302,7 @@ export function Step1({
                         showPopularAssets: true,
                         autoSelect: false,
                         hideOffNearChainDelivery: true,
+                        hideChainDeliveryRoutes: true,
                     }}
                     usdValueOverride={
                         quoteData?.quote
