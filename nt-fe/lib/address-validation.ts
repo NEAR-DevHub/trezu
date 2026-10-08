@@ -38,7 +38,9 @@ const ADDRESS_PATTERNS: Record<BlockchainType, RegExp | null> = {
     // X = P2PKH, 7 = P2SH.
     dash: /^[X7][1-9A-HJ-NP-Za-km-z]{33}$/,
     ethereum: /^0x[a-fA-F0-9]{40}$/,
-    starknet: /^0x[a-fA-F0-9]{1,64}$/,
+    // A 40-hex `0x` string is an EVM address. It fits a felt, but no Starknet
+    // account lives there, so funds sent to it are lost.
+    starknet: /^0x(?![a-fA-F0-9]{40}$)[a-fA-F0-9]{1,64}$/,
     aleo: /^aleo1[a-z0-9]{58}$/,
     solana: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
     tron: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,
@@ -225,9 +227,9 @@ export function getAddressPattern(blockchain: BlockchainType): RegExp | null {
  * excluded so a contact name cannot sneak through.
  *
  * Several chains share the `0x…` shape; the catalog order decides the first
- * match. A 40-hex (EVM-length) address hits Ethereum before the broader
- * Starknet pattern. A 64-hex `0x` address skips Ethereum (exactly 40 hex)
- * and matches Starknet before Sui / Aptos.
+ * match. A 40-hex (EVM-length) address is Ethereum only. A 64-hex `0x`
+ * address skips Ethereum (exactly 40 hex) and matches Starknet before
+ * Sui / Aptos.
  */
 export function findMatchingBlockchainType(
     address: string,
