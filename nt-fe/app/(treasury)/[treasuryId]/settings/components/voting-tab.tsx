@@ -94,7 +94,7 @@ export function VotingTab() {
                 voteDuration: z
                     .string()
                     .min(1, t("validation.required"))
-                    .refine((val) => !isNaN(Number(val)), {
+                    .refine((val) => /^\d+(\.\d+)?$/.test(val), {
                         message: t("validation.validNumber"),
                     })
                     .refine((val) => Number(val) >= 1, {
@@ -103,7 +103,7 @@ export function VotingTab() {
                     .refine((val) => Number(val) < 1000, {
                         message: t("validation.max"),
                     })
-                    .refine((val) => Number.isInteger(Number(val)), {
+                    .refine((val) => /^\d+$/.test(val), {
                         message: t("validation.whole"),
                     }),
                 thresholds: z.record(z.string(), z.number()),
@@ -344,6 +344,9 @@ export function VotingTab() {
         }
     };
 
+    const isDurationUnchanged =
+        Number(form.watch("voteDuration")) === Number(originalDuration);
+
     const handleDurationChange = async () => {
         if (!treasuryId || !policy) {
             toast.error(t("missingData"));
@@ -352,13 +355,13 @@ export function VotingTab() {
 
         // Validate the vote duration field
         const isValid = await form.trigger("voteDuration");
-        if (!isValid) {
+        if (!isValid || isDurationUnchanged) {
             return;
         }
 
         setIsSubmittingDuration(true);
         try {
-            const voteDuration = form.watch("voteDuration");
+            const voteDuration = String(Number(form.getValues("voteDuration")));
             const durationInNanoseconds =
                 Number(voteDuration) * 24 * 60 * 60 * 1_000_000_000;
 
@@ -590,6 +593,7 @@ export function VotingTab() {
                         isSubmitting={isSubmittingDuration}
                         disabled={
                             !form.formState.dirtyFields.voteDuration ||
+                            isDurationUnchanged ||
                             !!form.formState.errors.voteDuration
                         }
                     />
