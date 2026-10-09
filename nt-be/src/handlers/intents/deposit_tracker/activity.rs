@@ -129,6 +129,7 @@ impl InProcessDeposit {
             usd_value: None,
             proposal_id: None,
             quote_deposit_address: None,
+            notes: None,
         })
     }
 }
@@ -270,6 +271,7 @@ mod tests {
             usd_value: None,
             proposal_id: None,
             quote_deposit_address: None,
+            notes: None,
         }
     }
 
