@@ -8,9 +8,11 @@ import { test as base } from "@playwright/test";
 import { VoteDialogComponent } from "../components/vote-dialog.component";
 import { WalletConnectorPopupComponent } from "../components/wallet-connector-popup.component";
 import { RequestDetailsPage } from "../pages/request-details.page";
+import { RequestsPage } from "../pages/requests.page";
 
 interface PageObjectFixtures {
     requestDetailsPage: RequestDetailsPage;
+    requestsPage: RequestsPage;
     voteDialog: VoteDialogComponent;
     walletConnectorPopup: WalletConnectorPopupComponent;
 }
@@ -18,6 +20,9 @@ interface PageObjectFixtures {
 export const test = base.extend<PageObjectFixtures>({
     requestDetailsPage: async ({ page }, use) => {
         await use(new RequestDetailsPage(page));
+    },
+    requestsPage: async ({ page }, use) => {
+        await use(new RequestsPage(page));
     },
     voteDialog: async ({ page }, use) => {
         await use(new VoteDialogComponent(page));
