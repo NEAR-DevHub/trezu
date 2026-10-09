@@ -286,30 +286,26 @@ export default function MembersPage() {
         }
     };
 
+    // A row's Remove action takes priority over the bulk selection.
+    const membersPendingRemoval = useMemo(
+        () =>
+            memberToDelete
+                ? [memberToDelete]
+                : existingMembers.filter((m) =>
+                      selectedMembers.includes(m.accountId),
+                  ),
+        [memberToDelete, selectedMembers, existingMembers],
+    );
+
     // Handle delete members submission
     const handleDeleteMembersSubmit = async () => {
         if (!policy || !treasuryId || isMemberActionsDisabled) return;
 
         try {
-            const membersToRemove =
-                selectedMembers.length > 0
-                    ? selectedMembers.map((accountId) => {
-                          const member = existingMembers.find(
-                              (m) => m.accountId === accountId,
-                          );
-                          return {
-                              member: accountId,
-                              roles: member?.roles || [],
-                          };
-                      })
-                    : memberToDelete
-                      ? [
-                            {
-                                member: memberToDelete.accountId,
-                                roles: memberToDelete.roles,
-                            },
-                        ]
-                      : [];
+            const membersToRemove = membersPendingRemoval.map((m) => ({
+                member: m.accountId,
+                roles: m.roles,
+            }));
 
             if (membersToRemove.length === 0) return;
 
@@ -368,6 +364,7 @@ export default function MembersPage() {
     // Handle bulk delete
     const handleBulkDelete = useCallback(() => {
         if (isMemberActionsDisabled) return;
+        setMemberToDelete(null);
         setIsDeleteModalOpen(true);
     }, [isMemberActionsDisabled]);
 
@@ -585,6 +582,7 @@ export default function MembersPage() {
                                             onClick={() => {
                                                 if (isMemberActionsDisabled)
                                                     return;
+                                                setSelectedMembers([]);
                                                 setMemberToDelete(member);
                                                 setIsDeleteModalOpen(true);
                                             }}
@@ -921,27 +919,12 @@ export default function MembersPage() {
                     setSelectedMembers([]);
                 }}
                 member={memberToDelete}
-                members={
-                    selectedMembers.length > 0
-                        ? existingMembers.filter((m) =>
-                              selectedMembers.includes(m.accountId),
-                          )
-                        : undefined
-                }
+                members={membersPendingRemoval}
                 onConfirm={handleDeleteMembersSubmit}
                 validationError={(() => {
-                    const membersToDelete =
-                        selectedMembers.length > 0
-                            ? existingMembers.filter((m) =>
-                                  selectedMembers.includes(m.accountId),
-                              )
-                            : memberToDelete
-                              ? [memberToDelete]
-                              : [];
+                    if (membersPendingRemoval.length === 0) return undefined;
 
-                    if (membersToDelete.length === 0) return undefined;
-
-                    const validation = canDeleteBulk(membersToDelete);
+                    const validation = canDeleteBulk(membersPendingRemoval);
                     return validation.canModify ? undefined : validation.reason;
                 })()}
             />
