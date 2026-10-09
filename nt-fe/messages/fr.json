@@ -1285,9 +1285,8 @@
             "editMembers": "Mettre à jour la politique - Modifier plusieurs membres",
             "editMemberSuccess": "Demande de mise à jour des rôles du membre créée avec succès",
             "editMembersSuccess": "Demande de mise à jour groupée des rôles des membres créée avec succès",
-            "removeMember": "Mettre à jour la politique - Supprimer un membre",
-            "removeMembers": "Mettre à jour la politique - Supprimer des membres",
-            "removeMemberSuccess": "Demande de suppression de membre créée avec succès",
+            "removeMember": "{count, plural, =1 {Mettre à jour la politique - Supprimer un membre} other {Mettre à jour la politique - Supprimer des membres}}",
+            "removeMemberSuccess": "{count, plural, =1 {Demande de suppression de membre créée avec succès} other {Demande de suppression de # membres créée avec succès}}",
             "createProposalFailed": "Échec de la création de la demande de membre. Veuillez réessayer."
         },
         "infoSection": {

@@ -1285,9 +1285,8 @@
             "editMembers": "Atualizar política - Editar vários membros",
             "editMemberSuccess": "Solicitação de atualização de funções do membro criada com sucesso",
             "editMembersSuccess": "Solicitação de atualização em massa de funções de membros criada com sucesso",
-            "removeMember": "Atualizar política - Remover membro",
-            "removeMembers": "Atualizar política - Remover membros",
-            "removeMemberSuccess": "Solicitação de remoção de membro criada com sucesso",
+            "removeMember": "{count, plural, =1 {Atualizar política - Remover membro} other {Atualizar política - Remover membros}}",
+            "removeMemberSuccess": "{count, plural, =1 {Solicitação de remoção de membro criada com sucesso} other {Solicitação de remoção de # membros criada com sucesso}}",
             "createProposalFailed": "Falha ao criar a solicitação de membro. Tente novamente."
         },
         "infoSection": {

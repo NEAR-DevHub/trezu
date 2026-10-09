@@ -1285,9 +1285,8 @@
             "editMembers": "更新策略 - 编辑多个成员",
             "editMemberSuccess": "成员角色更新请求已成功创建",
             "editMembersSuccess": "批量成员角色更新请求已成功创建",
-            "removeMember": "更新策略 - 移除成员",
-            "removeMembers": "更新策略 - 移除成员",
-            "removeMemberSuccess": "成员移除请求已成功创建",
+            "removeMember": "{count, plural, other {更新策略 - 移除成员}}",
+            "removeMemberSuccess": "{count, plural, =1 {成员移除请求已成功创建} other {移除 # 名成员的请求已成功创建}}",
             "createProposalFailed": "创建成员请求失败。请重试。"
         },
         "infoSection": {

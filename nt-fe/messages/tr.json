@@ -1285,9 +1285,8 @@
             "editMembers": "Politikayı Güncelle - Birden Çok Üyeyi Düzenle",
             "editMemberSuccess": "Üye rolleri güncelleme talebi başarıyla oluşturuldu",
             "editMembersSuccess": "Toplu üye rolleri güncelleme talebi başarıyla oluşturuldu",
-            "removeMember": "Politikayı Güncelle - Üye Kaldır",
-            "removeMembers": "Politikayı Güncelle - Üyeleri Kaldır",
-            "removeMemberSuccess": "Üye kaldırma talebi başarıyla oluşturuldu",
+            "removeMember": "{count, plural, =1 {Politikayı Güncelle - Üye Kaldır} other {Politikayı Güncelle - Üyeleri Kaldır}}",
+            "removeMemberSuccess": "{count, plural, =1 {Üye kaldırma talebi başarıyla oluşturuldu} other {# üyeyi kaldırma talebi başarıyla oluşturuldu}}",
             "createProposalFailed": "Üye talebi oluşturulamadı. Lütfen tekrar deneyin."
         },
         "infoSection": {

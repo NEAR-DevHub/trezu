@@ -1285,9 +1285,8 @@
             "editMembers": "Perbarui Kebijakan - Ubah Beberapa Anggota",
             "editMemberSuccess": "Permintaan pembaruan peran anggota berhasil dibuat",
             "editMembersSuccess": "Permintaan pembaruan peran anggota massal berhasil dibuat",
-            "removeMember": "Perbarui Kebijakan - Hapus Anggota",
-            "removeMembers": "Perbarui Kebijakan - Hapus Anggota",
-            "removeMemberSuccess": "Permintaan penghapusan anggota berhasil dibuat",
+            "removeMember": "{count, plural, other {Perbarui Kebijakan - Hapus Anggota}}",
+            "removeMemberSuccess": "{count, plural, =1 {Permintaan penghapusan anggota berhasil dibuat} other {Permintaan penghapusan # anggota berhasil dibuat}}",
             "createProposalFailed": "Gagal membuat permintaan anggota. Silakan coba lagi."
         },
         "infoSection": {

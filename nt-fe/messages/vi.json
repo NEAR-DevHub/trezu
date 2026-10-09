@@ -1285,9 +1285,8 @@
             "editMembers": "Cập nhật chính sách - Chỉnh sửa nhiều thành viên",
             "editMemberSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò thành viên",
             "editMembersSuccess": "Đã tạo thành công yêu cầu cập nhật vai trò hàng loạt",
-            "removeMember": "Cập nhật chính sách - Xóa thành viên",
-            "removeMembers": "Cập nhật chính sách - Xóa các thành viên",
-            "removeMemberSuccess": "Đã tạo thành công yêu cầu xóa thành viên",
+            "removeMember": "{count, plural, =1 {Cập nhật chính sách - Xóa thành viên} other {Cập nhật chính sách - Xóa các thành viên}}",
+            "removeMemberSuccess": "{count, plural, =1 {Đã tạo thành công yêu cầu xóa thành viên} other {Đã tạo thành công yêu cầu xóa # thành viên}}",
             "createProposalFailed": "Không thể tạo yêu cầu thành viên. Vui lòng thử lại."
         },
         "infoSection": {
