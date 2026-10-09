@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import { useUiStore } from "@/stores/ui-store";
 import { AppEventsProvider } from "./app-events-provider";
+import { ConfidentialHistoryAutoRefresh } from "./confidential-history-auto-refresh";
 
 function isPaySharePath(pathname: string | null): boolean {
     return /\/pay\/(public|confidential)\/?$/.test(pathname ?? "");
@@ -100,6 +101,7 @@ export function TreasuryLayoutClient({
                     )}
                 >
                     <AppEventsProvider scope={{ treasuryId }} />
+                    <ConfidentialHistoryAutoRefresh />
                     <PrimaryColorProvider treasuryId={treasuryId} />
                     <div className="hidden lg:block">
                         <Sidebar
