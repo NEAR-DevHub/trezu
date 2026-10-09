@@ -1282,10 +1282,8 @@
             "editMembers": "Update Policy - Edit Multiple Members",
             "editMemberSuccess": "Member roles update request created successfully",
             "editMembersSuccess": "Bulk member roles update request created successfully",
-            "removeMember": "Update Policy - Remove Member",
-            "removeMembers": "Update Policy - Remove Members",
-            "removeMemberSuccess": "Member removal request created successfully",
-            "removeMembersSuccess": "Bulk member removal request created successfully",
+            "removeMember": "{count, plural, =1 {Update Policy - Remove Member} other {Update Policy - Remove Members}}",
+            "removeMemberSuccess": "{count, plural, =1 {Member removal request created successfully} other {Request to remove # members created successfully}}",
             "createProposalFailed": "Failed to create member request. Please try again."
         },
         "infoSection": {

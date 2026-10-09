@@ -1282,10 +1282,8 @@
             "editMembers": "עדכון מדיניות - עריכת חברים מרובים",
             "editMemberSuccess": "בקשת עדכון תפקידי חבר נוצרה בהצלחה",
             "editMembersSuccess": "בקשת עדכון תפקידי חברים בכמויות נוצרה בהצלחה",
-            "removeMember": "עדכון מדיניות - הסרת חבר",
-            "removeMembers": "עדכון מדיניות - הסרת חברים",
-            "removeMemberSuccess": "בקשת הסרת חבר נוצרה בהצלחה",
-            "removeMembersSuccess": "בקשת הסרת חברים מרובים נוצרה בהצלחה",
+            "removeMember": "{count, plural, =1 {עדכון מדיניות - הסרת חבר} other {עדכון מדיניות - הסרת חברים}}",
+            "removeMemberSuccess": "{count, plural, =1 {בקשת הסרת חבר נוצרה בהצלחה} other {בקשה להסרת # חברים נוצרה בהצלחה}}",
             "createProposalFailed": "יצירת בקשת החבר נכשלה. נסה שוב."
         },
         "infoSection": {

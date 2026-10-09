@@ -321,12 +321,12 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                membersToRemove.length > 1
-                    ? tMembers("policy.removeMembers")
-                    : tMembers("policy.removeMember"),
-                membersToRemove.length > 1
-                    ? tMembers("policy.removeMembersSuccess")
-                    : tMembers("policy.removeMemberSuccess"),
+                tMembers("policy.removeMember", {
+                    count: membersToRemove.length,
+                }),
+                tMembers("policy.removeMemberSuccess", {
+                    count: membersToRemove.length,
+                }),
             );
 
             trackEvent("member-delete-submitted", {

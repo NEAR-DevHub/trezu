@@ -1282,10 +1282,8 @@
             "editMembers": "ポリシー更新 - 複数メンバーを編集",
             "editMemberSuccess": "メンバーロール更新リクエストが正常に作成されました",
             "editMembersSuccess": "一括メンバーロール更新リクエストが正常に作成されました",
-            "removeMember": "ポリシー更新 - メンバーを削除",
-            "removeMembers": "ポリシー更新 - メンバーを削除",
-            "removeMemberSuccess": "メンバー削除リクエストが正常に作成されました",
-            "removeMembersSuccess": "メンバー一括削除リクエストが正常に作成されました",
+            "removeMember": "{count, plural, other {ポリシー更新 - メンバーを削除}}",
+            "removeMemberSuccess": "{count, plural, =1 {メンバー削除リクエストが正常に作成されました} other {# 名のメンバーの削除リクエストが正常に作成されました}}",
             "createProposalFailed": "メンバーリクエストの作成に失敗しました。もう一度お試しください。"
         },
         "infoSection": {

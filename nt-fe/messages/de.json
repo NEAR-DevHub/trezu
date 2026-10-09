@@ -1282,10 +1282,8 @@
             "editMembers": "Richtlinie aktualisieren - Mehrere Mitglieder bearbeiten",
             "editMemberSuccess": "Anfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
             "editMembersSuccess": "Sammelanfrage zur Aktualisierung der Mitgliederrollen erfolgreich erstellt",
-            "removeMember": "Richtlinie aktualisieren - Mitglied entfernen",
-            "removeMembers": "Richtlinie aktualisieren - Mitglieder entfernen",
-            "removeMemberSuccess": "Anfrage zur Mitgliederentfernung erfolgreich erstellt",
-            "removeMembersSuccess": "Anfrage zur Entfernung mehrerer Mitglieder erfolgreich erstellt",
+            "removeMember": "{count, plural, =1 {Richtlinie aktualisieren - Mitglied entfernen} other {Richtlinie aktualisieren - Mitglieder entfernen}}",
+            "removeMemberSuccess": "{count, plural, =1 {Anfrage zur Mitgliederentfernung erfolgreich erstellt} other {Anfrage zum Entfernen von # Mitgliedern erfolgreich erstellt}}",
             "createProposalFailed": "Mitgliederanfrage konnte nicht erstellt werden. Bitte versuche es erneut."
         },
         "infoSection": {

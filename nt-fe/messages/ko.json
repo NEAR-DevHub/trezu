@@ -1282,10 +1282,8 @@
             "editMembers": "정책 업데이트 - 여러 멤버 편집",
             "editMemberSuccess": "멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
             "editMembersSuccess": "일괄 멤버 역할 업데이트 요청이 성공적으로 생성되었습니다",
-            "removeMember": "정책 업데이트 - 멤버 제거",
-            "removeMembers": "정책 업데이트 - 멤버 제거",
-            "removeMemberSuccess": "멤버 제거 요청이 성공적으로 생성되었습니다",
-            "removeMembersSuccess": "멤버 일괄 제거 요청이 성공적으로 생성되었습니다",
+            "removeMember": "{count, plural, other {정책 업데이트 - 멤버 제거}}",
+            "removeMemberSuccess": "{count, plural, =1 {멤버 제거 요청이 성공적으로 생성되었습니다} other {멤버 #명 제거 요청이 성공적으로 생성되었습니다}}",
             "createProposalFailed": "멤버 요청 생성에 실패했습니다. 다시 시도해 주세요."
         },
         "infoSection": {
