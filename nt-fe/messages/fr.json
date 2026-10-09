@@ -2928,7 +2928,6 @@
         "imageTooLarge": "L'image doit faire 2 Mo ou moins.",
         "signInRequired": "Connectez votre portefeuille pour gérer votre compte.",
         "avatarUploaded": "Avatar téléversé avec succès",
-        "displayNameRequiredToSave": "Saisissez un nom d'affichage pour enregistrer votre profil",
         "uploadError": "Erreur lors du téléversement de l'image. Réessayez."
     },
     "moveAssets": {

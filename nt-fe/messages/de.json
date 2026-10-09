@@ -2928,7 +2928,6 @@
         "imageTooLarge": "Das Bild darf höchstens 2 MB groß sein.",
         "signInRequired": "Verbinde dein Wallet, um dein Konto zu verwalten.",
         "avatarUploaded": "Avatar erfolgreich hochgeladen",
-        "displayNameRequiredToSave": "Gib einen Anzeigenamen ein, um dein Profil zu speichern",
         "uploadError": "Fehler beim Hochladen des Bildes. Bitte erneut versuchen."
     },
     "moveAssets": {

@@ -2928,7 +2928,6 @@
         "imageTooLarge": "התמונה חייבת להיות עד 2 MB.",
         "signInRequired": "חבר את הארנק כדי לנהל את החשבון שלך.",
         "avatarUploaded": "תמונת הפרופיל הועלתה בהצלחה",
-        "displayNameRequiredToSave": "הזן שם תצוגה כדי לשמור את הפרופיל",
         "uploadError": "אירעה שגיאה בהעלאת התמונה, נסה שוב."
     },
     "moveAssets": {

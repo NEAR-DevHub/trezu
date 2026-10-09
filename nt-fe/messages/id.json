@@ -2928,7 +2928,6 @@
         "imageTooLarge": "Gambar harus 2 MB atau lebih kecil.",
         "signInRequired": "Hubungkan dompet Anda untuk mengelola akun.",
         "avatarUploaded": "Avatar berhasil diunggah",
-        "displayNameRequiredToSave": "Masukkan nama tampilan untuk menyimpan profil Anda",
         "uploadError": "Terjadi kesalahan saat mengunggah gambar, coba lagi."
     },
     "moveAssets": {

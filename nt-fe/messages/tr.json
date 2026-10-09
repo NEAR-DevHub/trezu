@@ -2928,7 +2928,6 @@
         "imageTooLarge": "Görsel 2 MB veya daha küçük olmalıdır.",
         "signInRequired": "Hesabınızı yönetmek için cüzdanınızı bağlayın.",
         "avatarUploaded": "Avatar başarıyla yüklendi",
-        "displayNameRequiredToSave": "Profilinizi kaydetmek için bir görünen ad girin",
         "uploadError": "Görsel yüklenirken hata oluştu, lütfen tekrar deneyin."
     },
     "moveAssets": {

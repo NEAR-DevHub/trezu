@@ -483,7 +483,7 @@ pub async fn list_member_join_requests(
                 .account_id
                 .parse()
                 .map_err(|e| internal_error("Invalid account_id on join request", e))?,
-            display_name: row.display_name,
+            display_name: row.display_name.filter(|n| !n.trim().is_empty()),
             created_at: row.created_at,
         });
     }

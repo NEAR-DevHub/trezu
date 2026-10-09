@@ -66,17 +66,15 @@ fn internal_error(context: &str, e: impl std::fmt::Display) -> (StatusCode, Stri
     )
 }
 
-/// Display name is required on profile update (non-empty after trim).
+/// Normalize display name for a profile update write.
+///
+/// - `None` / empty → empty string (explicit clear; do not fall back to NEAR Social)
+/// - non-empty → trimmed, at most `MAX_DISPLAY_NAME_LEN` characters
+///
+/// Distinct from SQL `NULL` on the column, which means "never set locally" and
+/// still allows the NEAR Social name.
 fn normalize_display_name(raw: Option<String>) -> Result<String, (StatusCode, String)> {
-    let name = raw
-        .map(|n| n.trim().to_string())
-        .filter(|n| !n.is_empty())
-        .ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "displayName is required".to_string(),
-            )
-        })?;
+    let name = raw.map(|n| n.trim().to_string()).unwrap_or_default();
 
     if name.chars().count() > MAX_DISPLAY_NAME_LEN {
         return Err((
@@ -270,11 +268,17 @@ fn apply_local_profile_overrides(
     display_name: Option<String>,
     avatar_url: Option<String>,
 ) {
-    if display_name
-        .as_ref()
-        .is_some_and(|name| !name.trim().is_empty())
-    {
-        profile.name = display_name;
+    // NULL column = unset locally → keep NEAR Social name.
+    // Empty string = user cleared name → hide Social name too.
+    // Non-empty = local override.
+    match display_name {
+        None => {}
+        Some(name) if name.trim().is_empty() => {
+            profile.name = None;
+        }
+        Some(name) => {
+            profile.name = Some(name.trim().to_string());
+        }
     }
 
     // NULL column = unset locally → keep NEAR Social image.
@@ -420,19 +424,28 @@ mod tests {
     use super::*;
 
     #[test]
-    fn normalize_display_name_trims_and_requires_value() {
+    fn normalize_display_name_trims_and_allows_empty() {
         assert_eq!(
             normalize_display_name(Some("  harry  ".into())).unwrap(),
             "harry"
         );
-        assert_eq!(
-            normalize_display_name(Some("   ".into())).unwrap_err().0,
-            StatusCode::BAD_REQUEST
-        );
-        assert_eq!(
-            normalize_display_name(None).unwrap_err().0,
-            StatusCode::BAD_REQUEST
-        );
+        assert_eq!(normalize_display_name(Some("   ".into())).unwrap(), "");
+        assert_eq!(normalize_display_name(None).unwrap(), "");
+    }
+
+    #[test]
+    fn apply_local_profile_overrides_cleared_name_hides_social_name() {
+        let mut profile = empty_profile();
+        profile.name = Some("Social Name".into());
+        apply_local_profile_overrides(&mut profile, None, None);
+        assert_eq!(profile.name.as_deref(), Some("Social Name"));
+
+        apply_local_profile_overrides(&mut profile, Some("".into()), None);
+        assert_eq!(profile.name, None);
+
+        profile.name = Some("Social Name".into());
+        apply_local_profile_overrides(&mut profile, Some("  Local  ".into()), None);
+        assert_eq!(profile.name.as_deref(), Some("Local"));
     }
 
     #[test]

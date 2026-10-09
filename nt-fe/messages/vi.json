@@ -2928,7 +2928,6 @@
         "imageTooLarge": "Ảnh phải từ 2 MB trở xuống.",
         "signInRequired": "Kết nối ví để quản lý tài khoản của bạn.",
         "avatarUploaded": "Đã tải ảnh đại diện lên thành công",
-        "displayNameRequiredToSave": "Nhập tên hiển thị để lưu hồ sơ của bạn",
         "uploadError": "Đã xảy ra lỗi khi tải ảnh lên, vui lòng thử lại."
     },
     "moveAssets": {

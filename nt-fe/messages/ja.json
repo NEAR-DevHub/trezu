@@ -2928,7 +2928,6 @@
         "imageTooLarge": "画像は2 MB以下にしてください。",
         "signInRequired": "アカウントを管理するにはウォレットを接続してください。",
         "avatarUploaded": "アバターをアップロードしました",
-        "displayNameRequiredToSave": "プロフィールを保存するには表示名を入力してください",
         "uploadError": "画像のアップロード中にエラーが発生しました。もう一度お試しください。"
     },
     "moveAssets": {
