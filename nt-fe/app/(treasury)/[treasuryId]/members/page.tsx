@@ -38,7 +38,11 @@ import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { RoleBadge } from "@/components/role-badge";
 import { Tooltip } from "@/components/tooltip";
-import { PendingButton } from "@/components/pending-button";
+import {
+    PendingButton,
+    usePendingProposals,
+} from "@/components/pending-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMemberJoinRequests } from "@/hooks/use-member-invites";
 import { removeMembersFromPolicy } from "./utils/policy-helpers";
 import {
@@ -74,6 +78,7 @@ interface Member {
 }
 
 const MEMBERS_INFO_DISMISSED_STORAGE_KEY = "members-info-dismissed";
+const MEMBERS_PENDING_TYPES = ["Change Policy"];
 
 type MembersInfoItem = {
     icon: LucideIcon;
@@ -148,10 +153,6 @@ export default function MembersPage() {
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
-    usePageTour(
-        PAGE_TOUR_NAMES.MEMBERS_PENDING,
-        PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
-    );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isInfoSectionDismissed, setIsInfoSectionDismissed] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
@@ -164,10 +165,22 @@ export default function MembersPage() {
         ? tMemberValidation("pendingRequest")
         : undefined;
 
-    const { data: joinRequests = [] } = useMemberJoinRequests(
-        canAddMember ? treasuryId : undefined,
-    );
+    const { data: joinRequests = [], isLoading: isJoinRequestsLoading } =
+        useMemberJoinRequests(canAddMember ? treasuryId : undefined);
     const joinRequestCount = joinRequests.length;
+    const { isLoading: isPendingRequestsLoading } = usePendingProposals(
+        MEMBERS_PENDING_TYPES,
+    );
+    const areRequestButtonsReady =
+        isMemberDataReady &&
+        !isJoinRequestsLoading &&
+        !isPendingRequestsLoading;
+
+    usePageTour(
+        PAGE_TOUR_NAMES.MEMBERS_PENDING,
+        PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
+        { enabled: areRequestButtonsReady },
+    );
 
     const membersInfoItems = useMemo<MembersInfoItem[]>(
         () => [
@@ -703,12 +716,16 @@ export default function MembersPage() {
                             />
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <PendingButton
-                                id="members-pending-btn"
-                                types={["Change Policy"]}
-                            />
+                            {areRequestButtonsReady ? (
+                                <PendingButton
+                                    id="members-pending-btn"
+                                    types={MEMBERS_PENDING_TYPES}
+                                />
+                            ) : (
+                                <Skeleton className="h-9 w-28 rounded-xl" />
+                            )}
 
-                            {joinRequestCount > 0 && (
+                            {areRequestButtonsReady && joinRequestCount > 0 && (
                                 <AuthButton
                                     permissionKind="policy"
                                     permissionAction="AddProposal"
@@ -733,7 +750,9 @@ export default function MembersPage() {
                                 </AuthButton>
                             )}
 
-                            {!canAddMember || !isMemberDataReady ? (
+                            {!areRequestButtonsReady ? (
+                                <Skeleton className="size-9 rounded-xl sm:w-40" />
+                            ) : !canAddMember ? (
                                 <AuthButton
                                     permissionKind="policy"
                                     permissionAction="AddProposal"
