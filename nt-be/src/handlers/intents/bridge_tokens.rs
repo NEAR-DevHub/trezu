@@ -453,7 +453,7 @@ pub async fn get_deposit_tokens(
 }
 
 /// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`,
-/// excluding chain-only `1cs_v1:` networks (INTENTS holds nep141/nep245 only).
+/// excluding `1cs_v1:` chain-delivery networks (INTENTS holds nep141/nep245 only).
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
@@ -522,18 +522,21 @@ fn filter_catalog_for_oneclick(
 
 /// Swap catalog = 1Click ∩ plus INTENTS-holdable balance ids.
 ///
-/// Chain routes are rewritten first so `balance_asset_id` is the holdable
-/// `nep141`/`nep245` and `quote_asset_id` is the `1cs_v1:` destination. A row
-/// that is still only a `1cs` balance id is not something the treasury holds.
+/// `1cs_v1:` chain-delivery rows (ZEC on NEAR, NEAR on Solana, …) are left
+/// out: pickers would list them as a second copy of the held balance, and a
+/// confidential deposit on one is credited under the `1cs` id, which Send and
+/// Swap cannot spend. nBTC stays — its row id is `nep141:nbtc…`, only its
+/// quote is `1cs`.
 fn filter_catalog_for_swap(
     deposit: DepositAssetsResponse,
     oneclick_ids: &HashSet<String>,
 ) -> DepositAssetsResponse {
     let mut filtered = filter_catalog_for_oneclick(deposit, oneclick_ids);
     for asset in &mut filtered.assets {
-        asset
-            .networks
-            .retain(|network| !is_one_click_routing_asset(&network.balance_asset_id));
+        asset.networks.retain(|network| {
+            !is_one_click_routing_asset(&network.id)
+                && !is_one_click_routing_asset(&network.balance_asset_id)
+        });
     }
     filtered
         .assets
@@ -921,8 +924,19 @@ mod tests {
         assert!(
             near.networks
                 .iter()
-                .any(|network| network.quote_asset_id.starts_with("1cs_v1:sol:")),
-            "Solana delivery stays available for payments and exchange"
+                .any(|network| network.id == "nep141:wrap.near"),
+            "held NEAR stays in the swap catalog"
+        );
+        let route_ids: Vec<&str> = swap
+            .assets
+            .iter()
+            .flat_map(|asset| &asset.networks)
+            .map(|network| network.id.as_str())
+            .filter(|id| is_one_click_routing_asset(id))
+            .collect();
+        assert!(
+            route_ids.is_empty(),
+            "1cs chain-delivery rows stay out of the swap catalog: {route_ids:?}"
         );
     }
 
