@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function TermsOfUsePage() {
     return (
         <LegalPage title={["Terms", "of Use"]}>
-            <p>Updated 6 September 2026</p>
+            <p>Updated 7 October 2026</p>
             <p>
                 These Terms &amp; Conditions constitute a legally binding
                 agreement between any User of the Services (
@@ -32,7 +32,8 @@ export default function TermsOfUsePage() {
                 documents or policies they expressly incorporate by reference
                 (collectively, the <strong>"Agreement"</strong>) govern your
                 access to and use of the platform available at business.near.com
-                (the <strong>“Platform”</strong> or{" "}
+                (the <strong>“Platform”</strong>,{" "}
+                <strong>“NEAR Business”</strong> or{" "}
                 <strong>“Business Platform”</strong>) and the business-facing
                 software, features and services made available through it (each
                 a <strong>“Service”</strong> and, collectively, the{" "}
@@ -389,13 +390,13 @@ export default function TermsOfUsePage() {
                 Recovery Phrase and/or Passkeys are the only way to access the
                 cryptocurrency associated with your CW. Anyone that has access
                 to your Recovery Phrase and/or Passkeys can access your
-                cryptocurrency. Intents Technology does not offer CWs or CW
-                software to customers. You are solely responsible for obtaining
-                a CW with which you can connect to the Platform for the purposes
-                of using the Services. Intents Technology does not have control
-                over third-party CW software providers’ content or their
-                products and does not warrant or endorse, and is not responsible
-                for the availability or legitimacy of, any CW.
+                cryptocurrency. Intents Technology does not itself provide,
+                operate or hold the keys to any CW. You are solely responsible
+                for obtaining a CW with which you can connect to the Platform
+                for the purposes of using the Services. Intents Technology does
+                not have control over third-party CW software providers’ content
+                or their products and does not warrant or endorse, and is not
+                responsible for the availability or legitimacy of, any CW.
             </p>
             <p>
                 <strong>
@@ -428,6 +429,62 @@ export default function TermsOfUsePage() {
                 digital assets or change the Governance Rules. Intents
                 Technology cannot restore access, reverse an approved action or
                 protect the Customer against those outcomes.
+            </p>
+            <h2>
+                <strong>
+                    Passkeys and Third-Party Authentication Providers
+                </strong>
+            </h2>
+            <p>
+                Where a passkey is used to create or access an account, that
+                functionality is provided by Privy, an independent third party,
+                under its own terms and privacy policy. Intents Technology does
+                not operate Privy’s infrastructure, does not control how key
+                material is generated, split, stored or recovered, and holds no
+                credential that would allow it to access any wallet or to
+                authorise a transaction on the Customer’s behalf. The Customer
+                and each Authorized User acknowledge that:
+            </p>
+            <ul>
+                <li>
+                    access to a wallet depends on the continued availability,
+                    performance and security of Privy and of the platform
+                    authenticator (for example, Apple or Google) on which the
+                    passkey is held;
+                </li>
+                <li>
+                    if Privy or that platform suffers an outage, discontinues
+                    the service or restricts access, an Authorized User may be
+                    temporarily or permanently unable to access the Services or
+                    to approve a Proposal;
+                </li>
+                <li>
+                    anyone who obtains access to a passkey, or to the device or
+                    platform account on which it is held, may be able to access
+                    the relevant wallet and to approve or perform actions as
+                    that Authorized User; and
+                </li>
+                <li>
+                    recovery of access is subject to Privy’s own mechanisms and
+                    limitations. Intents Technology cannot restore access, reset
+                    a credential or recover assets.
+                </li>
+            </ul>
+            <p>
+                Where more than one Authorized User relies on the same
+                authentication provider or platform authenticator, a failure,
+                outage or compromise affecting that provider may affect several
+                Authorized Users at the same time. An approval threshold does
+                not protect the Customer against a failure that is common to the
+                Authorized Users who make it up. The Customer is responsible for
+                satisfying itself that its Governance Rules, approval thresholds
+                and recovery arrangements take account of that dependency.
+            </p>
+            <p>
+                To the maximum extent permitted by applicable law, Intents
+                Technology is not liable for any act, omission, outage, security
+                failure or discontinuation of Privy or of any platform
+                authenticator.
             </p>
             <h2>
                 <strong>Treasury Governance and Control</strong>
@@ -503,9 +560,8 @@ export default function TermsOfUsePage() {
                 satisfying itself as to the contract it deploys and configures.
             </p>
             <p>
-                The MPC Service and the NEAR Private Shard are operated by
-                parties other than Intents Technology. Intents Technology does
-                not control them, does not guarantee their availability,
+                Intents Technology does not control the MPC Service or the NEAR
+                Private Shard, does not guarantee their availability,
                 continuity, performance or security, and is not liable for any
                 act, omission, failure, delay, downtime, compromise or collusion
                 affecting them. If either becomes unavailable or degraded,
@@ -583,10 +639,18 @@ export default function TermsOfUsePage() {
             </h2>
             <p>
                 Solvers are independent third parties and Users of the Services.
-                Intents Technology does not: guarantee optimal pricing or
-                execution, assess Solvers’ reliability or security, or ensure or
-                guarantee against losses from Solver errors, collusion, or
-                malicious acts.
+                Solvers act as principals on their own account and are not
+                agents of Intents Technology. One or more Solvers may be
+                affiliated with, or otherwise connected to, Intents Technology
+                or its Affiliates, including by common ownership, personnel,
+                funding or commercial arrangement. No Solver is obliged to quote
+                or fill any transaction, and Intents Technology does not direct
+                any Solver’s inventory or its decisions to quote or fill. The
+                participation of an affiliated Solver may give rise to interests
+                that differ from the Customer’s. Intents Technology does not:
+                guarantee optimal pricing or execution, assess Solvers’
+                reliability or security, or ensure or guarantee against losses
+                from Solver errors, collusion, or malicious acts.
             </p>
             <p>
                 The Solver Network may include AI-driven, algorithmic-driven and
@@ -842,6 +906,27 @@ export default function TermsOfUsePage() {
                 compliance.
             </p>
             <h2>
+                <strong>Routing and Aggregation</strong>
+            </h2>
+            <p>
+                Transactions undertaken via the Services may be routed through
+                the Protocol and, for certain assets, networks, routes or
+                transaction types, through third-party routing, aggregation,
+                bridging, liquidity or execution networks that are not the
+                Protocol. Any such network is a Third Party Service. Intents
+                Technology does not operate or control any such network, does
+                not guarantee its availability, performance, pricing, execution,
+                security or compliance, and, to the maximum extent permitted by
+                applicable law, is not liable for any act, omission, failure,
+                delay, exploit, insolvency or loss arising in connection with
+                it. Such networks may apply their own terms, fees, eligibility
+                requirements, restrictions and compliance controls, which may
+                result in a transaction being delayed, blocked, rejected or
+                executed on terms different from those indicated. Intents
+                Technology may add, change, suspend or remove any such network,
+                and vary which transactions are routed through it, at any time.
+            </p>
+            <h2>
                 <strong>Quote and Execution Mechanics</strong>
             </h2>
             <p>
@@ -1005,6 +1090,52 @@ export default function TermsOfUsePage() {
                 Quoting Layers, or liquidity sources.
             </p>
             <h2>
+                <strong>Deferred Transactions</strong>
+            </h2>
+            <p>
+                Not all transactions execute immediately. The Services may allow
+                a transaction to be submitted that remains pending for a period
+                before executing, including where a price condition is specified
+                or a later execution window is selected (each, a{" "}
+                <strong>“Deferred Transaction”</strong>). You acknowledge that:
+            </p>
+            <ul>
+                <li>
+                    while a Deferred Transaction is pending, the relevant assets
+                    are committed to it and are not available to the Customer
+                    until it executes, expires or is cancelled;
+                </li>
+                <li>
+                    it may remain pending for the whole of the period selected,
+                    and the risks described in this Agreement apply throughout
+                    that period, including market movement, network conditions
+                    and the availability of Solvers and Third Party Services;
+                </li>
+                <li>
+                    it may expire, be cancelled or fail to execute, and may
+                    execute in part only. Where it does not execute, assets are
+                    returned to the address fixed for that transaction, subject
+                    to the section titled “Failed Execution, Deadlines, and
+                    Refunds”;
+                </li>
+                <li>
+                    Intents Technology does not guarantee that it will execute,
+                    execute in whole, or execute at any particular time or
+                    price, does not monitor Deferred Transactions on the
+                    Customer’s behalf, and gives no assurance that one can be
+                    cancelled at any particular time. A request to cancel may
+                    not take effect before the transaction is filled; and
+                </li>
+                <li>
+                    where a Deferred Transaction is subject to the Governance
+                    Rules, the approvals required for it are given at the time
+                    of approval and are not revisited before execution. The
+                    Customer is responsible for satisfying itself that an
+                    approval given now remains appropriate throughout the period
+                    for which the transaction stays pending.
+                </li>
+            </ul>
+            <h2>
                 <strong>Payments and Bulk Transfers</strong>
             </h2>
             <p>
@@ -1131,7 +1262,7 @@ export default function TermsOfUsePage() {
                 where technically feasible. Any such assistance is voluntary,
                 best-efforts only, may be refused, may be subject to minimum
                 value thresholds, verification, compliance review and/or
-                freezing or blocking, and administrative or operational fees,
+                blocking or restriction, and administrative or operational fees,
                 and does not create any duty, continuing obligation, or
                 expectation of recovery.
             </p>
@@ -1165,11 +1296,11 @@ export default function TermsOfUsePage() {
                 address or refund account specified by you, subject to
                 applicable network conditions, bridge availability, smart
                 contract operation, refund fees, minimum amounts, compliance
-                review and freezing and/or blocking, and technical feasibility.
-                Intents Technology does not guarantee that any refund will be
-                available, complete, timely, economically rational, or
-                successful. You are solely responsible for providing a correct
-                refund address and refund type.
+                review and/or blocking or restriction, and technical
+                feasibility. Intents Technology does not guarantee that any
+                refund will be available, complete, timely, economically
+                rational, or successful. You are solely responsible for
+                providing a correct refund address and refund type.
             </p>
             <h2>
                 <strong>Bridging and Cross-Chain Deposits</strong>
@@ -1268,6 +1399,107 @@ export default function TermsOfUsePage() {
                 and when it is expressly made available.
             </p>
             <h2>
+                <strong>Tokenised Real-World Assets</strong>
+            </h2>
+            <p>
+                Where the Services provide access to tokens that represent,
+                reference, track or are backed by real-world assets, including
+                commodity- or asset-referenced tokens, tokenised securities,
+                fund interests or debt instruments (
+                <strong>“RWA Tokens”</strong>), each such token is issued,
+                structured, backed and administered by an independent third
+                party. Intents Technology does not issue, back, guarantee,
+                underwrite, sponsor, distribute, promote or market any RWA
+                Token, does not act as a broker, dealer, investment adviser,
+                custodian, placement agent or distributor in respect of any RWA
+                Token, and does not operate a trading venue or equivalent
+                facility. Intents Technology does not verify or audit any
+                issuer’s asset backing, reserves, collateralisation or
+                redemption mechanisms, and makes no representation as to the
+                regulatory status, authorisation, compliance, financial
+                condition or solvency of any issuer. Making an RWA Token
+                accessible through the Services reflects technical integration
+                only and does not constitute an endorsement, recommendation or
+                assurance. RWA Tokens may be treated as securities,
+                asset-referenced tokens, derivatives or other regulated
+                instruments in one or more jurisdictions, may not be available
+                in all jurisdictions, and may be subject to eligibility,
+                transfer, redemption or holding restrictions imposed by the
+                issuer or by applicable law. Redemption, if available at all, is
+                a matter for the issuer. The Customer is solely responsible for
+                determining whether it is eligible and permitted to acquire,
+                hold or transact in any RWA Token, and Intents Technology may
+                restrict or block access to any RWA Token by jurisdiction or by
+                eligibility at any time.
+            </p>
+            <h2>
+                <strong>Yield, Staking and “Earn” Products</strong>
+            </h2>
+            <p>
+                Where the Services provide access to yield-bearing, staking,
+                lending or “earn” products, assets are deposited into vaults,
+                protocols or other products created, operated and controlled by
+                independent third parties and not by Intents Technology. Once
+                deposited, those assets may be deployed, transferred,
+                re-deployed or otherwise applied by the relevant third party
+                across other protocols, networks, chains and strategies, in each
+                case without the involvement, control, oversight or approval of
+                Intents Technology. Making any such vault, protocol or strategy
+                accessible through the Services reflects technical integration
+                only and does not constitute an endorsement, recommendation or
+                assurance as to its safety, performance, liquidity or solvency.
+                Intents Technology does not manage the Customer’s assets, does
+                not exercise discretion over any strategy, does not hold or
+                control deposited assets, and has no ability to recall,
+                withdraw, redeem, unwind or reverse any deposit. Withdrawal and
+                redemption depend on the terms, liquidity, lock-up periods and
+                continued operation of the relevant third party, and assets
+                deposited may not be available to meet the Customer’s
+                obligations when required. Any yield, return or reward is
+                generated by the relevant third party and is not interest.
+                Intents Technology does not accept deposits, does not pay
+                interest, does not borrow the Customer’s assets, and is not a
+                bank, credit institution or deposit-taking institution. Yield is
+                not guaranteed, may vary or cease, and the Customer may lose
+                some or all of its principal, including through smart contract
+                failure or exploit, counterparty default or insolvency, or
+                illiquidity.
+            </p>
+            <h2>
+                <strong>Fiat On-Ramp and Off-Ramp Services</strong>
+            </h2>
+            <p>
+                Where the Services present a flow that converts fiat currency
+                into digital assets, or digital assets into fiat currency, that
+                flow comprises two distinct legs: a fiat leg, performed entirely
+                by one or more independent third-party providers, and a digital
+                asset leg, routed for on-chain execution and settlement. Intents
+                Technology’s role is limited to the digital asset leg and to
+                presenting and transmitting the instruction. Intents Technology
+                does not hold, receive, convert, transmit or pay fiat currency
+                at any point, does not operate any bank or payment account on
+                the Customer’s behalf, and does not act as a bank, credit
+                institution, electronic money institution, payment service
+                provider, money transmitter, money services business, remittance
+                provider or financial intermediary in respect of any fiat leg.
+            </p>
+            <p>
+                The fiat leg is provided by the relevant third-party provider
+                under its own terms, and that provider is responsible for it,
+                including identity verification, the amount actually paid or
+                received, timing, refunds and any failure of payment. That
+                provider may apply its own eligibility criteria, verification
+                requirements, limits, fees, exchange rates and compliance
+                controls, and may delay, decline or reverse a payment. Any fiat
+                amount displayed before a transaction is authorised is
+                indicative unless the provider expressly states otherwise, and
+                the amount actually received may differ. Fiat services are not
+                available in all jurisdictions, may be restricted by
+                eligibility, may require identity information to be provided
+                directly to the provider or shared with it, and may be subject
+                to Supplemental Terms.
+            </p>
+            <h2>
                 <strong>Asset-Level Characteristics and Controls</strong>
             </h2>
             <p>
@@ -1275,7 +1507,7 @@ export default function TermsOfUsePage() {
                 administered by third parties and may include characteristics or
                 controls that affect whether they can be transferred or used,
                 including administrative, minting, pausing, blocklisting,
-                freezing or upgrade functions exercisable by the issuer or
+                restricting or upgrade functions exercisable by the issuer or
                 another party. The exercise of any such function may prevent a
                 transfer, block an address or render an asset unusable, and
                 Intents Technology cannot prevent, reverse or override it. Where
@@ -1292,6 +1524,24 @@ export default function TermsOfUsePage() {
                 issuer or other third party in respect of the Customer's assets.
                 This is separate from any measure described under the section
                 titled "Compliance with Legal Requests".
+            </p>
+            <h2>
+                <strong>Market Data and Displayed Information</strong>
+            </h2>
+            <p>
+                Prices, rates, valuations, yields, annual percentage rates,
+                balances, profit and loss figures, charts and other market or
+                account information displayed through the Services are
+                indicative only, are derived from third-party data sources and
+                on-chain data, and may be delayed, incomplete, inaccurate or
+                unavailable. They are provided for general information and do
+                not constitute a quote, an offer, a valuation, a confirmation or
+                advice. Any figure described as a rate of return, yield or
+                annual percentage rate is an estimate based on information
+                supplied by a third party, is not guaranteed, may change without
+                notice and is not a promise of future return. The Customer
+                should not rely on any such figure as the sole basis for a
+                decision, including a decision to approve a Proposal.
             </p>
             <h2>
                 <strong>Off-Chain Data Collected/Retained</strong>
@@ -1646,19 +1896,20 @@ export default function TermsOfUsePage() {
                 communications or AI inputs and outputs.
             </p>
             <p>
-                User Contributions must comply with the Content Standards. A
-                User Contribution intentionally posted to a public or
-                community-facing Interactive Service will be treated as
-                non-confidential. You retain ownership of it and grant Intents
-                Technology, its Affiliates and service providers a worldwide,
-                non-exclusive, royalty-free licence to host, reproduce, format,
-                display and distribute it only as reasonably necessary to
-                operate, provide, secure and improve the relevant Interactive
-                Service and as otherwise directed or authorised by you. This
-                licence ends when the User Contribution is deleted from the
-                Service, except to the extent it has been shared with others who
-                have not deleted it or retention is required for legal,
-                security, backup or dispute-management purposes.
+                User Contributions must comply with this Agreement, including
+                the section titled “Prohibited Use”. A User Contribution
+                intentionally posted to a public or community-facing Interactive
+                Service will be treated as non-confidential. You retain
+                ownership of it and grant Intents Technology, its Affiliates and
+                service providers a worldwide, non-exclusive, royalty-free
+                licence to host, reproduce, format, display and distribute it
+                only as reasonably necessary to operate, provide, secure and
+                improve the relevant Interactive Service and as otherwise
+                directed or authorised by you. This licence ends when the User
+                Contribution is deleted from the Service, except to the extent
+                it has been shared with others who have not deleted it or
+                retention is required for legal, security, backup or
+                dispute-management purposes.
             </p>
             <p>
                 You represent and warrant that you own or control the rights
@@ -1688,6 +1939,21 @@ export default function TermsOfUsePage() {
                 is responsible for ensuring that its Authorized Users have
                 appropriate competence and authority and for obtaining
                 professional advice where appropriate.
+            </p>
+            <h2>
+                <strong>Customers in the United Kingdom</strong>
+            </h2>
+            <p>
+                If the Services are accessed from the United Kingdom, the
+                Customer acknowledges that the Services are provided as a tool
+                for it to interact with the Protocol and with customer-governed
+                smart contracts on its own initiative, with no endorsement or
+                recommendation of cryptoasset trading activity; that Intents
+                Technology is not recommending that the Customer or any
+                Authorized User engage in any cryptoasset trading activity; and
+                that nothing made available through the Services is to be
+                regarded as a recommendation, invitation or inducement to deal
+                in cryptoassets.
             </p>
             <h2>
                 <strong>Disclaimer</strong>
@@ -2040,6 +2306,22 @@ export default function TermsOfUsePage() {
                 relevant smart contracts or recover or transfer assets, and
                 independent access is not guaranteed.
             </p>
+            <h2>
+                <strong>Experimental and Evolving Infrastructure</strong>
+            </h2>
+            <p>
+                The Services, the Business Platform, the Protocol and the
+                infrastructure supporting them are experimental and evolving,
+                and may be upgraded, modified, interrupted, suspended or
+                discontinued at any time. Intents Technology may change the
+                architecture, parameters, routes, assets and functionality of
+                the Services at any time, in whole or in part, and without
+                notice where circumstances require it. Features described in
+                documentation, marketing or a roadmap may change or may never be
+                released. The Customer should not design a treasury, payment or
+                operational process on the assumption that any particular
+                feature, route or asset will remain available.
+            </p>
             <p>
                 Intents Technology may assign or transfer this Agreement, in
                 whole or in part, including as part of a reorganisation,
@@ -2063,6 +2345,24 @@ export default function TermsOfUsePage() {
                 advisor, fiduciary, or in any similar capacity on behalf of any
                 user. No fiduciary or advisory relationship is created by your
                 use of the Services.
+            </p>
+            <h2>
+                <strong>Regulatory Status</strong>
+            </h2>
+            <p>
+                Intents Technology is not licensed or regulated by any financial
+                regulatory authority to provide regulated financial services,
+                and the Services are not offered as, and are not intended to
+                constitute, regulated financial services. Intents Technology is
+                not registered with the U.S. Securities and Exchange Commission
+                or the Commodity Futures Trading Commission. Digital assets
+                accessed through the Services are not subject to protection or
+                insurance provided by the Federal Deposit Insurance Corporation,
+                the Securities Investor Protection Corporation or any equivalent
+                body, and are not covered by any deposit protection scheme,
+                investor compensation fund or similar arrangement. It is the
+                Customer’s responsibility to determine whether its use of the
+                Services is permitted under the laws applicable to it.
             </p>
             <p>
                 Providing the Business Platform, Treasury Contract
@@ -2089,59 +2389,139 @@ export default function TermsOfUsePage() {
                 law. We may honour valid legal process regardless of the method
                 or place of service.
             </p>
+            <h2>
+                <strong>Compliance Controls and Restrictions</strong>
+            </h2>
             <p>
-                Transactions, assets and wallet addresses in connection with the
-                Services are subject to transaction screening, sanctions and
-                other compliance, legal and security controls, whether applied
-                by Intents Technology, its service providers or the operators of
-                any underlying network, protocol, bridge or other
+                Transactions, assets, and wallet addresses in connection with
+                the Services are subject to transaction screening, sanctions,
+                and other compliance, legal, and security controls, whether
+                applied by Intents Technology, its service providers, or the
+                operators of any underlying network, protocol, bridge, or other
                 infrastructure. As a result, a transaction may be delayed,
-                blocked or rejected, and assets to which it relates may be
-                restricted or unavailable for a period or indefinitely, where
-                this is required or considered appropriate for legal,
-                regulatory, compliance, sanctions or security reasons. The
-                Customer acknowledges that Intents Technology may be prohibited
-                by applicable law, or otherwise unable, from disclosing the
-                existence of, the reasons for, or any details of any such
-                measure, and has no obligation to do so. Nothing in this
-                paragraph obliges Intents Technology to apply any control, to
-                screen, review or monitor any transaction, or to detect any
-                activity. To the maximum extent permitted by applicable law,
-                Intents Technology is not liable for any measure taken, or not
-                taken, under this paragraph.
+                blocked, or rejected, and assets to which it relates may be
+                restricted or unavailable for a period or indefinitely. This may
+                apply to a Proposal that the Governance Rules have already
+                approved, to confidential balances maintained for the Customer,
+                and to assets held in a Bulk Transfer Contract. Intents
+                Technology itself will apply such a measure only where required
+                by applicable law or where it has reasonable grounds to consider
+                the measure necessary for legal, regulatory, compliance,
+                sanctions, or security purposes, and a measure it applies may
+                continue for as long as those grounds remain.
             </p>
             <p>
-                The Business Platform uses the Confidential Intents Protocol to
-                reduce the public visibility of certain balance and transaction
-                information. Intents Technology does not represent or warrant
-                that the Confidential Intents Protocol will make use of the
-                Services anonymous, untraceable, private against all parties or
-                immune from disclosure, or provide any particular level of
-                privacy, anonymity, confidentiality, unlinkability or
-                non-disclosure. Confidentiality is designed to limit the
-                visibility of transaction information to other network
-                participants and the public. It does not limit Intents
-                Technology's own access to that information. Information
-                relating to a transaction may remain visible to, or be
-                obtainable by, Intents Technology, its Affiliates, service
-                providers, infrastructure providers, counterparties, regulators,
-                law enforcement or other third parties, including through
-                operational data, on-chain or off-chain activity, analytics or
-                information obtained from other sources. Intents Technology may
-                access, use and disclose information relating to a transaction,
-                including a transaction processed through the Confidential
-                Intents Protocol, where it considers this necessary or
-                appropriate for legal, regulatory, compliance, sanctions,
-                security or investigative purposes, including to its Affiliates
-                and professional advisers, to service providers engaged for
-                compliance, security or incident-response purposes, to law
-                enforcement, regulators and other competent authorities, and, in
-                limited circumstances and at its discretion, to other persons
-                affected by the relevant matter. Intents Technology may be
-                unable, or prohibited by applicable law, from notifying the
-                Customer of any such access, use or disclosure. Personal data is
-                handled as described in the Privacy Policy and the Data
-                Processing Agreement.
+                Except where applicable law requires notification, Intents
+                Technology is not obliged to notify the Customer or any
+                Authorized User of a measure. It may notify the Customer where
+                it considers this appropriate and is legally permitted to do so,
+                but may withhold the existence of, the reasons for, or details
+                of a measure where disclosure is prohibited by applicable law,
+                is not reasonably practicable, or could prejudice an
+                investigation or compromise security. Nothing in this section
+                obliges Intents Technology, beyond what applicable law requires
+                of it, to apply any control, to screen, review, or monitor any
+                transaction, or to detect any activity.
+            </p>
+            <p>
+                To the maximum extent permitted by applicable law, Intents
+                Technology shall keep under review any measure that it has
+                itself applied and is able to lift, and shall lift it where no
+                grounds remain for continuing that measure and doing so is
+                legally permitted. Intents Technology does not control, and
+                cannot guarantee the lifting of, any measure applied
+                independently by a third party. A measure under this section
+                does not change the Governance Rules, alter who may approve an
+                action, or give Intents Technology any authority over the
+                Customer’s Treasury Contract.
+            </p>
+            <p>
+                To the maximum extent permitted by applicable law, Intents
+                Technology is not liable for any measure taken, or not taken,
+                under this section, save in respect of its own bad faith or
+                gross negligence. That exception applies only to measures under
+                this section and prevails over any other provision of this
+                Agreement that excludes all liability for the suspension or
+                restriction of the Services. The exclusions of indirect and
+                consequential losses and the aggregate limitation of liability
+                in this Agreement continue to apply to the extent permitted by
+                applicable law.
+            </p>
+            <h2>
+                <strong>Confidential Intents</strong>
+            </h2>
+            <p>
+                The Business Platform uses the Confidential Intents Protocol,
+                which is designed to reduce the public visibility of certain
+                balance and transaction information. Intents Technology does not
+                represent or warrant that the Confidential Intents Protocol will
+                make the Customer’s use of the Services anonymous, untraceable,
+                private against all parties, or immune from disclosure, or that
+                it will achieve any particular level of privacy,
+                confidentiality, or unlinkability. Member wallet addresses,
+                governance roles, Proposals and votes remain on the public NEAR
+                blockchain even where balances and transaction details are
+                processed through the Confidential Intents Protocol.
+            </p>
+            <p>
+                The Confidential Intents Protocol does not limit Intents
+                Technology’s own access to information relating to the
+                Customer’s transactions, which is processed and retained in its
+                systems as part of operating the Services. Subject to applicable
+                law, Intents Technology may use and disclose that information,
+                including in respect of transactions processed through the
+                Confidential Intents Protocol, to the extent reasonably
+                necessary for legal, regulatory, compliance, sanctions,
+                security, or investigative purposes. It may do so to its
+                Affiliates and professional advisers, to blockchain analytics,
+                screening, and transaction-monitoring providers, to
+                incident-response and security partners and other service
+                providers engaged for those purposes, to law enforcement,
+                regulators, and other competent authorities, whether to comply
+                with a legal obligation or lawful request or voluntarily where
+                permitted by applicable law, and, in connection with the
+                investigation or remediation of a security incident, to persons
+                directly affected by it. Subject to any notification that
+                applicable law requires, Intents Technology is not obliged to
+                notify the Customer of any such access, use, or disclosure, in
+                particular where it is unable to do so, where applicable law
+                prohibits notification, or where notification could prejudice an
+                investigation or compromise security.
+            </p>
+            <p>
+                Intents Technology may also share transaction information,
+                including provenance and attribution data and information
+                relating to transactions processed through the Confidential
+                Intents Protocol, with blockchain analytics, screening, and
+                transaction-monitoring providers in order to maintain the
+                integrity and completeness of ecosystem-wide analytics and
+                screening data, and may do so under contractual arrangements
+                with those providers. It will share only what is reasonably
+                necessary for that purpose, and will do so in aggregated or
+                pseudonymised form where reasonably practicable. Any processing
+                of personal data under this section is carried out in accordance
+                with the Privacy Policy and, in respect of Customer Data
+                processed on the Customer’s behalf, the Data Processing
+                Agreement.
+            </p>
+            <p>
+                The NEAR Private Shard on which the Confidential Intents
+                Protocol operates, and the infrastructure supporting it, are not
+                controlled by Intents Technology, which does not guarantee their
+                availability, continuity, performance, or security.
+                Confidentiality depends on technical assumptions and the correct
+                operation of third-party validator nodes and related
+                infrastructure, and may be compromised by advances in
+                cryptography, node failure or collusion, software
+                vulnerabilities, on-chain settlement analysis, or other factors
+                outside Intents Technology’s control. Separately,
+                confidentiality is subject to legal and regulatory disclosure
+                requirements applying to Intents Technology or to third parties,
+                and to the access, use, and disclosure described above.
+                Confidential balance and transaction information may be
+                available to Authorized Users, and the Customer is responsible
+                for restricting membership and access and for any disclosure by
+                an Authorized User.
             </p>
             <p>
                 For a Business Workspace, member wallet addresses, governance
@@ -2206,6 +2586,24 @@ export default function TermsOfUsePage() {
                 <strong>"Force Majeure Events"</strong>).
             </p>
             <h2>
+                <strong>Security Incidents</strong>
+            </h2>
+            <p>
+                In the event of a material security incident affecting the
+                Services, Intents Technology will use commercially reasonable
+                efforts to notify affected Customers by an in-Service
+                notification, by email to an address provided or by other
+                reasonable means, within a reasonable timeframe. Intents
+                Technology may suspend, pause or restrict access to all or part
+                of the Services during a security incident. Intents Technology
+                has no obligation to make the Customer whole for losses
+                resulting from a security incident, and nothing in this section
+                creates any liability not otherwise established by this
+                Agreement. This is without prejudice to any obligation to notify
+                a personal data breach under applicable data protection law or
+                the Data Processing Agreement.
+            </p>
+            <h2>
                 <strong>Consent to Electronic Communications</strong>
             </h2>
             <p>
@@ -2220,125 +2618,6 @@ export default function TermsOfUsePage() {
                 information and data exchanged between you and Intents
                 Technology or its representatives or agents.
             </p>
-            <p>
-                Intents Technology may provide certain multi-party communication
-                or communication processing services, including, but not limited
-                to call lines, chat services, social forums, chat-rooms, and
-                other communication channels (the <strong>"Forums"</strong>).
-                All communications made at or through the Forums are public and
-                the Forums may include information, materials, links and other
-                information provided by third parties unrelated to Intents
-                Technology or the Intents Technology Service Providers. Reliance
-                on any Content available on or through the Forums is at your own
-                risk. Without limitation, you agree not to do any of the
-                following in relation to any Forum (the{" "}
-                <strong>“Content Standards”</strong>):
-            </p>
-            <ul>
-                <li>
-                    upload, post, transmit or otherwise make available any
-                    Content that is unlawful, harmful, threatening, abusive,
-                    harassing, tortious, defamatory, vulgar, obscene, libelous,
-                    invasive of another's privacy (including, but not limited
-                    to, any address, email, phone number, or any other contact
-                    information without the written consent of the owner of such
-                    information), hateful, or racially, ethnically or otherwise
-                    objectionable;
-                </li>
-            </ul>
-            <p>harm minors in any way;</p>
-            <ul>
-                <li>
-                    impersonate any person or entity, including, but not limited
-                    to, (i) an Intents Technology or Intents Technology Service
-                    Provider manager, employee, agent, or representative or (ii)
-                    forum leader, guide or host;
-                </li>
-                <li>
-                    falsely state or otherwise misrepresent your affiliation
-                    with any person or entity;
-                </li>
-                <li>
-                    forge headers or otherwise manipulate identifiers in order
-                    to disguise the origin of any material;
-                </li>
-                <li>
-                    upload, post or otherwise transmit any material that you do
-                    not have a right to transmit under any law or under
-                    contractual or fiduciary relationships (such as inside
-                    information, proprietary and confidential information
-                    learned or disclosed as part of employment relationships or
-                    under nondisclosure agreements);
-                </li>
-                <li>
-                    upload, post or otherwise transmit any material that
-                    infringes any patent, trademark, trade secret, copyright,
-                    rights of privacy or publicity, or other proprietary rights
-                    of any party;
-                </li>
-                <li>
-                    upload, post, or transmit unsolicited commercial email or
-                    "SPAM," including, but not limited to, unethical marketing,
-                    advertising, or any other practice that is in any way
-                    connected with SPAM, such as: (1) sending mass email to
-                    recipients who haven't requested email from you or with a
-                    fake return address; (2) promoting a site with inappropriate
-                    links, titles, or descriptions; or (3) promoting any site by
-                    posting multiple submissions in forums that are identical;
-                </li>
-                <li>
-                    upload, post or otherwise transmit any material that
-                    contains software viruses or any other computer code, files
-                    or programs designed to interrupt, destroy or limit the
-                    functionality of any computer software or hardware or
-                    telecommunications equipment;
-                </li>
-                <li>
-                    interfere with or disrupt the Services or servers or
-                    networks connected to the Services, or disobey any
-                    requirements, procedures, policies or regulations of
-                    networks connected to the Services;
-                </li>
-                <li>
-                    intentionally or unintentionally violate any applicable
-                    local, state, national or international law, including, but
-                    not limited to, regulations promulgated by the U.S.
-                    Securities and Exchange Commission, any rules of any
-                    national or other securities exchange, and any regulations
-                    having the force of law;
-                </li>
-                <li>"stalk" or otherwise harass another;</li>
-                <li>
-                    collect or store personal data about other users of the
-                    Service;
-                </li>
-                <li>
-                    promote or provide instructional information about illegal
-                    activities, promote physical harm or injury against any
-                    group or individual, or promote any act of cruelty;
-                </li>
-                <li>
-                    promote, offer for sale or sell any security or item, good
-                    or service that i) violates any applicable international,
-                    federal, state, or local law or regulation, ii) you do not
-                    have full power and authority under all relevant laws and
-                    regulations to offer and sell, including all necessary
-                    licenses and authorizations, or iii) Intents Technology or
-                    Intents Technology Service Providers determine, in their
-                    sole discretion, is inappropriate for sale;
-                </li>
-                <li>
-                    use the Forums as a forwarding service to another website;
-                    or
-                </li>
-                <li>
-                    access or otherwise use the Forums in any unlawful manner,
-                    for any unlawful purpose or in violation of this agreement
-                    including the outlined prohibitions on market manipulation
-                    and self-trading and or any other agreement between you and
-                    Intents Technology.
-                </li>
-            </ul>
             <h2>
                 <strong>Applicable Law and Dispute Resolution</strong>
             </h2>
@@ -2498,88 +2777,6 @@ export default function TermsOfUsePage() {
                     Technology or the Intents Technology brand; any action that
                     implies an untrue endorsement by or affiliation with Intents
                     Technology.
-                </li>
-            </ul>
-            <p>
-                By using the Services, you represent and warrant that you will
-                not use the Services or the Platform in connection with any of
-                the following businesses, activities, practices, or items where
-                the activity is unlawful, is conducted without any required
-                licence, registration, authorisation or consent, or has been
-                prohibited or restricted by Intents Technology:
-            </p>
-            <ul>
-                <li>
-                    Investment and Credit Services: unlicensed securities
-                    brokers; unlawful or unlicensed mortgage consulting or debt
-                    reduction services; unlawful or unlicensed credit
-                    counselling or repair; unlawful real estate opportunities;
-                    investment schemes;
-                </li>
-                <li>
-                    Restricted Financial Services: check cashing, bail bonds;
-                    collections agencies;
-                </li>
-                <li>
-                    Intellectual Property or Proprietary Rights Infringement:
-                    sales, distribution, or access to counterfeit music, movies,
-                    software, or other licensed materials without the
-                    appropriate authorization from the rights holder;
-                </li>
-                <li>
-                    Counterfeit or Unauthorized Goods: unauthorized sale or
-                    resale of brand name or designer products or services; sale
-                    of goods or services that are illegally imported or exported
-                    or which are stolen;
-                </li>
-                <li>
-                    Regulated Products and Services: marijuana dispensaries and
-                    related businesses; sale of tobacco, e-cigarettes, and
-                    e-liquid; online prescription or pharmaceutical services;
-                    age restricted goods or services; weapons and munitions;
-                    gunpowder and other explosives; fireworks and related goods;
-                    toxic, flammable, and radioactive materials;
-                </li>
-                <li>
-                    Drugs and Drug Paraphernalia: sale of narcotics, controlled
-                    substances, and any equipment designed for making or using
-                    drugs, such as bongs, vaporizers, and hookahs;
-                </li>
-                <li>
-                    Pseudo-Pharmaceuticals: pharmaceuticals and other products
-                    that make health claims that have not been approved or
-                    verified by the applicable local and/or national regulatory
-                    body;
-                </li>
-                <li>
-                    Substances designed to mimic illegal drugs: sale of a legal
-                    substance that provides the same effect as an illegal drug
-                    (e.g., salvia, kratom);
-                </li>
-                <li>
-                    Adult Content and Services: pornography and other obscene
-                    materials (including literature, imagery and other media);
-                    sites offering any sexually-related services such as
-                    prostitution, escorts, pay-per view, adult live chat
-                    features;
-                </li>
-                <li>
-                    Multi-level Marketing: pyramid schemes, network marketing,
-                    and referral marketing programs, other than a referral
-                    programme expressly offered by Intents Technology;
-                </li>
-                <li>
-                    Unfair, predatory or deceptive practices: investment
-                    opportunities or other services that promise high rewards;
-                    sale or resale of a service without added benefit to the
-                    buyer; resale of government offerings without authorization
-                    or added value; sites that we determine in our sole
-                    discretion to be unfair, deceptive, or predatory towards
-                    consumers; and
-                </li>
-                <li>
-                    High-risk businesses: any businesses that we believe poses
-                    elevated financial risk, legal liability.
                 </li>
             </ul>
             <h2>
