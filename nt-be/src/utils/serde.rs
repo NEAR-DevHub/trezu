@@ -9,7 +9,7 @@ use serde::{Deserialize, Deserializer, de};
 ///
 /// #[derive(Deserialize)]
 /// struct MyStruct {
-///     #[serde(default, deserialize_with = "crate::utils::serde::comma_separated")]
+///     #[serde(default, deserialize_with = "nt_be::utils::serde::comma_separated")]
 ///     pub items: Option<Vec<String>>,
 /// }
 /// ```

@@ -37,28 +37,6 @@ pub async fn refresh_gold_metadata_for_intent(
     .execute(pool)
     .await?;
 
-    // TODO(confidential-v2): remove with the legacy read path. Mirrors onto
-    // the legacy table while UNIFIED_GOLD_LEDGER_READS can still serve it.
-    sqlx::query(
-        r#"
-        UPDATE gold_confidential_history_events cbc
-        SET intent_id = ci.id,
-            proposal_created_at = ci.proposal_created_at,
-            proposal_executed_at = ci.proposal_executed_at,
-            proposal_execution_block_height = ci.proposal_execution_block_height,
-            proposal_execution_transaction_hash = ci.proposal_execution_transaction_hash,
-            updated_at = NOW()
-        FROM confidential_intents ci
-        WHERE ci.dao_id = $1
-          AND ci.payload_hash = $2
-          AND ci.history_event_id = cbc.history_event_id
-        "#,
-    )
-    .bind(dao_id)
-    .bind(payload_hash)
-    .execute(pool)
-    .await?;
-
     if result.rows_affected() == 0 {
         let row = sqlx::query_as::<_, (DateTime<Utc>,)>(
             r#"
@@ -324,14 +302,12 @@ pub(crate) async fn load_bronze_suffix(
             he.account_id,
             he.created_at_external,
             he.deposit_address,
-            he.deposit_memo,
             he.deposit_type,
             he.recipient_type,
             he.recipient,
             he.origin_asset,
             he.destination_asset,
             he.raw_payload,
-            ci.id AS intent_id,
             ci.proposal_id::bigint AS proposal_id,
             ci.proposal_created_at,
             ci.proposal_executed_at,
@@ -457,115 +433,6 @@ pub(crate) async fn upsert_projection(
     clear_projection_error(tx, row.history_event_id).await?;
 
     Ok(())
-}
-
-// TODO(confidential-v2): remove with the legacy read path.
-/// Legacy dual-write while `UNIFIED_GOLD_LEDGER_READS` can still serve
-/// confidential reads from `gold_confidential_history_events`.
-pub(crate) async fn upsert_legacy_projection(
-    tx: &mut Transaction<'_, Postgres>,
-    row: &ProjectedRow,
-) -> Result<(), sqlx::Error> {
-    sqlx::query(
-        r#"
-        INSERT INTO gold_confidential_history_events (
-            history_event_id, intent_id, dao_id, transaction_type,
-            origin_asset, destination_asset, amount_in, amount_out,
-            amount_in_usd, amount_out_usd, usd_change,
-            origin_balance_before, origin_balance_after,
-            destination_balance_before, destination_balance_after,
-            recipient, refund_to, counterparty, deposit_address, deposit_memo,
-            proposal_execution_block_height, proposal_executed_at,
-            proposal_execution_transaction_hash, quote_created_at,
-            proposal_created_at, deposit_tx_hash
-        )
-        VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-            $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-            $21, $22, $23, $24, $25, $26
-        )
-        ON CONFLICT (history_event_id) DO UPDATE SET
-            intent_id = EXCLUDED.intent_id,
-            dao_id = EXCLUDED.dao_id,
-            transaction_type = EXCLUDED.transaction_type,
-            origin_asset = EXCLUDED.origin_asset,
-            destination_asset = EXCLUDED.destination_asset,
-            amount_in = EXCLUDED.amount_in,
-            amount_out = EXCLUDED.amount_out,
-            amount_in_usd = EXCLUDED.amount_in_usd,
-            amount_out_usd = EXCLUDED.amount_out_usd,
-            usd_change = EXCLUDED.usd_change,
-            origin_balance_before = EXCLUDED.origin_balance_before,
-            origin_balance_after = EXCLUDED.origin_balance_after,
-            destination_balance_before = EXCLUDED.destination_balance_before,
-            destination_balance_after = EXCLUDED.destination_balance_after,
-            recipient = EXCLUDED.recipient,
-            refund_to = EXCLUDED.refund_to,
-            counterparty = EXCLUDED.counterparty,
-            deposit_address = EXCLUDED.deposit_address,
-            deposit_memo = EXCLUDED.deposit_memo,
-            proposal_execution_block_height = EXCLUDED.proposal_execution_block_height,
-            proposal_executed_at = EXCLUDED.proposal_executed_at,
-            proposal_execution_transaction_hash = EXCLUDED.proposal_execution_transaction_hash,
-            quote_created_at = EXCLUDED.quote_created_at,
-            proposal_created_at = EXCLUDED.proposal_created_at,
-            deposit_tx_hash = EXCLUDED.deposit_tx_hash,
-            updated_at = NOW()
-        "#,
-    )
-    .bind(row.history_event_id)
-    .bind(row.intent_id)
-    .bind(row.dao_id.as_str())
-    .bind(row.transaction_type)
-    .bind(&row.origin_asset)
-    .bind(&row.destination_asset)
-    .bind(&row.amount_in)
-    .bind(&row.amount_out)
-    .bind(&row.amount_in_usd)
-    .bind(&row.amount_out_usd)
-    .bind(&row.usd_change)
-    .bind(&row.origin_balance_before)
-    .bind(&row.origin_balance_after)
-    .bind(&row.destination_balance_before)
-    .bind(&row.destination_balance_after)
-    .bind(&row.recipient)
-    .bind(&row.refund_to)
-    .bind(&row.counterparty)
-    .bind(&row.deposit_address)
-    .bind(&row.deposit_memo)
-    .bind(row.proposal_execution_block_height)
-    .bind(row.proposal_executed_at)
-    .bind(&row.proposal_execution_transaction_hash)
-    .bind(row.quote_created_at)
-    .bind(row.proposal_created_at)
-    .bind(&row.deposit_tx_hash)
-    .execute(&mut **tx)
-    .await?;
-
-    Ok(())
-}
-
-pub(crate) async fn delete_stale_legacy_gold_rows(
-    tx: &mut Transaction<'_, Postgres>,
-    dao_id: &str,
-    recompute_from: DateTime<Utc>,
-    preserve_ids: &[i64],
-) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query(
-        r#"
-        DELETE FROM gold_confidential_history_events
-        WHERE dao_id = $1
-          AND quote_created_at >= $2
-          AND NOT (history_event_id = ANY($3))
-        "#,
-    )
-    .bind(dao_id)
-    .bind(recompute_from)
-    .bind(preserve_ids)
-    .execute(&mut **tx)
-    .await?;
-
-    Ok(result.rows_affected())
 }
 
 pub(crate) async fn clear_projection_error(

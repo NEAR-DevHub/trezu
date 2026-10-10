@@ -43,6 +43,12 @@ pub async fn setup_public_history_queue_workers(state: &AppState) -> Result<(), 
         tracing::warn!("public history queue workers disabled: NEARBLOCKS_API_KEY missing");
         return Ok(());
     }
+    if state.env_vars.disable_public_treasury_workers {
+        tracing::info!(
+            "public history queue workers disabled (DISABLE_PUBLIC_TREASURY_WORKERS=true)"
+        );
+        return Ok(());
+    }
 
     postgres::setup_public_history_jobs(&state.db_pool).await?;
     Ok(())
@@ -53,7 +59,8 @@ pub(crate) fn public_history_queue_worker_futures(
     shutdown: CancellationToken,
     wake_hub: crate::jobs::platform::JobWakeHub,
 ) -> Vec<PublicHistorySupervisorFuture> {
-    if state.env_vars.nearblocks_api_key.is_none() {
+    if state.env_vars.nearblocks_api_key.is_none() || state.env_vars.disable_public_treasury_workers
+    {
         return Vec::new();
     }
     worker::public_history_job_worker_futures(state, shutdown, wake_hub)

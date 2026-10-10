@@ -26,8 +26,6 @@ services:
         value: json
       - key: PORT
         value: 10000
-      - key: UNIFIED_GOLD_LEDGER_READS
-        sync: false
       - key: GOLD_USD_ENRICHMENT_INTERVAL_SECONDS
         value: 300
       - key: JWT_SECRET
@@ -52,6 +50,8 @@ services:
         sync: false
       - key: CONFIDENTIAL_BALANCE_READ_SOURCE
         sync: false
+      - key: DISABLE_PUBLIC_TREASURY_WORKERS
+        value: "true"
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 
@@ -115,8 +115,6 @@ services:
         value: json
       - key: PORT
         value: 10000
-      - key: UNIFIED_GOLD_LEDGER_READS
-        sync: false
       - key: GOLD_USD_ENRICHMENT_INTERVAL_SECONDS
         value: 300
       - key: JWT_SECRET
@@ -141,6 +139,8 @@ services:
         sync: false
       - key: CONFIDENTIAL_BALANCE_READ_SOURCE
         sync: false
+      - key: DISABLE_PUBLIC_TREASURY_WORKERS
+        value: "true"
     healthCheckPath: /api/health
     maxShutdownDelaySeconds: 90
 

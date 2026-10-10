@@ -407,7 +407,7 @@ async fn load_confidential_ledger_balances(
     use bigdecimal::Zero;
 
     use crate::constants::intents_tokens::get_defuse_tokens_map;
-    use crate::handlers::balance_changes::confidential_list;
+    use crate::handlers::public_history::confidential_list;
     use crate::handlers::public_history::silver::models::decimal_denominator;
 
     if source == BalanceReadSource::Live {
@@ -593,8 +593,8 @@ async fn load_public_ledger_heads(
     account: &AccountId,
     source: BalanceReadSource,
 ) -> Result<Option<PublicLedgerHeads>, (StatusCode, String)> {
-    use crate::handlers::balance_changes::public_list;
     use crate::handlers::public_history::charts::repository::load_chart_readiness;
+    use crate::handlers::public_history::public_list;
 
     if source == BalanceReadSource::Live {
         return Ok(None);
@@ -621,15 +621,9 @@ async fn load_public_ledger_inputs(
     state: &Arc<AppState>,
     account: &AccountId,
 ) -> Result<Option<AssetBalanceInputs>, (StatusCode, String)> {
-    let Some(heads) = load_public_ledger_heads(
-        &state.db_pool,
-        account,
-        effective_balance_source(
-            state.env_vars.unified_gold_ledger_reads,
-            state.env_vars.balance_read_source,
-        ),
-    )
-    .await?
+    let Some(heads) =
+        load_public_ledger_heads(&state.db_pool, account, state.env_vars.balance_read_source)
+            .await?
     else {
         return Ok(None);
     };
@@ -817,10 +811,7 @@ async fn load_asset_balances(
         let ledger_balances = load_confidential_ledger_balances(
             &state.db_pool,
             account,
-            effective_balance_source(
-                state.env_vars.unified_gold_ledger_reads,
-                state.env_vars.confidential_balance_read_source,
-            ),
+            state.env_vars.confidential_balance_read_source,
         )
         .await?;
         let intents_balances = match ledger_balances {
@@ -849,17 +840,6 @@ async fn load_asset_balances(
     };
 
     Ok(inputs)
-}
-
-/// Ledger asset reads stay behind `UNIFIED_GOLD_LEDGER_READS`. Once that flag
-/// is on, `BALANCE_READ_SOURCE=live` (and the confidential twin) is the
-/// outage switch back to FastNear / 1Click.
-fn effective_balance_source(unified: bool, configured: BalanceReadSource) -> BalanceReadSource {
-    if unified && configured == BalanceReadSource::Ledger {
-        BalanceReadSource::Ledger
-    } else {
-        BalanceReadSource::Live
-    }
 }
 
 async fn load_live_public_balances(
@@ -1006,6 +986,7 @@ pub async fn compute_user_assets(
         staking_balance,
         ft_lockup_positions,
     } = load_asset_balances(state, account, scope).await?;
+
     // ── Fetch metadata (shared path) ────────────────────────────────────
 
     // Ref whitelist tokens + intents + lockup + NEAR (no NearBlocks)

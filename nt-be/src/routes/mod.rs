@@ -19,7 +19,6 @@ const EARLY_ACCESS_TIMEOUT: Duration = Duration::from_secs(10);
 mod balance_changes;
 pub use balance_changes::{
     BalanceChangesQuery, EnrichedBalanceChange, SwapInfo, get_balance_changes_internal,
-    should_read_public_history,
 };
 pub(crate) use balance_changes::{
     BalanceChangesReadSource, get_balance_changes_from_source, resolve_balance_changes_read_source,
@@ -58,19 +57,6 @@ async fn health_check(
         ));
     }
 
-    // Query Goldsky enrichment cursor if configured
-    let goldsky_cursor_block = if state.goldsky_pool.is_some() {
-        sqlx::query_scalar::<_, i64>(
-            "SELECT last_processed_block FROM goldsky_cursors WHERE consumer_name = 'balance_enrichment'"
-        )
-        .fetch_optional(&state.db_pool)
-        .await
-        .ok()
-        .flatten()
-    } else {
-        None
-    };
-
     let global_background_jobs = crate::jobs::leadership::global_snapshot(&state.db_pool)
         .await
         .ok()
@@ -87,10 +73,6 @@ async fn health_check(
         "background_jobs": {
             "local": background_jobs,
             "global": global_background_jobs
-        },
-        "goldsky_enrichment": {
-            "enabled": state.goldsky_pool.is_some(),
-            "cursor_block": goldsky_cursor_block
         }
     })))
 }
@@ -126,36 +108,24 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route(
             "/api/recent-activity",
-            get(handlers::balance_changes::history::get_recent_activity),
+            get(handlers::history::get_recent_activity),
         )
         .route(
             "/api/recent-activity/senders",
-            get(handlers::balance_changes::history::get_recent_activity_senders),
+            get(handlers::history::get_recent_activity_senders),
         )
         .route(
             "/api/recent-activity/recipients",
-            get(handlers::balance_changes::history::get_recent_activity_recipients),
-        )
-        .route(
-            "/api/balance-changes/fill-gaps",
-            post(balance_changes::fill_gaps),
+            get(handlers::history::get_recent_activity_recipients),
         )
         // Balance history endpoints
         .route(
-            "/api/balance-history/completeness",
-            get(balance_changes::get_completeness),
-        )
-        .route(
             "/api/balance-history/chart",
-            get(handlers::balance_changes::history::get_balance_chart),
+            get(handlers::history::get_balance_chart),
         )
         .route(
             "/api/confidential/public-assets",
             get(handlers::user::assets::get_confidential_public_assets),
-        )
-        .route(
-            "/api/confidential/balance-chart",
-            get(handlers::intents::confidential::gold::snapshots::get_confidential_balance_chart),
         )
         .route(
             "/api/confidential/history-refresh/status",
@@ -167,7 +137,7 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route(
             "/api/balance-history/export",
-            get(handlers::balance_changes::history::export_balance),
+            get(handlers::history::export_balance),
         )
         .route(
             "/api/proposals/refresh",
@@ -302,7 +272,7 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         )
         .route(
             "/api/export-history",
-            get(handlers::balance_changes::history::get_export_history),
+            get(handlers::history::get_export_history),
         )
         .route(
             "/api/bulk-payment/list/{list_id}",

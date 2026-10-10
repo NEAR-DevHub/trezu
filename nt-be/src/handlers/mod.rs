@@ -1,11 +1,11 @@
 pub mod address_book;
 pub mod analytics;
-pub mod balance_changes;
 pub mod bulkpayment;
 pub mod chains;
 pub mod dao;
 pub mod early_access;
 pub mod events;
+pub mod history;
 pub mod intents;
 pub mod lookup;
 pub mod member_invites;
