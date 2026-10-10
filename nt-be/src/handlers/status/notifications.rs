@@ -681,7 +681,7 @@ mod tests {
         assert!(message.contains("Trigger: <b>Manual</b> · Post to app · by Megha_Goel"));
         assert!(message.contains("Exchange quotes"));
         assert!(message.contains("exchange.quote"));
-        assert!(message.contains("Exchange is temporarily paused"));
+        assert!(message.contains("Swap is temporarily paused"));
         assert!(message.contains("Response: Paused"));
         assert!(message.contains("Severity: High"));
         assert!(!message.contains("Deposits are paused"));
@@ -734,6 +734,29 @@ mod tests {
         assert!(message.contains("Check: <code>backend.database</code>"));
         assert!(message.contains("Connection refused"));
         assert!(message.contains("Post to app would publish:"));
+    }
+
+    #[test]
+    fn health_check_alert_keeps_post_title_in_the_body() {
+        let post = crate::handlers::status::oh_dear::IntentsStatusPost {
+            id: Some("P9D0S3K".to_string()),
+            title: "zCash Bridge Maintenance".to_string(),
+            post_type: "maintenance".to_string(),
+            starts_at: Some(0),
+            ends_at: None,
+        };
+        let body = crate::handlers::status::oh_dear::intents_post_notification(&post);
+        let check_name = crate::handlers::status::oh_dear::intents_incident_check_name(
+            post.id.as_deref().expect("post id"),
+        );
+        let message = format_health_check_alert("near-intents", &check_name, "failed", &body);
+        assert!(
+            body.contains("zCash Bridge Maintenance"),
+            "title must enter the alert via intents_post_notification"
+        );
+        assert!(message.contains("⚠️ <b>Health check failed: NEAR Intents</b>"));
+        assert!(message.contains("zCash Bridge Maintenance"));
+        assert!(message.contains("near-intents.status:P9D0S3K"));
     }
 
     #[test]

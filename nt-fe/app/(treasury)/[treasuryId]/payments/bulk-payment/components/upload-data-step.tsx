@@ -352,43 +352,33 @@ export function UploadDataStep({
 
                 <SlotWarning slot="payments" />
 
-                <div
-                    className={cn(
-                        "w-full min-w-0",
-                        showTokenWarning &&
-                            "flex flex-col rounded-3xl border border-general-border bg-card px-1 pb-3",
-                    )}
-                >
-                    <TokenSelect
-                        selectedToken={
-                            selectedToken as SelectedTokenData | null
-                        }
-                        setSelectedToken={(token) =>
-                            form.setValue("selectedToken", token)
-                        }
-                        disableTokens={(token) =>
-                            isConfidential
-                                ? token.residency?.toLowerCase() !== "intents"
-                                : token.address.startsWith("nep245:")
-                        }
-                        disableTokenMessage={t("disableTokenMessage")}
-                        disabled={availableCredits === 0}
-                        iconSize="2xl"
-                        triggerLabel={t("token")}
-                        classNames={{
-                            trigger: showTokenWarning
-                                ? "h-18 w-full shrink-0 rounded-3xl border-0 bg-transparent px-4! shadow-none hover:bg-transparent"
-                                : "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:border-general-border hover:bg-card",
-                        }}
+                <TokenSelect
+                    selectedToken={selectedToken as SelectedTokenData | null}
+                    setSelectedToken={(token) =>
+                        form.setValue("selectedToken", token)
+                    }
+                    disableTokens={(token) =>
+                        isConfidential
+                            ? token.residency?.toLowerCase() !== "intents"
+                            : token.address.startsWith("nep245:")
+                    }
+                    disableTokenMessage={t("disableTokenMessage")}
+                    hideChainDeliveryRoutes
+                    disabled={availableCredits === 0}
+                    iconSize="2xl"
+                    triggerLabel={t("token")}
+                    classNames={{
+                        trigger:
+                            "h-18 w-full rounded-3xl border border-general-border bg-card px-4! shadow-none hover:border-general-unofficial-border-4 hover:bg-card",
+                    }}
+                />
+                {showTokenWarning && (
+                    <WarningMessage
+                        variant="inline"
+                        message={sendWarningMessage}
+                        className="ml-4 text-sm whitespace-normal"
                     />
-                    {showTokenWarning && (
-                        <WarningMessage
-                            variant="inline"
-                            message={sendWarningMessage}
-                            className="pl-3 text-xs"
-                        />
-                    )}
-                </div>
+                )}
 
                 <Tabs
                     value={activeTab}
@@ -565,8 +555,11 @@ export function UploadDataStep({
                         <div className="flex flex-col gap-1">
                             <div
                                 className={cn(
-                                    "rounded-3xl border border-general-border bg-card",
-                                    hasDataErrors && "border-destructive",
+                                    "rounded-3xl border border-general-border bg-card transition-colors",
+                                    hasDataErrors
+                                        ? "border-destructive"
+                                        : availableCredits !== 0 &&
+                                              "hover:border-general-unofficial-border-4 focus-within:border-general-unofficial-border-4",
                                 )}
                             >
                                 <Textarea
@@ -596,7 +589,7 @@ export function UploadDataStep({
 
                 <CreateRequestButton
                     type="button"
-                    className="h-11 w-full rounded-2xl"
+                    className="h-11 w-full"
                     disabled={
                         !selectedToken ||
                         (activeTab === "upload" && !csvData) ||

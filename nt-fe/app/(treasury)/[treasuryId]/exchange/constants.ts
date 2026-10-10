@@ -8,7 +8,7 @@ export const ETH_TOKEN = {
     symbol: "ETH",
     decimals: 18,
     name: "ETH",
-    icon: "https://s2.coinmarketcap.com/static/img/coins/128x128/1027.png",
+    icon: "https://near.com/static/icons/network/ethereum.png",
     network: "eth",
     chainIcons: {
         icon: "https://near.com/static/icons/network/ethereum.svg",

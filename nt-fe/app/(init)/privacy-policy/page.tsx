@@ -13,14 +13,14 @@ export const metadata: Metadata = {
 export default function PrivacyPolicyPage() {
     return (
         <LegalPage title={["Privacy", "Policy"]}>
-            <p>Last updated: 10 September 2026</p>
+            <p>Last updated: 8 October 2026</p>
             <h2>
                 <strong>1. About this notice</strong>
             </h2>
             <p>
                 This notice explains how Intents Technology Ltd (
                 <strong>we</strong>, <strong>us</strong>) handles personal
-                information in connection with near.com for Business at
+                information in connection with NEAR Business at
                 business.near.com (the <strong>Business Platform</strong>), and
                 in connection with enquiries about it. The near.com privacy
                 policy at{" "}
@@ -68,10 +68,7 @@ export default function PrivacyPolicyPage() {
                 controller and we act as its data processor, on its
                 instructions. Our obligations to it are set out in our Data
                 Processing Addendum at{" "}
-                <Link href={DATA_PROCESSING_HREF}>
-                    https://business.near.com/data
-                </Link>
-                .
+                <Link href={DATA_PROCESSING_HREF}>business.near.com/data</Link>.
             </p>
             <p>
                 If you use a workspace and want to exercise your rights over
@@ -229,9 +226,22 @@ export default function PrivacyPolicyPage() {
                 that they are anonymous. The operators of the confidential
                 environment, and the solvers and bridge operators that process a
                 confidential transaction, can see the details they need to
-                process it. The near.com for Business Terms and Conditions
-                describe Confidential Mode and who may be able to see
-                information about a confidential transaction.
+                process it. The NEAR Business Terms and Conditions describe
+                Confidential Mode and who may be able to see information about a
+                confidential transaction. We are not always able to tell you
+                when we access or disclose information in this way, and in some
+                cases we are prohibited from doing so.
+            </p>
+            <p>
+                We may also share transaction information, including provenance
+                and attribution data and information relating to confidential
+                transactions, with blockchain analytics, screening and
+                transaction-monitoring providers in order to maintain the
+                integrity and completeness of ecosystem-wide analytics and
+                screening data, under contractual arrangements with those
+                providers. We share only what is reasonably necessary for that
+                purpose, and in aggregated or pseudonymised form where
+                reasonably practicable.
             </p>
             <p>
                 Where we do this for our own purposes rather than on the

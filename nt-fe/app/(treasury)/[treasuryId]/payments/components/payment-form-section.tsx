@@ -23,6 +23,7 @@ import { selectorTriggerClassName } from "@/components/selector-field";
 import { getNetworkDisplayName } from "@/components/token-display";
 import { type Token, TokenInput } from "@/components/token-input";
 import TokenSelect, { type SelectedTokenData } from "@/components/token-select";
+import { WarningMessage } from "@/components/warning-message";
 import { FormField } from "@/components/ui/form";
 import { NEAR_COM_NETWORK_ID, NEAR_NETWORK_ID } from "@/constants/network-ids";
 import {
@@ -533,9 +534,17 @@ export function PaymentFormSection<
                             balanceLayout="usdPrimary"
                             appearance="card"
                             triggerLabel={tPay("tokenLabel")}
+                            hideChainDeliveryRoutes
                         />
                     )}
                 />
+                {sendWarningMessage ? (
+                    <WarningMessage
+                        variant="inline"
+                        message={sendWarningMessage}
+                        className="ml-4 text-sm whitespace-normal"
+                    />
+                ) : null}
 
                 {recipientLocked ? (
                     <div className={selectorTriggerClassName}>
@@ -584,7 +593,6 @@ export function PaymentFormSection<
                 usdValueOverride={usdValueOverride}
                 balanceOverrideRaw={balanceOverrideRaw}
                 balanceFromToken={balanceFromToken}
-                warningMessage={sendWarningMessage}
                 showInsufficientBalance={
                     !feeErrorMessage || showRestrictedRecipientAlert
                 }
@@ -654,7 +662,7 @@ export function PaymentFormSection<
                 disabled={isSaveDisabled}
                 isSubmitting={isSubmitting}
                 idleMessage={saveButtonText}
-                className="w-full h-11 rounded-2xl"
+                className="w-full h-11"
                 permissions={savePermissions}
             />
         </div>

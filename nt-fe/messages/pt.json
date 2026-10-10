@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Carregando...",
+        "loading": "Carregando",
         "notAvailable": "N/D",
-        "connecting": "Conectando...",
+        "connecting": "Conectando",
         "save": "Salvar",
         "cancel": "Cancelar",
         "submit": "Enviar",
@@ -18,7 +18,7 @@
         "exporting": "Exportando",
         "import": "Importar",
         "remove": "Remover",
-        "removing": "Removendo...",
+        "removing": "Removendo",
         "edit": "Editar",
         "continue": "Continuar",
         "select": "Selecionar",
@@ -191,18 +191,14 @@
             "title": "Configurações"
         },
         "addressBook": {
-            "title": "Catálogo de endereços",
-            "description": "Gerencie seus destinatários salvos"
+            "title": "Catálogo de endereços"
         },
         "payments": {
-            "title": "Pagamentos",
-            "confidentialTitle": "Pagamentos confidenciais",
-            "description": "Envie fundos com segurança e proteção."
+            "title": "Pagamentos"
         },
         "exchange": {
             "title": "Trocar",
-            "confidentialTitle": "Trocar",
-            "description": "Troque seus tokens de forma segura e eficiente"
+            "confidentialTitle": "Trocar"
         },
         "vesting": {
             "title": "Vesting",
@@ -340,13 +336,11 @@
         "anythingElseLost": "Tudo enviado de outro lugar é perdido",
         "anythingElseLostSub": "Exchanges, carteiras públicas, outras redes – não pode ser recuperado.",
         "confidentialAckCheckbox": "Entendo que depósitos de fora do near.com ou near business serão perdidos.",
-        "onlyFromNearBusiness": "Apenas do <bold>near business</bold>",
+        "onlyFromNearBusiness": "Apenas do <bold>near business</bold> ou <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Apenas do <bold>near.com confidencial</bold>",
-        "onlyFromNearBusinessOrNearcom": "Apenas do <bold>near business</bold> ou <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Reutilizável.</bold> Não expira",
-        "fundsOutsideNearBusinessLost": "Fundos enviados de fora do <bold>near business</bold> serão perdidos",
+        "fundsOutsideNearBusinessLost": "Fundos enviados de fora do <bold>near business</bold> ou <bold>near.com</bold> serão perdidos.",
         "fundsOutsideNearcomLost": "Fundos enviados de fora do <bold>near.com confidencial</bold> serão perdidos",
-        "fundsOutsideNearBusinessOrNearcomLost": "Fundos enviados de fora do <bold>near business</bold> ou <bold>near.com</bold> serão perdidos.",
         "publicNetworkRecommendation": "Deposite apenas da rede <bold>{network}</bold>. Comece com uma pequena transação de teste antes de enviar o valor total.",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "Peso",
         "source": "Origem",
         "send": "Enviar",
-        "exchange": "Trocar",
         "swap": "Trocar",
         "comingSoon": "Em breve",
         "vesting": "Vesting",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "Você não tem permissão para exportar",
             "quotaExhausted": "Você usou toda a sua cota",
-            "exporting": "Exportando...",
+            "exporting": "Exportando",
             "export": "Exportar"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "Aprovar",
             "reject": "Rejeitar",
-            "deposit": "Depositar",
             "viewRequest": "Ver solicitação"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "Pendente",
+            "processing": "Processando",
             "approved": "Aprovada",
             "rejected": "Rejeitada",
             "executed": "Executada",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "Esta solicitação ainda está pendente e não atingiu o número necessário de votos para execução.",
+            "processing": "Aprovada e em processamento. Leva apenas alguns segundos.",
             "executed": "Executada após {approved} de {required} membros aprovarem a solicitação.",
             "rejected": "Rejeitada após {rejected} de {required} membros votarem para rejeitar a solicitação.",
             "expired": "Expirada por não receber votos suficientes para ser executada.",
@@ -716,13 +710,16 @@
             "removeTitle": "Remover solicitação",
             "bulkBody": "Você está prestes a {action} várias solicitações. Após o envio, esta decisão não pode ser alterada.",
             "singleBody": "Você está prestes a {action} esta solicitação. Após confirmada, esta ação não pode ser desfeita.",
+            "ledgerBody": "Mantenha seu Ledger desbloqueado. Em seguida, você confirmará seu voto nele.",
             "actionApprove": "aprovar",
             "actionReject": "rejeitar",
             "actionRemove": "remover",
             "insufficientBalance": "As solicitações <highlight>{ids}</highlight> não podem ser aprovadas devido a saldo insuficiente. Sua aprovação será aplicada apenas às solicitações restantes.",
             "approveBlockedBulk": "{count, plural, one {# solicitação selecionada não pode ser aprovada agora — desmarque-a para continuar.} other {# solicitações selecionadas não podem ser aprovadas agora — desmarque-as para continuar.}}",
             "remove": "Remover",
-            "confirm": "Confirmar"
+            "preparingRemove": "Preparando a remoção",
+            "confirm": "Confirmar",
+            "preparingVote": "Preparando o seu voto"
         },
         "expanded": {
             "recipient": "Destinatário",
@@ -866,8 +863,7 @@
             "approvalsReceived": "{received}/{required} aprovações recebidas",
             "expiresAt": "Expira em",
             "expiredAt": "Expirou em",
-            "exchangingTokens": "Trocando tokens",
-            "exchangingTokensBody": "Esta solicitação foi aprovada pela equipe. A troca de tokens está em andamento e pode levar algum tempo.",
+            "processing": "Sua solicitação foi aprovada e está sendo processada - apenas alguns segundos.",
             "requestFailed": "Solicitação falhou",
             "requestFailedBody": "A equipe aprovou esta solicitação, mas ela falhou devido a flutuações de taxa. Por favor, crie uma nova solicitação e tente novamente.",
             "votingPeriod24h": "Período de votação: 24 horas",
@@ -875,8 +871,6 @@
             "reject": "Rejeitar",
             "approve": "Aprovar",
             "destinationNetwork": "Rede de destino",
-            "processingPayment": "Pagamento em andamento",
-            "processingPaymentBody": "Este pagamento foi aprovado pela equipe e está sendo processado. Pode levar algum tempo para ser concluído.",
             "addMember": "Adicionar membro",
             "removeMember": "Remover membro",
             "member": "Membro",
@@ -938,7 +932,7 @@
                 "voteDescription": "Os dados chegam pré-preenchidos. Você cria a solicitação e a equipe vota."
             },
             "generateLink": "Gerar link de convite",
-            "generating": "Gerando...",
+            "generating": "Gerando",
             "generateFailed": "Falha ao gerar o link de convite. Tente novamente.",
             "readyTitle": "Seu link de convite está pronto",
             "readyDescription": "Envie para a pessoa que deseja adicionar. Ela conectará uma carteira e pedirá para entrar.",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, one {# novo membro} other {# novos membros}}",
             "updatedMembers": "Membros atualizados",
             "newMembers": "Novos membros",
-            "creatingProposal": "Criando proposta...",
+            "creatingProposal": "Criando proposta",
             "confirmSubmit": "Criar solicitação"
         },
         "removeDialog": {
             "title": "Remover {count, plural, one {membro} other {membros}}?",
             "nearnBody": "Após aprovado, {account} será removido permanentemente da tesouraria e todas as permissões associadas serão revogadas. Após a remoção, esta conta não poderá mais criar solicitações a partir do NEARN.",
             "genericBody": "Após aprovada, esta ação removerá permanentemente <bold>{accounts}</bold> da tesouraria e revogará todas as permissões atribuídas.",
-            "creatingProposal": "Criando proposta..."
+            "creatingProposal": "Criando proposta"
         },
         "validation": {
             "accountIdRequired": "ID da conta é obrigatório",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "Insira o nome de exibição",
             "logo": "Logotipo",
             "logoDescription": "Faça upload de um logotipo para sua tesouraria. Recomendado SVG, PNG ou JPG (256x256 px).",
-            "uploading": "Enviando...",
+            "uploading": "Enviando",
             "removeLogo": "Remover",
             "logoUploaded": "Logotipo enviado com sucesso",
             "uploadError": "Ocorreu um erro ao enviar a imagem, por favor tente novamente.",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "{count, plural, =0 {nenhum destinatário} one {# destinatário} other {# destinatários}} selecionado",
         "sectionHeading": "Destinatários",
         "privacyNote": "Os endereços salvos são privados e visíveis apenas para sua equipe.",
+        "contactsCount": "{count, plural, one {# destinatário} other {# destinatários}}",
         "searchPlaceholder": "Buscar destinatário por nome",
         "searchPlaceholderShort": "Buscar",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "Todos os destinatários importados já existem no seu catálogo de endereços. Volte para enviar uma lista diferente ou remova duplicatas desta revisão.",
             "someDuplicates": "{duplicates} destinatários duplicados de {total} destinatários no total. Continue para importar apenas os novos destinatários.",
             "duplicated": "Duplicado",
+            "contactNumber": "Destinatário {number}",
             "notePlaceholder": "Adicione uma nota para ajudar a identificar este destinatário (ex.: pagamento de prestador, distribuição de vesting).",
             "skipDuplicates": "Ignorar duplicatas e importar apenas os novos.",
             "allDuplicatesTooltip": "Todos os destinatários importados já estão no seu catálogo de endereços, então não há nada novo para importar.",
+            "manualAllDuplicates": "{count, plural, =1 {Este contato já existe na sua lista de contatos.} other {Estes contatos já existem na sua lista de contatos.}}",
+            "manualSomeDuplicates": "{duplicates, plural, =1 {# de {total} contatos já existe na sua lista de contatos.} other {# de {total} contatos já existem na sua lista de contatos.}} Somente os novos contatos serão salvos.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Este contato já está na sua lista de contatos, então não há nada novo para salvar.} other {Estes contatos já estão na sua lista de contatos, então não há nada novo para salvar.}}",
             "duplicateActionTooltip": "Ative o pulo de duplicatas ou remova destinatários duplicados para continuar.",
-            "adding": "Adicionando…",
+            "adding": "Adicionando",
             "nothingNew": "Nada novo para importar",
-            "addRecipientsButton": "{count, plural, one {Adicionar destinatário} other {Adicionar destinatários}}"
+            "addRecipientsButton": "Salvar contatos"
         },
         "removeDialog": {
             "title": "Remover destinatário",
+            "body": "Isso removerá <bold>{names}</bold> dos seus contatos. Você pode adicioná-los novamente a qualquer momento.",
             "bulk": "Isso removerá <bold>{count, plural, one {# destinatário} other {# destinatários}}</bold> do seu catálogo de endereços. Você pode adicioná-los novamente a qualquer momento.",
-            "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento."
+            "single": "Isso removerá <bold>{name}</bold> do seu catálogo de endereços. Você pode adicionar este destinatário novamente a qualquer momento.",
+            "removing": "Removendo"
         },
         "importFlow": {
             "title": "Importar destinatários",
@@ -1144,7 +1145,7 @@
             "foundSummary": "{count, plural, one {# destinatário encontrado} other {# destinatários encontrados}} em {networkCount, plural, one {# rede} other {# redes}}",
             "uploadPrompt": "Faça upload ou cole os dados dos destinatários",
             "fixErrors": "Corrija os erros para continuar",
-            "continueReview": "Continuar para revisão"
+            "continueReview": "Revisar detalhes"
         },
         "form": {
             "editRecipient": "Editar destinatário",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "Endereço do destinatário",
             "network": "Rede",
             "networkInfo": "Redes compatíveis com este endereço",
+            "enterName": "Inserir nome",
+            "enterAddress": "Inserir endereço",
+            "note": "Nota",
+            "clearName": "Limpar nome",
+            "clearAddress": "Limpar endereço",
+            "clearNote": "Limpar nota",
+            "saveContact": "Salvar destinatário",
             "enterAddressFirst": "Insira primeiro o endereço do destinatário",
             "selectNetwork": "Selecionar rede",
             "selectNetworksTitle": "Selecionar redes",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "ou arraste e solte",
             "token": "Token",
             "destinationNetwork": "Rede de destino",
-            "uploadFileFirst": "Primeiro, carregue um arquivo",
             "removeFile": "Remover arquivo",
             "maxFileSize": "máx. 1 arquivo de até 1,5 MB, somente arquivo CSV",
             "noFilePrompt": "Não tem um arquivo para enviar?",
@@ -1335,6 +1342,7 @@
             "enterAmount": "Insira um valor"
         },
         "review": "Revisar troca",
+        "chainDeliveryUnsupported": "Esta rede não está disponível na troca.",
         "poweredBy": "Desenvolvido por",
         "info": {
             "priceDifference": "Diferença de preço",
@@ -1484,6 +1492,7 @@
             "passkeyCardSubtitle": "Entre com a biometria ou o código do seu dispositivo",
             "web3WalletsSeparator": "Carteiras Web3",
             "selectOtherWallet": "Escolher outra carteira",
+            "connectFailed": "Não foi possível entrar",
             "back": "Voltar"
         },
         "unexpectedError": "Ocorreu um erro inesperado",
@@ -1546,7 +1555,7 @@
         "proposalDescriptionLabel": "Descrição da proposta (opcional)",
         "proposalDescriptionPlaceholder": "Descreva esta proposta...",
         "createProposal": "Criar proposta",
-        "creatingProposal": "Criando proposta...",
+        "creatingProposal": "Criando proposta",
         "confirmInWallet": "Por favor, confirme na sua carteira",
         "proposalSubmitted": "Proposta enviada",
         "shareProposal": "Sua proposta foi criada. Compartilhe o link abaixo com os membros da tesouraria para votarem.",
@@ -1596,7 +1605,7 @@
         "relinking": "{count, plural, one {# tesouraria selecionada está vinculada a outro chat do Telegram. Conectar fará a reconexão e alterará o link do ID do chat para este chat.} other {# tesourarias selecionadas estão vinculadas a outros chats do Telegram. Conectar fará a reconexão e alterará os links de ID do chat para este chat.}}",
         "connectedToAnother": "Conectada a outro chat",
         "notMember": "Você não é membro de nenhuma tesouraria.",
-        "connecting": "Conectando…",
+        "connecting": "Conectando",
         "connect": "Conectar",
         "settings": {
             "title": "Telegram",
@@ -1709,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Adicionar outro membro",
         "validation": {
-            "rolesRequired": "Pelo menos uma função é obrigatória",
-            "duplicateAddress": "O endereço já é membro"
+            "rolesRequired": "Pelo menos uma função é obrigatória"
         },
         "enterAddress": "Inserir endereço",
         "clearAddress": "Limpar endereço",
@@ -1746,7 +1754,10 @@
         "orDragDrop": "ou arraste e solte",
         "maxFileSize": "máx. 1 arquivo de até {maxSize} MB, somente arquivo CSV",
         "noFilePrompt": "Não tem um arquivo para enviar?",
-        "downloadTemplate": "Baixar um modelo"
+        "downloadTemplate": "Baixar um modelo",
+        "pleaseUploadCsv": "Por favor, faça upload de um arquivo CSV",
+        "fileSizeLimit": "O tamanho do arquivo deve ser inferior a 1,5 MB",
+        "removeFile": "Remover arquivo"
     },
     "tokenSelect": {
         "selectToken": "Selecionar token",
@@ -1804,7 +1815,7 @@
         "noDownloadPermission": "Você não tem permissão para baixar o arquivo.",
         "noExportPermission": "Você não tem permissão para exportar",
         "quotaUsed": "Você usou toda a sua cota",
-        "exporting": "Exportando...",
+        "exporting": "Exportando",
         "export": "Exportar",
         "columnSubmissionTime": "Data de envio",
         "columnDateRange": "Intervalo de datas",
@@ -1876,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Rede do destinatário",
         "placeholder": "Selecionar rede do destinatário",
-        "enterAddressFirst": "Insira primeiro o endereço do destinatário",
         "noCompatibleNetwork": "Nenhuma rede corresponde a este endereço",
         "selectPlaceholder": "Selecionar rede",
         "title": "Selecionar rede",
@@ -1884,8 +1894,6 @@
         "fromAddressBook": "Do catálogo de endereços",
         "otherAvailable": "Outras disponíveis",
         "incompatible": "Incompatível",
-        "comingSoon": "Em breve",
-        "forMembersOnly": "Apenas para membros",
         "nearComDescription": "Rede para near business e near.com",
         "internalTag": "Interno"
     },
@@ -1900,6 +1908,7 @@
         "note": "Nota",
         "added": "Adicionado",
         "remove": "Remover",
+        "noResults": "Nenhum destinatário corresponde à sua busca.",
         "send": "Enviar"
     },
     "publicDashboard": {
@@ -2058,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Salvar nos contatos",
-        "walletCopiedToast": "Endereço da carteira copiado para a área de transferência",
         "copyWalletAddress": "Copiar endereço da carteira"
     },
     "infoDisplay": {
@@ -2161,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Usar máx.",
-        "max": "MAX",
         "insufficientTokens": "Saldo insuficiente. Complete o saldo antes da aprovação.",
         "insufficientTokensForFee": "Tokens insuficientes para cobrir a taxa de rede ({fee} {symbol}). Você pode enviar a solicitação e completar o saldo antes da aprovação.",
         "balance": "Saldo: {amount} {symbol}",
@@ -2173,23 +2180,20 @@
         "paused": "Pausado temporariamente",
         "brieflyUnavailable": "Brevemente indisponível"
     },
-    "address": {
-        "copied": "Endereço copiado para a área de transferência"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "Membros que podem votar",
         "copyAddress": "Copiar endereço",
         "moreMembers": "+{count, plural, one {# membro} other {# membros}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Destinatário adicionado} other {# destinatários adicionados}}",
-        "alreadyExistsToast": "O destinatário já está no seu livro de endereços",
-        "addedSingleToast": "Destinatário adicionado",
-        "addFailedToast": "Falha ao adicionar destinatários",
-        "addSingleFailedToast": "Falha ao adicionar destinatário",
-        "removedToast": "{count, plural, one {Destinatário removido} other {# destinatários removidos}}",
-        "removeFailedToast": "Falha ao remover destinatários",
-        "exportFailedToast": "Falha ao exportar destinatários"
+        "addedToast": "{count, plural, =1 {Contato salvo com sucesso} other {# contatos adicionados}}",
+        "alreadyExistsToast": "O contato já está no seu livro de endereços",
+        "addedSingleToast": "Contato adicionado",
+        "addFailedToast": "Falha ao adicionar contatos",
+        "addSingleFailedToast": "Falha ao adicionar contato",
+        "removedToast": "{count, plural, =1 {Contato removido com sucesso} other {# contatos removidos}}",
+        "removeFailedToast": "Falha ao remover contatos",
+        "exportFailedToast": "Falha ao exportar contatos"
     },
     "treasuryMutations": {
         "savedToast": "Tesouraria salva na sua lista",
@@ -2339,15 +2343,7 @@
             "back": "Voltar"
         },
         "progress": {
-            "title": "Siga passos rápidos para explorar a tesouraria",
             "addAssetsTitle": "Adicione seus ativos",
-            "addAssetsDescription": "Comece adicionando ativos para vê-los em ação.",
-            "deposit": "Depositar",
-            "createPaymentTitle": "Crie uma solicitação de pagamento",
-            "createPaymentDescription": "Crie uma solicitação de pagamento para concluir sua configuração.",
-            "send": "Enviar",
-            "useSolo": "Usar Solo",
-            "addTeamMemberDescription": "Você configurou sua conta com sucesso. Ótimo começo!",
             "addTeamMemberTitle": "Criar conta da tesouraria",
             "getStarted": "Começar",
             "setupThresholdTitle": "Definir limite",
@@ -2400,8 +2396,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Entendi",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Página de status](https://status.trezu.org/)",
+        "statusPageLink": "[Página de status](https://status.business.near.com)",
         "schedule": {
             "on": "em",
             "until": "até"
@@ -2492,7 +2489,7 @@
             "title": "Excluir modelo",
             "body": "Excluir <b>{name}</b>? Os membros não poderão mais registrar propostas a partir dele. Esta ação não pode ser desfeita.",
             "confirm": "Excluir",
-            "deleting": "Excluindo…"
+            "deleting": "Excluindo"
         },
         "editor": {
             "nameLabel": "Nome",
@@ -2636,7 +2633,7 @@
         "save": "Salvar",
         "edit": "Editar",
         "remove": "Remover",
-        "uploading": "Enviando...",
+        "uploading": "Enviando",
         "saveSuccess": "Suas alterações foram salvas.",
         "saveError": "Não foi possível salvar as alterações. Tente novamente.",
         "invalidImage": "Escolha um arquivo de imagem válido.",

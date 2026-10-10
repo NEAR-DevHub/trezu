@@ -1,12 +1,14 @@
 "use client";
 import { Icon } from "@/components/icon";
 import {
+    Alert01Icon,
     ArrowLeft01Icon,
     CheckIcon,
     Wallet01Icon,
 } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Alert, AlertDescription } from "@/components/alert";
 import { SlotWarning } from "@/components/warning-message";
 import { Button } from "@/components/button";
 import { FingerAccessIcon } from "@/components/icons/finger-access";
@@ -100,6 +102,32 @@ function WalletOptionIcon({
 }
 
 /**
+ * Surfaces a failed connect attempt on the sign-in screen.
+ *
+ * Without this the wallet's own popup just closes and the user is left staring
+ * at the untouched sign-in screen with no idea what went wrong — the failure
+ * mode looks identical to "nothing happened". The wallet's message is shown
+ * verbatim underneath: it is what explains *why* (passkey cancelled, on-chain
+ * account setup failed, backend rejected the authorization, ...).
+ */
+function ConnectFailureAlert({ error }: { error: string | null }) {
+    const t = useTranslations("createTreasury");
+    if (!error) return null;
+
+    return (
+        <Alert variant="destructive" className="items-start gap-2 rounded-2xl">
+            <Icon icon={Alert01Icon} className="mt-0.5 shrink-0" />
+            <AlertDescription className="flex flex-col gap-1">
+                <span className="font-medium">
+                    {t("walletSelector.connectFailed")}
+                </span>
+                <span className="text-xs break-words opacity-80">{error}</span>
+            </AlertDescription>
+        </Alert>
+    );
+}
+
+/**
  * The tile used for every sign-in option: a bordered card with the wallet logo
  * on top, an optional badge in the opposite corner, and the label underneath.
  */
@@ -129,30 +157,53 @@ function WalletCard({
             disabled={disabled}
             aria-disabled={disabled || dimmed}
             className={cn(
-                "flex flex-col items-start gap-5 rounded-2xl border border-general-border bg-card p-[19px] text-left dark:border-general-unofficial-border-2 dark:bg-general-unofficial-accent-0",
+                "relative flex flex-col items-start gap-5 rounded-2xl border border-general-border bg-card p-[19px] text-left dark:border-general-unofficial-border-2 dark:bg-general-unofficial-accent-0",
                 "transition-colors hover:border-general-unofficial-border-4",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 "disabled:pointer-events-none",
                 dimmed
-                    ? "cursor-not-allowed opacity-50 hover:border-general-border"
+                    ? "cursor-not-allowed hover:border-general-border"
                     : "cursor-pointer",
                 className,
             )}
         >
-            <div className="flex w-full items-start justify-between gap-2">
-                {icon}
-                {badge}
-            </div>
-            <div className="flex w-full flex-col gap-[3px]">
-                <span className="text-base font-semibold leading-[1.2]">
-                    {title}
-                </span>
-                {description && (
-                    <span className="text-sm font-medium leading-5 text-general-muted-foreground whitespace-normal dark:text-muted-foreground">
-                        {description}
-                    </span>
+            <div
+                className={cn(
+                    "flex w-full flex-col items-start gap-5",
+                    dimmed && "opacity-50",
                 )}
+            >
+                <div className="flex w-full items-start justify-between gap-2">
+                    {icon}
+                    {badge ? (
+                        <span
+                            className={
+                                dimmed
+                                    ? "invisible pointer-events-none"
+                                    : undefined
+                            }
+                            aria-hidden={dimmed || undefined}
+                        >
+                            {badge}
+                        </span>
+                    ) : null}
+                </div>
+                <div className="flex w-full flex-col gap-[3px]">
+                    <span className="text-base font-semibold leading-[1.2]">
+                        {title}
+                    </span>
+                    {description && (
+                        <span className="text-sm font-medium leading-5 text-general-muted-foreground whitespace-normal dark:text-muted-foreground">
+                            {description}
+                        </span>
+                    )}
+                </div>
             </div>
+            {dimmed && badge ? (
+                <span className="absolute top-[19px] right-[19px]">
+                    {badge}
+                </span>
+            ) : null}
         </button>
     );
 }
@@ -428,6 +479,7 @@ export function ConnectWalletSelector({
                     </div>
                 </div>
                 <SlotWarning slot="login" />
+                <ConnectFailureAlert error={authError} />
                 {showOnboardingHints && (
                     <div className="flex items-start gap-2">
                         <div className="bg-general-success-background-faded rounded-full size-7 sm:size-6 flex items-center justify-center p-1 sm:p-0">
@@ -517,6 +569,7 @@ export function ConnectWalletSelector({
                         </DialogHeader>
                         <div className="flex flex-col gap-2 px-5 pt-2 pb-5">
                             <SlotWarning slot="login" />
+                            <ConnectFailureAlert error={authError} />
                             <div className="grid grid-cols-2 gap-2">
                                 {walletPickerChoices.map((wallet) => {
                                     const isOfflineBlocked =
@@ -736,7 +789,7 @@ export function ConnectWalletSelector({
                             </div>
                             <Button
                                 type="button"
-                                className="h-13 w-full rounded-2xl text-base font-bold"
+                                className="h-13 w-full text-base font-bold"
                                 onClick={closeUnsupportedWalletModal}
                             >
                                 {t("walletSelector.selectOtherWallet")}

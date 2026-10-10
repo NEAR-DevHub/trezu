@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Memuat...",
+        "loading": "Memuat",
         "notAvailable": "T/A",
-        "connecting": "Menghubungkan...",
+        "connecting": "Menghubungkan",
         "save": "Simpan",
         "cancel": "Batal",
         "submit": "Kirim",
@@ -18,7 +18,7 @@
         "exporting": "Mengekspor",
         "import": "Impor",
         "remove": "Hapus",
-        "removing": "Menghapus...",
+        "removing": "Menghapus",
         "edit": "Ubah",
         "continue": "Lanjutkan",
         "select": "Pilih",
@@ -191,18 +191,14 @@
             "title": "Pengaturan"
         },
         "addressBook": {
-            "title": "Buku Alamat",
-            "description": "Kelola penerima yang Anda simpan"
+            "title": "Buku Alamat"
         },
         "payments": {
-            "title": "Pembayaran",
-            "confidentialTitle": "Pembayaran rahasia",
-            "description": "Kirim dana dengan aman dan terlindungi."
+            "title": "Pembayaran"
         },
         "exchange": {
             "title": "Tukar",
-            "confidentialTitle": "Tukar",
-            "description": "Tukar token Anda dengan aman dan efisien"
+            "confidentialTitle": "Tukar"
         },
         "vesting": {
             "title": "Vesting",
@@ -340,13 +336,11 @@
         "anythingElseLost": "Apa pun yang dikirim dari tempat lain akan hilang",
         "anythingElseLostSub": "Exchange, dompet publik, jaringan lain – tidak dapat dipulihkan.",
         "confidentialAckCheckbox": "Saya memahami deposit dari luar near.com atau near business akan hilang.",
-        "onlyFromNearBusiness": "Hanya dari <bold>near business</bold>",
+        "onlyFromNearBusiness": "Hanya dari <bold>near business</bold> atau <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Hanya dari <bold>near.com rahasia</bold>",
-        "onlyFromNearBusinessOrNearcom": "Hanya dari <bold>near business</bold> atau <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Dapat digunakan ulang.</bold> Tidak kedaluwarsa",
-        "fundsOutsideNearBusinessLost": "Dana yang dikirim dari luar <bold>near business</bold> akan hilang",
+        "fundsOutsideNearBusinessLost": "Dana yang dikirim dari luar <bold>near business</bold> atau <bold>near.com</bold> akan hilang.",
         "fundsOutsideNearcomLost": "Dana yang dikirim dari luar <bold>near.com rahasia</bold> akan hilang",
-        "fundsOutsideNearBusinessOrNearcomLost": "Dana yang dikirim dari luar <bold>near business</bold> atau <bold>near.com</bold> akan hilang.",
         "publicNetworkRecommendation": "Deposit hanya dari jaringan <bold>{network}</bold>. Mulai dengan transaksi uji kecil sebelum mengirim jumlah penuh.",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "Bobot",
         "source": "Sumber",
         "send": "Kirim",
-        "exchange": "Tukar",
         "swap": "Tukar",
         "comingSoon": "Segera hadir",
         "vesting": "Vesting",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "Anda tidak memiliki izin untuk mengekspor",
             "quotaExhausted": "Anda telah menggunakan semua kuota Anda",
-            "exporting": "Mengekspor...",
+            "exporting": "Mengekspor",
             "export": "Ekspor"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "Setujui",
             "reject": "Tolak",
-            "deposit": "Deposit",
             "viewRequest": "Lihat Permintaan"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "Tertunda",
+            "processing": "Diproses",
             "approved": "Disetujui",
             "rejected": "Ditolak",
             "executed": "Dieksekusi",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "Permintaan ini masih tertunda dan belum mencapai jumlah suara yang diperlukan untuk eksekusi.",
+            "processing": "Disetujui dan sedang diproses. Hanya butuh beberapa detik.",
             "executed": "Dieksekusi setelah {approved} dari {required} anggota menyetujui permintaan.",
             "rejected": "Ditolak setelah {rejected} dari {required} anggota memilih untuk menolak permintaan.",
             "expired": "Kedaluwarsa karena tidak menerima cukup suara untuk dieksekusi.",
@@ -716,13 +710,16 @@
             "removeTitle": "Hapus Permintaan",
             "bulkBody": "Anda akan {action} beberapa permintaan. Setelah dikirim, keputusan ini tidak dapat diubah.",
             "singleBody": "Anda akan {action} permintaan ini. Setelah dikonfirmasi, tindakan ini tidak dapat dibatalkan.",
+            "ledgerBody": "Biarkan Ledger Anda tetap tidak terkunci. Selanjutnya Anda akan mengonfirmasi suara Anda di sana.",
             "actionApprove": "menyetujui",
             "actionReject": "menolak",
             "actionRemove": "menghapus",
             "insufficientBalance": "Permintaan <highlight>{ids}</highlight> tidak dapat disetujui karena saldo tidak mencukupi. Persetujuan Anda hanya akan berlaku untuk permintaan yang tersisa.",
             "approveBlockedBulk": "{count, plural, one {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.} other {# permintaan terpilih tidak dapat disetujui saat ini — batalkan pilihan untuk melanjutkan.}}",
             "remove": "Hapus",
-            "confirm": "Konfirmasi"
+            "preparingRemove": "Menyiapkan penghapusan",
+            "confirm": "Konfirmasi",
+            "preparingVote": "Menyiapkan suara Anda"
         },
         "expanded": {
             "recipient": "Penerima",
@@ -866,8 +863,7 @@
             "approvalsReceived": "{received}/{required} persetujuan diterima",
             "expiresAt": "Kedaluwarsa Pada",
             "expiredAt": "Kedaluwarsa Pada",
-            "exchangingTokens": "Menukar Token",
-            "exchangingTokensBody": "Permintaan ini telah disetujui oleh tim. Pertukaran token sedang berlangsung dan mungkin memerlukan beberapa waktu.",
+            "processing": "Permintaan Anda telah disetujui dan sedang diproses - hanya beberapa detik.",
             "requestFailed": "Permintaan Gagal",
             "requestFailedBody": "Tim menyetujui permintaan ini, tetapi gagal karena fluktuasi nilai tukar. Silakan buat permintaan baru dan coba lagi.",
             "votingPeriod24h": "Periode pemungutan suara: 24 jam",
@@ -875,8 +871,6 @@
             "reject": "Tolak",
             "approve": "Setujui",
             "destinationNetwork": "Jaringan Tujuan",
-            "processingPayment": "Memproses Pembayaran",
-            "processingPaymentBody": "Pembayaran ini telah disetujui oleh tim dan sedang diproses. Mungkin memerlukan beberapa waktu.",
             "addMember": "Tambah Anggota",
             "removeMember": "Hapus Anggota",
             "member": "Anggota",
@@ -938,7 +932,7 @@
                 "voteDescription": "Detail mereka sudah terisi. Anda membuat permintaan, lalu tim memberi suara."
             },
             "generateLink": "Buat tautan undangan",
-            "generating": "Membuat...",
+            "generating": "Membuat",
             "generateFailed": "Gagal membuat tautan undangan. Coba lagi.",
             "readyTitle": "Tautan undangan Anda siap",
             "readyDescription": "Kirim ke orang yang ingin Anda tambahkan. Mereka akan menghubungkan dompet dan meminta bergabung.",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, other {# anggota baru}}",
             "updatedMembers": "Anggota yang Diperbarui",
             "newMembers": "Anggota Baru",
-            "creatingProposal": "Membuat Usulan...",
+            "creatingProposal": "Membuat Usulan",
             "confirmSubmit": "Buat permintaan"
         },
         "removeDialog": {
             "title": "Hapus {count, plural, one {anggota} other {anggota}}?",
             "nearnBody": "Setelah disetujui, {account} akan dihapus secara permanen dari treasury dan semua izin terkait akan dicabut. Setelah dihapus, akun ini tidak akan dapat lagi membuat permintaan dari NEARN.",
             "genericBody": "Setelah disetujui, tindakan ini akan menghapus secara permanen <bold>{accounts}</bold> dari treasury dan mencabut semua izin yang ditetapkan.",
-            "creatingProposal": "Membuat Usulan..."
+            "creatingProposal": "Membuat Usulan"
         },
         "validation": {
             "accountIdRequired": "ID Akun diperlukan",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "Masukkan nama tampilan",
             "logo": "Logo",
             "logoDescription": "Unggah logo untuk treasury Anda. Direkomendasikan SVG, PNG, atau JPG (256x256 px).",
-            "uploading": "Mengunggah...",
+            "uploading": "Mengunggah",
             "removeLogo": "Hapus",
             "logoUploaded": "Logo berhasil diunggah",
             "uploadError": "Terjadi kesalahan saat mengunggah gambar, silakan coba lagi.",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "{count, plural, =0 {tidak ada penerima} other {# penerima}} dipilih",
         "sectionHeading": "Penerima",
         "privacyNote": "Alamat yang disimpan bersifat pribadi dan hanya terlihat oleh tim Anda.",
+        "contactsCount": "{count, plural, other {# penerima}}",
         "searchPlaceholder": "Cari penerima berdasarkan nama",
         "searchPlaceholderShort": "Cari",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "Semua penerima yang diimpor sudah ada di buku alamat Anda. Kembali untuk mengunggah daftar berbeda atau hapus duplikat dari tinjauan ini.",
             "someDuplicates": "{duplicates} penerima duplikat dari total {total} penerima. Lanjutkan untuk mengunggah hanya penerima baru.",
             "duplicated": "Duplikat",
+            "contactNumber": "Penerima {number}",
             "notePlaceholder": "Tambahkan catatan untuk membantu mengidentifikasi penerima ini (mis. pembayaran kontraktor, distribusi vesting).",
             "skipDuplicates": "Lewati duplikat dan hanya impor yang baru.",
             "allDuplicatesTooltip": "Semua penerima yang diimpor sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk diimpor.",
+            "manualAllDuplicates": "{count, plural, =1 {Kontak ini sudah ada di buku alamat Anda.} other {Kontak ini sudah ada di buku alamat Anda.}}",
+            "manualSomeDuplicates": "{duplicates} dari {total} kontak sudah ada di buku alamat Anda. Hanya kontak baru yang akan disimpan.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.} other {Kontak ini sudah ada di buku alamat Anda, jadi tidak ada yang baru untuk disimpan.}}",
             "duplicateActionTooltip": "Aktifkan lewati duplikat atau hapus penerima duplikat untuk melanjutkan.",
-            "adding": "Menambahkan…",
+            "adding": "Menambahkan",
             "nothingNew": "Tidak Ada yang Baru untuk Diimpor",
-            "addRecipientsButton": "{count, plural, other {Tambah Penerima}}"
+            "addRecipientsButton": "Simpan kontak"
         },
         "removeDialog": {
             "title": "Hapus Penerima",
+            "body": "Ini akan menghapus <bold>{names}</bold> dari kontak Anda. Anda dapat menambahkannya lagi kapan saja.",
             "bulk": "Ini akan menghapus <bold>{count, plural, other {# penerima}}</bold> dari buku alamat Anda. Anda dapat menambahkannya lagi kapan saja.",
-            "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja."
+            "single": "Ini akan menghapus <bold>{name}</bold> dari buku alamat Anda. Anda dapat menambahkan penerima ini lagi kapan saja.",
+            "removing": "Menghapus"
         },
         "importFlow": {
             "title": "Impor Penerima",
@@ -1144,7 +1145,7 @@
             "foundSummary": "Ditemukan {count, plural, other {# penerima}} di {networkCount, plural, other {# jaringan}}",
             "uploadPrompt": "Unggah atau tempel data penerima",
             "fixErrors": "Perbaiki kesalahan untuk melanjutkan",
-            "continueReview": "Lanjutkan ke Tinjauan"
+            "continueReview": "Tinjau Detail"
         },
         "form": {
             "editRecipient": "Ubah Penerima",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "Alamat Penerima",
             "network": "Jaringan",
             "networkInfo": "Jaringan yang kompatibel dengan alamat ini",
+            "enterName": "Masukkan nama",
+            "enterAddress": "Masukkan alamat",
+            "note": "Catatan",
+            "clearName": "Hapus nama",
+            "clearAddress": "Hapus alamat",
+            "clearNote": "Hapus catatan",
+            "saveContact": "Simpan penerima",
             "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
             "selectNetwork": "Pilih jaringan",
             "selectNetworksTitle": "Pilih Jaringan",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "atau seret dan lepas",
             "token": "Token",
             "destinationNetwork": "Jaringan tujuan",
-            "uploadFileFirst": "Unggah file terlebih dahulu",
             "removeFile": "Hapus file",
             "maxFileSize": "maks 1 file hingga 1.5 MB, hanya file CSV",
             "noFilePrompt": "Tidak punya file untuk diunggah?",
@@ -1335,6 +1342,7 @@
             "enterAmount": "Masukkan jumlah"
         },
         "review": "Tinjau tukar",
+        "chainDeliveryUnsupported": "Jaringan ini tidak tersedia di Tukar.",
         "poweredBy": "Didukung oleh",
         "info": {
             "priceDifference": "Selisih Harga",
@@ -1484,6 +1492,7 @@
             "passkeyCardSubtitle": "Masuk dengan biometrik atau kode sandi perangkat Anda",
             "web3WalletsSeparator": "Dompet Web3",
             "selectOtherWallet": "Pilih wallet lain",
+            "connectFailed": "Kami tidak dapat memproses masuk Anda",
             "back": "Kembali"
         },
         "unexpectedError": "Terjadi kesalahan tak terduga",
@@ -1546,7 +1555,7 @@
         "proposalDescriptionLabel": "Deskripsi usulan (opsional)",
         "proposalDescriptionPlaceholder": "Jelaskan usulan ini...",
         "createProposal": "Buat Usulan",
-        "creatingProposal": "Membuat usulan...",
+        "creatingProposal": "Membuat usulan",
         "confirmInWallet": "Silakan konfirmasi di dompet Anda",
         "proposalSubmitted": "Usulan Telah Dikirim",
         "shareProposal": "Usulan Anda telah dibuat. Bagikan tautan di bawah dengan anggota treasury untuk memilih.",
@@ -1596,7 +1605,7 @@
         "relinking": "{count, plural, other {# treasury yang dipilih ditautkan ke chat Telegram lain. Menghubungkan akan menautkan ulang dan mengubah tautan ID chat-nya ke chat ini.}}",
         "connectedToAnother": "Terhubung ke chat lain",
         "notMember": "Anda bukan anggota kebijakan dari treasury mana pun.",
-        "connecting": "Menghubungkan…",
+        "connecting": "Menghubungkan",
         "connect": "Hubungkan",
         "settings": {
             "title": "Telegram",
@@ -1709,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Tambah anggota lain",
         "validation": {
-            "rolesRequired": "Setidaknya satu peran diperlukan",
-            "duplicateAddress": "Alamat sudah menjadi anggota"
+            "rolesRequired": "Setidaknya satu peran diperlukan"
         },
         "enterAddress": "Masukkan alamat",
         "clearAddress": "Hapus alamat",
@@ -1746,7 +1754,10 @@
         "orDragDrop": "atau seret dan lepas",
         "maxFileSize": "maks 1 file hingga {maxSize} MB, hanya file CSV",
         "noFilePrompt": "Tidak punya file untuk diunggah?",
-        "downloadTemplate": "Unduh templat"
+        "downloadTemplate": "Unduh templat",
+        "pleaseUploadCsv": "Silakan unggah file CSV",
+        "fileSizeLimit": "Ukuran file harus kurang dari 1.5 MB",
+        "removeFile": "Hapus file"
     },
     "tokenSelect": {
         "selectToken": "Pilih token",
@@ -1804,7 +1815,7 @@
         "noDownloadPermission": "Anda tidak memiliki izin untuk mengunduh file.",
         "noExportPermission": "Anda tidak memiliki izin untuk mengekspor",
         "quotaUsed": "Anda telah menggunakan semua kuota Anda",
-        "exporting": "Mengekspor...",
+        "exporting": "Mengekspor",
         "export": "Ekspor",
         "columnSubmissionTime": "Waktu Pengiriman",
         "columnDateRange": "Rentang Tanggal",
@@ -1876,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Jaringan Penerima",
         "placeholder": "Pilih jaringan penerima",
-        "enterAddressFirst": "Masukkan alamat penerima terlebih dahulu",
         "noCompatibleNetwork": "Tidak ada jaringan yang cocok dengan alamat ini",
         "selectPlaceholder": "Pilih jaringan",
         "title": "Pilih Jaringan",
@@ -1884,8 +1894,6 @@
         "fromAddressBook": "Dari Buku Alamat",
         "otherAvailable": "Tersedia Lainnya",
         "incompatible": "Tidak Kompatibel",
-        "comingSoon": "Segera Hadir",
-        "forMembersOnly": "Hanya untuk anggota",
         "nearComDescription": "Jaringan untuk near business dan near.com",
         "internalTag": "Internal"
     },
@@ -1900,6 +1908,7 @@
         "note": "Catatan",
         "added": "Ditambahkan",
         "remove": "Hapus",
+        "noResults": "Tidak ada penerima yang cocok dengan pencarian Anda.",
         "send": "Kirim"
     },
     "publicDashboard": {
@@ -2058,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Simpan ke Kontak",
-        "walletCopiedToast": "Alamat dompet disalin ke papan klip",
         "copyWalletAddress": "Salin Alamat Dompet"
     },
     "infoDisplay": {
@@ -2161,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Gunakan maks",
-        "max": "MAX",
         "insufficientTokens": "Saldo tidak mencukupi. Isi saldo sebelum persetujuan.",
         "insufficientTokensForFee": "Token tidak cukup untuk menutupi biaya jaringan ({fee} {symbol}). Anda dapat mengirim permintaan dan menambah saldo sebelum persetujuan.",
         "balance": "Saldo: {amount} {symbol}",
@@ -2173,23 +2180,20 @@
         "paused": "Dijeda sementara",
         "brieflyUnavailable": "Sementara tidak tersedia"
     },
-    "address": {
-        "copied": "Alamat disalin ke papan klip"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "Anggota yang dapat memilih",
         "copyAddress": "Salin alamat",
         "moreMembers": "+{count, plural, other {# anggota}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {# penerima ditambahkan}}",
-        "alreadyExistsToast": "Penerima sudah ada di buku alamat",
-        "addedSingleToast": "Penerima ditambahkan",
-        "addFailedToast": "Gagal menambahkan penerima",
-        "addSingleFailedToast": "Gagal menambahkan penerima",
-        "removedToast": "{count, plural, other {# penerima dihapus}}",
-        "removeFailedToast": "Gagal menghapus penerima",
-        "exportFailedToast": "Gagal mengekspor penerima"
+        "addedToast": "{count, plural, =1 {Kontak berhasil disimpan} other {# kontak ditambahkan}}",
+        "alreadyExistsToast": "Kontak sudah ada di buku alamat",
+        "addedSingleToast": "Kontak ditambahkan",
+        "addFailedToast": "Gagal menambahkan kontak",
+        "addSingleFailedToast": "Gagal menambahkan kontak",
+        "removedToast": "{count, plural, =1 {Kontak berhasil dihapus} other {# kontak dihapus}}",
+        "removeFailedToast": "Gagal menghapus kontak",
+        "exportFailedToast": "Gagal mengekspor kontak"
     },
     "treasuryMutations": {
         "savedToast": "Treasury disimpan ke daftar Anda",
@@ -2339,15 +2343,7 @@
             "back": "Kembali"
         },
         "progress": {
-            "title": "Ikuti Langkah Cepat untuk Menjelajahi Treasury",
             "addAssetsTitle": "Tambah Aset Anda",
-            "addAssetsDescription": "Mulailah dengan menambahkan aset untuk melihatnya beraksi.",
-            "deposit": "Setor",
-            "createPaymentTitle": "Buat Permintaan Pembayaran",
-            "createPaymentDescription": "Buat permintaan pembayaran untuk menyelesaikan pengaturan Anda.",
-            "send": "Kirim",
-            "useSolo": "Gunakan Solo",
-            "addTeamMemberDescription": "Anda telah berhasil menyiapkan akun Anda. Awal yang bagus!",
             "addTeamMemberTitle": "Buat akun Treasury",
             "getStarted": "Mulai",
             "setupThresholdTitle": "Atur ambang batas",
@@ -2400,8 +2396,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Mengerti",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "pada",
             "until": "hingga"
@@ -2492,7 +2489,7 @@
             "title": "Hapus templat",
             "body": "Hapus <b>{name}</b>? Anggota tidak akan dapat lagi mengajukan proposal darinya. Tindakan ini tidak dapat dibatalkan.",
             "confirm": "Hapus",
-            "deleting": "Menghapus…"
+            "deleting": "Menghapus"
         },
         "editor": {
             "nameLabel": "Nama",
@@ -2636,7 +2633,7 @@
         "save": "Simpan",
         "edit": "Edit",
         "remove": "Hapus",
-        "uploading": "Mengunggah...",
+        "uploading": "Mengunggah",
         "saveSuccess": "Perubahan Anda telah disimpan.",
         "saveError": "Tidak dapat menyimpan perubahan. Coba lagi.",
         "invalidImage": "Pilih file gambar yang valid.",

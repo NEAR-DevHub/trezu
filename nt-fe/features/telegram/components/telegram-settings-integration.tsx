@@ -1,6 +1,4 @@
 "use client";
-import { Icon } from "@/components/icon";
-import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -100,15 +98,9 @@ export function TelegramSettingsIntegration() {
                             type="button"
                             variant="outline"
                             className="w-full shrink-0 rounded-lg sm:w-auto"
-                            disabled={disconnectMutation.isPending}
+                            loading={disconnectMutation.isPending}
                             onClick={() => setDisconnectModalOpen(true)}
                         >
-                            {disconnectMutation.isPending && (
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="animate-spin"
-                                />
-                            )}
                             {t("disconnect")}
                         </Button>
                     </div>
@@ -180,15 +172,9 @@ export function TelegramSettingsIntegration() {
                             <Button
                                 type="button"
                                 onClick={handleDisconnect}
-                                disabled={disconnectMutation.isPending}
-                                className="w-full rounded-[10px] bg-[#1A1617] text-white hover:bg-[#1A1617]/90"
+                                loading={disconnectMutation.isPending}
+                                className={`w-full rounded-[10px] text-white hover:bg-[#1A1617]/90 ${disconnectMutation.isPending ? "" : "bg-[#1A1617]"}`}
                             >
-                                {disconnectMutation.isPending && (
-                                    <Icon
-                                        icon={LoaderCircleIcon}
-                                        className="animate-spin"
-                                    />
-                                )}
                                 {t("telegramDisconnect.action")}
                             </Button>
                         </div>

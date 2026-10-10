@@ -1,5 +1,6 @@
 "use client";
 
+import { XIcon } from "@hugeicons/core-free-icons";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { isAxiosError } from "axios";
@@ -11,141 +12,52 @@ import {
     type ReactNode,
     useCallback,
     useContext,
-    useEffect,
     useId,
-    useMemo,
     useState,
 } from "react";
+import { Icon } from "@/components/icon";
 import { PRIVACY_POLICY_HREF } from "@/constants/config";
-import {
-    type EarlyAccessAttribution,
-    submitEarlyAccessRequest,
-} from "@/lib/api";
+import { submitEarlyAccessRequest } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import {
     BUSINESS_TYPE_OPTIONS,
-    EARLY_ACCESS_HREF,
     OTHER_OPTION,
     REFERRAL_SOURCE_OPTIONS,
 } from "../content";
 import { NearMark } from "./landing-icons";
 
-/**
- * Where "Request Early Access" leads. Behind the `show_redesigned_modal` flag
- * it opens the in-page form; without it the CTAs are plain links to the
- * Airtable form, exactly as they were before the redesign.
- */
-type EarlyAccessCta =
-    | { kind: "modal"; open: () => void }
-    | { kind: "external"; href: string };
-
-const EarlyAccessContext = createContext<EarlyAccessCta | null>(null);
+const EarlyAccessContext = createContext<(() => void) | null>(null);
 
 /**
- * How to request early access from here. Every CTA on the landing — the nav
- * button, the hero button and the pricing footnote — shares one modal
- * instance, so the state lives on the provider rather than on each trigger.
+ * Opens the early-access form. Every CTA on the landing — the nav button, the
+ * hero button and the pricing footnote — shares one modal instance, so the
+ * state lives on the provider rather than on each trigger.
  */
-export function useEarlyAccessCta() {
-    const cta = useContext(EarlyAccessContext);
-    if (!cta) {
+function useOpenEarlyAccess() {
+    const open = useContext(EarlyAccessContext);
+    if (!open) {
         throw new Error(
-            "useEarlyAccessCta must be used inside <EarlyAccessProvider>",
+            "useOpenEarlyAccess must be used inside <EarlyAccessProvider>",
         );
     }
-    return cta;
+    return open;
 }
 
-export function EarlyAccessProvider({
-    showRedesignedModal = false,
-    children,
-}: {
-    /** Set from `?show_redesigned_modal=true` on the landing. Off everywhere
-     *  else, including the legal pages, which carry the same CTAs. */
-    showRedesignedModal?: boolean;
-    children: ReactNode;
-}) {
+export function EarlyAccessProvider({ children }: { children: ReactNode }) {
     const [isOpen, setIsOpen] = useState(false);
     const open = useCallback(() => setIsOpen(true), []);
-    const [attribution, setAttribution] = useState<EarlyAccessAttribution>({});
-
-    // Read on mount rather than on submit: a visitor who steps out to the
-    // privacy policy and back would otherwise arrive with the campaign tags
-    // and the original referrer already gone.
-    useEffect(() => setAttribution(readAttribution()), []);
-
-    const cta = useMemo<EarlyAccessCta>(
-        () =>
-            showRedesignedModal
-                ? { kind: "modal", open }
-                : { kind: "external", href: EARLY_ACCESS_HREF },
-        [showRedesignedModal, open],
-    );
 
     return (
-        <EarlyAccessContext.Provider value={cta}>
+        <EarlyAccessContext.Provider value={open}>
             {children}
-            {showRedesignedModal && (
-                <EarlyAccessModal
-                    open={isOpen}
-                    onOpenChange={setIsOpen}
-                    attribution={attribution}
-                />
-            )}
+            <EarlyAccessModal open={isOpen} onOpenChange={setIsOpen} />
         </EarlyAccessContext.Provider>
     );
 }
 
-/** Long enough for any real campaign tag, short enough not to be a payload. */
-const MAX_ATTRIBUTION_LENGTH = 256;
-
 /** Long enough to name a vertical or a conference, short enough to read as a
  *  CRM value rather than as a paragraph. */
 const MAX_OTHER_LENGTH = 100;
-
-function capped(value: string | undefined) {
-    return value?.slice(0, MAX_ATTRIBUTION_LENGTH) || undefined;
-}
-
-/**
- * Only the parts of the URL this page chose. The full href and the raw
- * referrer are deliberately never sent: both routinely carry a querystring or
- * fragment the visitor has no idea they are handing over — an OAuth `code`, a
- * password-reset `token`, a CRM's `utm_email` — and everything here is stored
- * verbatim as CRM free text and passes through our logs and Sentry on the way.
- * The named `utm_*` keys are the only query values we read, and even those are
- * length-capped because they are attacker-supplied strings.
- */
-function readAttribution(): EarlyAccessAttribution {
-    const params = new URLSearchParams(window.location.search);
-    const tag = (key: string) => capped(params.get(key) ?? undefined);
-
-    return {
-        utmSource: tag("utm_source"),
-        utmMedium: tag("utm_medium"),
-        utmCampaign: tag("utm_campaign"),
-        utmTerm: tag("utm_term"),
-        utmContent: tag("utm_content"),
-        referrer: readReferrer(),
-        // Path only — no search, and no hash, which is where implicit OAuth
-        // flows put their tokens.
-        landingPage: capped(window.location.pathname),
-    };
-}
-
-/** Which site sent them, not which page of it and not with what attached. */
-function readReferrer() {
-    if (!document.referrer) return undefined;
-
-    try {
-        const referrer = new URL(document.referrer);
-        // Our own pages say nothing about where the visitor came from.
-        if (referrer.origin === window.location.origin) return undefined;
-        return capped(referrer.host);
-    } catch {
-        return undefined;
-    }
-}
 
 /** The landing's primary CTA, in the nav, the hero and the closing block. */
 export function EarlyAccessButton({ className }: { className?: string }) {
@@ -161,12 +73,8 @@ export function EarlyAccessButton({ className }: { className?: string }) {
     );
 }
 
-/**
- * The trigger itself, used bare where the CTA reads as a link inside a
- * sentence. A real anchor while the flag is off, so the Airtable form keeps
- * opening in a new tab on middle-click and on "open in new window" too; a
- * button once the in-page modal is what the CTA actually does.
- */
+/** The trigger itself, used bare where the CTA reads as a link inside a
+ *  sentence. */
 export function EarlyAccessLink({
     children,
     className,
@@ -174,23 +82,10 @@ export function EarlyAccessLink({
     children: ReactNode;
     className?: string;
 }) {
-    const cta = useEarlyAccessCta();
-
-    if (cta.kind === "external") {
-        return (
-            <Link
-                href={cta.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={className}
-            >
-                {children}
-            </Link>
-        );
-    }
+    const open = useOpenEarlyAccess();
 
     return (
-        <button type="button" onClick={cta.open} className={className}>
+        <button type="button" onClick={open} className={className}>
             {children}
         </button>
     );
@@ -221,14 +116,12 @@ const FIELD = cn(
     "w-full rounded-none border-0 border-b border-landing-grey-light bg-transparent text-base leading-none text-landing-ink outline-none transition-colors placeholder:text-landing-grey-light focus:border-landing-ink",
 );
 
-function EarlyAccessModal({
+export function EarlyAccessModal({
     open,
     onOpenChange,
-    attribution,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    attribution: EarlyAccessAttribution;
 }) {
     const titleId = useId();
     // The card doubles as the boundary the open dropdowns are kept inside of.
@@ -308,7 +201,6 @@ function EarlyAccessModal({
                                 confirmation that the form is gone. */}
                             {!isSent && <PrivacyNotice />}
                             <EarlyAccessForm
-                                attribution={attribution}
                                 card={card}
                                 onSent={() => setIsSent(true)}
                             />
@@ -334,6 +226,12 @@ function EarlyAccessModal({
                             </div>
                         )}
                     </div>
+                    <DialogPrimitive.Close
+                        aria-label="Close"
+                        className="absolute right-4 top-4 inline-flex size-9 cursor-pointer items-center justify-center rounded-full text-landing-ink/60 transition-colors hover:bg-landing-ink/5 hover:text-landing-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-landing-ink/30"
+                    >
+                        <Icon icon={XIcon} className="size-4" />
+                    </DialogPrimitive.Close>
                 </DialogPrimitive.Content>
             </DialogPrimitive.Portal>
         </DialogPrimitive.Root>
@@ -379,11 +277,9 @@ function PrivacyNotice() {
  * the submission state together.
  */
 function EarlyAccessForm({
-    attribution,
     card,
     onSent,
 }: {
-    attribution: EarlyAccessAttribution;
     card: HTMLElement | null;
     /** Raised once, so the card can shed the photograph it was sized for. */
     onSent: () => void;
@@ -436,7 +332,7 @@ function EarlyAccessForm({
                 businessType: answer("businessType"),
                 referralSource: answer("referralSource"),
                 marketingOptIn: fields.has("marketingOptIn"),
-                attribution,
+                landingPage: `${window.location.origin}${window.location.pathname}`,
             });
             setStatus("sent");
             onSent();

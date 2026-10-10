@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Đang tải...",
+        "loading": "Đang tải",
         "notAvailable": "N/A",
-        "connecting": "Đang kết nối...",
+        "connecting": "Đang kết nối",
         "save": "Lưu",
         "cancel": "Hủy",
         "submit": "Gửi",
@@ -18,7 +18,7 @@
         "exporting": "Đang xuất",
         "import": "Nhập",
         "remove": "Xóa",
-        "removing": "Đang xóa...",
+        "removing": "Đang xóa",
         "edit": "Chỉnh sửa",
         "continue": "Tiếp tục",
         "select": "Chọn",
@@ -191,18 +191,14 @@
             "title": "Cài đặt"
         },
         "addressBook": {
-            "title": "Sổ địa chỉ",
-            "description": "Quản lý người nhận đã lưu của bạn"
+            "title": "Sổ địa chỉ"
         },
         "payments": {
-            "title": "Thanh toan",
-            "confidentialTitle": "Thanh toan bao mat",
-            "description": "Gui tien an toan va bao mat."
+            "title": "Thanh toan"
         },
         "exchange": {
             "title": "Hoán đổi",
-            "confidentialTitle": "Hoán đổi",
-            "description": "Trao đổi token một cách an toàn và hiệu quả"
+            "confidentialTitle": "Hoán đổi"
         },
         "vesting": {
             "title": "Vesting",
@@ -340,13 +336,11 @@
         "anythingElseLost": "Mọi thứ gửi từ nơi khác sẽ bị mất",
         "anythingElseLostSub": "Sàn giao dịch, ví công khai, mạng khác – không thể khôi phục.",
         "confidentialAckCheckbox": "Tôi hiểu các khoản nạp từ ngoài near.com hoặc near business sẽ bị mất.",
-        "onlyFromNearBusiness": "Chỉ từ <bold>near business</bold>",
+        "onlyFromNearBusiness": "Chỉ từ <bold>near business</bold> hoặc <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Chỉ từ <bold>near.com bảo mật</bold>",
-        "onlyFromNearBusinessOrNearcom": "Chỉ từ <bold>near business</bold> hoặc <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Dùng lại được.</bold> Không hết hạn",
-        "fundsOutsideNearBusinessLost": "Tiền gửi từ ngoài <bold>near business</bold> sẽ bị mất",
+        "fundsOutsideNearBusinessLost": "Tiền gửi từ ngoài <bold>near business</bold> hoặc <bold>near.com</bold> sẽ bị mất.",
         "fundsOutsideNearcomLost": "Tiền gửi từ ngoài <bold>near.com bảo mật</bold> sẽ bị mất",
-        "fundsOutsideNearBusinessOrNearcomLost": "Tiền gửi từ ngoài <bold>near business</bold> hoặc <bold>near.com</bold> sẽ bị mất.",
         "publicNetworkRecommendation": "Chỉ nạp từ mạng <bold>{network}</bold>. Hãy bắt đầu bằng một giao dịch thử nhỏ trước khi gửi toàn bộ số tiền.",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "Trọng số",
         "source": "Nguồn",
         "send": "Gửi",
-        "exchange": "Trao đổi",
         "swap": "Hoán đổi",
         "comingSoon": "Sắp ra mắt",
         "vesting": "Vesting",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "Bạn không có quyền xuất",
             "quotaExhausted": "Bạn đã dùng hết hạn mức",
-            "exporting": "Đang xuất...",
+            "exporting": "Đang xuất",
             "export": "Xuất"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "Phê duyệt",
             "reject": "Từ chối",
-            "deposit": "Nạp tiền",
             "viewRequest": "Xem yêu cầu"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "Đang chờ",
+            "processing": "Đang xử lý",
             "approved": "Đã phê duyệt",
             "rejected": "Đã từ chối",
             "executed": "Đã thực thi",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "Yêu cầu này vẫn đang chờ và chưa đạt được số phiếu cần thiết để thực thi.",
+            "processing": "Đã được phê duyệt và đang được xử lý. Chỉ mất vài giây.",
             "executed": "Đã thực thi sau khi {approved} trên {required} thành viên phê duyệt yêu cầu.",
             "rejected": "Đã từ chối sau khi {rejected} trên {required} thành viên bỏ phiếu từ chối yêu cầu.",
             "expired": "Đã hết hạn vì không nhận đủ số phiếu để thực thi.",
@@ -716,13 +710,16 @@
             "removeTitle": "Xóa yêu cầu",
             "bulkBody": "Bạn sắp {action} nhiều yêu cầu. Sau khi gửi, quyết định này không thể thay đổi.",
             "singleBody": "Bạn sắp {action} yêu cầu này. Sau khi xác nhận, hành động này không thể hoàn tác.",
+            "ledgerBody": "Hãy giữ Ledger của bạn ở trạng thái mở khóa. Tiếp theo, bạn sẽ xác nhận phiếu bầu trên đó.",
             "actionApprove": "phê duyệt",
             "actionReject": "từ chối",
             "actionRemove": "xóa",
             "insufficientBalance": "Yêu cầu <highlight>{ids}</highlight> không thể phê duyệt do số dư không đủ. Phê duyệt của bạn sẽ chỉ áp dụng cho các yêu cầu còn lại.",
             "approveBlockedBulk": "{count, plural, one {# yêu cầu đã chọn không thể được phê duyệt ngay bây giờ — bỏ chọn để tiếp tục.} other {# yêu cầu đã chọn không thể được phê duyệt ngay bây giờ — bỏ chọn để tiếp tục.}}",
             "remove": "Xóa",
-            "confirm": "Xác nhận"
+            "preparingRemove": "Đang chuẩn bị xóa",
+            "confirm": "Xác nhận",
+            "preparingVote": "Đang chuẩn bị phiếu bầu của bạn"
         },
         "expanded": {
             "recipient": "Người nhận",
@@ -866,8 +863,7 @@
             "approvalsReceived": "Đã nhận {received}/{required} phê duyệt",
             "expiresAt": "Hết hạn vào",
             "expiredAt": "Đã hết hạn vào",
-            "exchangingTokens": "Đang trao đổi token",
-            "exchangingTokensBody": "Yêu cầu này đã được đội phê duyệt. Việc trao đổi token đang diễn ra và có thể mất một chút thời gian.",
+            "processing": "Yêu cầu của bạn đã được phê duyệt và đang xử lý - chỉ vài giây.",
             "requestFailed": "Yêu cầu thất bại",
             "requestFailedBody": "Đội đã phê duyệt yêu cầu này, nhưng nó đã thất bại do biến động tỷ giá. Vui lòng tạo yêu cầu mới và thử lại.",
             "votingPeriod24h": "Thời gian bỏ phiếu: 24 giờ",
@@ -875,8 +871,6 @@
             "reject": "Từ chối",
             "approve": "Phê duyệt",
             "destinationNetwork": "Mạng đích",
-            "processingPayment": "Đang xử lý thanh toán",
-            "processingPaymentBody": "Khoản thanh toán này đã được nhóm phê duyệt và đang được xử lý. Có thể mất một chút thời gian để hoàn thành.",
             "addMember": "Thêm thành viên",
             "removeMember": "Xóa thành viên",
             "member": "Thành viên",
@@ -938,7 +932,7 @@
                 "voteDescription": "Thông tin của họ đã được điền sẵn. Bạn tạo yêu cầu và nhóm bỏ phiếu."
             },
             "generateLink": "Tạo liên kết mời",
-            "generating": "Đang tạo...",
+            "generating": "Đang tạo",
             "generateFailed": "Không tạo được liên kết mời. Vui lòng thử lại.",
             "readyTitle": "Liên kết mời của bạn đã sẵn sàng",
             "readyDescription": "Gửi cho người bạn muốn thêm. Họ sẽ kết nối ví và yêu cầu tham gia.",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, other {# thành viên mới}}",
             "updatedMembers": "Thành viên đã cập nhật",
             "newMembers": "Thành viên mới",
-            "creatingProposal": "Đang tạo đề xuất...",
+            "creatingProposal": "Đang tạo đề xuất",
             "confirmSubmit": "Tạo yêu cầu"
         },
         "removeDialog": {
             "title": "Xóa {count, plural, one {thành viên} other {thành viên}}?",
             "nearnBody": "Sau khi được phê duyệt, {account} sẽ bị xóa vĩnh viễn khỏi ngân quỹ và mọi quyền liên quan sẽ bị thu hồi. Sau khi xóa, tài khoản này sẽ không thể tạo yêu cầu từ NEARN nữa.",
             "genericBody": "Sau khi phê duyệt, hành động này sẽ xóa vĩnh viễn <bold>{accounts}</bold> khỏi ngân quỹ và thu hồi tất cả quyền đã gán.",
-            "creatingProposal": "Đang tạo đề xuất..."
+            "creatingProposal": "Đang tạo đề xuất"
         },
         "validation": {
             "accountIdRequired": "Bắt buộc nhập ID tài khoản",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "Nhập tên hiển thị",
             "logo": "Logo",
             "logoDescription": "Tải lên logo cho ngân quỹ của bạn. Khuyến nghị SVG, PNG hoặc JPG (256x256 px).",
-            "uploading": "Đang tải lên...",
+            "uploading": "Đang tải lên",
             "removeLogo": "Xóa",
             "logoUploaded": "Đã tải lên logo thành công",
             "uploadError": "Đã xảy ra lỗi khi tải lên hình ảnh, vui lòng thử lại.",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "Đã chọn {count, plural, =0 {không có người nhận nào} other {# người nhận}}",
         "sectionHeading": "Người nhận",
         "privacyNote": "Các địa chỉ đã lưu là riêng tư và chỉ đội của bạn nhìn thấy.",
+        "contactsCount": "{count, plural, other {# người nhận}}",
         "searchPlaceholder": "Tìm người nhận theo tên",
         "searchPlaceholderShort": "Tìm kiếm",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ của bạn. Quay lại để tải lên một danh sách khác hoặc xóa các bản trùng lặp khỏi đợt xem lại này.",
             "someDuplicates": "{duplicates} người nhận trùng lặp trên tổng số {total} người nhận. Tiếp tục để chỉ tải lên những người nhận mới.",
             "duplicated": "Trùng lặp",
+            "contactNumber": "Người nhận {number}",
             "notePlaceholder": "Thêm ghi chú để giúp xác định người nhận này (ví dụ: thanh toán cho nhà thầu, phân phối vesting).",
             "skipDuplicates": "Bỏ qua bản trùng lặp và chỉ nhập những bản mới.",
             "allDuplicatesTooltip": "Tất cả người nhận đã nhập đều đã có trong sổ địa chỉ, nên không có gì mới để nhập.",
+            "manualAllDuplicates": "{count, plural, =1 {Liên hệ này đã có trong sổ địa chỉ của bạn.} other {Những liên hệ này đã có trong sổ địa chỉ của bạn.}}",
+            "manualSomeDuplicates": "{duplicates} trong số {total} liên hệ đã có trong sổ địa chỉ của bạn. Chỉ các liên hệ mới được lưu.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.} other {Những liên hệ này đã có trong sổ địa chỉ, nên không có gì mới để lưu.}}",
             "duplicateActionTooltip": "Bật bỏ qua bản trùng lặp hoặc xóa người nhận trùng lặp để tiếp tục.",
-            "adding": "Đang thêm…",
+            "adding": "Đang thêm",
             "nothingNew": "Không có gì mới để nhập",
-            "addRecipientsButton": "{count, plural, one {Thêm người nhận} other {Thêm người nhận}}"
+            "addRecipientsButton": "Lưu danh bạ"
         },
         "removeDialog": {
             "title": "Xóa người nhận",
+            "body": "Thao tác này sẽ xóa <bold>{names}</bold> khỏi danh bạ của bạn. Bạn có thể thêm lại bất cứ lúc nào.",
             "bulk": "Thao tác này sẽ xóa <bold>{count, plural, other {# người nhận}}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại bất kỳ lúc nào.",
-            "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào."
+            "single": "Thao tác này sẽ xóa <bold>{name}</bold> khỏi sổ địa chỉ của bạn. Bạn có thể thêm lại người nhận này bất kỳ lúc nào.",
+            "removing": "Đang xóa"
         },
         "importFlow": {
             "title": "Nhập người nhận",
@@ -1144,7 +1145,7 @@
             "foundSummary": "Tìm thấy {count, plural, other {# người nhận}} trên {networkCount, plural, other {# mạng}}",
             "uploadPrompt": "Tải lên hoặc dán dữ liệu người nhận",
             "fixErrors": "Sửa lỗi để tiếp tục",
-            "continueReview": "Tiếp tục xem lại"
+            "continueReview": "Xem lại chi tiết"
         },
         "form": {
             "editRecipient": "Chỉnh sửa người nhận",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "Địa chỉ người nhận",
             "network": "Mạng",
             "networkInfo": "Các mạng tương thích với địa chỉ này",
+            "enterName": "Nhập tên",
+            "enterAddress": "Nhập địa chỉ",
+            "note": "Ghi chú",
+            "clearName": "Xóa tên",
+            "clearAddress": "Xóa địa chỉ",
+            "clearNote": "Xóa ghi chú",
+            "saveContact": "Lưu người nhận",
             "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
             "selectNetwork": "Chọn mạng",
             "selectNetworksTitle": "Chọn các mạng",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "hoặc kéo và thả",
             "token": "Token",
             "destinationNetwork": "Mạng đích",
-            "uploadFileFirst": "Hãy tải tệp lên trước",
             "removeFile": "Xóa tệp",
             "maxFileSize": "tối đa 1 tệp lên đến 1.5 MB, chỉ chấp nhận tệp CSV",
             "noFilePrompt": "Không có tệp để tải lên?",
@@ -1318,6 +1325,7 @@
             "enterAmount": "Nhập số tiền"
         },
         "review": "Xem lại hoán đổi",
+        "chainDeliveryUnsupported": "Mạng này không khả dụng khi trao đổi.",
         "poweredBy": "Cung cấp bởi",
         "info": {
             "priceDifference": "Chênh lệch giá",
@@ -1467,6 +1475,7 @@
             "passkeyCardSubtitle": "Đăng nhập bằng sinh trắc học hoặc mật mã của thiết bị",
             "web3WalletsSeparator": "Ví Web3",
             "selectOtherWallet": "Chọn ví khác",
+            "connectFailed": "Chúng tôi không thể đăng nhập cho bạn",
             "back": "Quay lại"
         },
         "unexpectedError": "Đã xảy ra lỗi không mong muốn",
@@ -1529,7 +1538,7 @@
         "proposalDescriptionLabel": "Mô tả đề xuất (tùy chọn)",
         "proposalDescriptionPlaceholder": "Mô tả đề xuất này...",
         "createProposal": "Tạo đề xuất",
-        "creatingProposal": "Đang tạo đề xuất...",
+        "creatingProposal": "Đang tạo đề xuất",
         "confirmInWallet": "Vui lòng xác nhận trong ví của bạn",
         "proposalSubmitted": "Đã gửi đề xuất",
         "shareProposal": "Đề xuất của bạn đã được tạo. Chia sẻ liên kết bên dưới với các thành viên ngân quỹ để bỏ phiếu.",
@@ -1579,7 +1588,7 @@
         "relinking": "{count, plural, other {# ngân quỹ đã chọn được liên kết với các cuộc trò chuyện Telegram khác. Việc kết nối sẽ kết nối lại và thay đổi liên kết ID cuộc trò chuyện sang cuộc trò chuyện này.}}",
         "connectedToAnother": "Đã kết nối với một cuộc trò chuyện khác",
         "notMember": "Bạn không phải là thành viên chính sách của bất kỳ ngân quỹ nào.",
-        "connecting": "Đang kết nối…",
+        "connecting": "Đang kết nối",
         "connect": "Kết nối",
         "settings": {
             "title": "Telegram",
@@ -1692,8 +1701,7 @@
     "memberInput": {
         "addNewMember": "Thêm thành viên khác",
         "validation": {
-            "rolesRequired": "Cần ít nhất một vai trò",
-            "duplicateAddress": "Địa chỉ đã là một thành viên"
+            "rolesRequired": "Cần ít nhất một vai trò"
         },
         "enterAddress": "Nhập địa chỉ",
         "clearAddress": "Xoá địa chỉ",
@@ -1729,7 +1737,10 @@
         "orDragDrop": "hoặc kéo và thả",
         "maxFileSize": "tối đa 1 tệp lên đến {maxSize} MB, chỉ chấp nhận tệp CSV",
         "noFilePrompt": "Không có tệp để tải lên?",
-        "downloadTemplate": "Tải xuống mẫu"
+        "downloadTemplate": "Tải xuống mẫu",
+        "pleaseUploadCsv": "Vui lòng tải lên một tệp CSV",
+        "fileSizeLimit": "Kích thước tệp phải nhỏ hơn 1.5 MB",
+        "removeFile": "Xóa tệp"
     },
     "tokenSelect": {
         "selectToken": "Chọn token",
@@ -1787,7 +1798,7 @@
         "noDownloadPermission": "Bạn không có quyền tải tệp này.",
         "noExportPermission": "Bạn không có quyền xuất",
         "quotaUsed": "Bạn đã dùng hết hạn mức",
-        "exporting": "Đang xuất...",
+        "exporting": "Đang xuất",
         "export": "Xuất",
         "columnSubmissionTime": "Thời gian gửi",
         "columnDateRange": "Khoảng ngày",
@@ -1859,7 +1870,6 @@
     "recipientNetworkSelect": {
         "label": "Mạng người nhận",
         "placeholder": "Chọn mạng người nhận",
-        "enterAddressFirst": "Hãy nhập địa chỉ người nhận trước",
         "noCompatibleNetwork": "Không có mạng nào phù hợp với địa chỉ này",
         "selectPlaceholder": "Chọn mạng",
         "title": "Chọn mạng",
@@ -1867,8 +1877,6 @@
         "fromAddressBook": "Từ sổ địa chỉ",
         "otherAvailable": "Khác khả dụng",
         "incompatible": "Không tương thích",
-        "comingSoon": "Sắp ra mắt",
-        "forMembersOnly": "Chỉ dành cho thành viên",
         "nearComDescription": "Mạng cho near business và near.com",
         "internalTag": "Nội bộ"
     },
@@ -1883,6 +1891,7 @@
         "note": "Ghi chú",
         "added": "Đã thêm",
         "remove": "Xóa",
+        "noResults": "Không có người nhận nào khớp với tìm kiếm của bạn.",
         "send": "Gửi"
     },
     "publicDashboard": {
@@ -2041,7 +2050,6 @@
     },
     "user": {
         "saveToAddressBook": "Lưu vào danh bạ",
-        "walletCopiedToast": "Đã sao chép địa chỉ ví vào bộ nhớ tạm",
         "copyWalletAddress": "Sao chép địa chỉ ví"
     },
     "infoDisplay": {
@@ -2144,7 +2152,6 @@
     },
     "tokenInput": {
         "useMax": "Dùng tối đa",
-        "max": "MAX",
         "insufficientTokens": "Số dư không đủ. Nạp thêm trước khi phê duyệt.",
         "insufficientTokensForFee": "Không đủ token để trang trả phí mạng ({fee} {symbol}). Bạn có thể gửi yêu cầu và nạp thêm trước khi phê duyệt.",
         "balance": "Số dư: {amount} {symbol}",
@@ -2156,23 +2163,20 @@
         "paused": "Tạm dừng",
         "brieflyUnavailable": "Tạm thời không khả dụng"
     },
-    "address": {
-        "copied": "Đã sao chép địa chỉ vào bộ nhớ tạm"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "Thành viên có thể bỏ phiếu",
         "copyAddress": "Sao chép địa chỉ",
         "moreMembers": "+{count, plural, other {# thành viên}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Đã thêm người nhận} other {Đã thêm # người nhận}}",
-        "alreadyExistsToast": "Người nhận đã có trong sổ địa chỉ",
-        "addedSingleToast": "Đã thêm người nhận",
-        "addFailedToast": "Không thể thêm người nhận",
-        "addSingleFailedToast": "Không thể thêm người nhận",
-        "removedToast": "{count, plural, one {Đã xóa người nhận} other {Đã xóa # người nhận}}",
-        "removeFailedToast": "Không thể xóa người nhận",
-        "exportFailedToast": "Không thể xuất danh sách người nhận"
+        "addedToast": "{count, plural, =1 {Đã lưu liên hệ thành công} other {Đã thêm # liên hệ}}",
+        "alreadyExistsToast": "Liên hệ đã có trong sổ địa chỉ",
+        "addedSingleToast": "Đã thêm liên hệ",
+        "addFailedToast": "Không thể thêm liên hệ",
+        "addSingleFailedToast": "Không thể thêm liên hệ",
+        "removedToast": "{count, plural, =1 {Đã xóa liên hệ thành công} other {Đã xóa # liên hệ}}",
+        "removeFailedToast": "Không thể xóa liên hệ",
+        "exportFailedToast": "Không thể xuất danh sách liên hệ"
     },
     "treasuryMutations": {
         "savedToast": "Đã lưu ngân quỹ vào danh sách của bạn",
@@ -2322,15 +2326,7 @@
             "back": "Quay lại"
         },
         "progress": {
-            "title": "Làm theo các bước nhanh để khám phá Ngân quỹ",
             "addAssetsTitle": "Thêm tài sản của bạn",
-            "addAssetsDescription": "Bắt đầu bằng cách thêm tài sản để xem chúng hoạt động.",
-            "deposit": "Nạp tiền",
-            "createPaymentTitle": "Tạo yêu cầu thanh toán",
-            "createPaymentDescription": "Tạo một yêu cầu thanh toán để hoàn tất thiết lập của bạn.",
-            "send": "Gửi",
-            "useSolo": "Dùng Solo",
-            "addTeamMemberDescription": "Bạn đã thiết lập tài khoản thành công. Khởi đầu tuyệt vời!",
             "addTeamMemberTitle": "Tạo tài khoản Ngân quỹ",
             "getStarted": "Bắt đầu",
             "setupThresholdTitle": "Thiết lập ngưỡng",
@@ -2383,8 +2379,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Đã hiểu",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "vào",
             "until": "đến"
@@ -2475,7 +2472,7 @@
             "title": "Xóa mẫu",
             "body": "Xóa <b>{name}</b>? Thành viên sẽ không còn có thể nộp đề xuất từ mẫu này. Thao tác này không thể hoàn tác.",
             "confirm": "Xóa",
-            "deleting": "Đang xóa…"
+            "deleting": "Đang xóa"
         },
         "editor": {
             "nameLabel": "Tên",
@@ -2636,7 +2633,7 @@
         "save": "Lưu",
         "edit": "Chỉnh sửa",
         "remove": "Xóa",
-        "uploading": "Đang tải lên...",
+        "uploading": "Đang tải lên",
         "saveSuccess": "Các thay đổi của bạn đã được lưu.",
         "saveError": "Không thể lưu thay đổi. Vui lòng thử lại.",
         "invalidImage": "Vui lòng chọn tệp hình ảnh hợp lệ.",

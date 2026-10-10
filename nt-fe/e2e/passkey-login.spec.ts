@@ -1,12 +1,13 @@
 import fs from "node:fs";
 import path from "node:path";
-import { expect, test } from "@playwright/test";
+import { type BrowserContext, expect, type Page, test } from "@playwright/test";
 
-// The Passkey executor ships from the NEAR-DevHub/near-connect-passkey main branch
-// (served via raw.githubusercontent.com — see lib/passkey-wallet.ts). The spec
-// route-mocks that URL with a locally-built artifact from a sibling checkout of
-// the executor repo, and skips when it isn't present (e.g. CI without the
-// sibling repo — Passkey stays behind the warnings kill switch until then).
+// The Passkey executor ships from the NEAR-DevHub/near-connect-passkey
+// nep641 branch (served via raw.githubusercontent.com — see
+// lib/passkey-wallet.ts). The spec route-mocks that URL with a locally-built
+// artifact from a sibling checkout of the executor repo, and skips when it
+// isn't present (e.g. CI without the sibling repo — Passkey stays behind the
+// warnings kill switch until then).
 const EXECUTOR_ARTIFACT = path.join(
     __dirname,
     "..",
@@ -21,13 +22,21 @@ const EXECUTOR_ARTIFACT = path.join(
 // constants). Used to satisfy the registration transaction's key lookup.
 const FC_PUBLIC_KEY = "ed25519:4rPkq4P1KwD4kVuUETqL5wLUEH3hEHqwiuSEKVC3fUwT";
 
-// Helper: JSON-RPC call_function result body (bytes of JSON)
+const CHALLENGE_PAYLOAD = "Login to Trezu — test payload";
+
+// near-api-ts validates RPC responses with zod, so every hash has to be real
+// base58 that decodes to 32 bytes — `"A".repeat(44)` does not.
+const BLOCK_HASH = "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi";
+const RECEIPT_ID = "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR";
+
+const RPC_URL_PATTERN = /rpc\.(mainnet|testnet)?\.?(fastnear\.com|near\.org)/;
+
 function callFunctionResult(id: unknown, value: unknown) {
     return {
         jsonrpc: "2.0",
         id,
         result: {
-            block_hash: "A".repeat(44),
+            block_hash: BLOCK_HASH,
             block_height: 100000000,
             logs: [],
             result: Array.from(new TextEncoder().encode(JSON.stringify(value))),
@@ -35,30 +44,72 @@ function callFunctionResult(id: unknown, value: unknown) {
     };
 }
 
-test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
-    page,
-    context,
-}) => {
-    test.skip(
-        !fs.existsSync(EXECUTOR_ARTIFACT),
-        "passkey-executor.js artifact not vendored yet",
-    );
-    test.setTimeout(120000);
+/** A successful `FinalExecutionOutcomeView`, shaped to pass zod validation. */
+function successfulTransaction(id: unknown) {
+    const outcomeMetadata = { version: 1, gas_profile: null };
+    return {
+        jsonrpc: "2.0",
+        id,
+        result: {
+            final_execution_status: "FINAL",
+            status: { SuccessValue: "" },
+            transaction: {
+                actions: [],
+                hash: BLOCK_HASH,
+                nonce: 2,
+                public_key: FC_PUBLIC_KEY,
+                receiver_id: "passkeys-registry.near",
+                signature: `ed25519:${"1".repeat(64)}`,
+                signer_id: "passkeys-registry.near",
+                priority_fee: 0,
+            },
+            transaction_outcome: {
+                block_hash: BLOCK_HASH,
+                id: BLOCK_HASH,
+                proof: [],
+                outcome: {
+                    executor_id: "passkeys-registry.near",
+                    gas_burnt: 2428030560766,
+                    logs: [],
+                    metadata: outcomeMetadata,
+                    receipt_ids: [RECEIPT_ID],
+                    status: { SuccessReceiptId: RECEIPT_ID },
+                    tokens_burnt: "242803056076600000000",
+                },
+            },
+            receipts_outcome: [
+                {
+                    block_hash: BLOCK_HASH,
+                    id: RECEIPT_ID,
+                    proof: [],
+                    outcome: {
+                        executor_id: "passkeys-registry.near",
+                        gas_burnt: 2428030560766,
+                        logs: [],
+                        metadata: outcomeMetadata,
+                        receipt_ids: [],
+                        status: { SuccessValue: "" },
+                        tokens_burnt: "0",
+                    },
+                },
+            ],
+            receipts: [],
+        },
+    };
+}
 
-    const logs: string[] = [];
-    page.on("console", (msg) => {
-        logs.push(msg.text());
-        if (msg.type() === "error") {
-            console.log("CONSOLE ERROR:", msg.text());
-        }
-    });
-    page.on("pageerror", (error) => {
-        console.log("PAGE ERROR:", error.message);
-    });
-
-    // WebAuthn ceremonies run in the TOP window (near-connect proxies
-    // navigator.credentials from the sandboxed iframe), so a page-level CDP
-    // virtual authenticator covers the whole flow.
+/**
+ * Answers the passkey ceremonies without a real authenticator.
+ *
+ * WebAuthn runs in the TOP window (near-connect proxies
+ * `navigator.credentials` out of the sandboxed iframe), so one page-level CDP
+ * virtual authenticator covers both the `create()` at sign-up and the `get()`
+ * that NEP-641 `resolveAuth` performs.
+ */
+async function installVirtualAuthenticator(
+    page: Page,
+    context: BrowserContext,
+) {
     const cdp = await context.newCDPSession(page);
     await cdp.send("WebAuthn.enable");
     await cdp.send("WebAuthn.addVirtualAuthenticator", {
@@ -71,11 +122,12 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
             automaticPresenceSimulation: true,
         },
     });
+}
 
-    // Serve the executor from the locally-built artifact instead of fetching
-    // it from GitHub, so the test has no network dependency.
-    // Match with an optional cache-busting query string: near-connect
-    // fetches the executor as `…/passkey-executor.js?nonce=<per-session>`.
+/** Serves the executor locally so the test has no network dependency. */
+async function mockExecutor(context: BrowserContext) {
+    // Match with an optional cache-busting query string: near-connect fetches
+    // the executor as `…/passkey-executor.js?nonce=<per-session>`.
     await context.route("**/passkey-executor.js*", (route) =>
         route.fulfill({
             status: 200,
@@ -83,186 +135,182 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
             body: fs.readFileSync(EXECUTOR_ARTIFACT, "utf8"),
         }),
     );
+}
 
-    // NEAR RPC mocks: registry lookups, wallet-contract config views,
-    // account state and transaction submission.
-    await context.route(
-        /rpc\.(mainnet|testnet)?\.?(fastnear\.com|near\.org)/,
-        async (route) => {
-            const body = JSON.parse(route.request().postData() ?? "{}");
-            let result: unknown;
+/**
+ * NEAR RPC: registry lookups, wallet-contract config views, account state and
+ * transaction submission, all succeeding.
+ */
+async function mockNearRpc(context: BrowserContext) {
+    await context.route(RPC_URL_PATTERN, async (route) => {
+        const body = JSON.parse(route.request().postData() ?? "{}");
+        const params = body.params ?? {};
+        let result: unknown = { jsonrpc: "2.0", id: body.id, result: {} };
 
-            if (body.method === "query") {
-                const p = body.params ?? {};
-                if (p.request_type === "call_function") {
-                    switch (p.method_name) {
-                        case "get": // passkeys-registry.near
-                            result = callFunctionResult(body.id, []);
-                            break;
-                        case "w_is_signature_allowed":
-                            result = callFunctionResult(body.id, true);
-                            break;
-                        case "w_subwallet_id":
-                            result = callFunctionResult(body.id, 0);
-                            break;
-                        case "w_timeout_secs":
-                            result = callFunctionResult(body.id, 3600);
-                            break;
-                        case "w_extensions":
-                            result = callFunctionResult(body.id, []);
-                            break;
-                        default:
-                            result = callFunctionResult(body.id, null);
-                    }
-                } else if (p.request_type === "view_account") {
-                    // Wallet account exists — the executor skips StateInit
-                    result = {
-                        jsonrpc: "2.0",
-                        id: body.id,
-                        result: {
-                            amount: "0",
-                            locked: "0",
-                            code_hash: "11111111111111111111111111111111",
-                            storage_usage: 500,
-                            storage_paid_at: 0,
-                            block_height: 100000000,
-                            block_hash: "A".repeat(44),
+        if (
+            body.method === "query" &&
+            params.request_type === "call_function"
+        ) {
+            switch (params.method_name) {
+                case "get": // passkeys-registry.near — no passkey known yet
+                    result = callFunctionResult(body.id, []);
+                    break;
+                case "w_is_signature_allowed":
+                    result = callFunctionResult(body.id, true);
+                    break;
+                case "w_subwallet_id":
+                    result = callFunctionResult(body.id, 0);
+                    break;
+                case "w_timeout_secs":
+                    result = callFunctionResult(body.id, 3600);
+                    break;
+                case "w_extensions":
+                    result = callFunctionResult(body.id, []);
+                    break;
+                default:
+                    result = callFunctionResult(body.id, null);
+            }
+        } else if (
+            body.method === "query" &&
+            params.request_type === "view_account"
+        ) {
+            // Wallet account already exists — the executor skips StateInit.
+            result = {
+                jsonrpc: "2.0",
+                id: body.id,
+                result: {
+                    amount: "0",
+                    locked: "0",
+                    code_hash: "11111111111111111111111111111111",
+                    storage_usage: 500,
+                    storage_paid_at: 0,
+                    block_height: 100000000,
+                    block_hash: BLOCK_HASH,
+                },
+            };
+        } else if (
+            body.method === "query" &&
+            params.request_type === "view_access_key"
+        ) {
+            result = {
+                jsonrpc: "2.0",
+                id: body.id,
+                result: {
+                    block_hash: BLOCK_HASH,
+                    block_height: 100000000,
+                    nonce: 1,
+                    permission: {
+                        FunctionCall: {
+                            allowance: null,
+                            receiver_id: "passkeys-registry.near",
+                            method_names: ["register"],
                         },
-                    };
-                } else if (p.request_type === "view_access_key") {
-                    result = {
-                        jsonrpc: "2.0",
-                        id: body.id,
-                        result: {
-                            block_hash: "A".repeat(44),
-                            block_height: 100000000,
-                            nonce: 1,
-                            permission: {
-                                FunctionCall: {
-                                    allowance: null,
-                                    receiver_id: "passkeys-registry.near",
-                                    method_names: ["register"],
+                    },
+                },
+            };
+        } else if (
+            body.method === "query" &&
+            params.request_type === "view_access_key_list"
+        ) {
+            // near-api-ts's memory signer enumerates the account's keys to
+            // find the one it signs with.
+            result = {
+                jsonrpc: "2.0",
+                id: body.id,
+                result: {
+                    block_hash: BLOCK_HASH,
+                    block_height: 100000000,
+                    keys: [
+                        {
+                            public_key: FC_PUBLIC_KEY,
+                            access_key: {
+                                nonce: 1,
+                                permission: {
+                                    FunctionCall: {
+                                        allowance: null,
+                                        receiver_id: "passkeys-registry.near",
+                                        method_names: ["register"],
+                                    },
                                 },
                             },
                         },
-                    };
-                } else if (p.request_type === "view_access_key_list") {
-                    // near-api-ts's memory signer enumerates the account's
-                    // keys to find the one it signs with — return the
-                    // executor's embedded function-call key (public part).
-                    result = {
-                        jsonrpc: "2.0",
-                        id: body.id,
-                        result: {
-                            block_hash: "A".repeat(44),
-                            block_height: 100000000,
-                            keys: [
-                                {
-                                    public_key: FC_PUBLIC_KEY,
-                                    access_key: {
-                                        nonce: 1,
-                                        permission: {
-                                            FunctionCall: {
-                                                allowance: null,
-                                                receiver_id:
-                                                    "passkeys-registry.near",
-                                                method_names: ["register"],
-                                            },
-                                        },
-                                    },
-                                },
-                            ],
-                        },
-                    };
-                } else {
-                    result = { jsonrpc: "2.0", id: body.id, result: {} };
-                }
-            } else if (body.method === "block") {
-                result = {
-                    jsonrpc: "2.0",
-                    id: body.id,
-                    result: {
-                        header: {
-                            hash: "A".repeat(44),
-                            height: 100000000,
-                            timestamp: Date.now() * 1e6,
-                        },
+                    ],
+                },
+            };
+        } else if (body.method === "block") {
+            result = {
+                jsonrpc: "2.0",
+                id: body.id,
+                result: {
+                    header: {
+                        hash: BLOCK_HASH,
+                        height: 100000000,
+                        timestamp: Date.now() * 1e6,
                     },
-                };
-            } else if (
-                body.method === "send_tx" ||
-                body.method === "broadcast_tx_commit"
-            ) {
-                // Registry `register` / relayed transactions succeed. Shape
-                // must satisfy near-api-ts's FinalExecutionOutcomeView zod
-                // schema (send_tx uses wait_until=EXECUTED_OPTIMISTIC).
-                const hash = "A".repeat(44);
-                const outcome = {
-                    executor_id: "passkeys-registry.near",
-                    gas_burnt: 0,
-                    logs: [],
-                    receipt_ids: [],
-                    status: { SuccessValue: "" },
-                    tokens_burnt: "0",
-                };
-                result = {
-                    jsonrpc: "2.0",
-                    id: body.id,
-                    result: {
-                        final_execution_status: "EXECUTED_OPTIMISTIC",
-                        status: { SuccessValue: "" },
-                        transaction: {
-                            actions: [],
-                            hash,
-                            nonce: 1,
-                            public_key: FC_PUBLIC_KEY,
-                            receiver_id: "passkeys-registry.near",
-                            signature:
-                                "ed25519:11111111111111111111111111111111",
-                            signer_id: "passkeys-registry.near",
-                        },
-                        transaction_outcome: {
-                            block_hash: hash,
-                            id: hash,
-                            outcome,
-                            proof: [],
-                        },
-                        receipts_outcome: [],
+                },
+            };
+        } else if (
+            body.method === "send_tx" ||
+            body.method === "broadcast_tx_commit" ||
+            body.method === "tx" ||
+            // send_tx with wait_until=NONE returns immediately; the signer
+            // then polls the status separately.
+            body.method === "EXPERIMENTAL_tx_status"
+        ) {
+            result = successfulTransaction(body.id);
+        } else if (body.method === "EXPERIMENTAL_protocol_config") {
+            // near-api-ts's getAccountInfo needs the storage price.
+            result = {
+                jsonrpc: "2.0",
+                id: body.id,
+                result: {
+                    runtime_config: {
+                        storage_amount_per_byte: "10000000000000000000",
                     },
-                };
-            } else if (body.method === "EXPERIMENTAL_protocol_config") {
-                // near-api-ts's getAccountInfo needs the storage price.
-                result = {
-                    jsonrpc: "2.0",
-                    id: body.id,
-                    result: {
-                        runtime_config: {
-                            storage_amount_per_byte: "10000000000000000000",
-                        },
-                    },
-                };
-            } else {
-                result = { jsonrpc: "2.0", id: body.id, result: {} };
-            }
+                },
+            };
+        }
 
-            await route.fulfill({
-                status: 200,
-                contentType: "application/json",
-                body: JSON.stringify(result),
-            });
-        },
+        await route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(result),
+        });
+    });
+}
+
+/** Opens the sign-in screen and starts the Passkey flow. */
+async function startPasskeyFlow(page: Page) {
+    await page.goto("/create");
+    const passkeyOption = page
+        .getByRole("button", { name: /Passkey for Touch ID/i })
+        .first();
+    await expect(passkeyOption).toBeVisible({ timeout: 15000 });
+    await passkeyOption.click();
+}
+
+test("Passkey sign-up logs in via NEP-641 resolveAuth", async ({
+    page,
+    context,
+}) => {
+    test.skip(
+        !fs.existsSync(EXECUTOR_ARTIFACT),
+        "passkey-executor.js artifact not vendored yet",
     );
+    test.setTimeout(120000);
 
-    // Backend auth mocks (same pattern as the Ledger spec)
-    let isLoggedIn = false;
-    let resolvedAccountId: string | null = null;
+    await installVirtualAuthenticator(page, context);
+    await mockExecutor(context);
+    await mockNearRpc(context);
+
+    let loggedInAccountId: string | null = null;
 
     await context.route("**/api/auth/challenge", (route) =>
         route.fulfill({
             status: 200,
             contentType: "application/json",
             body: JSON.stringify({
-                payload: "Login to Trezu — test payload",
+                payload: CHALLENGE_PAYLOAD,
                 chainId: "mainnet",
             }),
         }),
@@ -272,21 +320,17 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
         const body = JSON.parse(route.request().postData() ?? "{}");
         // The executor must produce a NEP-641 authorization blob for a
         // deterministic 0s… wallet account: the signed `OffchainMessage`
-        // envelope (bound to chain, signer, empty path, timestamp, payload)
-        // plus the passkey proof, in the reference wallet's
+        // envelope (bound to chain, signer, timestamp, payload) plus the
+        // passkey proof, in the reference wallet's
         // `{ signature: { msg, proof } }` shape.
         expect(body.accountId).toMatch(/^0s[0-9a-f]{40}$/);
-        const authorization = JSON.parse(body.authorization);
-        expect(authorization.signature.msg.chain_id).toBe("mainnet");
-        expect(authorization.signature.msg.signer_id).toBe(body.accountId);
-        expect(authorization.signature.msg.path ?? []).toEqual([]);
-        expect(authorization.signature.msg.payload).toBe(
-            "Login to Trezu — test payload",
-        );
-        expect(authorization.signature.proof).toBeTruthy();
+        const { signature } = JSON.parse(body.authorization);
+        expect(signature.msg.chain_id).toBe("mainnet");
+        expect(signature.msg.signer_id).toBe(body.accountId);
+        expect(signature.msg.payload).toBe(CHALLENGE_PAYLOAD);
+        expect(signature.proof).toBeTruthy();
 
-        resolvedAccountId = body.accountId;
-        isLoggedIn = true;
+        loggedInAccountId = body.accountId;
         await route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -298,12 +342,12 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
     });
 
     await context.route("**/api/auth/me", (route) =>
-        isLoggedIn
+        loggedInAccountId
             ? route.fulfill({
                   status: 200,
                   contentType: "application/json",
                   body: JSON.stringify({
-                      accountId: resolvedAccountId,
+                      accountId: loggedInAccountId,
                       termsAccepted: true,
                   }),
               })
@@ -314,42 +358,64 @@ test("Passkey login flow (create + NEP-641 resolveAuth)", async ({
               }),
     );
 
-    // Navigate and open the sign-in screen
-    await page.goto("/create");
-    await page.getByRole("button", { name: /sign in/i }).click();
-    await expect(page.getByText("Sign in or create a treasury")).toBeVisible();
+    await startPasskeyFlow(page);
 
-    // Passkey card must be present without the "Coming soon" gate
-    const passkeyOption = page.getByRole("button", { name: "Passkey" });
-    await expect(passkeyOption).toBeVisible();
-    await passkeyOption.click();
-
-    // The executor UI renders inside the sandboxed iframe
-    const iframe = page
+    // The executor UI renders inside the sandboxed iframe: pick "Sign up" to
+    // create the passkey, then confirm the resolveAuth ceremony. The virtual
+    // authenticator answers both WebAuthn prompts automatically.
+    const executor = page
         .frameLocator('iframe[sandbox*="allow-scripts"]')
         .first();
 
-    // Fresh browser: choose to create a new account. The CDP virtual
-    // authenticator answers both the create() and the resolveAuth get()
-    // ceremonies automatically.
-    const createBtn = iframe.getByRole("button", {
-        name: /create new account/i,
+    const signUp = executor.getByRole("button", {
+        name: "Sign up",
+        exact: true,
     });
-    await expect(createBtn).toBeVisible({ timeout: 15000 });
-    await createBtn.click();
+    await expect(signUp).toBeVisible({ timeout: 30000 });
+    await signUp.click();
 
-    // Name-your-passkey step: accept the default name.
-    const confirmCreateBtn = iframe.getByRole("button", {
-        name: /create passkey/i,
+    const confirm = executor.getByRole("button", {
+        name: "Sign in",
+        exact: true,
     });
-    await expect(confirmCreateBtn).toBeVisible({ timeout: 15000 });
-    await confirmCreateBtn.click();
+    await expect(confirm).toBeVisible({ timeout: 30000 });
+    await confirm.click();
 
-    // Login completes: the sign-in screen goes away
-    await expect(
-        page.getByText("Sign in or create a treasury"),
-    ).not.toBeVisible({
+    await expect
+        .poll(() => loggedInAccountId, { timeout: 30000 })
+        .toMatch(/^0s[0-9a-f]{40}$/);
+    await expect(page.getByText("Sign in or create a treasury")).toBeHidden({
         timeout: 30000,
     });
-    expect(resolvedAccountId).toMatch(/^0s[0-9a-f]{40}$/);
+});
+
+test("a failed connect attempt is surfaced on the sign-in screen", async ({
+    page,
+    context,
+}) => {
+    test.skip(
+        !fs.existsSync(EXECUTOR_ARTIFACT),
+        "passkey-executor.js artifact not vendored yet",
+    );
+
+    await installVirtualAuthenticator(page, context);
+    await mockExecutor(context);
+    await mockNearRpc(context);
+
+    // Anything that breaks mid-connect leaves the user back on the sign-in
+    // screen; without the alert that is indistinguishable from "nothing
+    // happened". A failing challenge is the cheapest way to trigger it.
+    await context.route("**/api/auth/challenge", (route) =>
+        route.fulfill({
+            status: 503,
+            contentType: "application/json",
+            body: JSON.stringify({ error: "relayer unavailable" }),
+        }),
+    );
+
+    await startPasskeyFlow(page);
+
+    await expect(page.getByText("We couldn't sign you in")).toBeVisible({
+        timeout: 30000,
+    });
 });

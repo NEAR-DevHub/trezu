@@ -7,9 +7,17 @@
 //! 1. `activating` → call sub `activate(proposal_id)` (0.5 NEAR deposit).
 //!    Move to `signing`.
 //! 2. `signing` → view sub `get_activation`. If the activation is `Ready`
-//!    and there are still `Pending` entries, call `ping`. If `Done`,
-//!    submit every recipient intent to 1Click in parallel and mark the
-//!    bulk row `completed`.
+//!    and there are still `Pending` entries, call `ping`. If `Done` with
+//!    `SignFailed` entries, call `retry_failed` (up to
+//!    `CONFIDENTIAL_BULK_MAX_SIGN_RETRIES`, default 3)
+//!    so the next tick pings them again. Otherwise submit every signed
+//!    recipient intent to 1Click in parallel and mark the bulk row
+//!    `completed`.
+//!
+//! Why retries matter: a `ping` dispatches signs until its gas runs low, so
+//! the last signs of a large batch get starved and v1.signer rejects them
+//! ("Provided gas is lower than required"). Each retry handles fewer hashes
+//! with the same gas, so it converges.
 //!
 use std::sync::Arc;
 
@@ -20,7 +28,7 @@ use serde_json::json;
 use crate::AppState;
 
 const ACTIVATE_DEPOSIT: NearToken = NearToken::from_millinear(500); // 0.5 NEAR
-const PING_GAS: NearGas = NearGas::from_tgas(300);
+const PING_GAS: NearGas = NearGas::from_tgas(1000);
 
 // Strongly-typed mirror of the on-chain contract types. Kept in lockstep
 // with `contracts/confidential-bulk-payment/src/lib.rs`. Duplicating them
@@ -84,6 +92,9 @@ impl HashStatusView {
     }
     fn is_pending_or_signing(&self) -> bool {
         matches!(self, HashStatusView::Pending | HashStatusView::Signing)
+    }
+    fn is_sign_failed(&self) -> bool {
+        matches!(self, HashStatusView::SignFailed { .. })
     }
 }
 
@@ -256,6 +267,22 @@ async fn drive_signing(
         return Ok(());
     }
 
+    // Done, but some signs failed — reset them and let the next tick ping.
+    // Past the retry cap we fall through: signed recipients still get paid,
+    // unsigned ones are marked failed below.
+    if activation.hashes.iter().any(|h| h.status.is_sign_failed()) {
+        if claim_sign_retry(state, bulk_id).await? {
+            retry_failed_on_subaccount(state, sub_id, proposal_id).await?;
+            return Ok(());
+        }
+        crate::error_event!(
+            crate::error_event::ErrorCode::BulkConfDriveFailed,
+            dao_id,
+            proposal_id,
+            error = "recipient signs still failing after max retries"
+        );
+    }
+
     // Done — only now do we submit recipient intents to 1Click.
     let public_key =
         crate::handlers::relay::confidential::fetch_mpc_public_key(state, sub_id.as_ref(), "")
@@ -290,6 +317,54 @@ async fn ping_subaccount(
         .into_result()
         .map_err(|e| format!("ping send: {}", e))?;
     tracing::info!("Pinged bulk proposal {} on {}", proposal_id, sub_id);
+    Ok(())
+}
+
+/// Atomically take one of the `confidential_bulk_max_sign_retries` slots.
+/// Returns false once they're used up. The slot is spent even if the
+/// `retry_failed` tx then fails, which keeps the loop bounded.
+async fn claim_sign_retry(state: &Arc<AppState>, bulk_id: i32) -> Result<bool, String> {
+    // ponytail: runtime query, not `query!`, so the .sqlx offline cache needs no regen.
+    sqlx::query_scalar::<_, i32>(
+        r#"
+        UPDATE confidential_bulk_payments
+        SET sign_retry_count = sign_retry_count + 1, updated_at = NOW()
+        WHERE id = $1 AND sign_retry_count < $2
+        RETURNING sign_retry_count
+        "#,
+    )
+    .bind(bulk_id)
+    .bind(state.env_vars.confidential_bulk_max_sign_retries)
+    .fetch_optional(&state.db_pool)
+    .await
+    .map(|claimed| claimed.is_some())
+    .map_err(|e| format!("claim sign retry: {}", e))
+}
+
+/// Reset the sub's `SignFailed` entries to `Pending` and move the activation
+/// back to `Ready`, so the next `ping` signs them again.
+async fn retry_failed_on_subaccount(
+    state: &Arc<AppState>,
+    sub_id: &AccountId,
+    proposal_id: i64,
+) -> Result<(), String> {
+    Contract(sub_id.clone())
+        .call_function(
+            "retry_failed",
+            json!({ "proposal_id": proposal_id.to_string() }),
+        )
+        .transaction()
+        .with_signer(state.signer_id.clone(), state.signer.clone())
+        .send_to(&state.network)
+        .await
+        .map_err(|e| format!("retry_failed send: {}", e))?
+        .into_result()
+        .map_err(|e| format!("retry_failed send: {}", e))?;
+    tracing::info!(
+        "Reset failed signs for bulk proposal {} on {}",
+        proposal_id,
+        sub_id
+    );
     Ok(())
 }
 
@@ -411,6 +486,20 @@ async fn submit_done_activation(
                 .await;
             }
         }
+    }
+
+    // Pull the next 1Click history poll forward so the submitted intents enter
+    // the await-settlement fast tier (mirrors relay/confidential.rs submits).
+    // Before the completed update: if that update fails, the retry cycle finds
+    // no pending recipients and never reaches this point again.
+    if let Err(e) =
+        crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due(
+            &state.db_pool,
+            dao_id,
+        )
+        .await
+    {
+        tracing::warn!("cannot mark confidential history due for {}: {}", dao_id, e);
     }
 
     sqlx::query!(

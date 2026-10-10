@@ -653,7 +653,7 @@ mod tests {
         assert!(
             exchange.targets[0]
                 .message()
-                .contains("Exchange is temporarily paused")
+                .contains("Swap is temporarily paused")
         );
 
         let near_rpc = fallback_config("near-rpc").expect("near-rpc config");

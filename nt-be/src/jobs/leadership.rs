@@ -442,6 +442,21 @@ pub fn spawn(
                 session.cancel();
             }
 
+            // The runtime has drained or been aborted, so none of its workers
+            // is alive: hand their ids back so the next runtime (here after a
+            // rebuild, or in a new process after a deploy) registers at once
+            // instead of waiting for the heartbeats to go stale.
+            let release = super::platform::release_worker_registrations(&pool);
+            match tokio::time::timeout(LEADERSHIP_QUERY_TIMEOUT, release).await {
+                Ok(Ok(released)) => {
+                    tracing::info!(released, "released job worker registrations");
+                }
+                Ok(Err(error)) => {
+                    tracing::warn!(%error, "failed to release job worker registrations");
+                }
+                Err(_) => tracing::warn!("timed out releasing job worker registrations"),
+            }
+
             let connection_lost = matches!(exit, SessionExit::HeartbeatFailed(_));
             let released_cleanly = if connection_lost {
                 guard.discard();

@@ -1,0 +1,12 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO dao_members (dao_id, account_id, is_policy_member, is_saved, is_hidden)\n            VALUES ('member-remove.sputnik-dao.near', 'alice.near', true, true, false)\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": []
+    },
+    "nullable": []
+  },
+  "hash": "d701a42593967f32249e9170097a81c8546bb89548fdb6abac16e8581889eafa"
+}

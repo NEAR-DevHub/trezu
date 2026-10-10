@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApprovalWorkflow } from "@/features/proposals/components/request-details/approval-workflow";
 import {
     RequestDetailsBody,
+    RequestFeatureWarning,
     RequestNotices,
     useRequestActions,
     useRequestDetailsTitle,
@@ -40,8 +41,9 @@ interface RequestPageProps {
  * Stacked on a phone the cards are a single 20px-spaced run under the heading,
  * which the header already leaves room for — hence no top padding until `lg`.
  */
+const PAGE_CLASS = "mx-auto flex w-full max-w-[880px] flex-col gap-5 lg:pt-4";
 const COLUMNS_CLASS =
-    "mx-auto flex w-full max-w-[880px] flex-col gap-5 lg:flex-row lg:items-start lg:gap-4 lg:pt-4";
+    "flex w-full flex-col gap-5 lg:flex-row lg:items-start lg:gap-4";
 const SIDE_COLUMN_CLASS = "w-full min-w-0 lg:w-[360px] lg:shrink-0";
 /**
  * On a phone the cards line up with the back button in the header rather than
@@ -53,10 +55,12 @@ const HEADER_ICON_BUTTON_CLASS = "size-10 rounded-lg lg:size-9 lg:rounded-md";
 
 function RequestPageSkeleton() {
     return (
-        <div className={COLUMNS_CLASS}>
-            <Skeleton className="h-[300px] w-full min-w-0 flex-1 rounded-2xl" />
-            <div className={SIDE_COLUMN_CLASS}>
-                <Skeleton className="h-[400px] w-full rounded-2xl" />
+        <div className={PAGE_CLASS}>
+            <div className={COLUMNS_CLASS}>
+                <Skeleton className="h-[300px] w-full min-w-0 flex-1 rounded-2xl" />
+                <div className={SIDE_COLUMN_CLASS}>
+                    <Skeleton className="h-[400px] w-full rounded-2xl" />
+                </div>
             </div>
         </div>
     );
@@ -178,6 +182,7 @@ function RequestDetail({
                             size="icon"
                             className={HEADER_ICON_BUTTON_CLASS}
                             tooltipContent={tExpanded("deleteRequest")}
+                            aria-label={tExpanded("deleteRequest")}
                             onClick={() => onVote("Remove")}
                         >
                             <Icon icon={Delete01Icon} />
@@ -189,23 +194,30 @@ function RequestDetail({
                         className={HEADER_ICON_BUTTON_CLASS}
                         text={`${window.location.origin}/${treasuryId}/requests/${proposal.id}`}
                         tooltipContent={tExpanded("copyLink")}
+                        aria-label={tExpanded("copyLink")}
                     />
                 </>
             }
         >
-            <div className={COLUMNS_CLASS}>
-                <div className="flex min-w-0 flex-1 flex-col gap-3">
-                    <RequestDetailsBody proposal={proposal} details={details} />
-                    <RequestNotices proposal={proposal} details={details} />
-                </div>
+            <div className={PAGE_CLASS}>
+                <RequestFeatureWarning proposal={proposal} details={details} />
+                <div className={COLUMNS_CLASS}>
+                    <div className="flex min-w-0 flex-1 flex-col gap-3">
+                        <RequestDetailsBody
+                            proposal={proposal}
+                            details={details}
+                        />
+                        <RequestNotices proposal={proposal} details={details} />
+                    </div>
 
-                <div className={SIDE_COLUMN_CLASS}>
-                    <ApprovalWorkflow
-                        proposal={proposal}
-                        policy={policy}
-                        details={details}
-                        footer={actions}
-                    />
+                    <div className={SIDE_COLUMN_CLASS}>
+                        <ApprovalWorkflow
+                            proposal={proposal}
+                            policy={policy}
+                            details={details}
+                            footer={actions}
+                        />
+                    </div>
                 </div>
             </div>
 

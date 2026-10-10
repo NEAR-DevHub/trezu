@@ -4,19 +4,15 @@ import { Icon } from "@/components/icon";
 import {
     Cancel01Icon,
     File01Icon,
-    Upload01Icon,
+    FileUpIcon,
+    UserGroupIcon,
 } from "@hugeicons/core-free-icons";
 import { useState, useEffect, useId } from "react";
 import { useTranslations } from "next-intl";
 import { Button } from "@/components/button";
-import { ScrollContainer } from "@/components/scroll-container";
 import { Textarea } from "@/components/textarea";
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger,
-    TabsContent,
-} from "@/components/underline-tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { cn } from "@/lib/utils";
 
 interface CsvUploadPanelProps {
     csvData: string | null;
@@ -37,7 +33,6 @@ interface CsvUploadPanelProps {
 }
 
 export function CsvUploadPanel({
-    csvData,
     onCsvDataChange,
     pasteData,
     onPasteDataChange,
@@ -57,6 +52,7 @@ export function CsvUploadPanel({
     const inputId = useId();
     const [isDragging, setIsDragging] = useState(false);
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+    const [fileError, setFileError] = useState<string | null>(null);
 
     // Restore uploaded file state when navigating back
     useEffect(() => {
@@ -68,13 +64,16 @@ export function CsvUploadPanel({
 
     const handleFileUpload = (file: File) => {
         if (file.type !== "text/csv" && !file.name.endsWith(".csv")) {
+            setFileError(t("pleaseUploadCsv"));
             return;
         }
 
         if (file.size > maxFileSizeMB * 1024 * 1024) {
+            setFileError(t("fileSizeLimit"));
             return;
         }
 
+        setFileError(null);
         onErrorsClear();
         setUploadedFile(file);
         onUploadedFileNameChange(file.name);
@@ -118,52 +117,83 @@ export function CsvUploadPanel({
 
     const clearFile = () => {
         setUploadedFile(null);
+        setFileError(null);
         onCsvDataChange(null);
         onUploadedFileNameChange(null);
         onErrorsClear();
     };
 
-    const hasErrors = errors && errors.length > 0;
+    const hasErrors =
+        Boolean(errors && errors.length > 0) || Boolean(fileError);
+    const errorList = fileError ? (
+        <p className="wrap-anywhere text-sm text-destructive">{fileError}</p>
+    ) : errors && errors.length > 0 ? (
+        <div className="max-h-48 space-y-1 overflow-y-auto overflow-x-hidden">
+            {errors.map((error) => (
+                <p
+                    key={`${error.row}-${error.message}`}
+                    className="wrap-anywhere text-sm text-destructive"
+                >
+                    {error.message}
+                </p>
+            ))}
+        </div>
+    ) : null;
 
     return (
         <Tabs
             value={activeTab}
             onValueChange={(value) => {
                 onActiveTabChange(value as "upload" | "paste");
+                setFileError(null);
                 onErrorsClear();
             }}
         >
-            <TabsList>
-                <TabsTrigger value="upload">{t("uploadFile")}</TabsTrigger>
-                <TabsTrigger value="paste">{t("provideData")}</TabsTrigger>
+            <TabsList className="h-12 w-full justify-stretch gap-1 rounded-2xl border border-general-border bg-transparent">
+                <TabsTrigger
+                    value="upload"
+                    className="h-10 flex-1 cursor-pointer rounded-xl px-2 py-3 font-bold text-general-unofficial-ghost-foreground data-[state=active]:border-general-border data-[state=active]:bg-card dark:data-[state=active]:border-general-border dark:data-[state=active]:bg-card"
+                >
+                    <Icon icon={File01Icon} />
+                    {t("uploadFile")}
+                </TabsTrigger>
+                <TabsTrigger
+                    value="paste"
+                    className="h-10 flex-1 cursor-pointer rounded-xl px-2 py-3 font-bold text-general-unofficial-ghost-foreground data-[state=active]:border-general-border data-[state=active]:bg-card dark:data-[state=active]:border-general-border dark:data-[state=active]:bg-card"
+                >
+                    <Icon icon={UserGroupIcon} />
+                    {t("provideData")}
+                </TabsTrigger>
             </TabsList>
 
-            {/* Upload Tab */}
             <TabsContent value="upload">
-                <div className="space-y-4">
+                <div className="flex flex-col gap-1">
                     {!uploadedFile ? (
                         <>
+                            {/* biome-ignore lint/a11y/noStaticElementInteractions: Drag-and-drop supplements the accessible file button below. */}
                             <div
-                                className={`border-2 border-dashed hover:bg-general-tertiary focus-within:bg-general-tertiary transition-colors rounded-lg p-4 text-center ${
-                                    isDragging
-                                        ? "border-primary bg-primary/5"
-                                        : "border-border bg-muted"
-                                }`}
+                                className={cn(
+                                    "flex h-44 items-center justify-center rounded-3xl border border-general-border bg-card px-6 text-center transition-colors hover:bg-general-tertiary focus-within:bg-general-tertiary",
+                                    isDragging && "border-primary bg-primary/5",
+                                    hasErrors && "border-destructive",
+                                )}
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                             >
-                                <div className="flex flex-col items-center gap-4">
-                                    <Icon
-                                        icon={Upload01Icon}
-                                        className="size-6 text-muted-foreground"
-                                    />
-                                    <div>
-                                        <p className="text-base mb-2">
+                                <div className="flex flex-col items-center gap-2.5">
+                                    <span className="flex size-10 items-center justify-center rounded-full border border-general-border bg-muted">
+                                        <Icon
+                                            icon={FileUpIcon}
+                                            className="text-muted-foreground"
+                                        />
+                                    </span>
+                                    <div className="flex flex-col gap-1">
+                                        <p className="text-base leading-tight">
                                             <Button
                                                 type="button"
                                                 variant="link"
-                                                className="font-semibold h-auto p-0! hover:underline disabled:text-muted-foreground"
+                                                className="h-auto p-0! font-semibold text-foreground hover:underline disabled:text-muted-foreground"
                                                 onClick={() =>
                                                     document
                                                         .getElementById(inputId)
@@ -173,11 +203,11 @@ export function CsvUploadPanel({
                                             >
                                                 {t("chooseFile")}
                                             </Button>{" "}
-                                            <span className="text-muted-foreground font-medium">
+                                            <span className="font-medium text-muted-foreground">
                                                 {t("orDragDrop")}
                                             </span>
                                         </p>
-                                        <p className="text-sm text-muted-foreground">
+                                        <p className="text-sm leading-5 text-muted-foreground">
                                             {t("maxFileSize", {
                                                 maxSize: maxFileSizeMB,
                                             })}
@@ -189,122 +219,108 @@ export function CsvUploadPanel({
                                         accept=".csv"
                                         className="hidden"
                                         disabled={disabled}
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0];
+                                        onChange={(event) => {
+                                            const file =
+                                                event.target.files?.[0];
                                             if (file) handleFileUpload(file);
+                                            event.target.value = "";
                                         }}
                                     />
                                 </div>
                             </div>
 
-                            <div className="flex items-center gap-2 text-sm">
-                                <span className="text-muted-foreground">
-                                    {t("noFilePrompt")}
-                                </span>
+                            {errorList}
+
+                            <div className="flex min-h-7 flex-wrap items-center gap-1 text-sm font-medium">
+                                <span>{t("noFilePrompt")}</span>
                                 <Button
                                     type="button"
                                     variant="link"
                                     onClick={downloadTemplate}
-                                    className="h-auto p-0! font-medium hover:underline text-general-unofficial-ghost-foreground"
+                                    className="h-7 px-2! py-0.5 text-xs font-bold text-general-unofficial-ghost-foreground hover:underline"
                                 >
                                     {t("downloadTemplate")}
                                 </Button>
                             </div>
                         </>
                     ) : (
-                        <div
-                            className={`rounded-lg p-4 flex items-center justify-between ${
-                                hasErrors
-                                    ? "bg-destructive/10 border border-destructive"
-                                    : "bg-muted/50"
-                            }`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <Icon
-                                    icon={File01Icon}
-                                    className={`${
-                                        hasErrors
-                                            ? "text-destructive"
-                                            : "text-primary"
-                                    }`}
-                                />
-                                <div>
-                                    <p className="text-sm font-medium">
-                                        {uploadedFile.name}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">
-                                        {(uploadedFile.size / 1024).toFixed(0)}
-                                        KB
-                                    </p>
-                                </div>
-                            </div>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={clearFile}
-                                className={`h-8 w-8 ${
-                                    hasErrors
-                                        ? "text-destructive hover:text-destructive/80"
-                                        : "text-muted-foreground hover:text-foreground"
-                                }`}
+                        <>
+                            <div
+                                className={cn(
+                                    "flex h-18 items-center justify-between rounded-3xl border border-general-border bg-card px-4",
+                                    hasErrors && "border-destructive",
+                                )}
                             >
-                                <Icon icon={Cancel01Icon} />
-                            </Button>
-                        </div>
-                    )}
-
-                    {/* Errors below file upload */}
-                    {activeTab === "upload" && hasErrors && (
-                        <ScrollContainer className="space-y-1 max-h-48">
-                            {errors.map((error, idx) => (
-                                <div
-                                    key={idx}
-                                    className="text-sm text-destructive"
-                                >
-                                    {error.message}
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full border border-general-border bg-muted">
+                                        <Icon
+                                            icon={File01Icon}
+                                            className={cn(
+                                                "text-primary",
+                                                hasErrors && "text-destructive",
+                                            )}
+                                        />
+                                    </span>
+                                    <div className="min-w-0 text-left">
+                                        <p className="truncate text-sm font-semibold">
+                                            {uploadedFile.name}
+                                        </p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {(uploadedFile.size / 1024).toFixed(
+                                                0,
+                                            )}
+                                            KB
+                                        </p>
+                                    </div>
                                 </div>
-                            ))}
-                        </ScrollContainer>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={clearFile}
+                                    className={cn(
+                                        "text-muted-foreground hover:text-foreground",
+                                        hasErrors &&
+                                            "text-destructive hover:text-destructive/80",
+                                    )}
+                                >
+                                    <Icon icon={Cancel01Icon} />
+                                    <span className="sr-only">
+                                        {t("removeFile")}
+                                    </span>
+                                </Button>
+                            </div>
+                            {errorList}
+                        </>
                     )}
                 </div>
             </TabsContent>
 
-            {/* Paste Tab */}
             <TabsContent value="paste">
-                <div className="space-y-2">
-                    <Textarea
-                        value={pasteData}
-                        onChange={(e) => {
-                            onPasteDataChange(e.target.value);
-                            if (hasErrors) {
-                                onErrorsClear();
-                            }
-                        }}
-                        borderless
-                        placeholder={pastePlaceholder}
-                        rows={8}
-                        className={`resize-none font-mono text-base md:text-sm bg-muted focus:outline-none break-all whitespace-pre-wrap min-h-41 ${
-                            hasErrors
-                                ? "border border-destructive bg-destructive/5! focus:border-destructive!"
-                                : "bg-muted"
-                        }`}
-                        disabled={disabled}
-                    />
-
-                    {/* Errors below textarea */}
-                    {hasErrors && (
-                        <ScrollContainer className="space-y-1 max-h-48">
-                            {errors.map((error, idx) => (
-                                <div
-                                    key={idx}
-                                    className="text-sm text-destructive"
-                                >
-                                    {error.message}
-                                </div>
-                            ))}
-                        </ScrollContainer>
-                    )}
+                <div className="flex flex-col gap-1">
+                    <div
+                        className={cn(
+                            "rounded-3xl border border-general-border bg-card",
+                            hasErrors && "border-destructive",
+                        )}
+                    >
+                        <Textarea
+                            value={pasteData}
+                            onChange={(event) => {
+                                onPasteDataChange(event.target.value);
+                                if (hasErrors) {
+                                    setFileError(null);
+                                    onErrorsClear();
+                                }
+                            }}
+                            borderless
+                            placeholder={pastePlaceholder}
+                            rows={8}
+                            className="min-h-44 w-full max-w-full resize-none overflow-x-hidden rounded-3xl bg-transparent! p-4 font-mono text-base whitespace-pre-wrap shadow-none hover:bg-transparent! focus-within:bg-transparent! focus:outline-none disabled:opacity-100 md:text-sm"
+                            disabled={disabled}
+                        />
+                    </div>
+                    {errorList}
                 </div>
             </TabsContent>
         </Tabs>

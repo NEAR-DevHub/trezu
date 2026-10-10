@@ -18,14 +18,9 @@ import { Comparison, Pricing } from "./pricing";
  * business.near.com marketing page. Laid out for the 1440px Figma frame and
  * fluid below it.
  */
-export function LandingPage({
-    showRedesignedModal,
-}: {
-    /** Gates the redesigned in-page early-access form; see `redesigned-modal.ts`. */
-    showRedesignedModal: boolean;
-}) {
+export function LandingPage() {
     return (
-        <EarlyAccessProvider showRedesignedModal={showRedesignedModal}>
+        <EarlyAccessProvider>
             <div
                 className={cn(
                     geistMono.variable,

@@ -6,7 +6,6 @@ import {
     CheckIcon,
     File01Icon,
     LinkSquare02Icon,
-    LoaderCircleIcon,
 } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -25,13 +24,15 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { useProposalApproveBlock } from "@/hooks/use-warnings";
 import { getApproversAndThreshold } from "@/lib/config-utils";
 import type { Proposal } from "@/lib/proposals-api";
-import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
 import type { useProposalDetails } from "../../hooks/use-proposal-details";
 import { useProposalInsufficientBalance } from "../../hooks/use-proposal-insufficient-balance";
 import { useProposalKindLabel } from "../../hooks/use-proposal-kind-label";
-import { useVoteActionSlots } from "../../hooks/use-vote-action-slots";
+import {
+    isRequestsWontProcessWarning,
+    useVoteActionSlots,
+} from "../../hooks/use-vote-action-slots";
 import { useVotingDurationCheck } from "../../hooks/use-voting-duration-check";
 import type {
     AnyProposalData,
@@ -193,6 +194,54 @@ function HiddenSendDetails() {
 }
 
 /**
+ * Status warning for this request: a paused vote action, or a payments /
+ * exchange warning for its token. Sits under the page header.
+ */
+export function RequestFeatureWarning({
+    proposal,
+    details,
+}: {
+    proposal: Proposal;
+    details: ReturnType<typeof useProposalDetails>;
+}) {
+    const { approve, reject, voteBannerSlot } = useVoteActionSlots();
+    const approveBlock = useProposalApproveBlock([proposal]);
+    const featureWarning =
+        approveBlock.blockedWarnings[0] ??
+        approveBlock.noticeWarnings[0] ??
+        null;
+    const voteWarning =
+        voteBannerSlot === "action.approve"
+            ? approve.warning
+            : voteBannerSlot === "action.reject"
+              ? reject.warning
+              : null;
+    // "Can't process new requests…" is a hover on Approve and Reject, the
+    // same way Send shows it on the create button.
+    const showVoteBanner =
+        Boolean(voteBannerSlot) && !isRequestsWontProcessWarning(voteWarning);
+
+    if (!details.isPending || (!showVoteBanner && !featureWarning?.slot)) {
+        return null;
+    }
+
+    return (
+        <>
+            {showVoteBanner && voteBannerSlot && (
+                <SlotWarning slot={voteBannerSlot} />
+            )}
+            {!showVoteBanner && featureWarning?.slot && (
+                <SlotWarning
+                    slot={featureWarning.slot}
+                    token={featureWarning.token ?? undefined}
+                    network={featureWarning.network ?? undefined}
+                />
+            )}
+        </>
+    );
+}
+
+/**
  * Everything a request has to say that isn't the request itself: a swap still
  * settling, a paused action, a balance that won't cover the payment.
  */
@@ -206,50 +255,24 @@ export function RequestNotices({
     const t = useTranslations("proposals.expanded");
     const { treasuryId } = useTreasury();
     const {
+        status,
         isPending,
         isExecuted,
         hasDepositAddress,
-        swapStatus,
         shortQuoteDeadline,
-        isPaymentLikeProposal,
     } = details;
     const { data: insufficientBalanceInfo } = useProposalInsufficientBalance(
         proposal,
         treasuryId,
     );
-    const { voteBannerSlot } = useVoteActionSlots();
-    const approveBlock = useProposalApproveBlock([proposal]);
-    const approveBlockedWarning = approveBlock.blockedWarnings[0] ?? null;
-
-    const isSettling =
-        swapStatus?.status === "KNOWN_DEPOSIT_TX" ||
-        swapStatus?.status === "PENDING_DEPOSIT" ||
-        swapStatus?.status === "INCOMPLETE_DEPOSIT" ||
-        swapStatus?.status === "PROCESSING";
-    const hasFailed =
-        swapStatus?.status === "FAILED" || swapStatus?.status === "REFUNDED";
 
     return (
         <>
-            {isExecuted && hasDepositAddress && isSettling && (
-                <InfoAlert
-                    className="inline-flex"
-                    message={
-                        <span>
-                            <strong>
-                                {isPaymentLikeProposal
-                                    ? t("processingPayment")
-                                    : t("exchangingTokens")}
-                            </strong>
-                            <br />
-                            {isPaymentLikeProposal
-                                ? t("processingPaymentBody")
-                                : t("exchangingTokensBody")}
-                        </span>
-                    }
-                />
+            {status === "Processing" && (
+                <InfoAlert className="inline-flex" message={t("processing")} />
             )}
-            {isExecuted && hasDepositAddress && hasFailed && (
+            {/* Approved on-chain, but the swap it paid for didn't go through. */}
+            {isExecuted && hasDepositAddress && status === "Failed" && (
                 <InfoAlert
                     className="inline-flex"
                     message={
@@ -278,20 +301,6 @@ export function RequestNotices({
                     insufficientBalanceInfo={insufficientBalanceInfo}
                 />
             )}
-            {isPending && voteBannerSlot && (
-                <SlotWarning slot={voteBannerSlot} />
-            )}
-            {/* Approval paused by a feature warning — rejection still works. */}
-            {isPending &&
-                !voteBannerSlot &&
-                approveBlock.anyBlocked &&
-                approveBlockedWarning?.slot && (
-                    <SlotWarning
-                        slot={approveBlockedWarning.slot}
-                        token={approveBlockedWarning.token ?? undefined}
-                        network={approveBlockedWarning.network ?? undefined}
-                    />
-                )}
         </>
     );
 }
@@ -418,6 +427,7 @@ export function useRequestActions({
                 onClick={() => onVote("Reject")}
                 disabled={hasVoted || rejectSlot.blocked}
                 tooltip={
+                    rejectSlot.hoverTooltip ??
                     rejectSlot.inlineTooltip ??
                     (hasVoted ? noVoteMessage : undefined)
                 }
@@ -438,7 +448,7 @@ export function useRequestActions({
                     }
                 >
                     <Icon icon={ArrowDown02Icon} />
-                    {t("deposit")}
+                    {t("receive")}
                 </Button>
             ) : (
                 <AuthButtonWithProposal
@@ -446,21 +456,15 @@ export function useRequestActions({
                     variant="default"
                     className="h-10 w-full text-sm"
                     onClick={handleApprove}
-                    disabled={
-                        hasVoted ||
-                        isChecking ||
-                        approveBlocked ||
-                        approveSlot.blocked
-                    }
+                    loading={isChecking}
+                    disabled={hasVoted || approveBlocked || approveSlot.blocked}
                     tooltip={
+                        approveSlot.hoverTooltip ??
                         approveSlot.inlineTooltip ??
                         (hasVoted ? noVoteMessage : undefined)
                     }
                 >
-                    <Icon
-                        icon={isChecking ? LoaderCircleIcon : CheckIcon}
-                        className={cn(isChecking && "animate-spin")}
-                    />
+                    {isChecking ? null : <Icon icon={CheckIcon} />}
                     {t("approve")}
                 </AuthButtonWithProposal>
             )}

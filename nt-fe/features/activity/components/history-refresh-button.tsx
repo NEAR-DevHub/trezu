@@ -1,9 +1,9 @@
 "use client";
 import { RefreshCwIcon } from "@hugeicons/core-free-icons";
-import { Icon } from "@/components/icon";
 import { useLocale, useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo } from "react";
 import { Button } from "@/components/button";
+import { Icon } from "@/components/icon";
 import { useTreasury } from "@/hooks/use-treasury";
 import {
     useConfidentialHistoryRefreshStatus,
@@ -179,15 +179,11 @@ export function HistoryRefreshButton({ className }: { className?: string }) {
             size="icon"
             className={cn("h-9 w-9", className)}
             tooltipContent={refreshTooltip}
-            disabled={isRefreshDisabled}
+            loading={isRefreshing}
+            disabled={isRefreshDisabled && !isRefreshing}
             onClick={handleRefreshHistory}
         >
-            <Icon
-                icon={RefreshCwIcon}
-                className={cn(
-                    isRefreshing && "animate-spin motion-reduce:animate-none",
-                )}
-            />
+            {isRefreshing ? null : <Icon icon={RefreshCwIcon} />}
         </Button>
     );
 }

@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { useState, useMemo } from "react";
 import { Button } from "@/components/button";
-import { StepperHeader } from "@/components/step-wizard";
 import { CsvUploadPanel } from "@/components/csv-upload-panel";
 import { useChains } from "../chains";
 import {
@@ -15,21 +14,17 @@ import { useAddressBookParsingLabels } from "../utils/use-parsing-labels";
 
 export type { ParsedRecipient };
 
-const TEMPLATE_CSV = `Recipient Name,Recipient Address,Network,Note (optional)
+const TEMPLATE_CSV = `Contact Name,Contact Address,Network,Note (optional)
 alice,alice.near,Near,Payroll
-bob,0x82bAFB7aC512C62160C218bf184A3823AF60e9aD,Ethereum;BNB,Payroll
+bob,0x82bAFB7aC512C62160C218bf184A3823AF60e9aD,Ethereum,Payroll
 charlie,F4k6615fhQZerPEGyhhfyfkZR7p8Fd1RK2jdegRcg2Qo,Solana,`;
 const PLACEHOLDER_CSV = TEMPLATE_CSV.split("\n").slice(1).join("\n");
 
 interface ImportUploadStepProps {
-    handleBack: () => void;
     onReview: (recipients: ParsedRecipient[]) => void;
 }
 
-export function ImportUploadStep({
-    handleBack,
-    onReview,
-}: ImportUploadStepProps) {
+export function ImportUploadStep({ onReview }: ImportUploadStepProps) {
     const t = useTranslations("addressBook.importFlow");
     const parsingLabels = useAddressBookParsingLabels();
     const { data: chains = [] } = useChains();
@@ -88,13 +83,7 @@ export function ImportUploadStep({
     };
 
     return (
-        <div className="flex flex-col gap-4">
-            <StepperHeader
-                title={t("title")}
-                description={t("description")}
-                handleBack={handleBack}
-            />
-
+        <div className="flex flex-col gap-2">
             <div className="flex flex-col gap-1">
                 <CsvUploadPanel
                     csvData={csvData}
@@ -126,7 +115,7 @@ export function ImportUploadStep({
                     )}
             </div>
             <Button
-                className="w-full"
+                className="h-11 w-full"
                 disabled={!isValid}
                 onClick={handleContinue}
             >

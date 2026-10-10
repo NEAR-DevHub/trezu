@@ -6,11 +6,11 @@ import { type Control, useFieldArray, useWatch } from "react-hook-form";
 import { Button } from "@/components/button";
 import type { StepProps } from "@/components/step-wizard";
 import { StepperHeader } from "@/components/step-wizard";
-import { SummaryBlock } from "@/components/summary-block";
-import { Textarea } from "@/components/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import type { AddressBookEntry } from "../types";
+import { duplicateRecipientIndexes } from "../utils/duplicate-recipients";
+import { persistAddressBookAddress } from "../utils/find-entry";
 import {
     AddRecipientInput,
     type FormValues,
@@ -46,23 +46,18 @@ export function ReviewRecipients({
     const recipients = useWatch({ control, name: "recipients" }) ?? [];
     const count = recipients.length;
     const existingAddresses = useMemo(
-        () => new Set(existingEntries.map((entry) => entry.address.trim())),
+        () =>
+            new Set(
+                existingEntries.map((entry) =>
+                    persistAddressBookAddress(entry),
+                ),
+            ),
         [existingEntries],
     );
-    const duplicateIndexes = useMemo(() => {
-        const seen = new Set<string>();
-        const duplicates: number[] = [];
-        for (let index = 0; index < recipients.length; index++) {
-            const address = recipients[index]?.address?.trim();
-            if (!address) continue;
-            if (existingAddresses.has(address) || seen.has(address)) {
-                duplicates.push(index);
-            } else {
-                seen.add(address);
-            }
-        }
-        return duplicates;
-    }, [existingAddresses, recipients]);
+    const duplicateIndexes = useMemo(
+        () => duplicateRecipientIndexes(recipients, existingAddresses),
+        [existingAddresses, recipients],
+    );
     const duplicateIndexSet = useMemo(
         () => new Set(duplicateIndexes),
         [duplicateIndexes],
@@ -86,11 +81,6 @@ export function ReviewRecipients({
     const includedRecipientIndexes = skipDuplicates
         ? nonDuplicateRecipientIndexes
         : recipients.map((_recipient, index) => index);
-    const networkCount = new Set(
-        includedRecipientIndexes.flatMap(
-            (index) => recipients[index]?.networks ?? [],
-        ),
-    ).size;
     const submitTooltip =
         hasOnlyDuplicates && skipDuplicates
             ? t("allDuplicatesTooltip")
@@ -107,35 +97,37 @@ export function ReviewRecipients({
                 setActiveIndex={setEditingIndex}
                 handleBack={() => setEditingIndex(null)}
                 onReview={() => setEditingIndex(null)}
+                note={notes[editingIndex] ?? ""}
+                onNoteChange={(value) =>
+                    setNotes((prev) => ({
+                        ...prev,
+                        [editingIndex]: value,
+                    }))
+                }
             />
         );
     }
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-6">
             <StepperHeader title={t("header")} handleBack={handleBack} />
 
-            <div className="flex flex-col gap-3">
-                <SummaryBlock
-                    title={t("youAreAdding")}
-                    secondRow={
-                        <p className="text-2xl font-semibold text-foreground">
-                            {t("newRecipients", { count: newRecipientCount })}
-                        </p>
-                    }
-                    subRow={
-                        count > 1 &&
-                        newRecipientCount > 0 && (
-                            <p className="text-sm text-muted-foreground">
-                                {t("onNetworks", { count: networkCount })}
-                            </p>
-                        )
-                    }
-                />
+            <div className="flex flex-col items-center justify-center gap-1 rounded-3xl border border-general-border bg-card px-4 py-8 text-center">
+                <p className="text-sm font-medium text-muted-foreground">
+                    {t("youAreAdding")}
+                </p>
+                <p className="text-2xl font-bold leading-[1.2] tracking-[-0.025rem] text-foreground">
+                    {t("newRecipients", { count: newRecipientCount })}
+                </p>
+            </div>
+
+            <div className="flex flex-col gap-4">
                 <div className="flex flex-col gap-1">
-                    <p className="text-sm font-semibold">{t("recipients")}</p>
+                    <p className="text-sm font-semibold text-foreground">
+                        {t("recipients")}
+                    </p>
                     {duplicateCount > 0 && (
-                        <p className="text-xs text-general-info-foreground font-medium">
+                        <p className="text-sm font-medium text-general-info-foreground">
                             {hasOnlyDuplicates
                                 ? t("allDuplicates")
                                 : t("someDuplicates", {
@@ -146,56 +138,53 @@ export function ReviewRecipients({
                     )}
                 </div>
 
-                {fields.map((field, i) => (
-                    <div key={field.id} className="flex flex-col gap-2">
-                        <RecipientRow
-                            control={control}
-                            index={i}
-                            nameBadge={
-                                duplicateIndexSet.has(i) ? (
-                                    <span className="rounded-full bg-general-warning-background-faded px-2 py-0.5 text-xs font-medium text-general-warning-foreground">
-                                        {t("duplicated")}
-                                    </span>
-                                ) : undefined
-                            }
-                            onEdit={() => setEditingIndex(i)}
-                            onRemove={
-                                count > 1
-                                    ? () => {
-                                          remove(i);
-                                          setNotes((prev) => {
-                                              const next: Record<
-                                                  number,
-                                                  string
-                                              > = {};
-                                              for (const [
-                                                  k,
-                                                  v,
-                                              ] of Object.entries(prev)) {
-                                                  const idx = Number(k);
-                                                  if (idx < i) next[idx] = v;
-                                                  else if (idx > i)
-                                                      next[idx - 1] = v;
-                                              }
-                                              return next;
-                                          });
-                                      }
-                                    : undefined
-                            }
-                        />
-                        <Textarea
-                            borderless
-                            placeholder={t("notePlaceholder")}
-                            value={notes[i] ?? ""}
-                            onChange={(e) =>
-                                setNotes((prev) => ({
-                                    ...prev,
-                                    [i]: e.target.value,
-                                }))
-                            }
-                        />
-                    </div>
-                ))}
+                <div className="flex flex-col divide-y divide-general-border">
+                    {fields.map((field, i) => (
+                        <div
+                            key={field.id}
+                            className="py-4 first:pt-0 last:pb-0"
+                        >
+                            <RecipientRow
+                                control={control}
+                                index={i}
+                                note={notes[i]}
+                                label={t("contactNumber", { number: i + 1 })}
+                                nameBadge={
+                                    duplicateIndexSet.has(i) ? (
+                                        <span className="flex min-h-6 items-center justify-center gap-1.5 rounded-sm border border-general-warning-border bg-general-warning-background-faded px-2 py-0.75 text-xs font-medium text-general-warning-foreground">
+                                            {t("duplicated")}
+                                        </span>
+                                    ) : undefined
+                                }
+                                onEdit={() => setEditingIndex(i)}
+                                onRemove={
+                                    count > 1
+                                        ? () => {
+                                              remove(i);
+                                              setNotes((prev) => {
+                                                  const next: Record<
+                                                      number,
+                                                      string
+                                                  > = {};
+                                                  for (const [
+                                                      k,
+                                                      v,
+                                                  ] of Object.entries(prev)) {
+                                                      const idx = Number(k);
+                                                      if (idx < i)
+                                                          next[idx] = v;
+                                                      else if (idx > i)
+                                                          next[idx - 1] = v;
+                                                  }
+                                                  return next;
+                                              });
+                                          }
+                                        : undefined
+                                }
+                            />
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {duplicateCount > 0 && (
@@ -219,7 +208,8 @@ export function ReviewRecipients({
 
             <Button
                 className="w-full"
-                disabled={isSubmitting || !canSubmit}
+                loading={isSubmitting}
+                disabled={!canSubmit}
                 tooltipContent={submitTooltip}
                 onClick={() => onSubmit(notes, includedRecipientIndexes)}
             >

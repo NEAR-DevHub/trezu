@@ -35,8 +35,13 @@ export interface AddressBookParsingLabels {
 /**
  * Header keywords for each column
  */
-const NAME_KEYWORDS = ["name", "recipient name", "recipient"];
-const ADDRESS_KEYWORDS = ["address", "recipient address", "wallet"];
+const NAME_KEYWORDS = ["name", "contact name", "recipient name", "recipient"];
+const ADDRESS_KEYWORDS = [
+    "address",
+    "contact address",
+    "recipient address",
+    "wallet",
+];
 const NETWORK_KEYWORDS = ["network", "chain", "blockchain"];
 const NOTE_KEYWORDS = ["note", "notes", "memo", "comment"];
 

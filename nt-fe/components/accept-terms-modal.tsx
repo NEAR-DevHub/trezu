@@ -1,11 +1,9 @@
 "use client";
 
-import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 import { Button } from "@/components/button";
-import { Icon } from "@/components/icon";
 import {
     Dialog,
     DialogContent,
@@ -111,20 +109,11 @@ export function AcceptTermsModal({ open, variant }: AcceptTermsModalProps) {
                 <DialogFooter className="mx-0 px-0 pt-0">
                     <Button
                         onClick={handleAccept}
-                        disabled={!accepted || isSubmitting}
+                        loading={isSubmitting}
+                        disabled={!accepted}
                         className="h-10 w-full"
                     >
-                        {isSubmitting ? (
-                            <>
-                                <Icon
-                                    icon={LoaderCircleIcon}
-                                    className="mr-2 animate-spin"
-                                />
-                                {t("accepting")}
-                            </>
-                        ) : (
-                            t("agreeAndContinue")
-                        )}
+                        {isSubmitting ? t("accepting") : t("agreeAndContinue")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

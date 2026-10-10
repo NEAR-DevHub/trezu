@@ -2,7 +2,7 @@ name: Frontend Build
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, nearcom_redesign]
     paths:
       - 'nt-fe/**'
       - '.github/workflows/frontend-build.yml'
@@ -10,7 +10,7 @@ on:
       - 'render.yaml'
       - '.env.example'
   pull_request:
-    branches: [ main ]
+    branches: [main, nearcom_redesign]
     paths:
       - 'nt-fe/**'
       - '.github/workflows/frontend-build.yml'

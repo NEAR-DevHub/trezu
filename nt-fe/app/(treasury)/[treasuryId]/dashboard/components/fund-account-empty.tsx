@@ -25,9 +25,15 @@ const FEATURED_TOKEN_ICONS = [
 
 interface Props {
     onReceiveClick: () => void;
+    receiveDisabled?: boolean;
+    receiveTooltip?: string;
 }
 
-export function FundAccountEmpty({ onReceiveClick }: Props) {
+export function FundAccountEmpty({
+    onReceiveClick,
+    receiveDisabled = false,
+    receiveTooltip,
+}: Props) {
     const t = useTranslations("balanceWithGraph");
     const { treasuryId } = useTreasury();
 
@@ -46,8 +52,11 @@ export function FundAccountEmpty({ onReceiveClick }: Props) {
             </div>
             <Button
                 id="dashboard-step1"
-                className="h-11 gap-2 rounded-2xl px-6"
+                className="h-11 gap-2 px-6"
+                disabled={receiveDisabled}
+                tooltipContent={receiveTooltip}
                 onClick={() => {
+                    if (receiveDisabled) return;
                     trackEvent("nav_click", {
                         destination: "deposit",
                         source: "dashboard",

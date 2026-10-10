@@ -12,7 +12,7 @@
 //! - tracing spans per task and `concurrency(1)` so cycles never overlap
 //!
 //! Schedules keep their old intervals/env-var overrides. Jobs that used to
-//! run once at startup (reconciliation, monthly reset, dashboard, FT
+//! run once at startup (monthly reset, dashboard, FT
 //! lockup) get one deduplicated task when the process first becomes leader,
 //! in addition to their cron schedule.
 
@@ -488,38 +488,61 @@ pub(crate) fn job_trace_layer() -> TraceLayer {
         .on_failure(DefaultOnFailure::new().level(tracing::Level::WARN))
 }
 
-fn job_monitor() -> Monitor {
+fn job_monitor(shutdown: CancellationToken) -> Monitor {
     // apalis's own supervisor: runs every cron worker, restarts one that
-    // exits (backend/storage failure) via `should_restart`, and drains
-    // in-flight tasks on shutdown. The three public-history payload consumers
-    // use their targeted supervisors below.
+    // exits via `should_restart`, and drains in-flight tasks on shutdown. The
+    // three public-history payload consumers use their targeted supervisors
+    // below.
     //
     // The `should_restart` hook is synchronous, so each rebuilt backend delays
     // its first claim with the platform's jittered 1-30s restart backoff.
     // Transient database outages remain inside the claim stream and use the
     // same bounds without forcing a worker rebuild.
-    //
-    // A `GracefulExit` (worker stopped via `.stop()`, i.e. shutdown) must NOT
-    // be restarted: during shutdown the Monitor stops each rebuilt worker
-    // immediately, so restarting on GracefulExit hot-loops
-    // stop→exit→restart→stop forever and the process never terminates after
-    // SIGINT/SIGTERM. Same for any exit while shutdown is in progress.
-    Monitor::new().should_restart(|ctx, err, attempt| {
-        if matches!(err, WorkerError::GracefulExit) || ctx.is_shutting_down() {
-            tracing::info!(
-                worker = %ctx.name(),
-                "job worker stopped for shutdown; not restarting"
-            );
-            return false;
-        }
+    Monitor::new().should_restart(move |ctx, err, attempt| {
+        restart_cron_worker(&shutdown, ctx.name(), err, attempt)
+    })
+}
+
+/// Decides whether a cron worker that exited is rebuilt.
+///
+/// Only the process-wide shutdown token may veto a restart. The Monitor calls
+/// `ctx.stop()` on the failed worker *before* consulting this hook, so
+/// `ctx.is_shutting_down()` is always true here and cannot distinguish a
+/// shutdown from a crash — checking it made every exit permanent (a worker
+/// that lost its heartbeat to a 10s pool-acquire timeout stayed dead until the
+/// process was restarted by hand). A `GracefulExit` outside shutdown is a stop
+/// nobody asked for and is restarted too; during real shutdown the token is
+/// already cancelled, so the old stop→exit→restart hot-loop cannot occur.
+pub(crate) fn restart_cron_worker(
+    shutdown: &CancellationToken,
+    worker: &str,
+    err: &WorkerError,
+    attempt: usize,
+) -> bool {
+    if shutdown.is_cancelled() {
+        tracing::info!(worker, "job worker stopped for shutdown; not restarting");
+        return false;
+    }
+    let error = err.to_string();
+    if error.contains("WORKER_ALREADY_EXISTS") {
+        // Another process registered this stable worker id and its heartbeat
+        // is still fresh (leadership handover). Expected to clear on its own;
+        // retry with backoff at WARN.
+        tracing::warn!(
+            worker,
+            error,
+            attempt,
+            "job worker id still registered elsewhere; monitor retrying"
+        );
+    } else {
         tracing::error!(
-            worker = %ctx.name(),
-            error = %err,
+            worker,
+            error,
             attempt,
             "job worker exited; monitor restarting it"
         );
-        true
-    })
+    }
+    true
 }
 
 fn configure_cron_runtime(
@@ -529,27 +552,6 @@ fn configure_cron_runtime(
     wake_hub: &JobWakeHub,
 ) -> (Option<Monitor>, QueueRegistry) {
     let preparing_queues = monitor.is_none();
-
-    if !state.env_vars.disable_balance_monitoring {
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "account-maintenance",
-            schedule_every_secs(env_secs("MAINTENANCE_INTERVAL_SECONDS", 60)),
-            handlers::account_maintenance
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "confidential-poll",
-            schedule_every_secs(env_secs("CONFIDENTIAL_POLL_INTERVAL_SECONDS", 300)),
-            handlers::confidential_poll
-        );
-    }
 
     if state.env_vars.nearblocks_api_key.is_some() {
         monitor = register_cron_worker!(
@@ -561,78 +563,89 @@ fn configure_cron_runtime(
             schedule_every_secs(2),
             handlers::public_history_scheduler
         );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-latest-dispatcher",
-            schedule_every_secs(1),
-            handlers::public_history_latest_dispatcher
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-readiness-scheduler",
-            schedule_every_secs(60),
-            handlers::public_history_readiness_scheduler
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-history-backfill-scheduler",
-            schedule_every_secs(10),
-            handlers::public_history_backfill_scheduler
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-silver-projection",
-            schedule_every_secs(5),
-            handlers::public_silver_projection
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-gold-projection",
-            schedule_every_secs(5),
-            handlers::public_gold_projection
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-proposal-reconciliation",
-            schedule_every_secs(600),
-            handlers::public_proposal_reconciliation
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "public-quote-status-refresh",
-            schedule_every_secs(env_secs("PUBLIC_QUOTE_REFRESH_INTERVAL_SECONDS", 120)),
-            handlers::public_quote_status_refresh
-        );
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "staking-observation",
-            schedule_every_secs(env_secs("STAKING_OBSERVATION_INTERVAL_SECONDS", 900)),
-            handlers::staking_observation
-        );
+        // Shared with confidential treasuries: the Goldsky detector above also
+        // stamps confidential intents and links confidential proposals. Only
+        // the workers below are public-treasury-specific.
+        if state.env_vars.disable_public_treasury_workers {
+            if preparing_queues {
+                tracing::info!(
+                    "public treasury workers disabled (DISABLE_PUBLIC_TREASURY_WORKERS=true)"
+                );
+            }
+        } else {
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-latest-dispatcher",
+                schedule_every_secs(1),
+                handlers::public_history_latest_dispatcher
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-readiness-scheduler",
+                schedule_every_secs(60),
+                handlers::public_history_readiness_scheduler
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-history-backfill-scheduler",
+                schedule_every_secs(10),
+                handlers::public_history_backfill_scheduler
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-silver-projection",
+                schedule_every_secs(5),
+                handlers::public_silver_projection
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-gold-projection",
+                schedule_every_secs(5),
+                handlers::public_gold_projection
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-proposal-reconciliation",
+                schedule_every_secs(600),
+                handlers::public_proposal_reconciliation
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "public-quote-status-refresh",
+                schedule_every_secs(env_secs("PUBLIC_QUOTE_REFRESH_INTERVAL_SECONDS", 120)),
+                handlers::public_quote_status_refresh
+            );
+            monitor = register_cron_worker!(
+                monitor,
+                queues,
+                state,
+                wake_hub,
+                "staking-observation",
+                schedule_every_secs(env_secs("STAKING_OBSERVATION_INTERVAL_SECONDS", 900)),
+                handlers::staking_observation
+            );
+        }
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -663,35 +676,10 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
-        "price-sync",
-        schedule_every_secs(60),
-        handlers::price_sync
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
         "token-price-ingest",
         schedule_every_secs(60),
         handlers::token_price_ingest
     );
-
-    // Skipping this becuase balance_changs table will be depreceated and we will only use gold projections
-
-    // if !state.env_vars.disable_balance_changes_usd_backfill {
-    //     spawn_cron_worker!(
-    //         queues,
-    //         state,
-    //         "balance-changes-usd-backfill",
-    //         schedule_every_secs(env_secs(
-    //             "BALANCE_CHANGES_USD_BACKFILL_INTERVAL_SECONDS",
-    //             3600
-    //         )),
-    //         handlers::balance_changes_usd_backfill
-    //     );
-    // }
 
     if !state.env_vars.disable_gold_ledger_usd_backfill {
         monitor = register_cron_worker!(
@@ -720,46 +708,10 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
-        "confidential-snapshots",
-        schedule_every_secs(3600),
-        handlers::confidential_snapshots
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
-        "confidential-gold-reconciliation",
-        schedule_every_secs(86_400),
-        handlers::confidential_gold_reconciliation
-    );
-
-    monitor = register_cron_worker!(
-        monitor,
-        queues,
-        state,
-        wake_hub,
         "bulk-payment-payout",
         schedule_every_secs(5),
         handlers::bulk_payment_payout
     );
-
-    if state.goldsky_pool.is_some() {
-        monitor = register_cron_worker!(
-            monitor,
-            queues,
-            state,
-            wake_hub,
-            "goldsky-enrichment",
-            schedule_every_secs(env_secs("ENRICHMENT_INTERVAL_SECONDS", 15)),
-            handlers::goldsky_enrichment
-        );
-    } else {
-        if preparing_queues {
-            tracing::info!("Goldsky enrichment worker disabled (GOLDSKY_DATABASE_URL not set)");
-        }
-    }
 
     let sweeper_disabled = std::env::var("DISABLE_TREASURY_CREATION_SWEEPER")
         .is_ok_and(|v| v.eq_ignore_ascii_case("true") || v == "1");
@@ -813,7 +765,7 @@ fn configure_cron_runtime(
 
     // The factory mirror pulls every sputnik DAO into `daos`; a managed-only
     // deployment relies solely on DAOs registered through creation/save.
-    if !state.env_vars.managed_treasuries_only {
+    if !state.env_vars.managed_treasuries_only && !state.env_vars.disable_public_treasury_workers {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -824,7 +776,9 @@ fn configure_cron_runtime(
             handlers::dao_list_sync
         );
     } else if preparing_queues {
-        tracing::warn!("dao-list-sync disabled: MANAGED_TREASURIES_ONLY is set");
+        tracing::warn!(
+            "dao-list-sync disabled: MANAGED_TREASURIES_ONLY or DISABLE_PUBLIC_TREASURY_WORKERS is set"
+        );
     }
 
     // Notify-only drift check vs near.com production.json; sync stays manual.
@@ -871,7 +825,7 @@ fn configure_cron_runtime(
         handlers::subscription_monthly_reset
     );
 
-    if !state.env_vars.disable_stats_generation {
+    if !state.env_vars.disable_stats_generation && !state.env_vars.disable_public_treasury_workers {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -883,7 +837,9 @@ fn configure_cron_runtime(
         );
     }
 
-    if !state.env_vars.disable_ft_lockup_scheduler {
+    if !state.env_vars.disable_ft_lockup_scheduler
+        && !state.env_vars.disable_public_treasury_workers
+    {
         monitor = register_cron_worker!(
             monitor,
             queues,
@@ -895,7 +851,9 @@ fn configure_cron_runtime(
         );
     } else {
         if preparing_queues {
-            tracing::info!("FT lockup scheduler disabled (DISABLE_FT_LOCKUP_SCHEDULER=true)");
+            tracing::info!(
+                "FT lockup scheduler disabled (DISABLE_FT_LOCKUP_SCHEDULER or DISABLE_PUBLIC_TREASURY_WORKERS)"
+            );
         }
     }
 
@@ -931,7 +889,9 @@ fn prepare_job_queues(state: Arc<AppState>) -> (JobQueues, Vec<QueueSpec>) {
     let (_, mut registry) =
         configure_cron_runtime(state.clone(), QueueRegistry::default(), None, &wake_hub);
 
-    if state.env_vars.nearblocks_api_key.is_some() {
+    if state.env_vars.nearblocks_api_key.is_some()
+        && !state.env_vars.disable_public_treasury_workers
+    {
         registry
             .specs
             .extend(crate::handlers::public_history::bronze::jobs::public_history_queue_specs());
@@ -945,13 +905,14 @@ fn build_cron_runtime(
     state: Arc<AppState>,
     queues: JobQueues,
     wake_hub: &JobWakeHub,
+    shutdown: CancellationToken,
 ) -> (Monitor, JobQueues) {
     let registry = QueueRegistry {
         entries: queues.entries,
         specs: Vec::new(),
     };
     let (monitor, registry) =
-        configure_cron_runtime(state, registry, Some(job_monitor()), wake_hub);
+        configure_cron_runtime(state, registry, Some(job_monitor(shutdown)), wake_hub);
     (
         monitor.expect("cron monitor must be present when starting workers"),
         JobQueues {
@@ -960,12 +921,10 @@ fn build_cron_runtime(
     )
 }
 
-const STARTUP_QUEUES: [&str; 7] = [
-    "confidential-gold-reconciliation",
+const STARTUP_QUEUES: [&str; 5] = [
     "subscription-monthly-reset",
     "public-dashboard-refresh",
     "ft-lockup-refresh",
-    "balance-changes-usd-backfill",
     "gold-usd-enrichment",
     "price-history-backfill",
 ];
@@ -1049,7 +1008,7 @@ async fn run_leader_runtime(
     run_startup_tasks: bool,
 ) -> Result<(), String> {
     let wake_hub = JobWakeHub::default();
-    let (monitor, queues) = build_cron_runtime(state.clone(), queues, &wake_hub);
+    let (monitor, queues) = build_cron_runtime(state.clone(), queues, &wake_hub, shutdown.clone());
     if run_startup_tasks {
         push_startup_tasks(&queues, &state.db_pool).await;
     }
@@ -1344,6 +1303,188 @@ mod tests {
         for spec in crate::handlers::public_history::bronze::jobs::public_history_queue_specs() {
             assert_eq!(spec.fetch_batch, spec.concurrency);
             assert_eq!(spec.poll_interval, std::time::Duration::from_secs(1));
+            // The consumers register under hyphenated ids; the watchdog's
+            // heartbeat check must look those up, not the queue namespace.
+            assert_eq!(spec.worker_id, spec.queue.replace('_', "-"));
+        }
+        for spec in specs
+            .iter()
+            .filter(|spec| spec.queue != "public-history-latest-dispatcher")
+        {
+            if matches!(spec.kind, super::watchdog::QueueKind::Cron { .. }) {
+                assert_eq!(spec.worker_id, spec.queue);
+            }
+        }
+    }
+
+    #[test]
+    fn cron_worker_restarts_on_any_exit_unless_shutting_down() {
+        use apalis::prelude::WorkerError;
+        use tokio_util::sync::CancellationToken;
+
+        let shutdown = CancellationToken::new();
+        let restart = |err: WorkerError, attempt: usize| {
+            super::restart_cron_worker(&shutdown, "unit-test", &err, attempt)
+        };
+        assert!(restart(WorkerError::GracefulExit, 1));
+        assert!(restart(
+            WorkerError::HeartbeatError(
+                "pool timed out while waiting for an open connection".into()
+            ),
+            2
+        ));
+        assert!(restart(
+            WorkerError::StreamError("WORKER_ALREADY_EXISTS".into()),
+            3
+        ));
+        assert!(restart(WorkerError::PanicError("boom".into()), 4));
+
+        shutdown.cancel();
+        assert!(!restart(WorkerError::GracefulExit, 1));
+        assert!(!restart(WorkerError::HeartbeatError("x".into()), 1));
+    }
+
+    /// End-to-end through the real apalis Monitor: a cron worker that keeps
+    /// stopping for no reason must be rebuilt every time, re-register under
+    /// its stable id despite the dead incarnation's fresh heartbeat, and keep
+    /// ticking. Shutdown must still end the Monitor promptly.
+    #[sqlx::test(migrations = "./migrations")]
+    async fn cron_worker_is_rebuilt_after_unexpected_stops(pool: sqlx::PgPool) {
+        use std::sync::Arc;
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        use std::time::Duration;
+
+        use apalis::prelude::*;
+        use apalis_core::backend::pipe::PipeExt;
+        use apalis_cron::{CronStream, Tick};
+        use tokio_util::sync::CancellationToken;
+
+        use super::platform::{JobWakeHub, QueueSpec, SteadyPostgresStorage};
+
+        const QUEUE: &str = "restart-soak-test";
+        const STOPS: usize = 3;
+
+        async fn flaky_tick(
+            _t: Tick,
+            runs: Data<Arc<AtomicUsize>>,
+            worker: WorkerContext,
+        ) -> Result<(), BoxDynError> {
+            let run = runs.fetch_add(1, Ordering::SeqCst) + 1;
+            if run % 2 == 1 {
+                // The stop nobody asked for.
+                worker.stop()?;
+            }
+            Ok(())
+        }
+
+        super::setup_apalis(&pool).await.unwrap();
+        let runs = Arc::new(AtomicUsize::new(0));
+        let rebuilds = Arc::new(AtomicUsize::new(0));
+        let shutdown = CancellationToken::new();
+        let spec = QueueSpec::cron(QUEUE, 1, 1, Duration::from_secs(30));
+        let schedule = super::schedule_every_secs(1);
+
+        let monitor = super::job_monitor(shutdown.clone()).register({
+            let runs = runs.clone();
+            let rebuilds = rebuilds.clone();
+            let steady = SteadyPostgresStorage::new(&pool, &spec, &JobWakeHub::default());
+            move |attempt| {
+                rebuilds.fetch_max(attempt, Ordering::SeqCst);
+                let restart_delay = super::platform::worker_restart_delay(attempt);
+                WorkerBuilder::new(QUEUE)
+                    .backend(
+                        CronStream::new(schedule.clone())
+                            .pipe_to(steady.clone().with_startup_delay(restart_delay)),
+                    )
+                    .data(runs.clone())
+                    .build(flaky_tick)
+            }
+        });
+        let monitor_shutdown = shutdown.clone();
+        let monitor_task = tokio::spawn(async move {
+            monitor
+                .run_with_signal(async move {
+                    monitor_shutdown.cancelled().await;
+                    Ok(())
+                })
+                .await
+        });
+
+        tokio::time::timeout(Duration::from_secs(150), async {
+            while runs.load(Ordering::SeqCst) < 2 * STOPS {
+                tokio::time::sleep(Duration::from_millis(200)).await;
+            }
+        })
+        .await
+        .expect("worker must keep ticking across repeated unexpected stops");
+        assert!(
+            rebuilds.load(Ordering::SeqCst) >= STOPS,
+            "monitor must rebuild the worker after every stop"
+        );
+
+        shutdown.cancel();
+        tokio::time::timeout(Duration::from_secs(20), monitor_task)
+            .await
+            .expect("monitor must exit promptly on shutdown")
+            .expect("monitor task must not panic")
+            .expect("monitor must shut down cleanly");
+    }
+
+    #[sqlx::test(migrations = "./migrations")]
+    async fn disabling_public_treasury_workers_keeps_shared_detector(pool: sqlx::PgPool) {
+        let env = crate::utils::env::EnvVars {
+            nearblocks_api_key: Some("test".to_string()),
+            goldsky_database_url: None,
+            disable_public_treasury_workers: true,
+            ..Default::default()
+        };
+        let state = std::sync::Arc::new(
+            crate::AppState::builder()
+                .db_pool(pool)
+                .env_vars(env)
+                .build()
+                .await
+                .unwrap(),
+        );
+
+        let (queues, specs) = super::prepare_job_queues(state);
+        for queue in [
+            "public-history-scheduler",
+            "price-history-backfill",
+            "confidential-history-ingest",
+            "notifications",
+            "gold-usd-enrichment",
+        ] {
+            assert!(
+                queues.storage(queue).is_some(),
+                "{queue} must stay registered"
+            );
+        }
+        for queue in [
+            "public-history-latest-dispatcher",
+            "public-history-readiness-scheduler",
+            "public-history-backfill-scheduler",
+            "public-silver-projection",
+            "public-gold-projection",
+            "public-proposal-reconciliation",
+            "public-quote-status-refresh",
+            "staking-observation",
+            "dao-list-sync",
+            "public-dashboard-refresh",
+            "ft-lockup-refresh",
+        ] {
+            assert!(queues.storage(queue).is_none(), "{queue} must be skipped");
+            assert!(
+                specs.iter().all(|spec| spec.queue != queue),
+                "{queue} must not be watched"
+            );
+        }
+        for spec in crate::handlers::public_history::bronze::jobs::public_history_queue_specs() {
+            assert!(
+                specs.iter().all(|watched| watched.queue != spec.queue),
+                "{} must not be watched",
+                spec.queue
+            );
         }
     }
 

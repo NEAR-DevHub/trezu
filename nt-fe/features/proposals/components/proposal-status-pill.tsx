@@ -1,15 +1,19 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { UIProposalStatus, getProposalStatus } from "../utils/proposal-utils";
+import { useTranslations } from "next-intl";
+import { Icon } from "@/components/icon";
 import { Tooltip } from "@/components/tooltip";
-import { Proposal, Vote } from "@/lib/proposals-api";
-import { Policy } from "@/types/policy";
-import { getApproversAndThreshold } from "@/lib/config-utils";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useProposalTransaction } from "@/hooks/use-proposals";
 import { useTreasury } from "@/hooks/use-treasury";
+import { getApproversAndThreshold } from "@/lib/config-utils";
+import type { Proposal, Vote } from "@/lib/proposals-api";
+import { cn } from "@/lib/utils";
+import type { Policy } from "@/types/policy";
+import { useProposalStatus } from "../hooks/use-proposal-status";
+import type { UIProposalStatus } from "../utils/proposal-utils";
 
 type PillStatus = UIProposalStatus | "Paid" | "Approved";
 
@@ -31,6 +35,7 @@ export function getStatusColor(status: PillStatus): string {
         case "Removed":
             return "border-general-rose-border bg-general-rose-background-faded text-general-rose-foreground";
         case "Pending":
+        case "Processing":
             return "border-general-orange-border bg-general-orange-background-faded text-general-orange-foreground";
         case "Expired":
             return "border-general-border bg-general-bg-secondary text-general-secondary-foreground";
@@ -47,6 +52,8 @@ function statusKey(status: PillStatus): string {
             return "executed";
         case "Pending":
             return "pending";
+        case "Processing":
+            return "processing";
         case "Rejected":
             return "rejected";
         case "Expired":
@@ -69,7 +76,7 @@ export function statusPillClassName(
     className?: string,
 ): string {
     return cn(
-        "inline-flex min-h-6 items-center rounded-sm border px-2 py-[3px] text-xs/[14px] font-semibold",
+        "inline-flex min-h-6 items-center gap-1.5 rounded-sm border px-2 py-[3px] text-xs/[14px] font-semibold",
         getStatusColor(status),
         className,
     );
@@ -79,6 +86,12 @@ export function StatusPill({ status, className }: StatusPillProps) {
     const t = useTranslations("proposals.status");
     return (
         <span className={statusPillClassName(status, className)}>
+            {status === "Processing" && (
+                <Icon
+                    icon={LoaderCircleIcon}
+                    className="size-[13px] animate-spin"
+                />
+            )}
             {t(statusKey(status))}
         </span>
     );
@@ -132,7 +145,7 @@ export function ProposalStatusPill({
 }: ProposalStatusPillProps) {
     const tTooltip = useTranslations("proposals.statusTooltip");
     const { treasuryId } = useTreasury();
-    const status = getProposalStatus(proposal, policy);
+    const status = useProposalStatus(proposal, policy);
 
     const isFailed = status === "Failed";
 
@@ -157,10 +170,17 @@ export function ProposalStatusPill({
         (v) => v === "Reject",
     ).length;
 
+    if (!status) {
+        return <Skeleton className={cn("h-6 w-20 rounded-sm", className)} />;
+    }
+
     let info: React.ReactNode | undefined;
     switch (status) {
         case "Pending":
             info = tTooltip("pending");
+            break;
+        case "Processing":
+            info = tTooltip("processing");
             break;
         case "Executed":
             info = tTooltip("executed", {

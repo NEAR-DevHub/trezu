@@ -14,10 +14,8 @@ import { resolveProfileImageUrl } from "@/lib/profile-image";
 import type { Proposal, Vote } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
 import type { Policy } from "@/types/policy";
-import {
-    getProposalStatus,
-    type UIProposalStatus,
-} from "../utils/proposal-utils";
+import { useProposalStatus } from "../hooks/use-proposal-status";
+import type { UIProposalStatus } from "../utils/proposal-utils";
 import { VoteBadge } from "./proposal-status-pill";
 
 interface VotingIndicatorProps {
@@ -26,12 +24,13 @@ interface VotingIndicatorProps {
 }
 
 /** Approvals already cast take the colour of the request's outcome. */
-function approvedIndicatorClass(status: UIProposalStatus) {
+function approvedIndicatorClass(status: UIProposalStatus | undefined) {
     switch (status) {
         case "Executed":
         case "Failed":
             return "bg-general-success-foreground";
         case "Pending":
+        case "Processing":
             return "bg-general-orange-foreground";
         default:
             return "bg-general-unofficial-border-5";
@@ -42,7 +41,10 @@ function approvedIndicatorClass(status: UIProposalStatus) {
  * One of the bars: empty until an account fills it, then tinted by the vote
  * they cast. Rejections are the design's #C2410C wherever the request ends up.
  */
-function indicatorClass(vote: Vote | undefined, status: UIProposalStatus) {
+function indicatorClass(
+    vote: Vote | undefined,
+    status: UIProposalStatus | undefined,
+) {
     if (!vote) {
         return "bg-general-unofficial-border-3";
     }
@@ -112,7 +114,7 @@ export function VotingIndicator({ proposal, policy }: VotingIndicatorProps) {
         proposal.kind,
         false,
     );
-    const status = getProposalStatus(proposal, policy);
+    const status = useProposalStatus(proposal, policy);
     // Every vote fills a bar, whichever way it was cast. `requiredVotes` is
     // only the approval threshold, so a split vote can push the count past it.
     const votes = Object.entries(proposal.votes);

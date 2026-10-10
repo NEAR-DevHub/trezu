@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "読み込み中...",
+        "loading": "読み込み中",
         "notAvailable": "該当なし",
-        "connecting": "接続中...",
+        "connecting": "接続中",
         "save": "保存",
         "cancel": "キャンセル",
         "submit": "送信",
@@ -18,7 +18,7 @@
         "exporting": "エクスポート中",
         "import": "インポート",
         "remove": "削除",
-        "removing": "削除中...",
+        "removing": "削除中",
         "edit": "編集",
         "continue": "続ける",
         "select": "選択",
@@ -191,18 +191,14 @@
             "title": "設定"
         },
         "addressBook": {
-            "title": "アドレス帳",
-            "description": "保存した受取人を管理"
+            "title": "アドレス帳"
         },
         "payments": {
-            "title": "支払い",
-            "confidentialTitle": "機密支払い",
-            "description": "資金を安全かつ確実に送金します。"
+            "title": "支払い"
         },
         "exchange": {
             "title": "スワップ",
-            "confidentialTitle": "スワップ",
-            "description": "トークンを安全かつ効率的に交換"
+            "confidentialTitle": "スワップ"
         },
         "vesting": {
             "title": "ベスティング",
@@ -340,13 +336,11 @@
         "anythingElseLost": "他から送られたものは失われます",
         "anythingElseLostSub": "取引所、公開ウォレット、他のネットワーク – 復元できません。",
         "confidentialAckCheckbox": "near.com または near business 以外からの入金は失われることを理解しています。",
-        "onlyFromNearBusiness": "<bold>near business</bold> からのみ",
+        "onlyFromNearBusiness": "<bold>near business</bold> または <bold>near.com</bold> からのみ",
         "onlyFromConfidentialNearcom": "<bold>機密 near.com</bold> からのみ",
-        "onlyFromNearBusinessOrNearcom": "<bold>near business</bold> または <bold>near.com</bold> からのみ",
         "reusableDoesntExpire": "<bold>再利用可能。</bold>期限なし",
-        "fundsOutsideNearBusinessLost": "<bold>near business</bold> 以外から送られた資金は失われます",
+        "fundsOutsideNearBusinessLost": "<bold>near business</bold> または <bold>near.com</bold> 以外から送られた資金は失われます。",
         "fundsOutsideNearcomLost": "<bold>機密 near.com</bold> 以外から送られた資金は失われます",
-        "fundsOutsideNearBusinessOrNearcomLost": "<bold>near business</bold> または <bold>near.com</bold> 以外から送られた資金は失われます。",
         "publicNetworkRecommendation": "<bold>{network}</bold> ネットワークからのみ入金してください。全額を送る前に少額のテスト取引から始めることをおすすめします。",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "ウェイト",
         "source": "ソース",
         "send": "送金",
-        "exchange": "交換",
         "swap": "スワップ",
         "comingSoon": "近日公開",
         "vesting": "ベスティング",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "エクスポートする権限がありません",
             "quotaExhausted": "上限をすべて使い切りました",
-            "exporting": "エクスポート中...",
+            "exporting": "エクスポート中",
             "export": "エクスポート"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "承認",
             "reject": "却下",
-            "deposit": "入金",
             "viewRequest": "リクエストを表示"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "保留中",
+            "processing": "処理中",
             "approved": "承認済み",
             "rejected": "却下済み",
             "executed": "実行済み",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "このリクエストはまだ保留中で、実行に必要な投票数に達していません。",
+            "processing": "承認済みで、現在処理中です。数秒で完了します。",
             "executed": "{required}人中{approved}人のメンバーがリクエストを承認したため実行されました。",
             "rejected": "{required}人中{rejected}人のメンバーがリクエストを却下したため拒否されました。",
             "expired": "実行に必要な投票数を獲得できなかったため期限切れとなりました。",
@@ -716,13 +710,16 @@
             "removeTitle": "リクエストを削除",
             "bulkBody": "複数のリクエストを{action}しようとしています。一度送信すると、この決定は変更できません。",
             "singleBody": "このリクエストを{action}しようとしています。一度確認すると、このアクションは取り消せません。",
+            "ledgerBody": "Ledgerのロックを解除したままにしてください。次にLedger上で投票を確認します。",
             "actionApprove": "承認",
             "actionReject": "却下",
             "actionRemove": "削除",
             "insufficientBalance": "残高不足のため、リクエスト<highlight>{ids}</highlight>は承認できません。承認は残りのリクエストにのみ適用されます。",
             "approveBlockedBulk": "{count, plural, one {選択した # 件のリクエストは現在承認できません。続行するには選択を解除してください。} other {選択した # 件のリクエストは現在承認できません。続行するには選択を解除してください。}}",
             "remove": "削除",
-            "confirm": "確認"
+            "preparingRemove": "削除を準備しています",
+            "confirm": "確認",
+            "preparingVote": "投票を準備しています"
         },
         "expanded": {
             "recipient": "受取人",
@@ -866,8 +863,7 @@
             "approvalsReceived": "{received}/{required}件の承認を受領",
             "expiresAt": "有効期限",
             "expiredAt": "失効日時",
-            "exchangingTokens": "トークンを交換中",
-            "exchangingTokensBody": "このリクエストはチームに承認されました。トークン交換が進行中で、しばらく時間がかかる場合があります。",
+            "processing": "リクエストは承認され、処理中です。数秒お待ちください。",
             "requestFailed": "リクエストが失敗しました",
             "requestFailedBody": "チームはこのリクエストを承認しましたが、レート変動により失敗しました。新しいリクエストを作成して、もう一度お試しください。",
             "votingPeriod24h": "投票期間: 24時間",
@@ -875,8 +871,6 @@
             "reject": "却下",
             "approve": "承認",
             "destinationNetwork": "送先ネットワーク",
-            "processingPayment": "支払い処理中",
-            "processingPaymentBody": "この支払いはチームによって承認され、現在処理中です。完了まで時間がかかる場合があります。",
             "addMember": "メンバーを追加",
             "removeMember": "メンバーを削除",
             "member": "メンバー",
@@ -938,7 +932,7 @@
                 "voteDescription": "詳細は事前入力されます。リクエストを作成し、チームが投票します。"
             },
             "generateLink": "招待リンクを作成",
-            "generating": "作成中...",
+            "generating": "作成中",
             "generateFailed": "招待リンクの作成に失敗しました。もう一度お試しください。",
             "readyTitle": "招待リンクの準備ができました",
             "readyDescription": "追加したい人に送信してください。ウォレットを接続して参加を申請します。",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, other {# 名の新しいメンバー}}",
             "updatedMembers": "更新されたメンバー",
             "newMembers": "新しいメンバー",
-            "creatingProposal": "提案を作成中...",
+            "creatingProposal": "提案を作成中",
             "confirmSubmit": "リクエストを作成"
         },
         "removeDialog": {
             "title": "{count, plural, one {メンバー} other {メンバー}}を削除しますか？",
             "nearnBody": "承認されると、{account}はトレジャリーから永久に削除され、関連するすべての権限が取り消されます。削除後、このアカウントはNEARNからリクエストを作成できなくなります。",
             "genericBody": "承認されると、このアクションにより<bold>{accounts}</bold>がトレジャリーから永久に削除され、割り当てられたすべての権限が取り消されます。",
-            "creatingProposal": "提案を作成中..."
+            "creatingProposal": "提案を作成中"
         },
         "validation": {
             "accountIdRequired": "アカウントIDは必須です",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "表示名を入力",
             "logo": "ロゴ",
             "logoDescription": "トレジャリーのロゴをアップロードしてください。SVG、PNG、またはJPG(256x256ピクセル)を推奨します。",
-            "uploading": "アップロード中...",
+            "uploading": "アップロード中",
             "removeLogo": "削除",
             "logoUploaded": "ロゴが正常にアップロードされました",
             "uploadError": "画像のアップロード中にエラーが発生しました。もう一度お試しください。",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "{count, plural, =0 {受取人が選択されていません} other {# 人の受取人を選択中}}",
         "sectionHeading": "受取人",
         "privacyNote": "保存されたアドレスは非公開で、チームのみが閲覧できます。",
+        "contactsCount": "{count, plural, other {# 人の受取人}}",
         "searchPlaceholder": "名前で受取人を検索",
         "searchPlaceholderShort": "検索",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "インポートされたすべての受取人はすでにアドレス帳に存在します。戻って別のリストをアップロードするか、このレビューから重複を削除してください。",
             "someDuplicates": "合計{total}人中{duplicates}人が重複しています。続行すると新しい受取人のみがインポートされます。",
             "duplicated": "重複",
+            "contactNumber": "受取人 {number}",
             "notePlaceholder": "この受取人を識別するためのメモを追加(例: 業務委託支払い、ベスティング配布)。",
             "skipDuplicates": "重複をスキップして新しいもののみインポートします。",
             "allDuplicatesTooltip": "インポートされたすべての受取人はすでにアドレス帳にあるため、新しくインポートするものはありません。",
+            "manualAllDuplicates": "{count, plural, =1 {この連絡先はすでにアドレス帳に存在します。} other {これらの連絡先はすでにアドレス帳に存在します。}}",
+            "manualSomeDuplicates": "{total}件中{duplicates}件の連絡先はすでにアドレス帳に存在します。新しい連絡先のみ保存されます。",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {この連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。} other {これらの連絡先はすでにアドレス帳にあるため、新しく保存するものはありません。}}",
             "duplicateActionTooltip": "続行するには重複スキップを有効化するか、重複する受取人を削除してください。",
-            "adding": "追加中…",
+            "adding": "追加中",
             "nothingNew": "新しくインポートするものはありません",
-            "addRecipientsButton": "{count, plural, other {受取人を追加}}"
+            "addRecipientsButton": "連絡先を保存"
         },
         "removeDialog": {
             "title": "受取人を削除",
+            "body": "アドレス帳から<bold>{names}</bold>を削除します。いつでも再度追加できます。",
             "bulk": "アドレス帳から<bold>{count, plural, other {# 人の受取人}}</bold>を削除します。いつでも再度追加できます。",
-            "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。"
+            "single": "アドレス帳から<bold>{name}</bold>を削除します。この受取人はいつでも再度追加できます。",
+            "removing": "削除中"
         },
         "importFlow": {
             "title": "受取人をインポート",
@@ -1144,7 +1145,7 @@
             "foundSummary": "{networkCount, plural, other {# 件のネットワーク}}上で{count, plural, other {# 人の受取人}}を発見",
             "uploadPrompt": "受取人データをアップロードまたは貼り付け",
             "fixErrors": "続行するにはエラーを修正してください",
-            "continueReview": "確認に進む"
+            "continueReview": "詳細を確認"
         },
         "form": {
             "editRecipient": "受取人を編集",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "受取人のアドレス",
             "network": "ネットワーク",
             "networkInfo": "このアドレスと互換性のあるネットワーク",
+            "enterName": "名前を入力",
+            "enterAddress": "アドレスを入力",
+            "note": "メモ",
+            "clearName": "名前をクリア",
+            "clearAddress": "アドレスをクリア",
+            "clearNote": "メモをクリア",
+            "saveContact": "受取人を保存",
             "enterAddressFirst": "先に受取人アドレスを入力してください",
             "selectNetwork": "ネットワークを選択",
             "selectNetworksTitle": "ネットワークを選択",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "またはドラッグ&ドロップ",
             "token": "トークン",
             "destinationNetwork": "送信先ネットワーク",
-            "uploadFileFirst": "先にファイルをアップロードしてください",
             "removeFile": "ファイルを削除",
             "maxFileSize": "最大1ファイル、1.5MBまで、CSVファイルのみ",
             "noFilePrompt": "アップロードするファイルがない場合は?",
@@ -1335,6 +1342,7 @@
             "enterAmount": "金額を入力してください"
         },
         "review": "スワップを確認",
+        "chainDeliveryUnsupported": "このネットワークは交換では利用できません。",
         "poweredBy": "提供:",
         "info": {
             "priceDifference": "価格差",
@@ -1484,6 +1492,7 @@
             "passkeyCardSubtitle": "デバイスの生体認証またはパスコードでサインイン",
             "web3WalletsSeparator": "Web3ウォレット",
             "selectOtherWallet": "別のウォレットを選択",
+            "connectFailed": "サインインできませんでした",
             "back": "戻る"
         },
         "unexpectedError": "予期しないエラーが発生しました",
@@ -1546,7 +1555,7 @@
         "proposalDescriptionLabel": "提案の説明(任意)",
         "proposalDescriptionPlaceholder": "この提案を説明してください...",
         "createProposal": "提案を作成",
-        "creatingProposal": "提案を作成中...",
+        "creatingProposal": "提案を作成中",
         "confirmInWallet": "ウォレットで確認してください",
         "proposalSubmitted": "提案を送信しました",
         "shareProposal": "提案が作成されました。下のリンクをトレジャリーメンバーと共有して投票してもらってください。",
@@ -1596,7 +1605,7 @@
         "relinking": "{count, plural, other {# 件の選択されたトレジャリーは別のTelegramチャットにリンクされています。接続するとチャットIDのリンクがこのチャットに変更されます。}}",
         "connectedToAnother": "別のチャットに接続されています",
         "notMember": "あなたはどのトレジャリーのポリシーメンバーでもありません。",
-        "connecting": "接続中…",
+        "connecting": "接続中",
         "connect": "接続",
         "settings": {
             "title": "Telegram",
@@ -1709,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "別のメンバーを追加",
         "validation": {
-            "rolesRequired": "少なくとも1つのロールが必要です",
-            "duplicateAddress": "アドレスはすでにメンバーです"
+            "rolesRequired": "少なくとも1つのロールが必要です"
         },
         "enterAddress": "アドレスを入力",
         "clearAddress": "アドレスをクリア",
@@ -1746,7 +1754,10 @@
         "orDragDrop": "またはドラッグ&ドロップ",
         "maxFileSize": "最大1ファイル、{maxSize}MBまで、CSVファイルのみ",
         "noFilePrompt": "アップロードするファイルがない場合は?",
-        "downloadTemplate": "テンプレートをダウンロード"
+        "downloadTemplate": "テンプレートをダウンロード",
+        "pleaseUploadCsv": "CSVファイルをアップロードしてください",
+        "fileSizeLimit": "ファイルサイズは1.5MB未満である必要があります",
+        "removeFile": "ファイルを削除"
     },
     "tokenSelect": {
         "selectToken": "トークンを選択",
@@ -1804,7 +1815,7 @@
         "noDownloadPermission": "ファイルをダウンロードする権限がありません。",
         "noExportPermission": "エクスポートする権限がありません",
         "quotaUsed": "上限をすべて使い切りました",
-        "exporting": "エクスポート中...",
+        "exporting": "エクスポート中",
         "export": "エクスポート",
         "columnSubmissionTime": "送信時刻",
         "columnDateRange": "期間",
@@ -1876,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "受取人のネットワーク",
         "placeholder": "受取人のネットワークを選択",
-        "enterAddressFirst": "先に受取人アドレスを入力してください",
         "noCompatibleNetwork": "このアドレスに一致するネットワークはありません",
         "selectPlaceholder": "ネットワークを選択",
         "title": "ネットワークを選択",
@@ -1884,8 +1894,6 @@
         "fromAddressBook": "アドレス帳から",
         "otherAvailable": "その他の利用可能",
         "incompatible": "非互換",
-        "comingSoon": "近日公開",
-        "forMembersOnly": "メンバー限定",
         "nearComDescription": "near business と near.com 用ネットワーク",
         "internalTag": "内部"
     },
@@ -1900,6 +1908,7 @@
         "note": "メモ",
         "added": "追加日",
         "remove": "削除",
+        "noResults": "検索に一致する受取人はいません。",
         "send": "送金"
     },
     "publicDashboard": {
@@ -2058,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "連絡先に保存",
-        "walletCopiedToast": "ウォレットアドレスをクリップボードにコピーしました",
         "copyWalletAddress": "ウォレットアドレスをコピー"
     },
     "infoDisplay": {
@@ -2161,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "最大を使用",
-        "max": "MAX",
         "insufficientTokens": "残高が不足しています。承認前に補充してください。",
         "insufficientTokensForFee": "ネットワーク手数料({fee} {symbol})をカバーするトークンが不足しています。リクエストを送信してから承認前に補充できます。",
         "balance": "残高: {amount} {symbol}",
@@ -2173,23 +2180,20 @@
         "paused": "一時停止中",
         "brieflyUnavailable": "一時的に利用不可"
     },
-    "address": {
-        "copied": "アドレスをクリップボードにコピーしました"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "投票できるメンバー",
         "copyAddress": "アドレスをコピー",
         "moreMembers": "+{count, plural, other {# 名のメンバー}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, other {# 名の受取人を追加しました}}",
-        "alreadyExistsToast": "この受取人はすでにアドレス帳にあります",
-        "addedSingleToast": "受取人を追加しました",
-        "addFailedToast": "受取人の追加に失敗しました",
-        "addSingleFailedToast": "受取人の追加に失敗しました",
-        "removedToast": "{count, plural, other {# 名の受取人を削除しました}}",
-        "removeFailedToast": "受取人の削除に失敗しました",
-        "exportFailedToast": "受取人のエクスポートに失敗しました"
+        "addedToast": "{count, plural, =1 {連絡先を保存しました} other {# 件の連絡先を追加しました}}",
+        "alreadyExistsToast": "この連絡先はすでにアドレス帳にあります",
+        "addedSingleToast": "連絡先を追加しました",
+        "addFailedToast": "連絡先の追加に失敗しました",
+        "addSingleFailedToast": "連絡先の追加に失敗しました",
+        "removedToast": "{count, plural, =1 {連絡先を削除しました} other {# 件の連絡先を削除しました}}",
+        "removeFailedToast": "連絡先の削除に失敗しました",
+        "exportFailedToast": "連絡先のエクスポートに失敗しました"
     },
     "treasuryMutations": {
         "savedToast": "トレジャリーを一覧に保存しました",
@@ -2339,15 +2343,7 @@
             "back": "戻る"
         },
         "progress": {
-            "title": "クイックステップに従ってトレジャリーを探索",
             "addAssetsTitle": "資産を追加",
-            "addAssetsDescription": "資産を追加して動きを確認しましょう。",
-            "deposit": "入金",
-            "createPaymentTitle": "支払いリクエストを作成",
-            "createPaymentDescription": "支払いリクエストを作成してセットアップを完了しましょう。",
-            "send": "送金",
-            "useSolo": "Solo を使う",
-            "addTeamMemberDescription": "アカウントが正常にセットアップされました。素晴らしいスタートです!",
             "addTeamMemberTitle": "トレジャリーアカウントを作成",
             "getStarted": "はじめる",
             "setupThresholdTitle": "しきい値を設定",
@@ -2400,8 +2396,9 @@
         }
     },
     "warnings": {
+        "gotIt": "了解",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "に",
             "until": "まで"
@@ -2492,7 +2489,7 @@
             "title": "テンプレートを削除",
             "body": "<b>{name}</b> を削除しますか？メンバーはこのテンプレートから提案を提出できなくなります。この操作は元に戻せません。",
             "confirm": "削除",
-            "deleting": "削除中…"
+            "deleting": "削除中"
         },
         "editor": {
             "nameLabel": "名前",
@@ -2636,7 +2633,7 @@
         "save": "保存",
         "edit": "編集",
         "remove": "削除",
-        "uploading": "アップロード中...",
+        "uploading": "アップロード中",
         "saveSuccess": "変更を保存しました。",
         "saveError": "変更を保存できませんでした。もう一度お試しください。",
         "invalidImage": "有効な画像ファイルを選択してください。",

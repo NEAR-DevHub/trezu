@@ -1,6 +1,7 @@
 "use client";
 
 import { Cancel01Icon } from "@hugeicons/core-free-icons";
+import * as DismissableLayer from "@radix-ui/react-dismissable-layer";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { useEffect } from "react";
@@ -28,59 +29,65 @@ export function CookieConsentBanner() {
         return () => popOverlay();
     }, [pushOverlay, popOverlay]);
 
+    // A modal dialog opened while the banner is up (e.g. the early-access
+    // form) sets `pointer-events: none` on <body>, which the banner inherits.
+    // `pointer-events-auto` takes the clicks back, and the branch keeps those
+    // clicks from counting as "outside" and dismissing the dialog.
     return createPortal(
-        <section
-            aria-label={t("title")}
-            className="fixed bottom-4 right-4 z-60 w-sm max-w-[calc(100vw-2rem)] rounded-2xl bg-popover-foreground text-popover shadow-xl p-4"
-        >
-            <div className="flex items-start gap-3">
-                <p className="min-w-0 flex-1 text-xs leading-relaxed">
-                    {t.rich("bannerBody", {
-                        privacy: (chunks) => (
-                            <Link
-                                href={PRIVACY_POLICY_HREF}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="underline underline-offset-2 hover:opacity-80"
-                            >
-                                {chunks}
-                            </Link>
-                        ),
-                    })}
-                </p>
-                <button
-                    type="button"
-                    onClick={rejectNonEssential}
-                    className="shrink-0 rounded-sm opacity-70 transition-opacity hover:opacity-100"
-                >
-                    <Icon icon={Cancel01Icon} />
-                    <span className="sr-only">{t("closeBanner")}</span>
-                </button>
-            </div>
+        <DismissableLayer.Branch asChild>
+            <section
+                aria-label={t("title")}
+                className="pointer-events-auto fixed bottom-4 right-4 z-60 w-sm max-w-[calc(100vw-2rem)] rounded-2xl bg-popover-foreground text-popover shadow-xl p-4"
+            >
+                <div className="flex items-start gap-3">
+                    <p className="min-w-0 flex-1 text-xs leading-relaxed">
+                        {t.rich("bannerBody", {
+                            privacy: (chunks) => (
+                                <Link
+                                    href={PRIVACY_POLICY_HREF}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="underline underline-offset-2 hover:opacity-80"
+                                >
+                                    {chunks}
+                                </Link>
+                            ),
+                        })}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={rejectNonEssential}
+                        className="shrink-0 rounded-sm opacity-70 transition-opacity hover:opacity-100"
+                    >
+                        <Icon icon={Cancel01Icon} />
+                        <span className="sr-only">{t("closeBanner")}</span>
+                    </button>
+                </div>
 
-            <div className="mt-4 flex flex-col gap-2">
-                <Button
-                    onClick={acceptAll}
-                    className="w-full bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90 text-[14px] leading-none"
-                >
-                    {t("acceptAll")}
-                </Button>
-                <Button
-                    variant="ghost"
-                    onClick={rejectNonEssential}
-                    className="w-full text-popover hover:bg-popover/10 dark:hover:bg-popover/10 hover:text-popover text-[14px] leading-none"
-                >
-                    {t("rejectNonEssential")}
-                </Button>
-                <Button
-                    variant="ghost"
-                    onClick={openPreferences}
-                    className="w-full text-popover hover:bg-popover/10 dark:hover:bg-popover/10 hover:text-popover text-[14px] leading-none"
-                >
-                    {t("managePreferences")}
-                </Button>
-            </div>
-        </section>,
+                <div className="mt-4 flex flex-col gap-2">
+                    <Button
+                        onClick={acceptAll}
+                        className="w-full bg-card text-card-foreground hover:bg-card/90 hover:text-card-foreground/90 text-[14px] leading-none"
+                    >
+                        {t("acceptAll")}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        onClick={rejectNonEssential}
+                        className="w-full text-popover hover:bg-popover/10 dark:hover:bg-popover/10 hover:text-popover text-[14px] leading-none"
+                    >
+                        {t("rejectNonEssential")}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        onClick={openPreferences}
+                        className="w-full text-popover hover:bg-popover/10 dark:hover:bg-popover/10 hover:text-popover text-[14px] leading-none"
+                    >
+                        {t("managePreferences")}
+                    </Button>
+                </div>
+            </section>
+        </DismissableLayer.Branch>,
         document.body,
     );
 }

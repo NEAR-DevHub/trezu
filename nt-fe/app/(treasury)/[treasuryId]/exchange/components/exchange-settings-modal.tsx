@@ -262,10 +262,7 @@ export function ExchangeSettingsModal({
                             )}
                         </div>
 
-                        <Button
-                            type="submit"
-                            className="mt-1 h-12 w-full rounded-2xl"
-                        >
+                        <Button type="submit" className="mt-1 h-12 w-full">
                             {t("save")}
                         </Button>
                     </form>

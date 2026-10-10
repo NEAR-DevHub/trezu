@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Завантаження...",
+        "loading": "Завантаження",
         "notAvailable": "Н/Д",
-        "connecting": "З'єднання...",
+        "connecting": "З'єднання",
         "save": "Зберегти",
         "cancel": "Скасувати",
         "submit": "Надіслати",
@@ -18,7 +18,7 @@
         "exporting": "Експорт",
         "import": "Імпортувати",
         "remove": "Видалити",
-        "removing": "Видалення...",
+        "removing": "Видалення",
         "edit": "Редагувати",
         "continue": "Продовжити",
         "select": "Вибрати",
@@ -191,18 +191,14 @@
             "title": "Налаштування"
         },
         "addressBook": {
-            "title": "Адресна книга",
-            "description": "Керуйте збереженими отримувачами"
+            "title": "Адресна книга"
         },
         "payments": {
-            "title": "Платежі",
-            "confidentialTitle": "Конфіденційні платежі",
-            "description": "Надсилайте кошти безпечно та надійно."
+            "title": "Платежі"
         },
         "exchange": {
             "title": "Обмін",
-            "confidentialTitle": "Обмін",
-            "description": "Обмінюйте токени безпечно й ефективно"
+            "confidentialTitle": "Обмін"
         },
         "vesting": {
             "title": "Вестинг",
@@ -340,13 +336,11 @@
         "anythingElseLost": "Усе надіслане звідкись ще буде втрачено",
         "anythingElseLostSub": "Біржі, публічні гаманці, інші мережі – відновити неможливо.",
         "confidentialAckCheckbox": "Я розумію, що депозити з-поза near.com або near business буде втрачено.",
-        "onlyFromNearBusiness": "Лише з <bold>near business</bold>",
+        "onlyFromNearBusiness": "Лише з <bold>near business</bold> або <bold>near.com</bold>",
         "onlyFromConfidentialNearcom": "Лише з <bold>конфіденційного near.com</bold>",
-        "onlyFromNearBusinessOrNearcom": "Лише з <bold>near business</bold> або <bold>near.com</bold>",
         "reusableDoesntExpire": "<bold>Багаторазова.</bold> Не закінчується",
-        "fundsOutsideNearBusinessLost": "Кошти, надіслані з-поза <bold>near business</bold>, буде втрачено",
+        "fundsOutsideNearBusinessLost": "Кошти, надіслані з-поза <bold>near business</bold> або <bold>near.com</bold>, буде втрачено.",
         "fundsOutsideNearcomLost": "Кошти, надіслані з-поза <bold>конфіденційного near.com</bold>, буде втрачено",
-        "fundsOutsideNearBusinessOrNearcomLost": "Кошти, надіслані з-поза <bold>near business</bold> або <bold>near.com</bold>, буде втрачено.",
         "publicNetworkRecommendation": "Вносьте депозит лише з мережі <bold>{network}</bold>. Почніть із невеликої тестової транзакції, перш ніж надсилати повну суму.",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "Вага",
         "source": "Джерело",
         "send": "Надіслати",
-        "exchange": "Обмін",
         "swap": "Обмін",
         "comingSoon": "Скоро",
         "vesting": "Вестинг",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "У вас немає дозволу експортувати",
             "quotaExhausted": "Ви вичерпали квоту",
-            "exporting": "Експортування...",
+            "exporting": "Експортування",
             "export": "Експортувати"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "Схвалити",
             "reject": "Відхилити",
-            "deposit": "Поповнити",
             "viewRequest": "Переглянути запит"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "Очікує",
+            "processing": "Обробляється",
             "approved": "Схвалено",
             "rejected": "Відхилено",
             "executed": "Виконано",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "Цей запит ще очікує й поки не набрав потрібної кількості голосів для виконання.",
+            "processing": "Схвалено і зараз обробляється. Це займе лише кілька секунд.",
             "executed": "Виконано після того, як {approved} з {required} учасників схвалили запит.",
             "rejected": "Відхилено після того, як {rejected} з {required} учасників проголосували проти.",
             "expired": "Спливло, бо не набрано достатньо голосів для виконання.",
@@ -716,13 +710,16 @@
             "removeTitle": "Видалити запит",
             "bulkBody": "Ви збираєтесь {action} кілька запитів. Після надсилання це рішення не можна буде змінити.",
             "singleBody": "Ви збираєтесь {action} цей запит. Після підтвердження цю дію неможливо скасувати.",
+            "ledgerBody": "Тримайте Ledger розблокованим. Далі ви підтвердите свій голос на ньому.",
             "actionApprove": "схвалити",
             "actionReject": "відхилити",
             "actionRemove": "видалити",
             "insufficientBalance": "Запити <highlight>{ids}</highlight> не можна схвалити через недостатній баланс. Ваше схвалення застосується лише до інших запитів.",
             "approveBlockedBulk": "{count, plural, one {# обраний запит зараз не можна схвалити — зніміть вибір, щоб продовжити.} other {# обраних запитів зараз не можна схвалити — зніміть вибір, щоб продовжити.}}",
             "remove": "Видалити",
-            "confirm": "Підтвердити"
+            "preparingRemove": "Готуємо видалення",
+            "confirm": "Підтвердити",
+            "preparingVote": "Готуємо ваш голос"
         },
         "expanded": {
             "recipient": "Отримувач",
@@ -866,8 +863,7 @@
             "approvalsReceived": "{received}/{required} отримано схвалень",
             "expiresAt": "Спливає",
             "expiredAt": "Спливло",
-            "exchangingTokens": "Обмін токенів",
-            "exchangingTokensBody": "Цей запит схвалила команда. Обмін токенів триває і може зайняти деякий час.",
+            "processing": "Ваш запит схвалено й обробляється — лише кілька секунд.",
             "requestFailed": "Запит не виконано",
             "requestFailedBody": "Команда схвалила цей запит, але він не виконався через коливання курсу. Створіть новий запит і спробуйте ще раз.",
             "votingPeriod24h": "Період голосування: 24 години",
@@ -875,8 +871,6 @@
             "reject": "Відхилити",
             "approve": "Схвалити",
             "destinationNetwork": "Мережа призначення",
-            "processingPayment": "Обробка платежу",
-            "processingPaymentBody": "Цей платіж затверджений командою та зараз обробляється. Це може зайняти деякий час.",
             "addMember": "Додати учасника",
             "removeMember": "Видалити учасника",
             "member": "Учасник",
@@ -938,7 +932,7 @@
                 "voteDescription": "Їхні дані надходять уже заповненими. Ви створюєте запит, команда голосує."
             },
             "generateLink": "Створити посилання-запрошення",
-            "generating": "Створення...",
+            "generating": "Створення",
             "generateFailed": "Не вдалося створити посилання-запрошення. Спробуйте ще раз.",
             "readyTitle": "Ваше посилання-запрошення готове",
             "readyDescription": "Надішліть його людині, яку хочете додати. Вона під’єднає гаманець і попросить приєднатися.",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, one {# новий учасник} few {# нові учасники} many {# нових учасників} other {# нових учасників}}",
             "updatedMembers": "Оновлені учасники",
             "newMembers": "Нові учасники",
-            "creatingProposal": "Створення пропозиції...",
+            "creatingProposal": "Створення пропозиції",
             "confirmSubmit": "Створити запит"
         },
         "removeDialog": {
             "title": "Видалити {count, plural, one {учасника} few {учасників} many {учасників} other {учасників}}?",
             "nearnBody": "Після схвалення {account} буде остаточно видалено зі скарбниці, а всі пов'язані дозволи скасуються. Після видалення цей обліковий запис більше не зможе створювати запити з NEARN.",
             "genericBody": "Після схвалення цю дію буде виконано: <bold>{accounts}</bold> остаточно видалиться зі скарбниці з відкликанням усіх призначених дозволів.",
-            "creatingProposal": "Створення пропозиції..."
+            "creatingProposal": "Створення пропозиції"
         },
         "validation": {
             "accountIdRequired": "Потрібен ID акаунта",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "Введіть відображувану назву",
             "logo": "Логотип",
             "logoDescription": "Завантажте логотип для вашої скарбниці. Рекомендовано SVG, PNG або JPG (256x256 px).",
-            "uploading": "Завантаження...",
+            "uploading": "Завантаження",
             "removeLogo": "Видалити",
             "logoUploaded": "Логотип успішно завантажено",
             "uploadError": "Помилка завантаження зображення. Спробуйте ще раз.",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "{count, plural, =0 {жодного отримувача} one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}} вибрано",
         "sectionHeading": "Отримувачі",
         "privacyNote": "Збережені адреси приватні та видимі лише вашій команді.",
+        "contactsCount": "{count, plural, one {# отримувач} few {# отримувачі} many {# отримувачів} other {# отримувача}}",
         "searchPlaceholder": "Шукати отримувача за іменем",
         "searchPlaceholderShort": "Пошук",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "Усі імпортовані отримувачі вже є у вашій адресній книзі. Поверніться, щоб завантажити інший список, або видаліть дублікати тут.",
             "someDuplicates": "{duplicates} дубльованих отримувачів із {total} усього. Продовжіть, щоб додати лише нових.",
             "duplicated": "Дубльовано",
+            "contactNumber": "Отримувач {number}",
             "notePlaceholder": "Додайте примітку, щоб легше впізнати цього отримувача (напр. платіж підряднику, розподіл вестингу).",
             "skipDuplicates": "Пропустити дублікати й імпортувати лише нових.",
             "allDuplicatesTooltip": "Усі імпортовані отримувачі вже у вашій адресній книзі, тож імпортувати нічого.",
+            "manualAllDuplicates": "{count, plural, =1 {Цей контакт уже є у вашій адресній книзі.} other {Ці контакти вже є у вашій адресній книзі.}}",
+            "manualSomeDuplicates": "{duplicates} із {total} контактів уже є у вашій адресній книзі. Буде збережено лише нові контакти.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Цей контакт уже у вашій адресній книзі, тож зберігати нічого.} other {Ці контакти вже у вашій адресній книзі, тож зберігати нічого.}}",
             "duplicateActionTooltip": "Увімкніть пропуск дублікатів або видаліть дубльованих отримувачів, щоб продовжити.",
-            "adding": "Додавання…",
+            "adding": "Додавання",
             "nothingNew": "Нема чого імпортувати",
-            "addRecipientsButton": "{count, plural, one {Додати отримувача} few {Додати отримувачів} many {Додати отримувачів} other {Додати отримувачів}}"
+            "addRecipientsButton": "Зберегти контакти"
         },
         "removeDialog": {
             "title": "Видалити отримувача",
+            "body": "Це видалить <bold>{names}</bold> з ваших контактів. Ви можете додати їх знову будь-коли.",
             "bulk": "Це видалить <bold>{count, plural, one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}}</bold> з вашої адресної книги. Ви можете додати їх знову коли завгодно.",
-            "single": "Це видалить <bold>{name}</bold> з вашої адресної книги. Ви можете додати цього отримувача знову коли завгодно."
+            "single": "Це видалить <bold>{name}</bold> з вашої адресної книги. Ви можете додати цього отримувача знову коли завгодно.",
+            "removing": "Видалення"
         },
         "importFlow": {
             "title": "Імпорт отримувачів",
@@ -1144,7 +1145,7 @@
             "foundSummary": "Знайдено {count, plural, one {# отримувача} few {# отримувачів} many {# отримувачів} other {# отримувачів}} у {networkCount, plural, one {# мережі} few {# мережах} many {# мережах} other {# мережах}}",
             "uploadPrompt": "Завантажте або вставте дані отримувачів",
             "fixErrors": "Виправте помилки, щоб продовжити",
-            "continueReview": "Продовжити до перегляду"
+            "continueReview": "Переглянути деталі"
         },
         "form": {
             "editRecipient": "Редагувати отримувача",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "Адреса отримувача",
             "network": "Мережа",
             "networkInfo": "Мережі, сумісні з цією адресою",
+            "enterName": "Введіть ім’я",
+            "enterAddress": "Введіть адресу",
+            "note": "Примітка",
+            "clearName": "Очистити ім’я",
+            "clearAddress": "Очистити адресу",
+            "clearNote": "Очистити примітку",
+            "saveContact": "Зберегти отримувача",
             "enterAddressFirst": "Спершу введіть адресу отримувача",
             "selectNetwork": "Оберіть мережу",
             "selectNetworksTitle": "Оберіть мережі",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "або перетягніть сюди",
             "token": "Токен",
             "destinationNetwork": "Мережа призначення",
-            "uploadFileFirst": "Спочатку завантажте файл",
             "removeFile": "Видалити файл",
             "maxFileSize": "не більше 1 файлу до 1.5 МБ, лише CSV",
             "noFilePrompt": "Немає файлу для завантаження?",
@@ -1318,6 +1325,7 @@
             "enterAmount": "Введіть суму"
         },
         "review": "Переглянути обмін",
+        "chainDeliveryUnsupported": "Ця мережа недоступна для обміну.",
         "poweredBy": "Працює на",
         "info": {
             "priceDifference": "Різниця в ціні",
@@ -1467,6 +1475,7 @@
             "passkeyCardSubtitle": "Увійдіть за допомогою біометрії або коду доступу пристрою",
             "web3WalletsSeparator": "Web3-гаманці",
             "selectOtherWallet": "Обрати інший гаманець",
+            "connectFailed": "Не вдалося увійти",
             "back": "Назад"
         },
         "unexpectedError": "Сталася неочікувана помилка",
@@ -1529,7 +1538,7 @@
         "proposalDescriptionLabel": "Опис пропозиції (необов'язково)",
         "proposalDescriptionPlaceholder": "Опишіть цю пропозицію...",
         "createProposal": "Створити пропозицію",
-        "creatingProposal": "Створення пропозиції...",
+        "creatingProposal": "Створення пропозиції",
         "confirmInWallet": "Підтвердьте у вашому гаманці",
         "proposalSubmitted": "Пропозицію надіслано",
         "shareProposal": "Вашу пропозицію створено. Поділіться посиланням нижче з учасниками скарбниці для голосування.",
@@ -1579,7 +1588,7 @@
         "relinking": "{count, plural, one {# обрану скарбницю прив'язано до іншого чату Telegram. Підключення перепривʼяже її до цього чату.} few {# обрані скарбниці прив'язані до інших чатів Telegram. Підключення перепривʼяже їх до цього чату.} many {# обраних скарбниць прив'язано до інших чатів Telegram. Підключення перепривʼяже їх до цього чату.} other {# скарбниць прив'язано до інших чатів Telegram. Підключення перепривʼяже їх до цього чату.}}",
         "connectedToAnother": "Підключено до іншого чату",
         "notMember": "Ви не є учасником політики жодної скарбниці.",
-        "connecting": "Підключення…",
+        "connecting": "Підключення",
         "connect": "Підключити",
         "settings": {
             "title": "Telegram",
@@ -1692,8 +1701,7 @@
     "memberInput": {
         "addNewMember": "Додати ще одного учасника",
         "validation": {
-            "rolesRequired": "Потрібна щонайменше одна роль",
-            "duplicateAddress": "Ця адреса вже є учасником"
+            "rolesRequired": "Потрібна щонайменше одна роль"
         },
         "enterAddress": "Введіть адресу",
         "clearAddress": "Очистити адресу",
@@ -1729,7 +1737,10 @@
         "orDragDrop": "або перетягніть сюди",
         "maxFileSize": "не більше 1 файлу до {maxSize} МБ, лише CSV",
         "noFilePrompt": "Немає файлу для завантаження?",
-        "downloadTemplate": "Завантажити шаблон"
+        "downloadTemplate": "Завантажити шаблон",
+        "pleaseUploadCsv": "Завантажте CSV-файл",
+        "fileSizeLimit": "Розмір файлу має бути меншим за 1.5 МБ",
+        "removeFile": "Видалити файл"
     },
     "tokenSelect": {
         "selectToken": "Обрати токен",
@@ -1787,7 +1798,7 @@
         "noDownloadPermission": "У вас немає прав завантажити файл.",
         "noExportPermission": "У вас немає прав експортувати",
         "quotaUsed": "Ви використали всю квоту",
-        "exporting": "Експорт...",
+        "exporting": "Експорт",
         "export": "Експорт",
         "columnSubmissionTime": "Час створення",
         "columnDateRange": "Діапазон дат",
@@ -1859,7 +1870,6 @@
     "recipientNetworkSelect": {
         "label": "Мережа одержувача",
         "placeholder": "Оберіть мережу одержувача",
-        "enterAddressFirst": "Спочатку введіть адресу одержувача",
         "noCompatibleNetwork": "Жодна мережа не підходить для цієї адреси",
         "selectPlaceholder": "Обрати мережу",
         "title": "Обрати мережу",
@@ -1867,8 +1877,6 @@
         "fromAddressBook": "З адресної книги",
         "otherAvailable": "Інші доступні",
         "incompatible": "Несумісні",
-        "comingSoon": "Скоро",
-        "forMembersOnly": "Лише для учасників",
         "nearComDescription": "Мережа для near business і near.com",
         "internalTag": "Внутрішня"
     },
@@ -1883,6 +1891,7 @@
         "note": "Примітка",
         "added": "Додано",
         "remove": "Видалити",
+        "noResults": "Жоден отримувач не відповідає вашому пошуку.",
         "send": "Надіслати"
     },
     "publicDashboard": {
@@ -2041,7 +2050,6 @@
     },
     "user": {
         "saveToAddressBook": "Зберегти в контакти",
-        "walletCopiedToast": "Адресу гаманця скопійовано в буфер обміну",
         "copyWalletAddress": "Скопіювати адресу"
     },
     "infoDisplay": {
@@ -2144,7 +2152,6 @@
     },
     "tokenInput": {
         "useMax": "Використати макс.",
-        "max": "МАКС",
         "insufficientTokens": "Недостатній баланс. Поповніть перед затвердженням.",
         "insufficientTokensForFee": "Недостатньо токенів для покриття комісії мережі ({fee} {symbol}). Можете надіслати запит і поповнити перед затвердженням.",
         "balance": "Баланс: {amount} {symbol}",
@@ -2156,23 +2163,20 @@
         "paused": "Тимчасово призупинено",
         "brieflyUnavailable": "Короткочасово недоступно"
     },
-    "address": {
-        "copied": "Адресу скопійовано в буфер"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "Учасники, які можуть голосувати",
         "copyAddress": "Скопіювати адресу",
         "moreMembers": "+{count, plural, one {# учасник} few {# учасники} many {# учасників} other {# учасників}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Одержувача додано} few {# одержувачів додано} many {# одержувачів додано} other {# одержувачів додано}}",
-        "alreadyExistsToast": "Одержувач уже є в адресній книзі",
-        "addedSingleToast": "Одержувача додано",
-        "addFailedToast": "Не вдалось додати одержувачів",
-        "addSingleFailedToast": "Не вдалось додати одержувача",
-        "removedToast": "{count, plural, one {Одержувача вилучено} few {# одержувачів вилучено} many {# одержувачів вилучено} other {# одержувачів вилучено}}",
-        "removeFailedToast": "Не вдалось вилучити одержувачів",
-        "exportFailedToast": "Не вдалось експортувати одержувачів"
+        "addedToast": "{count, plural, =1 {Контакт успішно збережено} few {# контакти додано} many {# контактів додано} other {# контактів додано}}",
+        "alreadyExistsToast": "Контакт уже є в адресній книзі",
+        "addedSingleToast": "Контакт додано",
+        "addFailedToast": "Не вдалось додати контакти",
+        "addSingleFailedToast": "Не вдалось додати контакт",
+        "removedToast": "{count, plural, =1 {Контакт успішно вилучено} few {# контакти вилучено} many {# контактів вилучено} other {# контактів вилучено}}",
+        "removeFailedToast": "Не вдалось вилучити контакти",
+        "exportFailedToast": "Не вдалось експортувати контакти"
     },
     "treasuryMutations": {
         "savedToast": "Скарбницю збережено у ваш список",
@@ -2322,15 +2326,7 @@
             "back": "Назад"
         },
         "progress": {
-            "title": "Швидкі кроки, щоб ознайомитись зі скарбницею",
             "addAssetsTitle": "Додайте активи",
-            "addAssetsDescription": "Почніть з додавання активів, щоб побачити їх у дії.",
-            "deposit": "Поповнити",
-            "createPaymentTitle": "Створити запит на платіж",
-            "createPaymentDescription": "Створіть запит на платіж, щоб завершити налаштування.",
-            "send": "Надіслати",
-            "useSolo": "Використовувати Solo",
-            "addTeamMemberDescription": "Ви успішно налаштували обліковий запис. Гарний початок!",
             "addTeamMemberTitle": "Створити обліковий запис скарбниці",
             "getStarted": "Почати",
             "setupThresholdTitle": "Налаштувати поріг",
@@ -2383,8 +2379,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Зрозуміло",
         "offlineBadge": "Офлайн",
-        "statusPageLink": "[Сторінка статусу](https://status.trezu.org/)",
+        "statusPageLink": "[Сторінка статусу](https://status.business.near.com)",
         "schedule": {
             "on": "о",
             "until": "до"
@@ -2475,7 +2472,7 @@
             "title": "Видалити шаблон",
             "body": "Видалити <b>{name}</b>? Учасники більше не зможуть подавати пропозиції на його основі. Цю дію не можна скасувати.",
             "confirm": "Видалити",
-            "deleting": "Видалення…"
+            "deleting": "Видалення"
         },
         "editor": {
             "nameLabel": "Назва",
@@ -2636,7 +2633,7 @@
         "save": "Зберегти",
         "edit": "Редагувати",
         "remove": "Видалити",
-        "uploading": "Завантаження...",
+        "uploading": "Завантаження",
         "saveSuccess": "Ваші зміни збережено.",
         "saveError": "Не вдалося зберегти зміни. Спробуйте ще раз.",
         "invalidImage": "Виберіть дійсний файл зображення.",

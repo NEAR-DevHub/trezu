@@ -11,6 +11,10 @@ import { useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
 import { type ReactNode, useEffect, useState } from "react";
 import { useHasSidebarRail } from "@/components/app-shell-context";
+import {
+    AppWarningMobileControl,
+    useAppWarningCopy,
+} from "@/components/app-warning-mobile";
 import { Button } from "@/components/button";
 import { Icon } from "@/components/icon";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -127,6 +131,11 @@ export function PageComponentLayout({
     }, []);
 
     const isDarkTheme = mounted ? resolvedTheme === "dark" : true;
+    const appWarning = useAppWarningCopy();
+    const hasMobileAppWarning =
+        hasSidebarRail &&
+        !hideAppWarningBanner &&
+        Boolean(appWarning.heading || appWarning.body);
 
     const router = useRouter();
     const cameFromApp = useInAppHistory();
@@ -139,7 +148,8 @@ export function PageComponentLayout({
     // stacked title does not jump. Large screens leave the title flush left.
     const reserveBackSlot = Boolean(backButton) || reserveHeaderSpace;
     const showMobileChromeRow =
-        stackedInnerHeader && (showBack || !!headerActions || reserveBackSlot);
+        stackedInnerHeader &&
+        (showBack || !!headerActions || reserveBackSlot || hasMobileAppWarning);
     const showShellUserControl = hasSidebarRail && !hideMobileShellControls;
     const showPublicHeaderControls =
         !hasSidebarRail && !hideHeaderContent && !hideHeaderControls;
@@ -154,7 +164,9 @@ export function PageComponentLayout({
             backButton();
             return;
         }
-        if (backKind === "section" && cameFromApp) {
+        // My account opens from the user sheet on the current screen, so Back
+        // returns there. A direct visit falls through to the configured path.
+        if (backKind === "mobile" && cameFromApp) {
             router.back();
             return;
         }
@@ -286,7 +298,24 @@ export function PageComponentLayout({
                                 {titleBlock}
                             </div>
                         </div>
-                        {stackedInnerHeader ? headerActions : null}
+                        {/* One flex item, so `justify-between` can't spread
+                            several actions across the row. */}
+                        {stackedInnerHeader &&
+                        (headerActions || hasMobileAppWarning) ? (
+                            <div
+                                className={cn(
+                                    "flex shrink-0 items-center gap-2",
+                                    !headerActions && "lg:hidden",
+                                )}
+                            >
+                                {hasMobileAppWarning ? (
+                                    <div className="lg:hidden">
+                                        <AppWarningMobileControl />
+                                    </div>
+                                ) : null}
+                                {headerActions}
+                            </div>
+                        ) : null}
                     </div>
 
                     {stackedInnerHeader &&
@@ -314,7 +343,10 @@ export function PageComponentLayout({
                         >
                             {stackedInnerHeader ? null : headerActions}
                             {showShellUserControl && (
-                                <div className="lg:hidden">
+                                <div className="flex items-center gap-2 lg:hidden">
+                                    {hasMobileAppWarning ? (
+                                        <AppWarningMobileControl />
+                                    ) : null}
                                     <MobileUserHeaderButton />
                                 </div>
                             )}
@@ -379,8 +411,12 @@ export function PageComponentLayout({
                     mainClassName,
                 )}
             >
-                {!hideAppWarningBanner && (
+                {!hideAppWarningBanner && !hasSidebarRail && (
                     <>
+                        {/* Inside the treasury shell these are the header
+                            button on small screens and the sidebar banners on
+                            large ones. Pages without that shell keep the
+                            inline banners. */}
                         <SlotWarning
                             slot="data.balances"
                             className="lg:hidden mb-3"

@@ -61,6 +61,45 @@ describe("pickDefaultSelectedToken", () => {
         );
     });
 
+    it("does not pick a chain-delivery copy ahead of the held token", () => {
+        const near: MergedToken = {
+            id: "near",
+            name: "NEAR",
+            symbol: "NEAR",
+            icon: "",
+            networks: [
+                {
+                    id: "1cs_v1:sol:spl:abc",
+                    name: "solana",
+                    symbol: "NEAR",
+                    chainIcons: null,
+                    chainId: "sol:mainnet",
+                    decimals: 9,
+                    balanceDecimals: 24,
+                    balanceAssetId: "nep141:wrap.near",
+                    quoteAssetId: "1cs_v1:sol:spl:abc",
+                    residency: "Intents",
+                    balance: "333",
+                    balanceUSD: 999,
+                },
+                {
+                    id: "nep141:wrap.near",
+                    name: "near",
+                    symbol: "NEAR",
+                    chainIcons: null,
+                    chainId: "near:mainnet",
+                    decimals: 24,
+                    residency: "Intents",
+                    balance: "333",
+                    balanceUSD: 1,
+                },
+            ],
+        };
+        expect(pickHighestUsdOwnedToken([near])?.address).toBe(
+            "nep141:wrap.near",
+        );
+    });
+
     it("falls back to USDC on NEAR from the list when nothing is owned", () => {
         const listedOnly: MergedToken = {
             ...nearUsdc,

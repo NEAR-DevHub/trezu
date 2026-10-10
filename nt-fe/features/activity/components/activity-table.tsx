@@ -37,7 +37,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
-    hidesSwapExplorerLink,
+    hidesIntentsExplorerLink,
     useGetActivityLabel,
     useGetActivitySubLabel,
     useGetFromAccount,
@@ -170,10 +170,12 @@ function NotesCell({ notes }: { notes?: string | null }) {
     return (
         <Tooltip
             content={trimmed}
-            contentProps={{ className: "max-w-72 whitespace-pre-wrap" }}
+            contentProps={{
+                className: "w-auto max-w-72 whitespace-pre-wrap wrap-anywhere",
+            }}
         >
             <span className="inline-block w-full max-w-full">
-                <span className="line-clamp-2 text-sm font-medium text-general-foreground">
+                <span className="line-clamp-2 wrap-anywhere text-sm font-medium text-general-foreground">
                     {trimmed}
                 </span>
             </span>
@@ -553,18 +555,21 @@ export function ActivityTable({
                                             )}
                                         >
                                             <div className="flex items-center justify-end gap-1">
-                                                {hidesSwapExplorerLink(
+                                                {hidesIntentsExplorerLink(
                                                     activity,
                                                     isConfidential,
-                                                ) &&
-                                                activity.proposalId != null &&
-                                                treasuryId ? (
-                                                    <PdfReceiptCell
-                                                        treasuryId={treasuryId}
-                                                        proposalId={
-                                                            activity.proposalId
-                                                        }
-                                                    />
+                                                ) ? (
+                                                    activity.proposalId !=
+                                                        null && treasuryId ? (
+                                                        <PdfReceiptCell
+                                                            treasuryId={
+                                                                treasuryId
+                                                            }
+                                                            proposalId={
+                                                                activity.proposalId
+                                                            }
+                                                        />
+                                                    ) : null
                                                 ) : (
                                                     <TransactionHashCell
                                                         transactionHashes={

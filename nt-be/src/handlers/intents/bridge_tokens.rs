@@ -103,9 +103,10 @@ fn fallback_chain_id_for_name(chain_name: &str) -> String {
         "dash" => "dash:mainnet".to_string(),
         "movement" => "movement:mainnet".to_string(),
         "fogo" => "fogo:mainnet".to_string(),
-        // Defuse: "Hyperliquid is only available as a withdrawal destination"
-        // (not in PoaBridgeNetworkReference; no public POA deposit).
-        "hyperliquid" | "hypercore" => "hyperliquid:999".to_string(),
+        "hood" => "eth:4663".to_string(),
+        // Live bridge `supported_tokens` uses `hypercore:mainnet` for both
+        // NEAR and USDC on Hyperliquid (not the UI name `hyperliquid:999`).
+        "hyperliquid" | "hypercore" => "hypercore:mainnet".to_string(),
         other => format!("{other}:mainnet"),
     }
 }
@@ -130,6 +131,13 @@ fn contract_address_from_asset_id(asset_id: &str) -> Option<String> {
     None
 }
 
+fn deployment_chain_name(deployment: &TokenDeployment) -> &str {
+    match deployment {
+        TokenDeployment::Native { chain_name, .. }
+        | TokenDeployment::Fungible { chain_name, .. } => chain_name,
+    }
+}
+
 fn deployment_decimals(base: &BaseTokenInfo) -> u8 {
     base.deployments
         .first()
@@ -140,19 +148,47 @@ fn deployment_decimals(base: &BaseTokenInfo) -> u8 {
         .unwrap_or(base.decimals)
 }
 
-fn network_name_for_base(base: &BaseTokenInfo) -> String {
-    get_chain_metadata_by_name(&base.origin_chain_name)
+fn network_name_for_chain(chain_name: &str) -> String {
+    get_chain_metadata_by_name(chain_name)
         .map(|m| m.name.to_lowercase())
-        .unwrap_or_else(|| base.origin_chain_name.to_lowercase())
+        .unwrap_or_else(|| chain_name.to_lowercase())
+}
+
+/// Chain to label when every deployment sits on one chain other than
+/// `origin_chain_name`. NEAR on BSC is this shape (origin `near`, only
+/// deployment `bsc`). wrap.near also deploys on its origin, so it stays NEAR.
+fn off_origin_deployment_chain(base: &BaseTokenInfo) -> Option<&str> {
+    let origin = base.origin_chain_name.to_lowercase();
+    let mut chain: Option<&str> = None;
+    for deployment in &base.deployments {
+        let name = deployment_chain_name(deployment);
+        if name.eq_ignore_ascii_case(&origin) {
+            return None;
+        }
+        match chain {
+            None => chain = Some(name),
+            Some(existing) if existing.eq_ignore_ascii_case(name) => {}
+            Some(_) => return None,
+        }
+    }
+    chain
 }
 
 /// When our build produces multiple rows for the same intents balance or POA
 /// `chain_id`, keep the first row we already pushed for that asset.
+///
+/// A chain-delivery row (held sibling balance, distinct destination id) is a
+/// separate destination of that balance, so it does not consume the balance key.
 fn dedupe_asset_networks(networks: &mut Vec<NetworkOption>) {
     let mut seen_balance = HashSet::new();
     let mut seen_chain = HashSet::new();
     networks.retain(|network| {
-        if !seen_balance.insert(network.balance_asset_id.clone()) {
+        let balance_key = if is_chain_delivery_route(network) {
+            network.id.clone()
+        } else {
+            network.balance_asset_id.clone()
+        };
+        if !seen_balance.insert(balance_key) {
             return false;
         }
         if !seen_chain.insert(network.chain_id.clone()) {
@@ -160,6 +196,98 @@ fn dedupe_asset_networks(networks: &mut Vec<NetworkOption>) {
         }
         true
     });
+}
+
+fn is_chain_delivery_route(network: &NetworkOption) -> bool {
+    network.balance_asset_id != network.id
+        || (is_one_click_routing_asset(&network.quote_asset_id)
+            && network.quote_asset_id != network.balance_asset_id)
+}
+
+/// `1cs_v1:` catalog rows are chain delivery of a token the treasury holds as
+/// `nep141` / `nep245`. Point the balance id at that sibling so payments and
+/// exchange still transfer the holdable asset, and keep the `1cs` id as the quote.
+fn holdable_sibling_id<'a>(routing_id: &str, grouped: &'a [BaseTokenInfo]) -> Option<&'a str> {
+    if !is_one_click_routing_asset(routing_id) {
+        return None;
+    }
+    let symbol = grouped
+        .iter()
+        .find(|token| token.defuse_asset_id == routing_id)?
+        .symbol
+        .as_str();
+    let mut matches: Vec<&BaseTokenInfo> = grouped
+        .iter()
+        .filter(|token| {
+            token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
+                && (token.defuse_asset_id.starts_with("nep141:")
+                    || token.defuse_asset_id.starts_with("nep245:"))
+        })
+        .collect();
+    matches.sort_by_key(|token| {
+        let contract = token
+            .defuse_asset_id
+            .split_once(':')
+            .map(|(_, rest)| rest)
+            .unwrap_or("");
+        let head = contract.split('.').next().unwrap_or(contract);
+        (
+            head.contains('-'),
+            token.defuse_asset_id.starts_with("nep245:"),
+        )
+    });
+    matches.first().map(|token| token.defuse_asset_id.as_str())
+}
+
+/// Same-symbol `nep141` / `nep245` sibling, excluding this row. Used when the
+/// row itself is holdable (NEAR on BSC) but the treasury's balance is the
+/// other member of the family (`nep141:wrap.near`).
+fn same_symbol_holdable_sibling<'a>(
+    routing_id: &str,
+    grouped: &'a [BaseTokenInfo],
+) -> Option<&'a str> {
+    let symbol = grouped
+        .iter()
+        .find(|token| token.defuse_asset_id == routing_id)?
+        .symbol
+        .as_str();
+    let mut matches: Vec<&BaseTokenInfo> = grouped
+        .iter()
+        .filter(|token| {
+            token.defuse_asset_id != routing_id
+                && token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
+                && (token.defuse_asset_id.starts_with("nep141:")
+                    || token.defuse_asset_id.starts_with("nep245:"))
+        })
+        .collect();
+    matches.sort_by_key(|token| {
+        let contract = token
+            .defuse_asset_id
+            .split_once(':')
+            .map(|(_, rest)| rest)
+            .unwrap_or("");
+        let head = contract.split('.').next().unwrap_or(contract);
+        (
+            head.contains('-'),
+            token.defuse_asset_id.starts_with("nep245:"),
+        )
+    });
+    matches.first().map(|token| token.defuse_asset_id.as_str())
+}
+
+/// Log once per asset id when a delivery row cannot find the coin the treasury holds.
+fn warn_missing_holdable_sibling(routing_id: &str) {
+    use std::sync::Mutex;
+
+    static SEEN: Mutex<Option<HashSet<String>>> = Mutex::new(None);
+    let mut guard = SEEN.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let seen = guard.get_or_insert_with(HashSet::new);
+    if seen.insert(routing_id.to_string()) {
+        tracing::warn!(
+            asset_id = routing_id,
+            "chain delivery row has no holdable nep141/nep245 sibling"
+        );
+    }
 }
 
 fn has_tag(tags: &Option<Vec<String>>, tag: &str) -> bool {
@@ -325,7 +453,7 @@ pub async fn get_deposit_tokens(
 }
 
 /// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`,
-/// excluding chain-only `1cs_v1:` networks (INTENTS holds nep141/nep245 only).
+/// excluding `1cs_v1:` chain-delivery networks (INTENTS holds nep141/nep245 only).
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
@@ -392,20 +520,23 @@ fn filter_catalog_for_oneclick(
     DepositAssetsResponse { assets }
 }
 
-/// Swap catalog = 1Click ∩ plus only INTENTS-holdable balance ids.
+/// Swap catalog = 1Click ∩ plus INTENTS-holdable balance ids.
 ///
-/// `1cs_v1:` rows are deposit/withdraw routing (e.g. CFI on Base, ZEC on
-/// Solana). Exchange sell/receive must use `nep141`/`nep245` (nBTC stays:
-/// balance id is `nep141:nbtc…`, only `quote_asset_id` is native BTC `1cs`).
+/// `1cs_v1:` chain-delivery rows (ZEC on NEAR, NEAR on Solana, …) are left
+/// out: pickers would list them as a second copy of the held balance, and a
+/// confidential deposit on one is credited under the `1cs` id, which Send and
+/// Swap cannot spend. nBTC stays — its row id is `nep141:nbtc…`, only its
+/// quote is `1cs`.
 fn filter_catalog_for_swap(
     deposit: DepositAssetsResponse,
     oneclick_ids: &HashSet<String>,
 ) -> DepositAssetsResponse {
     let mut filtered = filter_catalog_for_oneclick(deposit, oneclick_ids);
     for asset in &mut filtered.assets {
-        asset
-            .networks
-            .retain(|network| !is_one_click_routing_asset(&network.balance_asset_id));
+        asset.networks.retain(|network| {
+            !is_one_click_routing_asset(&network.id)
+                && !is_one_click_routing_asset(&network.balance_asset_id)
+        });
     }
     filtered
         .assets
@@ -425,8 +556,8 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
             continue;
         }
         for base in &unified.grouped_tokens {
-            let balance_id = base.defuse_asset_id.as_str();
-            if DEPRECATED_BALANCE_ASSET_IDS.contains(&balance_id) {
+            let routing_id = base.defuse_asset_id.as_str();
+            if DEPRECATED_BALANCE_ASSET_IDS.contains(&routing_id) {
                 continue;
             }
             if is_hidden_catalog_token(base.tags.as_deref().unwrap_or(&[])) {
@@ -436,27 +567,62 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
                 continue;
             }
 
-            let quote_id = quote_asset_id(balance_id).to_string();
-            let group_key = find_unified_asset_id(balance_id)
+            let delivery_chain = off_origin_deployment_chain(base);
+            let balance_id = if delivery_chain.is_some() {
+                same_symbol_holdable_sibling(routing_id, &unified.grouped_tokens).unwrap_or_else(
+                    || {
+                        warn_missing_holdable_sibling(routing_id);
+                        routing_id
+                    },
+                )
+            } else {
+                holdable_sibling_id(routing_id, &unified.grouped_tokens).unwrap_or_else(|| {
+                    if is_one_click_routing_asset(routing_id) {
+                        warn_missing_holdable_sibling(routing_id);
+                    }
+                    routing_id
+                })
+            };
+            let quote_id = if is_one_click_routing_asset(routing_id) || delivery_chain.is_some() {
+                routing_id.to_string()
+            } else {
+                quote_asset_id(balance_id).to_string()
+            };
+            let group_key = find_unified_asset_id(routing_id)
                 .map(String::from)
                 .unwrap_or_else(|| unified_id.clone());
 
-            let network_name = network_name_for_base(base);
-            let chain_meta = get_chain_metadata_by_name(&base.origin_chain_name)
+            let chain_source = delivery_chain.unwrap_or(base.origin_chain_name.as_str());
+            let network_name = network_name_for_chain(chain_source);
+            let chain_meta = get_chain_metadata_by_name(chain_source)
                 .or_else(|| get_chain_metadata_by_name(&network_name));
 
-            let preferred_chain = if balance_id == NBTC_BALANCE_ASSET_ID {
+            let preferred_chain = if routing_id == NBTC_BALANCE_ASSET_ID {
                 fallback_chain_id_for_name("bitcoin")
-            } else if is_one_click_routing_asset(balance_id) {
-                chain_id_from_defuse_id(balance_id)
+            } else if let Some(chain) = delivery_chain {
+                fallback_chain_id_for_name(chain)
+            } else if is_one_click_routing_asset(routing_id) {
+                chain_id_from_defuse_id(routing_id)
             } else {
                 fallback_chain_id_for_name(&base.origin_chain_name)
             };
-            let extras = bridge.resolve(balance_id, &preferred_chain);
+            // Off-origin rows must not inherit the sibling's chain (wrap.near
+            // resolves to near:mainnet). Mins and public deposit follow this
+            // asset on the deployment chain only.
+            let lookup_id = if delivery_chain.is_some() {
+                routing_id
+            } else {
+                balance_id
+            };
+            let extras = bridge.resolve(lookup_id, &preferred_chain);
             let chain_id = extras
                 .map(|e| e.chain_id.clone())
                 .unwrap_or(preferred_chain);
-            let public_deposit_supported = bridge.supported_chains.contains(&chain_id);
+            let public_deposit_supported = if delivery_chain.is_some() {
+                extras.is_some()
+            } else {
+                bridge.supported_chains.contains(&chain_id)
+            };
 
             let asset = asset_map
                 .entry(group_key.clone())
@@ -468,16 +634,12 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
                     networks: Vec::new(),
                 });
 
-            if asset
-                .networks
-                .iter()
-                .any(|n| n.balance_asset_id == balance_id)
-            {
+            if asset.networks.iter().any(|n| n.id == routing_id) {
                 continue;
             }
 
             asset.networks.push(NetworkOption {
-                id: balance_id.to_string(),
+                id: routing_id.to_string(),
                 name: network_name,
                 symbol: base.symbol.clone(),
                 chain_icons: chain_meta.map(|m| m.icon),
@@ -662,6 +824,123 @@ mod tests {
     }
 
     #[test]
+    fn chain_delivery_routes_keep_holdable_balance_and_1cs_quote() {
+        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        // (symbol, quote marker, chain id, expected holdable balance)
+        let routes = [
+            (
+                "NEAR",
+                "3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG",
+                "sol:mainnet",
+                "nep141:wrap.near",
+            ),
+            (
+                "NEAR",
+                "0x20b8c9d2f022ffd2aea4f7962b7b1d8b",
+                "hypercore:mainnet",
+                "nep141:wrap.near",
+            ),
+            (
+                "USDC",
+                "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+                "hypercore:mainnet",
+                "",
+            ),
+            (
+                "ZEC",
+                "1cs_v1:near:nep141:zec.omft.near",
+                "near:mainnet",
+                "nep141:zec.omft.near",
+            ),
+            (
+                "ZEC",
+                "A7bdiYdS5GjqGFtxf17ppRHtDKPkkRqbKtR27dxvQXaS",
+                "sol:mainnet",
+                "nep141:zec.omft.near",
+            ),
+            (
+                "ZEC",
+                "0x05ce53b9b68fb8e9ecab9283a96d97948914733fd6ed8d9a53a276a419497841",
+                "starknet:mainnet",
+                "nep141:zec.omft.near",
+            ),
+            (
+                "XRP",
+                "0x07bc1958",
+                "starknet:mainnet",
+                "nep141:xrp.omft.near",
+            ),
+            (
+                "CFI",
+                "0x0382e3fee4a420bd446367d468a6f00225853420",
+                "eth:8453",
+                "nep141:cfi.consumer-fi.near",
+            ),
+            (
+                "STRK",
+                "HsRpHQn6VbyMs5b5j5SV6xQ2VvpvvCCzu19GjytVSCoz",
+                "sol:mainnet",
+                "nep141:starknet.omft.near",
+            ),
+        ];
+
+        let mut oneclick_ids = HashSet::new();
+        for (symbol, marker, chain_id, balance) in routes {
+            let asset = catalog
+                .assets
+                .iter()
+                .find(|asset| asset.asset_name == symbol)
+                .unwrap_or_else(|| panic!("{symbol} missing"));
+            let network = asset
+                .networks
+                .iter()
+                .find(|network| network.quote_asset_id.contains(marker))
+                .unwrap_or_else(|| panic!("{symbol} route {marker} missing"));
+            assert!(
+                network.quote_asset_id.starts_with("1cs_v1:"),
+                "{symbol} {marker}"
+            );
+            assert_eq!(network.id, network.quote_asset_id);
+            assert_eq!(network.chain_id, chain_id, "{symbol} {marker}");
+            assert!(
+                network.balance_asset_id.starts_with("nep141:")
+                    || network.balance_asset_id.starts_with("nep245:"),
+                "{symbol} balance {}",
+                network.balance_asset_id
+            );
+            if !balance.is_empty() {
+                assert_eq!(network.balance_asset_id, balance, "{symbol} {marker}");
+            }
+            oneclick_ids.insert(network.balance_asset_id.clone());
+            oneclick_ids.insert(network.quote_asset_id.clone());
+        }
+
+        let swap = filter_catalog_for_swap(catalog, &oneclick_ids);
+        let near = swap
+            .assets
+            .iter()
+            .find(|asset| asset.asset_name == "NEAR")
+            .expect("NEAR stays in the swap catalog");
+        assert!(
+            near.networks
+                .iter()
+                .any(|network| network.id == "nep141:wrap.near"),
+            "held NEAR stays in the swap catalog"
+        );
+        let route_ids: Vec<&str> = swap
+            .assets
+            .iter()
+            .flat_map(|asset| &asset.networks)
+            .map(|network| network.id.as_str())
+            .filter(|id| is_one_click_routing_asset(id))
+            .collect();
+        assert!(
+            route_ids.is_empty(),
+            "1cs chain-delivery rows stay out of the swap catalog: {route_ids:?}"
+        );
+    }
+
+    #[test]
     fn swap_catalog_drops_1cs_balance_networks_keeps_nbtc() {
         let cfi_near = "nep141:cfi.consumer-fi.near";
         let cfi_base = "1cs_v1:base:erc20:0x0382e3fee4a420bd446367d468a6f00225853420";
@@ -825,6 +1104,33 @@ mod tests {
     }
 
     #[test]
+    fn near_on_bsc_is_its_own_network_spending_wrap_near() {
+        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let near = catalog
+            .assets
+            .iter()
+            .find(|asset| asset.asset_name == "NEAR")
+            .expect("NEAR stays in the catalog");
+        let bsc = near
+            .networks
+            .iter()
+            .find(|network| network.id.contains("56_SZzgw3HSudhZcTwPWUTi2RJB19t"))
+            .expect("NEAR on BSC must stay in the catalog");
+        assert_eq!(bsc.chain_id, "eth:56");
+        assert_eq!(bsc.name.to_lowercase(), "bnb smart chain");
+        assert_eq!(bsc.decimals, 18);
+        assert_eq!(bsc.balance_asset_id, "nep141:wrap.near");
+        assert_eq!(bsc.quote_asset_id, bsc.id);
+        assert!(!bsc.public_deposit_supported);
+        assert!(
+            near.networks
+                .iter()
+                .any(|network| network.id == "nep141:wrap.near"),
+            "wrap.near must remain the NEAR network"
+        );
+    }
+
+    #[test]
     fn usdc_networks_put_near_first_then_volume() {
         let catalog = build_deposit_catalog(&BridgeLookup::default());
         let usdc = catalog
@@ -855,7 +1161,7 @@ mod tests {
     #[test]
     fn every_catalog_chain_has_a_volume_rank() {
         for base in get_defuse_tokens_map().values() {
-            let name = network_name_for_base(base);
+            let name = network_name_for_chain(&base.origin_chain_name);
             assert_ne!(
                 network_volume_rank(&name),
                 999,

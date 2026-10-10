@@ -1,19 +1,20 @@
-import { cn } from "@/lib/utils";
-import { Button as ShadcnButton, buttonVariants } from "./ui/button";
-import { VariantProps } from "class-variance-authority";
-import { Tooltip } from "./tooltip";
-import { Icon } from "./icon";
 import { LoaderCircleIcon } from "@hugeicons/core-free-icons";
+import type { VariantProps } from "class-variance-authority";
+import { cn } from "@/lib/utils";
+import { Icon } from "./icon";
+import { Tooltip } from "./tooltip";
+import { type buttonVariants, Button as ShadcnButton } from "./ui/button";
 
 type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 
 /**
  * The loading state's skin: gray-500 (#737373) surface, white label and spinner,
- * 14px/500 at 150% line height, 8px radius. It's split in two so the layering
- * works out: the surface goes *before* the call site's `className`, letting a
- * button that must stay on brand (a destructive red, say) keep its own
- * background, while the rest goes *after*, so every loading button agrees on
- * type and radius no matter what the call site asked for when idle.
+ * 16px/700 at 100% line height. Radius stays with the button's `size`. It's
+ * split in two so the layering works out: the surface goes *before* the call
+ * site's `className`, letting a button that must stay on brand (a destructive
+ * red, say) keep its own background, while the rest goes *after*, so every
+ * loading button agrees on type no matter what the call site asked for when
+ * idle.
  *
  * Height is deliberately not part of this — it stays with the button's `size`,
  * because resizing a button the moment it's clicked moves the layout under the
@@ -25,12 +26,12 @@ type ShadcnVariant = VariantProps<typeof buttonVariants>["variant"];
 // `dark:bg-gray-500` is not redundant with `bg-gray-500`: a `dark:bg-*` from
 // the underlying variant would out-specify a plain `bg-*` here, so
 // `destructive` would stay red in dark mode only. Call sites that genuinely
-// want to keep their colour override both (see the "Remove member" modal).
+// want to keep their colour override both.
 // No hover pair is needed — a loading button is disabled, and the base sets
 // `disabled:pointer-events-none`.
 const LOADING_SURFACE_CLASS = "bg-gray-500 dark:bg-gray-500";
 const LOADING_SKIN_CLASS =
-    "text-white rounded-[8px] text-sm font-medium leading-normal disabled:opacity-100";
+    "text-white text-base font-bold leading-none disabled:opacity-100";
 
 interface ButtonProps
     extends Omit<React.ComponentProps<typeof ShadcnButton>, "variant"> {

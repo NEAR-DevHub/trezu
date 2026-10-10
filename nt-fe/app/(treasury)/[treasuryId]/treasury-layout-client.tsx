@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import { useUiStore } from "@/stores/ui-store";
 import { AppEventsProvider } from "./app-events-provider";
+import { ConfidentialHistoryAutoRefresh } from "./confidential-history-auto-refresh";
 
 function isPaySharePath(pathname: string | null): boolean {
     return /\/pay\/(public|confidential)\/?$/.test(pathname ?? "");
@@ -41,6 +42,18 @@ function isRequestDetailPath(pathname: string | null): boolean {
 /** Nested Bulk send flow (upload + review): back in the header, no tab bar. */
 function isBulkPaymentPath(pathname: string | null): boolean {
     return /\/payments\/bulk-payment(?:\/|$)/.test(pathname ?? "");
+}
+
+/** Deposit and the full recent-transactions list leave the dashboard behind. */
+function isDashboardSubpagePath(pathname: string | null): boolean {
+    return /\/dashboard\/(?:deposit|activity)(?:\/|$)/.test(pathname ?? "");
+}
+
+/** Screens opened from the members list. The list itself keeps the tab bar. */
+function isMemberSubflowPath(pathname: string | null): boolean {
+    return /\/members\/(?:add|edit|invite|join-requests)(?:\/|$)/.test(
+        pathname ?? "",
+    );
 }
 
 export function TreasuryLayoutClient({
@@ -88,6 +101,7 @@ export function TreasuryLayoutClient({
                     )}
                 >
                     <AppEventsProvider scope={{ treasuryId }} />
+                    <ConfidentialHistoryAutoRefresh />
                     <PrimaryColorProvider treasuryId={treasuryId} />
                     <div className="hidden lg:block">
                         <Sidebar
@@ -101,6 +115,8 @@ export function TreasuryLayoutClient({
                         </div>
                         {!isRequestDetailPath(pathname) &&
                             !isBulkPaymentPath(pathname) &&
+                            !isDashboardSubpagePath(pathname) &&
+                            !isMemberSubflowPath(pathname) &&
                             !isSideSheetOpen && <MobileBottomNav />}
                         <MobileMenuSheet />
                         <MobileUserSheet />

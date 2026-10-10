@@ -1,8 +1,8 @@
 {
     "common": {
-        "loading": "Yükleniyor...",
+        "loading": "Yükleniyor",
         "notAvailable": "Yok",
-        "connecting": "Bağlanıyor...",
+        "connecting": "Bağlanıyor",
         "save": "Kaydet",
         "cancel": "İptal",
         "submit": "Gönder",
@@ -18,7 +18,7 @@
         "exporting": "Dışa Aktarılıyor",
         "import": "İçe Aktar",
         "remove": "Kaldır",
-        "removing": "Kaldırılıyor...",
+        "removing": "Kaldırılıyor",
         "edit": "Düzenle",
         "continue": "Devam Et",
         "select": "Seç",
@@ -191,18 +191,14 @@
             "title": "Ayarlar"
         },
         "addressBook": {
-            "title": "Adres Defteri",
-            "description": "Kayıtlı alıcılarınızı yönetin"
+            "title": "Adres Defteri"
         },
         "payments": {
-            "title": "Odemeler",
-            "confidentialTitle": "Gizli odemeler",
-            "description": "Fonlari guvenli ve emniyetli sekilde gonderin."
+            "title": "Odemeler"
         },
         "exchange": {
             "title": "Takas",
-            "confidentialTitle": "Takas",
-            "description": "Tokenlerinizi güvenli ve verimli bir şekilde takas edin"
+            "confidentialTitle": "Takas"
         },
         "vesting": {
             "title": "Vesting",
@@ -340,13 +336,11 @@
         "anythingElseLost": "Başka yerden gönderilen her şey kaybolur",
         "anythingElseLostSub": "Borsalar, genel cüzdanlar, diğer ağlar – kurtarılamaz.",
         "confidentialAckCheckbox": "near.com veya near business dışından yapılan yatırmaların kaybolacağını anlıyorum.",
-        "onlyFromNearBusiness": "Yalnızca <bold>near business</bold>’tan",
+        "onlyFromNearBusiness": "Yalnızca <bold>near business</bold> veya <bold>near.com</bold>’dan",
         "onlyFromConfidentialNearcom": "Yalnızca <bold>gizli near.com</bold>’dan",
-        "onlyFromNearBusinessOrNearcom": "Yalnızca <bold>near business</bold> veya <bold>near.com</bold>’dan",
         "reusableDoesntExpire": "<bold>Yeniden kullanılabilir.</bold> Süresi dolmaz",
-        "fundsOutsideNearBusinessLost": "<bold>near business</bold> dışından gönderilen fonlar kaybolur",
+        "fundsOutsideNearBusinessLost": "<bold>near business</bold> veya <bold>near.com</bold> dışından gönderilen fonlar kaybolur.",
         "fundsOutsideNearcomLost": "<bold>gizli near.com</bold> dışından gönderilen fonlar kaybolur",
-        "fundsOutsideNearBusinessOrNearcomLost": "<bold>near business</bold> veya <bold>near.com</bold> dışından gönderilen fonlar kaybolur.",
         "publicNetworkRecommendation": "Yalnızca <bold>{network}</bold> ağından yatırın. Tam tutarı göndermeden önce küçük bir test işlemiyle başlayın.",
         "sourceCards": {
             "publicWallet": {
@@ -392,7 +386,6 @@
         "weight": "Ağırlık",
         "source": "Kaynak",
         "send": "Gönder",
-        "exchange": "Takas",
         "swap": "Takas",
         "comingSoon": "Yakında",
         "vesting": "Vesting",
@@ -578,7 +571,7 @@
         "buttons": {
             "noPermissionExport": "Dışa aktarma izniniz yok",
             "quotaExhausted": "Tüm kotanızı kullandınız",
-            "exporting": "Dışa Aktarılıyor...",
+            "exporting": "Dışa Aktarılıyor",
             "export": "Dışa Aktar"
         },
         "empty": {
@@ -660,7 +653,6 @@
         "actions": {
             "approve": "Onayla",
             "reject": "Reddet",
-            "deposit": "Para Yatır",
             "viewRequest": "Talebi Görüntüle"
         },
         "table": {
@@ -695,6 +687,7 @@
     "proposals": {
         "status": {
             "pending": "Beklemede",
+            "processing": "İşleniyor",
             "approved": "Onaylandı",
             "rejected": "Reddedildi",
             "executed": "Yürütüldü",
@@ -705,6 +698,7 @@
         },
         "statusTooltip": {
             "pending": "Bu talep hâlâ beklemede ve yürütme için gereken oy sayısına henüz ulaşmadı.",
+            "processing": "Onaylandı ve şu anda işleniyor. Yalnızca birkaç saniye sürer.",
             "executed": "{required} üyeden {approved} tanesi talebi onayladıktan sonra yürütüldü.",
             "rejected": "{required} üyeden {rejected} tanesi talebi reddetmek için oy kullandıktan sonra reddedildi.",
             "expired": "Yürütülmek için yeterli oyu alamadığı için süresi doldu.",
@@ -716,13 +710,16 @@
             "removeTitle": "Talebi Kaldır",
             "bulkBody": "Birden çok talebi {action} etmek üzeresiniz. Gönderildikten sonra bu karar değiştirilemez.",
             "singleBody": "Bu talebi {action} etmek üzeresiniz. Onaylandığında bu işlem geri alınamaz.",
+            "ledgerBody": "Ledger cihazınızın kilidini açık tutun. Sıradaki adımda oyunuzu orada onaylayacaksınız.",
             "actionApprove": "onaylama",
             "actionReject": "reddetme",
             "actionRemove": "kaldırma",
             "insufficientBalance": "<highlight>{ids}</highlight> talepleri yetersiz bakiye nedeniyle onaylanamaz. Onayınız yalnızca kalan taleplere uygulanacak.",
             "approveBlockedBulk": "{count, plural, one {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimini kaldırın.} other {Seçilen # talep şu anda onaylanamaz — devam etmek için seçimlerini kaldırın.}}",
             "remove": "Kaldır",
-            "confirm": "Onayla"
+            "preparingRemove": "Kaldırma hazırlanıyor",
+            "confirm": "Onayla",
+            "preparingVote": "Oyunuz hazırlanıyor"
         },
         "expanded": {
             "recipient": "Alıcı",
@@ -866,8 +863,7 @@
             "approvalsReceived": "{received}/{required} onay alındı",
             "expiresAt": "Sona Erme",
             "expiredAt": "Sona Erdi",
-            "exchangingTokens": "Token'lar Takas Ediliyor",
-            "exchangingTokensBody": "Bu talep ekip tarafından onaylandı. Token takası şu anda devam ediyor ve biraz zaman alabilir.",
+            "processing": "Talebiniz onaylandı ve işleniyor - yalnızca birkaç saniye.",
             "requestFailed": "Talep Başarısız",
             "requestFailedBody": "Ekip bu talebi onayladı, ancak oran dalgalanmaları nedeniyle başarısız oldu. Lütfen yeni bir talep oluşturun ve tekrar deneyin.",
             "votingPeriod24h": "Oylama süresi: 24 saat",
@@ -875,8 +871,6 @@
             "reject": "Reddet",
             "approve": "Onayla",
             "destinationNetwork": "Hedef Ağ",
-            "processingPayment": "Ödeme İşleniyor",
-            "processingPaymentBody": "Bu ödeme ekip tarafından onaylandı ve şu anda işleniyor. Tamamlanması biraz zaman alabilir.",
             "addMember": "Üye Ekle",
             "removeMember": "Üye Kaldır",
             "member": "Üye",
@@ -938,7 +932,7 @@
                 "voteDescription": "Bilgileri önceden dolar. Talebi siz oluşturursunuz, ekip oy verir."
             },
             "generateLink": "Davet bağlantısı oluştur",
-            "generating": "Oluşturuluyor...",
+            "generating": "Oluşturuluyor",
             "generateFailed": "Davet bağlantısı oluşturulamadı. Lütfen tekrar deneyin.",
             "readyTitle": "Davet bağlantınız hazır",
             "readyDescription": "Eklemek istediğiniz kişiye gönderin. Cüzdan bağlayıp katılmak isteyecekler.",
@@ -1008,14 +1002,14 @@
             "newMembersCount": "{count, plural, one {# yeni üye} other {# yeni üye}}",
             "updatedMembers": "Güncellenmiş Üyeler",
             "newMembers": "Yeni Üyeler",
-            "creatingProposal": "Öneri Oluşturuluyor...",
+            "creatingProposal": "Öneri Oluşturuluyor",
             "confirmSubmit": "Talep oluştur"
         },
         "removeDialog": {
             "title": "{count, plural, one {Üye} other {Üyeler}} kaldırılsın mı?",
             "nearnBody": "Onaylandıktan sonra, {account} hazineden kalıcı olarak kaldırılacak ve ilgili tüm izinler iptal edilecek. Kaldırıldıktan sonra, bu hesap NEARN'den artık talep oluşturamayacak.",
             "genericBody": "Onaylandıktan sonra, bu işlem <bold>{accounts}</bold> üyesini hazineden kalıcı olarak kaldıracak ve atanan tüm izinleri iptal edecek.",
-            "creatingProposal": "Öneri Oluşturuluyor..."
+            "creatingProposal": "Öneri Oluşturuluyor"
         },
         "validation": {
             "accountIdRequired": "Hesap kimliği gereklidir",
@@ -1060,7 +1054,7 @@
             "displayNamePlaceholder": "Görünen adı girin",
             "logo": "Logo",
             "logoDescription": "Hazineniz için bir logo yükleyin. Önerilen SVG, PNG veya JPG (256x256 px).",
-            "uploading": "Yükleniyor...",
+            "uploading": "Yükleniyor",
             "removeLogo": "Kaldır",
             "logoUploaded": "Logo başarıyla yüklendi",
             "uploadError": "Resim yüklenirken hata oluştu, lütfen tekrar deneyin.",
@@ -1114,6 +1108,7 @@
         "recipientsSelected": "{count, plural, =0 {alıcı yok} one {# alıcı} other {# alıcı}} seçildi",
         "sectionHeading": "Alıcılar",
         "privacyNote": "Kayıtlı adresler gizlidir ve yalnızca ekibinize görünür.",
+        "contactsCount": "{count, plural, one {# alıcı} other {# alıcı}}",
         "searchPlaceholder": "Alıcıyı ada göre ara",
         "searchPlaceholderShort": "Ara",
         "review": {
@@ -1125,18 +1120,24 @@
             "allDuplicates": "İçe aktarılan tüm alıcılar adres defterinizde zaten var. Farklı bir liste yüklemek için geri dönün veya bu incelemeden tekrarları kaldırın.",
             "someDuplicates": "Toplam {total} alıcıdan {duplicates} tanesi tekrarlanmış. Yalnızca yeni alıcıları yüklemek için devam edin.",
             "duplicated": "Tekrarlandı",
+            "contactNumber": "Alıcı {number}",
             "notePlaceholder": "Bu alıcıyı tanımlamaya yardımcı olacak bir not ekleyin (örn. yüklenici ödemesi, vesting dağıtımı).",
             "skipDuplicates": "Tekrarları atla ve yalnızca yenileri içe aktar.",
             "allDuplicatesTooltip": "İçe aktarılan tüm alıcılar zaten adres defterinizde, bu nedenle içe aktarılacak yeni bir şey yok.",
+            "manualAllDuplicates": "{count, plural, =1 {Bu kişi zaten adres defterinizde var.} other {Bu kişiler zaten adres defterinizde var.}}",
+            "manualSomeDuplicates": "{total} kişiden {duplicates} tanesi zaten adres defterinizde var. Yalnızca yeni kişiler kaydedilecek.",
+            "manualAllDuplicatesTooltip": "{count, plural, =1 {Bu kişi zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.} other {Bu kişiler zaten adres defterinizde olduğu için kaydedilecek yeni bir şey yok.}}",
             "duplicateActionTooltip": "Devam etmek için tekrar atlamayı etkinleştirin veya tekrarlanan alıcıları kaldırın.",
-            "adding": "Ekleniyor…",
+            "adding": "Ekleniyor",
             "nothingNew": "İçe Aktarılacak Yeni Bir Şey Yok",
-            "addRecipientsButton": "{count, plural, one {Alıcı Ekle} other {Alıcı Ekle}}"
+            "addRecipientsButton": "Kişileri kaydet"
         },
         "removeDialog": {
             "title": "Alıcıyı Kaldır",
+            "body": "Bu, kişilerinizden <bold>{names}</bold> kaydını kaldırır. İstediğiniz zaman yeniden ekleyebilirsiniz.",
             "bulk": "Bu, adres defterinizden <bold>{count, plural, one {# alıcıyı} other {# alıcıyı}}</bold> kaldıracak. Onları istediğiniz zaman tekrar ekleyebilirsiniz.",
-            "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz."
+            "single": "Bu, adres defterinizden <bold>{name}</bold> kişisini kaldıracak. Bu alıcıyı istediğiniz zaman tekrar ekleyebilirsiniz.",
+            "removing": "Kaldırılıyor"
         },
         "importFlow": {
             "title": "Alıcıları İçe Aktar",
@@ -1144,7 +1145,7 @@
             "foundSummary": "{networkCount, plural, one {# ağda} other {# ağda}} {count, plural, one {# alıcı} other {# alıcı}} bulundu",
             "uploadPrompt": "Alıcı verilerini yükleyin veya yapıştırın",
             "fixErrors": "Devam etmek için hataları düzeltin",
-            "continueReview": "İncelemeye Devam Et"
+            "continueReview": "Ayrıntıları İncele"
         },
         "form": {
             "editRecipient": "Alıcıyı Düzenle",
@@ -1155,6 +1156,13 @@
             "recipientAddress": "Alıcı Adresi",
             "network": "Ağ",
             "networkInfo": "Bu adresle uyumlu ağlar",
+            "enterName": "Ad girin",
+            "enterAddress": "Adres girin",
+            "note": "Not",
+            "clearName": "Adı temizle",
+            "clearAddress": "Adresi temizle",
+            "clearNote": "Notu temizle",
+            "saveContact": "Alıcıyı kaydet",
             "enterAddressFirst": "Önce alıcı adresini girin",
             "selectNetwork": "Ağ seçin",
             "selectNetworksTitle": "Ağları Seçin",
@@ -1240,7 +1248,6 @@
             "orDragDrop": "veya sürükleyip bırakın",
             "token": "Token",
             "destinationNetwork": "Hedef ağ",
-            "uploadFileFirst": "Önce bir dosya yükleyin",
             "removeFile": "Dosyayı kaldır",
             "maxFileSize": "en fazla 1 dosya, 1.5 MB'a kadar, yalnızca CSV dosyası",
             "noFilePrompt": "Yüklenecek dosyanız yok mu?",
@@ -1335,6 +1342,7 @@
             "enterAmount": "Bir miktar girin"
         },
         "review": "Takası incele",
+        "chainDeliveryUnsupported": "Bu ağ takasta kullanılamaz.",
         "poweredBy": "Destekleyen",
         "info": {
             "priceDifference": "Fiyat Farkı",
@@ -1484,6 +1492,7 @@
             "passkeyCardSubtitle": "Cihazınızın biyometriği veya parolasıyla oturum açın",
             "web3WalletsSeparator": "Web3 cüzdanları",
             "selectOtherWallet": "Başka cüzdan seç",
+            "connectFailed": "Oturum açamadık",
             "back": "Geri"
         },
         "unexpectedError": "Beklenmedik bir hata oluştu",
@@ -1546,7 +1555,7 @@
         "proposalDescriptionLabel": "Öneri açıklaması (isteğe bağlı)",
         "proposalDescriptionPlaceholder": "Bu öneriyi açıklayın...",
         "createProposal": "Öneri Oluştur",
-        "creatingProposal": "Öneri oluşturuluyor...",
+        "creatingProposal": "Öneri oluşturuluyor",
         "confirmInWallet": "Lütfen cüzdanınızda onaylayın",
         "proposalSubmitted": "Öneri Gönderildi",
         "shareProposal": "Öneriniz oluşturuldu. Oy kullanmak için aşağıdaki bağlantıyı hazine üyeleriyle paylaşın.",
@@ -1596,7 +1605,7 @@
         "relinking": "{count, plural, one {# seçili hazine başka bir Telegram sohbetine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantısını bu sohbete değiştirecek.} other {# seçili hazine başka Telegram sohbetlerine bağlı. Bağlanmak yeniden bağlayacak ve sohbet kimliği bağlantılarını bu sohbete değiştirecek.}}",
         "connectedToAnother": "Başka bir sohbete bağlı",
         "notMember": "Hiçbir hazinenin politika üyesi değilsiniz.",
-        "connecting": "Bağlanıyor…",
+        "connecting": "Bağlanıyor",
         "connect": "Bağlan",
         "settings": {
             "title": "Telegram",
@@ -1709,8 +1718,7 @@
     "memberInput": {
         "addNewMember": "Başka üye ekle",
         "validation": {
-            "rolesRequired": "En az bir rol gereklidir",
-            "duplicateAddress": "Adres zaten bir üye"
+            "rolesRequired": "En az bir rol gereklidir"
         },
         "enterAddress": "Adres girin",
         "clearAddress": "Adresi temizle",
@@ -1746,7 +1754,10 @@
         "orDragDrop": "veya sürükleyip bırakın",
         "maxFileSize": "en fazla 1 dosya, {maxSize} MB'a kadar, yalnızca CSV dosyası",
         "noFilePrompt": "Yüklenecek dosyanız yok mu?",
-        "downloadTemplate": "Şablon indir"
+        "downloadTemplate": "Şablon indir",
+        "pleaseUploadCsv": "Lütfen bir CSV dosyası yükleyin",
+        "fileSizeLimit": "Dosya boyutu 1.5 MB'dan az olmalıdır",
+        "removeFile": "Dosyayı kaldır"
     },
     "tokenSelect": {
         "selectToken": "Token seç",
@@ -1804,7 +1815,7 @@
         "noDownloadPermission": "Dosyayı indirme izniniz yok.",
         "noExportPermission": "Dışa aktarma izniniz yok",
         "quotaUsed": "Tüm kotanızı kullandınız",
-        "exporting": "Dışa Aktarılıyor...",
+        "exporting": "Dışa Aktarılıyor",
         "export": "Dışa Aktar",
         "columnSubmissionTime": "Gönderim Zamanı",
         "columnDateRange": "Tarih Aralığı",
@@ -1876,7 +1887,6 @@
     "recipientNetworkSelect": {
         "label": "Alıcı Ağı",
         "placeholder": "Alıcı ağını seçin",
-        "enterAddressFirst": "Önce alıcı adresini girin",
         "noCompatibleNetwork": "Bu adresle eşleşen ağ yok",
         "selectPlaceholder": "Ağ seçin",
         "title": "Ağ Seç",
@@ -1884,8 +1894,6 @@
         "fromAddressBook": "Adres Defterinden",
         "otherAvailable": "Diğer Kullanılabilir",
         "incompatible": "Uyumsuz",
-        "comingSoon": "Yakında",
-        "forMembersOnly": "Yalnızca Üyelere Özel",
         "nearComDescription": "near business ve near.com için ağ",
         "internalTag": "Dahili"
     },
@@ -1900,6 +1908,7 @@
         "note": "Not",
         "added": "Eklendi",
         "remove": "Kaldır",
+        "noResults": "Aramanızla eşleşen alıcı yok.",
         "send": "Gönder"
     },
     "publicDashboard": {
@@ -2058,7 +2067,6 @@
     },
     "user": {
         "saveToAddressBook": "Kişilere kaydet",
-        "walletCopiedToast": "Cüzdan adresi panoya kopyalandı",
         "copyWalletAddress": "Cüzdan Adresini Kopyala"
     },
     "infoDisplay": {
@@ -2161,7 +2169,6 @@
     },
     "tokenInput": {
         "useMax": "Maks. kullan",
-        "max": "MAX",
         "insufficientTokens": "Yetersiz bakiye. Onaydan önce yükleyin.",
         "insufficientTokensForFee": "Ağ ücretini ({fee} {symbol}) karşılamak için yetersiz token. Talebi gönderebilir ve onaydan önce yükleyebilirsiniz.",
         "balance": "Bakiye: {amount} {symbol}",
@@ -2173,23 +2180,20 @@
         "paused": "Geçici olarak duraklatıldı",
         "brieflyUnavailable": "Kısa süreliğine kullanılamıyor"
     },
-    "address": {
-        "copied": "Adres panoya kopyalandı"
-    },
     "memberAvatars": {
         "membersWhoCanVote": "Oy kullanabilen üyeler",
         "copyAddress": "Adresi kopyala",
         "moreMembers": "+{count, plural, one {# üye} other {# üye}}"
     },
     "addressBookMutations": {
-        "addedToast": "{count, plural, one {Alıcı eklendi} other {# alıcı eklendi}}",
-        "alreadyExistsToast": "Alıcı zaten adres defterinizde",
-        "addedSingleToast": "Alıcı eklendi",
-        "addFailedToast": "Alıcılar eklenemedi",
-        "addSingleFailedToast": "Alıcı eklenemedi",
-        "removedToast": "{count, plural, one {Alıcı kaldırıldı} other {# alıcı kaldırıldı}}",
-        "removeFailedToast": "Alıcılar kaldırılamadı",
-        "exportFailedToast": "Alıcılar dışa aktarılamadı"
+        "addedToast": "{count, plural, =1 {Kişi başarıyla kaydedildi} other {# kişi eklendi}}",
+        "alreadyExistsToast": "Kişi zaten adres defterinizde",
+        "addedSingleToast": "Kişi eklendi",
+        "addFailedToast": "Kişiler eklenemedi",
+        "addSingleFailedToast": "Kişi eklenemedi",
+        "removedToast": "{count, plural, =1 {Kişi başarıyla kaldırıldı} other {# kişi kaldırıldı}}",
+        "removeFailedToast": "Kişiler kaldırılamadı",
+        "exportFailedToast": "Kişiler dışa aktarılamadı"
     },
     "treasuryMutations": {
         "savedToast": "Hazine listenize kaydedildi",
@@ -2339,15 +2343,7 @@
             "back": "Geri"
         },
         "progress": {
-            "title": "Hazineyi Keşfetmek İçin Hızlı Adımları İzleyin",
             "addAssetsTitle": "Varlıklarınızı Ekleyin",
-            "addAssetsDescription": "Onları iş başında görmek için varlıklar ekleyerek başlayın.",
-            "deposit": "Para Yatır",
-            "createPaymentTitle": "Ödeme Talebi Oluşturun",
-            "createPaymentDescription": "Kurulumunuzu tamamlamak için bir ödeme talebi oluşturun.",
-            "send": "Gönder",
-            "useSolo": "Solo kullan",
-            "addTeamMemberDescription": "Hesabınızı başarıyla kurdunuz. Harika bir başlangıç!",
             "addTeamMemberTitle": "Hazine hesabı oluştur",
             "getStarted": "Başla",
             "setupThresholdTitle": "Eşik ayarla",
@@ -2400,8 +2396,9 @@
         }
     },
     "warnings": {
+        "gotIt": "Anladım",
         "offlineBadge": "Offline",
-        "statusPageLink": "[Status page](https://status.trezu.org/)",
+        "statusPageLink": "[Status page](https://status.business.near.com)",
         "schedule": {
             "on": "tarihinde",
             "until": "tarihine kadar"
@@ -2492,7 +2489,7 @@
             "title": "Şablonu sil",
             "body": "<b>{name}</b> şablonunu silmek istiyor musunuz? Üyeler artık bundan teklif oluşturamayacak. Bu işlem geri alınamaz.",
             "confirm": "Sil",
-            "deleting": "Siliniyor…"
+            "deleting": "Siliniyor"
         },
         "editor": {
             "nameLabel": "Ad",
@@ -2636,7 +2633,7 @@
         "save": "Kaydet",
         "edit": "Düzenle",
         "remove": "Kaldır",
-        "uploading": "Yükleniyor...",
+        "uploading": "Yükleniyor",
         "saveSuccess": "Değişiklikleriniz kaydedildi.",
         "saveError": "Değişiklikler kaydedilemedi. Tekrar deneyin.",
         "invalidImage": "Lütfen geçerli bir görsel dosyası seçin.",
