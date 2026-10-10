@@ -59,7 +59,11 @@ function isTransientRpcError(error: unknown): boolean {
     return (
         message.includes("TransportError") ||
         message.includes("Communication Error") ||
-        message.includes("localhost:3031")
+        message.includes("localhost:3031") ||
+        // A retry after a transient failure can land while the backend still
+        // holds the previous attempt's creation lock; the next loop iteration
+        // sees the treasury once that attempt finishes.
+        message.includes("already in progress")
     );
 }
 
@@ -145,7 +149,7 @@ export async function ensureTreasury(
             if (!isTransientRpcError(error) || attempt === 9) {
                 throw error;
             }
-            await new Promise((resolve) => setTimeout(resolve, 1000));
+            await new Promise((resolve) => setTimeout(resolve, 3000));
         }
     }
 

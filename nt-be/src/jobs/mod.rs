@@ -706,6 +706,16 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
+        "deposit-tracker",
+        schedule_every_secs(env_secs("DEPOSIT_TRACKER_INTERVAL_SECONDS", 5)),
+        handlers::deposit_tracker
+    );
+
+    monitor = register_cron_worker!(
+        monitor,
+        queues,
+        state,
+        wake_hub,
         "bulk-payment-payout",
         schedule_every_secs(5),
         handlers::bulk_payment_payout

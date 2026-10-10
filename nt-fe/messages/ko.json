@@ -396,7 +396,16 @@
             "linkInactiveDescription": "이 결제를 하려면 링크를 보낸 사람에게 새 링크를 요청하세요."
         },
         "expiresInRemaining": "<time>{duration}</time> 후 만료 – <bold>사용하지 않아도</bold>.",
-        "addressExpired": "이 주소는 만료되었습니다."
+        "addressExpired": "이 주소는 만료되었습니다.",
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "코인 가격",

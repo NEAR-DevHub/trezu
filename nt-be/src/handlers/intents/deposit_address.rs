@@ -3,13 +3,14 @@ use axum::{
     extract::{Query, State},
     http::StatusCode,
 };
-use chrono::{Duration, Utc};
+use chrono::{DateTime, Duration, Utc};
 use near_api::AccountId;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 
 use crate::AppState;
 use crate::handlers::intents::confidential::bronze::api::fetch_history;
+use crate::handlers::intents::deposit_tracker::WatchActivation;
 use crate::handlers::public_history::confidential_list::is_confidential_dao;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
@@ -273,6 +274,23 @@ pub async fn get_deposit_address(
         let result =
             get_confidential_deposit_address(&state, &account_id, &chain, &token_id, amount)
                 .await?;
+        if let Some(quote_deposit_address) = result.quote_deposit_address.as_deref() {
+            let quote_expires_at = result
+                .expires_at
+                .as_deref()
+                .and_then(|raw| DateTime::parse_from_rfc3339(raw).ok())
+                .map(|at| at.with_timezone(&Utc));
+            activate_deposit_watch(
+                &state,
+                WatchActivation {
+                    dao_id: account_id.to_string(),
+                    chain: chain.clone(),
+                    token_id: Some(token_id.clone()),
+                },
+                Some((quote_deposit_address, quote_expires_at)),
+            )
+            .await;
+        }
         return Ok(Json(result));
     }
 
@@ -289,7 +307,49 @@ pub async fn get_deposit_address(
                 );
             }
         })?;
+    activate_deposit_watch(
+        &state,
+        WatchActivation {
+            dao_id: account_id.to_string(),
+            chain,
+            token_id: request.token_id,
+        },
+        None,
+    )
+    .await;
     Ok(Json(result))
+}
+
+/// Showing an address starts (or renews) deposit tracking. Tracking is a
+/// best-effort UX layer: failures are logged and never fail the address
+/// request. Accounts that are not monitored (share-page quote lookups) are
+/// skipped.
+async fn activate_deposit_watch(
+    state: &AppState,
+    activation: WatchActivation,
+    confidential_quote: Option<(&str, Option<DateTime<Utc>>)>,
+) {
+    let outcome = match confidential_quote {
+        Some((quote_deposit_address, quote_expires_at)) => {
+            activation
+                .activate_confidential(&state.db_pool, quote_deposit_address, quote_expires_at)
+                .await
+        }
+        None => activation.activate_public(&state.db_pool).await,
+    };
+    match outcome {
+        Ok(true) => {}
+        Ok(false) => tracing::debug!(
+            dao_id = %activation.dao_id,
+            "deposit watch skipped: account is not monitored"
+        ),
+        Err(error) => tracing::warn!(
+            dao_id = %activation.dao_id,
+            chain = %activation.chain,
+            %error,
+            "deposit watch activation failed"
+        ),
+    }
 }
 
 /// Look up confidential one-time deposit status via 1Click history

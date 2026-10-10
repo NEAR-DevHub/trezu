@@ -396,7 +396,16 @@
             "fiatAnswer": "Not at the moment, but we’re working on bringing fiat deposits soon. Stay tuned - it’s on the way 🚀",
             "arrivalQuestion": "How long does it take for a deposit to arrive?",
             "arrivalAnswer": "The processing time depends on the network."
-        }
+        },
+        "depositWaiting": "Waiting for deposit…",
+        "depositWaitingHint": "This page updates automatically once your transfer is seen.",
+        "depositDetectedTitle": "Deposit detected",
+        "depositDetectedHint": "Settling on NEAR. This usually takes a few minutes.",
+        "depositReceivedTitle": "Deposit received",
+        "depositReceivedHint": "The funds are now in your treasury.",
+        "depositFailedTitle": "Deposit failed",
+        "depositFailedHint": "The provider reported this deposit as failed or refunded.",
+        "depositAmountUnknown": "Amount pending"
     },
     "assetDetails": {
         "coinPrice": "Coin Price",
