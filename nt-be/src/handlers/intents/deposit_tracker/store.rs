@@ -264,9 +264,10 @@ pub async fn record_watch_poll(
     Ok(())
 }
 
-/// Insert or update one observed deposit. A confirmed row never regresses,
-/// and a finalized row is not pulled back to detected by a stale provider
-/// read. Returns the previous and current tracker states.
+/// Insert or update one observed deposit. A terminal row (ledger-confirmed
+/// or failed) never regresses, and a finalized row is not pulled back to
+/// detected by a stale provider read. Returns the previous and current
+/// tracker states.
 pub async fn upsert_deposit(
     executor: impl PgExecutor<'_>,
     watch_id: i64,
@@ -298,7 +299,8 @@ pub async fn upsert_deposit(
                 token_id = EXCLUDED.token_id,
                 chain = COALESCE(EXCLUDED.chain, in_process_deposits.chain),
                 status = CASE
-                    WHEN in_process_deposits.status = 'ledger_confirmed' THEN in_process_deposits.status
+                    WHEN in_process_deposits.status IN ('ledger_confirmed', 'failed')
+                        THEN in_process_deposits.status
                     WHEN in_process_deposits.status = 'finalized' AND EXCLUDED.status = 'detected'
                         THEN in_process_deposits.status
                     ELSE EXCLUDED.status
@@ -553,6 +555,50 @@ mod tests {
             amount: Some(BigDecimal::from(100)),
             provider_status: "PENDING".to_string(),
             status,
+        }
+    }
+
+    #[sqlx::test]
+    async fn failed_deposit_never_regresses(pool: PgPool) {
+        seed_dao(&pool, "dao.sputnik-dao.near", false).await;
+        let now = Utc::now();
+        upsert_watch(
+            &pool,
+            "dao.sputnik-dao.near",
+            WatchKind::Public,
+            None,
+            "eth:8453",
+            None,
+            now + Duration::minutes(10),
+            now + Duration::minutes(120),
+        )
+        .await
+        .expect("upsert watch");
+        let watch = claim_due_watches(&pool, 1, Duration::seconds(60))
+            .await
+            .expect("claim")
+            .remove(0);
+
+        let key = "eth:8453:0xdef:nep141:usdc.omft.near";
+        for status in [
+            DepositStatus::Failed,
+            DepositStatus::Detected,
+            DepositStatus::Finalized,
+        ] {
+            let transition = upsert_deposit(
+                &pool,
+                watch.id,
+                &watch.dao_id,
+                watch.kind,
+                &observed(key, status),
+            )
+            .await
+            .expect("upsert deposit");
+            assert_eq!(
+                transition.current,
+                DepositStatus::Failed,
+                "failed is terminal"
+            );
         }
     }
 
