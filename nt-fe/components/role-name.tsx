@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { useCallback } from "react";
 
 /**
  * Maps internal role names (raw policy names) to canonical role IDs:
@@ -39,7 +40,7 @@ export function formatRoleName(
 
 export function useFormatRoleName() {
     const t = useTranslations("roleSelector.roles");
-    return (roleName: string) => formatRoleName(roleName, t);
+    return useCallback((roleName: string) => formatRoleName(roleName, t), [t]);
 }
 
 interface RoleNameProps {

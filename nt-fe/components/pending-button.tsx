@@ -12,17 +12,23 @@ interface PendingButtonProps {
     id?: string;
 }
 
-export function PendingButton({ types, id }: PendingButtonProps) {
-    const t = useTranslations("proposals.status");
+/** Pending proposals shown by `PendingButton`; shares its query cache. */
+export function usePendingProposals(types?: string[]) {
     const { treasuryId } = useTreasury();
-    const router = useRouter();
-
-    const { data: pendingProposals } = useProposals(treasuryId, {
+    return useProposals(treasuryId, {
         statuses: ["InProgress"],
         types,
         sort_direction: "desc",
         sort_by: "CreationTime",
     });
+}
+
+export function PendingButton({ types, id }: PendingButtonProps) {
+    const t = useTranslations("proposals.status");
+    const { treasuryId } = useTreasury();
+    const router = useRouter();
+
+    const { data: pendingProposals } = usePendingProposals(types);
 
     return (
         <Button
