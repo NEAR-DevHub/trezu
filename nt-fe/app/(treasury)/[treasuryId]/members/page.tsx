@@ -38,7 +38,11 @@ import { PageCard } from "@/components/card";
 import { Button } from "@/components/button";
 import { RoleBadge } from "@/components/role-badge";
 import { Tooltip } from "@/components/tooltip";
-import { PendingButton } from "@/components/pending-button";
+import {
+    PendingButton,
+    usePendingProposals,
+} from "@/components/pending-button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useMemberJoinRequests } from "@/hooks/use-member-invites";
 import { removeMembersFromPolicy } from "./utils/policy-helpers";
 import {
@@ -74,6 +78,7 @@ interface Member {
 }
 
 const MEMBERS_INFO_DISMISSED_STORAGE_KEY = "members-info-dismissed";
+const MEMBERS_PENDING_TYPES = ["Change Policy"];
 
 type MembersInfoItem = {
     icon: LucideIcon;
@@ -148,10 +153,6 @@ export default function MembersPage() {
     const router = useRouter();
     const isMobile = useMediaQuery("(max-width: 640px)");
 
-    usePageTour(
-        PAGE_TOUR_NAMES.MEMBERS_PENDING,
-        PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
-    );
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [isInfoSectionDismissed, setIsInfoSectionDismissed] = useState(false);
     const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
@@ -164,10 +165,22 @@ export default function MembersPage() {
         ? tMemberValidation("pendingRequest")
         : undefined;
 
-    const { data: joinRequests = [] } = useMemberJoinRequests(
-        canAddMember ? treasuryId : undefined,
-    );
+    const { data: joinRequests = [], isLoading: isJoinRequestsLoading } =
+        useMemberJoinRequests(canAddMember ? treasuryId : undefined);
     const joinRequestCount = joinRequests.length;
+    const { isLoading: isPendingRequestsLoading } = usePendingProposals(
+        MEMBERS_PENDING_TYPES,
+    );
+    const areRequestButtonsReady =
+        isMemberDataReady &&
+        !isJoinRequestsLoading &&
+        !isPendingRequestsLoading;
+
+    usePageTour(
+        PAGE_TOUR_NAMES.MEMBERS_PENDING,
+        PAGE_TOUR_STORAGE_KEYS.MEMBERS_PENDING_SHOWN,
+        { enabled: areRequestButtonsReady },
+    );
 
     const membersInfoItems = useMemo<MembersInfoItem[]>(
         () => [
@@ -286,30 +299,26 @@ export default function MembersPage() {
         }
     };
 
+    // A row's Remove action takes priority over the bulk selection.
+    const membersPendingRemoval = useMemo(
+        () =>
+            memberToDelete
+                ? [memberToDelete]
+                : existingMembers.filter((m) =>
+                      selectedMembers.includes(m.accountId),
+                  ),
+        [memberToDelete, selectedMembers, existingMembers],
+    );
+
     // Handle delete members submission
     const handleDeleteMembersSubmit = async () => {
         if (!policy || !treasuryId || isMemberActionsDisabled) return;
 
         try {
-            const membersToRemove =
-                selectedMembers.length > 0
-                    ? selectedMembers.map((accountId) => {
-                          const member = existingMembers.find(
-                              (m) => m.accountId === accountId,
-                          );
-                          return {
-                              member: accountId,
-                              roles: member?.roles || [],
-                          };
-                      })
-                    : memberToDelete
-                      ? [
-                            {
-                                member: memberToDelete.accountId,
-                                roles: memberToDelete.roles,
-                            },
-                        ]
-                      : [];
+            const membersToRemove = membersPendingRemoval.map((m) => ({
+                member: m.accountId,
+                roles: m.roles,
+            }));
 
             if (membersToRemove.length === 0) return;
 
@@ -321,10 +330,12 @@ export default function MembersPage() {
             await createPolicyChangeProposal(
                 updatedPolicy,
                 summary,
-                membersToRemove.length > 1
-                    ? tMembers("policy.removeMembers")
-                    : tMembers("policy.removeMember"),
-                tMembers("policy.removeMemberSuccess"),
+                tMembers("policy.removeMember", {
+                    count: membersToRemove.length,
+                }),
+                tMembers("policy.removeMemberSuccess", {
+                    count: membersToRemove.length,
+                }),
             );
 
             trackEvent("member-delete-submitted", {
@@ -366,6 +377,7 @@ export default function MembersPage() {
     // Handle bulk delete
     const handleBulkDelete = useCallback(() => {
         if (isMemberActionsDisabled) return;
+        setMemberToDelete(null);
         setIsDeleteModalOpen(true);
     }, [isMemberActionsDisabled]);
 
@@ -583,6 +595,7 @@ export default function MembersPage() {
                                             onClick={() => {
                                                 if (isMemberActionsDisabled)
                                                     return;
+                                                setSelectedMembers([]);
                                                 setMemberToDelete(member);
                                                 setIsDeleteModalOpen(true);
                                             }}
@@ -703,12 +716,16 @@ export default function MembersPage() {
                             />
                         </div>
                         <div className="flex items-center gap-2 sm:gap-3">
-                            <PendingButton
-                                id="members-pending-btn"
-                                types={["Change Policy"]}
-                            />
+                            {areRequestButtonsReady ? (
+                                <PendingButton
+                                    id="members-pending-btn"
+                                    types={MEMBERS_PENDING_TYPES}
+                                />
+                            ) : (
+                                <Skeleton className="h-9 w-28 rounded-xl" />
+                            )}
 
-                            {joinRequestCount > 0 && (
+                            {areRequestButtonsReady && joinRequestCount > 0 && (
                                 <AuthButton
                                     permissionKind="policy"
                                     permissionAction="AddProposal"
@@ -733,7 +750,9 @@ export default function MembersPage() {
                                 </AuthButton>
                             )}
 
-                            {!canAddMember || !isMemberDataReady ? (
+                            {!areRequestButtonsReady ? (
+                                <Skeleton className="size-9 rounded-xl sm:w-40" />
+                            ) : !canAddMember ? (
                                 <AuthButton
                                     permissionKind="policy"
                                     permissionAction="AddProposal"
@@ -919,27 +938,12 @@ export default function MembersPage() {
                     setSelectedMembers([]);
                 }}
                 member={memberToDelete}
-                members={
-                    selectedMembers.length > 0
-                        ? existingMembers.filter((m) =>
-                              selectedMembers.includes(m.accountId),
-                          )
-                        : undefined
-                }
+                members={membersPendingRemoval}
                 onConfirm={handleDeleteMembersSubmit}
                 validationError={(() => {
-                    const membersToDelete =
-                        selectedMembers.length > 0
-                            ? existingMembers.filter((m) =>
-                                  selectedMembers.includes(m.accountId),
-                              )
-                            : memberToDelete
-                              ? [memberToDelete]
-                              : [];
+                    if (membersPendingRemoval.length === 0) return undefined;
 
-                    if (membersToDelete.length === 0) return undefined;
-
-                    const validation = canDeleteBulk(membersToDelete);
+                    const validation = canDeleteBulk(membersPendingRemoval);
                     return validation.canModify ? undefined : validation.reason;
                 })()}
             />

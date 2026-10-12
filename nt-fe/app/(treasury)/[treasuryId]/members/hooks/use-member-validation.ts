@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { useCallback, useMemo } from "react";
+import { useFormatRoleName } from "@/components/role-name";
 
 interface Member {
     accountId: string;
@@ -25,6 +26,7 @@ export function useMemberValidation(
 ) {
     const tAuth = useTranslations("auth");
     const tMembers = useTranslations("memberValidation");
+    const formatRoleName = useFormatRoleName();
     const { accountId, canAddMember, hasPendingMemberRequest } = options || {};
 
     const roleMembersMap = useMemo(() => {
@@ -49,19 +51,27 @@ export function useMemberValidation(
 
     // Helper to format critical roles list - memoized function
     const formatRolesList = useCallback(
-        (criticalRoles: string[]): string => {
-            if (criticalRoles.length === 1) return criticalRoles[0];
-            if (criticalRoles.length === 2)
-                return tMembers("rolesAnd", {
-                    first: criticalRoles[0],
-                    second: criticalRoles[1],
-                });
-            return tMembers("rolesMany", {
-                list: criticalRoles.slice(0, -1).join(", "),
-                last: criticalRoles[criticalRoles.length - 1],
-            });
+        (rawRoles: string[]): { roles: string; count: number } => {
+            const criticalRoles = [...new Set(rawRoles.map(formatRoleName))];
+            const count = criticalRoles.length;
+            if (count === 1) return { roles: criticalRoles[0], count };
+            if (count === 2)
+                return {
+                    roles: tMembers("rolesAnd", {
+                        first: criticalRoles[0],
+                        second: criticalRoles[1],
+                    }),
+                    count,
+                };
+            return {
+                roles: tMembers("rolesMany", {
+                    list: criticalRoles.slice(0, -1).join(", "),
+                    last: criticalRoles[count - 1],
+                }),
+                count,
+            };
         },
-        [tMembers],
+        [tMembers, formatRoleName],
     );
 
     // Helper to check if roles contain governance - memoized
@@ -115,16 +125,10 @@ export function useMemberValidation(
 
             if (criticalRoles.length > 0) {
                 const hasGovernance = hasGovernanceRole(criticalRoles);
-                const rolesList = formatRolesList(criticalRoles);
+                const roleParams = formatRolesList(criticalRoles);
                 const reason = hasGovernance
-                    ? tMembers("cannotRemoveMemberGov", {
-                          roles: rolesList,
-                          count: criticalRoles.length,
-                      })
-                    : tMembers("cannotRemoveMember", {
-                          roles: rolesList,
-                          count: criticalRoles.length,
-                      });
+                    ? tMembers("cannotRemoveMemberGov", roleParams)
+                    : tMembers("cannotRemoveMember", roleParams);
 
                 return {
                     canModify: false,
@@ -183,16 +187,10 @@ export function useMemberValidation(
 
             if (criticalRoles.length > 0) {
                 const hasGovernance = hasGovernanceRole(criticalRoles);
-                const rolesList = formatRolesList(criticalRoles);
+                const roleParams = formatRolesList(criticalRoles);
                 const reason = hasGovernance
-                    ? tMembers("cannotBulkRemoveGov", {
-                          roles: rolesList,
-                          count: criticalRoles.length,
-                      })
-                    : tMembers("cannotBulkRemove", {
-                          roles: rolesList,
-                          count: criticalRoles.length,
-                      });
+                    ? tMembers("cannotBulkRemoveGov", roleParams)
+                    : tMembers("cannotBulkRemove", roleParams);
 
                 return {
                     canModify: false,

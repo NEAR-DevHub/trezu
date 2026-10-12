@@ -1295,9 +1295,8 @@
             "editMembers": "Update Policy - Edit Multiple Members",
             "editMemberSuccess": "Member roles update request created successfully",
             "editMembersSuccess": "Bulk member roles update request created successfully",
-            "removeMember": "Update Policy - Remove Member",
-            "removeMembers": "Update Policy - Remove Members",
-            "removeMemberSuccess": "Member removal request created successfully",
+            "removeMember": "{count, plural, =1 {Update Policy - Remove Member} other {Update Policy - Remove Members}}",
+            "removeMemberSuccess": "{count, plural, =1 {Member removal request created successfully} other {Request to remove # members created successfully}}",
             "createProposalFailed": "Failed to create member request. Please try again."
         },
         "infoSection": {
@@ -2654,7 +2653,7 @@
         "welcome": {
             "heading": "🎉 Your treasury is ready",
             "subheading": "Take a quick tour?",
-            "body": "Deposit funds, send payments, exchange assets, and manage your team — all from this dashboard.",
+            "body": "Deposit funds, send payments, exchange assets, and manage your team - all from this dashboard.",
             "progress": "{current} of {total}",
             "next": "Got it",
             "body2": "We'll walk you through depositing funds, sending payments, swapping assets, and managing your team – about 60 seconds.",

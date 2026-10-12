@@ -66,7 +66,7 @@ export default function AccountPage() {
     const schema = useMemo(
         () =>
             z.object({
-                displayName: z.string().trim().min(1).max(100),
+                displayName: z.string().trim().max(100),
                 wallet: z.string(),
                 avatarUrl: z.string().nullable(),
             }),
@@ -93,11 +93,7 @@ export default function AccountPage() {
 
     const avatarUrl = form.watch("avatarUrl");
     const displayName = form.watch("displayName");
-    const trimmedDisplayName = displayName.trim();
-    const canSave =
-        form.formState.isDirty &&
-        trimmedDisplayName.length > 0 &&
-        trimmedDisplayName.length <= 100;
+    const canSave = form.formState.isDirty && displayName.trim().length <= 100;
 
     const onSubmit = async (data: AccountFormValues) => {
         if (!accountId || !isAuthenticated) {
