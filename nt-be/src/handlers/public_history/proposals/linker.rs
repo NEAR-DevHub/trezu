@@ -30,6 +30,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::AppState;
+use crate::handlers::intents::confidential::bronze::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::link_intent_to_history_event;
 use crate::handlers::intents::swap_status::fetch_public_swap_status;
@@ -759,7 +760,7 @@ async fn mirror_confidential_proposal_executed(
     sqlx::query(
         r#"
         UPDATE confidential_intents
-        SET status = 'submitted',
+        SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
             proposal_executed_at = COALESCE(proposal_executed_at, $3),
             proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
             proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
@@ -786,6 +787,9 @@ async fn mirror_confidential_proposal_executed(
         );
     }
     refresh_gold_metadata_for_intent(pool, dao_id, payload_hash).await?;
+    // The poll owns the "signature on chain → submit to 1Click" step; pull it
+    // forward so an intent the relay could not submit is picked up now.
+    mark_confidential_history_activity_due(pool, dao_id).await?;
     Ok(())
 }
 

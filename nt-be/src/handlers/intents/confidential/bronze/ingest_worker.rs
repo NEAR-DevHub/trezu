@@ -16,6 +16,7 @@ use crate::handlers::intents::confidential::gold::history_events::{
     CONFIDENTIAL_GOLD_RECONCILIATION_WORKERS, project_confidential_gold_for_dao,
     project_confidential_gold_for_dirty_daos, verify_confidential_ledger_heads,
 };
+use crate::handlers::relay::confidential::ConfidentialIntentSubmitter;
 
 pub const CONFIDENTIAL_HISTORY_SCHEDULER_TICK: Duration = Duration::from_secs(10);
 pub const CONFIDENTIAL_HISTORY_TRIGGER_LIMIT: u32 = 50;
@@ -460,6 +461,20 @@ async fn process_confidential_history_account(
             return HistoryCycleAccountResult::failed(account_id, error);
         }
     };
+
+    // Intents whose proposal executed but whose signature the relay never
+    // saw (slow MPC callback, relay timeout) are submitted from the on-chain
+    // signature here; expired ones are retired.
+    let resubmitted = ConfidentialIntentSubmitter::new(state)
+        .resubmit_awaiting_intents(account_ref.as_str())
+        .await;
+    if resubmitted > 0 {
+        tracing::info!(
+            "{}: submitted {} signed intent(s) from chain",
+            account_id,
+            resubmitted
+        );
+    }
 
     let backfill =
         match backfill_confidential_history(state, account_ref, limit, BackfillMode::OnePage).await

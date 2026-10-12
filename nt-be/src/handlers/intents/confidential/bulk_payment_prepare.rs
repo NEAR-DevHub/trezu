@@ -538,6 +538,7 @@ pub async fn bulk_payment_prepare(
             intent_type = EXCLUDED.intent_type,
             status = 'pending',
             submit_result = NULL,
+            submit_claimed_at = NULL,
             updated_at = NOW()
         "#,
         &batch.dao_ids,

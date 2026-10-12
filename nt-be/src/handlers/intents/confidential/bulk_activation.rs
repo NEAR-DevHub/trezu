@@ -315,6 +315,7 @@ pub async fn prepare_bulk_activation(
             intent_type = 'bulk_auth',
             status = 'pending',
             submit_result = NULL,
+            submit_claimed_at = NULL,
             updated_at = NOW()
         "#,
     )

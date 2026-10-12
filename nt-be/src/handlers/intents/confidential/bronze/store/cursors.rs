@@ -186,10 +186,22 @@ pub async fn record_confidential_history_poll_result(
                 LEFT JOIN bronze_confidential_history_events he
                   ON he.id = ci.history_event_id
                 WHERE ci.dao_id = $1
-                  AND ci.status = 'submitted'
-                  AND COALESCE(ci.proposal_executed_at, ci.created_at)
-                      > NOW() - INTERVAL '10 minutes'
-                  AND (he.id IS NULL OR NOT (UPPER(he.status) = ANY($2)))
+                  AND (
+                      (
+                          ci.status = 'submitted'
+                          AND COALESCE(ci.proposal_executed_at, ci.created_at)
+                              > NOW() - INTERVAL '10 minutes'
+                          AND (he.id IS NULL OR NOT (UPPER(he.status) = ANY($2)))
+                      )
+                      OR (
+                          -- Executed on chain, signature not yet handed to
+                          -- 1Click: the poll submits it, so stay on the fast tier.
+                          ci.intent_type = 'shield'
+                          AND ci.submit_result IS NULL
+                          AND ci.proposal_execution_transaction_hash IS NOT NULL
+                          AND ci.proposal_executed_at > NOW() - INTERVAL '60 minutes'
+                      )
+                  )
             )
         "#,
         )
