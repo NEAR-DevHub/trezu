@@ -9,8 +9,8 @@ import { DepositAddressCard } from "./deposit-address-card";
 import type { DepositNoticeTone } from "./deposit-notice-icon";
 import {
     DepositNoticeInfoRow,
-    DepositNoticeList,
     type DepositNoticeItem,
+    DepositNoticeList,
 } from "./deposit-notice-list";
 
 export type AddressNoticeTone = DepositNoticeTone;
@@ -37,7 +37,7 @@ interface DepositAddressViewProps {
     /** Shown above tabs/title (e.g. public slow-network banner). */
     warningSlot?: ReactNode;
     headerSlot?: ReactNode;
-    /** Live deposit progress, rendered between the address card and notices. */
+    /** Live deposit progress, rendered below the notices. */
     statusSlot?: ReactNode;
 }
 
@@ -79,6 +79,23 @@ export function DepositAddressSkeleton({ className }: { className?: string }) {
     );
 }
 
+export function DepositAddressHeading({
+    title,
+    subtitle,
+}: {
+    title: string;
+    subtitle?: string;
+}) {
+    return (
+        <div>
+            <h2 className="font-semibold text-base leading-snug">{title}</h2>
+            {subtitle && (
+                <p className="text-sm text-muted-foreground mt-1">{subtitle}</p>
+            )}
+        </div>
+    );
+}
+
 export function DepositAddressView({
     title,
     subtitle,
@@ -101,16 +118,7 @@ export function DepositAddressView({
         <div className={cn("space-y-4", className)}>
             {warningSlot}
             {headerSlot}
-            <div>
-                <h2 className="font-semibold text-base leading-snug">
-                    {title}
-                </h2>
-                {subtitle && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                        {subtitle}
-                    </p>
-                )}
-            </div>
+            <DepositAddressHeading title={title} subtitle={subtitle} />
 
             <DepositAddressCard
                 address={address}
@@ -120,8 +128,6 @@ export function DepositAddressView({
                 showShare={showShare}
                 onShare={onShare}
             />
-
-            {statusSlot}
 
             <DepositNoticeList
                 notices={notices}
@@ -145,6 +151,8 @@ export function DepositAddressView({
                     ) : undefined
                 }
             />
+
+            {statusSlot}
 
             {memo && (
                 <div className="flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3">

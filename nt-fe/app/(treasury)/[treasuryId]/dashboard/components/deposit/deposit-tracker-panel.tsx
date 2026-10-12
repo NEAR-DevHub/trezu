@@ -1,15 +1,20 @@
 "use client";
 
+import { BorderBeam } from "border-beam";
 import { Check, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useTheme } from "next-themes";
 import { FormattedAmount } from "@/components/formatted-amount";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { TrackedDeposit } from "@/lib/bridge-api";
 import { cn } from "@/lib/utils";
+import { DepositOptionIcon } from "./deposit-option-icon";
 
 interface DepositTrackerPanelProps {
     deposits: TrackedDeposit[];
-    /** Show the "waiting" row while nothing has been detected yet. */
-    waiting: boolean;
+    /** Asset icon shown on each tile (falls back to the token symbol). */
+    assetIcon?: string | null;
+    assetName?: string | null;
     className?: string;
 }
 
@@ -26,123 +31,135 @@ function toneFor(deposit: TrackedDeposit): Tone {
     }
 }
 
-function ToneIcon({ tone }: { tone: Tone }) {
-    if (tone === "success") {
-        return (
-            <span className="size-5 shrink-0 rounded-full bg-general-success-foreground flex items-center justify-center">
-                <Check className="size-3 text-white stroke-3" />
-            </span>
-        );
-    }
-    if (tone === "failed") {
-        return (
-            <span className="size-5 shrink-0 rounded-full bg-general-destructive-foreground flex items-center justify-center">
-                <X className="size-3 text-white stroke-3" />
-            </span>
-        );
-    }
+function StatusBadge({ tone }: { tone: Tone }) {
     return (
-        <Loader2 className="size-5 shrink-0 animate-spin text-general-orange-foreground" />
+        <span
+            className={cn(
+                "absolute -bottom-0.5 -right-0.5 flex size-5 items-center justify-center rounded-full ring-2 ring-muted",
+                tone === "success" && "bg-general-success-foreground",
+                tone === "failed" && "bg-general-destructive-foreground",
+                tone === "pending" && "bg-foreground",
+            )}
+        >
+            {tone === "success" ? (
+                <Check className="size-3 text-white stroke-3" />
+            ) : tone === "failed" ? (
+                <X className="size-3 text-white stroke-3" />
+            ) : (
+                <Loader2 className="size-3 animate-spin text-background" />
+            )}
+        </span>
+    );
+}
+
+function DepositStatusTile({
+    deposit,
+    assetIcon,
+    assetName,
+}: {
+    deposit: TrackedDeposit;
+    assetIcon?: string | null;
+    assetName?: string | null;
+}) {
+    const t = useTranslations("depositModal");
+    const tone = toneFor(deposit);
+    const symbol = deposit.tokenMetadata.symbol;
+
+    const title =
+        tone === "success"
+            ? t("depositCompletedTitle")
+            : tone === "failed"
+              ? t("depositFailedTitle")
+              : t("depositProcessingTitle");
+
+    const amount =
+        deposit.amount != null ? (
+            <FormattedAmount
+                kind="token"
+                value={deposit.amount}
+                symbol={symbol}
+                tokenDecimals={deposit.tokenMetadata.decimals}
+                profile="compact"
+            />
+        ) : null;
+    const bodyKey =
+        tone === "success"
+            ? "depositCompletedBody"
+            : tone === "failed"
+              ? "depositFailedBody"
+              : "depositProcessingBody";
+    const body = amount
+        ? t.rich(bodyKey, { amount: () => amount })
+        : t(`${bodyKey}NoAmount`);
+
+    return (
+        <div
+            className="flex items-center gap-4 rounded-xl bg-muted p-4"
+            data-testid={`deposit-tracker-row-${deposit.status}`}
+        >
+            <span className="relative shrink-0">
+                <DepositOptionIcon
+                    icon={assetIcon ?? ""}
+                    name={assetName ?? symbol}
+                    className="size-12 text-base"
+                />
+                <StatusBadge tone={tone} />
+            </span>
+            <div className="min-w-0 flex-1">
+                <p className="font-semibold text-base leading-snug">{title}</p>
+                <p className="text-sm text-muted-foreground mt-0.5">{body}</p>
+            </div>
+        </div>
     );
 }
 
 /**
- * Live deposit progress under the address card: waiting → detected →
- * received (or failed). Data comes from the backend deposit tracker.
+ * Live deposit progress from the backend tracker: one tile per deposit,
+ * processing → completed (or failed). A processing tile carries a travelling
+ * border beam; nothing renders until a deposit has been detected.
  */
 export function DepositTrackerPanel({
     deposits,
-    waiting,
+    assetIcon,
+    assetName,
     className,
 }: DepositTrackerPanelProps) {
-    const t = useTranslations("depositModal");
+    const { resolvedTheme } = useTheme();
+    const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 
-    if (deposits.length === 0 && !waiting) {
+    if (deposits.length === 0) {
         return null;
     }
 
     return (
         <div
-            className={cn("rounded-xl bg-muted p-3 space-y-3", className)}
+            className={cn("space-y-3", className)}
             data-testid="deposit-tracker-panel"
         >
-            {deposits.length === 0 ? (
-                <div className="flex items-start gap-2.5">
-                    <span className="relative flex size-5 shrink-0 items-center justify-center">
-                        <span className="absolute inline-flex size-2.5 animate-ping rounded-full bg-general-orange-foreground opacity-60" />
-                        <span className="relative inline-flex size-2.5 rounded-full bg-general-orange-foreground" />
-                    </span>
-                    <div className="min-w-0">
-                        <p className="text-sm font-medium">
-                            {t("depositWaiting")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                            {t("depositWaitingHint")}
-                        </p>
-                    </div>
-                </div>
-            ) : (
-                deposits.map((deposit) => {
-                    const tone = toneFor(deposit);
-                    const title =
-                        tone === "success"
-                            ? t("depositReceivedTitle")
-                            : tone === "failed"
-                              ? t("depositFailedTitle")
-                              : t("depositDetectedTitle");
-                    const hint =
-                        tone === "success"
-                            ? t("depositReceivedHint")
-                            : tone === "failed"
-                              ? t("depositFailedHint")
-                              : t("depositDetectedHint");
-                    return (
-                        <div
-                            key={deposit.id}
-                            className="flex items-start gap-2.5"
-                            data-testid={`deposit-tracker-row-${deposit.status}`}
-                        >
-                            <ToneIcon tone={tone} />
-                            <div className="min-w-0 flex-1">
-                                <div className="flex items-baseline justify-between gap-2">
-                                    <p className="text-sm font-medium">
-                                        {title}
-                                    </p>
-                                    <span
-                                        className={cn(
-                                            "text-sm font-medium tabular-nums whitespace-nowrap",
-                                            tone === "success" &&
-                                                "text-general-success-foreground",
-                                            tone === "failed" &&
-                                                "text-general-destructive-foreground line-through",
-                                        )}
-                                    >
-                                        {deposit.amount != null ? (
-                                            <FormattedAmount
-                                                kind="token"
-                                                value={deposit.amount}
-                                                symbol={
-                                                    deposit.tokenMetadata.symbol
-                                                }
-                                                tokenDecimals={
-                                                    deposit.tokenMetadata
-                                                        .decimals
-                                                }
-                                                profile="compact"
-                                            />
-                                        ) : (
-                                            t("depositAmountUnknown")
-                                        )}
-                                    </span>
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                    {hint}
-                                </p>
-                            </div>
-                        </div>
-                    );
-                })
-            )}
+            {deposits.map((deposit) => {
+                const tile = (
+                    <DepositStatusTile
+                        key={deposit.id}
+                        deposit={deposit}
+                        assetIcon={assetIcon}
+                        assetName={assetName}
+                    />
+                );
+                if (toneFor(deposit) !== "pending") return tile;
+                return (
+                    <BorderBeam
+                        key={deposit.id}
+                        size="md"
+                        colorVariant="mono"
+                        theme={resolvedTheme === "dark" ? "dark" : "light"}
+                        active={!reducedMotion}
+                        borderRadius={12}
+                        className="rounded-xl"
+                    >
+                        {tile}
+                    </BorderBeam>
+                );
+            })}
         </div>
     );
 }
