@@ -380,6 +380,7 @@ export function PaymentFormSection<
                     disabled: tokenLocked,
                     showOnlyOwnedAssets: false,
                     autoSelect: tokenAutoSelect,
+                    chainDelivery: "held",
                 }}
                 warningMessage={sendWarningMessage}
                 showInsufficientBalance={

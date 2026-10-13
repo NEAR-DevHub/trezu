@@ -5,6 +5,7 @@ import type { UseFormReturn } from "react-hook-form";
 import { useDebounce } from "use-debounce";
 import { useTreasuryPolicy } from "@/hooks/use-treasury-queries";
 import { decimalOrNull } from "@/lib/amount-format";
+import { holdingDecimals } from "@/lib/oneclick-asset-routing";
 import type { ExchangeFormValues } from "../exchange-form";
 import { type ExchangeSwapType, useExchangeQuote } from "./use-exchange-quote";
 import { useQuoteDecimalAmount } from "./use-format-quote-amount";
@@ -100,7 +101,7 @@ export function useExchangeAmountQuote({
                 : {
                       amount: quoteData.quote.amountIn,
                       amountFormatted: quoteData.quote.amountInFormatted,
-                      tokenDecimals: sellToken.decimals,
+                      tokenDecimals: holdingDecimals(sellToken),
                   }
             : null,
     );

@@ -3,6 +3,7 @@
 import { ArrowDown, Loader2, Shield } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { useFormContext } from "react-hook-form";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
@@ -17,7 +18,11 @@ import { WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useBridgeScopedWarning } from "@/hooks/use-warnings";
-import { DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
+import {
+    isChainDeliveryRoute,
+    isOffNearChainDelivery,
+} from "@/lib/oneclick-asset-routing";
+import { BTC_TOKEN, DRY_QUOTE_REFRESH_INTERVAL, ETH_TOKEN } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
 import { useExchangeAmountQuote } from "../hooks/use-exchange-amount-quote";
 import { ExchangeSettingsModal } from "./exchange-settings-modal";
@@ -118,14 +123,31 @@ export function Step1({
 
     // Reset receive token if it's no longer valid based on filter
     useEffect(() => {
-        const isReceiveTokenValid = filterReceiveTokens({
-            address: receiveToken.address,
-            symbol: receiveToken.symbol,
-            network: receiveToken.network,
-            residency: receiveToken.residency,
-        });
+        const isReceiveTokenValid =
+            filterReceiveTokens({
+                address: receiveToken.address,
+                symbol: receiveToken.symbol,
+                network: receiveToken.network,
+                residency: receiveToken.residency,
+            }) &&
+            !isOffNearChainDelivery({
+                id: receiveToken.address,
+                balanceAssetId: receiveToken.balanceAssetId,
+                quoteAssetId: receiveToken.quoteAssetId,
+            });
 
         if (!isReceiveTokenValid) {
+            if (
+                isOffNearChainDelivery({
+                    id: receiveToken.address,
+                    balanceAssetId: receiveToken.balanceAssetId,
+                    quoteAssetId: receiveToken.quoteAssetId,
+                })
+            ) {
+                toast.info(tEx("chainDeliveryUnsupported"), {
+                    id: "chain-delivery-unsupported",
+                });
+            }
             // Reset to a default valid token (ETH or first available)
             form.setValue("receiveToken", ETH_TOKEN);
             onQuoteInputsChanged();
@@ -134,11 +156,41 @@ export function Step1({
     }, [
         isSellTokenFTNEAR,
         receiveToken.address,
+        receiveToken.balanceAssetId,
+        receiveToken.quoteAssetId,
         receiveToken.symbol,
         receiveToken.network,
         receiveToken.residency,
         filterReceiveTokens,
         onQuoteInputsChanged,
+        tEx,
+    ]);
+
+    // A chain-delivery sell row repeats a held balance under another network
+    // (ZEC on NEAR, NEAR on Solana). The `sellToken` query param can still
+    // put one here, so fall back to BTC.
+    useEffect(() => {
+        if (
+            !isChainDeliveryRoute({
+                id: sellToken.address,
+                balanceAssetId: sellToken.balanceAssetId,
+                quoteAssetId: sellToken.quoteAssetId,
+            })
+        ) {
+            return;
+        }
+        toast.info(tEx("chainDeliveryUnsupported"), {
+            id: "chain-delivery-unsupported",
+        });
+        form.setValue("sellToken", BTC_TOKEN);
+        onQuoteInputsChanged();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- form.setValue is stable
+    }, [
+        sellToken.address,
+        sellToken.balanceAssetId,
+        sellToken.quoteAssetId,
+        onQuoteInputsChanged,
+        tEx,
     ]);
 
     // Validate tokens when they change
@@ -234,6 +286,7 @@ export function Step1({
                         tokenSelect={{
                             filterTokens: filterSellTokens,
                             autoSelect: false,
+                            chainDelivery: "held",
                         }}
                         usdValueOverride={
                             quoteData?.quote
@@ -280,6 +333,7 @@ export function Step1({
                         filterTokens: filterReceiveTokens,
                         showPopularAssets: true,
                         autoSelect: false,
+                        chainDelivery: "none",
                     }}
                     usdValueOverride={
                         quoteData?.quote

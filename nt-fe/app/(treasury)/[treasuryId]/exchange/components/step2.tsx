@@ -17,6 +17,7 @@ import {
     EXCHANGE_FEE_PERCENTAGE,
     quoteHasAppFee,
 } from "@/lib/exchange-fee";
+import { holdingDecimals } from "@/lib/oneclick-asset-routing";
 import { formatDurationSeconds } from "@/lib/utils";
 import { PROPOSAL_REFRESH_INTERVAL } from "../constants";
 import type { ExchangeFormValues } from "../exchange-form";
@@ -54,7 +55,7 @@ export function Step2({ handleBack }: StepProps) {
             ? {
                   amount: localLiveQuoteData.quote.amountIn,
                   amountFormatted: localLiveQuoteData.quote.amountInFormatted,
-                  tokenDecimals: sellToken.decimals,
+                  tokenDecimals: holdingDecimals(sellToken),
               }
             : null,
     );
@@ -131,7 +132,10 @@ export function Step2({ handleBack }: StepProps) {
                         <div className="relative flex justify-center items-center gap-4 mb-6">
                             <ExchangeSummaryCard
                                 title={tEx("sell")}
-                                token={sellToken}
+                                token={{
+                                    ...sellToken,
+                                    decimals: holdingDecimals(sellToken),
+                                }}
                                 amount={sellAmount}
                                 usdValue={localLiveQuoteData.quote.amountInUsd}
                             />
@@ -313,9 +317,9 @@ export function Step2({ handleBack }: StepProps) {
                                                                   symbol={
                                                                       sellToken.symbol
                                                                   }
-                                                                  tokenDecimals={
-                                                                      sellToken.decimals
-                                                                  }
+                                                                  tokenDecimals={holdingDecimals(
+                                                                      sellToken,
+                                                                  )}
                                                                   unitPriceUsd={
                                                                       sellToken.price
                                                                   }

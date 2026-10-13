@@ -33,7 +33,86 @@ export function formatAssetForIntentsAPI(tokenAddress: string): string {
 export function isOneClickRoutingAsset(
     assetId: string | null | undefined,
 ): boolean {
-    return !!assetId?.startsWith("1cs_v1:");
+    return !!assetId?.toLowerCase().startsWith("1cs_v1:");
+}
+
+/**
+ * A catalog row that spends a different asset than its own id. Covers `1cs_v1:`
+ * routes and NEAR on BSC (`nep245` destination, `nep141:wrap.near` balance).
+ * nBTC is not this: its row id is the held balance, and the 1cs id is only the quote.
+ */
+export function isChainDeliveryRoute(network: {
+    id: string;
+    balanceAssetId?: string;
+    quoteAssetId?: string;
+}): boolean {
+    const id = network.id.toLowerCase();
+    const balance = (network.balanceAssetId || network.id).toLowerCase();
+    const quote = (network.quoteAssetId || network.id).toLowerCase();
+    if (balance !== id) return true;
+    return (
+        isOneClickRoutingAsset(id) &&
+        isOneClickRoutingAsset(quote) &&
+        quote !== balance
+    );
+}
+
+/**
+ * Public swap may ask 1Click to deliver on-chain only for a `1cs_v1:near:`
+ * quote (ZEC on NEAR). A NEAR account is a valid recipient there.
+ * nBTC's quote is `1cs_v1:btc:native:coin` while the treasury holds
+ * `nep141:nbtc.bridge.near` — that credit must stay on Intents, not this path.
+ */
+export function isNearAccountDeliveryQuote(
+    quoteAssetId: string | null | undefined,
+    holdableAssetId: string,
+): boolean {
+    if (!quoteAssetId) return false;
+    const quote = quoteAssetId.toLowerCase();
+    if (quote === holdableAssetId.toLowerCase()) return false;
+    return quote.startsWith("1cs_v1:near:");
+}
+
+/**
+ * Delivery lands on a NEAR account. Swap can quote these because the only
+ * recipient it has is the treasury's NEAR account. ZEC on NEAR is this case.
+ */
+export function deliversOnNearAccount(network: {
+    id: string;
+    chainId?: string;
+    quoteAssetId?: string;
+}): boolean {
+    const chain = network.chainId?.trim().toLowerCase();
+    if (chain === "near:mainnet" || chain === NEAR_NETWORK_ID) return true;
+    const quote = (network.quoteAssetId || network.id).toLowerCase();
+    return quote.startsWith("1cs_v1:near:");
+}
+
+/**
+ * Chain delivery that needs a Solana, Hyperliquid, BNB, or other non-NEAR
+ * address. Swap has no field for that address, so these rows stay off swap.
+ * Send still shows them.
+ */
+export function isOffNearChainDelivery(network: {
+    id: string;
+    balanceAssetId?: string;
+    quoteAssetId?: string;
+    chainId?: string;
+}): boolean {
+    if (deliversOnNearAccount(network)) return false;
+    if (isChainDeliveryRoute(network)) return true;
+    return isOneClickRoutingAsset(network.id);
+}
+
+/**
+ * Decimals of the raw balance / spend asset. Chain-delivery rows keep catalog
+ * `decimals` for the destination asset and store the held token's decimals here.
+ */
+export function holdingDecimals(token: {
+    decimals: number;
+    balanceDecimals?: number;
+}): number {
+    return token.balanceDecimals ?? token.decimals;
 }
 
 /**

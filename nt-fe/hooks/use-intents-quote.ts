@@ -21,7 +21,10 @@ import {
     hasNearComAddressPrefix,
     stripNearComAddressPrefix,
 } from "@/lib/nearcom-address";
-import { formatAssetForIntentsAPI } from "@/lib/oneclick-asset-routing";
+import {
+    formatAssetForIntentsAPI,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import { nanosToMs } from "@/lib/utils";
 
 export type IntentsAmountMode = "recipient" | "total";
@@ -228,7 +231,9 @@ export function useIntentsQuote({
         !isNearComNetwork(destinationNetwork);
     const requestAmountDecimals = requiresDestinationAmountDecimals
         ? destinationAmountDecimals
-        : token?.decimals;
+        : token
+          ? holdingDecimals(token)
+          : undefined;
 
     const isRecipientReady =
         !!token &&
@@ -276,6 +281,7 @@ export function useIntentsQuote({
             debouncedAmount,
             debouncedAddress,
             amountMode,
+            requestAmountDecimals,
             destinationNetwork,
             destinationQuoteAssetId,
             isPayment,

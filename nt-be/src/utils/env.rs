@@ -28,6 +28,7 @@ pub struct EnvVars {
     pub signer_key: SecretKey,
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
+    pub disable_balance_monitoring: bool,
     /// How many times the confidential bulk processor resets `SignFailed`
     /// recipient hashes (`retry_failed`) before giving up on them.
     pub confidential_bulk_max_sign_retries: i32,
@@ -151,6 +152,10 @@ impl Default for EnvVars {
                 .expect("SIGNER_ID is not set")
                 .parse()
                 .unwrap(),
+            disable_balance_monitoring: std::env::var("DISABLE_BALANCE_MONITORING")
+                .unwrap_or_else(|_| "false".to_string())
+                .parse()
+                .unwrap_or(false),
             disable_treasury_creation: std::env::var("DISABLE_TREASURY_CREATION")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()

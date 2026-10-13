@@ -73,6 +73,10 @@ const NETWORK_DISPLAY_NAMES: Record<string, string> = {
     aleo: "Aleo",
     dash: "Dash",
     adi: "ADI",
+    hood: "Robinhood",
+    robinhood: "Robinhood",
+    qtc: "Quantus",
+    quantus: "Quantus",
 };
 
 export function getNetworkDisplayName(name: string): string {

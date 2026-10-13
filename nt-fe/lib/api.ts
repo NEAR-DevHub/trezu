@@ -324,6 +324,16 @@ export interface RecentActivity {
     proposalId?: number | null;
     /** 1Click deposit address of the linked quote proposal; marks the row as intents-routed. */
     quoteDepositAddress?: string | null;
+    /**
+     * Both sides of the 1Click transfer are confidential, so the intents
+     * explorer has no `/mask/` page for it.
+     */
+    fullyConfidential?: boolean | null;
+    /**
+     * From the stored 1Click quote / proposal description.
+     * Missing on older swaps, which always charged an app fee.
+     */
+    hasAppFee?: boolean | null;
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;

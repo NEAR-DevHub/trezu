@@ -34,7 +34,10 @@ import { Button } from "./button";
 import { FormattedAmount } from "./formatted-amount";
 import { InputBlock } from "./input-block";
 import { LargeInput } from "./large-input";
-import TokenSelect, { type SelectedTokenData } from "./token-select";
+import TokenSelect, {
+    type ChainDelivery,
+    type SelectedTokenData,
+} from "./token-select";
 import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
 
@@ -63,6 +66,11 @@ export const tokenSchema = z.object({
     balanceAssetId: z.string().optional(),
     /** 1Click routing id (may be `1cs_v1:`) for quotes */
     quoteAssetId: z.string().optional(),
+    /**
+     * Decimals of `balance` when this row delivers a different asset than the
+     * one the treasury holds. `decimals` stays the destination asset's decimals.
+     */
+    balanceDecimals: z.number().optional(),
 });
 
 export type Token = z.infer<typeof tokenSchema>;
@@ -104,6 +112,8 @@ interface TokenInputProps<
          * (highest-USD owned → USDC on NEAR). Exchange sets this false.
          */
         autoSelect?: boolean;
+        /** Which chain-delivery networks to list. */
+        chainDelivery?: ChainDelivery;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -417,6 +427,9 @@ export function TokenInput<
                                                 }
                                                 autoSelect={
                                                     tokenSelect?.autoSelect
+                                                }
+                                                chainDelivery={
+                                                    tokenSelect?.chainDelivery
                                                 }
                                             />
                                         );

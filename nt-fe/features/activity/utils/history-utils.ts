@@ -113,6 +113,26 @@ export function getActivityStatus(activity: ActivityAccount): ActivityStatus {
 }
 
 /**
+ * The NEAR Intents /mask explorer only resolves transfers with a public side.
+ * Confidential swaps and transfers between two confidential accounts 404
+ * there, so those rows hide the hash and show a PDF receipt instead.
+ */
+export function hidesIntentsExplorerLink(
+    activity: {
+        swap?: unknown;
+        quoteDepositAddress?: string | null;
+        fullyConfidential?: boolean | null;
+    },
+    isConfidential: boolean,
+): boolean {
+    return (
+        isConfidential &&
+        !!activity.quoteDepositAddress &&
+        (!!activity.swap || !!activity.fullyConfidential)
+    );
+}
+
+/**
  * Get the display label for an activity based on its action kind.
  *
  * Priority order:

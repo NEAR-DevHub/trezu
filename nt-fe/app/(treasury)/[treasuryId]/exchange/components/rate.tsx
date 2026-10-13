@@ -5,6 +5,7 @@ import { useState } from "react";
 import { FormattedAmount } from "@/components/formatted-amount";
 import type { Token } from "@/components/token-input";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
+import { holdingDecimals } from "@/lib/oneclick-asset-routing";
 import Big from "@/lib/big";
 import { cn } from "@/lib/utils";
 
@@ -44,7 +45,7 @@ export function Rate({
     try {
         const sellAmount = decimalFromBaseUnits(
             quote.amountIn,
-            sellToken.decimals,
+            holdingDecimals(sellToken),
         );
         const receiveAmount = decimalFromBaseUnits(
             quote.amountOut,

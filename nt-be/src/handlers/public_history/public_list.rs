@@ -13,6 +13,7 @@ use serde_json::Value;
 use sqlx::{PgPool, QueryBuilder, Row};
 
 use crate::AppState;
+use crate::handlers::intents::app_fee::stored_has_app_fee;
 use crate::handlers::public_history::quotes::{
     proposal_quote_from_metadata, quote_destination_token_id,
 };
@@ -514,6 +515,7 @@ struct LegRow {
     proposal_id: Option<i64>,
     quote_deposit_address: Option<String>,
     notes: Option<String>,
+    has_app_fee: Option<bool>,
     usd_value: Option<BigDecimal>,
     action_kind: String,
     swap_sent_token: Option<String>,
@@ -546,6 +548,10 @@ impl LegRow {
             hashes.push(hash);
         }
         hashes
+    }
+
+    fn has_app_fee(row: &PublicGoldRow) -> Option<bool> {
+        stored_has_app_fee(row.quote_metadata.as_ref())
     }
 
     fn from_gold(row: PublicGoldRow) -> Vec<Self> {
@@ -582,6 +588,7 @@ impl LegRow {
                         proposal_id: row.proposal_id,
                         quote_deposit_address: row.quote_deposit_address.clone(),
                         notes: row.notes.clone(),
+                        has_app_fee: Self::has_app_fee(&row),
                         usd_value: row.amount_in_usd.clone(),
                         action_kind: "PublicDeposit".to_string(),
                         swap_sent_token: None,
@@ -642,6 +649,7 @@ impl LegRow {
                         proposal_id: row.proposal_id,
                         quote_deposit_address: row.quote_deposit_address.clone(),
                         notes: row.notes.clone(),
+                        has_app_fee: Self::has_app_fee(&row),
                         usd_value: row.amount_out_usd.clone(),
                         action_kind,
                         swap_sent_token: None,
@@ -704,6 +712,7 @@ impl LegRow {
             proposal_id: row.proposal_id,
             quote_deposit_address: row.quote_deposit_address.clone(),
             notes: row.notes.clone(),
+            has_app_fee: Self::has_app_fee(&row),
             usd_value: row
                 .amount_out_usd
                 .clone()
@@ -756,6 +765,8 @@ impl LegRow {
             usd_value: self.usd_value.clone(),
             proposal_id: self.proposal_id,
             quote_deposit_address: self.quote_deposit_address.clone(),
+            fully_confidential: None,
+            has_app_fee: self.has_app_fee,
             notes: self.notes.clone(),
         }
     }

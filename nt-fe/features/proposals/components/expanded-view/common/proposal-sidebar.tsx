@@ -24,6 +24,7 @@ import { SlotWarning } from "@/components/warning-message";
 import { OmniStatusBanner } from "@/features/omni/components/omni-status-banner";
 import type { OmniProposalData } from "@/features/omni/types";
 import { useProposalInsufficientBalance } from "@/features/proposals/hooks/use-proposal-insufficient-balance";
+import { useProposalStatus } from "@/features/proposals/hooks/use-proposal-status";
 import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
 import type { PaymentRequestData } from "@/features/proposals/types/index";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
@@ -127,7 +128,7 @@ function VotingSection({
     );
     const votesArray = Object.entries(votes);
 
-    const proposalStatus = getProposalStatus(proposal, policy);
+    const proposalStatus = useProposalStatus(proposal, policy);
     let statusIconStatus: "Pending" | "Failed" | "Success" = "Pending";
     if (proposalStatus === "Executed" || proposalStatus === "Failed") {
         statusIconStatus = "Success";
@@ -136,7 +137,11 @@ function VotingSection({
     return (
         <div className="flex flex-col gap-3 relative z-10">
             <div className="flex items-center gap-2">
-                <StepIcon status={statusIconStatus} />
+                {proposalStatus ? (
+                    <StepIcon status={statusIconStatus} />
+                ) : (
+                    <Skeleton className="size-6 shrink-0 rounded-full" />
+                )}
                 <div>
                     <p className="text-sm font-semibold">{t("voting")}</p>
                     <p className="text-xs text-muted-foreground">
@@ -273,7 +278,8 @@ export function ProposalSidebar({
             },
             isVotingDurationChange,
         );
-    const status = getProposalStatus(proposal, policy);
+    const onChainStatus = getProposalStatus(proposal, policy);
+    const status = useProposalStatus(proposal, policy);
     const proposalType = getProposalUIKind(proposal);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
 
@@ -287,7 +293,9 @@ export function ProposalSidebar({
         reject: rejectSlot,
         voteBannerSlot,
     } = useVoteActionSlots();
-    const isPending = status === "Pending";
+    const isPending = onChainStatus === "Pending";
+    // On-chain Approved is "Executed" from getProposalStatus before 1Click
+    // settles. Receipts and the execution date wait for the swap status.
     const isExecuted = status === "Executed";
     const isExchangeProposal = proposalType === "Exchange";
     const isMoveToConfidential = proposalType === "Move to Confidential";
@@ -367,8 +375,6 @@ export function ProposalSidebar({
             }
         } catch (e) {}
     }
-    const isPaymentLikeProposal = isPaymentProposal || isConfidentialPayment;
-
     // Whether this proposal used the Intents protocol (has a deposit address)
     const hasDepositAddress = !!depositAddress;
     const shouldUseTransactionDate = isExecuted;
@@ -426,22 +432,19 @@ export function ProposalSidebar({
 
     // Swap is still settling (no finalized transaction yet).
     const isSwapProcessing = swapStatus?.status === "PROCESSING";
-    // Confidential swaps link to the NEAR Intents /mask explorer, which does
-    // not resolve. Hide that link and leave the PDF receipt as the artifact.
-    // Also hide the link while a confidential request is still settling.
-    const hideTransactionLink =
-        (isConfidentialSwap && hasDepositAddress) ||
-        (isConfidentialRequestProposal && isSwapProcessing);
-    // near.com confidential payments link to NEAR Blocks; all other
-    // intents-routed proposals use the NEAR Intents explorer (masked for
-    // confidential).
+    // The NEAR Intents /mask explorer has no page when both sides are
+    // confidential (swaps and near.com payments), so those leave the PDF
+    // receipt as the only artifact. Also hide the link for confidential
+    // requests while the swap is still processing — there is no finalized
+    // transaction to link to yet.
     const isConfidentialNearComPayment =
         isConfidentialPayment &&
         isNearComPaymentRoute(confidentialPaymentData ?? {});
-    const useNearblocksLink =
-        !hasDepositAddress ||
-        isConfidentialNearComPayment ||
-        isMoveToConfidential;
+    const hideTransactionLink =
+        ((isConfidentialSwap || isConfidentialNearComPayment) &&
+            hasDepositAddress) ||
+        (isConfidentialRequestProposal && isSwapProcessing);
+    const useNearblocksLink = !hasDepositAddress || isMoveToConfidential;
     const transactionExplorerLink = getTransactionExplorerLink({
         depositAddress: useNearblocksLink ? null : depositAddress,
         isConfidential: isConfidentialRequestProposal,
@@ -554,17 +557,27 @@ export function ProposalSidebar({
                     policy={policy}
                     accountId={accountId ?? ""}
                 />
-                <ExecutedSection
-                    status={status}
-                    date={timestamp}
-                    expiresAt={expiresAt}
-                    isDateLoading={isResolvedDateLoading}
-                />
+                {status ? (
+                    <ExecutedSection
+                        status={status}
+                        date={timestamp}
+                        expiresAt={expiresAt}
+                        isDateLoading={isResolvedDateLoading}
+                    />
+                ) : (
+                    <div className="relative z-10 flex items-center gap-2">
+                        <Skeleton className="size-6 shrink-0 rounded-full" />
+                        <div className="flex flex-col gap-1">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-36" />
+                        </div>
+                    </div>
+                )}
                 <div className="absolute left-[11px] top-1 bottom-2 w-px bg-muted-foreground/20" />
             </div>
 
             {/* Transaction Links */}
-            {isExecuted && (
+            {status === "Executed" && (
                 <div className="flex flex-col gap-2">
                     {canShowReceiptButton && (
                         <Button asChild variant="secondary" className="w-full">
@@ -594,47 +607,25 @@ export function ProposalSidebar({
                 </div>
             )}
 
-            {/* Swap Status - Show for executed intents-routed proposals (exchange or payment) */}
-            {isExecuted && hasDepositAddress && swapStatus && (
-                <>
-                    {(swapStatus.status === "KNOWN_DEPOSIT_TX" ||
-                        swapStatus.status === "PENDING_DEPOSIT" ||
-                        swapStatus.status === "INCOMPLETE_DEPOSIT" ||
-                        swapStatus.status === "PROCESSING") && (
-                        <InfoAlert
-                            className="inline-flex"
-                            message={
-                                <span>
-                                    <strong>
-                                        {isPaymentLikeProposal
-                                            ? t("processingPayment")
-                                            : t("exchangingTokens")}
-                                    </strong>
-                                    <br />
-                                    {isPaymentLikeProposal
-                                        ? t("processingPaymentBody")
-                                        : t("exchangingTokensBody")}
-                                </span>
-                            }
-                        />
-                    )}
-
-                    {/* Failed/Refunded Status */}
-                    {(swapStatus.status === "FAILED" ||
-                        swapStatus.status === "REFUNDED") && (
-                        <InfoAlert
-                            className="inline-flex"
-                            message={
-                                <span>
-                                    <strong>{t("requestFailed")}</strong>
-                                    <br />
-                                    {t("requestFailedBody")}
-                                </span>
-                            }
-                        />
-                    )}
-                </>
+            {status === "Processing" && (
+                <InfoAlert className="inline-flex" message={t("processing")} />
             )}
+
+            {status === "Failed" &&
+                hasDepositAddress &&
+                (swapStatus?.status === "FAILED" ||
+                    swapStatus?.status === "REFUNDED") && (
+                    <InfoAlert
+                        className="inline-flex"
+                        message={
+                            <span>
+                                <strong>{t("requestFailed")}</strong>
+                                <br />
+                                {t("requestFailedBody")}
+                            </span>
+                        }
+                    />
+                )}
 
             {/* Short quote deadline warning (legacy 24h quotes) */}
             {isPending && shortQuoteDeadline && (
