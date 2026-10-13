@@ -326,28 +326,37 @@ pub async fn set_gate_status(
     Ok(())
 }
 
+/// Returns whether `last_head_check_passed` actually changed, so callers
+/// alert on the pass→fail transition instead of every repeated failure.
 pub async fn set_head_check_result(
     tx: &mut Transaction<'_, Postgres>,
     account_id: &str,
     block_height: i64,
     passed: bool,
-) -> Result<(), sqlx::Error> {
-    sqlx::query(
+) -> Result<bool, sqlx::Error> {
+    let changed: Option<bool> = sqlx::query_scalar(
         r#"
-        UPDATE public_balance_verification_cursors
+        UPDATE public_balance_verification_cursors AS cursor
         SET last_head_check_at = NOW(),
             last_head_check_block_height = $2,
             last_head_check_passed = $3,
             updated_at = NOW()
-        WHERE account_id = $1
+        FROM (
+            SELECT account_id, last_head_check_passed AS previous_passed
+            FROM public_balance_verification_cursors
+            WHERE account_id = $1
+            FOR UPDATE
+        ) AS previous
+        WHERE cursor.account_id = previous.account_id
+        RETURNING previous.previous_passed IS DISTINCT FROM $3
         "#,
     )
     .bind(account_id)
     .bind(block_height)
     .bind(passed)
-    .execute(&mut **tx)
+    .fetch_optional(&mut **tx)
     .await?;
-    Ok(())
+    Ok(changed.unwrap_or(false))
 }
 
 /// Append a hidden reconciliation entry re-anchoring one asset's ledger to

@@ -480,7 +480,7 @@ async fn submit_done_activation(
                 let _ = sqlx::query!(
                     "UPDATE confidential_intents SET status = 'failed', submit_result = $2, updated_at = NOW() WHERE payload_hash = $1",
                     hash,
-                    json!({ "error": err }),
+                    json!({ "error": err.to_string() }),
                 )
                 .execute(&state.db_pool)
                 .await;

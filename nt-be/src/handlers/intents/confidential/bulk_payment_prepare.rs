@@ -283,6 +283,7 @@ struct LegBatch {
     intent_payloads: Vec<Value>,
     quote_metadatas: Vec<Value>,
     correlation_ids: Vec<Option<String>>,
+    deposit_addresses: Vec<Option<String>>,
     intent_types: Vec<String>,
     notes: Vec<Option<String>>,
 }
@@ -295,6 +296,7 @@ impl LegBatch {
             intent_payloads: Vec::with_capacity(n),
             quote_metadatas: Vec::with_capacity(n),
             correlation_ids: Vec::with_capacity(n),
+            deposit_addresses: Vec::with_capacity(n),
             intent_types: Vec::with_capacity(n),
             notes: Vec::with_capacity(n),
         }
@@ -313,11 +315,19 @@ impl LegBatch {
             .get("correlationId")
             .and_then(|v| v.as_str())
             .map(|s| s.to_string());
+        // The dedicated column is what history linking and the 1Click
+        // reconciliation lookup key on.
+        let deposit_address = quote_metadata
+            .get("quote")
+            .and_then(|q| q.get("depositAddress"))
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string());
         self.dao_ids.push(dao_id);
         self.payload_hashes.push(payload_hash);
         self.intent_payloads.push(intent_payload);
         self.quote_metadatas.push(quote_metadata);
         self.correlation_ids.push(correlation_id);
+        self.deposit_addresses.push(deposit_address);
         self.intent_types.push(intent_type.to_string());
         self.notes.push(notes);
     }
@@ -523,12 +533,12 @@ pub async fn bulk_payment_prepare(
         r#"
         INSERT INTO confidential_intents (
             dao_id, payload_hash, intent_payload, correlation_id,
-            quote_metadata, notes, intent_type, status
+            quote_metadata, notes, intent_type, deposit_address, status
         )
         SELECT * FROM UNNEST(
             $1::TEXT[], $2::TEXT[], $3::JSONB[], $4::TEXT[],
-            $5::JSONB[], $6::TEXT[], $7::TEXT[]
-        ) AS t(dao_id, payload_hash, intent_payload, correlation_id, quote_metadata, notes, intent_type),
+            $5::JSONB[], $6::TEXT[], $7::TEXT[], $8::TEXT[]
+        ) AS t(dao_id, payload_hash, intent_payload, correlation_id, quote_metadata, notes, intent_type, deposit_address),
         (SELECT 'pending'::TEXT AS status) s
         ON CONFLICT (dao_id, payload_hash) DO UPDATE SET
             intent_payload = EXCLUDED.intent_payload,
@@ -536,8 +546,15 @@ pub async fn bulk_payment_prepare(
             quote_metadata = EXCLUDED.quote_metadata,
             notes = EXCLUDED.notes,
             intent_type = EXCLUDED.intent_type,
+            deposit_address = EXCLUDED.deposit_address,
             status = 'pending',
             submit_result = NULL,
+            submit_state = 'idle',
+            submit_next_attempt_at = NULL,
+            submit_attempts = 0,
+            submit_last_error = NULL,
+            submit_lease_token = NULL,
+            submit_lease_until = NULL,
             updated_at = NOW()
         "#,
         &batch.dao_ids,
@@ -547,6 +564,7 @@ pub async fn bulk_payment_prepare(
         &batch.quote_metadatas,
         &batch.notes as _,
         &batch.intent_types,
+        &batch.deposit_addresses as _,
     )
     .execute(&mut *tx)
     .await

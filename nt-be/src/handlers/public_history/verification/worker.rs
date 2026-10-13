@@ -314,15 +314,26 @@ impl<'a> BalanceVerifier<'a> {
             }
             written > 0
         } else {
-            set_head_check_result(&mut tx, account_id, head_block, false).await?;
-            crate::error_event!(
-                crate::error_event::ErrorCode::VerificationHeadDrift,
-                tags.dao = account_id,
-                head_block,
-                ledger_balance = %ledger_balance,
-                chain_balance = %chain_balance,
-                drift = %drift
-            );
+            let changed = set_head_check_result(&mut tx, account_id, head_block, false).await?;
+            if changed {
+                crate::error_event!(
+                    crate::error_event::ErrorCode::VerificationHeadDrift,
+                    tags.dao = account_id,
+                    head_block,
+                    ledger_balance = %ledger_balance,
+                    chain_balance = %chain_balance,
+                    drift = %drift
+                );
+            } else {
+                tracing::warn!(
+                    account_id,
+                    head_block,
+                    ledger_balance = %ledger_balance,
+                    chain_balance = %chain_balance,
+                    drift = %drift,
+                    "native head still drifted beyond tolerance; chart remains stale"
+                );
+            }
             false
         };
         tx.commit().await?;
@@ -497,23 +508,33 @@ impl<'a> BalanceVerifier<'a> {
                 sync_hidden_ledger_rows(&mut tx, account_id, DateTime::<Utc>::UNIX_EPOCH).await?;
             }
             stats.rebases_written += rebases_written;
-        } else {
-            for outcome in outcomes.iter().filter(|outcome| !outcome.passed) {
-                tracing::error!(
-                    account_id,
-                    asset = outcome.asset,
-                    drift = %outcome.drift,
-                    "public balance head drift beyond tolerance; chart marked stale"
-                );
-            }
         }
-        set_head_check_result(
+        let changed = set_head_check_result(
             &mut tx,
             account_id,
             watermark.cutoff_block_height,
             all_passed,
         )
         .await?;
+        if !all_passed {
+            for outcome in outcomes.iter().filter(|outcome| !outcome.passed) {
+                if changed {
+                    tracing::error!(
+                        account_id,
+                        asset = outcome.asset,
+                        drift = %outcome.drift,
+                        "public balance head drift beyond tolerance; chart marked stale"
+                    );
+                } else {
+                    tracing::warn!(
+                        account_id,
+                        asset = outcome.asset,
+                        drift = %outcome.drift,
+                        "public balance head still drifted beyond tolerance; chart remains stale"
+                    );
+                }
+            }
+        }
         tx.commit().await?;
 
         Ok(all_passed)

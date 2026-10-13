@@ -22,6 +22,7 @@ use crate::handlers::intents::confidential::bronze::store::link_intent_to_histor
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::types::bare_account;
 use crate::handlers::proposals::scraper::{extract_payload_hash_from_kind, fetch_proposal};
+use crate::handlers::relay::confidential::POLL_SUBMITTED_INTENT_TYPES;
 
 /// Legacy payload form: `predecessor=AccountId("…") … payload_v2: Some(Eddsa(Bytes("<hex>")))`.
 static V1_SIGNER_HEX: Lazy<Regex> = Lazy::new(|| {
@@ -111,7 +112,11 @@ fn quote_recipient(quote_metadata: Option<&Value>) -> Option<String> {
     Some(bare_account(recipient))
 }
 
-pub async fn mark_confidential_intent_submitted(
+/// Stamp the on-chain execution facts. The status is promoted to `submitted`
+/// only when 1Click already accepted the intent (`submit_result` present); an
+/// executed-but-unsubmitted row stays `pending` and its submission state
+/// becomes `due`, which queues it for the per-DAO 1Click poll.
+pub async fn stamp_confidential_intent_execution(
     app_pool: &PgPool,
     dao_id: &str,
     payload_hash: &str,
@@ -140,7 +145,17 @@ pub async fn mark_confidential_intent_submitted(
     sqlx::query(
         r#"
         UPDATE confidential_intents
-        SET status = 'submitted',
+        SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
+            submit_state = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
+                    THEN 'due'
+                ELSE submit_state
+            END,
+            submit_next_attempt_at = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
+                    THEN NOW()
+                ELSE submit_next_attempt_at
+            END,
             proposal_executed_at = COALESCE(proposal_executed_at, $3),
             proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
             proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
@@ -154,6 +169,7 @@ pub async fn mark_confidential_intent_submitted(
     .bind(proposal_executed_at)
     .bind(proposal_execution_block_height)
     .bind(proposal_execution_transaction_hash)
+    .bind(POLL_SUBMITTED_INTENT_TYPES)
     .execute(app_pool)
     .await?;
 
@@ -309,6 +325,66 @@ pub(crate) async fn handle_confidential_add_proposal(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[sqlx::test]
+    async fn execution_stamp_promotes_only_intents_1click_accepted(pool: PgPool) {
+        let dao = "stamp.sputnik-dao.near";
+        for (hash, submit_result) in [
+            ("unsubmitted", None),
+            ("accepted", Some(serde_json::json!({ "intentHash": "x" }))),
+        ] {
+            sqlx::query(
+                "INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type, status, submit_result) \
+                 VALUES ($1, $2, '{}'::jsonb, 'shield', 'pending', $3)",
+            )
+            .bind(dao)
+            .bind(hash)
+            .bind(submit_result)
+            .execute(&pool)
+            .await
+            .expect("seed intent");
+        }
+
+        let executed_at = chrono::Utc::now();
+        for hash in ["unsubmitted", "accepted"] {
+            stamp_confidential_intent_execution(
+                &pool,
+                dao,
+                hash,
+                executed_at,
+                Some(219269410),
+                Some("7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s"),
+            )
+            .await
+            .expect("stamp succeeds")
+            .expect("intent row exists");
+        }
+
+        let rows = sqlx::query_as::<_, (String, String, Option<i64>)>(
+            "SELECT payload_hash, status, proposal_execution_block_height \
+             FROM confidential_intents WHERE dao_id = $1 ORDER BY payload_hash",
+        )
+        .bind(dao)
+        .fetch_all(&pool)
+        .await
+        .expect("load rows");
+        assert_eq!(
+            rows,
+            vec![
+                (
+                    "accepted".to_string(),
+                    "submitted".to_string(),
+                    Some(219269410)
+                ),
+                (
+                    "unsubmitted".to_string(),
+                    "pending".to_string(),
+                    Some(219269410)
+                ),
+            ],
+            "execution facts are stamped on both, only the 1Click-accepted row becomes submitted"
+        );
+    }
 
     #[test]
     fn parses_v1_signer_sign_log() {
