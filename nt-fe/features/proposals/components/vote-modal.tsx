@@ -1,6 +1,6 @@
 import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/button";
 import { InfoAlert } from "@/components/info-alert";
 import {
@@ -18,6 +18,7 @@ import { useProposalApproveBlock, useSlotBlock } from "@/hooks/use-warnings";
 import type { Proposal } from "@/lib/proposals-api";
 import { stripMessageForTooltip } from "@/lib/warnings";
 import { isAppLevelSlotBlock } from "@/features/proposals/hooks/use-vote-action-slots";
+import { SELECTED_WALLET_STORAGE_KEY, WALLET_IDS } from "@/lib/wallets";
 import { useNear } from "@/stores/near-store";
 
 interface VoteModalProps {
@@ -59,6 +60,15 @@ export function VoteModal({
     );
     const approveBlock = useProposalApproveBlock(proposals);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isLedger, setIsLedger] = useState(false);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        setIsLedger(
+            window.localStorage.getItem(SELECTED_WALLET_STORAGE_KEY) ===
+                WALLET_IDS.LEDGER,
+        );
+    }, [isOpen]);
 
     // Approving a payment/exchange proposal is blocked when that feature has a
     // critical warning. Rejection (and removal) is never blocked.
@@ -117,9 +127,11 @@ export function VoteModal({
                     <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
                 <DialogDescription>
-                    {isBulk
-                        ? t("bulkBody", { action })
-                        : t("singleBody", { action })}
+                    {isLedger
+                        ? t("ledgerBody")
+                        : isBulk
+                          ? t("bulkBody", { action })
+                          : t("singleBody", { action })}
                 </DialogDescription>
                 <SlotWarning slot={voteSlot} />
                 {approveBlocked && (

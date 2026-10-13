@@ -695,6 +695,7 @@
     "proposals": {
         "status": {
             "pending": "Đang chờ",
+            "processing": "Đang xử lý",
             "approved": "Đã phê duyệt",
             "rejected": "Đã từ chối",
             "executed": "Đã thực thi",
@@ -705,6 +706,7 @@
         },
         "statusTooltip": {
             "pending": "Yêu cầu này vẫn đang chờ và chưa đạt được số phiếu cần thiết để thực thi.",
+            "processing": "Đã được phê duyệt và đang được xử lý. Chỉ mất vài giây.",
             "executed": "Đã thực thi sau khi {approved} trên {required} thành viên phê duyệt yêu cầu.",
             "rejected": "Đã từ chối sau khi {rejected} trên {required} thành viên bỏ phiếu từ chối yêu cầu.",
             "expired": "Đã hết hạn vì không nhận đủ số phiếu để thực thi.",
@@ -716,6 +718,7 @@
             "removeTitle": "Xóa yêu cầu",
             "bulkBody": "Bạn sắp {action} nhiều yêu cầu. Sau khi gửi, quyết định này không thể thay đổi.",
             "singleBody": "Bạn sắp {action} yêu cầu này. Sau khi xác nhận, hành động này không thể hoàn tác.",
+            "ledgerBody": "Hãy giữ Ledger của bạn ở trạng thái mở khóa. Tiếp theo, bạn sẽ xác nhận phiếu bầu trên đó.",
             "actionApprove": "phê duyệt",
             "actionReject": "từ chối",
             "actionRemove": "xóa",
@@ -863,6 +866,7 @@
             "approvalsReceived": "Đã nhận {received}/{required} phê duyệt",
             "expiresAt": "Hết hạn vào",
             "expiredAt": "Đã hết hạn vào",
+            "processing": "Yêu cầu của bạn đã được phê duyệt và đang xử lý - chỉ vài giây.",
             "exchangingTokens": "Đang trao đổi token",
             "exchangingTokensBody": "Yêu cầu này đã được đội phê duyệt. Việc trao đổi token đang diễn ra và có thể mất một chút thời gian.",
             "requestFailed": "Yêu cầu thất bại",
@@ -1590,6 +1594,7 @@
             "differentTokens": "Token phải khác nhau",
             "enterAmount": "Nhập số tiền để trao đổi"
         },
+        "chainDeliveryUnsupported": "Mạng này không khả dụng khi trao đổi.",
         "review": "Xem lại trao đổi",
         "poweredBy": "Cung cấp bởi",
         "info": {

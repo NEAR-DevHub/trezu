@@ -46,7 +46,7 @@ import { OmniExpanded } from "@/features/omni/components/omni-expanded";
 import type { OmniProposalData } from "@/features/omni/types";
 import { BatchPaymentRequestExpanded } from "./batch-payment-expanded";
 import { useNear } from "@/stores/near-store";
-import { getProposalStatus } from "../../utils/proposal-utils";
+import { useProposalStatus } from "../../hooks/use-proposal-status";
 import {
     RequestDisplayProvider,
     useRequestDisplayContext,
@@ -191,7 +191,7 @@ export function ExpandedView({
     const t = useTranslations("proposals.expanded");
     const { treasuryId, isConfidential } = useTreasury();
     const { accountId } = useNear();
-    const proposalStatus = getProposalStatus(proposal, policy);
+    const proposalStatus = useProposalStatus(proposal, policy);
     const isPending = proposalStatus === "Pending";
     const isExecuted = proposalStatus === "Executed";
     const showUsdValue = isPending;

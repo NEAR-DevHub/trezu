@@ -496,6 +496,7 @@ export function UploadDataStep({
                                             disableTokenMessage={t(
                                                 "disableTokenMessage",
                                             )}
+                                            hideChainDeliveryRoutes
                                             disabled={availableCredits === 0}
                                             iconSize="md"
                                             classNames={{

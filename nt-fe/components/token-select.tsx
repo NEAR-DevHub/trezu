@@ -12,6 +12,10 @@ import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
+import {
+    isChainDeliveryRoute,
+    isOffNearChainDelivery,
+} from "@/lib/oneclick-asset-routing";
 import { pickDefaultSelectedToken } from "@/lib/pick-default-token";
 import { canonicalizeTokenIdForMatch, cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -48,6 +52,7 @@ export interface SelectedTokenData {
     price?: number;
     balanceAssetId?: string;
     quoteAssetId?: string;
+    balanceDecimals?: number;
 }
 
 interface TokenSelectProps {
@@ -95,6 +100,13 @@ interface TokenSelectProps {
      * that seeds its own tokens).
      */
     autoSelect?: boolean;
+    /**
+     * Hide chain-delivery networks that need a non-NEAR address.
+     * Exchange sets this. Send leaves it off.
+     */
+    hideOffNearChainDelivery?: boolean;
+    /** Hide every chain-delivery row (payments spend the held sibling). */
+    hideChainDeliveryRoutes?: boolean;
 }
 
 export default function TokenSelect({
@@ -111,6 +123,8 @@ export default function TokenSelect({
     filterTokens,
     showPopularAssets = false,
     autoSelect = true,
+    hideOffNearChainDelivery = false,
+    hideChainDeliveryRoutes = false,
 }: TokenSelectProps) {
     const t = useTranslations("tokenSelectDialog");
     const tDepositSections = useTranslations("depositModal.sections");
@@ -163,15 +177,21 @@ export default function TokenSelect({
             );
 
         const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
-            if (!filterTokens) return t;
-            const filtered = t.networks.filter((n) =>
-                filterTokens({
+            const filtered = t.networks.filter((n) => {
+                if (hideChainDeliveryRoutes && isChainDeliveryRoute(n)) {
+                    return false;
+                }
+                if (hideOffNearChainDelivery && isOffNearChainDelivery(n)) {
+                    return false;
+                }
+                if (!filterTokens) return true;
+                return filterTokens({
                     address: n.id,
                     symbol: n.symbol,
                     network: n.name,
                     residency: n.residency,
-                }),
-            );
+                });
+            });
             if (filtered.length === 0) return null;
             return { ...t, networks: filtered };
         };
@@ -186,7 +206,13 @@ export default function TokenSelect({
         }
 
         return filteredTokensList;
-    }, [tokens, search, filterTokens]);
+    }, [
+        tokens,
+        search,
+        filterTokens,
+        hideChainDeliveryRoutes,
+        hideOffNearChainDelivery,
+    ]);
 
     const { yourAssets, otherAssets } = useMemo(() => {
         const yourAssetsFiltered = filteredTokens.filter(
@@ -277,6 +303,7 @@ export default function TokenSelect({
                     network.quoteAssetId ||
                     network.balanceAssetId ||
                     network.id,
+                balanceDecimals: network.balanceDecimals,
             });
 
             setOpen(false);

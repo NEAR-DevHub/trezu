@@ -1,10 +1,13 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { UIProposalStatus, getProposalStatus } from "../utils/proposal-utils";
+import { UIProposalStatus } from "../utils/proposal-utils";
+import { useProposalStatus } from "../hooks/use-proposal-status";
 import { Tooltip } from "@/components/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Proposal } from "@/lib/proposals-api";
 import { Policy } from "@/types/policy";
 import { getApproversAndThreshold } from "@/lib/config-utils";
@@ -30,6 +33,7 @@ export function getStatusColor(status: PillStatus): string {
         case "Removed":
             return "bg-general-destructive-background-faded text-general-destructive-foreground";
         case "Pending":
+        case "Processing":
             return "bg-general-orange-background-faded text-general-orange-foreground";
         case "Expired":
             return "bg-secondary text-secondary-foreground";
@@ -46,6 +50,8 @@ function statusKey(status: PillStatus): string {
             return "executed";
         case "Pending":
             return "pending";
+        case "Processing":
+            return "processing";
         case "Rejected":
             return "rejected";
         case "Expired":
@@ -64,11 +70,14 @@ export function StatusPill({ status, className }: StatusPillProps) {
     return (
         <span
             className={cn(
-                "inline-flex px-2 py-1 rounded-md text-xs font-medium",
+                "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium",
                 getStatusColor(status),
                 className,
             )}
         >
+            {status === "Processing" && (
+                <Loader2 className="size-3 animate-spin" />
+            )}
             {t(statusKey(status))}
         </span>
     );
@@ -91,7 +100,7 @@ export function ProposalStatusPill({
 }: ProposalStatusPillProps) {
     const tTooltip = useTranslations("proposals.statusTooltip");
     const { treasuryId } = useTreasury();
-    const status = getProposalStatus(proposal, policy);
+    const status = useProposalStatus(proposal, policy);
 
     const isFailed = status === "Failed";
 
@@ -116,10 +125,17 @@ export function ProposalStatusPill({
         (v) => v === "Reject",
     ).length;
 
+    if (!status) {
+        return <Skeleton className={cn("h-6 w-20 rounded-md", className)} />;
+    }
+
     let info: React.ReactNode | undefined;
     switch (status) {
         case "Pending":
             info = tTooltip("pending");
+            break;
+        case "Processing":
+            info = tTooltip("processing");
             break;
         case "Executed":
             info = tTooltip("executed", {

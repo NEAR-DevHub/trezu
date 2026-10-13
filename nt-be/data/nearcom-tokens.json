@@ -1219,6 +1219,23 @@
             }
           ],
           "tags": ["mc:2", "tvol:7", "aid:eth"]
+        },
+        {
+          "defuseAssetId": "nep141:hood.omft.near",
+          "symbol": "ETH",
+          "name": "Ethereum",
+          "decimals": 18,
+          "icon": "https://s2.coinmarketcap.com/static/img/coins/128x128/1027.png",
+          "originChainName": "hood",
+          "deployments": [
+            {
+              "type": "native",
+              "decimals": 18,
+              "chainName": "hood",
+              "bridge": "poa"
+            }
+          ],
+          "tags": ["aid:eth"]
         }
       ],
       "tags": ["mc:2", "tvol:7", "aid:eth"]
@@ -3735,6 +3752,100 @@
         "type:rwa",
         "provider:ondo"
       ]
+    },
+    {
+      "unifiedAssetId": "quantus",
+      "symbol": "QTC",
+      "name": "Quantus",
+      "icon": "https://coin-images.coingecko.com/coins/images/102171910/large/CG.png",
+      "groupedTokens": [
+        {
+          "defuseAssetId": "nep141:qtc.omft.near",
+          "symbol": "QTC",
+          "name": "Quantus",
+          "decimals": 12,
+          "icon": "https://coin-images.coingecko.com/coins/images/102171910/large/CG.png",
+          "originChainName": "qtc",
+          "deployments": [
+            {
+              "type": "native",
+              "decimals": 12,
+              "chainName": "qtc",
+              "bridge": "poa"
+            }
+          ],
+          "tags": ["aid:qtc"]
+        },
+        {
+          "defuseAssetId": "1cs_v1:near:nep141:qtc.omft.near",
+          "symbol": "QTC",
+          "name": "Quantus",
+          "decimals": 12,
+          "icon": "https://coin-images.coingecko.com/coins/images/102171910/large/CG.png",
+          "originChainName": "near",
+          "deployments": [
+            {
+              "address": "qtc.omft.near",
+              "decimals": 12,
+              "chainName": "near",
+              "bridge": "direct"
+            }
+          ],
+          "tags": ["aid:qtc"]
+        }
+      ],
+      "tags": ["aid:qtc"]
+    },
+    {
+      "defuseAssetId": "nep141:hood-0x5fc5360d0400a0fd4f2af552add042d716f1d168.omft.near",
+      "symbol": "USDG",
+      "name": "Global Dollar",
+      "decimals": 6,
+      "icon": "https://coin-images.coingecko.com/coins/images/51281/large/GDN_USDG_Token_200x200.png?1730484111",
+      "originChainName": "hood",
+      "deployments": [
+        {
+          "address": "0x5fc5360d0400a0fd4f2af552add042d716f1d168",
+          "decimals": 6,
+          "chainName": "hood",
+          "bridge": "poa"
+        }
+      ],
+      "tags": ["aid:usdg", "type:stablecoin"]
+    },
+    {
+      "defuseAssetId": "nep141:hood-0x39dbed3a2bd333467115de45665cc57f813c4571.omft.near",
+      "symbol": "PONS",
+      "name": "Pons",
+      "decimals": 18,
+      "icon": "https://coin-images.coingecko.com/coins/images/102174571/large/jhitvkisdq8fhxvimdkpcw7y3dx5.?1784093932",
+      "originChainName": "hood",
+      "deployments": [
+        {
+          "address": "0x39dbed3a2bd333467115de45665cc57f813c4571",
+          "decimals": 18,
+          "chainName": "hood",
+          "bridge": "poa"
+        }
+      ],
+      "tags": ["aid:pons"]
+    },
+    {
+      "defuseAssetId": "nep141:hood-0x020bfc650a365f8bb26819deaabf3e21291018b4.omft.near",
+      "symbol": "CASHCAT",
+      "name": "Cash Cat",
+      "decimals": 18,
+      "icon": "https://coin-images.coingecko.com/coins/images/102174280/large/cashcat-logo.jpg?1782922765",
+      "originChainName": "hood",
+      "deployments": [
+        {
+          "address": "0x020bfc650a365f8bb26819deaabf3e21291018b4",
+          "decimals": 18,
+          "chainName": "hood",
+          "bridge": "poa"
+        }
+      ],
+      "tags": ["aid:cashcat"]
     }
   ]
 }

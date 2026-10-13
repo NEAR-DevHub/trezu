@@ -695,6 +695,7 @@
     "proposals": {
         "status": {
             "pending": "Pendiente",
+            "processing": "Procesando",
             "approved": "Aprobada",
             "rejected": "Rechazada",
             "executed": "Ejecutada",
@@ -705,6 +706,7 @@
         },
         "statusTooltip": {
             "pending": "Esta solicitud sigue pendiente y aún no ha alcanzado el número de votos requerido para ejecutarse.",
+            "processing": "Aprobada y en proceso. Solo tardará unos segundos.",
             "executed": "Ejecutada después de que {approved} de {required} miembros aprobaran la solicitud.",
             "rejected": "Rechazada después de que {rejected} de {required} miembros votaran en contra.",
             "expired": "Caducada al no recibir suficientes votos para ejecutarse.",
@@ -716,6 +718,7 @@
             "removeTitle": "Eliminar solicitud",
             "bulkBody": "Estás a punto de {action} varias solicitudes. Una vez enviado, esta decisión no se puede cambiar.",
             "singleBody": "Estás a punto de {action} esta solicitud. Una vez confirmado, esta acción no se puede deshacer.",
+            "ledgerBody": "Mantén tu Ledger desbloqueado. A continuación confirmarás tu voto en él.",
             "actionApprove": "aprobar",
             "actionReject": "rechazar",
             "actionRemove": "eliminar",
@@ -863,6 +866,7 @@
             "approvalsReceived": "{received}/{required} aprobaciones recibidas",
             "expiresAt": "Caduca el",
             "expiredAt": "Caducó el",
+            "processing": "Tu solicitud está aprobada y en proceso: solo unos segundos.",
             "exchangingTokens": "Intercambiando tokens",
             "exchangingTokensBody": "Esta solicitud ha sido aprobada por el equipo. El intercambio de tokens está en progreso y puede tardar un tiempo.",
             "requestFailed": "Solicitud fallida",
@@ -1607,6 +1611,7 @@
             "differentTokens": "Los tokens deben ser diferentes",
             "enterAmount": "Introduce un importe para intercambiar"
         },
+        "chainDeliveryUnsupported": "Esta red no está disponible en el intercambio.",
         "review": "Revisar intercambio",
         "poweredBy": "Impulsado por",
         "info": {
