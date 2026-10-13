@@ -11,7 +11,7 @@ pub use cursors::{
     record_confidential_history_poll_result, save_backfill_progress, save_latest_page_cursor,
 };
 pub use events::upsert_history_events;
-pub use linking::link_intent_to_history_event;
+pub use linking::{link_intent_to_history_event, recover_unsubmitted_intent_from_history};
 pub use models::{
     HistoryCursor, HistoryEventUpsertOutcome, HistoryEventUpsertState, HistoryUpsertResult,
 };

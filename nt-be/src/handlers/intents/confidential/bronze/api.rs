@@ -2,8 +2,8 @@
 //!
 //! Mirrors `@defuse-protocol/one-click-sdk-typescript::AccountService.getHistory`.
 //! NOTE: the host for `q8v3n6.defuse.org` is *different* from the
-//! confidential balances host. We let it be overridden via
-//! `CONFIDENTIAL_HISTORY_BASE_URL` env var.
+//! confidential balances host. It comes from
+//! `EnvVars::confidential_history_base_url` (`CONFIDENTIAL_HISTORY_BASE_URL`).
 
 use near_account_id::AccountIdRef;
 use reqwest::StatusCode;
@@ -13,13 +13,6 @@ use crate::AppState;
 use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::handlers::intents::confidential::types::{HistoryApiEvent, HistoryApiItem};
 use crate::observability::sanitize_sensitive_text;
-
-const DEFAULT_HISTORY_BASE_URL: &str = "https://q8v3n6.defuse.org";
-
-fn history_base_url() -> String {
-    std::env::var("CONFIDENTIAL_HISTORY_BASE_URL")
-        .unwrap_or_else(|_| DEFAULT_HISTORY_BASE_URL.to_string())
-}
 
 /// Bronze ingest event: typed API item + original JSON for storage.
 pub type HistoryEvent = HistoryApiEvent;
@@ -84,8 +77,10 @@ pub async fn fetch_history_with_token(
 ) -> Result<HistoryPage, (StatusCode, String)> {
     let access_token = jwt_token.to_string();
 
-    let base = history_base_url();
-    let url = format!("{}/v0/account/history", base);
+    let url = format!(
+        "{}/v0/account/history",
+        state.env_vars.confidential_history_base_url
+    );
     let mut params: Vec<(&str, String)> = Vec::new();
 
     params.push(("limit", limit.to_string()));

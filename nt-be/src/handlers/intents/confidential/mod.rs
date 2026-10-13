@@ -19,7 +19,7 @@ pub mod prepare_auth;
 pub mod proposal_signals;
 pub mod types;
 
-pub use bronze::store::link_intent_to_history_event;
+pub use bronze::store::{link_intent_to_history_event, recover_unsubmitted_intent_from_history};
 pub use bronze::{
     HistoryEvent, HistoryPage, fetch_history, fetch_history_with_token,
     trigger_confidential_history_refresh,
