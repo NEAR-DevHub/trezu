@@ -106,11 +106,6 @@ function ProposalTimelineDate({
 }) {
     const { treasuryId } = useTreasury();
     const status = useProposalStatus(proposal, policy);
-    // Swap status is still loading. The row may already be settled, so hold
-    // the date until we know which timestamp to show.
-    if (!status) {
-        return <Skeleton className="h-3.5 w-24" />;
-    }
     const isProposalExecuted = status === "Executed";
     const isResolvedByVote =
         isProposalExecuted || status === "Failed" || status === "Rejected";
@@ -141,6 +136,12 @@ function ProposalTimelineDate({
         shouldUseSwapDate,
         treasuryId,
     );
+
+    // Swap status is still loading. The row may already be settled, so hold
+    // the date until we know which timestamp to show.
+    if (!status) {
+        return <Skeleton className="h-3.5 w-24" />;
+    }
 
     if (!isResolvedByVote) {
         return (
