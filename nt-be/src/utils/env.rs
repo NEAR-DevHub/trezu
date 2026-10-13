@@ -65,6 +65,9 @@ pub struct EnvVars {
     pub oneclick_api_url: String,
     // Confidential intents API URL (defaults to 1click-test)
     pub confidential_api_url: String,
+    // 1Click confidential account-history host. NOTE: a different host from
+    // the confidential balances API.
+    pub confidential_history_base_url: String,
     pub oneclick_jwt_token: Option<String>,
     pub oneclick_app_fee_bps: Option<u32>,
     pub oneclick_app_fee_recipient: Option<String>,
@@ -213,6 +216,10 @@ impl Default for EnvVars {
                 .unwrap_or_else(|_| "https://1click.chaindefuser.com".to_string()),
             confidential_api_url: std::env::var("CONFIDENTIAL_API_URL")
                 .unwrap_or_else(|_| "https://1click-test.chaindefuser.com".to_string()),
+            confidential_history_base_url: std::env::var("CONFIDENTIAL_HISTORY_BASE_URL")
+                .ok()
+                .filter(|s| !s.is_empty())
+                .unwrap_or_else(|| "https://q8v3n6.defuse.org".to_string()),
             oneclick_jwt_token: std::env::var("ONECLICK_JWT_TOKEN")
                 .ok()
                 .filter(|s| !s.is_empty()),
