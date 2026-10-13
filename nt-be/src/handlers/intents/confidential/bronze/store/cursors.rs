@@ -194,11 +194,9 @@ pub async fn record_confidential_history_poll_result(
                           AND (he.id IS NULL OR NOT (UPPER(he.status) = ANY($2)))
                       )
                       OR (
-                          -- Executed on chain, signature not yet handed to
-                          -- 1Click: the poll submits it, so stay on the fast tier.
-                          ci.intent_type = 'shield'
-                          AND ci.submit_result IS NULL
-                          AND ci.proposal_execution_transaction_hash IS NOT NULL
+                          -- Still owed to 1Click (the poll submits or
+                          -- reconciles it), so stay on the fast tier.
+                          ci.submit_state IN ('due', 'unknown', 'in_flight')
                           AND ci.proposal_executed_at > NOW() - INTERVAL '60 minutes'
                       )
                   )

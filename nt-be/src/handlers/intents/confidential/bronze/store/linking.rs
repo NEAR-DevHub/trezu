@@ -118,12 +118,13 @@ pub async fn link_intent_to_history_event(
 /// the DAO's ingested 1Click history: an existing link (rows the ingest-time
 /// linker already matched) or a single unlinked history row for the intent's
 /// deposit address (and recipient) proves acceptance, so the row is promoted
-/// to `submitted` with a synthetic `submit_result` and linked. Returns the
-/// linked history event id.
+/// to `submitted` with a synthetic `submit_result` and linked. Only the
+/// holder of `lease_token` may do this. Returns the linked history event id.
 pub async fn recover_unsubmitted_intent_from_history(
     pool: &PgPool,
     dao_id: &str,
     payload_hash: &str,
+    lease_token: &str,
 ) -> Result<Option<i64>, sqlx::Error> {
     let linked = sqlx::query_scalar(
         r#"
@@ -131,12 +132,14 @@ pub async fn recover_unsubmitted_intent_from_history(
             SELECT
                 id,
                 dao_id,
-                deposit_address,
+                COALESCE(deposit_address, quote_metadata->'quote'->>'depositAddress')
+                    AS deposit_address,
                 history_event_id AS linked_event_id,
                 quote_metadata->'quoteRequest'->>'recipient' AS recipient
             FROM confidential_intents
             WHERE dao_id = $1
               AND payload_hash = $2
+              AND submit_lease_token = $3
               AND submit_result IS NULL
               AND status IN ('pending', 'submitted')
               AND proposal_id IS NOT NULL
@@ -177,15 +180,25 @@ pub async fn recover_unsubmitted_intent_from_history(
                 'recoveredFromHistory', true,
                 'historyEventId', r.history_event_id
             ),
+            submit_state = 'done',
+            submit_next_attempt_at = NULL,
+            submit_last_error = NULL,
+            submit_lease_token = NULL,
+            submit_lease_until = NULL,
             updated_at = NOW()
         FROM intent i, resolved r
         WHERE ci.id = i.id
+          -- Re-checked on the row version the UPDATE locks: the CTE's view can
+          -- predate a replacement lease taken by another holder meanwhile.
+          AND ci.submit_lease_token = $3
+          AND ci.submit_result IS NULL
           AND r.history_event_id IS NOT NULL
         RETURNING ci.history_event_id
         "#,
     )
     .bind(dao_id)
     .bind(payload_hash)
+    .bind(lease_token)
     .fetch_optional(pool)
     .await?;
 

@@ -22,6 +22,7 @@ use crate::handlers::intents::confidential::bronze::store::link_intent_to_histor
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::types::bare_account;
 use crate::handlers::proposals::scraper::{extract_payload_hash_from_kind, fetch_proposal};
+use crate::handlers::relay::confidential::POLL_SUBMITTED_INTENT_TYPES;
 
 /// Legacy payload form: `predecessor=AccountId("…") … payload_v2: Some(Eddsa(Bytes("<hex>")))`.
 static V1_SIGNER_HEX: Lazy<Regex> = Lazy::new(|| {
@@ -113,8 +114,8 @@ fn quote_recipient(quote_metadata: Option<&Value>) -> Option<String> {
 
 /// Stamp the on-chain execution facts. The status is promoted to `submitted`
 /// only when 1Click already accepted the intent (`submit_result` present); an
-/// executed-but-unsubmitted row stays `pending` so the per-DAO 1Click poll can
-/// still submit it from the on-chain signature.
+/// executed-but-unsubmitted row stays `pending` and its submission state
+/// becomes `due`, which queues it for the per-DAO 1Click poll.
 pub async fn stamp_confidential_intent_execution(
     app_pool: &PgPool,
     dao_id: &str,
@@ -145,6 +146,16 @@ pub async fn stamp_confidential_intent_execution(
         r#"
         UPDATE confidential_intents
         SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
+            submit_state = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
+                    THEN 'due'
+                ELSE submit_state
+            END,
+            submit_next_attempt_at = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
+                    THEN NOW()
+                ELSE submit_next_attempt_at
+            END,
             proposal_executed_at = COALESCE(proposal_executed_at, $3),
             proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
             proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
@@ -158,6 +169,7 @@ pub async fn stamp_confidential_intent_execution(
     .bind(proposal_executed_at)
     .bind(proposal_execution_block_height)
     .bind(proposal_execution_transaction_hash)
+    .bind(POLL_SUBMITTED_INTENT_TYPES)
     .execute(app_pool)
     .await?;
 

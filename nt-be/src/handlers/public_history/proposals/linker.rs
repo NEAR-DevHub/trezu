@@ -33,6 +33,7 @@ use crate::AppState;
 use crate::handlers::intents::confidential::bronze::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
 use crate::handlers::intents::confidential::link_intent_to_history_event;
+use crate::handlers::intents::confidential::proposal_signals::stamp_confidential_intent_execution;
 use crate::handlers::intents::swap_status::fetch_public_swap_status;
 use crate::handlers::proposals::scraper::{
     ProposalStatus, extract_from_description, extract_payload_hash_from_kind, fetch_proposal,
@@ -756,37 +757,16 @@ async fn mirror_confidential_proposal_executed(
     proposal_executed_at: DateTime<Utc>,
     block_height: i64,
     transaction_hash: Option<&str>,
-) -> Result<(), sqlx::Error> {
-    sqlx::query(
-        r#"
-        UPDATE confidential_intents
-        SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
-            proposal_executed_at = COALESCE(proposal_executed_at, $3),
-            proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
-            proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
-            updated_at = NOW()
-        WHERE dao_id = $1
-          AND payload_hash = $2
-        "#,
+) -> Result<(), Box<dyn std::error::Error>> {
+    stamp_confidential_intent_execution(
+        pool,
+        dao_id,
+        payload_hash,
+        proposal_executed_at,
+        Some(block_height),
+        transaction_hash,
     )
-    .bind(dao_id)
-    .bind(payload_hash)
-    .bind(proposal_executed_at)
-    .bind(block_height)
-    .bind(transaction_hash)
-    .execute(pool)
     .await?;
-
-    if let Some(history_event_id) = link_intent_to_history_event(pool, dao_id, payload_hash).await?
-    {
-        tracing::info!(
-            dao_id = dao_id,
-            payload_hash = payload_hash,
-            history_event_id = history_event_id,
-            "linked executed confidential intent from public proposal linker"
-        );
-    }
-    refresh_gold_metadata_for_intent(pool, dao_id, payload_hash).await?;
     // The poll owns the "signature on chain → submit to 1Click" step; pull it
     // forward so an intent the relay could not submit is picked up now.
     mark_confidential_history_activity_due(pool, dao_id).await?;

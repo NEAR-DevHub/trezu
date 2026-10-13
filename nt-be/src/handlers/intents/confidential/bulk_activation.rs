@@ -315,7 +315,12 @@ pub async fn prepare_bulk_activation(
             intent_type = 'bulk_auth',
             status = 'pending',
             submit_result = NULL,
-            submit_claimed_at = NULL,
+            submit_state = 'idle',
+            submit_next_attempt_at = NULL,
+            submit_attempts = 0,
+            submit_last_error = NULL,
+            submit_lease_token = NULL,
+            submit_lease_until = NULL,
             updated_at = NOW()
         "#,
     )
