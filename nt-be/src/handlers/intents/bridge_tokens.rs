@@ -12,7 +12,7 @@
 use crate::{
     constants::{
         intents_tokens::{
-            find_unified_asset_id, get_tokens_map, BaseTokenInfo, TokenDeployment, UnifiedTokenInfo,
+            BaseTokenInfo, TokenDeployment, UnifiedTokenInfo, find_unified_asset_id, get_tokens_map,
         },
         nearcom_ranking::{
             is_hidden_catalog_token, is_near_network, is_swap_excluded_symbol, network_volume_rank,
@@ -21,19 +21,19 @@ use crate::{
     },
     utils::cache::CacheTier,
 };
-use axum::{extract::State, http::StatusCode, Json};
+use axum::{Json, extract::State, http::StatusCode};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 use std::sync::{Arc, LazyLock};
 
 use crate::{
-    constants::intents_chains::{get_chain_metadata_by_name, ChainIcons},
+    AppState,
+    constants::intents_chains::{ChainIcons, get_chain_metadata_by_name},
     handlers::intents::supported_tokens::fetch_supported_tokens_data,
     services::oneclick_asset_routing::{
-        is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id, NBTC_BALANCE_ASSET_ID,
+        NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
     services::oneclick_tokens::fetch_oneclick_tokens,
-    AppState,
 };
 use serde_json::Value;
 
@@ -456,8 +456,10 @@ pub async fn get_deposit_tokens(
     Ok(Json(load_deposit_catalog(state).await?))
 }
 
-/// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`,
-/// excluding `1cs_v1:` chain-delivery networks (INTENTS holds nep141/nep245 only).
+/// Swap / quote catalog: deposit catalog filtered to 1Click `/v0/tokens`.
+/// Chain-delivery rows stay, with a holdable `nep141`/`nep245` balance id and
+/// a `1cs_v1:` quote id, so Send can withdraw NEAR to Solana. A row whose
+/// balance id is still only `1cs` is dropped. nBTC stays.
 pub async fn get_swap_tokens(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<DepositAssetsResponse>, (StatusCode, String)> {
@@ -512,23 +514,21 @@ fn filter_catalog_for_oneclick(
     DepositAssetsResponse { assets }
 }
 
-/// Swap catalog = 1Click ∩ plus INTENTS-holdable balance ids.
+/// Swap catalog = 1Click ∩ plus rows whose balance id is holdable.
 ///
-/// `1cs_v1:` chain-delivery rows (ZEC on NEAR, NEAR on Solana, …) are left
-/// out: pickers would list them as a second copy of the held balance, and a
-/// confidential deposit on one is credited under the `1cs` id, which Send and
-/// Swap cannot spend. nBTC stays — its row id is `nep141:nbtc…`, only its
-/// quote is `1cs`.
+/// A chain-delivery row keeps `balance_asset_id` as `nep141`/`nep245` and
+/// `id` / `quote_asset_id` as the `1cs_v1:` destination (NEAR on Solana).
+/// Send spends the balance id and quotes the destination id. Rows that are
+/// still only a `1cs` balance id are not something the treasury holds.
 fn filter_catalog_for_swap(
     deposit: DepositAssetsResponse,
     oneclick_ids: &HashSet<String>,
 ) -> DepositAssetsResponse {
     let mut filtered = filter_catalog_for_oneclick(deposit, oneclick_ids);
     for asset in &mut filtered.assets {
-        asset.networks.retain(|network| {
-            !is_one_click_routing_asset(&network.id)
-                && !is_one_click_routing_asset(&network.balance_asset_id)
-        });
+        asset
+            .networks
+            .retain(|network| !is_one_click_routing_asset(&network.balance_asset_id));
     }
     filtered
         .assets
@@ -919,16 +919,12 @@ mod tests {
                 .any(|network| network.id == "nep141:wrap.near"),
             "held NEAR stays in the swap catalog"
         );
-        let route_ids: Vec<&str> = swap
-            .assets
-            .iter()
-            .flat_map(|asset| &asset.networks)
-            .map(|network| network.id.as_str())
-            .filter(|id| is_one_click_routing_asset(id))
-            .collect();
         assert!(
-            route_ids.is_empty(),
-            "1cs chain-delivery rows stay out of the swap catalog: {route_ids:?}"
+            near.networks.iter().any(|network| {
+                network.quote_asset_id.starts_with("1cs_v1:sol:")
+                    && network.balance_asset_id == "nep141:wrap.near"
+            }),
+            "Solana delivery stays available for withdraw"
         );
     }
 

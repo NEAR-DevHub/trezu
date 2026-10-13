@@ -101,12 +101,29 @@ interface TokenSelectProps {
      */
     autoSelect?: boolean;
     /**
-     * Hide chain-delivery networks that need a non-NEAR address.
-     * Exchange sets this. Send leaves it off.
+     * Which chain-delivery networks to list.
+     * `"all"` shows every network. `"held"` keeps only a route the treasury
+     * holds under its own id. `"none"` hides every route, including held ones.
      */
-    hideOffNearChainDelivery?: boolean;
-    /** Hide every chain-delivery row (payments spend the held sibling). */
-    hideChainDeliveryRoutes?: boolean;
+    chainDelivery?: ChainDelivery;
+}
+
+/** Which chain-delivery networks a picker lists. */
+export type ChainDelivery = "all" | "held" | "none";
+
+function hidesChainDelivery(
+    network: {
+        id: string;
+        balanceAssetId?: string;
+        quoteAssetId?: string;
+        chainId?: string;
+        heldRoute?: boolean;
+    },
+    chainDelivery: ChainDelivery,
+): boolean {
+    if (chainDelivery === "all") return false;
+    if (network.heldRoute) return chainDelivery === "none";
+    return isChainDeliveryRoute(network) || isOffNearChainDelivery(network);
 }
 
 export default function TokenSelect({
@@ -123,8 +140,7 @@ export default function TokenSelect({
     filterTokens,
     showPopularAssets = false,
     autoSelect = true,
-    hideOffNearChainDelivery = false,
-    hideChainDeliveryRoutes = false,
+    chainDelivery = "all",
 }: TokenSelectProps) {
     const t = useTranslations("tokenSelectDialog");
     const tDepositSections = useTranslations("depositModal.sections");
@@ -178,12 +194,7 @@ export default function TokenSelect({
 
         const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
             const filtered = t.networks.filter((n) => {
-                if (hideChainDeliveryRoutes && isChainDeliveryRoute(n)) {
-                    return false;
-                }
-                if (hideOffNearChainDelivery && isOffNearChainDelivery(n)) {
-                    return false;
-                }
+                if (hidesChainDelivery(n, chainDelivery)) return false;
                 if (!filterTokens) return true;
                 return filterTokens({
                     address: n.id,
@@ -206,13 +217,7 @@ export default function TokenSelect({
         }
 
         return filteredTokensList;
-    }, [
-        tokens,
-        search,
-        filterTokens,
-        hideChainDeliveryRoutes,
-        hideOffNearChainDelivery,
-    ]);
+    }, [tokens, search, filterTokens, chainDelivery]);
 
     const { yourAssets, otherAssets } = useMemo(() => {
         const yourAssetsFiltered = filteredTokens.filter(

@@ -34,7 +34,10 @@ import { Button } from "./button";
 import { FormattedAmount } from "./formatted-amount";
 import { InputBlock } from "./input-block";
 import { LargeInput } from "./large-input";
-import TokenSelect, { type SelectedTokenData } from "./token-select";
+import TokenSelect, {
+    type ChainDelivery,
+    type SelectedTokenData,
+} from "./token-select";
 import { FormField } from "./ui/form";
 import { WarningMessage } from "./warning-message";
 
@@ -109,8 +112,8 @@ interface TokenInputProps<
          * (highest-USD owned → USDC on NEAR). Exchange sets this false.
          */
         autoSelect?: boolean;
-        hideOffNearChainDelivery?: boolean;
-        hideChainDeliveryRoutes?: boolean;
+        /** Which chain-delivery networks to list. */
+        chainDelivery?: ChainDelivery;
     };
     readOnly?: boolean;
     loading?: boolean;
@@ -425,11 +428,8 @@ export function TokenInput<
                                                 autoSelect={
                                                     tokenSelect?.autoSelect
                                                 }
-                                                hideOffNearChainDelivery={
-                                                    tokenSelect?.hideOffNearChainDelivery
-                                                }
-                                                hideChainDeliveryRoutes={
-                                                    tokenSelect?.hideChainDeliveryRoutes
+                                                chainDelivery={
+                                                    tokenSelect?.chainDelivery
                                                 }
                                             />
                                         );

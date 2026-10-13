@@ -1,20 +1,23 @@
 import { useMemo } from "react";
+import { NEAR_NETWORK_ID } from "@/constants/network-ids";
+import { NEAR_CHAIN_ICONS } from "@/constants/token";
 import {
-    useAggregatedTokens,
-    DEFAULT_ASSETS_QUERY,
-    useAssets,
     type AggregatedAsset,
+    DEFAULT_ASSETS_QUERY,
+    useAggregatedTokens,
+    useAssets,
 } from "@/hooks/use-assets";
 import {
-    useTokenCatalog,
     type BridgeAsset,
     type BridgeNetwork,
+    useTokenCatalog,
 } from "@/hooks/use-bridge-tokens";
 import { useTreasury } from "@/hooks/use-treasury";
-import { NEAR_CHAIN_ICONS } from "@/constants/token";
 import type { ChainIcons } from "@/lib/api";
-import { NEAR_NETWORK_ID } from "@/constants/network-ids";
-import { isChainDeliveryRoute } from "@/lib/oneclick-asset-routing";
+import {
+    isChainDeliveryRoute,
+    isOneClickRoutingAsset,
+} from "@/lib/oneclick-asset-routing";
 import { normalizeNearAssetId } from "@/lib/utils";
 
 export interface MergedNetwork {
@@ -39,6 +42,12 @@ export interface MergedNetwork {
     minDepositAmount?: string;
     balanceAssetId?: string;
     quoteAssetId?: string;
+    /**
+     * Chain-delivery row the treasury holds its own balance on (a confidential
+     * deposit on ZEC on NEAR is credited under `1cs_v1:near:…`). Spent under
+     * its own id, so it is not a repeat of the sibling holding.
+     */
+    heldRoute?: boolean;
 }
 
 export interface MergedToken {
@@ -119,6 +128,29 @@ const mapBridgeMatchedNetwork = (
     price: treasuryNetwork.price,
 });
 
+/**
+ * A treasury holding under a chain-delivery id (`1cs_v1:near:…`, NEAR on BSC)
+ * is its own balance. Spend that id instead of the catalog's held sibling.
+ */
+export function mapHeldChainDeliveryNetwork(
+    bridgeNetwork: BridgeNetwork,
+    treasuryNetwork: TreasuryNetwork,
+): MergedNetwork {
+    const network = mapBridgeMatchedNetwork(bridgeNetwork, treasuryNetwork);
+    return {
+        ...network,
+        // Catalog chain ("solana"), not the treasury field. Send spends
+        // `network.id` (the 1cs balance), which is a different quote origin
+        // from the near.com sibling.
+        name: bridgeNetwork.name || network.name,
+        chainIcons: bridgeNetwork.chainIcons || network.chainIcons,
+        balanceAssetId: network.id,
+        quoteAssetId: network.id,
+        balanceDecimals: treasuryNetwork.decimals,
+        heldRoute: true,
+    };
+}
+
 // Expand bridge entries to selectable variants (Intents + optional Ft).
 const toBridgeVariants = (
     bridgeNetwork: BridgeNetwork,
@@ -175,9 +207,10 @@ const toBridgeVariants = (
 };
 
 /**
- * Chain-delivery rows (NEAR on Solana, and the rest of the 1cs routes) are not
- * a second balance. Copy the held sibling onto them so the picker shows the
- * same spendable amount, and remember that sibling's decimals.
+ * Chain-delivery rows (NEAR on Solana, and the rest of the 1cs routes) the
+ * treasury holds nothing on are not a second balance. Copy the held sibling
+ * onto them so the picker shows the same spendable amount, and remember that
+ * sibling's decimals. Held routes are already their own id, so they pass through.
  */
 export function overlayChainDeliveryHoldings(
     networks: MergedNetwork[],
@@ -271,7 +304,11 @@ const mergeOwnedTokenWithBridge = (
 
         for (const tn of chainMatches) {
             matched.add(networkKey(tn));
-            networks.push(mapBridgeMatchedNetwork(bn, tn));
+            networks.push(
+                contractMatch && isChainDeliveryRoute(bn)
+                    ? mapHeldChainDeliveryNetwork(bn, tn)
+                    : mapBridgeMatchedNetwork(bn, tn),
+            );
         }
 
         // Chain-name match means treasury has native/lockup entries (no contractId).
@@ -288,9 +325,18 @@ const mergeOwnedTokenWithBridge = (
 
     // Unmatched treasury networks (not covered by any bridge network)
     for (const tn of treasuryToken.networks) {
-        if (!matched.has(networkKey(tn))) {
-            networks.push(mapTreasuryNetwork(tn));
-        }
+        if (matched.has(networkKey(tn))) continue;
+        const network = mapTreasuryNetwork(tn);
+        networks.push(
+            isOneClickRoutingAsset(tn.contractId)
+                ? {
+                      ...network,
+                      balanceAssetId: network.id,
+                      quoteAssetId: network.id,
+                      heldRoute: true,
+                  }
+                : network,
+        );
     }
 
     return {

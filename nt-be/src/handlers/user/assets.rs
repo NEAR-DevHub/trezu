@@ -30,8 +30,11 @@ use crate::{
         near_ft_whitelist::NEAR_FT_WHITELIST,
     },
     handlers::intents::confidential::balances::fetch_confidential_balances,
-    handlers::intents::confidential::gold::cursors::is_balance_check_failed,
+    handlers::intents::confidential::gold::cursors::{
+        is_balance_check_confirmed, is_balance_check_failed,
+    },
     handlers::token::{TokenMetadata as TokenMetadataResponse, fetch_tokens_metadata_enriched},
+    services::oneclick_asset_routing::is_one_click_routing_asset,
 };
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -815,6 +818,56 @@ impl AssetsScope {
     }
 }
 
+/// A chain-delivery credit (`1cs_v1:`) is not a settled asset until a balance
+/// check has agreed with 1Click. The quote destination and the id 1Click
+/// reports can differ, so the ledger id must not paint a chain that the
+/// check will then replace.
+fn ledger_has_unconfirmed_chain_delivery(balances: &[(String, String)]) -> bool {
+    balances
+        .iter()
+        .any(|(asset, _)| is_one_click_routing_asset(asset))
+}
+
+fn without_chain_delivery(balances: Vec<(String, String)>) -> Vec<(String, String)> {
+    balances
+        .into_iter()
+        .filter(|(asset, _)| !is_one_click_routing_asset(asset))
+        .collect()
+}
+
+/// Ledger balances for the assets page.
+///
+/// A confirmed ledger is returned as stored. While chain-delivery credits are
+/// still unchecked, the page uses 1Click's token ids. If that read fails, those
+/// credits stay off the settled list; recent activity still shows the deposit.
+async fn confidential_balances_for_assets(
+    state: &Arc<AppState>,
+    account: &AccountId,
+    balances: Vec<(String, String)>,
+) -> Result<Vec<(String, String)>, (StatusCode, String)> {
+    if !ledger_has_unconfirmed_chain_delivery(&balances) {
+        return Ok(balances);
+    }
+    let confirmed = is_balance_check_confirmed(&state.db_pool, account.as_str())
+        .await
+        .map_err(|error| (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?;
+    if confirmed {
+        return Ok(balances);
+    }
+    match fetch_confidential_balances(state, account).await {
+        Ok(fetch) => Ok(fetch.balances),
+        Err((status, message)) => {
+            tracing::warn!(
+                "unconfirmed chain-delivery balances for {} stay off the asset list ({}): {}",
+                account,
+                status,
+                message
+            );
+            Ok(without_chain_delivery(balances))
+        }
+    }
+}
+
 /// Load one set of balances, including any fallback, before building assets.
 async fn load_asset_balances(
     state: &Arc<AppState>,
@@ -829,7 +882,7 @@ async fn load_asset_balances(
         )
         .await?;
         let intents_balances = match ledger_balances {
-            Some(balances) => balances,
+            Some(balances) => confidential_balances_for_assets(&state, account, balances).await?,
             None => fetch_confidential_balances(state, account).await?.balances,
         };
         return Ok(AssetBalanceInputs {
@@ -1634,6 +1687,29 @@ mod tests {
                 .await
                 .expect_err("confidential ledger read must fail");
         assert_eq!(confidential_error.0, StatusCode::INTERNAL_SERVER_ERROR);
+    }
+
+    #[test]
+    fn unconfirmed_chain_delivery_is_not_a_settled_asset() {
+        let solana_near = "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG";
+        let balances = vec![
+            (solana_near.to_string(), "100000000".to_string()),
+            (
+                "nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t".to_string(),
+                "1000".to_string(),
+            ),
+        ];
+        assert!(ledger_has_unconfirmed_chain_delivery(&balances));
+        let settled = without_chain_delivery(balances);
+        assert_eq!(settled.len(), 1);
+        assert!(settled[0].0.starts_with("nep245:"));
+    }
+
+    #[test]
+    fn holdable_ledger_rows_stay_settled_without_a_check() {
+        let balances = vec![("nep141:wrap.near".to_string(), "1".to_string())];
+        assert!(!ledger_has_unconfirmed_chain_delivery(&balances));
+        assert_eq!(without_chain_delivery(balances.clone()), balances);
     }
 
     #[test]

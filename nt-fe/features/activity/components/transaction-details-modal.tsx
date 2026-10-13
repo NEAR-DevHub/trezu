@@ -483,9 +483,7 @@ function DetailsSection({
         },
     ];
     if (variant === "exchange" && activity.swap) {
-        const fee = shouldShowStoredExchangeFee(
-            activity.hasAppFee ?? undefined,
-        )
+        const fee = shouldShowStoredExchangeFee(activity.hasAppFee ?? undefined)
             ? exchangeFeeLabel(activity.swap)
             : null;
         if (fee) {

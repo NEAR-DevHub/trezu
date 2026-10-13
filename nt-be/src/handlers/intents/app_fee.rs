@@ -24,21 +24,15 @@ fn has_our_app_fee(quote: Option<&Value>, our_recipient: &str) -> Option<bool> {
         return Some(flag);
     }
     let fees = quote_request(quote)?.get("appFees")?.as_array()?;
-    Some(
-        fees.iter()
-            .any(|fee| recipient_matches(fee, our_recipient)),
-    )
+    Some(fees.iter().any(|fee| recipient_matches(fee, our_recipient)))
 }
 
 fn stamped_has_app_fee(value: &Value) -> Option<bool> {
-    value
-        .get("hasAppFee")
-        .and_then(Value::as_bool)
-        .or_else(|| {
-            value
-                .pointer("/status/quoteResponse/hasAppFee")
-                .and_then(Value::as_bool)
-        })
+    value.get("hasAppFee").and_then(Value::as_bool).or_else(|| {
+        value
+            .pointer("/status/quoteResponse/hasAppFee")
+            .and_then(Value::as_bool)
+    })
 }
 
 fn recipient_matches(fee: &Value, our_recipient: &str) -> bool {

@@ -86,6 +86,7 @@ export function pickHighestUsdOwnedToken(
             if (
                 !networkHasBalance(network) ||
                 isChainDeliveryRoute(network) ||
+                network.heldRoute ||
                 isDisabled(network, disableTokens)
             ) {
                 continue;
