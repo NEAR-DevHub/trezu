@@ -941,8 +941,8 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
             .signature_from_chain(dao_id, payload_hash, execution_tx_hash, sender_hint)
             .await
         {
-            Ok(Some(signature)) => signature,
-            Ok(None) => {
+            Ok(SignatureLookup::Found(signature)) => signature,
+            Ok(SignatureLookup::CallbackPending) => {
                 self.release(
                     dao_id,
                     payload_hash,
@@ -952,6 +952,30 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
                 )
                 .await;
                 return IntentSubmitOutcome::NotSignedYet;
+            }
+            Ok(SignatureLookup::NotInTransaction) => {
+                // The stamped execution transaction does not vote on this
+                // payload: a detector mismatch, not a timing issue. Bounded
+                // by the intent deadline.
+                let error = format!(
+                    "execution tx {} carries no sign call for this payload",
+                    execution_tx_hash
+                );
+                tracing::error!("{}/{}: {}", dao_id, payload_hash, error);
+                self.release(dao_id, payload_hash, lease, SubmitState::Due, &error)
+                    .await;
+                return IntentSubmitOutcome::Deferred(error);
+            }
+            Ok(SignatureLookup::Failed(error)) => {
+                crate::error_event!(
+                    crate::error_event::ErrorCode::ConfIntentSigParseFailed,
+                    dao_id,
+                    payload_hash,
+                    error = %error
+                );
+                self.finish_failed(dao_id, payload_hash, lease, &error)
+                    .await;
+                return IntentSubmitOutcome::Rejected(error);
             }
             Err(error) => {
                 self.release(dao_id, payload_hash, lease, SubmitState::Due, &error)
@@ -963,14 +987,13 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
             .await
     }
 
-    /// `Ok(None)`: the transaction does not carry the MPC callback yet.
     async fn signature_from_chain(
         &self,
         dao_id: &str,
         payload_hash: &str,
         execution_tx_hash: &str,
         sender_hint: &str,
-    ) -> Result<Option<Vec<u8>>, String> {
+    ) -> Result<SignatureLookup, String> {
         let tx_hash = execution_tx_hash
             .parse::<CryptoHash>()
             .map_err(|e| format!("invalid execution tx hash {}: {}", execution_tx_hash, e))?;
@@ -1504,25 +1527,62 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
 /// `SuccessReceiptId`) at the MPC callback receipt whose `SuccessValue` is
 /// the signature. A transaction can carry several votes, so the hash is
 /// matched explicitly instead of taking the first signature in the outcome.
-fn signature_for_payload(tx_status: &Value, payload_hash: &str) -> Option<Vec<u8>> {
-    let outcomes = tx_status.get("receipts_outcome")?.as_array()?;
-    let sign_receipt = outcomes
+/// What an execution transaction says about the MPC signature for one payload.
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum SignatureLookup {
+    Found(Vec<u8>),
+    /// The `v1.signer` call succeeded but its callback receipt is not in the
+    /// transaction yet: ask again later.
+    CallbackPending,
+    /// The transaction carries no `sign:` call for this payload at all.
+    NotInTransaction,
+    /// Signing failed on chain, or the callback carries nothing usable: no
+    /// retry will ever produce a signature for this payload.
+    Failed(String),
+}
+
+fn signature_for_payload(tx_status: &Value, payload_hash: &str) -> SignatureLookup {
+    let Some(outcomes) = tx_status.get("receipts_outcome").and_then(Value::as_array) else {
+        return SignatureLookup::NotInTransaction;
+    };
+    let Some(sign_receipt) = outcomes
         .iter()
-        .find(|entry| outcome_signs_payload(entry, payload_hash))?;
-    let callback_id = sign_receipt
-        .get("outcome")?
-        .get("status")?
-        .get("SuccessReceiptId")?
-        .as_str()?;
-    let callback = outcomes
+        .find(|entry| outcome_signs_payload(entry, payload_hash))
+    else {
+        return SignatureLookup::NotInTransaction;
+    };
+    let sign_status = sign_receipt.get("outcome").and_then(|o| o.get("status"));
+    let Some(callback_id) = sign_status
+        .and_then(|s| s.get("SuccessReceiptId"))
+        .and_then(Value::as_str)
+    else {
+        return SignatureLookup::Failed(format!(
+            "v1.signer sign call did not succeed: {}",
+            sign_status.map(Value::to_string).unwrap_or_default()
+        ));
+    };
+    let Some(callback) = outcomes
         .iter()
-        .find(|entry| entry.get("id").and_then(Value::as_str) == Some(callback_id))?;
-    let success_value = callback
-        .get("outcome")?
-        .get("status")?
-        .get("SuccessValue")?
-        .as_str()?;
-    extract_mpc_signature(success_value)
+        .find(|entry| entry.get("id").and_then(Value::as_str) == Some(callback_id))
+    else {
+        return SignatureLookup::CallbackPending;
+    };
+    let callback_status = callback.get("outcome").and_then(|o| o.get("status"));
+    let Some(success_value) = callback_status
+        .and_then(|s| s.get("SuccessValue"))
+        .and_then(Value::as_str)
+    else {
+        return SignatureLookup::Failed(format!(
+            "MPC callback did not succeed: {}",
+            callback_status.map(Value::to_string).unwrap_or_default()
+        ));
+    };
+    match extract_mpc_signature(success_value) {
+        Some(signature) => SignatureLookup::Found(signature),
+        None => {
+            SignatureLookup::Failed("MPC callback value carries no parseable signature".to_string())
+        }
+    }
 }
 
 fn outcome_signs_payload(entry: &Value, payload_hash: &str) -> bool {
@@ -1802,8 +1862,11 @@ mod tests {
 
     #[test]
     fn signature_for_payload_follows_sign_receipt_to_mpc_callback() {
-        let signature = signature_for_payload(&tx_status_fixture(), RRI_29_PAYLOAD_HASH)
-            .expect("signature present in fixture");
+        let SignatureLookup::Found(signature) =
+            signature_for_payload(&tx_status_fixture(), RRI_29_PAYLOAD_HASH)
+        else {
+            panic!("signature present in fixture");
+        };
         assert_eq!(signature.len(), 64);
         assert_eq!(&signature[..4], &[138, 143, 59, 239]);
     }
@@ -1811,22 +1874,89 @@ mod tests {
     #[test]
     fn signature_for_payload_ignores_other_payload_hashes() {
         let other = "0".repeat(64);
-        assert!(signature_for_payload(&tx_status_fixture(), &other).is_none());
+        assert_eq!(
+            signature_for_payload(&tx_status_fixture(), &other),
+            SignatureLookup::NotInTransaction
+        );
+    }
+
+    /// An on-chain execution failure in the shape the RPC types accept.
+    fn failed_status(message: &str) -> Value {
+        serde_json::json!({
+            "Failure": {
+                "ActionError": {
+                    "index": 0,
+                    "kind": { "FunctionCallError": { "ExecutionError": message } }
+                }
+            }
+        })
+    }
+
+    /// The sign receipt and the callback receipt in the fixture.
+    fn fixture_receipt_indexes() -> (usize, usize) {
+        let fixture = tx_status_fixture();
+        let outcomes = fixture["receipts_outcome"]
+            .as_array()
+            .expect("receipts_outcome");
+        let sign = outcomes
+            .iter()
+            .position(|entry| outcome_signs_payload(entry, RRI_29_PAYLOAD_HASH))
+            .expect("sign receipt");
+        let callback_id = outcomes[sign]["outcome"]["status"]["SuccessReceiptId"]
+            .as_str()
+            .expect("callback id");
+        let callback = outcomes
+            .iter()
+            .position(|entry| entry["id"].as_str() == Some(callback_id))
+            .expect("callback receipt");
+        (sign, callback)
     }
 
     #[test]
-    fn signature_for_payload_is_none_before_the_callback_lands() {
+    fn signature_for_payload_is_pending_before_the_callback_lands() {
+        let (_, callback) = fixture_receipt_indexes();
         let mut fixture = tx_status_fixture();
-        let outcomes = fixture["receipts_outcome"]
+        fixture["receipts_outcome"]
             .as_array_mut()
-            .expect("receipts_outcome");
-        outcomes.retain(|entry| {
-            entry["outcome"]["status"]
-                .get("SuccessValue")
-                .and_then(Value::as_str)
-                .is_none_or(|value| !value.starts_with(MPC_SIGNATURE_MARKER))
-        });
-        assert!(signature_for_payload(&fixture, RRI_29_PAYLOAD_HASH).is_none());
+            .expect("receipts_outcome")
+            .remove(callback);
+        assert_eq!(
+            signature_for_payload(&fixture, RRI_29_PAYLOAD_HASH),
+            SignatureLookup::CallbackPending
+        );
+    }
+
+    #[test]
+    fn signature_for_payload_fails_when_the_sign_call_failed() {
+        let (sign, _) = fixture_receipt_indexes();
+        let mut fixture = tx_status_fixture();
+        fixture["receipts_outcome"][sign]["outcome"]["status"] =
+            failed_status("signature request rejected");
+        let lookup = signature_for_payload(&fixture, RRI_29_PAYLOAD_HASH);
+        let SignatureLookup::Failed(error) = lookup else {
+            panic!("expected Failed, got {lookup:?}");
+        };
+        assert!(error.contains("sign call did not succeed"), "{error}");
+    }
+
+    #[test]
+    fn signature_for_payload_fails_when_the_callback_failed_or_is_unparseable() {
+        let (_, callback) = fixture_receipt_indexes();
+        let mut fixture = tx_status_fixture();
+        fixture["receipts_outcome"][callback]["outcome"]["status"] =
+            failed_status("callback panicked");
+        assert!(matches!(
+            signature_for_payload(&fixture, RRI_29_PAYLOAD_HASH),
+            SignatureLookup::Failed(ref e) if e.contains("callback did not succeed")
+        ));
+
+        let mut fixture = tx_status_fixture();
+        fixture["receipts_outcome"][callback]["outcome"]["status"] =
+            serde_json::json!({ "SuccessValue": "bm90IGEgc2lnbmF0dXJl" });
+        assert!(matches!(
+            signature_for_payload(&fixture, RRI_29_PAYLOAD_HASH),
+            SignatureLookup::Failed(ref e) if e.contains("no parseable signature")
+        ));
     }
 
     #[test]
@@ -2180,6 +2310,49 @@ mod tests {
 
         // A second pass finds nothing to do and never re-posts (wiremock
         // enforces `expect(1)` on drop).
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+    }
+
+    /// Signing failed on chain: no retry can help, so the poll fails the
+    /// row instead of re-reading the transaction until the deadline.
+    #[sqlx::test]
+    async fn resubmit_fails_the_row_when_the_sign_call_failed_on_chain(pool: PgPool) {
+        struct FailedSignStub;
+        impl Respond for FailedSignStub {
+            fn respond(&self, request: &Request) -> ResponseTemplate {
+                let body: Value = serde_json::from_slice(&request.body).expect("json-rpc body");
+                let (sign, _) = fixture_receipt_indexes();
+                let mut fixture = tx_status_fixture();
+                fixture["receipts_outcome"][sign]["outcome"]["status"] = failed_status("rejected");
+                ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                    "jsonrpc": "2.0",
+                    "id": body.get("id").cloned().unwrap_or(Value::Null),
+                    "result": fixture
+                }))
+            }
+        }
+        let rpc = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/"))
+            .respond_with(FailedSignStub)
+            .expect(1)
+            .mount(&rpc)
+            .await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
+
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "failed");
+        assert_eq!(row.submit_state, "failed");
+        assert!(
+            row.submit_result.expect("error stored")["error"]
+                .as_str()
+                .is_some_and(|e| e.contains("sign call did not succeed"))
+        );
+        // Terminal: a second pass does not touch the chain again.
         assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
     }
 

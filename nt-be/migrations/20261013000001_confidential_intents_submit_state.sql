@@ -23,7 +23,8 @@ ALTER TABLE confidential_intents
 -- Bulk-payment headers kept the deposit address only inside quote_metadata;
 -- history linking and the 1Click reconciliation lookup key on the column.
 UPDATE confidential_intents
-SET deposit_address = quote_metadata->'quote'->>'depositAddress'
+SET deposit_address = quote_metadata->'quote'->>'depositAddress',
+    updated_at = NOW()
 WHERE deposit_address IS NULL
   AND quote_metadata->'quote'->>'depositAddress' IS NOT NULL;
 
