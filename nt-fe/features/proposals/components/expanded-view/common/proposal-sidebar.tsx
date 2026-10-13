@@ -290,9 +290,9 @@ export function ProposalSidebar({
         voteBannerSlot,
     } = useVoteActionSlots();
     const isPending = onChainStatus === "Pending";
-    // Approved on-chain. An intents-routed request may still be settling —
-    // `status` above tells whether it actually executed.
-    const isExecuted = onChainStatus === "Executed";
+    // On-chain Approved is "Executed" from getProposalStatus before 1Click
+    // settles. Receipts and the execution date wait for the swap status.
+    const isExecuted = status === "Executed";
     const isExchangeProposal = proposalType === "Exchange";
     const isMoveToConfidential = proposalType === "Move to Confidential";
     // A move to confidential is a payment-shaped Intents transfer: same
@@ -554,7 +554,7 @@ export function ProposalSidebar({
                     accountId={accountId ?? ""}
                 />
                 <ExecutedSection
-                    status={status}
+                    status={status ?? onChainStatus}
                     date={timestamp}
                     expiresAt={expiresAt}
                     isDateLoading={isResolvedDateLoading}

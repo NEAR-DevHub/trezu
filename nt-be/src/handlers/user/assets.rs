@@ -882,7 +882,7 @@ async fn load_asset_balances(
         )
         .await?;
         let intents_balances = match ledger_balances {
-            Some(balances) => confidential_balances_for_assets(&state, account, balances).await?,
+            Some(balances) => confidential_balances_for_assets(state, account, balances).await?,
             None => fetch_confidential_balances(state, account).await?.balances,
         };
         return Ok(AssetBalanceInputs {

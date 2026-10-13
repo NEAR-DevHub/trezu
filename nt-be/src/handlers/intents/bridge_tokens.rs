@@ -154,6 +154,7 @@ fn network_name_for_chain(chain_name: &str) -> String {
         .unwrap_or_else(|| chain_name.to_lowercase())
 }
 
+#[cfg(test)]
 fn network_name_for_base(base: &BaseTokenInfo) -> String {
     network_name_for_chain(&base.origin_chain_name)
 }
@@ -208,57 +209,24 @@ fn is_chain_delivery_route(network: &NetworkOption) -> bool {
             && network.quote_asset_id != network.balance_asset_id)
 }
 
-/// `1cs_v1:` catalog rows are chain delivery of a token the treasury holds as
-/// `nep141` / `nep245`. Point the balance id at that sibling so payments and
-/// exchange still transfer the holdable asset, and keep the `1cs` id as the quote.
-fn holdable_sibling_id<'a>(routing_id: &str, grouped: &'a [BaseTokenInfo]) -> Option<&'a str> {
-    if !is_one_click_routing_asset(routing_id) {
-        return None;
-    }
-    let symbol = grouped
-        .iter()
-        .find(|token| token.defuse_asset_id == routing_id)?
-        .symbol
-        .as_str();
-    let mut matches: Vec<&BaseTokenInfo> = grouped
-        .iter()
-        .filter(|token| {
-            token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
-                && (token.defuse_asset_id.starts_with("nep141:")
-                    || token.defuse_asset_id.starts_with("nep245:"))
-        })
-        .collect();
-    matches.sort_by_key(|token| {
-        let contract = token
-            .defuse_asset_id
-            .split_once(':')
-            .map(|(_, rest)| rest)
-            .unwrap_or("");
-        let head = contract.split('.').next().unwrap_or(contract);
-        (
-            head.contains('-'),
-            token.defuse_asset_id.starts_with("nep245:"),
-        )
-    });
-    matches.first().map(|token| token.defuse_asset_id.as_str())
-}
-
-/// Same-symbol `nep141` / `nep245` sibling, excluding this row. Used when the
-/// row itself is holdable (NEAR on BSC) but the treasury's balance is the
-/// other member of the family (`nep141:wrap.near`).
-fn same_symbol_holdable_sibling<'a>(
+/// Same-symbol `nep141` / `nep245` members of `routing_id`'s family, preferred
+/// order: a plain contract id, then `nep245`.
+fn holdable_siblings<'a>(
     routing_id: &str,
     grouped: &'a [BaseTokenInfo],
-) -> Option<&'a str> {
-    let symbol = grouped
+    include_self: bool,
+) -> Vec<&'a BaseTokenInfo> {
+    let Some(symbol) = grouped
         .iter()
-        .find(|token| token.defuse_asset_id == routing_id)?
-        .symbol
-        .as_str();
+        .find(|token| token.defuse_asset_id == routing_id)
+        .map(|token| token.symbol.as_str())
+    else {
+        return Vec::new();
+    };
     let mut matches: Vec<&BaseTokenInfo> = grouped
         .iter()
         .filter(|token| {
-            token.defuse_asset_id != routing_id
+            (include_self || token.defuse_asset_id != routing_id)
                 && token.symbol.trim().eq_ignore_ascii_case(symbol.trim())
                 && (token.defuse_asset_id.starts_with("nep141:")
                     || token.defuse_asset_id.starts_with("nep245:"))
@@ -276,7 +244,31 @@ fn same_symbol_holdable_sibling<'a>(
             token.defuse_asset_id.starts_with("nep245:"),
         )
     });
-    matches.first().map(|token| token.defuse_asset_id.as_str())
+    matches
+}
+
+/// `1cs_v1:` catalog rows are chain delivery of a token the treasury holds as
+/// `nep141` / `nep245`. Point the balance id at that sibling so payments and
+/// exchange still transfer the holdable asset, and keep the `1cs` id as the quote.
+fn holdable_sibling_id<'a>(routing_id: &str, grouped: &'a [BaseTokenInfo]) -> Option<&'a str> {
+    if !is_one_click_routing_asset(routing_id) {
+        return None;
+    }
+    holdable_siblings(routing_id, grouped, true)
+        .first()
+        .map(|token| token.defuse_asset_id.as_str())
+}
+
+/// Same-symbol `nep141` / `nep245` sibling, excluding this row. Used when the
+/// row itself is holdable (NEAR on BSC) but the treasury's balance is the
+/// other member of the family (`nep141:wrap.near`).
+fn same_symbol_holdable_sibling<'a>(
+    routing_id: &str,
+    grouped: &'a [BaseTokenInfo],
+) -> Option<&'a str> {
+    holdable_siblings(routing_id, grouped, false)
+        .first()
+        .map(|token| token.defuse_asset_id.as_str())
 }
 
 /// Log once per asset id when a delivery row cannot find the coin the treasury holds.

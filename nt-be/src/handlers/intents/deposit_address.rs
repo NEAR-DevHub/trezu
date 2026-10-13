@@ -473,6 +473,16 @@ mod tests {
     }
 
     #[test]
+    fn hypercore_near_id_is_in_the_vendored_catalog() {
+        use crate::constants::intents_tokens::get_defuse_tokens_map;
+
+        assert!(
+            get_defuse_tokens_map().contains_key(HYPERCORE_NEAR_ASSET_ID),
+            "HYPERCORE_NEAR_ASSET_ID drifted from nearcom-tokens.json"
+        );
+    }
+
+    #[test]
     fn hyperliquid_near_deposit_credits_wrap_near() {
         assert_eq!(
             confidential_deposit_destination_asset(HYPERCORE_NEAR_ASSET_ID),

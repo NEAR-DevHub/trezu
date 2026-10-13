@@ -34,7 +34,7 @@ export interface DepositAssetCatalog {
  * 1Click rejects USDC on Hyperliquid as a deposit origin. Send still delivers
  * to this id, so it stays in the swap catalog and is only removed here.
  */
-const USDC_HYPERLIQUID_QUOTE_ID =
+export const USDC_HYPERLIQUID_QUOTE_ID =
     "1cs_v1:hypercore:erc20:0xb88339cb7199b77e23db6e890353e22632ba630f";
 
 export function isDepositOriginSupported(network: {
