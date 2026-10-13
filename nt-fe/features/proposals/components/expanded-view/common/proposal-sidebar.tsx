@@ -137,7 +137,11 @@ function VotingSection({
     return (
         <div className="flex flex-col gap-3 relative z-10">
             <div className="flex items-center gap-2">
-                <StepIcon status={statusIconStatus} />
+                {proposalStatus ? (
+                    <StepIcon status={statusIconStatus} />
+                ) : (
+                    <Skeleton className="size-6 shrink-0 rounded-full" />
+                )}
                 <div>
                     <p className="text-sm font-semibold">{t("voting")}</p>
                     <p className="text-xs text-muted-foreground">
@@ -553,12 +557,22 @@ export function ProposalSidebar({
                     policy={policy}
                     accountId={accountId ?? ""}
                 />
-                <ExecutedSection
-                    status={status ?? onChainStatus}
-                    date={timestamp}
-                    expiresAt={expiresAt}
-                    isDateLoading={isResolvedDateLoading}
-                />
+                {status ? (
+                    <ExecutedSection
+                        status={status}
+                        date={timestamp}
+                        expiresAt={expiresAt}
+                        isDateLoading={isResolvedDateLoading}
+                    />
+                ) : (
+                    <div className="relative z-10 flex items-center gap-2">
+                        <Skeleton className="size-6 shrink-0 rounded-full" />
+                        <div className="flex flex-col gap-1">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-36" />
+                        </div>
+                    </div>
+                )}
                 <div className="absolute left-[11px] top-1 bottom-2 w-px bg-muted-foreground/20" />
             </div>
 
