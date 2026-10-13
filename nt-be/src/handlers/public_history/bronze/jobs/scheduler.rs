@@ -17,7 +17,7 @@ use crate::handlers::intents::confidential::gold::history_events::refresh_gold_m
 use crate::handlers::intents::confidential::link_intent_to_history_event;
 use crate::handlers::intents::confidential::proposal_signals::{
     decode_success_value_u64, extract_sign_call_from_logs, handle_confidential_add_proposal,
-    mark_confidential_intent_submitted,
+    stamp_confidential_intent_execution,
 };
 use crate::handlers::public_history::bronze::store::{
     PublicHistorySource, load_ready_latest_demands, oldest_ready_latest_demand_age_seconds,
@@ -116,7 +116,7 @@ async fn process_confidential_proposal_signals(
         if !confidential.contains(&call.dao_id) {
             return None;
         }
-        if let Err(error) = mark_confidential_intent_submitted(
+        if let Err(error) = stamp_confidential_intent_execution(
             &state.db_pool,
             &call.dao_id,
             &call.payload_hash,
