@@ -15,7 +15,8 @@ use crate::{
     handlers::intents::confidential::{
         bronze::ingest_worker::trigger_confidential_history_refresh,
         gold::history_events::refresh_gold_metadata_for_intent, link_intent_to_history_event,
-        proposal_signals::extract_sign_call_from_logs, types::normalize_quote_metadata_accounts,
+        proposal_signals::extract_sign_call_from_logs, recover_unsubmitted_intent_from_history,
+        types::normalize_quote_metadata_accounts,
     },
     handlers::relay::{effects::background, parse::ProposalKind},
     observability::sanitize_sensitive_json_value,
@@ -473,6 +474,17 @@ struct ClaimedIntent {
     intent_type: String,
 }
 
+/// Whether the DAO's ingested 1Click history vouches for an unsubmitted intent.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum HistoryReconciliation {
+    /// 1Click has it; the row is now `submitted`.
+    Recovered,
+    /// No matching history row: safe to re-post or expire.
+    NotInHistory,
+    /// The lookup itself failed; nothing is known, so leave the row alone.
+    Unknown,
+}
+
 /// Executed on chain, never accepted by 1Click: what the per-DAO poll re-attempts.
 #[derive(Debug, sqlx::FromRow)]
 struct AwaitingSubmitIntent {
@@ -823,8 +835,12 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
     }
 
     /// Re-attempt this DAO's executed-but-unsubmitted single intents and retire
-    /// the ones whose intent deadline has passed. Returns how many 1Click
-    /// accepted. Called from the per-DAO 1Click history poll.
+    /// the ones whose intent deadline has passed. A row whose 1Click answer was
+    /// lost in transit is first reconciled against the DAO's ingested 1Click
+    /// history (the poll fetches it just before this runs): a matching history
+    /// row means 1Click accepted it, so it is marked submitted instead of being
+    /// re-posted or expired. Returns how many ended up submitted. Called from
+    /// the per-DAO 1Click history poll.
     pub async fn resubmit_awaiting_intents(&self, dao_id: &str) -> usize {
         let rows = sqlx::query_as::<_, AwaitingSubmitIntent>(
             r#"
@@ -856,6 +872,16 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         let now = Utc::now();
         let mut submitted = 0;
         for row in rows {
+            match self.recover_from_history(dao_id, &row.payload_hash).await {
+                HistoryReconciliation::Recovered => {
+                    submitted += 1;
+                    continue;
+                }
+                HistoryReconciliation::NotInHistory => {}
+                // Unknown whether 1Click has it: neither expire nor re-post
+                // this round; the next poll retries.
+                HistoryReconciliation::Unknown => continue,
+            }
             if row.intent_deadline().is_some_and(|deadline| deadline < now) {
                 self.mark_expired(dao_id, &row.payload_hash).await;
                 continue;
@@ -928,9 +954,54 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         }
     }
 
+    /// Promote the row to `submitted` when the DAO's 1Click history already
+    /// carries it (the submit answer was lost after 1Click accepted it).
+    async fn recover_from_history(
+        &self,
+        dao_id: &str,
+        payload_hash: &str,
+    ) -> HistoryReconciliation {
+        match recover_unsubmitted_intent_from_history(&self.state.db_pool, dao_id, payload_hash)
+            .await
+        {
+            Ok(Some(history_event_id)) => {
+                tracing::warn!(
+                    "intent {}/{} had no 1Click response but is in 1Click history; marked submitted (history_event_id={})",
+                    dao_id,
+                    payload_hash,
+                    history_event_id
+                );
+                if let Err(e) =
+                    refresh_gold_metadata_for_intent(&self.state.db_pool, dao_id, payload_hash)
+                        .await
+                {
+                    tracing::warn!(
+                        "Failed to refresh confidential gold metadata for {} (hash={}): {}",
+                        dao_id,
+                        payload_hash,
+                        e
+                    );
+                }
+                HistoryReconciliation::Recovered
+            }
+            Ok(None) => HistoryReconciliation::NotInHistory,
+            Err(e) => {
+                tracing::warn!(
+                    "history reconciliation for {} (hash={}) failed: {}",
+                    dao_id,
+                    payload_hash,
+                    e
+                );
+                HistoryReconciliation::Unknown
+            }
+        }
+    }
+
+    /// Record a final failure. Never overwrites a stored 1Click response: a
+    /// concurrent path may have completed the submission in the meantime.
     async fn mark_failed(&self, dao_id: &str, payload_hash: &str, submit_result: Value) {
         if let Err(db_err) = sqlx::query(
-            "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3",
+            "UPDATE confidential_intents SET status = 'failed', submit_result = $1, updated_at = NOW() WHERE dao_id = $2 AND payload_hash = $3 AND submit_result IS NULL",
         )
         .bind(submit_result)
         .bind(dao_id)
@@ -949,18 +1020,53 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         }
     }
 
+    /// Retire an executed intent whose deadline passed. Runs without holding
+    /// the claim, so the write is conditional: a stored 1Click response, an
+    /// existing history link, or a live claim (an in-flight submission) wins
+    /// and the row is left alone.
     async fn mark_expired(&self, dao_id: &str, payload_hash: &str) {
-        crate::error_event!(
-            crate::error_event::ErrorCode::ConfIntentExpiredUnsubmitted,
-            dao_id,
-            payload_hash
-        );
-        self.mark_failed(
-            dao_id,
-            payload_hash,
-            serde_json::json!({ "error": "intent deadline passed before submission to 1Click" }),
+        let updated = sqlx::query(
+            r#"
+            UPDATE confidential_intents
+            SET status = 'failed',
+                submit_result = $1,
+                updated_at = NOW()
+            WHERE dao_id = $2
+              AND payload_hash = $3
+              AND submit_result IS NULL
+              AND history_event_id IS NULL
+              AND status IN ('pending', 'submitted')
+              AND (submit_claimed_at IS NULL
+                   OR submit_claimed_at < NOW() - INTERVAL '10 minutes')
+            "#,
         )
+        .bind(serde_json::json!({ "error": "intent deadline passed before submission to 1Click" }))
+        .bind(dao_id)
+        .bind(payload_hash)
+        .execute(&self.state.db_pool)
         .await;
+        match updated {
+            Ok(result) if result.rows_affected() == 1 => {
+                crate::error_event!(
+                    crate::error_event::ErrorCode::ConfIntentExpiredUnsubmitted,
+                    dao_id,
+                    payload_hash
+                );
+            }
+            Ok(_) => tracing::info!(
+                "expiry of {}/{} skipped: submitted or claimed concurrently",
+                dao_id,
+                payload_hash
+            ),
+            Err(db_err) => {
+                crate::error_event!(
+                    crate::error_event::ErrorCode::ConfIntentMarkFailedLost,
+                    dao_id,
+                    payload_hash,
+                    error = %db_err
+                );
+            }
+        }
     }
 }
 
@@ -1068,16 +1174,52 @@ mod tests {
         .expect("seed intent");
     }
 
+    const DEPOSIT_ADDRESS: &str =
+        "4c0dbb3b7dc3508a899be836568b564ceefa414d1b135e93e3933d1ea19bcba1";
+
+    /// Give the seeded intent the quote facts the history linker matches on.
+    async fn attach_quote(pool: &PgPool, payload_hash: &str) {
+        sqlx::query(
+            "UPDATE confidential_intents SET deposit_address = $2, quote_metadata = $3 WHERE payload_hash = $1",
+        )
+        .bind(payload_hash)
+        .bind(DEPOSIT_ADDRESS)
+        .bind(serde_json::json!({ "quoteRequest": { "recipient": "alice.near" } }))
+        .execute(pool)
+        .await
+        .expect("attach quote");
+    }
+
+    /// A 1Click history row as the forward poll ingests it.
+    async fn seed_history_row(pool: &PgPool, deposit_address: &str) -> i64 {
+        sqlx::query_scalar(
+            r#"
+            INSERT INTO bronze_confidential_history_events (
+                account_id, created_at_external, deposit_address, status, deposit_type,
+                recipient, destination_asset, raw_payload
+            )
+            VALUES ($1, NOW(), $2, 'SUCCESS', 'ORIGIN_CHAIN', 'alice.near', 'nep141:wrap.near', '{}'::jsonb)
+            RETURNING id
+            "#,
+        )
+        .bind(DAO)
+        .bind(deposit_address)
+        .fetch_one(pool)
+        .await
+        .expect("seed history row")
+    }
+
     #[derive(sqlx::FromRow)]
     struct IntentRow {
         status: String,
         submit_result: Option<Value>,
         submit_claimed_at: Option<DateTime<Utc>>,
+        history_event_id: Option<i64>,
     }
 
     async fn load_intent(pool: &PgPool, payload_hash: &str) -> IntentRow {
         sqlx::query_as::<_, IntentRow>(
-            "SELECT status, submit_result, submit_claimed_at FROM confidential_intents WHERE dao_id = $1 AND payload_hash = $2",
+            "SELECT status, submit_result, submit_claimed_at, history_event_id FROM confidential_intents WHERE dao_id = $1 AND payload_hash = $2",
         )
         .bind(DAO)
         .bind(payload_hash)
@@ -1281,5 +1423,204 @@ mod tests {
         // A second pass finds nothing to do and never re-posts (wiremock
         // enforces `expect(1)` on drop).
         assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+    }
+
+    /// The 1Click answer was lost after 1Click accepted the intent: the poll
+    /// ingested its history row, so the expired row is reconciled as
+    /// submitted rather than failed, and nothing is re-posted.
+    #[sqlx::test]
+    async fn resubmit_recovers_an_intent_already_in_1click_history(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        attach_quote(&pool, RRI_29_PAYLOAD_HASH).await;
+        // A transport failure left the claim behind, long enough ago to be stale.
+        sqlx::query(
+            "UPDATE confidential_intents SET submit_claimed_at = NOW() - INTERVAL '11 minutes' WHERE payload_hash = $1",
+        )
+        .bind(RRI_29_PAYLOAD_HASH)
+        .execute(&pool)
+        .await
+        .expect("age claim");
+        let history_event_id = seed_history_row(&pool, DEPOSIT_ADDRESS).await;
+
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 1);
+
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.history_event_id, Some(history_event_id));
+        let submit_result = row.submit_result.expect("synthetic submit_result");
+        assert_eq!(submit_result["recoveredFromHistory"], true);
+        assert_eq!(submit_result["historyEventId"], history_event_id);
+        assert!(
+            rpc.received_requests().await.expect("rpc log").is_empty(),
+            "recovery needs no RPC"
+        );
+        assert!(
+            oneclick
+                .received_requests()
+                .await
+                .expect("1click log")
+                .is_empty(),
+            "recovery never re-posts to 1Click"
+        );
+
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+        assert_eq!(
+            load_intent(&pool, RRI_29_PAYLOAD_HASH).await.status,
+            "submitted"
+        );
+    }
+
+    /// A legacy row: the old detector promoted it to `submitted` without a
+    /// 1Click response and the ingest-time linker already attached its
+    /// history row. The existing link is the proof; the row is backfilled, not
+    /// expired.
+    #[sqlx::test]
+    async fn resubmit_backfills_an_already_linked_intent_instead_of_expiring_it(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        attach_quote(&pool, RRI_29_PAYLOAD_HASH).await;
+        let history_event_id = seed_history_row(&pool, DEPOSIT_ADDRESS).await;
+        sqlx::query(
+            "UPDATE confidential_intents SET status = 'submitted', history_event_id = $2 WHERE payload_hash = $1",
+        )
+        .bind(RRI_29_PAYLOAD_HASH)
+        .bind(history_event_id)
+        .execute(&pool)
+        .await
+        .expect("link legacy row");
+
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 1);
+
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.history_event_id, Some(history_event_id));
+        let submit_result = row.submit_result.expect("synthetic submit_result");
+        assert_eq!(submit_result["recoveredFromHistory"], true);
+        assert_eq!(submit_result["historyEventId"], history_event_id);
+        assert!(
+            oneclick
+                .received_requests()
+                .await
+                .expect("1click log")
+                .is_empty()
+        );
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+    }
+
+    /// Expiry alone must also respect an existing link.
+    #[sqlx::test]
+    async fn expiry_yields_to_an_existing_history_link(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        let history_event_id = seed_history_row(&pool, DEPOSIT_ADDRESS).await;
+        sqlx::query(
+            "UPDATE confidential_intents SET status = 'submitted', history_event_id = $2 WHERE payload_hash = $1",
+        )
+        .bind(RRI_29_PAYLOAD_HASH)
+        .bind(history_event_id)
+        .execute(&pool)
+        .await
+        .expect("link row");
+
+        ConfidentialIntentSubmitter::new(&state)
+            .mark_expired(DAO, RRI_29_PAYLOAD_HASH)
+            .await;
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert!(row.submit_result.is_none());
+    }
+
+    /// When the reconciliation lookup itself fails, nothing is known about
+    /// the intent, so it is neither expired nor re-posted this round.
+    #[sqlx::test]
+    async fn resubmit_defers_expiry_when_reconciliation_fails(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        sqlx::query("DROP TABLE bronze_confidential_history_events CASCADE")
+            .execute(&pool)
+            .await
+            .expect("break the history lookup");
+
+        assert_eq!(
+            ConfidentialIntentSubmitter::new(&state)
+                .resubmit_awaiting_intents(DAO)
+                .await,
+            0
+        );
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "pending", "expiry deferred");
+        assert!(row.submit_result.is_none());
+        assert!(
+            rpc.received_requests().await.expect("rpc log").is_empty(),
+            "nothing is re-posted either"
+        );
+    }
+
+    /// An unrelated history row (different deposit address) proves nothing:
+    /// the expired intent is still retired.
+    #[sqlx::test]
+    async fn resubmit_does_not_recover_from_an_unrelated_history_row(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        attach_quote(&pool, RRI_29_PAYLOAD_HASH).await;
+        seed_history_row(&pool, "some-other-deposit-address").await;
+
+        assert_eq!(
+            ConfidentialIntentSubmitter::new(&state)
+                .resubmit_awaiting_intents(DAO)
+                .await,
+            0
+        );
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "failed");
+        assert!(row.history_event_id.is_none());
+    }
+
+    /// Expiry runs without the claim, so it must yield to a submission that
+    /// completed (stored response) or is in flight (live claim) meanwhile.
+    #[sqlx::test]
+    async fn expiry_yields_to_a_concurrent_submission(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2020-01-01T00:00:00Z").await;
+        sqlx::query(
+            "UPDATE confidential_intents SET status = 'submitted', submit_result = '{\"intentHash\":\"x\"}'::jsonb WHERE payload_hash = $1",
+        )
+        .bind(RRI_29_PAYLOAD_HASH)
+        .execute(&pool)
+        .await
+        .expect("mark submitted");
+        submitter.mark_expired(DAO, RRI_29_PAYLOAD_HASH).await;
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.submit_result.expect("response kept")["intentHash"], "x");
+
+        let in_flight = format!("{}00", &RRI_29_PAYLOAD_HASH[2..]);
+        seed_executed_intent(&pool, &in_flight, "2020-01-01T00:00:00Z").await;
+        submitter
+            .claim(DAO, &in_flight)
+            .await
+            .expect("claim query")
+            .expect("claim taken");
+        submitter.mark_expired(DAO, &in_flight).await;
+        let row = load_intent(&pool, &in_flight).await;
+        assert_eq!(row.status, "pending", "a live claim blocks expiry");
+        assert!(row.submit_result.is_none());
     }
 }
