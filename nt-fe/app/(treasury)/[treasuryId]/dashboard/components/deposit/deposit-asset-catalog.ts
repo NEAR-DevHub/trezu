@@ -272,7 +272,6 @@ export function buildDepositAssetCatalog(params: {
         const bUSD = assetBalancesById.get(b.id)?.balanceUSD || 0;
         return bUSD - aUSD;
     });
-    otherAssets.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
     const formattedAssets: SelectOption[] = [...yourAssets, ...otherAssets];
 
