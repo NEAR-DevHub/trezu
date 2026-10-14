@@ -705,6 +705,7 @@
     "proposals": {
         "status": {
             "pending": "ממתין",
+            "processing": "בעיבוד",
             "approved": "אושר",
             "rejected": "נדחה",
             "executed": "בוצע",
@@ -715,6 +716,7 @@
         },
         "statusTooltip": {
             "pending": "בקשה זו עדיין ממתינה ולא הגיעה למספר ההצבעות הנדרש לביצוע.",
+            "processing": "אושרה ונמצאת כעת בעיבוד. זה ייקח רק כמה שניות.",
             "executed": "בוצעה לאחר ש-{approved} מתוך {required} חברים אישרו את הבקשה.",
             "rejected": "נדחתה לאחר ש-{rejected} מתוך {required} חברים הצביעו לדחיית הבקשה.",
             "expired": "פג תוקף מכיוון שלא התקבלו מספיק הצבעות לביצוע.",
@@ -726,6 +728,7 @@
             "removeTitle": "הסר בקשה",
             "bulkBody": "אתה עומד {action} מספר בקשות. לאחר השליחה, לא ניתן לשנות החלטה זו.",
             "singleBody": "אתה עומד {action} בקשה זו. לאחר האישור, לא ניתן לבטל פעולה זו.",
+            "ledgerBody": "השאר את ה-Ledger שלך פתוח. בשלב הבא תאשר בו את ההצבעה שלך.",
             "actionApprove": "לאשר",
             "actionReject": "לדחות",
             "actionRemove": "להסיר",
@@ -873,6 +876,7 @@
             "approvalsReceived": "{received}/{required} אישורים התקבלו",
             "expiresAt": "פג תוקף ב-",
             "expiredAt": "פג תוקף ב-",
+            "processing": "הבקשה שלך אושרה ונמצאת בעיבוד – רק כמה שניות.",
             "exchangingTokens": "מחליף טוקנים",
             "exchangingTokensBody": "בקשה זו אושרה על ידי הצוות. החלפת הטוקנים מתבצעת כעת ועשויה לקחת זמן מה.",
             "requestFailed": "הבקשה נכשלה",
@@ -1617,6 +1621,7 @@
             "differentTokens": "הטוקנים חייבים להיות שונים",
             "enterAmount": "הזן סכום להחלפה"
         },
+        "chainDeliveryUnsupported": "רשת זו אינה זמינה בהחלפה.",
         "review": "סקור החלפה",
         "poweredBy": "מופעל על ידי",
         "info": {

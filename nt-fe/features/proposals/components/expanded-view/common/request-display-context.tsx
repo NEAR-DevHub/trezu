@@ -6,7 +6,7 @@ import type { UIProposalStatus } from "@/features/proposals/utils/proposal-utils
 interface RequestDisplayContextValue {
     showUSDValue: boolean;
     isConfidential: boolean;
-    proposalStatus: UIProposalStatus;
+    proposalStatus: UIProposalStatus | undefined;
     isPending: boolean;
     isExecuted: boolean;
 }

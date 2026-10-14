@@ -31,7 +31,9 @@ const ADDRESS_PATTERNS: Record<BlockchainType, RegExp | null> = {
     litecoin: /^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$/,
     dash: /^X[1-9A-HJ-NP-Za-km-z]{33}$/,
     ethereum: /^0x[a-fA-F0-9]{40}$/,
-    starknet: /^0x[a-fA-F0-9]{1,64}$/,
+    // A 40-hex `0x` string is an EVM address. It fits a felt, but no Starknet
+    // account lives there, so funds sent to it are lost.
+    starknet: /^0x(?![a-fA-F0-9]{40}$)[a-fA-F0-9]{1,64}$/,
     aleo: /^aleo1[a-z0-9]{58}$/,
     solana: /^[1-9A-HJ-NP-Za-km-z]{32,44}$/,
     tron: /^T[1-9A-HJ-NP-Za-km-z]{33}$/,

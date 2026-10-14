@@ -23,7 +23,10 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { decimalOrNull } from "@/lib/amount-format";
 import type { RecentActivity, SwapInfo, TokenMetadataInfo } from "@/lib/api";
 import Big from "@/lib/big";
-import { calculateExchangeFeeAmount } from "@/lib/exchange-fee";
+import {
+    calculateExchangeFeeAmount,
+    shouldShowStoredExchangeFee,
+} from "@/lib/exchange-fee";
 import { cn } from "@/lib/utils";
 import {
     activityUnitPriceUsd,
@@ -35,6 +38,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hidesIntentsExplorerLink,
     useGetFromAccount,
 } from "../utils/history-utils";
 import { ActivityStatusPill } from "./activity-status-pill";
@@ -479,7 +483,9 @@ function DetailsSection({
         },
     ];
     if (variant === "exchange" && activity.swap) {
-        const fee = exchangeFeeLabel(activity.swap);
+        const fee = shouldShowStoredExchangeFee(activity.hasAppFee ?? undefined)
+            ? exchangeFeeLabel(activity.swap)
+            : null;
         if (fee) {
             items.push({
                 label: tExchange("info.exchangeFee"),
@@ -522,10 +528,10 @@ function DetailsSection({
     }
 
     if (
+        !hidesIntentsExplorerLink(activity, isConfidential) &&
         (activity.transactionHashes?.length ||
             activity.receiptIds?.length ||
-            activity.quoteDepositAddress) &&
-        !(isConfidential && variant === "exchange")
+            activity.quoteDepositAddress)
     ) {
         items.push({
             label: t(TRANSACTION_LABEL_KEYS[variant]),
@@ -634,10 +640,8 @@ export function TransactionDetailsModal({
 
     const variant = getActivityDetailsVariant(activity);
     const showSwapReceipt =
-        isConfidential &&
-        variant === "exchange" &&
-        activity.proposalId != null &&
-        !!activity.quoteDepositAddress;
+        hidesIntentsExplorerLink(activity, isConfidential) &&
+        activity.proposalId != null;
     const showParties = variant !== "exchange" && !isProposalCall(activity);
 
     return (

@@ -224,6 +224,11 @@ pub static CHAIN_METADATA: Lazy<HashMap<String, ChainMetadata>> = Lazy::new(|| {
     );
     add_chain_alias(&mut metadata, "xlayer", "layerx");
     metadata.insert("dash".to_string(), ChainMetadata::new("Dash", "dash.svg"));
+    metadata.insert(
+        "hood".to_string(),
+        ChainMetadata::new("Robinhood", "hood.svg"),
+    );
+    metadata.insert("qtc".to_string(), ChainMetadata::new("Quantus", "qtc.svg"));
 
     // Common long-form / shorthand aliases used by upstream providers
     add_chain_alias(&mut metadata, "ethereum", "eth");

@@ -1,9 +1,10 @@
 "use client";
 
-import { Check, Fingerprint, Wallet } from "lucide-react";
+import { Check, CircleAlert, Fingerprint, Wallet } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Alert, AlertDescription } from "@/components/alert";
 import { SlotWarning } from "@/components/warning-message";
 import { Button } from "@/components/button";
 import { PageCard } from "@/components/card";
@@ -90,6 +91,32 @@ function WalletOptionIcon({
                 />
             ))}
         </div>
+    );
+}
+
+/**
+ * Surfaces a failed connect attempt on the sign-in screen.
+ *
+ * Without this the wallet's own popup just closes and the user is left staring
+ * at the untouched sign-in screen with no idea what went wrong — the failure
+ * mode looks identical to "nothing happened". The wallet's message is shown
+ * verbatim underneath: it is what explains *why* (passkey cancelled, on-chain
+ * account setup failed, backend rejected the authorization, ...).
+ */
+function ConnectFailureAlert({ error }: { error: string | null }) {
+    const t = useTranslations("createTreasury");
+    if (!error) return null;
+
+    return (
+        <Alert variant="destructive" className="items-start gap-2">
+            <CircleAlert className="mt-0.5 size-4 shrink-0" />
+            <AlertDescription className="flex flex-col gap-1">
+                <span className="font-medium">
+                    {t("walletSelector.connectFailed")}
+                </span>
+                <span className="text-xs break-words opacity-80">{error}</span>
+            </AlertDescription>
+        </Alert>
     );
 }
 
@@ -333,6 +360,7 @@ export function ConnectWalletSelector({
                     handleBack={showBackButton ? onBack : undefined}
                 />
                 <SlotWarning slot="login" className="mb-4" />
+                <ConnectFailureAlert error={authError} />
                 {showOnboardingHints && (
                     <div className="space-y-3 mb-4">
                         <div className="flex items-start gap-2">
@@ -494,6 +522,7 @@ export function ConnectWalletSelector({
                             </DialogTitle>
                         </DialogHeader>
                         <SlotWarning slot="login" className="mb-2" />
+                        <ConnectFailureAlert error={authError} />
                         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {walletPickerChoices.map((wallet) => {
                                 const isOfflineBlocked = isWalletChoiceBlocked(

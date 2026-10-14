@@ -44,6 +44,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hidesIntentsExplorerLink,
     useGetActivityLabel,
     useGetFromAccount,
 } from "../utils/history-utils";
@@ -524,20 +525,22 @@ export function ActivityTable({
                                         <NotesCell notes={activity.notes} />
                                     </TableCell>
                                     <TableCell className="text-right pr-2">
-                                        {isConfidential &&
-                                        activity.swap &&
-                                        activity.quoteDepositAddress &&
-                                        activity.proposalId != null &&
-                                        treasuryId ? (
-                                            <Link
-                                                href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
-                                            >
-                                                <FileText className="size-4 shrink-0 text-muted-foreground" />
-                                                {t("pdfReceipt")}
-                                            </Link>
+                                        {hidesIntentsExplorerLink(
+                                            activity,
+                                            isConfidential,
+                                        ) ? (
+                                            activity.proposalId != null &&
+                                            treasuryId ? (
+                                                <Link
+                                                    href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
+                                                >
+                                                    <FileText className="size-4 shrink-0 text-muted-foreground" />
+                                                    {t("pdfReceipt")}
+                                                </Link>
+                                            ) : null
                                         ) : (
                                             <TransactionHashCell
                                                 transactionHashes={

@@ -104,6 +104,17 @@ export const NetworkIconDisplay = ({
     );
 };
 
+function isNearChain(asset: TreasuryAsset): boolean {
+    const network = asset.network?.trim().toLowerCase();
+    const chain = asset.chainName?.trim().toLowerCase();
+    return (
+        network === NEAR_NETWORK_ID ||
+        network === "near:mainnet" ||
+        chain === "near" ||
+        chain === "near protocol"
+    );
+}
+
 export const NetworkDisplay = ({
     asset,
     subLabel,
@@ -126,11 +137,16 @@ export const NetworkDisplay = ({
             type = tRes("fungibleToken");
             break;
         case "Intents":
-            type = getLocalizedNetworkDisplayName({
-                networkName: "near.com",
-                networkLabel: tAddressBookTable("network"),
-                fallbackName: "near.com",
-            });
+            // near.com is the NEAR-chain intents balance (wrap.near, ZEC on
+            // NEAR). A Solana or BNB deposit is a different spendable id, so
+            // its row is named for that chain.
+            type = isNearChain(asset)
+                ? getLocalizedNetworkDisplayName({
+                      networkName: "near.com",
+                      networkLabel: tAddressBookTable("network"),
+                      fallbackName: "near.com",
+                  })
+                : undefined;
             break;
         case "Near":
             type = tRes("nativeToken");
@@ -150,9 +166,11 @@ export const NetworkDisplay = ({
                 <span className="truncate font-semibold capitalize">
                     {asset.chainName}
                 </span>
-                <span className="truncate text-xs text-muted-foreground">
-                    {subLabel ?? type}
-                </span>
+                {(subLabel ?? type) ? (
+                    <span className="truncate text-xs text-muted-foreground">
+                        {subLabel ?? type}
+                    </span>
+                ) : null}
             </div>
         </div>
     );

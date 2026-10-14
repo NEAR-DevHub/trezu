@@ -1,3 +1,4 @@
+pub mod app_fee;
 pub mod bridge_tokens;
 pub mod confidential;
 pub mod deposit_address;

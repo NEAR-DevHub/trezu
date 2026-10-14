@@ -7,6 +7,7 @@ import { Sidebar } from "@/components/sidebar";
 import { useTreasury } from "@/hooks/use-treasury";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import { AppEventsProvider } from "./app-events-provider";
+import { ConfidentialHistoryAutoRefresh } from "./confidential-history-auto-refresh";
 
 export function TreasuryLayoutClient({
     children,
@@ -39,6 +40,7 @@ export function TreasuryLayoutClient({
     return (
         <div className="flex h-dvh lg:h-screen overflow-hidden">
             <AppEventsProvider scope={{ treasuryId }} />
+            <ConfidentialHistoryAutoRefresh />
             <PrimaryColorProvider treasuryId={treasuryId} />
             <Sidebar
                 isOpen={isSidebarOpen}

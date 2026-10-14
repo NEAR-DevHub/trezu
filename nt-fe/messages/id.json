@@ -705,6 +705,7 @@
     "proposals": {
         "status": {
             "pending": "Tertunda",
+            "processing": "Diproses",
             "approved": "Disetujui",
             "rejected": "Ditolak",
             "executed": "Dieksekusi",
@@ -715,6 +716,7 @@
         },
         "statusTooltip": {
             "pending": "Permintaan ini masih tertunda dan belum mencapai jumlah suara yang diperlukan untuk eksekusi.",
+            "processing": "Disetujui dan sedang diproses. Hanya butuh beberapa detik.",
             "executed": "Dieksekusi setelah {approved} dari {required} anggota menyetujui permintaan.",
             "rejected": "Ditolak setelah {rejected} dari {required} anggota memilih untuk menolak permintaan.",
             "expired": "Kedaluwarsa karena tidak menerima cukup suara untuk dieksekusi.",
@@ -726,6 +728,7 @@
             "removeTitle": "Hapus Permintaan",
             "bulkBody": "Anda akan {action} beberapa permintaan. Setelah dikirim, keputusan ini tidak dapat diubah.",
             "singleBody": "Anda akan {action} permintaan ini. Setelah dikonfirmasi, tindakan ini tidak dapat dibatalkan.",
+            "ledgerBody": "Biarkan Ledger Anda tetap tidak terkunci. Selanjutnya Anda akan mengonfirmasi suara Anda di sana.",
             "actionApprove": "menyetujui",
             "actionReject": "menolak",
             "actionRemove": "menghapus",
@@ -873,6 +876,7 @@
             "approvalsReceived": "{received}/{required} persetujuan diterima",
             "expiresAt": "Kedaluwarsa Pada",
             "expiredAt": "Kedaluwarsa Pada",
+            "processing": "Permintaan Anda telah disetujui dan sedang diproses - hanya beberapa detik.",
             "exchangingTokens": "Menukar Token",
             "exchangingTokensBody": "Permintaan ini telah disetujui oleh tim. Pertukaran token sedang berlangsung dan mungkin memerlukan beberapa waktu.",
             "requestFailed": "Permintaan Gagal",
@@ -1617,6 +1621,7 @@
             "differentTokens": "Token harus berbeda",
             "enterAmount": "Masukkan jumlah untuk ditukar"
         },
+        "chainDeliveryUnsupported": "Jaringan ini tidak tersedia di Tukar.",
         "review": "Tinjau Pertukaran",
         "poweredBy": "Didukung oleh",
         "info": {

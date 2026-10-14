@@ -76,6 +76,8 @@ fn canonical_network_key(name: &str) -> Cow<'static, str> {
         "bch" | "bitcoincash" | "bitcoin cash" => Cow::Borrowed("bitcoincash"),
         "near.com" | "nearcom" | "near_intents" => Cow::Borrowed("near_intents"),
         "layerx" | "x layer" | "xlayer" => Cow::Borrowed("layerx"),
+        "hood" | "robinhood" => Cow::Borrowed("hood"),
+        "qtc" | "quantus" => Cow::Borrowed("qtc"),
         _ => Cow::Owned(lowered),
     }
 }
@@ -117,6 +119,8 @@ pub fn network_volume_rank(name: &str) -> u32 {
         "scroll" => 31,
         "movement" => 32,
         "fogo" => 33,
+        "hood" => 34,
+        "qtc" => 35,
         "aurora" => 101,
         "turbochain" => 102,
         "tuxappchain" => 103,
@@ -230,5 +234,10 @@ mod tests {
             network_volume_rank("XRP Ledger"),
             network_volume_rank("xrpledger")
         );
+        assert_eq!(
+            network_volume_rank("robinhood"),
+            network_volume_rank("hood")
+        );
+        assert_eq!(network_volume_rank("quantus"), network_volume_rank("qtc"));
     }
 }

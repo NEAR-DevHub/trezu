@@ -71,6 +71,20 @@ pub struct ConfidentialDepositAddressStatusResult {
 /// Matches near.com confidential deposit slippage (0.1% → 10 bips).
 const CONFIDENTIAL_DEPOSIT_SLIPPAGE_TOLERANCE: u32 = 10;
 
+/// near.com credits NEAR deposited on Hyperliquid as `nep141:wrap.near`.
+const HYPERCORE_NEAR_ASSET_ID: &str = "1cs_v1:hypercore:hip1:0x20b8c9d2f022ffd2aea4f7962b7b1d8b";
+const NEAR_HELD_ASSET_ID: &str = "nep141:wrap.near";
+
+/// Asset a confidential deposit is credited as. The depositor sends `token_id`.
+/// NEAR on Hyperliquid is the one route near.com settles into held NEAR.
+fn confidential_deposit_destination_asset(token_id: &str) -> &str {
+    if token_id == HYPERCORE_NEAR_ASSET_ID {
+        NEAR_HELD_ASSET_ID
+    } else {
+        token_id
+    }
+}
+
 /// For confidential treasuries, mint a one-time 1Click wet quote and return its
 /// `depositAddress` (plus memo / bridge floor).
 ///
@@ -108,7 +122,7 @@ async fn get_confidential_deposit_address(
             "slippageTolerance": CONFIDENTIAL_DEPOSIT_SLIPPAGE_TOLERANCE,
             "originAsset": token_id,
             "depositType": "INTENTS",
-            "destinationAsset": token_id,
+            "destinationAsset": confidential_deposit_destination_asset(token_id),
             "amount": amount.to_string(),
             "refundTo": account_id,
             "refundType": "CONFIDENTIAL_INTENTS",
@@ -238,6 +252,8 @@ async fn fetch_bridge_deposit_address(
 /// **Confidential** treasuries mint a rotating 1Click wet quote (`tokenId`
 /// should be the 1Click `quoteAssetId`, which may be `1cs_v1:…`) and return
 /// that quote's Bridge origin-chain deposit address plus `minAmountIn`.
+/// The credit is that same id, except NEAR on Hyperliquid, which is credited
+/// as `nep141:wrap.near`.
 ///
 /// Guests and non-members may generate addresses — depositing funds into a
 /// treasury is not a member-only action. Confidential quotes use the app API
@@ -514,6 +530,34 @@ mod tests {
             serde_json::from_str(json).expect("bridge payloads omit expiresAt");
         assert_eq!(parsed.address, "abc");
         assert_eq!(parsed.expires_at, None);
+    }
+
+    #[test]
+    fn hypercore_near_id_is_in_the_vendored_catalog() {
+        use crate::constants::intents_tokens::get_defuse_tokens_map;
+
+        assert!(
+            get_defuse_tokens_map().contains_key(HYPERCORE_NEAR_ASSET_ID),
+            "HYPERCORE_NEAR_ASSET_ID drifted from nearcom-tokens.json"
+        );
+    }
+
+    #[test]
+    fn hyperliquid_near_deposit_credits_wrap_near() {
+        assert_eq!(
+            confidential_deposit_destination_asset(HYPERCORE_NEAR_ASSET_ID),
+            NEAR_HELD_ASSET_ID
+        );
+        assert_eq!(
+            confidential_deposit_destination_asset("1cs_v1:near:nep141:zec.omft.near"),
+            "1cs_v1:near:nep141:zec.omft.near"
+        );
+        assert_eq!(
+            confidential_deposit_destination_asset(
+                "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG"
+            ),
+            "1cs_v1:sol:spl:3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG"
+        );
     }
 
     #[test]

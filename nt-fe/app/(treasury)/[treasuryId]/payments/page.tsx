@@ -67,7 +67,10 @@ import {
     buildNearFtIntentsKind,
 } from "@/lib/near-proposal-builders";
 import { isNearComRecipientAddress } from "@/lib/nearcom-address";
-import { findQuoteAssetIdForDestination } from "@/lib/oneclick-asset-routing";
+import {
+    findQuoteAssetIdForDestination,
+    holdingDecimals,
+} from "@/lib/oneclick-asset-routing";
 import {
     classifyPaymentToken,
     normalizePaymentRecipient,
@@ -330,6 +333,19 @@ function Step2({
         }
         return undefined;
     }, [bridgeAssets, destinationNetwork]);
+    const quotedOutputDecimals = useMemo(() => {
+        if (!token) return undefined;
+        if (!destinationNetwork || isNearComNetwork(destinationNetwork)) {
+            return holdingDecimals(token);
+        }
+        for (const asset of bridgeAssets) {
+            const network = asset.networks.find(
+                (n) => n.id === destinationNetwork,
+            );
+            if (network) return network.decimals;
+        }
+        return token.decimals;
+    }, [bridgeAssets, destinationNetwork, token]);
     const { data: addressBook = [] } = useAddressBook();
     const contactName = findAddressBookEntry(addressBook, address)?.name;
 
@@ -357,7 +373,7 @@ function Step2({
             const quotedTotal =
                 decimalFromBaseUnitsOrNull(
                     liveQuote.quote.amountIn || liveQuote.quote.minAmountIn,
-                    token.decimals,
+                    holdingDecimals(token),
                 ) ??
                 decimalOrNull(liveQuote.quote.amountInFormatted) ??
                 Big(0);
@@ -365,7 +381,7 @@ function Step2({
                 decimalOrNull(liveQuote.quote.amountOutFormatted) ??
                 decimalFromBaseUnitsOrNull(
                     liveQuote.quote.amountOut || liveQuote.quote.minAmountOut,
-                    token.decimals,
+                    quotedOutputDecimals ?? token.decimals,
                 ) ??
                 Big(0);
             const feeValue =
@@ -376,10 +392,12 @@ function Step2({
                 totalAmountWithFees: quotedTotal,
                 recipientAmount: quotedRecipient,
                 displayNetworkFee: feeValue,
-                estimatedUSDValue: price?.gt(0) ? quotedTotal.mul(price) : null,
-                recipientEstimatedUSDValue: price?.gt(0)
-                    ? quotedRecipient.mul(price)
-                    : null,
+                estimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountInUsd) ??
+                    (price?.gt(0) ? quotedTotal.mul(price) : null),
+                recipientEstimatedUSDValue:
+                    decimalOrNull(liveQuote.quote.amountOutUsd) ??
+                    (price?.gt(0) ? quotedRecipient.mul(price) : null),
             };
         }
 
@@ -392,7 +410,7 @@ function Step2({
                 ? enteredAmount.mul(price)
                 : null,
         };
-    }, [amount, liveQuote, token, tokenData?.price]);
+    }, [amount, liveQuote, quotedOutputDecimals, token, tokenData?.price]);
 
     const isQuoteLoading =
         isViaIntents && (isLoadingLiveQuote || isFetchingLiveQuote);
@@ -408,7 +426,7 @@ function Step2({
                 <AmountSummary
                     total={totalAmountWithFees}
                     totalUSD={estimatedUSDValue}
-                    token={token}
+                    token={{ ...token, decimals: holdingDecimals(token) }}
                     showNetworkIcon={true}
                 >
                     <p>{tPay("summaryRecipients", { count: 1 })}</p>
@@ -447,7 +465,10 @@ function Step2({
                                             kind="token"
                                             value={recipientAmount}
                                             symbol={token.symbol}
-                                            tokenDecimals={token.decimals}
+                                            tokenDecimals={
+                                                quotedOutputDecimals ??
+                                                token.decimals
+                                            }
                                             unitPriceUsd={tokenData?.price}
                                             profile="standard"
                                         />
@@ -485,7 +506,7 @@ function Step2({
                                         kind="token"
                                         value={displayNetworkFee}
                                         symbol={token.symbol}
-                                        tokenDecimals={token.decimals}
+                                        tokenDecimals={holdingDecimals(token)}
                                         unitPriceUsd={tokenData?.price}
                                         profile="standard"
                                         rounding="up"
@@ -540,13 +561,13 @@ function getQuoteAmountDecimals(
     amountMode: IntentsAmountMode,
     bridgeAssets: BridgeAsset[],
 ): number | undefined {
-    // EXACT_INPUT (MAX) and near.com routes use the origin token's decimals.
+    // EXACT_INPUT (MAX) and near.com routes use the held token's decimals.
     if (
         amountMode !== "recipient" ||
         !destinationNetwork ||
         isNearComNetwork(destinationNetwork)
     ) {
-        return token.decimals;
+        return holdingDecimals(token);
     }
 
     const bridgeAsset = findBridgeAssetForToken(bridgeAssets, token);

@@ -72,6 +72,30 @@ pub(crate) async fn load_balance_check_state(
     Ok(state.unwrap_or_default())
 }
 
+/// True once a check has completed and the ledger still matches 1Click.
+///
+/// A missing row and a standing failure are both unconfirmed: the ledger's
+/// chain-delivery id may not be the id 1Click will report.
+pub(crate) async fn is_balance_check_confirmed(
+    pool: &PgPool,
+    dao_id: &str,
+) -> Result<bool, sqlx::Error> {
+    sqlx::query_scalar(
+        r#"
+        SELECT EXISTS (
+            SELECT 1
+            FROM gold_confidential_history_cursors
+            WHERE account_id = $1
+              AND balance_checked_at IS NOT NULL
+              AND balance_check_failed_at IS NULL
+        )
+        "#,
+    )
+    .bind(dao_id)
+    .fetch_one(pool)
+    .await
+}
+
 /// True while the DAO's ledger heads disagree with 1Click; readers then
 /// serve live balances instead of the ledger.
 pub(crate) async fn is_balance_check_failed(

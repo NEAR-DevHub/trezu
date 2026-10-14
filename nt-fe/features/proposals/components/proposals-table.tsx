@@ -73,6 +73,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { HighlightedText } from "@/components/highlighted-text";
 import { cn } from "@/lib/utils";
+import { useProposalStatus } from "@/features/proposals/hooks/use-proposal-status";
 import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
 
 const columnHelper = createColumnHelper<Proposal>();
@@ -104,7 +105,7 @@ function ProposalTimelineDate({
     className?: string;
 }) {
     const { treasuryId } = useTreasury();
-    const status = getProposalStatus(proposal, policy);
+    const status = useProposalStatus(proposal, policy);
     const isProposalExecuted = status === "Executed";
     const isResolvedByVote =
         isProposalExecuted || status === "Failed" || status === "Rejected";
@@ -135,6 +136,12 @@ function ProposalTimelineDate({
         shouldUseSwapDate,
         treasuryId,
     );
+
+    // Swap status is still loading. The row may already be settled, so hold
+    // the date until we know which timestamp to show.
+    if (!status) {
+        return <Skeleton className="h-3.5 w-24" />;
+    }
 
     if (!isResolvedByVote) {
         return (

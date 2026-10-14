@@ -12,6 +12,10 @@ import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { ChainIcons } from "@/lib/api";
 import Big from "@/lib/big";
+import {
+    isChainDeliveryRoute,
+    isOffNearChainDelivery,
+} from "@/lib/oneclick-asset-routing";
 import { pickDefaultSelectedToken } from "@/lib/pick-default-token";
 import { canonicalizeTokenIdForMatch, cn } from "@/lib/utils";
 import { Button } from "./button";
@@ -48,6 +52,7 @@ export interface SelectedTokenData {
     price?: number;
     balanceAssetId?: string;
     quoteAssetId?: string;
+    balanceDecimals?: number;
 }
 
 interface TokenSelectProps {
@@ -95,6 +100,30 @@ interface TokenSelectProps {
      * that seeds its own tokens).
      */
     autoSelect?: boolean;
+    /**
+     * Which chain-delivery networks to list.
+     * `"all"` shows every network. `"held"` keeps only a route the treasury
+     * holds under its own id. `"none"` hides every route, including held ones.
+     */
+    chainDelivery?: ChainDelivery;
+}
+
+/** Which chain-delivery networks a picker lists. */
+export type ChainDelivery = "all" | "held" | "none";
+
+function hidesChainDelivery(
+    network: {
+        id: string;
+        balanceAssetId?: string;
+        quoteAssetId?: string;
+        chainId?: string;
+        heldRoute?: boolean;
+    },
+    chainDelivery: ChainDelivery,
+): boolean {
+    if (chainDelivery === "all") return false;
+    if (network.heldRoute) return chainDelivery === "none";
+    return isChainDeliveryRoute(network) || isOffNearChainDelivery(network);
 }
 
 export default function TokenSelect({
@@ -111,6 +140,7 @@ export default function TokenSelect({
     filterTokens,
     showPopularAssets = false,
     autoSelect = true,
+    chainDelivery = "all",
 }: TokenSelectProps) {
     const t = useTranslations("tokenSelectDialog");
     const tDepositSections = useTranslations("depositModal.sections");
@@ -163,15 +193,16 @@ export default function TokenSelect({
             );
 
         const applyNetworkFilter = (t: MergedToken): MergedToken | null => {
-            if (!filterTokens) return t;
-            const filtered = t.networks.filter((n) =>
-                filterTokens({
+            const filtered = t.networks.filter((n) => {
+                if (hidesChainDelivery(n, chainDelivery)) return false;
+                if (!filterTokens) return true;
+                return filterTokens({
                     address: n.id,
                     symbol: n.symbol,
                     network: n.name,
                     residency: n.residency,
-                }),
-            );
+                });
+            });
             if (filtered.length === 0) return null;
             return { ...t, networks: filtered };
         };
@@ -186,7 +217,7 @@ export default function TokenSelect({
         }
 
         return filteredTokensList;
-    }, [tokens, search, filterTokens]);
+    }, [tokens, search, filterTokens, chainDelivery]);
 
     const { yourAssets, otherAssets } = useMemo(() => {
         const yourAssetsFiltered = filteredTokens.filter(
@@ -277,6 +308,7 @@ export default function TokenSelect({
                     network.quoteAssetId ||
                     network.balanceAssetId ||
                     network.id,
+                balanceDecimals: network.balanceDecimals,
             });
 
             setOpen(false);
