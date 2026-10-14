@@ -237,9 +237,7 @@ export function RecipientNetworkSelect({
             return [nearComOption];
         }
 
-        return [...tokenNetworkOptions].sort((a, b) =>
-            a.name.localeCompare(b.name),
-        );
+        return tokenNetworkOptions;
     }, [nearComOption, recipient, tokenNetworkOptions]);
 
     const selectedOption = useMemo(() => {

@@ -372,15 +372,14 @@ const buildBridgeOnlyTokens = (
                     }),
                 ),
             }),
-        )
-        .sort((a, b) => a.symbol.localeCompare(b.symbol));
+        );
 };
 
 /**
  * Fetches treasury assets and bridge tokens, returning a single merged array.
  *
  * - Owned tokens come first, sorted by USD value descending.
- * - Bridge-only tokens (not held in treasury) follow, sorted alphabetically.
+ * - Bridge-only tokens follow in catalog order.
  * - All bridge networks carry residency: "Intents".
  * - When a token is in both treasury and bridge, networks are merged: treasury
  *   networks retain their original residency, while bridge-only networks on that
