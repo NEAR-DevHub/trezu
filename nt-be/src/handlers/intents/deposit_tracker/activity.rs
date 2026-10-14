@@ -130,6 +130,8 @@ impl InProcessDeposit {
             proposal_id: None,
             quote_deposit_address: None,
             notes: None,
+            fully_confidential: None,
+            has_app_fee: None,
         })
     }
 }
@@ -272,6 +274,8 @@ mod tests {
             proposal_id: None,
             quote_deposit_address: None,
             notes: None,
+            fully_confidential: None,
+            has_app_fee: None,
         }
     }
 
