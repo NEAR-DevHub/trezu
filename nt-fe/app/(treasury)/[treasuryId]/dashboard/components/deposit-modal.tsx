@@ -419,14 +419,13 @@ export function DepositModal({
         withAssets.sort((a, b) => {
             const aUSD = selectedNetworkBalances.get(a.id)?.amountUSD || 0;
             const bUSD = selectedNetworkBalances.get(b.id)?.amountUSD || 0;
-            if (aUSD !== bUSD) return bUSD - aUSD;
-            return a.name.localeCompare(b.name);
+            return bUSD - aUSD;
         });
 
         supportedNetworks.sort((a, b) => {
             if (a.id === NEAR_COM_DIRECT_NETWORK_ID) return -1;
             if (b.id === NEAR_COM_DIRECT_NETWORK_ID) return 1;
-            return a.name.localeCompare(b.name);
+            return 0;
         });
 
         const sections: { title: string; options: SelectOption[] }[] = [];

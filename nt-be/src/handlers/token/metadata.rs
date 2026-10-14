@@ -488,9 +488,11 @@ fn apply_unified_display_override(meta: &mut TokenMetadata) {
         };
         meta.symbol = unified.symbol.clone();
         meta.name = unified.name.clone();
-        if meta.icon.is_none() {
-            meta.icon = Some(unified.icon.clone());
-        }
+        // Catalog coin art wins over on-chain metadata. NEP-245 contracts often
+        // return a chain-explorer image (BscScan's page image for NEAR on BNB).
+        meta.icon = find_token_by_defuse_asset_id(defuse_id)
+            .map(|token| token.icon.clone())
+            .or_else(|| Some(unified.icon.clone()));
         return;
     }
 }
@@ -1170,6 +1172,31 @@ mod tests {
         apply_unified_display_override(&mut meta);
         assert_eq!(meta.symbol, "AURORA");
         assert_eq!(meta.name, "Aurora");
+    }
+
+    #[test]
+    fn unified_display_override_replaces_chain_explorer_icon_with_catalog_coin() {
+        let mut meta = TokenMetadata {
+            token_id: "nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t".to_string(),
+            name: "NEAR(Bsc)".to_string(),
+            symbol: "NEAR".to_string(),
+            decimals: 18,
+            icon: Some("https://bscscan.com/assets/bsc/images/og.jpg?v=24.12.4.2".to_string()),
+            price: None,
+            price_updated_at: None,
+            network: Some("bsc".to_string()),
+            chain_name: Some("BNB Smart Chain".to_string()),
+            chain_icons: None,
+        };
+        apply_unified_display_override(&mut meta);
+        assert_eq!(meta.name, "NEAR Protocol");
+        assert_eq!(meta.symbol, "NEAR");
+        assert_eq!(
+            meta.icon.as_deref(),
+            Some("https://s2.coinmarketcap.com/static/img/coins/128x128/6535.png")
+        );
+        assert_eq!(meta.network.as_deref(), Some("bsc"));
+        assert_eq!(meta.chain_name.as_deref(), Some("BNB Smart Chain"));
     }
 
     #[test]

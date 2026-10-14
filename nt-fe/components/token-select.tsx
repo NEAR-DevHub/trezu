@@ -277,7 +277,7 @@ export default function TokenSelect({
             const bUSD = b.balanceUSD ?? 0;
             if (aUSD > 0 !== bUSD > 0) return bUSD > 0 ? 1 : -1;
             if (aUSD !== bUSD) return bUSD - aUSD;
-            return a.name.localeCompare(b.name);
+            return 0;
         });
     }, [selectedAsset]);
 
