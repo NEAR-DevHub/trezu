@@ -19,9 +19,10 @@ on:
       - '.github/workflows/bulk-payment-e2e.yml'
   workflow_dispatch:
 
-# Cancel superseded runs when a PR gets a new push; runs on main always finish.
+# Cancel superseded runs when a PR gets a new push. Other events group per
+# commit, so every push to main runs to completion.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:

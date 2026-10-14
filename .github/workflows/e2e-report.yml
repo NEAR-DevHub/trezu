@@ -37,10 +37,8 @@ concurrency:
 jobs:
   publish:
     name: Publish report to Pages
-    # Cancelled runs were superseded by a newer push; that run publishes instead.
-    if: github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'cancelled'
+    if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
