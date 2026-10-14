@@ -22,9 +22,15 @@ on:
 env:
   CARGO_TERM_COLOR: always
 
+# Cancel superseded runs when a PR gets a new push; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
     - name: Free Disk Space

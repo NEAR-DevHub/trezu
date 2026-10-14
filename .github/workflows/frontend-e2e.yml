@@ -13,6 +13,11 @@ on:
       - ".github/workflows/frontend-e2e.yml"
   workflow_dispatch:
 
+# Cancel superseded runs when a PR gets a new push; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   e2e-tests:
     name: Playwright E2E Tests

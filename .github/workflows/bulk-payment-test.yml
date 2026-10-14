@@ -13,10 +13,16 @@ on:
       - '.github/workflows/bulk-payment-test.yml'
   workflow_dispatch:
 
+# Cancel superseded runs when a PR gets a new push; runs on main always finish.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   code-formatting:
     name: Code Formatting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,6 +33,7 @@ jobs:
   code-linter:
     name: Code Linter
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,6 +50,7 @@ jobs:
   tests:
     name: Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
