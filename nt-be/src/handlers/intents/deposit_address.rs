@@ -351,7 +351,13 @@ async fn activate_deposit_watch(
                 .activate_confidential(&state.db_pool, quote_deposit_address, quote_expires_at)
                 .await
         }
-        None => activation.activate_public(&state.db_pool).await,
+        // Share pages look the bridge address up with the quote address as
+        // the account id; that is not a monitored DAO, but it may be a quote
+        // whose watch can be renewed.
+        None => match activation.activate_public(&state.db_pool).await {
+            Ok(false) => activation.renew_confidential_by_quote(&state.db_pool).await,
+            other => other,
+        },
     };
     match outcome {
         Ok(true) => {}

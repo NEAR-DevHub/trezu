@@ -78,9 +78,6 @@ pub async fn get_deposit_tracker(
     user: OptionalAuthUser,
     Query(query): Query<DepositTrackerQuery>,
 ) -> Result<Json<DepositTrackerResponse>, (StatusCode, String)> {
-    user.verify_member_if_confidential(&state.db_pool, &query.account_id)
-        .await?;
-
     let quote = query
         .quote_deposit_address
         .as_deref()
@@ -96,6 +93,13 @@ pub async fn get_deposit_tracker(
             StatusCode::BAD_REQUEST,
             "chain or quoteDepositAddress is required".to_string(),
         ));
+    }
+    // A one-time quote address is the capability: share pages let the payer
+    // (not a member) watch their own deposit, exactly like the confidential
+    // deposit-address status endpoint. Chain-wide reads stay member-only.
+    if quote.is_none() {
+        user.verify_member_if_confidential(&state.db_pool, &query.account_id)
+            .await?;
     }
 
     let rows =

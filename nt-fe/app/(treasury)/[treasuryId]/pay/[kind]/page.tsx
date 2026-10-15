@@ -18,11 +18,15 @@ import { PageComponentLayout } from "@/components/page-component-layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
 import { NEAR_COM_ICON } from "@/constants/token";
+import { ActivityStatusPill } from "@/features/activity/components/activity-status-pill";
+import type { ActivityStatus } from "@/features/activity/utils/history-utils";
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useConfidentialBridgeAddress } from "@/hooks/use-confidential-bridge-address";
 import { useDepositAddressStatus } from "@/hooks/use-deposit-address-status";
 import { useDepositExpiryClock } from "@/hooks/use-deposit-expiry-clock";
+import { useDepositTracker } from "@/hooks/use-deposit-tracker";
 import { useTreasury } from "@/hooks/use-treasury";
+import type { TrackedDeposit, TrackedDepositStatus } from "@/lib/bridge-api";
 import {
     buildNearComSendHref,
     NEAR_COM_SEND_INTERNAL_NETWORK,
@@ -40,6 +44,7 @@ import {
     buildPublicWalletOneTimeNotices,
 } from "../../dashboard/components/deposit/deposit-notices";
 import { DepositPayTreasuryModal } from "../../dashboard/components/deposit/deposit-pay-treasury-modal";
+import { DepositTrackerPanel } from "../../dashboard/components/deposit/deposit-tracker-panel";
 import { DepositTransferInactive } from "../../dashboard/components/deposit/deposit-transfer-inactive";
 import {
     resolveBridgeChainId,
@@ -57,6 +62,48 @@ import {
 } from "../../dashboard/components/deposit/deposit-transfer-url";
 import type { ConfidentialOrigin } from "../../dashboard/components/deposit/deposit-types";
 import { formatMinDepositDisplay } from "../../dashboard/components/deposit/format-min-deposit";
+
+/** Public addresses are reusable: in-flight deposits seen this long before the page opened still count. */
+const TRACKER_IN_FLIGHT_LOOKBACK_MS = 10 * 60 * 1000;
+
+/**
+ * 1Click quote status → tracker state, mirroring the backend's
+ * `confidential_tracker_status`. `PENDING_DEPOSIT` is an unused address and
+ * `EXPIRED` a dead one: neither is deposit evidence. `SUCCESS` is the
+ * bridge's claim, not the ledger's, so it stays "finalized"; only a tracker
+ * row (which takes precedence when it exists) can say ledger-confirmed.
+ */
+function statusDepositState(
+    status: string | null | undefined,
+): TrackedDepositStatus | null {
+    switch ((status ?? "").trim().toUpperCase()) {
+        case "":
+        case "PENDING_DEPOSIT":
+        case "EXPIRED":
+            return null;
+        case "SUCCESS":
+            return "finalized";
+        case "REFUNDED":
+        case "FAILED":
+        case "INCOMPLETE_DEPOSIT":
+            return "failed";
+        default:
+            return "detected";
+    }
+}
+
+/** Header pill for the tracked deposits: processing beats failed beats completed. */
+function trackerPillStatus(deposits: { status: string }[]): ActivityStatus {
+    if (
+        deposits.some(
+            (d) => d.status !== "ledger_confirmed" && d.status !== "failed",
+        )
+    ) {
+        return "pending";
+    }
+    if (deposits.every((d) => d.status === "failed")) return "failed";
+    return null;
+}
 
 export default function PaySharePage() {
     const t = useTranslations("depositModal");
@@ -163,10 +210,76 @@ export default function PaySharePage() {
           ? true
           : bridgeQueryFetched;
 
+    const sendTokenMeta = useMemo(
+        () =>
+            kind === "public"
+                ? resolveSendTokenMeta(bridgeAssets, tokenId, networkId)
+                : null,
+        [kind, bridgeAssets, tokenId, networkId],
+    );
+
     const nowMs = useDepositExpiryClock(
         isOneTimeConfidentialShare && !statusIsTerminal,
         statusExpiresAtMs,
     );
+
+    // Live deposit progress for the payer. One-time links are scoped to their
+    // quote; public treasury links to the bridge chain, from page open.
+    const [pageShownAtMs] = useState(() => Date.now());
+    const { deposits: trackedDeposits, hasFetched: hasFetchedTracker } =
+        useDepositTracker({
+            enabled:
+                kind === "public" &&
+                !isLoading &&
+                (isOneTimeConfidentialShare ? !!shareId : !!bridgeChainId),
+            accountId: treasuryId,
+            chain: isPublicTreasuryShare ? bridgeChainId : null,
+            quoteDepositAddress: isOneTimeConfidentialShare ? shareId : null,
+            shownAtMs: pageShownAtMs,
+            inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
+        });
+    // The tracker row can lag 1Click's status by a poll or two, and a quote
+    // whose watch stopped before the payer sent (discovery ends after two
+    // hours) never gets one. Either way the status alone proves a deposit,
+    // so it stands in for the row rather than reading as a dead link.
+    const statusFallbackDeposit = useMemo((): TrackedDeposit | null => {
+        if (!isOneTimeConfidentialShare) return null;
+        const status = statusDepositState(depositStatus);
+        if (!status) return null;
+        const detectedAt = new Date(pageShownAtMs).toISOString();
+        return {
+            id: -1,
+            status,
+            providerStatus: depositStatus ?? "",
+            chain: bridgeChainId,
+            tokenId: sendTokenMeta?.assetId ?? tokenId,
+            tokenMetadata: {
+                symbol: sendTokenMeta?.symbol ?? tokenId,
+                decimals: sendTokenMeta?.decimals ?? 0,
+            },
+            amount: null,
+            originTxHash: null,
+            detectedAt,
+            finalizedAt: status === "finalized" ? detectedAt : null,
+            updatedAt: detectedAt,
+        };
+    }, [
+        isOneTimeConfidentialShare,
+        depositStatus,
+        pageShownAtMs,
+        bridgeChainId,
+        sendTokenMeta?.assetId,
+        sendTokenMeta?.symbol,
+        sendTokenMeta?.decimals,
+        tokenId,
+    ]);
+    const visibleDeposits =
+        trackedDeposits.length > 0
+            ? trackedDeposits
+            : statusFallbackDeposit
+              ? [statusFallbackDeposit]
+              : [];
+    const hasTrackedDeposits = visibleDeposits.length > 0;
 
     const isStatusLoading =
         kind === "public" &&
@@ -175,11 +288,22 @@ export default function PaySharePage() {
                 (!hasFetchedStatus ||
                     (statusFound === true &&
                         !statusIsTerminal &&
-                        !hasFetchedBridge))));
+                        !hasFetchedBridge) ||
+                    // A used quote is either a deposit in progress or a dead
+                    // link; the tracker decides which, so wait for it.
+                    (statusIsTerminal && !hasFetchedTracker))));
 
     const isUsed = isDepositAddressUsed(depositStatus);
     const isInactive =
-        !isStatusLoading && isOneTimeConfidentialShare && statusIsTerminal;
+        !isStatusLoading &&
+        isOneTimeConfidentialShare &&
+        statusIsTerminal &&
+        !hasTrackedDeposits;
+    // A one-time address is spent once a deposit is seen: its card and pay
+    // actions give way to the deposit's progress. Public addresses stay
+    // usable, so their progress renders under the card.
+    const showProgressInsteadOfAddress =
+        isOneTimeConfidentialShare && hasTrackedDeposits;
 
     const depositAddress =
         kind === "confidential"
@@ -187,14 +311,6 @@ export default function PaySharePage() {
             : isOneTimeConfidentialShare
               ? bridgeAddress || ""
               : shareId;
-
-    const sendTokenMeta = useMemo(
-        () =>
-            kind === "public"
-                ? resolveSendTokenMeta(bridgeAssets, tokenId, networkId)
-                : null,
-        [kind, bridgeAssets, tokenId, networkId],
-    );
 
     const minDepositDisplay = useMemo(
         () =>
@@ -470,10 +586,19 @@ export default function PaySharePage() {
                                 <h1 className="font-semibold text-lg leading-snug">
                                     {pageTitle}
                                 </h1>
-                                <span className="inline-flex items-center gap-1.5 rounded-full bg-general-orange-background-faded text-general-orange-foreground px-2.5 py-1 text-xs font-medium shrink-0">
-                                    <Clock className="size-3.5" />
-                                    {t("transfer.waitingForPayment")}
-                                </span>
+                                {hasTrackedDeposits ? (
+                                    <ActivityStatusPill
+                                        status={trackerPillStatus(
+                                            visibleDeposits,
+                                        )}
+                                        className="shrink-0 rounded-full px-2.5"
+                                    />
+                                ) : (
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-general-orange-background-faded text-general-orange-foreground px-2.5 py-1 text-xs font-medium shrink-0">
+                                        <Clock className="size-3.5" />
+                                        {t("transfer.waitingForPayment")}
+                                    </span>
+                                )}
                             </div>
 
                             {kind === "confidential" && (
@@ -497,53 +622,74 @@ export default function PaySharePage() {
                                 isConfidentialTreasury={isConfidential}
                             />
 
-                            <DepositAddressCard
-                                address={depositAddress}
-                                memo={bridgeMemo}
-                                copyMode="inline"
-                                showShare={false}
-                                footer={
-                                    <div className="px-3 py-2.5 border-t border-general-tertiary">
-                                        <DepositNoticeList notices={notices} />
-                                    </div>
-                                }
-                            />
-
-                            <div className="space-y-2">
-                                <Button
-                                    type="button"
-                                    onClick={handlePayCta}
-                                    className="w-full gap-2"
-                                    data-testid={
-                                        isConfidentialNearcomShare
-                                            ? "deposit-pay-with-nearcom"
-                                            : "deposit-pay-with-trezu"
-                                    }
-                                >
-                                    {isConfidentialNearcomShare ? (
-                                        <img
-                                            src={NEAR_COM_ICON}
-                                            alt=""
-                                            className="size-4 rounded"
+                            {showProgressInsteadOfAddress ? (
+                                <DepositTrackerPanel
+                                    deposits={visibleDeposits}
+                                    assetIcon={sendTokenMeta?.icon}
+                                    assetName={sendTokenMeta?.symbol}
+                                />
+                            ) : (
+                                <>
+                                    <DepositAddressCard
+                                        address={depositAddress}
+                                        memo={bridgeMemo}
+                                        copyMode="inline"
+                                        showShare={false}
+                                        footer={
+                                            <div className="px-3 py-2.5 border-t border-general-tertiary">
+                                                <DepositNoticeList
+                                                    notices={notices}
+                                                />
+                                            </div>
+                                        }
+                                    />
+                                    {hasTrackedDeposits ? (
+                                        <DepositTrackerPanel
+                                            deposits={visibleDeposits}
+                                            assetIcon={sendTokenMeta?.icon}
+                                            assetName={sendTokenMeta?.symbol}
                                         />
-                                    ) : (
-                                        <Zap className="size-4 fill-current" />
-                                    )}
-                                    {isConfidentialNearcomShare
-                                        ? t("transfer.payWithNearcom")
-                                        : t("transfer.payWithTrezu")}
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={handleCopyLink}
-                                    className="w-full gap-2"
-                                    data-testid="deposit-copy-link"
-                                >
-                                    <Link2 className="size-4" />
-                                    {t("transfer.copyLink")}
-                                </Button>
-                            </div>
+                                    ) : null}
+                                </>
+                            )}
+
+                            {showProgressInsteadOfAddress ? null : (
+                                <div className="space-y-2">
+                                    <Button
+                                        type="button"
+                                        onClick={handlePayCta}
+                                        className="w-full gap-2"
+                                        data-testid={
+                                            isConfidentialNearcomShare
+                                                ? "deposit-pay-with-nearcom"
+                                                : "deposit-pay-with-trezu"
+                                        }
+                                    >
+                                        {isConfidentialNearcomShare ? (
+                                            <img
+                                                src={NEAR_COM_ICON}
+                                                alt=""
+                                                className="size-4 rounded"
+                                            />
+                                        ) : (
+                                            <Zap className="size-4 fill-current" />
+                                        )}
+                                        {isConfidentialNearcomShare
+                                            ? t("transfer.payWithNearcom")
+                                            : t("transfer.payWithTrezu")}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant="secondary"
+                                        onClick={handleCopyLink}
+                                        className="w-full gap-2"
+                                        data-testid="deposit-copy-link"
+                                    >
+                                        <Link2 className="size-4" />
+                                        {t("transfer.copyLink")}
+                                    </Button>
+                                </div>
+                            )}
                         </>
                     )}
                 </PageCard>
