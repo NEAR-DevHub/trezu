@@ -70,13 +70,32 @@ interface UseMergedTokensOptions {
 
 type TreasuryNetwork = AggregatedAsset["networks"][number];
 
+/**
+ * `/api/user/assets` can return three NEAR rows with the same id `"near"`:
+ * - Native: `contractId` null, `residency` `"Near"` → spend `"near"`
+ * - Fungible: `contractId` `"wrap.near"`, `residency` `"Ft"` → spend `"wrap.near"`
+ * - Intents: `contractId` `"nep141:wrap.near"`, `residency` `"Intents"` → spend that contract id
+ *
+ * Null contract id is only the native row. Other residencies keep their own
+ * contract id (`blackdragon.tkn.near` vs `nep141:blackdragon.tkn.near`).
+ */
+function walletNearSpendId(network: {
+    contractId?: string | null;
+    residency?: string;
+}): string | undefined {
+    if (network.residency === "Near") return NEAR_NETWORK_ID;
+    if (network.residency !== "Ft") return undefined;
+    const contractId = network.contractId?.trim();
+    return contractId ? contractId : undefined;
+}
+
 // Unique key for tracking matched treasury networks during merge.
 const networkKey = (n: TreasuryNetwork): string =>
     n.contractId ?? `${n.id}:${n.residency}`;
 
 // Convert treasury network shape to a unified network model.
 const mapTreasuryNetwork = (n: TreasuryNetwork): MergedNetwork => ({
-    id: n.contractId ?? n.id,
+    id: walletNearSpendId(n) ?? n.contractId ?? n.id,
     name: n.network,
     symbol: n.symbol,
     chainIcons:
@@ -94,13 +113,45 @@ const mapTreasuryNetwork = (n: TreasuryNetwork): MergedNetwork => ({
     price: n.price,
 });
 
+/**
+ * Catalog spend/quote ids belong on Intents rows. Native NEAR spends `"near"`.
+ * Fungible NEAR spends its contract id (`wrap.near`). Stamping
+ * `nep141:wrap.near` on either makes the picker treat the holding as a
+ * chain-delivery route and hide it.
+ */
+export function matchedNetworkRoutingIds(
+    treasuryNetwork: {
+        contractId?: string | null;
+        id: string;
+        residency?: string;
+    },
+    bridgeNetwork: {
+        id: string;
+        balanceAssetId?: string;
+        quoteAssetId?: string;
+    },
+): { balanceAssetId: string; quoteAssetId: string } {
+    const bridgeBalanceId = bridgeNetwork.balanceAssetId || bridgeNetwork.id;
+    const walletSpendId = walletNearSpendId(treasuryNetwork);
+    if (walletSpendId) {
+        return { balanceAssetId: walletSpendId, quoteAssetId: walletSpendId };
+    }
+    return {
+        balanceAssetId: bridgeBalanceId,
+        quoteAssetId: bridgeNetwork.quoteAssetId || bridgeBalanceId,
+    };
+}
+
 // Overlay bridge metadata with treasury balances/residency, but keep treasury
 // identity fields so selection can use this object directly.
 const mapBridgeMatchedNetwork = (
     bridgeNetwork: BridgeNetwork,
     treasuryNetwork: TreasuryNetwork,
 ): MergedNetwork => ({
-    id: treasuryNetwork.contractId ?? treasuryNetwork.id,
+    id:
+        walletNearSpendId(treasuryNetwork) ??
+        treasuryNetwork.contractId ??
+        treasuryNetwork.id,
     name: treasuryNetwork.network,
     symbol: treasuryNetwork.symbol,
     chainIcons:
@@ -114,11 +165,7 @@ const mapBridgeMatchedNetwork = (
     residency: treasuryNetwork.residency,
     minWithdrawalAmount: bridgeNetwork.minWithdrawalAmount,
     minDepositAmount: bridgeNetwork.minDepositAmount,
-    balanceAssetId: bridgeNetwork.balanceAssetId || bridgeNetwork.id,
-    quoteAssetId:
-        bridgeNetwork.quoteAssetId ||
-        bridgeNetwork.balanceAssetId ||
-        bridgeNetwork.id,
+    ...matchedNetworkRoutingIds(treasuryNetwork, bridgeNetwork),
     lockedBalance:
         treasuryNetwork.balance.type === "Standard"
             ? treasuryNetwork.balance.locked.toFixed(0)
