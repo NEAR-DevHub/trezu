@@ -6,6 +6,7 @@ import { isChainDeliveryRoute } from "@/lib/oneclick-asset-routing";
 import {
     type MergedNetwork,
     mapHeldChainDeliveryNetwork,
+    matchedNetworkRoutingIds,
     overlayChainDeliveryHoldings,
 } from "./use-merged-tokens";
 
@@ -31,6 +32,80 @@ const chainRow: MergedNetwork = {
     balanceAssetId: "nep141:wrap.near",
     quoteAssetId: SOLANA_NEAR,
 };
+
+const WRAP_NEAR = "nep141:wrap.near";
+
+describe("matchedNetworkRoutingIds", () => {
+    const wrapBridge = {
+        id: WRAP_NEAR,
+        balanceAssetId: WRAP_NEAR,
+        quoteAssetId: WRAP_NEAR,
+    };
+
+    it("spends native NEAR as near when contractId is null", () => {
+        const routing = matchedNetworkRoutingIds(
+            { id: "near", contractId: null, residency: "Near" },
+            wrapBridge,
+        );
+        expect(routing).toEqual({
+            balanceAssetId: "near",
+            quoteAssetId: "near",
+        });
+        expect(isChainDeliveryRoute({ id: "near", ...routing })).toBe(false);
+    });
+
+    it("spends fungible wrap.near as wrap.near, not the shared near id", () => {
+        const routing = matchedNetworkRoutingIds(
+            { id: "near", contractId: "wrap.near", residency: "Ft" },
+            wrapBridge,
+        );
+        expect(routing).toEqual({
+            balanceAssetId: "wrap.near",
+            quoteAssetId: "wrap.near",
+        });
+        expect(
+            isChainDeliveryRoute({ id: "wrap.near", ...routing }),
+        ).toBe(false);
+    });
+
+    it("does not relabel a fungible row as native when its contract id is empty", () => {
+        const routing = matchedNetworkRoutingIds(
+            { id: "near", contractId: "", residency: "Ft" },
+            wrapBridge,
+        );
+        expect(routing.balanceAssetId).not.toBe("near");
+    });
+
+    it("keeps intents NEAR on nep141:wrap.near", () => {
+        const routing = matchedNetworkRoutingIds(
+            { id: "near", contractId: WRAP_NEAR, residency: "Intents" },
+            wrapBridge,
+        );
+        expect(routing).toEqual({
+            balanceAssetId: WRAP_NEAR,
+            quoteAssetId: WRAP_NEAR,
+        });
+    });
+
+    it("keeps a fungible contract distinct from its intents contract", () => {
+        const routing = matchedNetworkRoutingIds(
+            {
+                id: "blackdragon",
+                contractId: "blackdragon.tkn.near",
+                residency: "Ft",
+            },
+            {
+                id: "nep141:blackdragon.tkn.near",
+                balanceAssetId: "nep141:blackdragon.tkn.near",
+                quoteAssetId: "nep141:blackdragon.tkn.near",
+            },
+        );
+        expect(routing).toEqual({
+            balanceAssetId: "blackdragon.tkn.near",
+            quoteAssetId: "blackdragon.tkn.near",
+        });
+    });
+});
 
 describe("overlayChainDeliveryHoldings", () => {
     it("copies the held sibling onto a chain-delivery row", () => {
