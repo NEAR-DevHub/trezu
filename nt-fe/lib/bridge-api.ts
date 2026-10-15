@@ -50,8 +50,6 @@ export type ConfidentialDepositAddressStatusResponse = {
     status?: string | null;
     expiresAt?: string | null;
     originAsset?: string | null;
-    /** Decimal-adjusted amount 1Click observed, once the quote has a deposit. */
-    amount?: string | null;
 };
 
 export const fetchDepositAddress = async (

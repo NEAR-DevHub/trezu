@@ -11,10 +11,6 @@ use std::sync::Arc;
 use crate::AppState;
 use crate::handlers::intents::confidential::bronze::api::fetch_history;
 use crate::handlers::intents::deposit_tracker::WatchActivation;
-use crate::handlers::intents::deposit_tracker::worker::{
-    confidential_amount, confidential_tracker_status,
-};
-use crate::handlers::intents::swap_status::fetch_public_swap_status;
 use crate::handlers::public_history::confidential_list::is_confidential_dao;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
@@ -70,11 +66,6 @@ pub struct ConfidentialDepositAddressStatusResult {
     /// Origin asset / network id for the quote (used by share pages).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub origin_asset: Option<String>,
-    /// Decimal-adjusted amount 1Click actually observed (credited once
-    /// settled). Only looked up once the quote has deposit evidence; absent
-    /// while unused or when `/v0/status` is unavailable.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub amount: Option<String>,
 }
 
 /// Matches near.com confidential deposit slippage (0.1% → 10 bips).
@@ -451,30 +442,11 @@ async fn fetch_confidential_deposit_address_status_uncached(
             let expires_at = (event.item.created_at
                 + Duration::days(DEPOSIT_ADDRESS_VALIDITY_DAYS))
             .to_rfc3339();
-            // History carries the quote nominal, not what was sent. Once the
-            // quote has deposit evidence, `/v0/status` has the observed
-            // amount (same source the tracker uses); best-effort only.
-            let amount = if confidential_tracker_status(&event.item.status).is_some() {
-                fetch_public_swap_status(
-                    &state.http_client,
-                    &state.env_vars.confidential_api_url,
-                    state.env_vars.oneclick_jwt_token.as_ref(),
-                    deposit_address,
-                    event.item.deposit_memo.as_deref(),
-                )
-                .await
-                .ok()
-                .and_then(|full| confidential_amount(&full))
-                .map(|amount| amount.to_string())
-            } else {
-                None
-            };
             Ok(ConfidentialDepositAddressStatusResult {
                 found: true,
                 status: Some(event.item.status),
                 expires_at: Some(expires_at),
                 origin_asset: event.item.origin_asset,
-                amount,
             })
         }
         None => Ok(ConfidentialDepositAddressStatusResult {
@@ -482,7 +454,6 @@ async fn fetch_confidential_deposit_address_status_uncached(
             status: None,
             expires_at: None,
             origin_asset: None,
-            amount: None,
         }),
     }
 }

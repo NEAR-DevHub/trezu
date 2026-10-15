@@ -69,9 +69,9 @@ const TRACKER_IN_FLIGHT_LOOKBACK_MS = 10 * 60 * 1000;
 /**
  * 1Click quote status → tracker state, mirroring the backend's
  * `confidential_tracker_status`. `PENDING_DEPOSIT` is an unused address and
- * `EXPIRED` a dead one: neither is deposit evidence. 1Click `SUCCESS` is the
- * strongest signal a page without a tracker row can get, so it reads as
- * completed here (the tracker row, when it exists, takes precedence).
+ * `EXPIRED` a dead one: neither is deposit evidence. `SUCCESS` is the
+ * bridge's claim, not the ledger's, so it stays "finalized"; only a tracker
+ * row (which takes precedence when it exists) can say ledger-confirmed.
  */
 function statusDepositState(
     status: string | null | undefined,
@@ -82,7 +82,7 @@ function statusDepositState(
         case "EXPIRED":
             return null;
         case "SUCCESS":
-            return "ledger_confirmed";
+            return "finalized";
         case "REFUNDED":
         case "FAILED":
         case "INCOMPLETE_DEPOSIT":
@@ -135,7 +135,6 @@ export default function PaySharePage() {
         status: depositStatus,
         expiresAtMs: statusExpiresAtMs,
         originAsset: statusOriginAsset,
-        amount: statusAmount,
         isTerminal: statusIsTerminal,
     } = useDepositAddressStatus({
         enabled: isOneTimeConfidentialShare,
@@ -258,16 +257,15 @@ export default function PaySharePage() {
                 symbol: sendTokenMeta?.symbol ?? tokenId,
                 decimals: sendTokenMeta?.decimals ?? 0,
             },
-            amount: statusAmount,
+            amount: null,
             originTxHash: null,
             detectedAt,
-            finalizedAt: status === "ledger_confirmed" ? detectedAt : null,
+            finalizedAt: status === "finalized" ? detectedAt : null,
             updatedAt: detectedAt,
         };
     }, [
         isOneTimeConfidentialShare,
         depositStatus,
-        statusAmount,
         pageShownAtMs,
         bridgeChainId,
         sendTokenMeta?.assetId,

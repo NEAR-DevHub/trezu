@@ -18,8 +18,6 @@ export type DepositAddressStatusState = {
     status: string | null;
     expiresAtMs: number | null;
     originAsset: string | null;
-    /** Decimal-adjusted amount 1Click observed, once the quote has a deposit. */
-    amount: string | null;
     /** True when used, expired, or history miss after a successful fetch. */
     isTerminal: boolean;
 };
@@ -30,7 +28,6 @@ const IDLE: DepositAddressStatusState = {
     status: null,
     expiresAtMs: null,
     originAsset: null,
-    amount: null,
     isTerminal: false,
 };
 
@@ -40,25 +37,6 @@ function parseExpiresAtMs(
     if (!result.expiresAt) return null;
     const ms = Date.parse(result.expiresAt);
     return Number.isFinite(ms) ? ms : null;
-}
-
-/** Deposit seen but not settled: 1Click will move on from these on its own. */
-const IN_FLIGHT_STATUSES = new Set(["PROCESSING", "KNOWN_DEPOSIT_TX"]);
-
-/**
- * Whether polling can stop. Differs from `isTerminalResult` for a deposit
- * in flight: the address is spent (terminal for the address UI), but the
- * outcome is still pending, and a page without a tracker row for it relies
- * on this status to learn that it settled.
- */
-function isSettledResult(
-    result: ConfidentialDepositAddressStatusResponse,
-    stopOnNotFound: boolean,
-): boolean {
-    if (IN_FLIGHT_STATUSES.has((result.status ?? "").trim().toUpperCase())) {
-        return false;
-    }
-    return isTerminalResult(result, stopOnNotFound);
 }
 
 function isTerminalResult(
@@ -106,7 +84,7 @@ export function useDepositAddressStatus(options: {
         refetchInterval: (q) => {
             const data = q.state.data;
             if (!data) return POLL_MS;
-            return isSettledResult(data, stopOnNotFound) ? false : POLL_MS;
+            return isTerminalResult(data, stopOnNotFound) ? false : POLL_MS;
         },
         retry: 1,
     });
@@ -135,7 +113,6 @@ export function useDepositAddressStatus(options: {
         status: data.status ?? null,
         expiresAtMs,
         originAsset: data.originAsset ?? null,
-        amount: data.amount ?? null,
         isTerminal: isTerminalResult(data, stopOnNotFound),
     };
 }

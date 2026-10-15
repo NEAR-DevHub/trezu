@@ -400,8 +400,10 @@ pub async fn load_visible_deposits(
 /// Share pages re-derive the bridge address with the quote address as the
 /// account id, so they cannot upsert by DAO. Renewing the quote's existing
 /// watch (reviving it if discovery already stopped) keeps the payer's own
-/// deposit tracked for as long as they keep the page open. `Ok(false)`: no
-/// watch exists for this quote (minted before the tracker, or not a quote).
+/// deposit tracked for as long as they keep the page open. A live watch
+/// keeps its schedule and error backoff; only a retired one starts a new
+/// life, as in `upsert_watch`. `Ok(false)`: no watch exists for this quote
+/// (minted before the tracker, or not a quote).
 pub async fn renew_confidential_watch_by_quote(
     pool: &PgPool,
     quote_deposit_address: &str,
@@ -413,10 +415,10 @@ pub async fn renew_confidential_watch_by_quote(
         UPDATE deposit_watches
         SET fast_until = GREATEST(fast_until, $2),
             discovery_until = GREATEST(discovery_until, $3),
-            next_poll_at = NOW(),
+            next_poll_at = CASE WHEN retired_at IS NULL THEN next_poll_at ELSE NOW() END,
+            attempts = CASE WHEN retired_at IS NULL THEN attempts ELSE 0 END,
+            last_error = CASE WHEN retired_at IS NULL THEN last_error END,
             retired_at = NULL,
-            last_error = NULL,
-            attempts = 0,
             updated_at = NOW()
         WHERE kind = 'confidential'
           AND quote_deposit_address = $1
@@ -734,9 +736,45 @@ mod tests {
                 .fetch_one(&pool)
                 .await
                 .expect("read last_error");
-        assert!(last_error.is_none(), "renewal clears the last error");
+        assert!(last_error.is_none(), "revival clears the last error");
         assert!(watch.fast_until >= later + Duration::minutes(9));
         assert!(watch.discovery_until >= later + Duration::minutes(119));
+
+        // A live watch that is backing off from errors keeps its schedule:
+        // page opens must not turn into immediate re-polls of a broken quote.
+        sqlx::query(
+            "UPDATE deposit_watches SET attempts = 5, last_error = 'boom', \
+             next_poll_at = NOW() + interval '5 minutes' WHERE id = $1",
+        )
+        .bind(watch.id)
+        .execute(&pool)
+        .await
+        .expect("simulate backoff");
+        assert!(
+            renew_confidential_watch_by_quote(
+                &pool,
+                "quote-addr",
+                later + Duration::minutes(20),
+                later + Duration::minutes(130),
+            )
+            .await
+            .expect("renew live"),
+        );
+        assert!(
+            claim_due_watches(&pool, 10, Duration::seconds(60))
+                .await
+                .expect("claim live")
+                .is_empty(),
+            "live watch keeps its backoff schedule"
+        );
+        let (attempts, last_error): (i32, Option<String>) =
+            sqlx::query_as("SELECT attempts, last_error FROM deposit_watches WHERE id = $1")
+                .bind(watch.id)
+                .fetch_one(&pool)
+                .await
+                .expect("read backoff state");
+        assert_eq!(attempts, 5, "live watch keeps its attempts");
+        assert_eq!(last_error.as_deref(), Some("boom"));
     }
 
     #[sqlx::test]

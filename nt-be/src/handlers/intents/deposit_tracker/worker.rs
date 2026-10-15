@@ -585,12 +585,12 @@ fn jitter(delay: Duration) -> Duration {
     Duration::milliseconds(delay.num_milliseconds().saturating_mul(percent) / 100)
 }
 
-/// 1Click status → tracker state. `PENDING_DEPOSIT` is "address unused",
-/// not deposit evidence, so it yields no row. Unknown statuses are treated
-/// as in-progress rather than terminal.
-pub(crate) fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
+/// 1Click status → tracker state. `PENDING_DEPOSIT` is "address unused" and
+/// `EXPIRED` is "address dead": neither is deposit evidence, so they yield
+/// no row. Unknown statuses are treated as in-progress rather than terminal.
+fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
     match raw.trim().to_ascii_uppercase().as_str() {
-        "PENDING_DEPOSIT" => None,
+        "PENDING_DEPOSIT" | "EXPIRED" => None,
         "SUCCESS" => Some(DepositStatus::Finalized),
         "REFUNDED" | "FAILED" | "INCOMPLETE_DEPOSIT" => Some(DepositStatus::Failed),
         _ => Some(DepositStatus::Detected),
@@ -600,7 +600,7 @@ pub(crate) fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
 /// Credited amount once settled, otherwise the deposit 1Click has observed
 /// on chain. Never the quote nominal: that is only what the address was
 /// minted with, not what the user sent.
-pub(crate) fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
+fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
     let details = full.swap_details.as_ref()?;
     let text = if matches!(full.status, SwapStatus::Success) {
         details
@@ -764,6 +764,7 @@ mod tests {
     #[test]
     fn confidential_statuses_map_to_tracker_states() {
         assert_eq!(confidential_tracker_status("PENDING_DEPOSIT"), None);
+        assert_eq!(confidential_tracker_status("EXPIRED"), None);
         assert_eq!(
             confidential_tracker_status("KNOWN_DEPOSIT_TX"),
             Some(DepositStatus::Detected)
