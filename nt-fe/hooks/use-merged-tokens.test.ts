@@ -63,9 +63,9 @@ describe("matchedNetworkRoutingIds", () => {
             balanceAssetId: "wrap.near",
             quoteAssetId: "wrap.near",
         });
-        expect(
-            isChainDeliveryRoute({ id: "wrap.near", ...routing }),
-        ).toBe(false);
+        expect(isChainDeliveryRoute({ id: "wrap.near", ...routing })).toBe(
+            false,
+        );
     });
 
     it("does not relabel a fungible row as native when its contract id is empty", () => {
