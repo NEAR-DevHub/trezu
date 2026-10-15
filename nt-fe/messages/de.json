@@ -396,7 +396,17 @@
             "linkInactiveDescription": "Bitten Sie die Person, die Ihnen den Link gesendet hat, um einen neuen."
         },
         "expiresInRemaining": "Läuft in <time>{duration}</time> ab – <bold>auch wenn ungenutzt</bold>.",
-        "addressExpired": "Diese Adresse ist abgelaufen."
+        "addressExpired": "Diese Adresse ist abgelaufen.",
+        "depositProcessingTitle": "Einzahlung wird verarbeitet",
+        "depositProcessingBody": "Eine Einzahlung von <amount></amount> wurde registriert und wartet auf Bestätigung",
+        "depositProcessingBodyNoAmount": "Eine Einzahlung wurde registriert und wartet auf Bestätigung",
+        "depositCompletedTitle": "Einzahlung abgeschlossen",
+        "depositCompletedBody": "Eine Einzahlung von <amount></amount> wurde deinem Konto gutgeschrieben",
+        "depositCompletedBodyNoAmount": "Eine Einzahlung wurde deinem Konto gutgeschrieben",
+        "depositFailedTitle": "Einzahlung fehlgeschlagen",
+        "depositFailedBody": "Eine Einzahlung von <amount></amount> wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
+        "depositFailedBodyNoAmount": "Eine Einzahlung wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
+        "depositAgain": "Erneut einzahlen"
     },
     "assetDetails": {
         "coinPrice": "Coin-Preis",

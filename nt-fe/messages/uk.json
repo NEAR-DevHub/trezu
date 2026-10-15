@@ -396,7 +396,17 @@
             "linkInactiveDescription": "Щоб здійснити цей платіж, попросіть у того, хто надіслав посилання, нове."
         },
         "expiresInRemaining": "Дійсна ще <time>{duration}</time> – <bold>навіть якщо не використана</bold>.",
-        "addressExpired": "Термін дії цієї адреси закінчився."
+        "addressExpired": "Термін дії цієї адреси закінчився.",
+        "depositProcessingTitle": "Депозит обробляється",
+        "depositProcessingBody": "Депозит на <amount></amount> зареєстровано, очікує підтвердження",
+        "depositProcessingBodyNoAmount": "Депозит зареєстровано, очікує підтвердження",
+        "depositCompletedTitle": "Депозит завершено",
+        "depositCompletedBody": "Депозит на <amount></amount> зараховано на ваш рахунок",
+        "depositCompletedBodyNoAmount": "Депозит зараховано на ваш рахунок",
+        "depositFailedTitle": "Депозит не вдався",
+        "depositFailedBody": "Провайдер повідомив, що депозит на <amount></amount> не вдався або був повернутий",
+        "depositFailedBodyNoAmount": "Провайдер повідомив, що депозит не вдався або був повернутий",
+        "depositAgain": "Поповнити ще раз"
     },
     "assetDetails": {
         "coinPrice": "Ціна токена",

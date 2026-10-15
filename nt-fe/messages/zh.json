@@ -396,7 +396,17 @@
             "linkInactiveDescription": "如需完成此付款，请向发送链接的人索取新链接。"
         },
         "expiresInRemaining": "<time>{duration}</time>后过期 – <bold>即使未使用</bold>。",
-        "addressExpired": "此地址已过期。"
+        "addressExpired": "此地址已过期。",
+        "depositProcessingTitle": "充值处理中",
+        "depositProcessingBody": "已登记一笔 <amount></amount> 的充值，正在等待确认",
+        "depositProcessingBodyNoAmount": "已登记一笔充值，正在等待确认",
+        "depositCompletedTitle": "充值完成",
+        "depositCompletedBody": "一笔 <amount></amount> 的充值已入账到您的账户",
+        "depositCompletedBodyNoAmount": "一笔充值已入账到您的账户",
+        "depositFailedTitle": "充值失败",
+        "depositFailedBody": "服务商报告一笔 <amount></amount> 的充值失败或已退款",
+        "depositFailedBodyNoAmount": "服务商报告一笔充值失败或已退款",
+        "depositAgain": "再次充值"
     },
     "assetDetails": {
         "coinPrice": "币价",

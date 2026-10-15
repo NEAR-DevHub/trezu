@@ -55,7 +55,7 @@ impl TryFrom<LatestDemandRow> for LatestDemand {
 /// newer trigger landing while a token job is pending or running bumps the
 /// generation and re-arms immediate dispatch — nothing is discarded.
 pub async fn upsert_latest_demand(
-    pool: &PgPool,
+    executor: impl sqlx::PgExecutor<'_>,
     account_id: &str,
     source: PublicHistorySource,
     trigger_block_height: i64,
@@ -89,7 +89,7 @@ pub async fn upsert_latest_demand(
     .bind(source.as_str())
     .bind(trigger_block_height)
     .bind(trigger_transaction_hash)
-    .execute(pool)
+    .execute(executor)
     .await?;
     Ok(())
 }

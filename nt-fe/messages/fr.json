@@ -396,7 +396,17 @@
             "linkInactiveDescription": "Pour effectuer ce paiement, demandez un nouveau lien à la personne qui vous l'a envoyé."
         },
         "expiresInRemaining": "Expire dans <time>{duration}</time> – <bold>même si inutilisée</bold>.",
-        "addressExpired": "Cette adresse a expiré."
+        "addressExpired": "Cette adresse a expiré.",
+        "depositProcessingTitle": "Dépôt en cours de traitement",
+        "depositProcessingBody": "Un dépôt de <amount></amount> a été enregistré et attend confirmation",
+        "depositProcessingBodyNoAmount": "Un dépôt a été enregistré et attend confirmation",
+        "depositCompletedTitle": "Dépôt terminé",
+        "depositCompletedBody": "Un dépôt de <amount></amount> a été crédité sur votre compte",
+        "depositCompletedBodyNoAmount": "Un dépôt a été crédité sur votre compte",
+        "depositFailedTitle": "Dépôt échoué",
+        "depositFailedBody": "Le prestataire a signalé un dépôt de <amount></amount> comme échoué ou remboursé",
+        "depositFailedBodyNoAmount": "Le prestataire a signalé un dépôt comme échoué ou remboursé",
+        "depositAgain": "Déposer à nouveau"
     },
     "assetDetails": {
         "coinPrice": "Prix de la pièce",

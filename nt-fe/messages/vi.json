@@ -396,7 +396,17 @@
             "linkInactiveDescription": "Để thực hiện thanh toán này, hãy yêu cầu người gửi liên kết cung cấp một liên kết mới."
         },
         "expiresInRemaining": "Hết hạn sau <time>{duration}</time> – <bold>kể cả khi chưa dùng</bold>.",
-        "addressExpired": "Địa chỉ này đã hết hạn."
+        "addressExpired": "Địa chỉ này đã hết hạn.",
+        "depositProcessingTitle": "Đang xử lý khoản nạp",
+        "depositProcessingBody": "Khoản nạp <amount></amount> đã được ghi nhận và đang chờ xác nhận",
+        "depositProcessingBodyNoAmount": "Khoản nạp đã được ghi nhận và đang chờ xác nhận",
+        "depositCompletedTitle": "Nạp hoàn tất",
+        "depositCompletedBody": "Khoản nạp <amount></amount> đã được ghi có vào tài khoản của bạn",
+        "depositCompletedBodyNoAmount": "Khoản nạp đã được ghi có vào tài khoản của bạn",
+        "depositFailedTitle": "Nạp thất bại",
+        "depositFailedBody": "Nhà cung cấp báo cáo khoản nạp <amount></amount> đã thất bại hoặc được hoàn lại",
+        "depositFailedBodyNoAmount": "Nhà cung cấp báo cáo khoản nạp đã thất bại hoặc được hoàn lại",
+        "depositAgain": "Nạp lại"
     },
     "assetDetails": {
         "coinPrice": "Giá Coin",

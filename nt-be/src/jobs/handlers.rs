@@ -104,6 +104,18 @@ pub async fn token_price_ingest(
     ))
 }
 
+/// Deposit tracker tick: polls active deposit watches (bridge for public
+/// treasuries, 1Click history for confidential quotes) and hands settled
+/// deposits to history ingestion.
+pub async fn deposit_tracker(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
+    let summary =
+        crate::handlers::intents::deposit_tracker::worker::DepositTrackerWorker::new(&state)
+            .tick()
+            .await
+            .map_err(erase)?;
+    Ok(summary.to_string())
+}
+
 /// Confidential history (bronze) ingest scheduler tick.
 pub async fn confidential_history_ingest(
     _t: Tick,

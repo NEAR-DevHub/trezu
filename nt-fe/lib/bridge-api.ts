@@ -106,3 +106,57 @@ export const fetchConfidentialDepositAddressStatus = async (
 
     return response.data;
 };
+
+export type TrackedDepositStatus =
+    | "detected"
+    | "finalized"
+    | "ledger_confirmed"
+    | "failed";
+
+export interface TrackedDeposit {
+    id: number;
+    status: TrackedDepositStatus;
+    providerStatus: string;
+    chain: string | null;
+    tokenId: string;
+    tokenMetadata: {
+        symbol: string;
+        decimals: number;
+        price?: number | null;
+    };
+    /** Decimal-adjusted amount as a string, or null when unknown. */
+    amount: string | null;
+    originTxHash: string | null;
+    detectedAt: string;
+    finalizedAt: string | null;
+    updatedAt: string;
+}
+
+export interface DepositTrackerResponse {
+    deposits: TrackedDeposit[];
+}
+
+/**
+ * In-process deposits the backend tracker has seen for one address scope:
+ * a confidential quote address, or a public chain.
+ */
+export const fetchDepositTracker = async (
+    accountId: string,
+    scope: { chain?: string | null; quoteDepositAddress?: string | null },
+): Promise<DepositTrackerResponse> => {
+    if (!accountId) {
+        throw new Error("Account ID is required");
+    }
+    const response = await axios.get<DepositTrackerResponse>(
+        `${BACKEND_API_BASE}/intents/deposit-tracker`,
+        {
+            params: {
+                accountId,
+                chain: scope.chain ?? undefined,
+                quoteDepositAddress: scope.quoteDepositAddress ?? undefined,
+            },
+            withCredentials: true,
+        },
+    );
+    return response.data;
+};

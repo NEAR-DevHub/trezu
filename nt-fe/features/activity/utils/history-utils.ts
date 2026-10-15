@@ -91,16 +91,13 @@ export type ActivityStatus = "pending" | "failed" | null;
 
 export function getActivityStatus(activity: ActivityAccount): ActivityStatus {
     const actionKind = activity.actionKind ?? "";
-    if (
-        actionKind === "PublicExchange:failed" ||
-        actionKind === "PublicSent:failed"
-    ) {
+    // Backend rows encode non-final state as an actionKind suffix:
+    // PublicSent:pending, PublicExchange:failed, PublicDeposit:pending,
+    // ConfidentialDeposit:failed, ...
+    if (actionKind.endsWith(":failed")) {
         return "failed";
     }
-    if (
-        actionKind === "PublicExchange:pending" ||
-        actionKind === "PublicSent:pending"
-    ) {
+    if (actionKind.endsWith(":pending")) {
         return "pending";
     }
     if (

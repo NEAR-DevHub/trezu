@@ -396,7 +396,17 @@
             "linkInactiveDescription": "כדי לבצע את התשלום, בקשו מהשולח קישור חדש."
         },
         "expiresInRemaining": "פג תוקף בעוד <time>{duration}</time> – <bold>גם אם לא נעשה בו שימוש</bold>.",
-        "addressExpired": "תוקף הכתובת הזו פג."
+        "addressExpired": "תוקף הכתובת הזו פג.",
+        "depositProcessingTitle": "ההפקדה בעיבוד",
+        "depositProcessingBody": "הפקדה של <amount></amount> נרשמה וממתינה לאישור",
+        "depositProcessingBodyNoAmount": "הפקדה נרשמה וממתינה לאישור",
+        "depositCompletedTitle": "ההפקדה הושלמה",
+        "depositCompletedBody": "הפקדה של <amount></amount> זוכתה בחשבונך",
+        "depositCompletedBodyNoAmount": "הפקדה זוכתה בחשבונך",
+        "depositFailedTitle": "ההפקדה נכשלה",
+        "depositFailedBody": "הספק דיווח שהפקדה של <amount></amount> נכשלה או הוחזרה",
+        "depositFailedBodyNoAmount": "הספק דיווח שההפקדה נכשלה או הוחזרה",
+        "depositAgain": "הפקד שוב"
     },
     "assetDetails": {
         "coinPrice": "מחיר מטבע",

@@ -2,6 +2,7 @@ pub mod app_fee;
 pub mod bridge_tokens;
 pub mod confidential;
 pub mod deposit_address;
+pub mod deposit_tracker;
 pub mod quote;
 pub mod search_tokens;
 pub mod supported_tokens;

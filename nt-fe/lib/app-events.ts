@@ -85,6 +85,9 @@ export async function invalidateTreasuryScopedQueries(
         queryClient.invalidateQueries({
             queryKey: ["recentActivityRecipients", accountId],
         }),
+        queryClient.invalidateQueries({
+            queryKey: ["depositTracker", accountId],
+        }),
     ]);
 }
 

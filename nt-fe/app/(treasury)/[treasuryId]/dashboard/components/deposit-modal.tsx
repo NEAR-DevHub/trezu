@@ -36,6 +36,7 @@ import {
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useDepositAddressStatus } from "@/hooks/use-deposit-address-status";
 import { useDepositExpiryClock } from "@/hooks/use-deposit-expiry-clock";
+import { useDepositTracker } from "@/hooks/use-deposit-tracker";
 import { useTreasury } from "@/hooks/use-treasury";
 import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
 import {
@@ -51,6 +52,7 @@ import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import { DepositAckPanel } from "./deposit/deposit-ack-panel";
 import {
+    DepositAddressHeading,
     DepositAddressSkeleton,
     DepositAddressView,
 } from "./deposit/deposit-address-view";
@@ -73,6 +75,7 @@ import {
     buildPublicWalletOneTimeNotices,
 } from "./deposit/deposit-notices";
 import { DepositSourceCards } from "./deposit/deposit-source-cards";
+import { DepositTrackerPanel } from "./deposit/deposit-tracker-panel";
 import { buildPaySharePath } from "./deposit/deposit-transfer-url";
 import type {
     ConfidentialOrigin,
@@ -203,6 +206,9 @@ function renderBalance(amount: number | string, amountUSD: number) {
     );
 }
 
+/** Public addresses are reusable: in-flight deposits seen this long before the address was shown still count. */
+const TRACKER_IN_FLIGHT_LOOKBACK_MS = 10 * 60 * 1000;
+
 export function DepositModal({
     prefillTokenId,
     prefillNetworkId,
@@ -267,6 +273,11 @@ export function DepositModal({
     const [depositInfo, setDepositInfo] = useState<DepositInfo | null>(null);
     const [isLoadingAddress, setIsLoadingAddress] = useState(false);
     const previousTreasuryIdRef = useRef(treasuryId);
+    // Default asset / URL prefill is applied once per treasury + prefill. Later
+    // catalog refreshes (balances change after a deposit lands) must not
+    // re-select the default asset under a user's explicit selection — that
+    // clears the network and strands the address step on the skeleton.
+    const appliedSelectionKeyRef = useRef<string | null>(null);
     // Stable empty defaults — inline `= []` creates a new reference every
     // render while the query is pending, which re-fires the load effect
     // (popularAssets is a dependency) and triggers React error.
@@ -451,6 +462,28 @@ export function DepositModal({
             },
         });
 
+        const selectionKey = `${treasuryId}|${isConfidential}|${prefillTokenId ?? ""}|${prefillNetworkId ?? ""}`;
+        const currentAssetId = form.getValues("asset")?.id;
+        if (
+            appliedSelectionKeyRef.current === selectionKey &&
+            currentAssetId &&
+            catalog.assetNetworksMap.has(currentAssetId)
+        ) {
+            // Catalog refresh only: keep the user's selection, update lists.
+            dispatchDepositAssets({
+                type: "LOAD_DEPOSIT_ASSETS",
+                payload: {
+                    ...catalog,
+                    filteredNetworks:
+                        catalog.assetNetworksMap.get(currentAssetId) || [],
+                    selectedNetworkBalances:
+                        catalog.networkBalancesByAsset.get(currentAssetId) ||
+                        new Map(),
+                },
+            });
+            return;
+        }
+
         const {
             targetAsset,
             networkToSelect,
@@ -464,6 +497,7 @@ export function DepositModal({
         });
 
         if (targetAsset) {
+            appliedSelectionKeyRef.current = selectionKey;
             const currentAsset = form.getValues("asset");
             // Only write when the selection actually changes — re-running this
             // effect (e.g. popular assets arriving) must not churn form state.
@@ -499,6 +533,7 @@ export function DepositModal({
         prefillNetworkId,
         popularAssets,
         isConfidential,
+        treasuryId,
         t,
     ]);
 
@@ -926,11 +961,66 @@ export function DepositModal({
         t,
     ]);
 
-    const oneTimeAddressInactive =
+    const oneTimeAddressExpired =
         isConfidential &&
         depositSource === "public_wallet" &&
-        (statusIsTerminal ||
-            isDepositAddressExpired(oneTimeExpiresAtMs, nowMs));
+        isDepositAddressExpired(oneTimeExpiresAtMs, nowMs);
+    const oneTimeAddressInactive =
+        oneTimeAddressExpired ||
+        (isConfidential &&
+            depositSource === "public_wallet" &&
+            statusIsTerminal);
+
+    // Live deposit progress from the backend tracker. Bridge-routed addresses
+    // only: native NEAR deposits land directly on the treasury account and
+    // have no pre-settlement signal.
+    const trackerChain = selectedNetwork
+        ? (selectedNetwork.chainId ?? selectedNetwork.id)
+        : null;
+    const trackerBridgeScoped =
+        !!trackerChain &&
+        trackerChain !== NEAR_COM_DIRECT_NETWORK_ID &&
+        !trackerChain.toLowerCase().includes(NEAR_NETWORK_ID);
+    const depositTrackerEnabled =
+        step === "address" &&
+        !!depositInfo &&
+        !isLoadingAddress &&
+        depositSource === "public_wallet" &&
+        (isConfidential
+            ? !!depositInfo.quoteDepositAddress
+            : trackerBridgeScoped);
+    const shownDepositAddress = depositInfo?.address ?? null;
+    const [addressShownAtMs, setAddressShownAtMs] = useState<number | null>(
+        null,
+    );
+    useEffect(() => {
+        setAddressShownAtMs(
+            step === "address" && shownDepositAddress ? Date.now() : null,
+        );
+    }, [step, shownDepositAddress]);
+    const { deposits: trackedDeposits } = useDepositTracker({
+        enabled: depositTrackerEnabled,
+        accountId: treasuryId,
+        chain: isConfidential ? null : trackerChain,
+        quoteDepositAddress: isConfidential
+            ? depositInfo?.quoteDepositAddress
+            : null,
+        shownAtMs: addressShownAtMs,
+        inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
+    });
+
+    // One-time (confidential) addresses are single-use: once a deposit is
+    // detected the address view gives way to the deposit's progress, and a
+    // terminal outcome offers a fresh address.
+    const oneTimeDepositDetected =
+        depositTrackerEnabled && isConfidential && trackedDeposits.length > 0;
+    const oneTimeDepositsSettled =
+        oneTimeDepositDetected &&
+        trackedDeposits.every(
+            (deposit) =>
+                deposit.status === "ledger_confirmed" ||
+                deposit.status === "failed",
+        );
 
     const addressTitle = useMemo(() => {
         if (!isConfidential) {
@@ -1141,54 +1231,99 @@ export function DepositModal({
                     <DepositAddressSkeleton />
                 )}
 
-                {step === "address" && depositInfo && !isLoadingAddress && (
-                    <DepositAddressView
-                        title={addressTitle}
-                        subtitle={addressSubtitle}
-                        address={depositInfo.address}
-                        memo={depositInfo.memo}
-                        // Sputnik-dao treasury id — plain text, no highlight.
-                        preferPlainAddress={
-                            isConfidential &&
-                            depositSource === "confidential_user"
-                        }
-                        notices={addressNotices}
-                        onShare={handleShare}
-                        showShare={!oneTimeAddressInactive}
-                        onCreateNewAddress={
-                            isConfidential && depositSource === "public_wallet"
-                                ? handleCreateNewAddress
-                                : undefined
-                        }
-                        createNewAddressDisabled={isLoadingAddress}
-                        warningSlot={
-                            showAddressWarningBanner ? (
-                                <SlotWarning
-                                    slot={
-                                        depositScopeWarning?.slot ?? "deposit"
-                                    }
-                                    token={
-                                        depositScopeWarning?.token ?? undefined
-                                    }
-                                    network={
-                                        depositScopeWarning?.network ??
-                                        undefined
-                                    }
-                                    action="deposit"
-                                />
-                            ) : undefined
-                        }
-                        headerSlot={
-                            isConfidential &&
-                            depositSource === "confidential_user" ? (
-                                <DepositConfidentialSourceTabs
-                                    value={confidentialOrigin}
-                                    onChange={setConfidentialOrigin}
-                                />
-                            ) : undefined
-                        }
-                    />
-                )}
+                {step === "address" &&
+                    depositInfo &&
+                    !isLoadingAddress &&
+                    oneTimeDepositDetected && (
+                        <div
+                            className="space-y-4"
+                            data-testid="deposit-one-time-progress"
+                        >
+                            <DepositAddressHeading
+                                title={addressTitle}
+                                subtitle={addressSubtitle}
+                            />
+                            <DepositTrackerPanel
+                                deposits={trackedDeposits}
+                                assetIcon={selectedAsset?.icon}
+                                assetName={selectedAsset?.name}
+                            />
+                            {oneTimeDepositsSettled && (
+                                <Button
+                                    type="button"
+                                    onClick={handleCreateNewAddress}
+                                    className="w-full"
+                                    data-testid="deposit-again-button"
+                                >
+                                    {t("depositAgain")}
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
+                {step === "address" &&
+                    depositInfo &&
+                    !isLoadingAddress &&
+                    !oneTimeDepositDetected && (
+                        <DepositAddressView
+                            title={addressTitle}
+                            subtitle={addressSubtitle}
+                            address={depositInfo.address}
+                            memo={depositInfo.memo}
+                            // Sputnik-dao treasury id — plain text, no highlight.
+                            preferPlainAddress={
+                                isConfidential &&
+                                depositSource === "confidential_user"
+                            }
+                            notices={addressNotices}
+                            onShare={handleShare}
+                            showShare={!oneTimeAddressInactive}
+                            onCreateNewAddress={
+                                isConfidential &&
+                                depositSource === "public_wallet"
+                                    ? handleCreateNewAddress
+                                    : undefined
+                            }
+                            createNewAddressDisabled={isLoadingAddress}
+                            statusSlot={
+                                depositTrackerEnabled ? (
+                                    <DepositTrackerPanel
+                                        deposits={trackedDeposits}
+                                        assetIcon={selectedAsset?.icon}
+                                        assetName={selectedAsset?.name}
+                                    />
+                                ) : undefined
+                            }
+                            warningSlot={
+                                showAddressWarningBanner ? (
+                                    <SlotWarning
+                                        slot={
+                                            depositScopeWarning?.slot ??
+                                            "deposit"
+                                        }
+                                        token={
+                                            depositScopeWarning?.token ??
+                                            undefined
+                                        }
+                                        network={
+                                            depositScopeWarning?.network ??
+                                            undefined
+                                        }
+                                        action="deposit"
+                                    />
+                                ) : undefined
+                            }
+                            headerSlot={
+                                isConfidential &&
+                                depositSource === "confidential_user" ? (
+                                    <DepositConfidentialSourceTabs
+                                        value={confidentialOrigin}
+                                        onChange={setConfidentialOrigin}
+                                    />
+                                ) : undefined
+                            }
+                        />
+                    )}
             </div>
 
             <SelectModal

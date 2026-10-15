@@ -396,7 +396,17 @@
             "linkInactiveDescription": "Para realizar este pago, pide a la persona que te envió el enlace uno nuevo."
         },
         "expiresInRemaining": "Caduca en <time>{duration}</time> – <bold>aunque no se use</bold>.",
-        "addressExpired": "Esta dirección ha caducado."
+        "addressExpired": "Esta dirección ha caducado.",
+        "depositProcessingTitle": "Depósito en proceso",
+        "depositProcessingBody": "Se ha registrado un depósito de <amount></amount> y está pendiente de confirmación",
+        "depositProcessingBodyNoAmount": "Se ha registrado un depósito y está pendiente de confirmación",
+        "depositCompletedTitle": "Depósito completado",
+        "depositCompletedBody": "Se ha abonado un depósito de <amount></amount> en tu cuenta",
+        "depositCompletedBodyNoAmount": "Se ha abonado un depósito en tu cuenta",
+        "depositFailedTitle": "Depósito fallido",
+        "depositFailedBody": "El proveedor informó de que un depósito de <amount></amount> falló o fue reembolsado",
+        "depositFailedBodyNoAmount": "El proveedor informó de que un depósito falló o fue reembolsado",
+        "depositAgain": "Depositar de nuevo"
     },
     "assetDetails": {
         "coinPrice": "Precio de la moneda",

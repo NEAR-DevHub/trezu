@@ -404,9 +404,22 @@ test("Ledger login flow", async ({ page, context, loginPage, startPage }) => {
     // Wait for the iframe to load
     const iframe = loginPage.executorFrame();
 
-    // The Ledger executor now auto-triggers device connection on load:
+    // The executor asks for a transport (USB / Bluetooth) before connecting;
+    // USB is the WebHID path the mock serves. Older executors skip this
+    // screen and auto-connect, so only click when it is shown.
+    const usbOption = iframe.getByText("USB", { exact: true });
+    const transportShown = await usbOption
+        .waitFor({ state: "visible", timeout: 10000 })
+        .then(() => true)
+        .catch(() => false);
+    if (transportShown) {
+        console.log("Transport dialog visible, selecting USB");
+        await usbOption.click();
+        await page.waitForTimeout(1000);
+    }
+
+    // After the transport choice (or on load for older executors):
     //   requestDevice() → mock returns device → GET_APP_AND_VERSION → "Select Derivation Path"
-    // No "Connect Ledger" button click is needed.
 
     // Handle the "Select Derivation Path" dialog - click Continue with default selection
     const continueBtn = iframe.getByRole("button", { name: /continue/i });

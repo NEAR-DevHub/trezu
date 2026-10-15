@@ -396,7 +396,17 @@
             "linkInactiveDescription": "이 결제를 하려면 링크를 보낸 사람에게 새 링크를 요청하세요."
         },
         "expiresInRemaining": "<time>{duration}</time> 후 만료 – <bold>사용하지 않아도</bold>.",
-        "addressExpired": "이 주소는 만료되었습니다."
+        "addressExpired": "이 주소는 만료되었습니다.",
+        "depositProcessingTitle": "입금 처리 중",
+        "depositProcessingBody": "<amount></amount> 입금이 등록되었으며 확인을 기다리고 있습니다",
+        "depositProcessingBodyNoAmount": "입금이 등록되었으며 확인을 기다리고 있습니다",
+        "depositCompletedTitle": "입금 완료",
+        "depositCompletedBody": "<amount></amount> 입금이 계정에 반영되었습니다",
+        "depositCompletedBodyNoAmount": "입금이 계정에 반영되었습니다",
+        "depositFailedTitle": "입금 실패",
+        "depositFailedBody": "제공업체가 <amount></amount> 입금을 실패 또는 환불로 보고했습니다",
+        "depositFailedBodyNoAmount": "제공업체가 입금을 실패 또는 환불로 보고했습니다",
+        "depositAgain": "다시 입금하기"
     },
     "assetDetails": {
         "coinPrice": "코인 가격",
