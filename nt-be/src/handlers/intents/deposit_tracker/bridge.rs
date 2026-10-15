@@ -95,11 +95,20 @@ pub struct BridgeDeposit {
 impl BridgeDeposit {
     fn from_raw(raw: RawBridgeDeposit) -> Option<Self> {
         let status = BridgeDepositStatus::parse(&raw.status)?;
-        let amount = raw
-            .amount
-            .as_ref()
-            .and_then(decimal_from_json_number)
-            .map(|base_units| scale_down(base_units, raw.decimals.unwrap_or(0)));
+        let base_units = raw.amount.as_ref().and_then(decimal_from_json_number);
+        let amount = match (base_units, raw.decimals) {
+            (Some(base_units), Some(decimals)) => Some(scale_down(base_units, decimals)),
+            (Some(_), None) => {
+                tracing::warn!(
+                    chain = %raw.chain,
+                    tx_hash = %raw.tx_hash,
+                    asset = %raw.defuse_asset_identifier,
+                    "bridge deposit has an amount but no decimals; dropping row"
+                );
+                return None;
+            }
+            (None, _) => None,
+        };
         Some(Self {
             key: format!(
                 "{}:{}:{}",
@@ -330,6 +339,33 @@ mod tests {
             "intents.near:nep141:sol-0x936420c6ae310eb29511d139991654f922456fbe.omdep.near"
         );
         assert_eq!(deposits[1].near_tx_hash, None, "empty mint hash is None");
+    }
+
+    #[test]
+    fn amount_without_decimals_drops_the_row() {
+        let raw = serde_json::json!({
+            "result": { "deposits": [{
+                "tx_hash": "0xnodec",
+                "chain": "eth:8453",
+                "defuse_asset_identifier": "eth:8453:0x8335",
+                "near_token_id": "base-0x8335.omft.near",
+                "amount": 100000000,
+                "status": "COMPLETED"
+            }, {
+                "tx_hash": "0xnoamt",
+                "chain": "eth:8453",
+                "defuse_asset_identifier": "eth:8453:0x8335",
+                "near_token_id": "base-0x8335.omft.near",
+                "status": "PENDING"
+            }]}
+        });
+        let deposits = parse_recent_deposits(&raw).expect("parses");
+        assert_eq!(deposits.len(), 1, "amount without decimals is rejected");
+        assert_eq!(deposits[0].origin_tx_hash, "0xnoamt");
+        assert_eq!(
+            deposits[0].amount, None,
+            "no amount and no decimals is still tracked"
+        );
     }
 
     #[test]
