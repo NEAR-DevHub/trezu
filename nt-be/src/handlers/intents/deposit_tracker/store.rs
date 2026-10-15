@@ -168,6 +168,15 @@ pub async fn upsert_watch(
             fast_until = GREATEST(deposit_watches.fast_until, EXCLUDED.fast_until),
             discovery_until = GREATEST(deposit_watches.discovery_until, EXCLUDED.discovery_until),
             next_poll_at = NOW(),
+            -- A revived watch starts a new life: deposits that settled while it
+            -- was retired are history, not new observations.
+            baseline_keys = CASE
+                WHEN deposit_watches.retired_at IS NULL THEN deposit_watches.baseline_keys
+            END,
+            created_at = CASE
+                WHEN deposit_watches.retired_at IS NULL THEN deposit_watches.created_at
+                ELSE NOW()
+            END,
             retired_at = NULL,
             last_error = NULL,
             attempts = 0,
@@ -231,10 +240,14 @@ fn lease_interval(duration: Duration) -> sqlx::postgres::types::PgInterval {
 }
 
 /// Outcome of one poll. `next_poll_at = None` retires the watch.
+/// `discovery_until` is the claimed snapshot's window: every renewal raises
+/// the stored one, so a mismatch means the watch was renewed mid-poll and
+/// this outcome must neither retire it nor push out its immediate poll.
 pub struct WatchPollOutcome<'a> {
     pub next_poll_at: Option<DateTime<Utc>>,
     pub error: Option<&'a str>,
     pub baseline_keys: Option<&'a [String]>,
+    pub discovery_until: DateTime<Utc>,
 }
 
 pub async fn record_watch_poll(
@@ -245,8 +258,11 @@ pub async fn record_watch_poll(
     sqlx::query(
         r#"
         UPDATE deposit_watches
-        SET next_poll_at = COALESCE($2, next_poll_at),
-            retired_at = CASE WHEN $2 IS NULL THEN NOW() ELSE NULL END,
+        SET next_poll_at = CASE
+                WHEN discovery_until > $5 THEN LEAST(next_poll_at, COALESCE($2, next_poll_at))
+                ELSE COALESCE($2, next_poll_at)
+            END,
+            retired_at = CASE WHEN $2 IS NULL AND discovery_until <= $5 THEN NOW() END,
             last_polled_at = NOW(),
             last_error = $3,
             attempts = CASE WHEN $3 IS NULL THEN 0 ELSE attempts END,
@@ -259,6 +275,7 @@ pub async fn record_watch_poll(
     .bind(outcome.next_poll_at)
     .bind(outcome.error)
     .bind(outcome.baseline_keys)
+    .bind(outcome.discovery_until)
     .execute(pool)
     .await?;
     Ok(())
@@ -417,6 +434,14 @@ pub async fn load_recent_deposits_for_scope(
 /// tracker row. With the bridge mint hash the match is exact on the ledger
 /// NEAR hash; without it, token + decimal amount + time window is the
 /// strongest key available.
+/// The gold row a settled deposit resolves to, with the amount it booked so
+/// a row the provider reported without one can be filled in on confirm.
+#[derive(Debug, Clone, PartialEq, FromRow)]
+pub struct LedgerMatch {
+    pub event_id: i64,
+    pub amount: Option<BigDecimal>,
+}
+
 /// Links a settled public deposit to its gold row: by NEAR mint hash when
 /// the bridge gave one, else by token + amount inside the lookback (Omni,
 /// see `activity::served_by_ledger`). The hashless path may pair two equal
@@ -428,12 +453,12 @@ pub async fn find_public_ledger_match(
     dao_id: &str,
     near_tx_hash: Option<&str>,
     token_id: &str,
-    amount: &BigDecimal,
+    amount: Option<&BigDecimal>,
     not_before: DateTime<Utc>,
-) -> Result<Option<i64>, sqlx::Error> {
-    sqlx::query_scalar(
+) -> Result<Option<LedgerMatch>, sqlx::Error> {
+    sqlx::query_as(
         r#"
-        SELECT g.id
+        SELECT g.id AS event_id, g.amount_in AS amount
         FROM gold_treasury_ledger_events g
         WHERE g.dao_id = $1
           AND g.source_kind = 'public_silver_leg'
@@ -442,7 +467,7 @@ pub async fn find_public_ledger_match(
           AND g.token_in = $3
           AND CASE
                 WHEN $2::text IS NOT NULL THEN g.transaction_hash = $2
-                ELSE g.amount_in = $4 AND g.event_time >= $5
+                ELSE $4::numeric IS NOT NULL AND g.amount_in = $4 AND g.event_time >= $5
               END
           AND NOT EXISTS (
               SELECT 1 FROM in_process_deposits d WHERE d.ledger_event_id = g.id
@@ -466,10 +491,10 @@ pub async fn find_confidential_ledger_match(
     pool: &PgPool,
     dao_id: &str,
     quote_deposit_address: &str,
-) -> Result<Option<i64>, sqlx::Error> {
-    sqlx::query_scalar(
+) -> Result<Option<LedgerMatch>, sqlx::Error> {
+    sqlx::query_as(
         r#"
-        SELECT g.id
+        SELECT g.id AS event_id, g.amount_in AS amount
         FROM bronze_confidential_history_events he
         JOIN gold_treasury_ledger_events g
           ON g.gold_event_key = 'confidential:' || he.id::text
@@ -488,13 +513,14 @@ pub async fn find_confidential_ledger_match(
 pub async fn confirm_ledger(
     pool: &PgPool,
     deposit_id: i64,
-    ledger_event_id: i64,
+    ledger: &LedgerMatch,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
         UPDATE in_process_deposits
         SET status = 'ledger_confirmed',
             ledger_event_id = $2,
+            amount = COALESCE(amount, $3),
             ledger_confirmed_at = NOW(),
             updated_at = NOW()
         WHERE id = $1
@@ -502,7 +528,8 @@ pub async fn confirm_ledger(
         "#,
     )
     .bind(deposit_id)
-    .bind(ledger_event_id)
+    .bind(ledger.event_id)
+    .bind(&ledger.amount)
     .execute(pool)
     .await?;
     Ok(())
@@ -532,6 +559,7 @@ pub async fn schedule_refresh(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::str::FromStr;
 
     async fn seed_dao(pool: &PgPool, dao_id: &str, confidential: bool) {
         sqlx::query(
@@ -724,6 +752,7 @@ mod tests {
                 next_poll_at: Some(now),
                 error: None,
                 baseline_keys: Some(&baseline),
+                discovery_until: watch.discovery_until,
             },
         )
         .await
@@ -755,7 +784,7 @@ mod tests {
                 &watch.dao_id,
                 None,
                 &deposits[0].token_id,
-                &BigDecimal::from(100),
+                Some(&BigDecimal::from(100)),
                 now - Duration::minutes(30),
             )
             .await
@@ -783,25 +812,47 @@ mod tests {
             &watch.dao_id,
             None,
             &deposits[0].token_id,
-            &BigDecimal::from(100),
+            Some(&BigDecimal::from(100)),
             now - Duration::minutes(30),
         )
         .await
         .expect("match query");
-        assert_eq!(matched, Some(ledger_id), "numeric equality ignores scale");
+        let ledger = LedgerMatch {
+            event_id: ledger_id,
+            amount: Some(BigDecimal::from_str("100.000000").unwrap()),
+        };
+        assert_eq!(
+            matched,
+            Some(ledger.clone()),
+            "numeric equality ignores scale"
+        );
+        assert!(
+            find_public_ledger_match(
+                &pool,
+                &watch.dao_id,
+                None,
+                &deposits[0].token_id,
+                None,
+                now - Duration::minutes(30),
+            )
+            .await
+            .expect("match query")
+            .is_none(),
+            "no mint hash and no amount never matches blind"
+        );
         assert_eq!(
             find_public_ledger_match(
                 &pool,
                 &watch.dao_id,
                 Some("MintHash1"),
                 &deposits[0].token_id,
-                &BigDecimal::from(1),
+                None,
                 now,
             )
             .await
             .expect("match query"),
-            Some(ledger_id),
-            "a known mint hash matches regardless of amount and window"
+            Some(ledger.clone()),
+            "a known mint hash matches without an amount or window"
         );
         assert!(
             find_public_ledger_match(
@@ -809,7 +860,7 @@ mod tests {
                 &watch.dao_id,
                 Some("OtherHash"),
                 &deposits[0].token_id,
-                &BigDecimal::from(100),
+                Some(&BigDecimal::from(100)),
                 now - Duration::minutes(30),
             )
             .await
@@ -818,7 +869,12 @@ mod tests {
             "a known mint hash never falls back to amount matching"
         );
 
-        confirm_ledger(&pool, deposits[0].id, ledger_id)
+        sqlx::query("UPDATE in_process_deposits SET amount = NULL WHERE id = $1")
+            .bind(deposits[0].id)
+            .execute(&pool)
+            .await
+            .expect("blank amount");
+        confirm_ledger(&pool, deposits[0].id, &ledger)
             .await
             .expect("confirm");
         assert!(
@@ -828,13 +884,18 @@ mod tests {
                 .is_empty(),
             "confirmed rows leave the feed"
         );
+        let confirmed = load_watch_deposits(&pool, watch.id).await.expect("load");
+        assert_eq!(
+            confirmed[0].amount, ledger.amount,
+            "confirm backfills a missing amount from the gold row"
+        );
         assert!(
             find_public_ledger_match(
                 &pool,
                 &watch.dao_id,
                 None,
                 &deposits[0].token_id,
-                &BigDecimal::from(100),
+                Some(&BigDecimal::from(100)),
                 now - Duration::minutes(30),
             )
             .await
@@ -850,6 +911,7 @@ mod tests {
                 next_poll_at: None,
                 error: None,
                 baseline_keys: None,
+                discovery_until: watch.discovery_until,
             },
         )
         .await
@@ -859,6 +921,149 @@ mod tests {
                 .await
                 .expect("claim after retire")
                 .is_empty()
+        );
+
+        let revived_at = Utc::now();
+        upsert_watch(
+            &pool,
+            &watch.dao_id,
+            WatchKind::Public,
+            None,
+            "eth:8453",
+            None,
+            revived_at + Duration::minutes(10),
+            revived_at + Duration::minutes(120),
+        )
+        .await
+        .expect("revive watch");
+        let revived = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim revived");
+        assert_eq!(revived.len(), 1);
+        assert_eq!(revived[0].id, watch.id, "same watch row");
+        assert_eq!(
+            revived[0].baseline_keys, None,
+            "a revived watch takes a fresh baseline"
+        );
+        assert!(
+            revived[0].created_at >= revived_at,
+            "a revived watch dates from its revival"
+        );
+    }
+
+    #[sqlx::test]
+    async fn live_watch_renewal_keeps_its_baseline(pool: PgPool) {
+        seed_dao(&pool, "live.sputnik-dao.near", false).await;
+        let now = Utc::now();
+        let renew = |pool: PgPool| async move {
+            upsert_watch(
+                &pool,
+                "live.sputnik-dao.near",
+                WatchKind::Public,
+                None,
+                "eth:8453",
+                None,
+                now + Duration::minutes(10),
+                now + Duration::minutes(120),
+            )
+            .await
+            .expect("upsert watch")
+        };
+        renew(pool.clone()).await;
+        let claimed = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim");
+        let watch = &claimed[0];
+        let baseline = vec!["eth:8453:0xseen:nep141:usdc.omft.near".to_string()];
+        record_watch_poll(
+            &pool,
+            watch.id,
+            WatchPollOutcome {
+                next_poll_at: Some(now + Duration::minutes(5)),
+                error: None,
+                baseline_keys: Some(&baseline),
+                discovery_until: watch.discovery_until,
+            },
+        )
+        .await
+        .expect("record poll");
+
+        renew(pool.clone()).await;
+        let renewed = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim renewed");
+        assert_eq!(renewed[0].baseline_keys, Some(baseline));
+        assert_eq!(renewed[0].created_at, watch.created_at);
+    }
+
+    #[sqlx::test]
+    async fn renewal_during_a_poll_survives_the_stale_outcome(pool: PgPool) {
+        seed_dao(&pool, "race.sputnik-dao.near", false).await;
+        let activate = |pool: PgPool, at: DateTime<Utc>| async move {
+            upsert_watch(
+                &pool,
+                "race.sputnik-dao.near",
+                WatchKind::Public,
+                None,
+                "eth:8453",
+                None,
+                at + Duration::minutes(10),
+                at + Duration::minutes(120),
+            )
+            .await
+            .expect("upsert watch")
+        };
+        // Watch whose discovery window already ended: its next poll retires it.
+        activate(pool.clone(), Utc::now() - Duration::minutes(130)).await;
+        let claimed = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim");
+        let snapshot = &claimed[0];
+        assert!(snapshot.discovery_until < Utc::now());
+
+        // The user reopens the address while that poll is in flight.
+        activate(pool.clone(), Utc::now()).await;
+
+        // The stale poll concludes "retire": it must not win.
+        record_watch_poll(
+            &pool,
+            snapshot.id,
+            WatchPollOutcome {
+                next_poll_at: None,
+                error: None,
+                baseline_keys: None,
+                discovery_until: snapshot.discovery_until,
+            },
+        )
+        .await
+        .expect("record stale retire");
+        let renewed = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim renewed");
+        assert_eq!(renewed.len(), 1, "renewed watch is still live and due");
+        assert_eq!(renewed[0].id, snapshot.id);
+
+        // Same race with a stale error backoff: the renewal's immediate poll wins.
+        activate(pool.clone(), Utc::now()).await;
+        record_watch_poll(
+            &pool,
+            snapshot.id,
+            WatchPollOutcome {
+                next_poll_at: Some(Utc::now() + Duration::minutes(10)),
+                error: Some("bridge timeout"),
+                baseline_keys: None,
+                discovery_until: renewed[0].discovery_until,
+            },
+        )
+        .await
+        .expect("record stale backoff");
+        assert_eq!(
+            claim_due_watches(&pool, 10, Duration::seconds(60))
+                .await
+                .expect("claim after stale backoff")
+                .len(),
+            1,
+            "stale backoff does not delay the renewed watch"
         );
     }
 

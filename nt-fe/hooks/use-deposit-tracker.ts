@@ -69,13 +69,25 @@ export function useDepositTracker(options: {
 
     // A row shown once stays visible for this showing, so a deposit watched
     // from "detected" still flips to "received" instead of disappearing.
-    const shownIds = useRef(new Set<number>());
+    // The memory belongs to one showing of one scope: a new stamp, chain,
+    // quote, or treasury starts with nothing remembered.
+    const showingKey = [
+        accountId ?? "",
+        quoteDepositAddress ?? "",
+        chain ?? "",
+        shownAtMs ?? "",
+    ].join("|");
+    const shown = useRef({ key: showingKey, ids: new Set<number>() });
+    if (shown.current.key !== showingKey) {
+        shown.current = { key: showingKey, ids: new Set<number>() };
+    }
+    const shownIds = shown.current.ids;
     const deposits = (query.data?.deposits ?? []).filter((deposit) => {
         if (quoteDepositAddress) return true;
         // No stamp yet (first render, or not on the address step): the
         // showing has not started, so nothing is visible or remembered.
         if (shownAtMs == null) return false;
-        if (shownIds.current.has(deposit.id)) return true;
+        if (shownIds.has(deposit.id)) return true;
         const detected = Date.parse(deposit.detectedAt);
         const visible =
             !Number.isFinite(detected) ||
@@ -83,7 +95,7 @@ export function useDepositTracker(options: {
                 (TERMINAL_STATUSES.has(deposit.status)
                     ? shownAtMs
                     : shownAtMs - inFlightLookbackMs);
-        if (visible) shownIds.current.add(deposit.id);
+        if (visible) shownIds.add(deposit.id);
         return visible;
     });
 

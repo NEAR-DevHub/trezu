@@ -7,9 +7,10 @@
 //! `defuse_asset_identifier` is the chain-scoped id (`eth:8453:0x…`), not the
 //! NEP-141 id; `near_token_id` is the omft contract the mint credits.
 //! `mint_tx_hash` is the NEAR mint transaction, the same hash the ledger row
-//! carries. There is no deposit id; the list is the newest 20 (`limit`,
-//! `offset`, `hasMore`), enough for recent deposits; `amount` is a JSON number.
+//! carries. There is no deposit id; the list is newest-first and paged by
+//! `limit`/`offset` with `hasMore`; `amount` is a JSON number.
 
+use std::collections::HashSet;
 use std::sync::LazyLock;
 
 use bigdecimal::BigDecimal;
@@ -25,6 +26,9 @@ use super::DepositStatus;
 use super::store::ObservedDeposit;
 
 const BRIDGE_MAX_PER_SECOND: u32 = 5;
+const PAGE_SIZE: usize = 50;
+/// Pages past the first are read only to refresh deposits already tracked.
+const MAX_LOOKUP_PAGES: usize = 4;
 const BRIDGE_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(15);
 
 static BRIDGE_LIMITER: LazyLock<RateLimiter> =
@@ -74,6 +78,14 @@ struct RawBridgeDeposit {
 struct RecentDepositsResult {
     #[serde(default)]
     deposits: Vec<RawBridgeDeposit>,
+    #[serde(default, rename = "hasMore")]
+    has_more: bool,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct RecentDepositsPage {
+    pub deposits: Vec<BridgeDeposit>,
+    pub has_more: bool,
 }
 
 /// One bridge deposit, normalised to tracker vocabulary.
@@ -179,14 +191,48 @@ impl<'a> BridgeDepositsClient<'a> {
         Self { state }
     }
 
-    /// All recent deposits the bridge knows for `account_id`, every chain.
-    pub async fn recent_deposits(&self, account_id: &str) -> Result<Vec<BridgeDeposit>, String> {
+    /// The newest page of deposits the bridge knows for `account_id`, every chain.
+    pub async fn recent_deposits(&self, account_id: &str) -> Result<RecentDepositsPage, String> {
+        self.page(account_id, 0).await
+    }
+
+    /// Deposits with the given keys from the pages after the first, read
+    /// until every key was seen, the list ends, or the page budget runs out.
+    pub async fn lookup_deposits(
+        &self,
+        account_id: &str,
+        keys: &[String],
+    ) -> Result<Vec<BridgeDeposit>, String> {
+        let mut pending: HashSet<&str> = keys.iter().map(String::as_str).collect();
+        let mut found = Vec::new();
+        for page_index in 1..=MAX_LOOKUP_PAGES {
+            if pending.is_empty() {
+                break;
+            }
+            let page = self.page(account_id, page_index * PAGE_SIZE).await?;
+            for deposit in page.deposits {
+                if pending.remove(deposit.key.as_str()) {
+                    found.push(deposit);
+                }
+            }
+            if !page.has_more {
+                break;
+            }
+        }
+        Ok(found)
+    }
+
+    async fn page(&self, account_id: &str, offset: usize) -> Result<RecentDepositsPage, String> {
         BRIDGE_LIMITER.acquire().await;
 
         let request = JsonRpcRequest::new(
             "recentDepositsFetch",
             "recent_deposits",
-            vec![serde_json::json!({ "account_id": account_id })],
+            vec![serde_json::json!({
+                "account_id": account_id,
+                "limit": PAGE_SIZE,
+                "offset": offset,
+            })],
         );
         let response = self
             .state
@@ -224,7 +270,7 @@ fn error_chain(error: &dyn std::error::Error) -> String {
     text
 }
 
-fn parse_recent_deposits(raw: &Value) -> Result<Vec<BridgeDeposit>, String> {
+fn parse_recent_deposits(raw: &Value) -> Result<RecentDepositsPage, String> {
     if let Some(error) = raw.get("error") {
         let message = error
             .as_str()
@@ -243,11 +289,14 @@ fn parse_recent_deposits(raw: &Value) -> Result<Vec<BridgeDeposit>, String> {
         .ok_or_else(|| "bridge recent_deposits response missing result".to_string())?;
     let parsed: RecentDepositsResult = serde_json::from_value(result.clone())
         .map_err(|e| format!("bridge recent_deposits result parse failed: {e}"))?;
-    Ok(parsed
-        .deposits
-        .into_iter()
-        .filter_map(BridgeDeposit::from_raw)
-        .collect())
+    Ok(RecentDepositsPage {
+        deposits: parsed
+            .deposits
+            .into_iter()
+            .filter_map(BridgeDeposit::from_raw)
+            .collect(),
+        has_more: parsed.has_more,
+    })
 }
 
 #[cfg(test)]
@@ -282,9 +331,11 @@ mod tests {
                 "account_id": "dao.sputnik-dao.near",
                 "address": "0xdeposit",
                 "status": "SOMETHING_NEW"
-            }]}
+            }], "hasMore": true }
         });
-        let deposits = parse_recent_deposits(&raw).expect("parses");
+        let page = parse_recent_deposits(&raw).expect("parses");
+        assert!(page.has_more);
+        let deposits = page.deposits;
         assert_eq!(deposits.len(), 1, "unknown statuses are dropped");
         let deposit = &deposits[0];
         assert_eq!(deposit.key, "eth:8453:0xabc:eth:8453:0x8335");
@@ -329,7 +380,7 @@ mod tests {
                 "status": "COMPLETED"
             }]}
         });
-        let deposits = parse_recent_deposits(&raw).expect("parses");
+        let deposits = parse_recent_deposits(&raw).expect("parses").deposits;
         assert_eq!(
             deposits[0].ledger_token_id(),
             "intents.near:nep245:v2_1.omni.hot.tg:56_2CMMyVTGZkeyNZTSvS5sarzfir6g"
@@ -359,7 +410,7 @@ mod tests {
                 "status": "PENDING"
             }]}
         });
-        let deposits = parse_recent_deposits(&raw).expect("parses");
+        let deposits = parse_recent_deposits(&raw).expect("parses").deposits;
         assert_eq!(deposits.len(), 1, "amount without decimals is rejected");
         assert_eq!(deposits[0].origin_tx_hash, "0xnoamt");
         assert_eq!(

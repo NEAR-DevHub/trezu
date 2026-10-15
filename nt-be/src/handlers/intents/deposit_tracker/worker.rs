@@ -2,6 +2,7 @@
 //! in-process rows, hand finalized deposits to history ingestion, and retire
 //! rows once the ledger carries them.
 
+use std::collections::HashSet;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -135,6 +136,7 @@ impl<'a> DepositTrackerWorker<'a> {
                     next_poll_at: outcome.next_poll_at,
                     error: outcome.error.as_deref(),
                     baseline_keys: outcome.baseline_keys.as_deref(),
+                    discovery_until: watch.discovery_until,
                 },
             )
             .await?;
@@ -198,9 +200,9 @@ impl<'a> DepositTrackerWorker<'a> {
     }
 
     async fn poll_public(&self, watch: &DepositWatch) -> Result<PollResult, String> {
-        let deposits = BridgeDepositsClient::new(self.state)
-            .recent_deposits(&watch.dao_id)
-            .await?;
+        let client = BridgeDepositsClient::new(self.state);
+        let page = client.recent_deposits(&watch.dao_id).await?;
+        let deposits = &page.deposits;
         let known = store::load_watch_deposits(self.pool(), watch.id)
             .await
             .map_err(|error| format!("load deposits: {error}"))?;
@@ -215,10 +217,12 @@ impl<'a> DepositTrackerWorker<'a> {
         let candidates: Vec<_> = match watch.baseline_keys.as_deref() {
             // First read: a settled deposit the bridge recorded before this
             // watch existed is history. One recorded after it (settled while
-            // the first poll was failing) and anything in flight is tracked.
+            // the first poll was failing), anything in flight, and anything
+            // this watch already tracks in an earlier life is observed.
             None => {
                 let is_history = |deposit: &BridgeDeposit| {
-                    deposit.status.tracker_status() != DepositStatus::Detected
+                    known_status(&deposit.key).is_none()
+                        && deposit.status.tracker_status() != DepositStatus::Detected
                         && deposit
                             .created_at
                             .is_none_or(|recorded_at| recorded_at < watch.created_at)
@@ -254,6 +258,33 @@ impl<'a> DepositTrackerWorker<'a> {
                 .map_err(|error| format!("record deposit {}: {error}", deposit.key))?;
             if transition.changed() {
                 result.changed += 1;
+            }
+        }
+
+        // A tracked deposit still in flight that newer deposits pushed off
+        // the first page keeps advancing from the pages behind it.
+        if page.has_more {
+            let seen: HashSet<&str> = deposits.iter().map(|d| d.key.as_str()).collect();
+            let outstanding: Vec<String> = known
+                .iter()
+                .filter(|deposit| deposit.status == DepositStatus::Detected)
+                .filter(|deposit| !seen.contains(deposit.provider_deposit_key.as_str()))
+                .map(|deposit| deposit.provider_deposit_key.clone())
+                .collect();
+            if !outstanding.is_empty() {
+                for deposit in client.lookup_deposits(&watch.dao_id, &outstanding).await? {
+                    let transition = self
+                        .record_observation(
+                            watch,
+                            &deposit.observed(),
+                            Some(DepositStatus::Detected),
+                        )
+                        .await
+                        .map_err(|error| format!("record deposit {}: {error}", deposit.key))?;
+                    if transition.changed() {
+                        result.changed += 1;
+                    }
+                }
             }
         }
         Ok(result)
@@ -401,21 +432,18 @@ impl<'a> DepositTrackerWorker<'a> {
             .iter()
             .filter(|deposit| deposit.status == DepositStatus::Finalized)
         {
-            let ledger_event_id = match watch.kind {
-                WatchKind::Public => match deposit.amount.as_ref() {
-                    Some(amount) => {
-                        store::find_public_ledger_match(
-                            self.pool(),
-                            &deposit.dao_id,
-                            deposit.near_tx_hash.as_deref(),
-                            &deposit.token_id,
-                            amount,
-                            deposit.detected_at - LEDGER_MATCH_LOOKBACK,
-                        )
-                        .await?
-                    }
-                    None => None,
-                },
+            let ledger = match watch.kind {
+                WatchKind::Public => {
+                    store::find_public_ledger_match(
+                        self.pool(),
+                        &deposit.dao_id,
+                        deposit.near_tx_hash.as_deref(),
+                        &deposit.token_id,
+                        deposit.amount.as_ref(),
+                        deposit.detected_at - LEDGER_MATCH_LOOKBACK,
+                    )
+                    .await?
+                }
                 WatchKind::Confidential => {
                     store::find_confidential_ledger_match(
                         self.pool(),
@@ -426,8 +454,8 @@ impl<'a> DepositTrackerWorker<'a> {
                 }
             };
 
-            if let Some(ledger_event_id) = ledger_event_id {
-                store::confirm_ledger(self.pool(), deposit.id, ledger_event_id).await?;
+            if let Some(ledger) = ledger {
+                store::confirm_ledger(self.pool(), deposit.id, &ledger).await?;
                 changed += 1;
                 continue;
             }

@@ -662,6 +662,52 @@ mod tests {
     use super::*;
     use chrono::TimeZone;
 
+    fn activity(id: i64) -> RecentActivity {
+        RecentActivity {
+            id,
+            block_time: Utc.with_ymd_and_hms(2026, 10, 1, 0, 0, 0).unwrap(),
+            token_id: "near".to_string(),
+            token_metadata: TokenMetadata::create_near_metadata(None, None),
+            counterparty: None,
+            signer_id: None,
+            receiver_id: None,
+            amount: "1".parse().unwrap(),
+            transaction_hashes: Vec::new(),
+            receipt_ids: Vec::new(),
+            value_usd: None,
+            proposal_id: None,
+            quote_deposit_address: None,
+            fully_confidential: None,
+            has_app_fee: None,
+            swap: None,
+            action_kind: None,
+            method_name: None,
+            notes: None,
+        }
+    }
+
+    #[test]
+    fn usd_filtered_total_counts_only_surviving_in_process_rows() {
+        // One in-process row (negative id) survived the USD filter; another
+        // was dropped before this point. Three ledger rows survived.
+        let rows = vec![activity(-7), activity(1), activity(2), activity(3)];
+        let page = paginate_recent_activity(rows, 2, 99, true);
+        assert_eq!(page.total, 3, "ledger rows passing the filter");
+        assert_eq!(
+            page.data.iter().map(|a| a.id).collect::<Vec<_>>(),
+            vec![-7, 1, 2],
+            "limit ledger rows plus the surviving in-process row"
+        );
+    }
+
+    #[test]
+    fn unfiltered_total_is_the_ledger_count() {
+        let rows = vec![activity(-7), activity(-8), activity(1), activity(2)];
+        let page = paginate_recent_activity(rows, 5, 42, false);
+        assert_eq!(page.total, 42);
+        assert_eq!(page.data.len(), 4);
+    }
+
     #[test]
     fn csv_field_quotes_commas_and_embedded_quotes() {
         assert_eq!(csv_field("rent"), "rent");
@@ -1414,14 +1460,10 @@ pub async fn get_recent_activity(
             tracing::warn!("Failed to load in-process deposits: {}", e);
             Vec::new()
         });
-    let in_process_count = in_process_rows.len();
     let mut enriched_changes = {
         in_process_rows.append(&mut enriched_changes);
         in_process_rows
     };
-    // `total` stays ledger-only: pages are offset by ledger rows, so counting
-    // the in-process rows would promise a trailing page with nothing on it.
-
     // Enrich all recent-activity rows with chain metadata
     let activity_token_ids: Vec<String> = enriched_changes
         .iter()
@@ -1512,25 +1554,36 @@ pub async fn get_recent_activity(
         })
         .collect::<Vec<_>>();
 
-    // If we're filtering by USD, we need to return the actual filtered total
-    // since we can't count USD-filtered items in SQL
-    let actual_total = if params.min_usd_value.is_some() {
-        activities.len().saturating_sub(in_process_count) as i64
+    Ok(Json(paginate_recent_activity(
+        activities,
+        limit as usize,
+        total,
+        params.min_usd_value.is_some(),
+    )))
+}
+
+/// Page one carries the in-process rows that survived filtering on top of
+/// `limit` ledger rows. `total` stays ledger-only: later pages offset by
+/// ledger rows, so counting in-process rows would promise an empty trailing
+/// page. Under a USD filter the ledger total cannot come from SQL, so it is
+/// the filtered rows minus the in-process ones among them (negative ids).
+fn paginate_recent_activity(
+    activities: Vec<RecentActivity>,
+    limit: usize,
+    ledger_total: i64,
+    usd_filtered: bool,
+) -> RecentActivityResponse {
+    let in_process_kept = activities.iter().filter(|a| a.id < 0).count();
+    let total = if usd_filtered {
+        activities.len().saturating_sub(in_process_kept) as i64
     } else {
-        total
+        ledger_total
     };
-
-    // Only return the requested number of results (pagination), plus the
-    // in-process rows leading page one.
-    let paginated_activities: Vec<RecentActivity> = activities
+    let data = activities
         .into_iter()
-        .take(limit as usize + in_process_count)
+        .take(limit + in_process_kept)
         .collect();
-
-    Ok(Json(RecentActivityResponse {
-        data: paginated_activities,
-        total: actual_total,
-    }))
+    RecentActivityResponse { data, total }
 }
 
 /// The activity feed's "from" party for one gold ledger row.
