@@ -130,6 +130,20 @@ impl WatchActivation {
         .await
     }
 
+    /// Share page for a one-time quote: `dao_id` is the quote address itself
+    /// (that is what the page re-derives the bridge address with). Renews
+    /// the quote's watch; `Ok(false)` when none exists.
+    pub async fn renew_confidential_by_quote(&self, pool: &PgPool) -> Result<bool, sqlx::Error> {
+        let now = Utc::now();
+        store::renew_confidential_watch_by_quote(
+            pool,
+            &self.dao_id,
+            now + FAST_WINDOW,
+            now + DISCOVERY_WINDOW,
+        )
+        .await
+    }
+
     /// Confidential treasuries: one watch per one-time quote. The watch window
     /// is bounded by the quote deadline when that is sooner.
     pub async fn activate_confidential(

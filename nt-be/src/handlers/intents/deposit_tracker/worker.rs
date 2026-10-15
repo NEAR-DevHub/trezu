@@ -588,7 +588,7 @@ fn jitter(delay: Duration) -> Duration {
 /// 1Click status → tracker state. `PENDING_DEPOSIT` is "address unused",
 /// not deposit evidence, so it yields no row. Unknown statuses are treated
 /// as in-progress rather than terminal.
-fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
+pub(crate) fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
     match raw.trim().to_ascii_uppercase().as_str() {
         "PENDING_DEPOSIT" => None,
         "SUCCESS" => Some(DepositStatus::Finalized),
@@ -600,7 +600,7 @@ fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
 /// Credited amount once settled, otherwise the deposit 1Click has observed
 /// on chain. Never the quote nominal: that is only what the address was
 /// minted with, not what the user sent.
-fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
+pub(crate) fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
     let details = full.swap_details.as_ref()?;
     let text = if matches!(full.status, SwapStatus::Success) {
         details

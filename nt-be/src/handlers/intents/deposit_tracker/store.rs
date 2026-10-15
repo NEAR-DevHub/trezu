@@ -397,6 +397,39 @@ pub async fn load_visible_deposits(
     .await
 }
 
+/// Share pages re-derive the bridge address with the quote address as the
+/// account id, so they cannot upsert by DAO. Renewing the quote's existing
+/// watch (reviving it if discovery already stopped) keeps the payer's own
+/// deposit tracked for as long as they keep the page open. `Ok(false)`: no
+/// watch exists for this quote (minted before the tracker, or not a quote).
+pub async fn renew_confidential_watch_by_quote(
+    pool: &PgPool,
+    quote_deposit_address: &str,
+    fast_until: DateTime<Utc>,
+    discovery_until: DateTime<Utc>,
+) -> Result<bool, sqlx::Error> {
+    let result = sqlx::query(
+        r#"
+        UPDATE deposit_watches
+        SET fast_until = GREATEST(fast_until, $2),
+            discovery_until = GREATEST(discovery_until, $3),
+            next_poll_at = NOW(),
+            retired_at = NULL,
+            last_error = NULL,
+            attempts = 0,
+            updated_at = NOW()
+        WHERE kind = 'confidential'
+          AND quote_deposit_address = $1
+        "#,
+    )
+    .bind(quote_deposit_address)
+    .bind(fast_until)
+    .bind(discovery_until)
+    .execute(pool)
+    .await?;
+    Ok(result.rows_affected() > 0)
+}
+
 /// Rows the deposit modal shows for one address scope: a confidential quote
 /// (its provider key) or a public chain. Confirmed rows stay for the
 /// activity window so the modal can say "received".
@@ -628,6 +661,82 @@ mod tests {
                 "failed is terminal"
             );
         }
+    }
+
+    #[sqlx::test]
+    async fn share_page_renews_a_quote_watch_by_its_address(pool: PgPool) {
+        seed_dao(&pool, "dao.sputnik-dao.near", true).await;
+        let now = Utc::now();
+        upsert_watch(
+            &pool,
+            "dao.sputnik-dao.near",
+            WatchKind::Confidential,
+            Some("quote-addr"),
+            "eth:8453",
+            None,
+            now + Duration::minutes(10),
+            now + Duration::minutes(120),
+        )
+        .await
+        .expect("upsert watch");
+        // Discovery ran out before the payer opened the link.
+        sqlx::query(
+            "UPDATE deposit_watches SET retired_at = NOW(), attempts = 7, \
+             last_error = 'x' WHERE quote_deposit_address = 'quote-addr'",
+        )
+        .execute(&pool)
+        .await
+        .expect("retire");
+        assert!(
+            claim_due_watches(&pool, 10, Duration::seconds(60))
+                .await
+                .expect("claim")
+                .is_empty(),
+            "retired watch is not due"
+        );
+
+        assert!(
+            !renew_confidential_watch_by_quote(
+                &pool,
+                "unknown-quote",
+                now + Duration::minutes(10),
+                now + Duration::minutes(120),
+            )
+            .await
+            .expect("renew unknown"),
+            "no watch for an unknown quote"
+        );
+        let later = now + Duration::minutes(30);
+        assert!(
+            renew_confidential_watch_by_quote(
+                &pool,
+                "quote-addr",
+                later + Duration::minutes(10),
+                later + Duration::minutes(120),
+            )
+            .await
+            .expect("renew"),
+        );
+
+        let revived = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim after renew");
+        assert_eq!(revived.len(), 1, "renewal revives the watch");
+        let watch = &revived[0];
+        assert_eq!(watch.quote_deposit_address.as_deref(), Some("quote-addr"));
+        assert_eq!(
+            watch.attempts, 1,
+            "attempt counter restarted (claim adds one)"
+        );
+        let last_error: Option<String> =
+            sqlx::query_scalar("SELECT last_error FROM deposit_watches WHERE id = $1")
+                .bind(watch.id)
+                .fetch_one(&pool)
+                .await
+                .expect("read last_error");
+        assert!(last_error.is_none(), "renewal clears the last error");
+        assert!(watch.fast_until >= later + Duration::minutes(9));
+        assert!(watch.discovery_until >= later + Duration::minutes(119));
     }
 
     #[sqlx::test]
