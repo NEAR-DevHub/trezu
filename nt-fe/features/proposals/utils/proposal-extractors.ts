@@ -13,6 +13,7 @@ import {
 } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { getKindFromProposal } from "@/lib/config-utils";
+import { sumAppFeesBps } from "@/lib/exchange-fee";
 import { computeQuoteNetworkFee } from "@/lib/intents-fee";
 import type {
     FunctionCallAction,
@@ -553,6 +554,16 @@ export function extractExchangeRequestData(
             : hasAppFeeRaw === "false"
               ? false
               : undefined;
+    const appFeeBpsRaw = decodeProposalDescription(
+        "appFeeBps",
+        proposal.description,
+    );
+    const appFeeBps =
+        appFeeBpsRaw !== undefined &&
+        appFeeBpsRaw !== "" &&
+        Number.isFinite(Number(appFeeBpsRaw))
+            ? Number(appFeeBpsRaw)
+            : undefined;
     const timeEstimateRaw = decodeProposalDescription(
         "timeEstimate",
         proposal.description,
@@ -625,6 +636,7 @@ export function extractExchangeRequestData(
         slippage: slippage || undefined,
         quoteDeadline: quoteDeadline || undefined,
         hasAppFee,
+        appFeeBps,
     };
 }
 
@@ -983,6 +995,7 @@ export function extractConfidentialRequestData(
                     // Absent on older quotes, which always charged. Explicit
                     // false hides the row when the quote did not inject a fee.
                     hasAppFee: quoteResponse.hasAppFee,
+                    appFeeBps: sumAppFeesBps(quoteRequest.appFees) ?? undefined,
                 } as SwapRequestData,
             };
             title = "Confidential Exchange";

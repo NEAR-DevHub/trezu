@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Dirección de depósito copiada",
             "quoteExpires": "La cotización caduca",
             "exchangeFee": "Comisión de intercambio",
-            "exchangeFeeTooltip": "La comisión del 0,70% cubre los costes del protocolo NEAR Intents para facilitar tu operación y la comisión del widget de Trezu. Este importe se calcula automáticamente en la tasa cotizada."
+            "exchangeFeeTooltip": "Incluye la comisión de NEAR Intents y la comisión de Trezu. Ya está incluida en tu tipo cotizado.",
+            "exchangeFeeIntentsOnlyTooltip": "Incluye la comisión de NEAR Intents. Ya está incluida en tu tipo cotizado."
         },
         "approveWithin24h": "Aprueba esta solicitud en 24 horas, de lo contrario caducará. Te recomendamos confirmar cuanto antes.",
         "confirmSubmit": "Confirmar y enviar solicitud",

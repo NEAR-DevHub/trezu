@@ -226,6 +226,8 @@ export interface SwapRequestData {
     quoteDeadline?: string;
     /** Absent on proposals created before the flag was stored. */
     hasAppFee?: boolean;
+    /** Total fee charged, in basis points. Absent on older proposals. */
+    appFeeBps?: number;
 }
 
 /**

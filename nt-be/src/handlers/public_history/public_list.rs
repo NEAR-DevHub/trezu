@@ -13,7 +13,7 @@ use serde_json::Value;
 use sqlx::{PgPool, QueryBuilder, Row};
 
 use crate::AppState;
-use crate::handlers::intents::app_fee::stored_has_app_fee;
+use crate::handlers::intents::app_fee::{stored_app_fee_bps, stored_has_app_fee};
 use crate::handlers::public_history::quotes::{
     proposal_quote_from_metadata, quote_destination_token_id,
 };
@@ -516,6 +516,7 @@ struct LegRow {
     quote_deposit_address: Option<String>,
     notes: Option<String>,
     has_app_fee: Option<bool>,
+    app_fee_bps: Option<u32>,
     usd_value: Option<BigDecimal>,
     action_kind: String,
     swap_sent_token: Option<String>,
@@ -554,6 +555,10 @@ impl LegRow {
         stored_has_app_fee(row.quote_metadata.as_ref())
     }
 
+    fn app_fee_bps(row: &PublicGoldRow) -> Option<u32> {
+        stored_app_fee_bps(row.quote_metadata.as_ref())
+    }
+
     fn from_gold(row: PublicGoldRow) -> Vec<Self> {
         match row.transaction_type.as_str() {
             "deposit" => row
@@ -589,6 +594,7 @@ impl LegRow {
                         quote_deposit_address: row.quote_deposit_address.clone(),
                         notes: row.notes.clone(),
                         has_app_fee: Self::has_app_fee(&row),
+                        app_fee_bps: Self::app_fee_bps(&row),
                         usd_value: row.amount_in_usd.clone(),
                         action_kind: "PublicDeposit".to_string(),
                         swap_sent_token: None,
@@ -650,6 +656,7 @@ impl LegRow {
                         quote_deposit_address: row.quote_deposit_address.clone(),
                         notes: row.notes.clone(),
                         has_app_fee: Self::has_app_fee(&row),
+                        app_fee_bps: Self::app_fee_bps(&row),
                         usd_value: row.amount_out_usd.clone(),
                         action_kind,
                         swap_sent_token: None,
@@ -713,6 +720,7 @@ impl LegRow {
             quote_deposit_address: row.quote_deposit_address.clone(),
             notes: row.notes.clone(),
             has_app_fee: Self::has_app_fee(&row),
+            app_fee_bps: Self::app_fee_bps(&row),
             usd_value: row
                 .amount_out_usd
                 .clone()
@@ -767,6 +775,7 @@ impl LegRow {
             quote_deposit_address: self.quote_deposit_address.clone(),
             fully_confidential: None,
             has_app_fee: self.has_app_fee,
+            app_fee_bps: self.app_fee_bps,
             notes: self.notes.clone(),
         }
     }

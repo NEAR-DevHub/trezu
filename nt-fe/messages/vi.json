@@ -1620,7 +1620,8 @@
             "depositAddressCopied": "Đã sao chép địa chỉ nạp tiền",
             "quoteExpires": "Hết hạn báo giá",
             "exchangeFee": "Phí trao đổi",
-            "exchangeFeeTooltip": "Phí 0.70% phát sinh ở đây bao gồm chi phí giao thức NEAR Intents để hỗ trợ giao dịch của bạn và phí widget Trezu. Số tiền này được tự động tính vào tỷ giá đã báo của bạn."
+            "exchangeFeeTooltip": "Bao gồm phí NEAR Intents và phí Trezu. Đã được tính trong tỷ giá báo giá của bạn.",
+            "exchangeFeeIntentsOnlyTooltip": "Bao gồm phí NEAR Intents. Đã được tính trong tỷ giá báo giá của bạn."
         },
         "approveWithin24h": "Vui lòng phê duyệt yêu cầu này trong vòng 24 giờ, nếu không nó sẽ hết hạn. Chúng tôi khuyên bạn xác nhận càng sớm càng tốt.",
         "confirmSubmit": "Xác nhận và gửi yêu cầu",
