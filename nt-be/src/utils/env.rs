@@ -226,7 +226,7 @@ impl Default for EnvVars {
             oneclick_app_fee_bps: std::env::var("ONECLICK_APP_FEE_BPS")
                 .ok()
                 .and_then(|s| s.parse().ok())
-                .or(Some(35)), // Default: 0.35%
+                .or(Some(15)), // Default: 0.15%; 1Click adds its 0.20%, 0.35% in total
             oneclick_app_fee_recipient: std::env::var("ONECLICK_APP_FEE_RECIPIENT")
                 .ok()
                 .filter(|s| !s.is_empty())

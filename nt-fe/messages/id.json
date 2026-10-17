@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Alamat deposit disalin",
             "quoteExpires": "Kuotasi Berakhir",
             "exchangeFee": "Biaya Pertukaran",
-            "exchangeFeeTooltip": "Biaya 0,70% yang dikenakan di sini menutupi biaya protokol NEAR Intents untuk memfasilitasi perdagangan Anda dan biaya widget Trezu. Jumlah ini secara otomatis dihitung ke dalam nilai tukar yang dikutip Anda."
+            "exchangeFeeTooltip": "Termasuk biaya NEAR Intents dan biaya Trezu. Sudah termasuk dalam kurs yang ditawarkan.",
+            "exchangeFeeIntentsOnlyTooltip": "Termasuk biaya NEAR Intents. Sudah termasuk dalam kurs yang ditawarkan."
         },
         "approveWithin24h": "Silakan setujui permintaan ini dalam 24 jam, jika tidak akan kedaluwarsa. Kami sarankan untuk mengonfirmasi sesegera mungkin.",
         "confirmSubmit": "Konfirmasi dan Kirim Permintaan",

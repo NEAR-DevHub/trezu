@@ -128,6 +128,8 @@ pub struct EnrichedBalanceChange {
     /// swaps, which always charged an app fee.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_app_fee: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_fee_bps: Option<u32>,
     /// Proposer's comment from the create-request form (`memo`/`comment`),
     /// stored as `notes` on the proposal.
     #[serde(skip_serializing_if = "Option::is_none")]

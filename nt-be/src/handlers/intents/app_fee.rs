@@ -11,6 +11,18 @@ pub fn stored_has_app_fee(quote: Option<&Value>) -> Option<bool> {
     has_our_app_fee(quote, &our_app_fee_recipient())
 }
 
+/// Total of every fee in the stored quote's `appFees`, in basis points: ours
+/// plus 1Click's own protocol fee. This is what the swap really cost the user.
+/// `None` means the fee list is missing (older swaps).
+pub fn stored_app_fee_bps(quote: Option<&Value>) -> Option<u32> {
+    let fees = quote_request(quote?)?.get("appFees")?.as_array()?;
+    let total: u64 = fees
+        .iter()
+        .filter_map(|fee| fee.get("fee").and_then(Value::as_u64))
+        .sum();
+    Some(u32::try_from(total).unwrap_or(u32::MAX))
+}
+
 fn our_app_fee_recipient() -> String {
     std::env::var("ONECLICK_APP_FEE_RECIPIENT")
         .ok()
@@ -56,6 +68,39 @@ mod tests {
 
     const OURS: &str = "trezu.sputnik-dao.near";
     const PROTOCOL: &str = "5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd";
+
+    #[test]
+    fn app_fee_bps_sums_every_fee_in_the_quote() {
+        let quote = json!({
+            "quoteRequest": {
+                "appFees": [
+                    { "fee": 15, "recipient": OURS },
+                    { "fee": 20, "recipient": PROTOCOL }
+                ]
+            }
+        });
+        assert_eq!(stored_app_fee_bps(Some(&quote)), Some(35));
+
+        let stable = json!({
+            "quoteRequest": { "appFees": [{ "fee": 1, "recipient": PROTOCOL }] }
+        });
+        assert_eq!(stored_app_fee_bps(Some(&stable)), Some(1));
+
+        let public_envelope = json!({
+            "status": { "quoteResponse": { "quoteRequest": {
+                "appFees": [{ "fee": 18, "recipient": OURS }, { "fee": 18, "recipient": PROTOCOL }]
+            } } }
+        });
+        assert_eq!(stored_app_fee_bps(Some(&public_envelope)), Some(36));
+    }
+
+    #[test]
+    fn app_fee_bps_is_unknown_without_a_fee_list() {
+        assert_eq!(stored_app_fee_bps(None), None);
+        assert_eq!(stored_app_fee_bps(Some(&json!({}))), None);
+        let empty = json!({ "quoteRequest": { "appFees": [] } });
+        assert_eq!(stored_app_fee_bps(Some(&empty)), Some(0));
+    }
 
     #[test]
     fn older_quotes_without_app_fees_are_unknown() {

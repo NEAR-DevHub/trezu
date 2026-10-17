@@ -334,6 +334,8 @@ export interface RecentActivity {
      * Missing on older swaps, which always charged an app fee.
      */
     hasAppFee?: boolean | null;
+    /** Total fee charged, in basis points, from the stored quote. */
+    appFeeBps?: number | null;
     swap?: SwapInfo;
     actionKind?: string | null;
     methodName?: string | null;

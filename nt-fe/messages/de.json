@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Einzahlungsadresse kopiert",
             "quoteExpires": "Angebot läuft ab",
             "exchangeFee": "Tauschgebühr",
-            "exchangeFeeTooltip": "Die hier anfallende Gebühr von 0,70 % deckt die Kosten des NEAR Intents-Protokolls zur Abwicklung Ihres Trades sowie die Trezu-Widget-Gebühr. Dieser Betrag wird automatisch in Ihren angebotenen Kurs einberechnet."
+            "exchangeFeeTooltip": "Enthält die NEAR-Intents-Gebühr und die Trezu-Gebühr. Bereits in Ihrem angebotenen Kurs enthalten.",
+            "exchangeFeeIntentsOnlyTooltip": "Enthält die NEAR-Intents-Gebühr. Bereits in Ihrem angebotenen Kurs enthalten."
         },
         "approveWithin24h": "Bitte genehmigen Sie diese Anfrage innerhalb von 24 Stunden, andernfalls läuft sie ab. Wir empfehlen, so bald wie möglich zu bestätigen.",
         "confirmSubmit": "Anfrage bestätigen und absenden",

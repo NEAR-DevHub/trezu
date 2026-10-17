@@ -2,7 +2,7 @@ import type { Token } from "@/components/token-input";
 import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import { decimalFromBaseUnits } from "@/lib/amount-format";
 import type { IntentsQuoteResponse } from "@/lib/api";
-import { quoteHasAppFee } from "@/lib/exchange-fee";
+import { quoteHasAppFee, sumAppFeesBps } from "@/lib/exchange-fee";
 import {
     formatAssetForIntentsAPI,
     holdingDecimals,
@@ -78,6 +78,9 @@ export function buildProposalDescription(
         depositAddress: proposalData.quote.depositAddress,
         signature: proposalData.signature,
         hasAppFee: quoteHasAppFee(proposalData) ? "true" : "false",
+        appFeeBps: sumAppFeesBps(
+            proposalData.quoteRequest?.appFees,
+        )?.toString(),
     });
 }
 

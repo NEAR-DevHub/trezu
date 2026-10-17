@@ -23,10 +23,7 @@ import { useTreasury } from "@/hooks/use-treasury";
 import { decimalOrNull } from "@/lib/amount-format";
 import type { RecentActivity, SwapInfo, TokenMetadataInfo } from "@/lib/api";
 import Big from "@/lib/big";
-import {
-    calculateExchangeFeeAmount,
-    shouldShowStoredExchangeFee,
-} from "@/lib/exchange-fee";
+import { calculateExchangeFeeAmount, exchangeFeeBps } from "@/lib/exchange-fee";
 import { cn } from "@/lib/utils";
 import {
     activityUnitPriceUsd,
@@ -105,11 +102,14 @@ interface ExchangeRateDetails {
 
 // Same calculation as the request page (lib/exchange-fee), denominated in
 // the sent token.
-function exchangeFeeLabel(swap: SwapInfo): React.ReactNode | null {
+function exchangeFeeLabel(
+    swap: SwapInfo,
+    feeBps: number,
+): React.ReactNode | null {
     if (!swap.sentAmount || !swap.sentTokenMetadata) return null;
     try {
         if (Big(swap.sentAmount).lte(0)) return null;
-        const fee = calculateExchangeFeeAmount(swap.sentAmount);
+        const fee = calculateExchangeFeeAmount(swap.sentAmount, feeBps);
         return (
             <FormattedAmount
                 kind="token"
@@ -483,9 +483,9 @@ function DetailsSection({
         },
     ];
     if (variant === "exchange" && activity.swap) {
-        const fee = shouldShowStoredExchangeFee(activity.hasAppFee ?? undefined)
-            ? exchangeFeeLabel(activity.swap)
-            : null;
+        const feeBps = exchangeFeeBps(activity);
+        const fee =
+            feeBps !== null ? exchangeFeeLabel(activity.swap, feeBps) : null;
         if (fee) {
             items.push({
                 label: tExchange("info.exchangeFee"),
