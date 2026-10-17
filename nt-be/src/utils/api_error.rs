@@ -129,7 +129,9 @@ impl ApiError {
     pub fn rejected_before_send(status: StatusCode) -> Self {
         let (code, retryable) = match status {
             StatusCode::PAYMENT_REQUIRED => (ApiErrorCode::SponsorshipNotAvailable, false),
-            StatusCode::FORBIDDEN => (ApiErrorCode::NotAuthorized, false),
+            StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN => {
+                (ApiErrorCode::NotAuthorized, false)
+            }
             status if status.is_client_error() => (ApiErrorCode::RequestRejected, false),
             _ => (ApiErrorCode::Unexpected, true),
         };
@@ -245,6 +247,10 @@ mod tests {
 
         let forbidden = ApiError::rejected_before_send(StatusCode::FORBIDDEN);
         assert_eq!(forbidden.code, ApiErrorCode::NotAuthorized);
+
+        let signed_out = ApiError::rejected_before_send(StatusCode::UNAUTHORIZED);
+        assert_eq!(signed_out.code, ApiErrorCode::NotAuthorized);
+        assert_eq!(signed_out.funds_state, FundsState::NotSent);
 
         let server = ApiError::rejected_before_send(StatusCode::INTERNAL_SERVER_ERROR);
         assert_eq!(server.code, ApiErrorCode::Unexpected);

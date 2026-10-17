@@ -2,7 +2,11 @@
 
 use std::sync::Arc;
 
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::{State, rejection::JsonRejection},
+    http::StatusCode,
+};
 use borsh::BorshDeserialize;
 use near_api::{
     AccountId, NearToken,
@@ -14,7 +18,7 @@ use near_api::{
 
 use crate::{
     AppState,
-    auth::AuthUser,
+    auth::{AuthError, AuthUser},
     handlers::relay::{
         access::{self, AuthorizedRelay},
         confidential,
@@ -50,9 +54,17 @@ use crate::{
 )]
 pub async fn relay_delegate_action(
     State(state): State<Arc<AppState>>,
-    auth_user: AuthUser,
-    Json(relay_request): Json<RelayRequest>,
+    auth_user: Result<AuthUser, AuthError>,
+    relay_request: Result<Json<RelayRequest>, JsonRejection>,
 ) -> Result<Json<RelayResponse>, RelayError> {
+    // Extractor rejections are taken as values so they leave through the same
+    // envelope as every other relay error; their text is only logged.
+    let auth_user = auth_user.map_err(|rejection| {
+        let (status, message) = rejection.status_and_message();
+        error_response(status, message)
+    })?;
+    let Json(relay_request) = relay_request
+        .map_err(|rejection| error_response(rejection.status(), rejection.body_text()))?;
     // Decouple the request into owned parts so the raw signed action and the
     // treasury id are independent from here on.
     let RelayRequest {
