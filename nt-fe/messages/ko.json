@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "아직 트레저리가 없나요?",
         "createOneLabel": "하나 만들기",
         "walletSelector": {
+            "connectFailed": "로그인하지 못했습니다",
             "title": "로그인 방법 선택",
             "subtitle": "로그인한 사용자가 트레저리의 첫 번째 멤버가 됩니다.",
             "helpCta": "무엇을 선택해야 할지 모르겠나요?",

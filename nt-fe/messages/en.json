@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "Don't have a treasury yet?",
         "createOneLabel": "Create one",
         "walletSelector": {
+            "connectFailed": "We couldn't sign you in",
             "title": "Choose how to sign in",
             "subtitle": "Your sign in becomes the first member of your treasury.",
             "helpCta": "Not sure which to pick?",

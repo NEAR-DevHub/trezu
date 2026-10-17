@@ -1736,6 +1736,7 @@
         "dontHaveTreasuryLabel": "还没有金库吗？",
         "createOneLabel": "创建一个",
         "walletSelector": {
+            "connectFailed": "我们无法让您登录",
             "title": "选择登录方式",
             "subtitle": "你的登录身份将成为金库的第一位成员。",
             "helpCta": "不确定该选哪个？",
