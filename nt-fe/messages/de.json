@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "Noch keine Treasury?",
         "createOneLabel": "Eine erstellen",
         "walletSelector": {
+            "connectFailed": "Anmeldung fehlgeschlagen",
             "title": "Wähle, wie du dich anmelden möchtest",
             "subtitle": "Deine Anmeldung wird zum ersten Mitglied deiner Treasury.",
             "helpCta": "Nicht sicher, was du wählen sollst?",

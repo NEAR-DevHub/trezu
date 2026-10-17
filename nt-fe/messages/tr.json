@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "Henüz bir hazineniz yok mu?",
         "createOneLabel": "Bir tane oluştur",
         "walletSelector": {
+            "connectFailed": "Oturum açamadık",
             "title": "Nasıl giriş yapacağınızı seçin",
             "subtitle": "Girişiniz hazinenizin ilk üyesi olur.",
             "helpCta": "Hangisini seçeceğinizden emin değil misiniz?",

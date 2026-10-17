@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "まだトレジャリーをお持ちではありませんか？",
         "createOneLabel": "作成する",
         "walletSelector": {
+            "connectFailed": "サインインできませんでした",
             "title": "サインイン方法を選択",
             "subtitle": "あなたのサインインがトレジャリーの最初のメンバーになります。",
             "helpCta": "どれを選べばよいか分かりませんか？",

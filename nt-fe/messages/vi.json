@@ -1736,6 +1736,7 @@
         "dontHaveTreasuryLabel": "Bạn chưa có kho bạc?",
         "createOneLabel": "Tạo một",
         "walletSelector": {
+            "connectFailed": "Chúng tôi không thể đăng nhập cho bạn",
             "title": "Chọn cách đăng nhập",
             "subtitle": "Lần đăng nhập của bạn sẽ trở thành thành viên đầu tiên của kho bạc.",
             "helpCta": "Bạn chưa chắc nên chọn gì?",
