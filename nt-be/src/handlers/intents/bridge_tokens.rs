@@ -179,8 +179,10 @@ fn off_origin_deployment_chain(base: &BaseTokenInfo) -> Option<&str> {
     chain
 }
 
-/// When our build produces multiple rows for the same intents balance or POA
-/// `chain_id`, keep the first row we already pushed for that asset.
+/// When our build produces multiple rows for the same intents balance, or for
+/// the same POA `chain_id` and token symbol, keep the first row we already
+/// pushed for that asset. Different tokens on one chain (native ETH and wETH
+/// on Ethereum) are different deposit options and both stay.
 ///
 /// A chain-delivery row (held sibling balance, distinct destination id) is a
 /// separate destination of that balance, so it does not consume the balance key.
@@ -196,7 +198,10 @@ fn dedupe_asset_networks(networks: &mut Vec<NetworkOption>) {
         if !seen_balance.insert(balance_key) {
             return false;
         }
-        if !seen_chain.insert(network.chain_id.clone()) {
+        if !seen_chain.insert((
+            network.chain_id.clone(),
+            network.symbol.trim().to_lowercase(),
+        )) {
             return false;
         }
         true
@@ -742,8 +747,8 @@ mod tests {
     }
 
     #[test]
-    fn dedupe_keeps_first_catalog_row_per_chain_and_balance() {
-        // Catalog order: native arb.omft before WETH wrap — first wins.
+    fn dedupe_keeps_distinct_tokens_on_one_chain() {
+        // Native ETH and wETH are different tokens on the same chain.
         let mut networks = vec![
             NetworkOption {
                 id: "nep141:arb.omft.near".into(),
@@ -773,6 +778,31 @@ mod tests {
                     .into(),
                 public_deposit_supported: true,
             },
+        ];
+        dedupe_asset_networks(&mut networks);
+        assert_eq!(networks.len(), 2);
+        assert_eq!(networks[0].balance_asset_id, "nep141:arb.omft.near");
+        assert_eq!(networks[1].symbol, "wETH");
+    }
+
+    #[test]
+    fn dedupe_keeps_first_row_for_same_token_on_one_chain() {
+        let row = |id: &str| NetworkOption {
+            id: id.into(),
+            name: "arbitrum".into(),
+            symbol: "ETH".into(),
+            chain_icons: None,
+            chain_id: "eth:42161".into(),
+            decimals: 18,
+            min_deposit_amount: None,
+            min_withdrawal_amount: None,
+            balance_asset_id: id.into(),
+            quote_asset_id: id.into(),
+            public_deposit_supported: true,
+        };
+        let mut networks = vec![
+            row("nep141:arb.omft.near"),
+            row("nep141:arb-alias.omft.near"),
         ];
         dedupe_asset_networks(&mut networks);
         assert_eq!(networks.len(), 1);
