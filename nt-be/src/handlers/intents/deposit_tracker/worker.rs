@@ -35,7 +35,10 @@ const WATCH_CONCURRENCY: usize = 4;
 /// Claimed watches become due again after this if the worker dies mid-poll.
 const CLAIM_LEASE: Duration = Duration::seconds(60);
 
-const ACTIVE_DEPOSIT_POLL: Duration = Duration::seconds(10);
+const ACTIVE_DEPOSIT_POLL: Duration = Duration::seconds(3);
+/// A settled deposit waiting for its ledger row: the check is a DB lookup, so
+/// poll every worker tick and flip the modal as soon as the feed has the row.
+const LEDGER_WAIT_POLL: Duration = Duration::seconds(1);
 /// Kept under two worker ticks (2s each, plus up to 20% jitter) so a watch is
 /// picked up on every other tick instead of missing one and waiting a third.
 const FAST_POLL: Duration = Duration::seconds(3);
@@ -51,7 +54,7 @@ const ERROR_BACKOFF_MAX: Duration = Duration::minutes(10);
 /// How long a settled deposit may wait for its ledger row before the tracker
 /// stops re-filing refresh demands (the row stays visible as evidence).
 const MAX_REFRESH_ATTEMPTS: i32 = 12;
-const REFRESH_BACKOFF: [i64; 5] = [10, 30, 60, 120, 300];
+const REFRESH_BACKOFF: [i64; 6] = [4, 10, 30, 60, 120, 300];
 /// The bridge can mint slightly before the tracker first sees the deposit.
 pub(super) const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
 
@@ -190,11 +193,15 @@ impl<'a> DepositTrackerWorker<'a> {
         let now = Utc::now();
         let has_active = deposits.iter().any(|deposit| deposit.is_active(now));
         let has_terminal = deposits.iter().any(|deposit| deposit.status.is_terminal());
+        let awaiting_ledger = deposits
+            .iter()
+            .any(|deposit| deposit.status == DepositStatus::Finalized);
         outcome.next_poll_at = WatchSchedule {
             watch,
             now,
             has_active_deposit: has_active,
             has_terminal_deposit: has_terminal,
+            awaiting_ledger,
             errored: outcome.error.is_some(),
         }
         .next_poll_at();
@@ -533,6 +540,8 @@ struct WatchSchedule<'a> {
     now: DateTime<Utc>,
     has_active_deposit: bool,
     has_terminal_deposit: bool,
+    /// A deposit the provider settled that has no ledger row yet.
+    awaiting_ledger: bool,
     errored: bool,
 }
 
@@ -549,6 +558,9 @@ impl WatchSchedule<'_> {
     }
 
     fn discovery_delay(&self) -> Option<Duration> {
+        if self.awaiting_ledger {
+            return Some(LEDGER_WAIT_POLL);
+        }
         if self.has_active_deposit {
             return Some(ACTIVE_DEPOSIT_POLL);
         }
@@ -646,6 +658,7 @@ mod tests {
             now,
             has_active_deposit: has_active,
             has_terminal_deposit: has_terminal,
+            awaiting_ledger: false,
             errored: false,
         }
         .discovery_delay()
@@ -681,6 +694,26 @@ mod tests {
     }
 
     #[test]
+    fn settled_deposit_without_a_ledger_row_is_polled_every_tick() {
+        let start = Utc::now();
+        let watch = watch(start, WatchKind::Public);
+        let waiting = WatchSchedule {
+            watch: &watch,
+            now: start,
+            has_active_deposit: true,
+            has_terminal_deposit: false,
+            awaiting_ledger: true,
+            errored: false,
+        };
+        assert_eq!(waiting.discovery_delay(), Some(LEDGER_WAIT_POLL));
+        let detected = WatchSchedule {
+            awaiting_ledger: false,
+            ..waiting
+        };
+        assert_eq!(detected.discovery_delay(), Some(ACTIVE_DEPOSIT_POLL));
+    }
+
+    #[test]
     fn confidential_watch_retires_once_its_deposit_is_terminal() {
         let start = Utc::now();
         let confidential = watch(start, WatchKind::Confidential);
@@ -699,6 +732,7 @@ mod tests {
             now: start,
             has_active_deposit: false,
             has_terminal_deposit: false,
+            awaiting_ledger: false,
             errored: true,
         }
         .next_poll_at()
@@ -713,7 +747,7 @@ mod tests {
         assert_eq!(error_backoff(0), Duration::seconds(30));
         assert_eq!(error_backoff(2), Duration::seconds(60));
         assert_eq!(error_backoff(20), ERROR_BACKOFF_MAX);
-        assert_eq!(refresh_backoff(0), Duration::seconds(10));
+        assert_eq!(refresh_backoff(0), Duration::seconds(4));
         assert_eq!(refresh_backoff(9), Duration::seconds(300));
     }
 
