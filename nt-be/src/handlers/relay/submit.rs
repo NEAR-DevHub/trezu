@@ -203,7 +203,9 @@ pub async fn relay_delegate_action(
         .then(|| created_proposal_ids(&outcome, &treasury_id));
     Ok(success_response(
         proposal_ids,
-        outcome.transaction().get_hash().to_string(),
+        // The network's id, not a re-hash of the RPC's JSON view: a
+        // delegate (meta-transaction) does not round-trip through borsh.
+        outcome.outcome().transaction_hash.to_string(),
     ))
 }
 
