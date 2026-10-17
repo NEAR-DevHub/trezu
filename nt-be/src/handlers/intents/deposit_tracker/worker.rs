@@ -36,7 +36,9 @@ const WATCH_CONCURRENCY: usize = 4;
 const CLAIM_LEASE: Duration = Duration::seconds(60);
 
 const ACTIVE_DEPOSIT_POLL: Duration = Duration::seconds(10);
-const FAST_POLL: Duration = Duration::seconds(5);
+/// Kept under two worker ticks (2s each, plus up to 20% jitter) so a watch is
+/// picked up on every other tick instead of missing one and waiting a third.
+const FAST_POLL: Duration = Duration::seconds(3);
 const MEDIUM_POLL: Duration = Duration::seconds(30);
 const SLOW_POLL: Duration = Duration::seconds(120);
 /// Discovery slows from the fast cadence to the medium one for this long
