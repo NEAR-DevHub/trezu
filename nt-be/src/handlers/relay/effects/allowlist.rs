@@ -150,6 +150,17 @@ fn apply_fetch(cache: &mut CacheState, outcome: FetchOutcome) {
     }
 }
 
+/// A total miss on an empty cache does not start the hour wait, so the next
+/// check tries the lists again. A saved list, or any successful fetch, waits
+/// the full interval.
+fn remember_refresh(cache: &mut CacheState, outcome: FetchOutcome, now: Instant) {
+    let learned = outcome.bridge.is_some() || outcome.ref_tokens.is_some();
+    apply_fetch(cache, outcome);
+    if learned || !cache.bridge.is_empty() || !cache.ref_tokens.is_empty() {
+        cache.last_refresh_attempt = Some(now);
+    }
+}
+
 fn from_cache(cache: &CacheState) -> HashSet<String> {
     let mut allowed = always_allowed();
     allowed.extend(cache.bridge.iter().cloned());
@@ -181,8 +192,7 @@ pub(crate) async fn allowed_storage_contracts(state: &Arc<AppState>) -> HashSet<
 
     let outcome = fetch_external(state).await;
     let mut cache = CACHE.write().await;
-    cache.last_refresh_attempt = Some(Instant::now());
-    apply_fetch(&mut cache, outcome);
+    remember_refresh(&mut cache, outcome, Instant::now());
     from_cache(&cache)
 }
 
@@ -282,5 +292,38 @@ mod tests {
         expected.insert("bridge-token.near".to_string());
         expected.insert("ref-token.near".to_string());
         assert_eq!(from_cache(&cache), expected);
+    }
+
+    #[test]
+    fn empty_cache_retries_when_both_sources_fail() {
+        let mut cache = CacheState::default();
+        remember_refresh(
+            &mut cache,
+            FetchOutcome {
+                bridge: None,
+                ref_tokens: None,
+            },
+            Instant::now(),
+        );
+        assert!(cache.last_refresh_attempt.is_none());
+    }
+
+    #[test]
+    fn saved_list_waits_when_both_sources_fail() {
+        let mut cache = CacheState {
+            bridge: HashSet::from(["usdc.near".to_string()]),
+            ref_tokens: HashSet::new(),
+            last_refresh_attempt: None,
+        };
+        remember_refresh(
+            &mut cache,
+            FetchOutcome {
+                bridge: None,
+                ref_tokens: None,
+            },
+            Instant::now(),
+        );
+        assert!(cache.last_refresh_attempt.is_some());
+        assert!(cache.bridge.contains("usdc.near"));
     }
 }
