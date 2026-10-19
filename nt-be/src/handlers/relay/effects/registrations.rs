@@ -4,8 +4,9 @@
 //! backend inspects the on-chain proposal kind, derives which accounts need to
 //! be registered on which token contracts, and performs the `storage_deposit`
 //! calls itself (signed and paid by the sponsor) before the vote executes the
-//! transfer. This removes the extra `storage_deposit` transactions the user
-//! used to sign in the relay flow.
+//! transfer. The sponsor only pays when the token contract is on the
+//! [`super::allowlist`]; other tokens are registered by a `storage_deposit`
+//! action inside the proposal, paid from the treasury.
 //!
 //! Derivation uses ONLY the authoritative on-chain proposal kind (fetched via
 //! `get_proposal`) — never the proposal description.
@@ -127,6 +128,17 @@ pub async fn register_vote_approvals(
     for &proposal_id in approve_proposal_ids {
         registration_targets
             .extend(derive_targets_for_proposal(state, treasury_id, proposal_id).await);
+    }
+
+    let allowed = super::allowlist::allowed_storage_contracts(state).await;
+    let before = registration_targets.len();
+    registration_targets.retain(|registration| allowed.contains(registration.token_id.as_str()));
+    let skipped = before - registration_targets.len();
+    if skipped > 0 {
+        tracing::info!(
+            skipped,
+            "skipping sponsor storage_deposit for token contracts outside the allowlist"
+        );
     }
 
     let (sent_count, registration_error) =

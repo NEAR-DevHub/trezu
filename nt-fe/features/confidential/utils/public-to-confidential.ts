@@ -14,8 +14,10 @@ import { availableBalance } from "@/lib/balance";
 import {
     buildIntentsTransferProposal,
     buildNativeNearIntentsKind,
+    accountsNeedingProposalStorageDeposit,
     buildNearFtIntentsKind,
     parseIntentsDepositKind,
+    prependStorageDeposits,
 } from "@/lib/near-proposal-builders";
 import { classifyPaymentToken } from "@/lib/payment-route";
 import type { FunctionCallKind, Proposal } from "@/lib/proposals-api";
@@ -267,21 +269,30 @@ export async function preparePublicToConfidentialTransfer(params: {
         );
     }
 
-    return {
-        quote,
-        proposal: buildPublicToConfidentialProposal({
-            asset,
-            amountRaw,
-            depositAddress: quote.quote.depositAddress,
-            notes,
-        }),
-    };
+    const proposal = buildPublicToConfidentialProposal({
+        asset,
+        amountRaw,
+        depositAddress: quote.quote.depositAddress,
+        notes,
+    });
+    const token = publicAssetToToken(asset);
+    if (token.residency === "Ft" && "FunctionCall" in proposal.kind) {
+        const needsStorage = await accountsNeedingProposalStorageDeposit(
+            token.address,
+            [quote.quote.depositAddress],
+        );
+        if (needsStorage.length > 0) {
+            proposal.kind = prependStorageDeposits(proposal.kind, needsStorage);
+        }
+    }
+
+    return { quote, proposal };
 }
 
 /**
  * Marker + exact builder call shape + backend-verified 1Click quote binding
  * (`confidential_metadata.public_move.verified`). Same rule as the requests
- * list classification.
+ * list classification, including an Ft call that starts with `storage_deposit`.
  */
 export function isPublicToConfidentialProposal(proposal: Proposal): boolean {
     return getProposalUIKind(proposal) === "Move to Confidential";

@@ -17,7 +17,8 @@ import { getProposalUIKind } from "@/features/proposals/utils/proposal-utils";
 import type { IntentsQuoteResponse, TreasuryAsset } from "@/lib/api";
 import Big from "@/lib/big";
 import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
-import type { Proposal } from "@/lib/proposals-api";
+import { prependStorageDeposits } from "@/lib/near-proposal-builders";
+import type { FunctionCallKind, Proposal } from "@/lib/proposals-api";
 import { decodeArgs, encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 import {
     buildPublicToConfidentialProposal,
@@ -435,6 +436,18 @@ describe("proposal inspection", () => {
             depositAddress: DEPOSIT_ADDRESS,
         }).kind,
     );
+
+    it("recognises an Ft move that registers the deposit address first", () => {
+        const kind = prependStorageDeposits(
+            ftProposal.kind as FunctionCallKind,
+            [DEPOSIT_ADDRESS],
+        );
+        const withDeposit = proposalWith(kind);
+        expect(extractPublicToConfidentialTransfer(withDeposit)).toEqual(
+            extractPublicToConfidentialTransfer(ftProposal),
+        );
+        expect(getProposalUIKind(withDeposit)).toBe("Move to Confidential");
+    });
 
     it("recognises all three kinds", () => {
         expect(extractPublicToConfidentialTransfer(nearProposal)).toEqual({
