@@ -602,6 +602,31 @@ export interface StorageDepositRegistration {
  * Get storage deposit for an account on a specific token contract
  * Returns the storage deposit amount required for the account to hold the token
  */
+/**
+ * Whether the relayer will pay NEP-141 registration on this token contract.
+ * `null` means the check could not be read. Callers that can put the deposit
+ * on the proposal treat that like `false`. Callers that cannot should not
+ * treat `null` as a refusal.
+ */
+export async function isSponsorStorageAllowed(
+    tokenId: string,
+): Promise<boolean | null> {
+    if (!tokenId) return false;
+    try {
+        const url = `${BACKEND_API_BASE}/token/storage-deposit/sponsor-allowed`;
+        const response = await axios.get<{ allowed: boolean }>(url, {
+            params: { tokenId },
+        });
+        return response.data.allowed === true;
+    } catch (error) {
+        console.error(
+            `Error checking sponsor storage allowlist for ${tokenId}`,
+            error,
+        );
+        return null;
+    }
+}
+
 export async function getStorageDepositIsRegistered(
     accountId: string,
     tokenId: string,

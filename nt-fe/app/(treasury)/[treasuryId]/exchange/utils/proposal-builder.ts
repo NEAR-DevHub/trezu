@@ -11,9 +11,9 @@ import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
 import { buildIntentsTransferProposal } from "@/lib/near-proposal-builders";
 import { encodeToMarkdown, jsonToBase64 } from "@/lib/utils";
 
-// NEP-141 `storage_deposit` registrations are handled by the backend at
-// approval time (see nt-be relay storage_deposit derivation), so these builders
-// only produce the proposal — no extra storage transactions.
+// Allowlisted token contracts are registered by the backend at approval time.
+// The exchange page prepends a `storage_deposit` action when the token is not
+// on that list. These builders only produce the transfer itself.
 
 interface ProposalBuilderParams {
     proposalData: IntentsQuoteResponse;
