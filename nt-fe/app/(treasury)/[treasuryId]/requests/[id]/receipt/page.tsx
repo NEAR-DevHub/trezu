@@ -15,7 +15,6 @@ import { NetworkIconDisplay } from "@/components/token-display";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LANDING_PAGE } from "@/constants/config";
 import { NEAR_COM_NETWORK_ID } from "@/constants/network-ids";
-import { formatRecipientForNearComDestination } from "@/lib/nearcom-address";
 import { StatusPill } from "@/features/proposals/components/proposal-status-pill";
 import type { BatchPaymentRequestData } from "@/features/proposals/types/index";
 import { extractProposalData } from "@/features/proposals/utils/proposal-extractors";
@@ -52,6 +51,7 @@ import {
     isNearComNetwork,
     isNearComPaymentRoute,
 } from "@/lib/intents-network";
+import { formatRecipientForNearComDestination } from "@/lib/nearcom-address";
 import {
     recordReceiptMetric,
     type SwapQuoteResponse,

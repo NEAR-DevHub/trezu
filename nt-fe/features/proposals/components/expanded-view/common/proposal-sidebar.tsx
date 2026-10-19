@@ -378,14 +378,13 @@ export function ProposalSidebar({
     }
     // Whether this proposal used the Intents protocol (has a deposit address)
     const hasDepositAddress = !!depositAddress;
-    // A settled persisted outcome is final (it is what buckets the request
-    // into a tab), so a settled request never hits the swap-status endpoint.
-    // An in-flight one keeps the live query as its refresh path, matching
-    // `useProposalStatus`.
-    const settledSwapStatus =
-        isExecuted && isTerminalSwapStatus(proposal.swap_status)
-            ? (proposal.swap_status ?? undefined)
-            : undefined;
+    // The backend's persisted outcome once it is final (it is what buckets
+    // the request into a tab). A settled request never hits the swap-status
+    // endpoint; an in-flight one keeps the live query as its refresh path,
+    // matching `useProposalStatus`.
+    const settledSwapStatus = isTerminalSwapStatus(proposal.swap_status)
+        ? (proposal.swap_status ?? undefined)
+        : undefined;
     const shouldUseTransactionDate = isExecuted;
     // Confidential quotes only expose the quote time, not the settlement time —
     // the executed date/link come from the on-chain transaction instead. The
@@ -492,7 +491,7 @@ export function ProposalSidebar({
         policy,
     );
 
-    let timestamp;
+    let timestamp: Date | undefined;
     switch (status) {
         case "Expired":
         case "Pending":

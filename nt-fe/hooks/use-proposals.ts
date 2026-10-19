@@ -1,19 +1,19 @@
-import { useQuery, useQueryClient, type Query } from "@tanstack/react-query";
-import {
-    getProposals,
-    ProposalFilters,
-    ProposalsResponse,
-    getProposal,
-    getProposalTransaction,
-    Proposal,
-    getSwapStatus,
-    getQuoteByDepositAddress,
-    getTokenPriceAtTimestamp,
-} from "@/lib/proposals-api";
+import { type Query, useQuery, useQueryClient } from "@tanstack/react-query";
 import { isTerminalSwapStatus } from "@/features/proposals/utils/receipt-utils";
+import {
+    getProposal,
+    getProposals,
+    getProposalTransaction,
+    getQuoteByDepositAddress,
+    getSwapStatus,
+    getTokenPriceAtTimestamp,
+    type Proposal,
+    type ProposalFilters,
+    type ProposalsResponse,
+} from "@/lib/proposals-api";
 import { isAxiosErrorWithStatus } from "@/lib/query-retry";
 import { nanosToMs } from "@/lib/utils";
-import { Policy } from "@/types/policy";
+import type { Policy } from "@/types/policy";
 
 /**
  * How long after a request is submitted its swap can still settle. A 1Click
@@ -31,7 +31,8 @@ export function isWithinSwapSettlingWindow(
 ): boolean {
     return (
         !!proposal &&
-        nanosToMs(proposal.submission_time) + SWAP_SETTLING_WINDOW_MS > Date.now()
+        nanosToMs(proposal.submission_time) + SWAP_SETTLING_WINDOW_MS >
+            Date.now()
     );
 }
 
