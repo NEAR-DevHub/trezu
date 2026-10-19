@@ -1,5 +1,14 @@
-import type { FunctionCallKind } from "@/lib/proposals-api";
-import { FT_TRANSFER_GAS, STORAGE_DEPOSIT_GAS } from "@/lib/near-ft-gas";
+import type { FunctionCallAction, FunctionCallKind } from "@/lib/proposals-api";
+import {
+    FT_TRANSFER_GAS,
+    STORAGE_DEPOSIT_AMOUNT,
+    STORAGE_DEPOSIT_GAS,
+} from "@/lib/near-ft-gas";
+import {
+    getBatchStorageDepositIsRegistered,
+    isSponsorStorageAllowed,
+} from "@/lib/api";
+import { isValidNearAddressFormat } from "@/lib/near-validation";
 import { decodeArgs, jsonToBase64 } from "@/lib/utils";
 import { NEAR_NETWORK_ID, WRAP_NEAR_TOKEN_ID } from "@/constants/network-ids";
 import Big from "@/lib/big";
@@ -56,6 +65,71 @@ export function buildNativeNearIntentsKind(
     };
 }
 
+/** DAO-paid NEP-141 registration. The token contract refunds this when the account is already registered. */
+export function storageDepositAction(accountId: string): FunctionCallAction {
+    return {
+        method_name: "storage_deposit",
+        args: jsonToBase64({
+            account_id: accountId,
+            registration_only: true,
+        }),
+        deposit: STORAGE_DEPOSIT_AMOUNT,
+        gas: STORAGE_DEPOSIT_GAS,
+    };
+}
+
+/**
+ * Prepend `storage_deposit` actions onto a FunctionCall whose receiver is the
+ * token contract. Same-proposal ordering is required: a separate proposal's
+ * cross-contract call is not finished before the transfer starts.
+ */
+export function prependStorageDeposits(
+    kind: FunctionCallKind,
+    accountIds: string[],
+): FunctionCallKind {
+    if (accountIds.length === 0) return kind;
+    return {
+        FunctionCall: {
+            receiver_id: kind.FunctionCall.receiver_id,
+            actions: [
+                ...accountIds.map(storageDepositAction),
+                ...kind.FunctionCall.actions,
+            ],
+        },
+    };
+}
+
+/**
+ * Accounts the proposal must register itself. Empty when the sponsor pays
+ * (token is allowlisted) or every account is already registered.
+ * A failed allowlist or registration check is treated as "not sponsored",
+ * so the treasury pays rather than the relayer calling an unknown contract.
+ */
+export async function accountsNeedingProposalStorageDeposit(
+    tokenId: string,
+    accountIds: string[],
+): Promise<string[]> {
+    const unique = [
+        ...new Set(
+            accountIds.filter((accountId) =>
+                isValidNearAddressFormat(accountId),
+            ),
+        ),
+    ];
+    if (unique.length === 0) return [];
+    if (await isSponsorStorageAllowed(tokenId)) return [];
+
+    const statuses = await getBatchStorageDepositIsRegistered(
+        unique.map((accountId) => ({ accountId, tokenId })),
+    );
+    const registered = new Set(
+        statuses
+            .filter((status) => status.isRegistered)
+            .map((status) => status.accountId),
+    );
+    return unique.filter((accountId) => !registered.has(accountId));
+}
+
 export function buildNearFtIntentsKind(
     tokenAddress: string,
     depositAddress: string,
@@ -83,6 +157,7 @@ export interface IntentsDepositCall {
     residency: "Near" | "Ft" | "Intents";
     /** Display token id: `near`, the NEP-141 contract, or the intents token id. */
     tokenId: string;
+    /** Recipient of the `ft_transfer` or `mt_transfer`, not a leading `storage_deposit`. */
     depositAddress: string;
     amountRaw: string;
 }
@@ -112,9 +187,11 @@ function parseTransferArgs(
  * Decode and validate a public-to-confidential move call — exactly the
  * shapes the builders above produce (wrap-and-transfer, single `ft_transfer`,
  * single `mt_transfer`), with decodable args, a receiver, a positive amount
- * and (for wrap) `near_deposit` == the transferred amount. Used to validate
- * the proposer-controlled `public-to-confidential` marker; anything else is
- * not a move.
+ * and (for wrap) `near_deposit` == the transferred amount. An Ft call may
+ * start with one or more `storage_deposit` actions whose deposit is
+ * `STORAGE_DEPOSIT_AMOUNT`; the decoded recipient is still the `ft_transfer`
+ * receiver. The requests list uses this same parser. Anything else is not a
+ * move.
  */
 export function parseIntentsDepositKind(
     kind: unknown,
@@ -142,9 +219,9 @@ export function parseIntentsDepositKind(
             amountRaw: parsed.amountRaw,
         };
     }
-    if (actions.length !== 1 || actions[0].deposit !== "1") return null;
-    const [action] = actions;
     if (receiver_id === "intents.near") {
+        if (actions.length !== 1 || actions[0].deposit !== "1") return null;
+        const action = actions[0];
         if (action.method_name !== "mt_transfer") return null;
         const parsed = parseTransferArgs(action.args);
         if (!parsed?.tokenId) return null;
@@ -155,8 +232,23 @@ export function parseIntentsDepositKind(
             amountRaw: parsed.amountRaw,
         };
     }
-    if (action.method_name !== "ft_transfer") return null;
-    const parsed = parseTransferArgs(action.args);
+    const transferIndex = actions.findIndex(
+        (action) => action.method_name === "ft_transfer",
+    );
+    if (transferIndex < 0 || transferIndex !== actions.length - 1) return null;
+    const transfer = actions[transferIndex];
+    if (transfer.deposit !== "1") return null;
+    const deposits = actions.slice(0, transferIndex);
+    if (
+        deposits.some(
+            (action) =>
+                action.method_name !== "storage_deposit" ||
+                action.deposit !== STORAGE_DEPOSIT_AMOUNT,
+        )
+    ) {
+        return null;
+    }
+    const parsed = parseTransferArgs(transfer.args);
     if (!parsed) return null;
     return {
         residency: "Ft",

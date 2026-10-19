@@ -1,4 +1,5 @@
 import { http as axios } from "@/lib/http";
+import { storageDepositAction } from "@/lib/near-proposal-builders";
 import { jsonToBase64 } from "@/lib/utils";
 
 // Bulk Payment Contract Configuration
@@ -98,6 +99,8 @@ export async function buildApproveListProposal(params: {
     totalAmount: string;
     description: string;
     proposalBond: string;
+    /** Accounts to register on `tokenId` before `ft_transfer_call`. Ignored unless residency is Ft. */
+    storageDepositAccounts?: string[];
 }): Promise<{
     contractName: string;
     methodName: string;
@@ -113,6 +116,7 @@ export async function buildApproveListProposal(params: {
         totalAmount,
         description,
         proposalBond,
+        storageDepositAccounts = [],
     } = params;
     const isNEAR = tokenResidency === "Near";
     const isIntents = tokenResidency === "Intents";
@@ -180,8 +184,11 @@ export async function buildApproveListProposal(params: {
             deposit: proposalBond,
         };
     } else {
-        // For FT: FunctionCall proposal with ft_transfer_call
+        // For FT: FunctionCall proposal with ft_transfer_call.
+        // Unallowlisted tokens register here, in front of the transfer, because
+        // the sponsor will not call storage_deposit on that contract.
         const actions = [
+            ...storageDepositAccounts.map(storageDepositAction),
             {
                 method_name: "ft_transfer_call",
                 args: jsonToBase64({

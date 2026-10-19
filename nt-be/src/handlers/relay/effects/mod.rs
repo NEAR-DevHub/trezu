@@ -3,5 +3,6 @@
 //! metrics (after success). [`background`] is the shared fire-and-forget helper.
 
 pub mod accounting;
+pub mod allowlist;
 pub mod background;
 pub mod registrations;

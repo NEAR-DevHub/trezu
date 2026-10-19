@@ -127,3 +127,29 @@ pub async fn get_batch_storage_deposit_is_registered(
 
     Ok(Json(deposits))
 }
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SponsorStorageAllowedQuery {
+    pub token_id: AccountId,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SponsorStorageAllowedResponse {
+    pub allowed: bool,
+}
+
+/// Whether the relayer will pay `storage_deposit` on this token contract.
+/// False means the proposal must attach that call itself.
+pub async fn get_sponsor_storage_allowed(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<SponsorStorageAllowedQuery>,
+) -> Json<SponsorStorageAllowedResponse> {
+    let allowed = crate::handlers::relay::effects::allowlist::sponsor_may_register_token(
+        &state,
+        params.token_id.as_str(),
+    )
+    .await;
+    Json(SponsorStorageAllowedResponse { allowed })
+}
