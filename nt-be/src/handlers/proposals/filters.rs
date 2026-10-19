@@ -1292,6 +1292,7 @@ mod tests {
             last_actions_log: None,
             confidential_metadata: None,
             public_metadata: None,
+            swap_status: None,
         }
     }
 

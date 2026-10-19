@@ -17,6 +17,7 @@ use serde_json::json;
 use std::collections::HashMap;
 
 use crate::handlers::intents::confidential::types::{accounts_equal, bare_account};
+use crate::handlers::intents::swap_status::SwapStatus;
 use crate::utils::cache::{Cache, CacheKey, CacheTier};
 
 #[derive(Serialize, Deserialize, BorshSerialize, BorshDeserialize, Clone, Debug)]
@@ -96,6 +97,11 @@ pub struct Proposal {
     /// Populated by the backend for public payment/exchange proposals from gold history.
     #[serde(skip_serializing_if = "Option::is_none", default)]
     pub public_metadata: Option<Value>,
+    /// Persisted 1Click outcome of the swap an approved intents-routed request
+    /// paid for (see `swap_outcome::SwapStatusLookup`). Absent when the
+    /// request is not intents-routed or no outcome has been ingested yet.
+    #[serde(skip_serializing_if = "Option::is_none", default)]
+    pub swap_status: Option<SwapStatus>,
 }
 
 /// Extract the payload_hash from a proposal's `kind` JSON if it's a v1.signer signing proposal.
@@ -557,6 +563,15 @@ pub fn get_status_display(
             } else {
                 pending_label.to_string()
             }
+        }
+        // Approved on-chain, but the 1Click swap it paid for did not deliver:
+        // the request failed from the treasury's point of view. This is the
+        // one place the backend derives it, so tab buckets and the status a
+        // request reports stay the same.
+        ProposalStatus::Approved
+            if proposal.is_some_and(|p| p.swap_status.is_some_and(SwapStatus::is_failed)) =>
+        {
+            "Failed".to_string()
         }
         _ => format!("{:?}", status),
     }

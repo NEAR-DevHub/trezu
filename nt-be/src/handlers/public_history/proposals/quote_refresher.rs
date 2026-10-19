@@ -3,7 +3,7 @@ use serde_json::Value;
 use sqlx::{PgPool, Postgres, Transaction};
 
 use crate::AppState;
-use crate::handlers::intents::swap_status::fetch_public_swap_status;
+use crate::handlers::intents::swap_status::{FullSwapStatusResponse, fetch_public_swap_status};
 use crate::handlers::public_history::quotes::{
     QuoteProposalType, merge_quote_status, proposal_quote_from_metadata, quote_status_is_failed,
     quote_status_is_terminal, quote_status_text_from_metadata, quote_status_value_from_metadata,
@@ -215,4 +215,161 @@ pub async fn refresh_public_quote_statuses(
     }
 
     Ok(stats)
+}
+
+/// Record a settled 1Click outcome the live swap-status endpoint fetched for a
+/// public swap. The refresher stops polling proposals older than 30 days, so
+/// a row whose status went stale before 1Click settled it is only ever
+/// looked at again when a viewer opens it; this writes that answer back so
+/// the next list load buckets the request from the stored status, like every
+/// other swap. Only terminal statuses are recorded: an in-flight one brings
+/// nothing the refresher would not write itself while it still covers the
+/// row.
+pub async fn record_settled_quote_status(
+    pool: &PgPool,
+    dao_id: &str,
+    deposit_address: &str,
+    response: &FullSwapStatusResponse,
+) -> Result<bool, sqlx::Error> {
+    if !response.status.is_terminal() {
+        return Ok(false);
+    }
+    let Some(proposal) = sqlx::query_as::<_, StaleQuoteProposal>(
+        r#"
+        SELECT dao_id, proposal_id, quote_deposit_address, quote_metadata,
+               proposal_created_at, proposal_executed_at
+        FROM dao_proposals
+        WHERE dao_id = $1
+          AND quote_deposit_address = $2
+        ORDER BY proposal_id DESC
+        LIMIT 1
+        "#,
+    )
+    .bind(dao_id)
+    .bind(deposit_address)
+    .fetch_optional(pool)
+    .await?
+    else {
+        return Ok(false);
+    };
+    if quote_status_is_terminal(proposal.quote_metadata.as_ref()) {
+        return Ok(false);
+    }
+    let Ok(status) = serde_json::to_value(response) else {
+        return Ok(false);
+    };
+    let mut tx = pool.begin().await?;
+    let merged = apply_quote_status(&mut tx, &proposal, status).await?;
+    tx.commit().await?;
+    match merged {
+        Some(merged) => {
+            report_terminal_failure(&proposal, &merged);
+            Ok(true)
+        }
+        None => Ok(false),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::handlers::intents::swap_status::SwapStatus;
+    use serde_json::json;
+
+    const DAO_ID: &str = "qa-stage.sputnik-dao.near";
+    const DEPOSIT_ADDRESS: &str = "deposit-7";
+
+    fn response(status: SwapStatus) -> FullSwapStatusResponse {
+        serde_json::from_value(json!({
+            "status": status,
+            "updatedAt": "2026-10-19T00:00:00Z",
+            "quoteResponse": null,
+            "swapDetails": null
+        }))
+        .expect("status response")
+    }
+
+    async fn seed(pool: &PgPool, quote_metadata: Value) {
+        sqlx::query(
+            r#"
+            INSERT INTO dao_proposals (dao_id, proposal_id, status, quote_deposit_address, quote_metadata,
+                                       proposal_executed_at)
+            VALUES ($1, 7, 'approved', $2, $3, NOW() - INTERVAL '90 days')
+            "#,
+        )
+        .bind(DAO_ID)
+        .bind(DEPOSIT_ADDRESS)
+        .bind(quote_metadata)
+        .execute(pool)
+        .await
+        .expect("seed dao_proposals");
+    }
+
+    async fn stored_status(pool: &PgPool) -> Option<String> {
+        let metadata: Option<Value> = sqlx::query_scalar(
+            "SELECT quote_metadata FROM dao_proposals WHERE dao_id = $1 AND proposal_id = 7",
+        )
+        .bind(DAO_ID)
+        .fetch_one(pool)
+        .await
+        .expect("row");
+        quote_status_text_from_metadata(metadata.as_ref())
+    }
+
+    #[sqlx::test]
+    async fn settled_live_status_is_written_over_a_stale_in_flight_one(pool: PgPool) {
+        seed(
+            &pool,
+            json!({ "proposalQuote": {}, "status": { "status": "PROCESSING" } }),
+        )
+        .await;
+
+        // Still in flight: nothing to record.
+        assert!(
+            !record_settled_quote_status(
+                &pool,
+                DAO_ID,
+                DEPOSIT_ADDRESS,
+                &response(SwapStatus::Processing)
+            )
+            .await
+            .expect("record")
+        );
+        assert_eq!(stored_status(&pool).await.as_deref(), Some("processing"));
+
+        assert!(
+            record_settled_quote_status(
+                &pool,
+                DAO_ID,
+                DEPOSIT_ADDRESS,
+                &response(SwapStatus::Failed)
+            )
+            .await
+            .expect("record")
+        );
+        assert_eq!(stored_status(&pool).await.as_deref(), Some("failed"));
+
+        // Terminal statuses are never rewritten, and unknown addresses are a no-op.
+        assert!(
+            !record_settled_quote_status(
+                &pool,
+                DAO_ID,
+                DEPOSIT_ADDRESS,
+                &response(SwapStatus::Success)
+            )
+            .await
+            .expect("record")
+        );
+        assert_eq!(stored_status(&pool).await.as_deref(), Some("failed"));
+        assert!(
+            !record_settled_quote_status(
+                &pool,
+                DAO_ID,
+                "unknown-address",
+                &response(SwapStatus::Success)
+            )
+            .await
+            .expect("record")
+        );
+    }
 }

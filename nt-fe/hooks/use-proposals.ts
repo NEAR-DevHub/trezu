@@ -15,6 +15,35 @@ import { isAxiosErrorWithStatus } from "@/lib/query-retry";
 import { Policy } from "@/types/policy";
 
 /**
+ * A request whose persisted 1Click outcome is not final yet. Its status is
+ * read from the proposal itself, so the proposal query is what has to keep
+ * refreshing until the backend stores a terminal outcome.
+ */
+function hasSettlingSwap(proposal: Proposal | null | undefined): boolean {
+    return (
+        proposal?.status === "Approved" &&
+        !!proposal.swap_status &&
+        !isTerminalSwapStatus(proposal.swap_status)
+    );
+}
+
+const SETTLING_SWAP_POLL_MS = 10_000;
+
+function refetchListWhileSettling(
+    query: Query<ProposalsResponse>,
+): number | false {
+    return query.state.data?.proposals.some(hasSettlingSwap)
+        ? SETTLING_SWAP_POLL_MS
+        : false;
+}
+
+function refetchProposalWhileSettling(
+    query: Query<Proposal | null>,
+): number | false {
+    return hasSettlingSwap(query.state.data) ? SETTLING_SWAP_POLL_MS : false;
+}
+
+/**
  * Query hook to get proposals for a specific DAO with optional filtering
  * Fetches from Sputnik DAO API with support for pagination, sorting, and various filters
  *
@@ -62,7 +91,7 @@ export function useProposals(
         enabled: enabled && !!daoId,
         staleTime: 1000 * 10, // 10 seconds (proposals can change frequently)
         refetchOnMount: options?.refetchOnMount,
-        refetchInterval: options?.refetchInterval,
+        refetchInterval: options?.refetchInterval ?? refetchListWhileSettling,
     });
 }
 
@@ -75,6 +104,7 @@ export function useProposal(
         queryFn: () => getProposal(daoId!, proposalId!),
         enabled: !!daoId && !!proposalId,
         staleTime: 1000 * 10, // 10 seconds (proposals can change frequently)
+        refetchInterval: refetchProposalWhileSettling,
     });
 }
 

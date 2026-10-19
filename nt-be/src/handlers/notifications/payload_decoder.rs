@@ -63,6 +63,7 @@ pub(crate) fn classify_proposal_kind(proposal_json: &Value) -> Option<String> {
         last_actions_log: None,
         confidential_metadata: None,
         public_metadata: None,
+        swap_status: None,
     };
 
     let bulk_contract_id: AccountId = BULK_PAYMENT_CONTRACT_ID.parse().ok()?;
