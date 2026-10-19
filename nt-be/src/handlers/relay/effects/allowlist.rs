@@ -17,7 +17,7 @@ use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
 use serde_json::Value;
-use tokio::sync::RwLock;
+use tokio::sync::{Mutex, RwLock};
 
 use crate::{
     AppState,
@@ -44,6 +44,9 @@ struct CacheState {
 }
 
 static CACHE: LazyLock<RwLock<CacheState>> = LazyLock::new(|| RwLock::new(CacheState::default()));
+/// One refresh at a time. A second caller waits, then reads the list the first
+/// refresh stored, instead of writing an older fetch over it.
+static REFRESH_GATE: LazyLock<Mutex<()>> = LazyLock::new(|| Mutex::new(()));
 
 /// `None` means that source failed and the previous set must be kept.
 struct FetchOutcome {
@@ -154,27 +157,31 @@ fn from_cache(cache: &CacheState) -> HashSet<String> {
     allowed
 }
 
+async fn needs_refresh() -> bool {
+    let cache = CACHE.read().await;
+    cache
+        .last_refresh_attempt
+        .map(|last| last.elapsed() >= REFRESH_INTERVAL)
+        .unwrap_or(true)
+}
+
 /// Contracts the sponsor may call `storage_deposit` on. Always includes
 /// [`always_allowed`]. Each upstream list is cached on its own: a failed
 /// refresh keeps that source's last successful set. With no successful fetch
 /// yet, only [`always_allowed`] is returned.
 pub(crate) async fn allowed_storage_contracts(state: &Arc<AppState>) -> HashSet<String> {
-    let now = Instant::now();
-    let should_refresh = {
-        let cache = CACHE.read().await;
-        cache
-            .last_refresh_attempt
-            .map(|last| now.duration_since(last) >= REFRESH_INTERVAL)
-            .unwrap_or(true)
-    };
+    if !needs_refresh().await {
+        return from_cache(&*CACHE.read().await);
+    }
 
-    if !should_refresh {
+    let _refresh = REFRESH_GATE.lock().await;
+    if !needs_refresh().await {
         return from_cache(&*CACHE.read().await);
     }
 
     let outcome = fetch_external(state).await;
     let mut cache = CACHE.write().await;
-    cache.last_refresh_attempt = Some(now);
+    cache.last_refresh_attempt = Some(Instant::now());
     apply_fetch(&mut cache, outcome);
     from_cache(&cache)
 }
@@ -246,5 +253,34 @@ mod tests {
         assert!(allowed.contains("usdc.near"));
         assert!(allowed.contains("new-ref.near"));
         assert!(allowed.contains(WRAP_NEAR));
+    }
+
+    #[test]
+    fn failed_sources_on_an_empty_cache_return_only_builtins() {
+        let mut cache = CacheState::default();
+        apply_fetch(
+            &mut cache,
+            FetchOutcome {
+                bridge: None,
+                ref_tokens: None,
+            },
+        );
+        assert_eq!(from_cache(&cache), always_allowed());
+    }
+
+    #[test]
+    fn successful_sources_are_merged_with_builtins() {
+        let mut cache = CacheState::default();
+        apply_fetch(
+            &mut cache,
+            FetchOutcome {
+                bridge: Some(HashSet::from(["bridge-token.near".to_string()])),
+                ref_tokens: Some(HashSet::from(["ref-token.near".to_string()])),
+            },
+        );
+        let mut expected = always_allowed();
+        expected.insert("bridge-token.near".to_string());
+        expected.insert("ref-token.near".to_string());
+        assert_eq!(from_cache(&cache), expected);
     }
 }

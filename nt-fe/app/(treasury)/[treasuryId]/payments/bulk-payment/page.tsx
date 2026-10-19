@@ -505,8 +505,8 @@ export default function BulkPaymentPage() {
                 | "Near"
                 | "Ft"
                 | "Intents";
-            // Intents bulk calls intents.near, so a storage_deposit cannot share
-            // that proposal. Those tokens are on the sponsor allowlist.
+            // Intents bulk is one call to intents.near. A storage_deposit for a
+            // NEAR fungible token cannot share that proposal.
             const storageDepositAccounts =
                 tokenResidency === "Ft"
                     ? await accountsNeedingProposalStorageDeposit(
