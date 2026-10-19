@@ -157,6 +157,7 @@ export interface IntentsDepositCall {
     residency: "Near" | "Ft" | "Intents";
     /** Display token id: `near`, the NEP-141 contract, or the intents token id. */
     tokenId: string;
+    /** Recipient of the `ft_transfer` or `mt_transfer`, not a leading `storage_deposit`. */
     depositAddress: string;
     amountRaw: string;
 }
@@ -186,9 +187,11 @@ function parseTransferArgs(
  * Decode and validate a public-to-confidential move call — exactly the
  * shapes the builders above produce (wrap-and-transfer, single `ft_transfer`,
  * single `mt_transfer`), with decodable args, a receiver, a positive amount
- * and (for wrap) `near_deposit` == the transferred amount. Used to validate
- * the proposer-controlled `public-to-confidential` marker; anything else is
- * not a move.
+ * and (for wrap) `near_deposit` == the transferred amount. An Ft call may
+ * start with one or more `storage_deposit` actions whose deposit is
+ * `STORAGE_DEPOSIT_AMOUNT`; the decoded recipient is still the `ft_transfer`
+ * receiver. The requests list uses this same parser. Anything else is not a
+ * move.
  */
 export function parseIntentsDepositKind(
     kind: unknown,

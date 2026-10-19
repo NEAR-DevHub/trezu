@@ -292,7 +292,7 @@ export async function preparePublicToConfidentialTransfer(params: {
 /**
  * Marker + exact builder call shape + backend-verified 1Click quote binding
  * (`confidential_metadata.public_move.verified`). Same rule as the requests
- * list classification.
+ * list classification, including an Ft call that starts with `storage_deposit`.
  */
 export function isPublicToConfidentialProposal(proposal: Proposal): boolean {
     return getProposalUIKind(proposal) === "Move to Confidential";

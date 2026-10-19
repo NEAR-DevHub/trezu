@@ -604,11 +604,13 @@ export interface StorageDepositRegistration {
  */
 /**
  * Whether the relayer will pay NEP-141 registration on this token contract.
- * On failure, returns false so the proposal pays the deposit itself.
+ * `null` means the check could not be read. Callers that can put the deposit
+ * on the proposal treat that like `false`. Callers that cannot should not
+ * treat `null` as a refusal.
  */
 export async function isSponsorStorageAllowed(
     tokenId: string,
-): Promise<boolean> {
+): Promise<boolean | null> {
     if (!tokenId) return false;
     try {
         const url = `${BACKEND_API_BASE}/token/storage-deposit/sponsor-allowed`;
@@ -621,7 +623,7 @@ export async function isSponsorStorageAllowed(
             `Error checking sponsor storage allowlist for ${tokenId}`,
             error,
         );
-        return false;
+        return null;
     }
 }
 
