@@ -142,6 +142,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             post(handlers::token::storage_deposit::is_registered::get_batch_storage_deposit_is_registered),
         )
         .route(
+            "/api/token/storage-deposit/sponsor-allowed",
+            get(handlers::token::storage_deposit::is_registered::get_sponsor_storage_allowed),
+        )
+        .route(
             "/api/treasury/policy",
             get(handlers::treasury::policy::get_treasury_policy)
         )

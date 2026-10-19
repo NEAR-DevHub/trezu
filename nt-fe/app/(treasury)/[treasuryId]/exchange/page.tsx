@@ -23,6 +23,10 @@ import {
 import { trackEvent } from "@/lib/analytics";
 import type { IntentsQuoteResponse } from "@/lib/api";
 import { generateIntent } from "@/lib/api";
+import {
+    accountsNeedingProposalStorageDeposit,
+    prependStorageDeposits,
+} from "@/lib/near-proposal-builders";
 import { parseTokenQueryParam } from "@/lib/token-query-param";
 import { useNear } from "@/stores/near-store";
 import { buildConfidentialProposal } from "../../../../features/confidential/utils/proposal-builder";
@@ -169,6 +173,29 @@ export default function ExchangePage() {
                 // Regular exchange: FT tokens or intents tokens
                 else {
                     result = await buildFungibleTokenProposal(proposalParams);
+                    const receiverId =
+                        result.proposal.kind.FunctionCall.receiver_id;
+                    // mt_transfer goes to intents.near; registration is on a
+                    // different contract and cannot share this proposal.
+                    if (receiverId !== "intents.near") {
+                        const needsStorage =
+                            await accountsNeedingProposalStorageDeposit(
+                                receiverId,
+                                [proposalDataFromForm.quote.depositAddress],
+                            );
+                        if (needsStorage.length > 0) {
+                            result = {
+                                ...result,
+                                proposal: {
+                                    ...result.proposal,
+                                    kind: prependStorageDeposits(
+                                        result.proposal.kind,
+                                        needsStorage,
+                                    ),
+                                },
+                            };
+                        }
+                    }
                 }
 
                 await createProposal(tEx("requestSubmitted"), {

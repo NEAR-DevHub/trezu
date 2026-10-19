@@ -62,9 +62,11 @@ import { findBridgeAssetForToken } from "@/lib/bridge-asset-resolver";
 import { computeQuoteNetworkFee, isIntentsToken } from "@/lib/intents-fee";
 import { getNearComChainIcons, isNearComNetwork } from "@/lib/intents-network";
 import {
+    accountsNeedingProposalStorageDeposit,
     buildIntentsTransferProposal,
     buildNativeNearIntentsKind,
     buildNearFtIntentsKind,
+    prependStorageDeposits,
 } from "@/lib/near-proposal-builders";
 import { isNearComRecipientAddress } from "@/lib/nearcom-address";
 import {
@@ -96,7 +98,10 @@ import {
     resolvePreferredDestinationNetwork,
     resolvePreferredNetworks,
 } from "./utils/payments-deep-link";
-import { buildDirectTransferKind } from "./utils/proposal-builder";
+import {
+    buildDirectFtTransferCallKind,
+    buildDirectTransferKind,
+} from "./utils/proposal-builder";
 
 function buildPaymentFormSchema(messages: {
     recipientMin: string;
@@ -1323,10 +1328,42 @@ export default function PaymentsPage() {
                             depositAddress,
                             amountIn,
                         );
+                        const needsStorage =
+                            await accountsNeedingProposalStorageDeposit(
+                                token.address,
+                                [depositAddress],
+                            );
+                        if (needsStorage.length > 0) {
+                            proposalKind = prependStorageDeposits(
+                                proposalKind,
+                                needsStorage,
+                            );
+                        }
                     }
                 }
+            } else if (!isNearNativeToken) {
+                const needsStorage =
+                    await accountsNeedingProposalStorageDeposit(token.address, [
+                        bareAddress,
+                    ]);
+                proposalKind =
+                    needsStorage.length > 0
+                        ? prependStorageDeposits(
+                              buildDirectFtTransferCallKind(
+                                  bareAddress,
+                                  token.address,
+                                  directTransferAmount,
+                              ),
+                              needsStorage,
+                          )
+                        : buildDirectTransferKind(
+                              bareAddress,
+                              token,
+                              directTransferAmount,
+                              isConfidential,
+                          );
             } else {
-                // Direct NEAR or NEAR FT transfer
+                // Direct native NEAR transfer
                 proposalKind = buildDirectTransferKind(
                     bareAddress,
                     token,

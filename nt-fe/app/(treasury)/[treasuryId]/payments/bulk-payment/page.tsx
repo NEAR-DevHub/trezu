@@ -16,10 +16,12 @@ import { trackEvent } from "@/lib/analytics";
 import { confirmConfidentialBulkPayment } from "@/lib/api";
 import Big from "@/lib/big";
 import {
+    BULK_PAYMENT_CONTRACT_ID,
     buildApproveListProposal,
     generateListId,
     submitPaymentList,
 } from "@/lib/bulk-payment-api";
+import { accountsNeedingProposalStorageDeposit } from "@/lib/near-proposal-builders";
 import { encodeToMarkdown } from "@/lib/utils";
 import {
     hasNearComAddressPrefix,
@@ -499,21 +501,33 @@ export default function BulkPaymentPage() {
                 .times(Big(10).pow(spendDecimals))
                 .toFixed();
 
+            const tokenResidency = selectedToken.residency as
+                | "Near"
+                | "Ft"
+                | "Intents";
+            // Intents bulk calls intents.near, so a storage_deposit cannot share
+            // that proposal. Those tokens are on the sponsor allowlist.
+            const storageDepositAccounts =
+                tokenResidency === "Ft"
+                    ? await accountsNeedingProposalStorageDeposit(
+                          tokenIdForProposal,
+                          [
+                              BULK_PAYMENT_CONTRACT_ID,
+                              ...payments.map((payment) => payment.recipient),
+                          ],
+                      )
+                    : [];
+
             const proposal = await buildApproveListProposal({
                 daoAccountId: selectedTreasury,
                 listId,
                 tokenId: tokenIdForProposal,
-                tokenResidency: selectedToken.residency as
-                    | "Near"
-                    | "Ft"
-                    | "Intents",
+                tokenResidency,
                 totalAmount: totalAmountInSmallestUnits,
                 description,
                 proposalBond,
+                storageDepositAccounts,
             });
-
-            // NEP-141 storage_deposit registrations (bulk contract + recipients)
-            // are handled by the backend at approval time.
 
             // Submit payment list to backend first.
             const submitResult = await submitPaymentList({

@@ -602,6 +602,29 @@ export interface StorageDepositRegistration {
  * Get storage deposit for an account on a specific token contract
  * Returns the storage deposit amount required for the account to hold the token
  */
+/**
+ * Whether the relayer will pay NEP-141 registration on this token contract.
+ * On failure, returns false so the proposal pays the deposit itself.
+ */
+export async function isSponsorStorageAllowed(
+    tokenId: string,
+): Promise<boolean> {
+    if (!tokenId) return false;
+    try {
+        const url = `${BACKEND_API_BASE}/token/storage-deposit/sponsor-allowed`;
+        const response = await axios.get<{ allowed: boolean }>(url, {
+            params: { tokenId },
+        });
+        return response.data.allowed === true;
+    } catch (error) {
+        console.error(
+            `Error checking sponsor storage allowlist for ${tokenId}`,
+            error,
+        );
+        return false;
+    }
+}
+
 export async function getStorageDepositIsRegistered(
     accountId: string,
     tokenId: string,

@@ -1,13 +1,15 @@
-import type { TransferKind } from "@/lib/proposals-api";
+import type { FunctionCallKind, TransferKind } from "@/lib/proposals-api";
 import type { Token } from "@/components/token-input";
 import { default_near_token } from "@/constants/token";
+import { FT_TRANSFER_GAS } from "@/lib/near-ft-gas";
+import { jsonToBase64 } from "@/lib/utils";
 
 // ─── Proposal builders ────────────────────────────────────────────────────────
 //
-// NEP-141 `storage_deposit` registrations are handled by the backend at
-// approval time (see nt-be relay storage_deposit derivation), so this builder
-// only produces the proposal kind — no extra storage transactions. The Intents
-// kinds are built directly via the `*Kind` helpers in @/lib/near-proposal-builders.
+// Allowlisted token contracts are registered by the backend at approval time.
+// A token outside that list gets a `storage_deposit` action on the proposal
+// itself (`buildDirectFtTransferCallKind` plus `prependStorageDeposits`).
+// Intents kinds are built via the `*Kind` helpers in @/lib/near-proposal-builders.
 
 /**
  * Builds a Transfer kind for a direct NEAR or NEAR FT payment.
@@ -26,6 +28,34 @@ export function buildDirectTransferKind(
             receiver_id: address,
             amount: parsedAmount,
             msg: null,
+        },
+    };
+}
+
+/**
+ * Direct FT payment as a FunctionCall, so a `storage_deposit` for an
+ * unregistered recipient can sit in front of `ft_transfer` on the same
+ * token contract. Used when the sponsor will not pay that registration.
+ */
+export function buildDirectFtTransferCallKind(
+    address: string,
+    tokenAddress: string,
+    parsedAmount: string,
+): FunctionCallKind {
+    return {
+        FunctionCall: {
+            receiver_id: tokenAddress,
+            actions: [
+                {
+                    method_name: "ft_transfer",
+                    args: jsonToBase64({
+                        receiver_id: address,
+                        amount: parsedAmount,
+                    }),
+                    deposit: "1",
+                    gas: FT_TRANSFER_GAS,
+                },
+            ],
         },
     };
 }
