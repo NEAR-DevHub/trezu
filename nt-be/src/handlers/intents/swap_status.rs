@@ -356,22 +356,21 @@ pub async fn get_swap_status(
                 // The quote refresher stops covering a proposal after 30 days;
                 // a viewer opening a stale one is the refresh path left, so
                 // a settled answer is stored for every later list load.
-                if let Some(dao_id) = dao_id.as_deref() {
-                    if let Err(e) = record_settled_quote_status(
+                if let Some(dao_id) = dao_id.as_deref()
+                    && let Err(e) = record_settled_quote_status(
                         &db_pool,
                         dao_id,
                         &deposit_address,
                         &full_response,
                     )
                     .await
-                    {
-                        tracing::warn!(
-                            dao_id,
-                            deposit_address,
-                            "failed to record settled swap status: {}",
-                            e
-                        );
-                    }
+                {
+                    tracing::warn!(
+                        dao_id,
+                        deposit_address,
+                        "failed to record settled swap status: {}",
+                        e
+                    );
                 }
 
                 Ok::<_, (StatusCode, String)>(SimplifiedSwapStatusResponse {

@@ -53,6 +53,7 @@ export function useProposalStatus(
         undefined,
         isApproved && !isSettled,
         treasuryId,
+        proposal,
     );
 
     if (isSettled) {

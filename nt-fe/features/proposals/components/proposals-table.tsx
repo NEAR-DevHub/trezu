@@ -135,6 +135,7 @@ function ProposalTimelineDate({
         undefined,
         shouldUseSwapDate,
         treasuryId,
+        proposal,
     );
 
     // Swap status is still loading. The row may already be settled, so hold

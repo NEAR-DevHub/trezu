@@ -817,6 +817,7 @@ export default function RequestReceiptPage({
         undefined,
         shouldTrackSwapStatus,
         treasuryId,
+        proposal,
     );
     // Intents-routed proposals gate the receipt on a SUCCESS swap status — a
     // pending/failed/refunded swap has no finalized receipt (mirrors the sidebar

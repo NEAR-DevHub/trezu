@@ -12,18 +12,41 @@ import {
 } from "@/lib/proposals-api";
 import { isTerminalSwapStatus } from "@/features/proposals/utils/receipt-utils";
 import { isAxiosErrorWithStatus } from "@/lib/query-retry";
+import { nanosToMs } from "@/lib/utils";
 import { Policy } from "@/types/policy";
+
+/**
+ * How long after a request is submitted its swap can still settle. A 1Click
+ * quote expires within this window (it is requested when the proposal is
+ * created and outlives the voting period only by a few days), and past the
+ * deadline the deposit is refunded rather than swapped. A status still in
+ * flight after that is an orphan (a deposit that never arrived, a bridge
+ * that never answered); polling it would pin the page to a heartbeat
+ * forever, so it is read once per load instead.
+ */
+const SWAP_SETTLING_WINDOW_MS = 10 * 24 * 60 * 60 * 1000;
+
+export function isWithinSwapSettlingWindow(
+    proposal: Pick<Proposal, "submission_time"> | null | undefined,
+): boolean {
+    return (
+        !!proposal &&
+        nanosToMs(proposal.submission_time) + SWAP_SETTLING_WINDOW_MS > Date.now()
+    );
+}
 
 /**
  * A request whose persisted 1Click outcome is not final yet. Its status is
  * read from the proposal itself, so the proposal query is what has to keep
- * refreshing until the backend stores a terminal outcome.
+ * refreshing until the backend stores a terminal outcome (or the settling
+ * window closes).
  */
 function hasSettlingSwap(proposal: Proposal | null | undefined): boolean {
     return (
         proposal?.status === "Approved" &&
         !!proposal.swap_status &&
-        !isTerminalSwapStatus(proposal.swap_status)
+        !isTerminalSwapStatus(proposal.swap_status) &&
+        isWithinSwapSettlingWindow(proposal)
     );
 }
 
@@ -180,6 +203,9 @@ export function useProposalTransaction(
  * @param daoId - Treasury/DAO id. The backend uses it to decide the status
  *   source: confidential treasuries read from our bronze history table, others
  *   use 1Click `/v0/status`.
+ * @param proposal - The request the swap belongs to. Polling stops once its
+ *   settling window has closed, see `isWithinSwapSettlingWindow`; without it
+ *   an in-flight status polls until it settles.
  *
  */
 export function useSwapStatus(
@@ -187,6 +213,7 @@ export function useSwapStatus(
     depositMemo?: string | null,
     enabled: boolean = true,
     daoId?: string | null,
+    proposal?: Pick<Proposal, "submission_time"> | null,
 ) {
     return useQuery({
         queryKey: ["swap-status", depositAddress, depositMemo, daoId],
@@ -202,6 +229,11 @@ export function useSwapStatus(
             const data = query.state.data;
             // If status is terminal (SUCCESS, REFUNDED, FAILED), stop polling
             if (isTerminalSwapStatus(data?.status)) {
+                return false;
+            }
+            // An orphaned swap (still in flight past every quote deadline) is
+            // read once per load, not polled.
+            if (proposal && !isWithinSwapSettlingWindow(proposal)) {
                 return false;
             }
             return 1000 * 10; // 10 seconds

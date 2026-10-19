@@ -420,6 +420,7 @@ export function ProposalSidebar({
         undefined,
         shouldFetchSwapStatus,
         treasuryId,
+        proposal,
     );
     const effectiveSwapStatus: SwapStatus | undefined =
         settledSwapStatus ??
