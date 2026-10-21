@@ -36,6 +36,7 @@ const MAX_RECURSION_DEPTH: usize = 8;
 const ACCOUNT_NOT_FOUND_RETRY_DELAYS_MS: [u64; 5] = [1000, 2000, 4000, 8000, 16000];
 
 /// Outcome of resolving an authorization (sub-)graph.
+#[derive(Debug, PartialEq)]
 enum ResolveOutcome {
     /// Authorization is valid; carries the unwrapped payload.
     Resolved(String),
@@ -533,7 +534,55 @@ mod tests {
 
     #[test]
     fn verifies_ml_dsa_65_signed_login() {
-        assert_verifies(include_str!("testdata/nep413_ml_dsa_65_login.json"));
+        assert_verifies(ML_DSA_65_LOGIN);
+    }
+
+    const ML_DSA_65_LOGIN: &str = include_str!("testdata/nep413_ml_dsa_65_login.json");
+
+    /// Finalized shortly after the fixture login, with its ML-DSA-65 key on the
+    /// account. Queried on archival RPC so the fixture stays re-recordable.
+    const ML_DSA_65_LOGIN_BLOCK: u64 = 220_938_347;
+
+    async fn nep413_fallback_at_login_block(authorization: &str) -> ResolveOutcome {
+        let state = crate::utils::test_utils::init_test_state().await;
+        let client = create_rpc_client(&state.archival_network).unwrap();
+        nep413_fallback(
+            &client,
+            "nearprotocolua.near",
+            "PROVE_OWNERSHIP",
+            "Trezu App",
+            authorization,
+            ML_DSA_65_LOGIN_BLOCK,
+        )
+        .await
+    }
+
+    /// Locks in the RPC resolving a full `ml-dsa-65:` key to the account's
+    /// on-chain `ml-dsa-65-hash:` handle.
+    #[tokio::test]
+    async fn resolves_ml_dsa_65_login_on_chain() {
+        let msg: Nep413SignedMessage = serde_json::from_str(ML_DSA_65_LOGIN).unwrap();
+        assert_eq!(
+            nep413_fallback_at_login_block(ML_DSA_65_LOGIN).await,
+            ResolveOutcome::Resolved(msg.message)
+        );
+    }
+
+    /// Locks in the RPC's missing-key response shape and wording.
+    #[tokio::test]
+    async fn rejects_unregistered_ml_dsa_65_key() {
+        let mut authorization: serde_json::Value = serde_json::from_str(ML_DSA_65_LOGIN).unwrap();
+        let key = authorization["publicKey"].as_str().unwrap();
+        let (head, last) = key.split_at(key.len() - 1);
+        authorization["publicKey"] =
+            format!("{head}{}", if last == "1" { "2" } else { "1" }).into();
+
+        assert_eq!(
+            nep413_fallback_at_login_block(&authorization.to_string()).await,
+            ResolveOutcome::Invalid(
+                "public key not registered on account at pinned block".to_string()
+            )
+        );
     }
 
     #[test]
