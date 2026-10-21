@@ -15,7 +15,7 @@ use crate::utils::jsonrpc::create_rpc_client;
 use base64::Engine;
 use near_api::NetworkConfig;
 use near_jsonrpc_client::{JsonRpcClient, methods};
-use near_jsonrpc_primitives::types::query::QueryResponseKind;
+use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryError};
 use near_primitives::types::{BlockId, BlockReference, FunctionArgs};
 use near_primitives::views::QueryRequest;
 use serde::Deserialize;
@@ -341,39 +341,42 @@ async fn nep413_fallback(
     };
 
     // Verify the public key is registered on `account_id` at the pinned block.
+    // Query that single key rather than the full key list: the list may hold
+    // key types our nearcore crates can't deserialize (e.g. `ml-dsa-65-hash`),
+    // which would fail the whole response for an unrelated key.
     let account: near_primitives::types::AccountId = match account_id.parse() {
         Ok(account) => account,
         Err(e) => return ResolveOutcome::Invalid(format!("invalid account id: {e}")),
     };
-    let keys = match client
+    match client
         .call(methods::query::RpcQueryRequest {
             block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
-            request: QueryRequest::ViewAccessKeyList {
+            request: QueryRequest::ViewAccessKey {
                 account_id: account,
+                public_key: public_key.clone(),
             },
         })
         .await
     {
-        Ok(response) => match response.kind {
-            QueryResponseKind::AccessKeyList(list) => list.keys,
-            _ => {
+        Ok(response) => {
+            if !matches!(response.kind, QueryResponseKind::AccessKey(_)) {
                 return ResolveOutcome::Invalid(
-                    "unexpected query response kind for access key list".to_string(),
+                    "unexpected query response kind for access key".to_string(),
                 );
             }
-        },
+        }
         Err(e) => {
+            if let Some(RpcQueryError::UnknownAccessKey { .. }) = e.handler_error() {
+                return ResolveOutcome::Invalid(
+                    "public key not registered on account at pinned block".to_string(),
+                );
+            }
             let err = format!("{e:?}");
             if is_unknown_account(&err) {
                 return ResolveOutcome::UnknownAccount(err);
             }
-            return ResolveOutcome::Invalid(format!("failed to fetch access keys: {err}"));
+            return ResolveOutcome::Invalid(format!("failed to fetch access key: {err}"));
         }
-    };
-    if !keys.iter().any(|k| k.public_key == public_key) {
-        return ResolveOutcome::Invalid(
-            "public key not registered on account at pinned block".to_string(),
-        );
     }
 
     // Recompute the NEP-413 borsh hash (tag 2^31 + 413) over the signed payload.
