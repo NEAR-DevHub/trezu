@@ -15,6 +15,7 @@ use crate::handlers::proposals::{
         Policy, Proposal, PublicToConfidentialCall, extract_from_description,
         extract_payload_hash_from_kind, fetch_policy, fetch_proposal, fetch_proposals,
     },
+    swap_outcome::SwapStatusLookup,
 };
 use crate::handlers::public_history::quotes::quote_asset_matches_token;
 use crate::{
@@ -182,6 +183,12 @@ pub async fn get_proposals(
         enrich_public_to_confidential_proposals(&mut proposals, &state.db_pool, dao_id.as_ref())
             .await;
     }
+    // Before filtering: the status filter buckets an approved request whose
+    // swap failed under "Failed". Gated like the confidential enrichment so a
+    // non-member learns nothing about a confidential treasury's swaps.
+    if confidentiality_check.is_ok() {
+        attach_swap_statuses(&mut proposals, &state.db_pool, dao_id.as_ref()).await;
+    }
 
     // Apply filters
     let filtered_proposals = filters
@@ -277,8 +284,25 @@ pub async fn get_proposal(
         )
         .await;
     }
+    if confidentiality_check.is_ok() {
+        attach_swap_statuses(
+            std::slice::from_mut(&mut proposal),
+            &state.db_pool,
+            dao_id.as_ref(),
+        )
+        .await;
+    }
 
     Ok((StatusCode::OK, Json(proposal)))
+}
+
+/// Stamp the persisted 1Click outcome on approved intents-routed proposals.
+/// A lookup failure degrades to on-chain status rather than failing the
+/// request, matching the other enrichers.
+async fn attach_swap_statuses(proposals: &mut [Proposal], pool: &PgPool, dao_id: &str) {
+    if let Err(error) = SwapStatusLookup::new(pool, dao_id).attach(proposals).await {
+        tracing::warn!(dao_id, %error, "Failed to attach swap statuses to proposals");
+    }
 }
 
 #[derive(serde::Serialize)]

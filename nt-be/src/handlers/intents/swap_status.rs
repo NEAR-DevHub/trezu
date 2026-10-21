@@ -10,7 +10,10 @@ use std::time::Duration;
 
 use crate::{
     AppState,
-    handlers::public_history::confidential_list::is_confidential_dao,
+    handlers::public_history::{
+        confidential_list::is_confidential_dao,
+        proposals::quote_refresher::record_settled_quote_status,
+    },
     utils::cache::{CacheKey, CacheTier},
 };
 
@@ -34,7 +37,7 @@ pub struct QuoteByDepositAddressQuery {
     pub deposit_memo: Option<String>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum SwapStatus {
     KnownDepositTx,
@@ -44,6 +47,52 @@ pub enum SwapStatus {
     Success,
     Refunded,
     Failed,
+}
+
+impl SwapStatus {
+    /// Parse a raw 1Click status string (any case). Unknown values are still
+    /// in flight from the treasury's point of view, so they read as
+    /// `Processing`.
+    pub fn parse(raw: &str) -> Self {
+        match raw.trim().to_ascii_uppercase().as_str() {
+            "SUCCESS" => SwapStatus::Success,
+            "REFUNDED" => SwapStatus::Refunded,
+            "FAILED" => SwapStatus::Failed,
+            "PENDING_DEPOSIT" => SwapStatus::PendingDeposit,
+            "INCOMPLETE_DEPOSIT" => SwapStatus::IncompleteDeposit,
+            "KNOWN_DEPOSIT_TX" => SwapStatus::KnownDepositTx,
+            _ => SwapStatus::Processing,
+        }
+    }
+
+    /// The swap ended without delivering: the request's funds were (or will
+    /// be) returned, so an approved request that paid for it shows as failed.
+    pub fn is_failed(self) -> bool {
+        matches!(self, SwapStatus::Failed | SwapStatus::Refunded)
+    }
+
+    /// 1Click will not move the swap past this status.
+    pub fn is_terminal(self) -> bool {
+        self.is_failed() || self == SwapStatus::Success
+    }
+}
+
+/// Outcome of a confidential swap from the two places that record it: the
+/// latest 1Click history row for the deposit address and the intent row the
+/// submit queue owns. A settled 1Click status is the final word. Otherwise an
+/// intent the queue retired (`confidential_intents.status = 'failed'`: never
+/// handed to 1Click before its deadline, or rejected by it) reads as `Failed`
+/// even though 1Click still lists the untouched quote as `PENDING_DEPOSIT`.
+/// `None` when nothing is on record yet.
+pub fn resolve_confidential_swap_status(
+    history_status: Option<&str>,
+    intent_failed: bool,
+) -> Option<SwapStatus> {
+    match history_status.map(SwapStatus::parse) {
+        Some(status) if status.is_terminal() => Some(status),
+        _ if intent_failed => Some(SwapStatus::Failed),
+        history => history,
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -170,39 +219,51 @@ pub fn extract_quote_data(full_response: &FullSwapStatusResponse) -> Option<Quot
         .and_then(|quote_response| quote_response.quote.clone())
 }
 
-/// Map a bronze history `status` string onto [`SwapStatus`]; unknown values
-/// fall back to `Processing`.
-fn map_history_status(raw: &str) -> SwapStatus {
-    match raw.trim().to_ascii_uppercase().as_str() {
-        "SUCCESS" => SwapStatus::Success,
-        "REFUNDED" => SwapStatus::Refunded,
-        "FAILED" => SwapStatus::Failed,
-        "PENDING_DEPOSIT" => SwapStatus::PendingDeposit,
-        "INCOMPLETE_DEPOSIT" => SwapStatus::IncompleteDeposit,
-        "KNOWN_DEPOSIT_TX" => SwapStatus::KnownDepositTx,
-        _ => SwapStatus::Processing,
-    }
+#[derive(sqlx::FromRow)]
+struct ConfidentialSwapStatusRow {
+    history_status: Option<String>,
+    history_at: Option<chrono::DateTime<chrono::Utc>>,
+    intent_failed: bool,
+    intent_updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
-/// Read confidential swap status from bronze. `None` means not yet ingested.
+/// Read confidential swap status from our own store: the latest bronze row
+/// for the deposit address and the intent row the submit queue may have
+/// retired (see [`resolve_confidential_swap_status`]). `None` means nothing
+/// is on record yet.
 pub async fn fetch_confidential_swap_status(
     pool: &sqlx::PgPool,
     dao_id: &str,
     deposit_address: &str,
 ) -> Result<Option<SimplifiedSwapStatusResponse>, (StatusCode, String)> {
-    let row = sqlx::query_as::<_, (String, chrono::DateTime<chrono::Utc>)>(
+    let row = sqlx::query_as::<_, ConfidentialSwapStatusRow>(
         r#"
-        SELECT status, created_at_external
-        FROM bronze_confidential_history_events
-        WHERE account_id = $1
-          AND deposit_address = $2
-        ORDER BY created_at_external DESC
-        LIMIT 1
+        SELECT he.status AS history_status,
+               he.created_at_external AS history_at,
+               COALESCE(ci.status = 'failed', FALSE) AS intent_failed,
+               ci.updated_at AS intent_updated_at
+        FROM (SELECT 1) AS lookup
+        LEFT JOIN LATERAL (
+            SELECT status, created_at_external
+            FROM bronze_confidential_history_events
+            WHERE account_id = $1
+              AND deposit_address = $2
+            ORDER BY created_at_external DESC
+            LIMIT 1
+        ) he ON TRUE
+        LEFT JOIN LATERAL (
+            SELECT status, updated_at
+            FROM confidential_intents
+            WHERE dao_id = $1
+              AND deposit_address = $2
+            ORDER BY id DESC
+            LIMIT 1
+        ) ci ON TRUE
         "#,
     )
     .bind(dao_id)
     .bind(deposit_address)
-    .fetch_optional(pool)
+    .fetch_one(pool)
     .await
     .map_err(|e| {
         tracing::error!("confidential swap status query failed: {}", e);
@@ -212,12 +273,24 @@ pub async fn fetch_confidential_swap_status(
         )
     })?;
 
-    Ok(row.map(
-        |(status, created_at_external)| SimplifiedSwapStatusResponse {
-            status: map_history_status(&status),
-            updated_at: created_at_external.to_rfc3339(),
-        },
-    ))
+    let history = row.history_status.as_deref().map(SwapStatus::parse);
+    Ok(
+        resolve_confidential_swap_status(row.history_status.as_deref(), row.intent_failed).map(
+            |status| {
+                // A status taken from 1Click carries 1Click's time; one derived
+                // from the retired intent carries the time it was retired.
+                let updated_at = if history == Some(status) {
+                    row.history_at
+                } else {
+                    row.intent_updated_at.or(row.history_at)
+                };
+                SimplifiedSwapStatusResponse {
+                    status,
+                    updated_at: updated_at.unwrap_or_else(chrono::Utc::now).to_rfc3339(),
+                }
+            },
+        ),
+    )
 }
 
 pub async fn get_swap_status(
@@ -279,6 +352,26 @@ pub async fn get_swap_status(
                     deposit_memo.as_deref(),
                 )
                 .await?;
+
+                // The quote refresher stops covering a proposal after 30 days;
+                // a viewer opening a stale one is the refresh path left, so
+                // a settled answer is stored for every later list load.
+                if let Some(dao_id) = dao_id.as_deref()
+                    && let Err(e) = record_settled_quote_status(
+                        &db_pool,
+                        dao_id,
+                        &deposit_address,
+                        &full_response,
+                    )
+                    .await
+                {
+                    tracing::warn!(
+                        dao_id,
+                        deposit_address,
+                        "failed to record settled swap status: {}",
+                        e
+                    );
+                }
 
                 Ok::<_, (StatusCode, String)>(SimplifiedSwapStatusResponse {
                     status: full_response.status,

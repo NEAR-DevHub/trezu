@@ -295,6 +295,14 @@ export interface Proposal {
             }>;
         };
     };
+    /**
+     * Persisted 1Click outcome of the swap an approved intents-routed request
+     * paid for, attached by the backend from its own history tables. The
+     * backend buckets the request into the Failed tab from the same value,
+     * so a status derived from it always matches the tab it sits in. Absent
+     * when the request is not intents-routed or no outcome is stored yet.
+     */
+    swap_status?: SwapStatus | null;
     /** Populated by backend for public payment/exchange proposals */
     public_metadata?: {
         proposal_created_at?: string | null;

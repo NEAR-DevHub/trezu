@@ -596,7 +596,10 @@ enum HistoryReconciliation {
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum OneclickLookup {
     /// 1Click has a history row for it; the row is now in Bronze.
-    Found,
+    /// `deposit_seen` is false when every row is still `PENDING_DEPOSIT`: the
+    /// quote exists but nothing ever reached its deposit address, which is
+    /// what a never-submitted intent looks like from 1Click.
+    Found { deposit_seen: bool },
     /// 1Click has nothing for it: the intent was never accepted.
     NotFound,
     /// The intent carries no deposit address, so there is nothing to ask and
@@ -1114,12 +1117,18 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
                     .lookup_in_1click(dao_id, row.deposit_address.as_deref())
                     .await
                 {
-                    OneclickLookup::Found => {
+                    OneclickLookup::Found { deposit_seen } => {
                         match self
                             .recover_from_history(dao_id, &row.payload_hash, &lease)
                             .await
                         {
                             HistoryReconciliation::Recovered => submitted += 1,
+                            // 1Click only knows the quote: nothing ever reached
+                            // its deposit address, and past the deadline nothing
+                            // can. The intent was never submitted.
+                            HistoryReconciliation::NotInHistory if expired && !deposit_seen => {
+                                self.mark_expired(dao_id, &row.payload_hash, &lease).await;
+                            }
                             HistoryReconciliation::NotInHistory => {
                                 self.release(
                                     dao_id,
@@ -1428,8 +1437,10 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         }
     }
 
-    /// Retire an executed intent whose deadline passed and that 1Click
-    /// history does not carry. A history link that appeared meanwhile wins.
+    /// Retire an executed intent whose deadline passed and whose deposit
+    /// address 1Click never saw funds on. A link to a history row that did
+    /// see a deposit (appeared meanwhile, or the legacy link the queue was
+    /// reopened with) wins.
     async fn mark_expired(&self, dao_id: &str, payload_hash: &str, lease: &SubmitLease) {
         const ERROR: &str = "intent deadline passed before submission to 1Click";
         let updated = sqlx::query(
@@ -1447,7 +1458,12 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
               AND payload_hash = $2
               AND submit_lease_token = $3
               AND submit_result IS NULL
-              AND history_event_id IS NULL
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM bronze_confidential_history_events he
+                  WHERE he.id = confidential_intents.history_event_id
+                    AND UPPER(he.status) <> 'PENDING_DEPOSIT'
+              )
             "#,
         )
         .bind(dao_id)
@@ -1512,8 +1528,15 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         if page.items.is_empty() {
             return OneclickLookup::NotFound;
         }
+        let deposit_seen = page.items.iter().any(|event| {
+            !event
+                .item
+                .status
+                .trim()
+                .eq_ignore_ascii_case("PENDING_DEPOSIT")
+        });
         match upsert_history_events(&self.state.db_pool, dao_id, &page.items).await {
-            Ok(_) => OneclickLookup::Found,
+            Ok(_) => OneclickLookup::Found { deposit_seen },
             Err(e) => OneclickLookup::Failed(format!(
                 "ingest of the 1Click history lookup for {} failed: {}",
                 deposit_address, e
@@ -1708,6 +1731,38 @@ mod tests {
         .fetch_one(pool)
         .await
         .expect("seed history row")
+    }
+
+    /// The quote row 1Click lists before any deposit reaches it.
+    async fn seed_pending_quote_row(pool: &PgPool, deposit_address: &str) -> i64 {
+        sqlx::query_scalar(
+            r#"
+            INSERT INTO bronze_confidential_history_events (
+                account_id, created_at_external, deposit_address, status, deposit_type,
+                recipient, destination_asset, raw_payload
+            )
+            VALUES ($1, NOW(), $2, 'PENDING_DEPOSIT', 'ORIGIN_CHAIN', 'alice.near', 'nep141:wrap.near', '{}'::jsonb)
+            RETURNING id
+            "#,
+        )
+        .bind(DAO)
+        .bind(deposit_address)
+        .fetch_one(pool)
+        .await
+        .expect("seed pending quote row")
+    }
+
+    /// Link the intent to a history row the way the standard linker does.
+    async fn link_history_row(pool: &PgPool, payload_hash: &str, history_event_id: i64) {
+        sqlx::query(
+            "UPDATE confidential_intents SET history_event_id = $2 WHERE dao_id = $3 AND payload_hash = $1",
+        )
+        .bind(payload_hash)
+        .bind(history_event_id)
+        .bind(DAO)
+        .execute(pool)
+        .await
+        .expect("link history row");
     }
 
     #[derive(sqlx::FromRow)]
@@ -2127,6 +2182,96 @@ mod tests {
         assert!(
             rpc.received_requests().await.expect("rpc log").is_empty(),
             "expired rows are retired without an RPC call"
+        );
+    }
+
+    /// A quote 1Click still lists as PENDING_DEPOSIT is not proof of a
+    /// submission: the quote exists before the intent runs. Past the deadline
+    /// with nothing on the deposit address, the intent was never submitted
+    /// and is retired. This is the legacy shape the submit-state migration
+    /// reopens as `unknown` (linked to the quote row, no 1Click response).
+    #[sqlx::test]
+    async fn resubmit_retires_expired_intents_whose_quote_never_saw_a_deposit(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_dao_jwt(&pool, &state).await;
+        let mut pending_quote = history_item_for_intent();
+        pending_quote[0]["status"] = Value::from("PENDING_DEPOSIT");
+        mount_history_lookup(&oneclick, pending_quote, 1).await;
+        seed_executed_intent_in(
+            &pool,
+            RRI_29_PAYLOAD_HASH,
+            "2020-01-01T00:00:00Z",
+            SubmitState::Unknown,
+        )
+        .await;
+        attach_quote(&pool, RRI_29_PAYLOAD_HASH).await;
+        let quote_row = seed_pending_quote_row(&pool, DEPOSIT_ADDRESS).await;
+        link_history_row(&pool, RRI_29_PAYLOAD_HASH, quote_row).await;
+
+        let submitted = ConfidentialIntentSubmitter::new(&state)
+            .resubmit_awaiting_intents(DAO)
+            .await;
+        assert_eq!(submitted, 0);
+
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "failed");
+        assert_eq!(row.submit_state, "failed");
+        assert_eq!(
+            row.history_event_id,
+            Some(quote_row),
+            "the quote link is kept"
+        );
+        let error = row.submit_result.expect("expiry recorded")["error"]
+            .as_str()
+            .expect("error string")
+            .to_string();
+        assert!(error.contains("deadline passed"), "got {error}");
+        assert!(row.submit_lease_token.is_none());
+        assert!(
+            rpc.received_requests().await.expect("rpc log").is_empty(),
+            "expired rows are retired without an RPC call"
+        );
+    }
+
+    /// Same quote-only history, deadline still ahead: an uncertain outcome is
+    /// neither retired nor re-posted. It waits for a deposit to show up or
+    /// the deadline to pass.
+    #[sqlx::test]
+    async fn resubmit_leaves_unexpired_intents_with_a_deposit_free_quote_unresolved(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_dao_jwt(&pool, &state).await;
+        let mut pending_quote = history_item_for_intent();
+        pending_quote[0]["status"] = Value::from("PENDING_DEPOSIT");
+        mount_history_lookup(&oneclick, pending_quote, 1).await;
+        seed_executed_intent_in(
+            &pool,
+            RRI_29_PAYLOAD_HASH,
+            "2999-01-01T00:00:00Z",
+            SubmitState::Unknown,
+        )
+        .await;
+        attach_quote(&pool, RRI_29_PAYLOAD_HASH).await;
+        let quote_row = seed_pending_quote_row(&pool, DEPOSIT_ADDRESS).await;
+        link_history_row(&pool, RRI_29_PAYLOAD_HASH, quote_row).await;
+
+        assert_eq!(
+            ConfidentialIntentSubmitter::new(&state)
+                .resubmit_awaiting_intents(DAO)
+                .await,
+            0
+        );
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "pending");
+        assert_eq!(row.submit_state, "unknown");
+        assert!(row.submit_result.is_none());
+        assert!(row.submit_lease_token.is_none());
+        assert!(
+            rpc.received_requests().await.expect("rpc log").is_empty(),
+            "an uncertain outcome is never re-posted"
         );
     }
 

@@ -39,6 +39,7 @@ import {
 import {
     extractReceiptProposalData,
     isReceiptEligibleProposalKind,
+    isTerminalSwapStatus,
     resolveExecutionTimestamp,
 } from "@/features/proposals/utils/receipt-utils";
 import {
@@ -51,7 +52,7 @@ import { useProposalApproveBlock } from "@/hooks/use-warnings";
 import { getTransactionExplorerLink } from "@/lib/blockchain-utils";
 import { getApproversAndThreshold } from "@/lib/config-utils";
 import { isNearComPaymentRoute } from "@/lib/intents-network";
-import type { Proposal } from "@/lib/proposals-api";
+import type { Proposal, SwapStatus } from "@/lib/proposals-api";
 import { nanosToMs } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
@@ -377,14 +378,24 @@ export function ProposalSidebar({
     }
     // Whether this proposal used the Intents protocol (has a deposit address)
     const hasDepositAddress = !!depositAddress;
+    // The backend's persisted outcome once it is final (it is what buckets
+    // the request into a tab). A settled request never hits the swap-status
+    // endpoint; an in-flight one keeps the live query as its refresh path,
+    // matching `useProposalStatus`.
+    const settledSwapStatus = isTerminalSwapStatus(proposal.swap_status)
+        ? (proposal.swap_status ?? undefined)
+        : undefined;
     const shouldUseTransactionDate = isExecuted;
     // Confidential quotes only expose the quote time, not the settlement time —
-    // the executed date/link come from the on-chain transaction instead.
+    // the executed date/link come from the on-chain transaction instead. The
+    // persisted outcome carries no timestamp either, so once it is set the
+    // execution date comes from the on-chain execution transaction.
     const shouldUseSwapDate =
         isExecuted &&
         hasDepositAddress &&
         !isConfidentialRequestProposal &&
-        !isMoveToConfidential;
+        !isMoveToConfidential &&
+        !settledSwapStatus;
 
     // Fetch transaction data for non-intents proposals, or for statuses
     // whose resolved date/link should come from the chain transaction.
@@ -399,14 +410,22 @@ export function ProposalSidebar({
         shouldUseTransactionDate && (!hasDepositAddress || !shouldUseSwapDate),
     );
 
-    // Fetch swap status for executed intents proposals (exchange or payment).
-    const shouldFetchSwapStatus = isExecuted && hasDepositAddress;
+    // Fetch swap status for executed intents proposals (exchange or payment)
+    // the backend has no stored outcome for yet.
+    const shouldFetchSwapStatus =
+        isExecuted && hasDepositAddress && !settledSwapStatus;
     const { data: swapStatus, isLoading: isLoadingSwapStatus } = useSwapStatus(
         depositAddress || null,
         undefined,
         shouldFetchSwapStatus,
         treasuryId,
+        proposal,
     );
+    const effectiveSwapStatus: SwapStatus | undefined =
+        settledSwapStatus ??
+        swapStatus?.status ??
+        proposal.swap_status ??
+        undefined;
     // Any intents-routed proposal (including confidential requests) must have a
     // SUCCESS swap status before a receipt can be generated — a pending/failed/
     // refunded swap has no finalized transaction to receipt.
@@ -415,7 +434,7 @@ export function ProposalSidebar({
     // and non-members from the requests page.
     const isPublicTreasuryGuestViewer = !isConfidential && isGuestTreasury;
     const isSwapSuccessReady = shouldRequireSwapSuccess
-        ? isPublicTreasuryGuestViewer || swapStatus?.status === "SUCCESS"
+        ? isPublicTreasuryGuestViewer || effectiveSwapStatus === "SUCCESS"
         : true;
     const { executedDate, isDateLoading: resolvedDateLoading } =
         resolveExecutionTimestamp({
@@ -431,7 +450,7 @@ export function ProposalSidebar({
     const isHidden = isConfidential && isGuestTreasury;
 
     // Swap is still settling (no finalized transaction yet).
-    const isSwapProcessing = swapStatus?.status === "PROCESSING";
+    const isSwapProcessing = effectiveSwapStatus === "PROCESSING";
     // The NEAR Intents /mask explorer has no page when both sides are
     // confidential (swaps and near.com payments), so those leave the PDF
     // receipt as the only artifact. Also hide the link for confidential
@@ -472,7 +491,7 @@ export function ProposalSidebar({
         policy,
     );
 
-    let timestamp;
+    let timestamp: Date | undefined;
     switch (status) {
         case "Expired":
         case "Pending":

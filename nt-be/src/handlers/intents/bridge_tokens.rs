@@ -1160,11 +1160,11 @@ mod tests {
             .collect();
 
         assert!(
-            symbols.iter().any(|symbol| *symbol == "USDC"),
+            symbols.contains(&"USDC"),
             "USDC should remain in the near.com catalog"
         );
         assert!(
-            symbols.iter().any(|symbol| *symbol == "USDT"),
+            symbols.contains(&"USDT"),
             "USDT should remain in the near.com catalog"
         );
 

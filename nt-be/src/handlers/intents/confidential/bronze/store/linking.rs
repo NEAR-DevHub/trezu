@@ -134,9 +134,16 @@ pub async fn recover_unsubmitted_intent_from_history(
                 dao_id,
                 COALESCE(deposit_address, quote_metadata->'quote'->>'depositAddress')
                     AS deposit_address,
-                history_event_id AS linked_event_id,
+                -- A linked quote 1Click never saw a deposit on proves nothing
+                -- about submission (the quote exists before the intent runs).
+                (
+                    SELECT he.id
+                    FROM bronze_confidential_history_events he
+                    WHERE he.id = src.history_event_id
+                      AND UPPER(he.status) <> 'PENDING_DEPOSIT'
+                ) AS linked_event_id,
                 quote_metadata->'quoteRequest'->>'recipient' AS recipient
-            FROM confidential_intents
+            FROM confidential_intents src
             WHERE dao_id = $1
               AND payload_hash = $2
               AND submit_lease_token = $3
@@ -156,6 +163,7 @@ pub async fn recover_unsubmitted_intent_from_history(
              )
             WHERE i.linked_event_id IS NULL
               AND i.deposit_address IS NOT NULL
+              AND UPPER(he.status) <> 'PENDING_DEPOSIT'
               AND NOT EXISTS (
                   SELECT 1
                   FROM confidential_intents existing
