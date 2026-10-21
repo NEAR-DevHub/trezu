@@ -132,7 +132,7 @@ pub async fn register_vote_approvals(
 
     let allowed = super::allowlist::allowed_storage_contracts(state).await;
     let before = registration_targets.len();
-    registration_targets.retain(|registration| allowed.contains(registration.token_id.as_str()));
+    registration_targets = sponsor_registrations(registration_targets, &allowed);
     let skipped = before - registration_targets.len();
     if skipped > 0 {
         tracing::info!(
@@ -147,6 +147,16 @@ pub async fn register_vote_approvals(
         spent: STORAGE_DEPOSIT_AMOUNT.saturating_mul(u128::from(sent_count)),
         error: registration_error.map(|msg| error_response(StatusCode::BAD_REQUEST, msg)),
     }
+}
+
+/// Drop registrations whose token contract is not on the sponsor allowlist.
+/// The sponsor never calls `storage_deposit` on a contract that is filtered out.
+fn sponsor_registrations(
+    mut targets: HashSet<Registration>,
+    allowed: &HashSet<String>,
+) -> HashSet<Registration> {
+    targets.retain(|registration| allowed.contains(registration.token_id.as_str()));
+    targets
 }
 
 /// Outcome of registering vote approvals: the NEAR actually spent on
@@ -642,5 +652,42 @@ mod tests {
         let kind = function_call_kind("usdc.near", vec![transfer(), transfer()]);
         let out = classify_kind(&kind, &bulk(), &treasury());
         assert_eq!(out.direct, regs(&[("deposit.near", "usdc.near")]));
+    }
+
+    #[test]
+    fn unlisted_contract_is_not_sponsored() {
+        // The proposal still classifies a registration. The allowlist is what
+        // stops the sponsor from paying `storage_deposit` on that contract.
+        let kind = function_call_kind(
+            "evil.near",
+            vec![fc_action(
+                "ft_transfer",
+                json!({ "receiver_id": "alice.near", "amount": "5" }),
+            )],
+        );
+        let classified = classify_kind(&kind, &bulk(), &treasury());
+        assert_eq!(classified.direct, regs(&[("alice.near", "evil.near")]));
+
+        let allowed = HashSet::from(["usdc.near".to_string(), "wrap.near".to_string()]);
+        let targets = regs(&[
+            ("alice.near", "evil.near"),
+            ("bob.near", "usdc.near"),
+            ("mydao.sputnik-dao.near", "wrap.near"),
+        ]);
+        let sponsored = sponsor_registrations(targets, &allowed);
+
+        assert!(
+            sponsored
+                .iter()
+                .all(|registration| registration.token_id != acc("evil.near"))
+        );
+        assert_eq!(
+            sponsored,
+            regs(&[
+                ("bob.near", "usdc.near"),
+                ("mydao.sputnik-dao.near", "wrap.near"),
+            ])
+        );
+        assert!(sponsor_registrations(classified.direct, &allowed).is_empty());
     }
 }
