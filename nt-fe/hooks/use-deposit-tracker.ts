@@ -8,7 +8,7 @@ import {
     type TrackedDepositStatus,
 } from "@/lib/bridge-api";
 
-const POLL_MS = 5_000;
+const POLL_MS = 2_000;
 
 const TERMINAL_STATUSES: ReadonlySet<TrackedDepositStatus> = new Set([
     "ledger_confirmed",
