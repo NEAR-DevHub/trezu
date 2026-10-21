@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "אין לך עדיין כספת?",
         "createOneLabel": "צור אחת",
         "walletSelector": {
+            "connectFailed": "לא הצלחנו להתחבר אליך",
             "title": "בחר איך להתחבר",
             "subtitle": "ההתחברות שלך תהפוך לחבר הראשון בכספת.",
             "helpCta": "לא בטוח מה לבחור?",

@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "Belum punya treasury?",
         "createOneLabel": "Buat satu",
         "walletSelector": {
+            "connectFailed": "Kami tidak dapat memasukkan Anda",
             "title": "Pilih cara masuk",
             "subtitle": "Login Anda menjadi anggota pertama treasury Anda.",
             "helpCta": "Belum yakin harus pilih yang mana?",

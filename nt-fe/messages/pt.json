@@ -1753,6 +1753,7 @@
         "dontHaveTreasuryLabel": "Ainda não tem uma tesouraria?",
         "createOneLabel": "Criar uma",
         "walletSelector": {
+            "connectFailed": "Não foi possível iniciar sua sessão",
             "title": "Escolha como entrar",
             "subtitle": "Seu login se torna o primeiro membro da sua tesouraria.",
             "helpCta": "Não sabe qual escolher?",
