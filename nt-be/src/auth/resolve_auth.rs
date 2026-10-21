@@ -359,7 +359,7 @@ async fn nep413_fallback(
     match client.call(request).await {
         Ok(ViewAccessKeyResult::Found { .. }) => {}
         Ok(ViewAccessKeyResult::Missing { error }) => {
-            if error.contains("does not exist while viewing") {
+            if error.contains(MISSING_ACCESS_KEY_ERROR) {
                 return ResolveOutcome::Invalid(
                     "public key not registered on account at pinned block".to_string(),
                 );
@@ -410,6 +410,11 @@ enum ViewAccessKeyResult {
 }
 
 impl methods::RpcHandlerResponse for ViewAccessKeyResult {}
+
+/// Tail of nearcore's legacy missing-key error, "access key <public_key> does
+/// not exist while viewing" (the same wording near-jsonrpc-client's typed
+/// query parses into `RpcQueryError::UnknownAccessKey`).
+const MISSING_ACCESS_KEY_ERROR: &str = "does not exist while viewing";
 
 /// ML-DSA-65 encoded public key length in bytes (FIPS 204).
 const ML_DSA_65_PUBLIC_KEY_LENGTH: usize = 1952;
