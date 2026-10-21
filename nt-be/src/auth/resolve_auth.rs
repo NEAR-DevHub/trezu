@@ -411,6 +411,9 @@ enum ViewAccessKeyResult {
 
 impl methods::RpcHandlerResponse for ViewAccessKeyResult {}
 
+/// ML-DSA-65 encoded public key length in bytes (FIPS 204).
+const ML_DSA_65_PUBLIC_KEY_LENGTH: usize = 1952;
+
 /// Key that signed a NEP-413 message. near-crypto 0.34 predates ML-DSA-65, so
 /// those keys are decoded and verified with the `ml-dsa` crate instead.
 enum SignerKey {
@@ -428,7 +431,7 @@ impl std::str::FromStr for SignerKey {
                 .map_err(|e| format!("invalid base58 public key: {e}"))?;
             let key = VerifyingKey::<MlDsa65>::new_from_slice(&bytes).map_err(|_| {
                 format!(
-                    "ml-dsa-65 public key must be 1952 bytes, got {}",
+                    "ml-dsa-65 public key must be {ML_DSA_65_PUBLIC_KEY_LENGTH} bytes, got {}",
                     bytes.len()
                 )
             })?;
