@@ -14,8 +14,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTreasury } from "@/hooks/use-treasury";
 import {
     calculateExchangeFeeAmount,
-    EXCHANGE_FEE_PERCENTAGE,
+    exchangeFeeBps,
+    exchangeFeePercent,
     quoteHasAppFee,
+    sumAppFeesBps,
 } from "@/lib/exchange-fee";
 import { holdingDecimals } from "@/lib/oneclick-asset-routing";
 import { formatDurationSeconds } from "@/lib/utils";
@@ -68,6 +70,16 @@ export function Step2({ handleBack }: StepProps) {
               }
             : null,
     );
+
+    // Everything this quote charges: our fee plus the NEAR Intents fee.
+    const liveFeeBps = localLiveQuoteData
+        ? exchangeFeeBps({
+              hasAppFee: localLiveQuoteData.hasAppFee,
+              appFeeBps: sumAppFeesBps(
+                  localLiveQuoteData.quoteRequest?.appFees,
+              ),
+          })
+        : null;
 
     const timeUntilRefresh = useCountdownTimer(
         !!localLiveQuoteData && !isFetchingLiveQuote,
@@ -285,8 +297,7 @@ export function Step2({ handleBack }: StepProps) {
                                     },
                                     // Hide the fee for wraps and for quotes that did not
                                     // inject an app fee (payments, stables).
-                                    ...(!isWrapConversion &&
-                                    quoteHasAppFee(localLiveQuoteData)
+                                    ...(!isWrapConversion && liveFeeBps !== null
                                         ? [
                                               {
                                                   label: tEx(
@@ -297,6 +308,7 @@ export function Step2({ handleBack }: StepProps) {
                                                           sellAmount
                                                               ? calculateExchangeFeeAmount(
                                                                     sellAmount,
+                                                                    liveFeeBps,
                                                                 )
                                                               : null;
 
@@ -304,9 +316,9 @@ export function Step2({ handleBack }: StepProps) {
                                                           <span>
                                                               <FormattedAmount
                                                                   kind="percent"
-                                                                  value={
-                                                                      EXCHANGE_FEE_PERCENTAGE
-                                                                  }
+                                                                  value={exchangeFeePercent(
+                                                                      liveFeeBps,
+                                                                  )}
                                                               />{" "}
                                                               /{" "}
                                                               <FormattedAmount
@@ -330,7 +342,11 @@ export function Step2({ handleBack }: StepProps) {
                                                       );
                                                   })(),
                                                   info: tEx(
-                                                      "info.exchangeFeeTooltip",
+                                                      quoteHasAppFee(
+                                                          localLiveQuoteData,
+                                                      )
+                                                          ? "info.exchangeFeeTooltip"
+                                                          : "info.exchangeFeeIntentsOnlyTooltip",
                                                   ),
                                               },
                                           ]

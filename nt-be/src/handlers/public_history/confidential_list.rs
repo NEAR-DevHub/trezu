@@ -17,7 +17,7 @@ use near_api::AccountId;
 use sqlx::{PgPool, QueryBuilder, Row};
 
 use crate::AppState;
-use crate::handlers::intents::app_fee::stored_has_app_fee;
+use crate::handlers::intents::app_fee::{stored_app_fee_bps, stored_has_app_fee};
 use crate::handlers::intents::confidential::types::{ConfidentialTxType, bare_account};
 use crate::handlers::public_history::token_filter::push_token_match;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
@@ -647,6 +647,7 @@ struct LegRow {
     fully_confidential: Option<bool>,
     notes: Option<String>,
     has_app_fee: Option<bool>,
+    app_fee_bps: Option<u32>,
     usd_value: Option<BigDecimal>,
     action_kind: String,
     swap_sent_token: Option<String>,
@@ -689,6 +690,7 @@ impl LegRow {
             fully_confidential,
         } = row;
         let has_app_fee = stored_has_app_fee(quote_metadata.as_ref());
+        let app_fee_bps = stored_app_fee_bps(quote_metadata.as_ref());
 
         let resolved_block_time = proposal_executed_at.unwrap_or(event_time);
         let block_height = proposal_execution_block_height.unwrap_or(0);
@@ -719,6 +721,7 @@ impl LegRow {
                     fully_confidential,
                     notes: notes.clone(),
                     has_app_fee,
+                    app_fee_bps,
                     usd_value: amount_out_usd,
                     action_kind: "ConfidentialSend".to_string(),
                     swap_sent_token: None,
@@ -762,6 +765,7 @@ impl LegRow {
                     fully_confidential,
                     notes: notes.clone(),
                     has_app_fee,
+                    app_fee_bps,
                     usd_value: amount_in_usd,
                     action_kind: "ConfidentialDeposit".to_string(),
                     swap_sent_token: None,
@@ -801,6 +805,7 @@ impl LegRow {
                     fully_confidential,
                     notes: notes.clone(),
                     has_app_fee,
+                    app_fee_bps,
                     usd_value: amount_in_usd.clone(),
                     action_kind: "ConfidentialExchange".to_string(),
                     swap_sent_token: token_out.clone(),
@@ -850,6 +855,7 @@ impl LegRow {
             quote_deposit_address: self.quote_deposit_address.clone(),
             fully_confidential: self.fully_confidential,
             has_app_fee: self.has_app_fee,
+            app_fee_bps: self.app_fee_bps,
             notes: self.notes.clone(),
         }
     }

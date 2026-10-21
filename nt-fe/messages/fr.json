@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Adresse de dépôt copiée",
             "quoteExpires": "Expiration du devis",
             "exchangeFee": "Frais d'échange",
-            "exchangeFeeTooltip": "Les frais de 0,70 % couvrent ici les coûts du protocole NEAR Intents pour faciliter votre transaction et les frais du widget Trezu. Ce montant est automatiquement calculé dans votre taux coté."
+            "exchangeFeeTooltip": "Comprend les frais NEAR Intents et les frais Trezu. Déjà inclus dans votre taux indiqué.",
+            "exchangeFeeIntentsOnlyTooltip": "Comprend les frais NEAR Intents. Déjà inclus dans votre taux indiqué."
         },
         "approveWithin24h": "Veuillez approuver cette demande dans les 24 heures, sinon elle expirera. Nous recommandons de confirmer dès que possible.",
         "confirmSubmit": "Confirmer et soumettre la demande",

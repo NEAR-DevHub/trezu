@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "入金アドレスをコピーしました",
             "quoteExpires": "見積り有効期限",
             "exchangeFee": "交換手数料",
-            "exchangeFeeTooltip": "ここで発生する0.70%の手数料は、取引を仲介するNEAR IntentsプロトコルのコストとTrezuウィジェット手数料を賄います。この金額は見積りレートに自動的に含まれています。"
+            "exchangeFeeTooltip": "NEAR Intents手数料とTrezu手数料を含みます。提示レートに既に含まれています。",
+            "exchangeFeeIntentsOnlyTooltip": "NEAR Intents手数料を含みます。提示レートに既に含まれています。"
         },
         "approveWithin24h": "このリクエストは24時間以内に承認してください。期限を過ぎると失効します。できるだけ早く確認することをおすすめします。",
         "confirmSubmit": "確認してリクエストを送信",

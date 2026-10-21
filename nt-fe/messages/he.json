@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "כתובת ההפקדה הועתקה",
             "quoteExpires": "הציטוט פג ב-",
             "exchangeFee": "עמלת החלפה",
-            "exchangeFeeTooltip": "עמלת 0.70% הנגבית כאן מכסה את עלויות פרוטוקול NEAR Intents כדי לאפשר את המסחר שלך ואת עמלת הווידג'ט של Trezu. סכום זה מחושב אוטומטית בתוך השער המצוטט שלך."
+            "exchangeFeeTooltip": "כולל את עמלת NEAR Intents ואת עמלת Trezu. כבר כלול בשער שהוצע לך.",
+            "exchangeFeeIntentsOnlyTooltip": "כולל את עמלת NEAR Intents. כבר כלול בשער שהוצע לך."
         },
         "approveWithin24h": "אנא אשר בקשה זו בתוך 24 שעות, אחרת היא תפוג. אנו ממליצים לאשר בהקדם האפשרי.",
         "confirmSubmit": "אשר ושלח בקשה",

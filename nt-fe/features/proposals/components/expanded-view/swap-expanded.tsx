@@ -12,8 +12,9 @@ import { useSearchIntentsTokens, useToken } from "@/hooks/use-treasury-queries";
 import { decimalFromBaseUnitsOrNull, decimalOrNull } from "@/lib/amount-format";
 import {
     calculateExchangeFeeAmount,
-    EXCHANGE_FEE_PERCENTAGE,
-    shouldShowStoredExchangeFee,
+    exchangeFeeBps,
+    exchangeFeePercent,
+    quoteHasAppFee,
 } from "@/lib/exchange-fee";
 import { formatDurationSeconds } from "@/lib/utils";
 import type { SwapRequestData } from "../../types/index";
@@ -91,13 +92,16 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         if (!amountOut || !slippage) return null;
         return amountOut.minus(amountOut.mul(slippage).div(100));
     }, [data.amountOut, data.slippage]);
+    const feeBps = exchangeFeeBps(data);
     const exchangeFeeAmount = useMemo(() => {
         const amountIn = decimalFromBaseUnitsOrNull(
             data.amountIn,
             tokenInData?.decimals || 24,
         );
-        return amountIn ? calculateExchangeFeeAmount(amountIn.toFixed()) : null;
-    }, [data.amountIn, tokenInData?.decimals]);
+        return amountIn && feeBps !== null
+            ? calculateExchangeFeeAmount(amountIn.toFixed(), feeBps)
+            : null;
+    }, [data.amountIn, tokenInData?.decimals, feeBps]);
 
     const infoItems: InfoItem[] = [
         {
@@ -206,7 +210,7 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
         });
     }
 
-    if (shouldShowStoredExchangeFee(data.hasAppFee)) {
+    if (feeBps !== null) {
         expandableItems.push({
             label: tExchange("info.exchangeFee"),
             value: isTokenInLoading ? (
@@ -215,7 +219,7 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
                 <span>
                     <FormattedAmount
                         kind="percent"
-                        value={EXCHANGE_FEE_PERCENTAGE}
+                        value={exchangeFeePercent(feeBps)}
                     />{" "}
                     /{" "}
                     <FormattedAmount
@@ -229,7 +233,11 @@ function IntentsSwapExpanded({ data, isExecuted = false }: SwapExpandedProps) {
                     />
                 </span>
             ),
-            info: tExchange("info.exchangeFeeTooltip"),
+            info: tExchange(
+                quoteHasAppFee(data)
+                    ? "info.exchangeFeeTooltip"
+                    : "info.exchangeFeeIntentsOnlyTooltip",
+            ),
         });
     }
 

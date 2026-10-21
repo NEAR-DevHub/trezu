@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Depozito adresi kopyalandı",
             "quoteExpires": "Teklif Sona Erme",
             "exchangeFee": "Takas Ücreti",
-            "exchangeFeeTooltip": "Burada uygulanan %0,70 ücret, işleminizi kolaylaştırmak için NEAR Intents protokol maliyetlerini ve Trezu widget ücretini karşılar. Bu miktar, teklif edilen oranınıza otomatik olarak hesaplanır."
+            "exchangeFeeTooltip": "NEAR Intents ücretini ve Trezu ücretini içerir. Teklif edilen kurunuza zaten dahildir.",
+            "exchangeFeeIntentsOnlyTooltip": "NEAR Intents ücretini içerir. Teklif edilen kurunuza zaten dahildir."
         },
         "approveWithin24h": "Lütfen bu talebi 24 saat içinde onaylayın, aksi takdirde süresi dolacaktır. Mümkün olan en kısa sürede onaylamanızı öneririz.",
         "confirmSubmit": "Onayla ve Talebi Gönder",

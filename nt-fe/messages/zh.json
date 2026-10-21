@@ -1620,7 +1620,8 @@
             "depositAddressCopied": "存款地址已复制",
             "quoteExpires": "报价过期时间",
             "exchangeFee": "兑换手续费",
-            "exchangeFeeTooltip": "此处产生的 0.70% 手续费用于支付 NEAR Intents 协议的交易处理成本及 Trezu 小部件费用。该金额已自动计入您的报价汇率中。"
+            "exchangeFeeTooltip": "包含 NEAR Intents 费用和 Trezu 费用。已计入您的报价汇率。",
+            "exchangeFeeIntentsOnlyTooltip": "包含 NEAR Intents 费用。已计入您的报价汇率。"
         },
         "approveWithin24h": "请在 24 小时内批准此请求,否则它将过期。建议尽快确认。",
         "confirmSubmit": "确认并提交请求",

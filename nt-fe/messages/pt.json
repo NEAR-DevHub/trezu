@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Endereço de depósito copiado",
             "quoteExpires": "A cotação expira",
             "exchangeFee": "Taxa de troca",
-            "exchangeFeeTooltip": "A taxa de 0,70% incorrida aqui cobre os custos do protocolo NEAR Intents para facilitar sua negociação e a taxa do widget Trezu. Este valor é calculado automaticamente na sua taxa cotada."
+            "exchangeFeeTooltip": "Inclui a taxa da NEAR Intents e a taxa da Trezu. Já incluída na sua taxa cotada.",
+            "exchangeFeeIntentsOnlyTooltip": "Inclui a taxa da NEAR Intents. Já incluída na sua taxa cotada."
         },
         "approveWithin24h": "Por favor, aprove esta solicitação em até 24 horas, caso contrário ela expirará. Recomendamos confirmar o quanto antes.",
         "confirmSubmit": "Confirmar e enviar solicitação",

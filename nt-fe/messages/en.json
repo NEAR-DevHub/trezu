@@ -1637,7 +1637,8 @@
             "depositAddressCopied": "Deposit address copied",
             "quoteExpires": "Quote Expires",
             "exchangeFee": "Exchange Fee",
-            "exchangeFeeTooltip": "The 0.70% fee incurred here covers the NEAR Intents protocol costs to facilitate your trade and the Trezu widget fee. This amount is automatically calculated into your quoted rate."
+            "exchangeFeeTooltip": "Includes the NEAR Intents fee and the Trezu fee. Already included in your quoted rate.",
+            "exchangeFeeIntentsOnlyTooltip": "Includes the NEAR Intents fee. Already included in your quoted rate."
         },
         "approveWithin24h": "Please approve this request within 24 hours, otherwise it will expire. We recommend confirming as soon as possible.",
         "confirmSubmit": "Confirm and Submit Request",

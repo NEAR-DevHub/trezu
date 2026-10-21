@@ -679,6 +679,7 @@ mod tests {
             quote_deposit_address: None,
             fully_confidential: None,
             has_app_fee: None,
+            app_fee_bps: None,
             swap: None,
             action_kind: None,
             method_name: None,
@@ -742,6 +743,7 @@ mod tests {
             quote_deposit_address: None,
             fully_confidential: None,
             has_app_fee: None,
+            app_fee_bps: None,
             notes: Some("payroll Q3".to_string()),
         };
 
@@ -1225,6 +1227,8 @@ pub struct RecentActivity {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub has_app_fee: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub app_fee_bps: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub swap: Option<SwapInfo>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub action_kind: Option<String>,
@@ -1546,6 +1550,7 @@ pub async fn get_recent_activity(
                 quote_deposit_address: change.quote_deposit_address,
                 fully_confidential: change.fully_confidential,
                 has_app_fee: change.has_app_fee,
+                app_fee_bps: change.app_fee_bps,
                 swap,
                 action_kind: change.action_kind,
                 method_name: change.method_name,

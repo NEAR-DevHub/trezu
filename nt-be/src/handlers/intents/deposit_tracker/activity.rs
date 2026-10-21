@@ -132,6 +132,7 @@ impl InProcessDeposit {
             notes: None,
             fully_confidential: None,
             has_app_fee: None,
+            app_fee_bps: None,
         })
     }
 }
@@ -276,6 +277,7 @@ mod tests {
             notes: None,
             fully_confidential: None,
             has_app_fee: None,
+            app_fee_bps: None,
         }
     }
 
