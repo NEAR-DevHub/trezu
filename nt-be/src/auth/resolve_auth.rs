@@ -13,6 +13,7 @@
 use crate::utils::contract_read_error::{is_method_not_found, is_unknown_account};
 use crate::utils::jsonrpc::create_rpc_client;
 use base64::Engine;
+use ml_dsa::{KeyInit, MlDsa65, VerifyingKey};
 use near_api::NetworkConfig;
 use near_jsonrpc_client::{JsonRpcClient, methods};
 use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryError};
@@ -335,42 +336,37 @@ async fn nep413_fallback(
         Err(_) => return ResolveOutcome::Invalid("nep-413 nonce must be 32 bytes".to_string()),
     };
 
-    let public_key: near_crypto::PublicKey = match msg.public_key.parse() {
-        Ok(pk) => pk,
+    let signer_key: SignerKey = match msg.public_key.parse() {
+        Ok(key) => key,
         Err(e) => return ResolveOutcome::Invalid(format!("invalid public key: {e}")),
     };
 
     // Verify the public key is registered on `account_id` at the pinned block.
     // Query that single key rather than the full key list: the list may hold
     // key types our nearcore crates can't deserialize (e.g. `ml-dsa-65-hash`),
-    // which would fail the whole response for an unrelated key.
-    let account: near_primitives::types::AccountId = match account_id.parse() {
-        Ok(account) => account,
-        Err(e) => return ResolveOutcome::Invalid(format!("invalid account id: {e}")),
-    };
-    match client
-        .call(methods::query::RpcQueryRequest {
-            block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
-            request: QueryRequest::ViewAccessKey {
-                account_id: account,
-                public_key: public_key.clone(),
-            },
-        })
-        .await
-    {
-        Ok(response) => {
-            if !matches!(response.kind, QueryResponseKind::AccessKey(_)) {
-                return ResolveOutcome::Invalid(
-                    "unexpected query response kind for access key".to_string(),
-                );
-            }
-        }
-        Err(e) => {
-            if let Some(RpcQueryError::UnknownAccessKey { .. }) = e.handler_error() {
+    // which would fail the whole response for an unrelated key. The query is
+    // untyped because near-crypto 0.34 can't represent ML-DSA-65 keys; the RPC
+    // maps a full `ml-dsa-65:` key to its on-chain `ml-dsa-65-hash:` handle.
+    let request = methods::any::<Result<ViewAccessKeyResult, RpcQueryError>>(
+        "query",
+        serde_json::json!({
+            "request_type": "view_access_key",
+            "block_id": block_height,
+            "account_id": account_id,
+            "public_key": msg.public_key,
+        }),
+    );
+    match client.call(request).await {
+        Ok(ViewAccessKeyResult::Found { .. }) => {}
+        Ok(ViewAccessKeyResult::Missing { error }) => {
+            if error.contains("does not exist while viewing") {
                 return ResolveOutcome::Invalid(
                     "public key not registered on account at pinned block".to_string(),
                 );
             }
+            return ResolveOutcome::Invalid(format!("failed to fetch access key: {error}"));
+        }
+        Err(e) => {
             let err = format!("{e:?}");
             if is_unknown_account(&err) {
                 return ResolveOutcome::UnknownAccount(err);
@@ -392,36 +388,150 @@ async fn nep413_fallback(
         Err(e) => return ResolveOutcome::Invalid(format!("failed to compute NEP-413 hash: {e}")),
     };
 
-    let signature = match parse_ed25519_signature(&msg.signature) {
-        Ok(signature) => signature,
-        Err(e) => return ResolveOutcome::Invalid(e),
-    };
+    match signer_key.verify(hash.0.as_ref(), &msg.signature) {
+        Ok(true) => ResolveOutcome::Resolved(msg.message),
+        Ok(false) => ResolveOutcome::Invalid("bad signature".to_string()),
+        Err(e) => ResolveOutcome::Invalid(e),
+    }
+}
 
-    if signature.verify(hash.0.as_ref(), &public_key) {
-        ResolveOutcome::Resolved(msg.message)
-    } else {
-        ResolveOutcome::Invalid("bad signature".to_string())
+/// `view_access_key` result. A missing key comes back inside `result` as
+/// `{"error": "… does not exist while viewing"}`, not as an RPC error.
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum ViewAccessKeyResult {
+    Found {
+        #[serde(rename = "nonce")]
+        _nonce: u64,
+    },
+    Missing {
+        error: String,
+    },
+}
+
+impl methods::RpcHandlerResponse for ViewAccessKeyResult {}
+
+/// Key that signed a NEP-413 message. near-crypto 0.34 predates ML-DSA-65, so
+/// those keys are decoded and verified with the `ml-dsa` crate instead.
+enum SignerKey {
+    Ed25519(near_crypto::PublicKey),
+    MlDsa65(Box<VerifyingKey<MlDsa65>>),
+}
+
+impl std::str::FromStr for SignerKey {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, String> {
+        if let Some(b58) = s.strip_prefix("ml-dsa-65:") {
+            let bytes = bs58::decode(b58)
+                .into_vec()
+                .map_err(|e| format!("invalid base58 public key: {e}"))?;
+            let key = VerifyingKey::<MlDsa65>::new_from_slice(&bytes).map_err(|_| {
+                format!(
+                    "ml-dsa-65 public key must be 1952 bytes, got {}",
+                    bytes.len()
+                )
+            })?;
+            return Ok(Self::MlDsa65(Box::new(key)));
+        }
+        let key: near_crypto::PublicKey = s.parse().map_err(|e| format!("{e}"))?;
+        match key.key_type() {
+            near_crypto::KeyType::ED25519 => Ok(Self::Ed25519(key)),
+            other => Err(format!("unsupported key type '{other}'")),
+        }
+    }
+}
+
+impl SignerKey {
+    fn verify(&self, data: &[u8], signature: &str) -> Result<bool, String> {
+        match self {
+            Self::Ed25519(key) => {
+                let raw = decode_signature(signature, "ed25519")?;
+                if raw.len() != 64 {
+                    return Err(format!(
+                        "ed25519 signature must be 64 bytes, got {}",
+                        raw.len()
+                    ));
+                }
+                let signature =
+                    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &raw)
+                        .map_err(|e| format!("invalid signature: {e}"))?;
+                Ok(signature.verify(data, key))
+            }
+            Self::MlDsa65(key) => {
+                let raw = decode_signature(signature, "ml-dsa-65")?;
+                let signature = ml_dsa::Signature::<MlDsa65>::try_from(raw.as_slice())
+                    .map_err(|_| format!("invalid ml-dsa-65 signature ({} bytes)", raw.len()))?;
+                // Pure ML-DSA with an empty context, as nearcore verifies it.
+                Ok(key.verify_with_context(data, &[], &signature))
+            }
+        }
     }
 }
 
 /// Accept either raw base64 (NEP-413 `signMessage` canonical output) or
-/// `"ed25519:<base58>"`.
-fn parse_ed25519_signature(s: &str) -> Result<near_crypto::Signature, String> {
-    let raw = if let Some(b58) = s.strip_prefix("ed25519:") {
-        bs58::decode(b58)
+/// `"<key-type>:<base58>"`.
+fn decode_signature(s: &str, key_type: &str) -> Result<Vec<u8>, String> {
+    match s
+        .strip_prefix(key_type)
+        .and_then(|rest| rest.strip_prefix(':'))
+    {
+        Some(b58) => bs58::decode(b58)
             .into_vec()
-            .map_err(|e| format!("invalid base58 signature: {e}"))?
-    } else {
-        base64::engine::general_purpose::STANDARD
+            .map_err(|e| format!("invalid base58 signature: {e}")),
+        None => base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| format!("invalid base64 signature: {e}"))?
-    };
-    if raw.len() != 64 {
-        return Err(format!(
-            "ed25519 signature must be 64 bytes, got {}",
-            raw.len()
-        ));
+            .map_err(|e| format!("invalid base64 signature: {e}")),
     }
-    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &raw)
-        .map_err(|e| format!("invalid signature: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn nep413_hash(msg: &Nep413SignedMessage) -> Vec<u8> {
+        let nonce = base64::engine::general_purpose::STANDARD
+            .decode(&msg.nonce)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        near_api::signer::NEP413Payload {
+            message: msg.message.clone(),
+            nonce,
+            recipient: msg.recipient.clone(),
+            callback_url: msg.callback_url.clone(),
+        }
+        .compute_hash()
+        .unwrap()
+        .0
+        .to_vec()
+    }
+
+    fn assert_verifies(authorization: &str) {
+        let msg: Nep413SignedMessage = serde_json::from_str(authorization).unwrap();
+        let key: SignerKey = msg.public_key.parse().unwrap();
+        let hash = nep413_hash(&msg);
+        assert_eq!(key.verify(&hash, &msg.signature), Ok(true));
+
+        let tampered = Nep413SignedMessage {
+            message: format!("{}!", msg.message),
+            ..msg
+        };
+        assert_eq!(
+            key.verify(&nep413_hash(&tampered), &tampered.signature),
+            Ok(false)
+        );
+    }
+
+    #[test]
+    fn verifies_ml_dsa_65_signed_login() {
+        assert_verifies(include_str!("testdata/nep413_ml_dsa_65_login.json"));
+    }
+
+    #[test]
+    fn verifies_ed25519_signed_login() {
+        assert_verifies(
+            r#"{"accountId":"nearprotocolua.near","publicKey":"ed25519:34fZjXn7DmM2XrAxZWK7XE6EnZugAusMtkKM9Zbb3P4J","signature":"zoOHb9AmdY2Ujg6CmJedaAdmiZxlbCbE6l5vZbmn3FZumGjKiJehXJ1gsZd98gIXYP/yTqGmMOD/X8cqceIaCQ==","message":"Login to Trezu initiated at 2026-10-21T10:43:06.669144502+00:00 with request ID: AY2KXvdQszhz58SUIni4bg==","recipient":"PROVE_OWNERSHIP@Trezu App","nonce":"uRzKRsykx/xO8BmmAvyjoCAWQLTvvnTreu4LxDZDLe4=","callbackUrl":null,"state":null}"#,
+        );
+    }
 }
