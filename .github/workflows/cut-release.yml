@@ -275,6 +275,11 @@ jobs:
                 `, { owner, repo, num: issueNumber });
                 issue = data.repository?.issue;
               } catch (error) {
+                const graphqlErrors = error?.errors;
+                const onlyNotFound = Array.isArray(graphqlErrors)
+                  && graphqlErrors.length > 0
+                  && graphqlErrors.every((entry) => entry.type === "NOT_FOUND");
+                if (!onlyNotFound) throw error;
                 core.info(`#${issueNumber} is not an issue — skipping`);
                 continue;
               }
@@ -286,6 +291,8 @@ jobs:
               let itemId = (issue.projectItems?.nodes || []).find(
                 (item) => item.project.id === project.id,
               )?.id;
+              // The issue already exists in the repo. Add it to the Trezu board
+              // when it has no card yet, so the Release field can be set.
               if (!itemId) {
                 const added = await github.graphql(`
                   mutation($projectId: ID!, $contentId: ID!) {
@@ -296,6 +303,8 @@ jobs:
                 `, { projectId: project.id, contentId: issue.id });
                 itemId = added.addProjectV2ItemById.item.id;
                 core.info(`Added issue #${issueNumber} to "${project.title}"`);
+              } else {
+                core.info(`Issue #${issueNumber} already in "${project.title}"`);
               }
 
               await github.graphql(`

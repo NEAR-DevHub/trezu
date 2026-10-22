@@ -23,7 +23,8 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             const pr = context.payload.pull_request;
-            // ✨ Trezu. Tickets opened by Olha go to UX Review; everyone else to QA.
+            // ✨ Trezu (org project 23). Exact login match is intentional:
+            // tickets opened by Olha (olskik12) go to UX Review; every other author goes to QA In Progress.
             const projectNumber = 23;
             const uxAuthor = "olskik12";
             const uxStatus = "UX Review";
@@ -110,6 +111,11 @@ jobs:
                 `, { owner, repo, num: issueNumber });
                 issue = issueData.repository?.issue;
               } catch (error) {
+                const graphqlErrors = error?.errors;
+                const onlyNotFound = Array.isArray(graphqlErrors)
+                  && graphqlErrors.length > 0
+                  && graphqlErrors.every((entry) => entry.type === "NOT_FOUND");
+                if (!onlyNotFound) throw error;
                 core.info(`#${issueNumber} is not an issue — skipping`);
                 continue;
               }
