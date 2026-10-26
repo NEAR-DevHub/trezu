@@ -159,6 +159,11 @@ fn is_balance_dust(
     let Some(unit_price) = unit_price else {
         return false;
     };
+    // Only a positive price can size a gap; zero or negative would wave
+    // every discrepancy through.
+    if unit_price.sign() != bigdecimal::num_bigint::Sign::Plus {
+        return false;
+    }
     let tolerance = BigDecimal::from_str(BALANCE_CHECK_DUST_USD).expect("valid constant");
     (ledger - live).abs() * unit_price <= tolerance
 }
@@ -1211,6 +1216,124 @@ mod tests {
             &mock,
             serde_json::json!([
                 { "tokenId": "nep141:wrap.near", "available": "4990000000000000000000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(balance_check_state(&pool).await.is_failed());
+    }
+
+    #[sqlx::test]
+    async fn same_execution_instant_rows_agree_between_replay_and_readers(pool: PgPool) {
+        seed_confidential_dao(&pool).await;
+        let t0 = micros_aligned_minutes_ago(30);
+        let executed = t0 + Duration::minutes(20);
+
+        seed_bronze_event(&pool, t0, DAO, None, "nep141:wrap.near", None, "10").await;
+        // Two sends executed by the same proposal. Insert the later-quoted one
+        // first so bronze ids run against quote order, as backfilled pages do.
+        let later_quoted = seed_bronze_event(
+            &pool,
+            t0 + Duration::minutes(2),
+            "external.near",
+            Some("nep141:wrap.near"),
+            "nep141:wrap.near",
+            Some("3"),
+            "3",
+        )
+        .await;
+        let earlier_quoted = seed_bronze_event(
+            &pool,
+            t0 + Duration::minutes(1),
+            "external.near",
+            Some("nep141:wrap.near"),
+            "nep141:wrap.near",
+            Some("4"),
+            "4",
+        )
+        .await;
+        assert!(later_quoted < earlier_quoted);
+        seed_intent(&pool, later_quoted, 1, Some(executed)).await;
+        seed_intent(&pool, earlier_quoted, 2, Some(executed)).await;
+
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        // Whatever order the replay used inside the tie, the readers' head
+        // (newest by event_time, source_order, id) must be the final balance.
+        let heads = load_ledger_head_balances(&pool, DAO)
+            .await
+            .expect("load heads");
+        assert_eq!(heads.get("nep141:wrap.near"), Some(&BigDecimal::from(3)));
+
+        let mut tx = pool.begin().await.expect("begin");
+        let seed = seed_ledger_before(&mut tx, DAO, executed + Duration::microseconds(1))
+            .await
+            .expect("seed ledger");
+        assert_eq!(seed.get("nep141:wrap.near"), Some(&BigDecimal::from(3)));
+    }
+
+    #[test]
+    fn dust_needs_a_positive_price() {
+        let ledger = BigDecimal::from_str("5").unwrap();
+        let live = BigDecimal::from_str("4.999").unwrap();
+        assert!(is_balance_dust(&ledger, &live, Some(&BigDecimal::from(2))));
+        assert!(!is_balance_dust(
+            &ledger,
+            &live,
+            Some(&BigDecimal::from(20))
+        ));
+        assert!(!is_balance_dust(&ledger, &live, Some(&BigDecimal::from(0))));
+        assert!(!is_balance_dust(
+            &ledger,
+            &live,
+            Some(&BigDecimal::from(-2))
+        ));
+        assert!(!is_balance_dust(&ledger, &live, None));
+    }
+
+    #[sqlx::test]
+    async fn inline_balance_check_does_not_treat_unpriced_gaps_as_dust(pool: PgPool) {
+        seed_confidential_dao(&pool).await;
+        sqlx::query(
+            r#"
+            INSERT INTO bronze_confidential_history_cursors (account_id, backfill_done, last_polled_at)
+            VALUES ($1, true, NOW())
+            "#,
+        )
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .expect("seed bronze cursor");
+
+        let t0 = Utc::now() - Duration::minutes(30);
+        let deposit_id =
+            seed_bronze_event(&pool, t0, DAO, None, "nep141:wrap.near", None, "5").await;
+        // 1Click reports a zero USD value for an unpriced token.
+        sqlx::query(
+            r#"
+            UPDATE bronze_confidential_history_events
+            SET raw_payload = raw_payload || '{"amountOutUsd": "0"}'::jsonb
+            WHERE id = $1
+            "#,
+        )
+        .bind(deposit_id)
+        .execute(&pool)
+        .await
+        .expect("add zero usd value");
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        let mock = MockServer::start().await;
+        let state = state_with_mock_api(pool.clone(), &mock).await;
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "4999000000000000000000000" }
             ]),
         )
         .await;
