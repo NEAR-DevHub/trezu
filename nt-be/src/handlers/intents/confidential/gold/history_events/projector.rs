@@ -1230,8 +1230,9 @@ mod tests {
         let executed = t0 + Duration::minutes(20);
 
         seed_bronze_event(&pool, t0, DAO, None, "nep141:wrap.near", None, "10").await;
-        // Two sends executed by the same proposal. Insert the later-quoted one
-        // first so bronze ids run against quote order, as backfilled pages do.
+        // Two intents executed in the same instant (one block, two proposals).
+        // Insert the later-quoted one first so bronze ids run against quote
+        // order, as backfilled pages do.
         let later_quoted = seed_bronze_event(
             &pool,
             t0 + Duration::minutes(2),
