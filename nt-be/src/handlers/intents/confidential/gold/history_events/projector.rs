@@ -13,7 +13,8 @@ use super::repository::{
     clear_balance_check_errors, clear_projection_error, delete_stale_gold_rows,
     earliest_success_for_dao, has_gold_before, load_bronze_suffix,
     load_confidential_deposit_corrections, load_dirty_daos, load_ledger_head_balances,
-    record_balance_check_mismatch, seed_ledger_before, upsert_projection, upsert_projection_error,
+    load_ledger_unit_prices, record_balance_check_mismatch, seed_ledger_before, upsert_projection,
+    upsert_projection_error,
 };
 use crate::AppState;
 use crate::constants::intents_tokens::get_defuse_tokens_map;
@@ -144,8 +145,27 @@ pub async fn project_confidential_gold_for_dao(
     Ok(stats)
 }
 
+/// Largest ledger/1Click gap, in USD, that the inline check treats as
+/// reconciled. 1Click keeps sub-cent quote remainders it reports as refunded
+/// (e.g. 0.000188 USDT on a send) instead of paying them back, so an exact
+/// compare would flag a ledger that is right to the cent.
+const BALANCE_CHECK_DUST_USD: &str = "0.01";
+
+fn is_balance_dust(
+    ledger: &BigDecimal,
+    live: &BigDecimal,
+    unit_price: Option<&BigDecimal>,
+) -> bool {
+    let Some(unit_price) = unit_price else {
+        return false;
+    };
+    let tolerance = BigDecimal::from_str(BALANCE_CHECK_DUST_USD).expect("valid constant");
+    (ledger - live).abs() * unit_price <= tolerance
+}
+
 /// Inline post-projection balance check: compare the unified ledger's
 /// per-asset head balances against the live 1Click `/v0/account/balances`.
+/// Gaps worth less than `BALANCE_CHECK_DUST_USD` are treated as reconciled.
 /// Runs only once the bronze backfill is complete and the gold cursor is
 /// clean — a partial history cannot match live balances. A mismatch is
 /// logged and recorded in the projection-errors table; the projected rows
@@ -223,6 +243,13 @@ pub async fn verify_confidential_ledger_heads(state: &AppState, dao_id: &str) {
             return;
         }
     };
+    let unit_prices = match load_ledger_unit_prices(&state.db_pool, dao_id).await {
+        Ok(prices) => prices,
+        Err(e) => {
+            tracing::warn!("balance check price load failed for {}: {}", dao_id, e);
+            HashMap::new()
+        }
+    };
 
     let assets: BTreeSet<&String> = api_balances.keys().chain(ledger_heads.keys()).collect();
     let zero = BigDecimal::zero();
@@ -235,6 +262,16 @@ pub async fn verify_confidential_ledger_heads(state: &AppState, dao_id: &str) {
         let ledger = ledger_heads.get(asset.as_str()).unwrap_or(&zero);
         let api = api_balances.get(asset.as_str()).unwrap_or(&zero);
         if ledger != api {
+            if is_balance_dust(ledger, api, unit_prices.get(asset.as_str())) {
+                tracing::info!(
+                    "balance check dust ignored for {} {}: ledger={} 1click={}",
+                    dao_id,
+                    asset,
+                    ledger,
+                    api
+                );
+                continue;
+            }
             mismatches.push(format!("{asset} ledger={ledger} 1click={api}"));
             mismatch.insert(
                 asset.clone(),
@@ -929,5 +966,255 @@ mod tests {
         assert!(!balance_check_state(&pool).await.is_failed());
         assert!(!is_balance_check_failed(&pool, DAO).await.unwrap());
         assert_eq!(events.try_recv().unwrap().account_id, DAO);
+    }
+
+    async fn seed_intent(
+        pool: &PgPool,
+        history_event_id: i64,
+        proposal_id: i32,
+        executed_at: Option<chrono::DateTime<Utc>>,
+    ) -> String {
+        let payload_hash = format!("hash-{history_event_id}");
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents
+                (dao_id, proposal_id, intent_payload, payload_hash, history_event_id, proposal_executed_at)
+            VALUES ($1, $2, '{}'::jsonb, $3, $4, $5)
+            "#,
+        )
+        .bind(DAO)
+        .bind(proposal_id)
+        .bind(&payload_hash)
+        .bind(history_event_id)
+        .bind(executed_at)
+        .execute(pool)
+        .await
+        .expect("seed intent");
+        payload_hash
+    }
+
+    async fn event_time_of(pool: &PgPool, history_event_id: i64) -> chrono::DateTime<Utc> {
+        sqlx::query_scalar(
+            "SELECT event_time FROM gold_treasury_ledger_events WHERE gold_event_key = $1",
+        )
+        .bind(format!("confidential:{history_event_id}"))
+        .fetch_one(pool)
+        .await
+        .expect("load event_time")
+    }
+
+    /// Postgres stores microseconds; start from a microsecond-aligned instant
+    /// so stored timestamps compare equal.
+    fn micros_aligned_minutes_ago(minutes: i64) -> chrono::DateTime<Utc> {
+        let now = Utc::now() - Duration::minutes(minutes);
+        chrono::DateTime::<Utc>::from_timestamp_micros(now.timestamp_micros())
+            .expect("valid timestamp")
+    }
+
+    #[sqlx::test]
+    async fn replay_orders_rows_by_proposal_execution_time(pool: PgPool) {
+        seed_confidential_dao(&pool).await;
+        let t0 = micros_aligned_minutes_ago(30);
+
+        // Send quoted at t0 but executed at t0+20m; deposit quoted at t0+10m.
+        // The real order is deposit, then send.
+        let sent_id = seed_bronze_event(
+            &pool,
+            t0,
+            "external.near",
+            Some("nep141:wrap.near"),
+            "nep141:wrap.near",
+            Some("3"),
+            "3",
+        )
+        .await;
+        seed_intent(&pool, sent_id, 1, Some(t0 + Duration::minutes(20))).await;
+        let deposit_id = seed_bronze_event(
+            &pool,
+            t0 + Duration::minutes(10),
+            DAO,
+            None,
+            "nep141:wrap.near",
+            None,
+            "5",
+        )
+        .await;
+
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        let rows = load_unified_rows(&pool).await;
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].gold_event_key, format!("confidential:{deposit_id}"));
+        assert_eq!(
+            rows[0].token_in_user_balance_after,
+            Some(BigDecimal::from(5))
+        );
+        assert_eq!(rows[1].gold_event_key, format!("confidential:{sent_id}"));
+        assert_eq!(rows[1].amount_out, Some(BigDecimal::from(3)));
+        assert_eq!(
+            rows[1].token_out_user_balance_after,
+            Some(BigDecimal::from(2))
+        );
+        assert_eq!(
+            event_time_of(&pool, sent_id).await,
+            t0 + Duration::minutes(20)
+        );
+    }
+
+    #[sqlx::test]
+    async fn execution_stamp_moves_row_behind_later_deposit(pool: PgPool) {
+        use super::super::repository::refresh_gold_metadata_for_intent;
+
+        seed_confidential_dao(&pool).await;
+        let t0 = micros_aligned_minutes_ago(30);
+
+        let sent_id = seed_bronze_event(
+            &pool,
+            t0,
+            "external.near",
+            Some("nep141:wrap.near"),
+            "nep141:wrap.near",
+            Some("3"),
+            "3",
+        )
+        .await;
+        let payload_hash = seed_intent(&pool, sent_id, 1, None).await;
+        let deposit_id = seed_bronze_event(
+            &pool,
+            t0 + Duration::minutes(10),
+            DAO,
+            None,
+            "nep141:wrap.near",
+            None,
+            "5",
+        )
+        .await;
+
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        // Unstamped, the send replays at quote time ahead of the deposit and
+        // the ledger goes negative instead of clamping.
+        let rows = load_unified_rows(&pool).await;
+        assert_eq!(rows[0].gold_event_key, format!("confidential:{sent_id}"));
+        assert_eq!(
+            rows[0].token_out_user_balance_after,
+            Some(BigDecimal::from(-3))
+        );
+        assert_eq!(
+            rows[1].token_in_user_balance_after,
+            Some(BigDecimal::from(2))
+        );
+
+        sqlx::query(
+            "UPDATE confidential_intents SET proposal_executed_at = $1 WHERE payload_hash = $2",
+        )
+        .bind(t0 + Duration::minutes(20))
+        .bind(&payload_hash)
+        .execute(&pool)
+        .await
+        .expect("stamp execution");
+        refresh_gold_metadata_for_intent(&pool, DAO, &payload_hash)
+            .await
+            .expect("refresh metadata");
+
+        let (dirty_since, recompute_from): (
+            Option<chrono::DateTime<Utc>>,
+            Option<chrono::DateTime<Utc>>,
+        ) = sqlx::query_as(
+            "SELECT gold_dirty_since, gold_recompute_from FROM gold_confidential_history_cursors WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .fetch_one(&pool)
+        .await
+        .expect("load cursor");
+        assert!(dirty_since.is_some());
+        assert_eq!(recompute_from, Some(t0));
+
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("re-projection succeeds");
+
+        let rows = load_unified_rows(&pool).await;
+        assert_eq!(rows[0].gold_event_key, format!("confidential:{deposit_id}"));
+        assert_eq!(
+            rows[0].token_in_user_balance_after,
+            Some(BigDecimal::from(5))
+        );
+        assert_eq!(rows[1].gold_event_key, format!("confidential:{sent_id}"));
+        assert_eq!(
+            rows[1].token_out_user_balance_after,
+            Some(BigDecimal::from(2))
+        );
+        assert_eq!(
+            event_time_of(&pool, sent_id).await,
+            t0 + Duration::minutes(20)
+        );
+    }
+
+    #[sqlx::test]
+    async fn inline_balance_check_ignores_sub_cent_dust(pool: PgPool) {
+        seed_confidential_dao(&pool).await;
+        sqlx::query(
+            r#"
+            INSERT INTO bronze_confidential_history_cursors (account_id, backfill_done, last_polled_at)
+            VALUES ($1, true, NOW())
+            "#,
+        )
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .expect("seed bronze cursor");
+
+        let t0 = Utc::now() - Duration::minutes(30);
+        let deposit_id =
+            seed_bronze_event(&pool, t0, DAO, None, "nep141:wrap.near", None, "5").await;
+        // 5 wrap worth 10 USD: the ledger prices wrap at 2 USD.
+        sqlx::query(
+            r#"
+            UPDATE bronze_confidential_history_events
+            SET raw_payload = raw_payload || '{"amountOutUsd": "10"}'::jsonb
+            WHERE id = $1
+            "#,
+        )
+        .bind(deposit_id)
+        .execute(&pool)
+        .await
+        .expect("add usd value");
+        mark_gold_dirty(&pool, DAO, None).await.expect("mark dirty");
+        project_confidential_gold_for_dao(&pool, DAO)
+            .await
+            .expect("projection succeeds");
+
+        let mock = MockServer::start().await;
+        let state = state_with_mock_api(pool.clone(), &mock).await;
+
+        // 0.001 wrap (0.002 USD) short of the ledger head: dust, still verified.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "4999000000000000000000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(balance_check_errors(&pool).await.is_empty());
+        assert!(!balance_check_state(&pool).await.is_failed());
+
+        // 0.01 wrap (0.02 USD) short: a real mismatch.
+        mock_balances(
+            &mock,
+            serde_json::json!([
+                { "tokenId": "nep141:wrap.near", "available": "4990000000000000000000000" }
+            ]),
+        )
+        .await;
+        verify_confidential_ledger_heads(&state, DAO).await;
+        assert!(balance_check_state(&pool).await.is_failed());
     }
 }

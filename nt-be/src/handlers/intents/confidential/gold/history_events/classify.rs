@@ -87,6 +87,8 @@ fn classify(
     recipient: &str,
     origin_asset: Option<&str>,
     destination_asset: &str,
+    deposit_type: DepositType,
+    recipient_type: Option<RecipientAddressType>,
 ) -> Classification {
     // Self-deposit/exchange when recipient matches this DAO (bare or prefixed).
     let is_self = accounts_equal(recipient, dao_id);
@@ -97,6 +99,27 @@ fn classify(
 
     if !is_self {
         return Classification::Project(ConfidentialTxType::Sent);
+    }
+
+    // Self-recipient quote whose destination is not the confidential balance
+    // (the DAO's own public account or public intents balance). Funded from
+    // the confidential balance it is an unshield: a plain debit of `amountIn`.
+    // Without an origin asset 1Click reports no confidential-side leg at all
+    // (a deposit-address pass-through to the DAO's public account); live
+    // balances prove those rows never touch the confidential balance.
+    if matches!(
+        recipient_type,
+        Some(
+            RecipientAddressType::DestinationChain
+                | RecipientAddressType::OriginChain
+                | RecipientAddressType::Intents
+        )
+    ) {
+        return if deposit_type == DepositType::ConfidentialIntents && origin_asset.is_some() {
+            Classification::Project(ConfidentialTxType::Sent)
+        } else {
+            Classification::Skip
+        };
     }
 
     if let Some(origin_asset) = origin_asset
@@ -158,11 +181,20 @@ pub(crate) fn project_row(
     )
     .ok_or_else(|| "missing depositAddress".to_string())?;
 
+    let deposit_type = DepositType::parse(&row.deposit_type);
+    let recipient_type = coalesce_str(
+        row.recipient_type.as_ref(),
+        &row.raw_payload,
+        "recipientType",
+    )
+    .map(|value| RecipientAddressType::parse(&value));
     let Classification::Project(kind) = classify(
         &dao_id,
         &recipient,
         origin_asset.as_deref(),
         &destination_asset,
+        deposit_type,
+        recipient_type,
     ) else {
         return Ok(None);
     };
@@ -278,10 +310,11 @@ pub(crate) fn project_row(
                 .get(origin_asset)
                 .cloned()
                 .unwrap_or_else(BigDecimal::zero);
-            let mut after = &before - &net_debit;
-            if after < zero {
-                after = BigDecimal::zero();
-            }
+            // A debit larger than the ledger balance leaves it negative on
+            // purpose: the ledger has not seen the inbound that funded it.
+            // The inline balance check surfaces that (serving live balances)
+            // where a clamp would silently inflate every later head.
+            let after = &before - &net_debit;
             ledger.insert(origin_asset.clone(), after.clone());
             let usd_change = -amount_in_usd.clone().unwrap_or_else(BigDecimal::zero);
             (Some(before), Some(after), None, None, usd_change)
@@ -306,10 +339,7 @@ pub(crate) fn project_row(
                 .get(origin_asset)
                 .cloned()
                 .unwrap_or_else(BigDecimal::zero);
-            let mut origin_after = &origin_before - &net_debit;
-            if origin_after < zero {
-                origin_after = BigDecimal::zero();
-            }
+            let origin_after = &origin_before - &net_debit;
             ledger.insert(origin_asset.clone(), origin_after.clone());
 
             let destination_before = ledger
@@ -381,10 +411,7 @@ pub(crate) fn project_row(
             if net_amount.is_zero() {
                 return Ok(None);
             }
-            let mut destination_after = &destination_before + &net_amount;
-            if destination_after < zero {
-                destination_after = BigDecimal::zero();
-            }
+            let destination_after = &destination_before + &net_amount;
             ledger.insert(destination_asset.clone(), destination_after.clone());
             // Keep the gold row self-consistent: a deposit credits exactly
             // `destination_after - destination_before` of the destination asset,
@@ -471,7 +498,7 @@ pub(crate) fn project_row(
         proposal_execution_block_height: row.proposal_execution_block_height,
         proposal_executed_at: row.proposal_executed_at,
         proposal_execution_transaction_hash: row.proposal_execution_transaction_hash.clone(),
-        quote_created_at: row.created_at_external,
+        event_time: row.effective_time,
         proposal_created_at: row.proposal_created_at,
         proposal_id: row.proposal_id,
         deposit_tx_hash,
@@ -502,7 +529,7 @@ mod tests {
         BronzeProjectionRow {
             id: 1,
             account_id: dao_id.to_string(),
-            created_at_external: Utc::now(),
+            effective_time: Utc::now(),
             deposit_address: "deposit-address".to_string(),
             deposit_type: "CONFIDENTIAL_INTENTS".to_string(),
             recipient_type: Some("CONFIDENTIAL_INTENTS".to_string()),
@@ -529,7 +556,9 @@ mod tests {
                 "dao.near",
                 recipient("external.near").as_str(),
                 None,
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Skip
         ));
@@ -538,7 +567,9 @@ mod tests {
                 "dao.near",
                 recipient("external.near").as_str(),
                 Some("nep141:wrap.near"),
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Sent)
         ));
@@ -547,7 +578,9 @@ mod tests {
                 "dao.near",
                 recipient("dao.near").as_str(),
                 Some("nep141:usdt.near"),
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Exchange)
         ));
@@ -556,7 +589,9 @@ mod tests {
                 "dao.near",
                 recipient("dao.near").as_str(),
                 None,
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Deposit)
         ));
@@ -569,7 +604,9 @@ mod tests {
                 "tobi.sputnik-dao.near",
                 recipient("near:tobi.sputnik-dao.near").as_str(),
                 None,
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Deposit)
         ));
@@ -578,7 +615,9 @@ mod tests {
                 "tobi.sputnik-dao.near",
                 recipient("near:tobi.sputnik-dao.near").as_str(),
                 Some("nep141:usdt.near"),
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Exchange)
         ));
@@ -587,7 +626,9 @@ mod tests {
                 "tobi.sputnik-dao.near",
                 recipient("near:external.near").as_str(),
                 Some("nep141:wrap.near"),
-                "nep141:wrap.near"
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::ConfidentialIntents)
             ),
             Classification::Project(ConfidentialTxType::Sent)
         ));
@@ -1238,5 +1279,163 @@ mod tests {
             projected.destination_balance_after,
             Some(BigDecimal::from_str("0.2").unwrap())
         );
+    }
+
+    #[test]
+    fn test_self_public_destination_rules() {
+        // A quote to the DAO's own public account is an unshield only when it
+        // is funded from the confidential balance (origin asset present).
+        assert!(matches!(
+            classify(
+                "dao.near",
+                recipient("dao.near").as_str(),
+                None,
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::DestinationChain)
+            ),
+            Classification::Skip
+        ));
+        assert!(matches!(
+            classify(
+                "dao.near",
+                recipient("dao.near").as_str(),
+                Some("nep141:wrap.near"),
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::DestinationChain)
+            ),
+            Classification::Project(ConfidentialTxType::Sent)
+        ));
+        assert!(matches!(
+            classify(
+                "dao.near",
+                recipient("dao.near").as_str(),
+                Some("nep141:usdt.near"),
+                "nep141:wrap.near",
+                DepositType::ConfidentialIntents,
+                Some(RecipientAddressType::Intents)
+            ),
+            Classification::Project(ConfidentialTxType::Sent)
+        ));
+        // Public-to-public pass-through never touches the confidential balance.
+        assert!(matches!(
+            classify(
+                "dao.near",
+                recipient("dao.near").as_str(),
+                Some("nep141:wrap.near"),
+                "nep141:wrap.near",
+                DepositType::OriginChain,
+                Some(RecipientAddressType::DestinationChain)
+            ),
+            Classification::Skip
+        ));
+    }
+
+    #[test]
+    fn test_project_self_public_destination_without_origin_is_skipped() {
+        let raw_payload = payload(&[
+            (
+                "recipientType",
+                Value::String("DESTINATION_CHAIN".to_string()),
+            ),
+            ("amountOutFormatted", Value::String("404.0".to_string())),
+            ("amountOutUsd", Value::String("1000".to_string())),
+        ]);
+        let mut row = row(
+            "dao.near",
+            Some("dao.near"),
+            None,
+            "nep141:wrap.near",
+            raw_payload,
+        );
+        row.recipient_type = Some("DESTINATION_CHAIN".to_string());
+        let mut ledger = HashMap::new();
+
+        let projected = project_row(
+            &row,
+            &mut ledger,
+            &ConfidentialDepositCorrectionIndex::empty_disabled(),
+        )
+        .expect("row should not error");
+
+        assert!(projected.is_none());
+        assert!(ledger.is_empty());
+    }
+
+    #[test]
+    fn test_project_unshield_to_own_public_account_debits_origin() {
+        let raw_payload = payload(&[
+            (
+                "recipientType",
+                Value::String("DESTINATION_CHAIN".to_string()),
+            ),
+            ("amountInFormatted", Value::String("3.9994".to_string())),
+            ("amountOutFormatted", Value::String("3.999".to_string())),
+            ("amountInUsd", Value::String("3.9994".to_string())),
+            ("amountOutUsd", Value::String("3.999".to_string())),
+            ("refundedAmountFormatted", Value::String("0".to_string())),
+        ]);
+        let mut row = row(
+            "dao.near",
+            Some("dao.near"),
+            Some("nep141:usdt.near"),
+            "nep141:usdt.near",
+            raw_payload,
+        );
+        row.recipient_type = Some("DESTINATION_CHAIN".to_string());
+        let mut ledger = HashMap::from([("nep141:usdt.near".to_string(), BigDecimal::from(6))]);
+
+        let projected = project_row(
+            &row,
+            &mut ledger,
+            &ConfidentialDepositCorrectionIndex::empty_disabled(),
+        )
+        .expect("row should project")
+        .expect("unshield should not skip");
+
+        assert_eq!(projected.transaction_type, ConfidentialTxType::Sent);
+        assert_eq!(
+            projected.amount_in,
+            Some(BigDecimal::from_str("3.9994").unwrap())
+        );
+        assert_eq!(projected.origin_balance_before, Some(BigDecimal::from(6)));
+        assert_eq!(
+            projected.origin_balance_after,
+            Some(BigDecimal::from_str("2.0006").unwrap())
+        );
+        assert!(projected.destination_balance_after.is_none());
+        assert_eq!(
+            ledger.get("nep141:usdt.near"),
+            Some(&BigDecimal::from_str("2.0006").unwrap())
+        );
+    }
+
+    #[test]
+    fn test_project_sent_exceeding_balance_goes_negative() {
+        let raw_payload = payload(&[
+            ("recipient", Value::String("external.near".to_string())),
+            ("amountInFormatted", Value::String("5".to_string())),
+            ("amountOutFormatted", Value::String("5".to_string())),
+        ]);
+        let row = row(
+            "dao.near",
+            Some("external.near"),
+            Some("nep141:wrap.near"),
+            "nep141:wrap.near",
+            raw_payload,
+        );
+        let mut ledger = HashMap::from([("nep141:wrap.near".to_string(), BigDecimal::from(2))]);
+
+        let projected = project_row(
+            &row,
+            &mut ledger,
+            &ConfidentialDepositCorrectionIndex::empty_disabled(),
+        )
+        .expect("sent row should project")
+        .expect("sent row should not skip");
+
+        assert_eq!(projected.origin_balance_after, Some(BigDecimal::from(-3)));
+        assert_eq!(ledger.get("nep141:wrap.near"), Some(&BigDecimal::from(-3)));
     }
 }

@@ -29,9 +29,8 @@ pub(crate) fn confidential_gold_event_key(history_event_id: i64) -> String {
 /// Confidential naming is inverted relative to the unified table: 1Click
 /// `origin`/`amount_in` is the debit side (unified `token_out`/`amount_out`)
 /// and `destination`/`amount_out` is the credit side (unified `token_in`/
-/// `amount_in`). The debit amount is the applied delta (before - after) so the
-/// read-side `balance_before = after + amount_out` derivation holds on rows
-/// where the replay clamped a would-be-negative balance at zero.
+/// `amount_in`). The debit amount is the applied delta (before - after), which
+/// keeps the read-side `balance_before = after + amount_out` derivation exact.
 pub(crate) fn unified_bind_from_event(event: &GoldHistoryEvent) -> UnifiedGoldBind {
     let applied_debit = match (&event.origin_balance_before, &event.origin_balance_after) {
         (Some(before), Some(after)) => Some(before - after),
@@ -89,7 +88,7 @@ pub(crate) fn unified_bind_from_event(event: &GoldHistoryEvent) -> UnifiedGoldBi
 
     UnifiedGoldBind {
         gold_event_key: confidential_gold_event_key(event.history_event_id),
-        event_time: event.quote_created_at,
+        event_time: event.event_time,
         source_order: event.history_event_id,
         token_in,
         amount_in,
@@ -131,7 +130,7 @@ mod tests {
             proposal_execution_block_height: None,
             proposal_executed_at: None,
             proposal_execution_transaction_hash: None,
-            quote_created_at: Utc::now(),
+            event_time: Utc::now(),
             proposal_created_at: None,
             proposal_id: None,
             deposit_tx_hash: None,
@@ -144,7 +143,7 @@ mod tests {
         let bind = unified_bind_from_event(&event);
         assert_eq!(bind.gold_event_key, "confidential:42");
         assert_eq!(bind.source_order, 42);
-        assert_eq!(bind.event_time, event.quote_created_at);
+        assert_eq!(bind.event_time, event.event_time);
     }
 
     #[test]
@@ -165,7 +164,7 @@ mod tests {
     }
 
     #[test]
-    fn sent_out_amount_is_the_applied_delta_when_clamped() {
+    fn sent_out_amount_is_the_applied_delta() {
         let mut clamped = event(ConfidentialTxType::Sent);
         clamped.origin_balance_before = Some(BigDecimal::from(1));
         clamped.origin_balance_after = Some(BigDecimal::from(0));
