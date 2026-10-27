@@ -20,12 +20,16 @@ mod wallet_contract;
 use std::ops::Deref;
 
 use axum::{Json, http::StatusCode};
+use borsh::BorshDeserialize;
 use near_api::{
-    AccountId, NearToken,
+    AccountId, NearGas, NearToken,
     types::{
         Action,
         json::{Base64VecU8, U128},
-        transaction::delegate_action::{NonDelegateAction, SignedDelegateAction},
+        transaction::{
+            actions::FunctionCallAction,
+            delegate_action::{NonDelegateAction, SignedDelegateAction},
+        },
     },
 };
 use serde::{Deserialize, Serialize};
@@ -187,9 +191,21 @@ pub enum RelaySubmission {
     /// WalletContract `w_execute_signed`: the sponsor replays these prepared actions
     /// (deposits already set to the bounded bond) to the user's wallet contract.
     WalletContract(WalletReplay),
-    /// NEP-366 meta-transaction: the sponsor wraps and relays the original signed
-    /// delegate action.
-    MetaTransaction(SignedDelegateAction),
+    /// NEP-366 meta-transaction: the sponsor wraps and relays the signed delegate
+    /// action.
+    MetaTransaction(MetaRelay),
+}
+
+/// How a meta-transaction is carried to the sponsor.
+///
+/// ed25519 and secp256k1 fit in near-api's `SignedDelegateAction`. An ML-DSA-65
+/// key does not: near-api's public key is `Copy` and only knows those two
+/// curves, so rebuilding the action would drop the signature. Those relays keep
+/// the original bytes.
+#[derive(Debug)]
+pub enum MetaRelay {
+    Supported(SignedDelegateAction),
+    PostQuantum { sender_id: AccountId, bytes: Vec<u8> },
 }
 
 /// The sponsor-prepared replay of a `w_execute_signed` relay.
@@ -303,6 +319,100 @@ impl RelayOperation {
     }
 }
 
+/// Decode a relay body. ed25519 and secp256k1 stay on the near-api path. Key
+/// type byte 2 is ML-DSA-65, which that decoder rejects; those bytes are read
+/// with `near-primitives` instead.
+pub fn parse_relay(treasury_id: AccountId, raw: &[u8]) -> Result<ParsedRelay, String> {
+    match SignedDelegateAction::try_from_slice(raw) {
+        Ok(signed) => parse_sponsored_proposals(treasury_id, signed),
+        Err(error) if is_post_quantum_key(&error) => parse_post_quantum(treasury_id, raw),
+        Err(error) => Err(format!("Invalid delegate action: {error}")),
+    }
+}
+
+fn is_post_quantum_key(error: &impl std::fmt::Display) -> bool {
+    // near-api's PublicKey borsh rejects any tag other than 0 (ed25519) and
+    // 1 (secp256k1). Tag 2 is ML-DSA-65.
+    error.to_string().contains("Invalid key type byte index: 2")
+}
+
+/// Parse a delegate action whose signer key near-api cannot represent.
+fn parse_post_quantum(treasury_id: AccountId, raw: &[u8]) -> Result<ParsedRelay, String> {
+    use near_primitives::action::delegate::SignedDelegateAction as ProtocolSigned;
+
+    let signed = ProtocolSigned::try_from_slice(raw)
+        .map_err(|error| format!("Invalid delegate action: {error}"))?;
+    let near_actions = protocol_function_calls(&signed.delegate_action.actions)?;
+    let (submission, calls) = if is_wallet_contract_shape(&near_actions) {
+        // The passkey (or other wallet-contract) proof lives inside the call
+        // args. The sponsor replays those calls and does not re-send this
+        // outer signature.
+        let calls = wallet_contract::collect_calls(&near_actions)?;
+        let replay = WalletReplay {
+            actions: wallet_contract::build_sponsored_actions(&near_actions)?,
+            wallet_account: api_account(&signed.delegate_action.receiver_id)?,
+        };
+        (RelaySubmission::WalletContract(replay), calls)
+    } else {
+        // The user's ML-DSA signature covers these exact bytes. Rebuilding
+        // them through near-api would change the signature, so keep the
+        // original and only continue when they round-trip.
+        let reserialized = borsh::to_vec(&signed)
+            .map_err(|error| format!("Invalid delegate action: {error}"))?;
+        if reserialized.as_slice() != raw {
+            return Err(
+                "Invalid delegate action: signed bytes did not round-trip".to_owned(),
+            );
+        }
+        let calls = collect_direct_calls(
+            &api_account(&signed.delegate_action.receiver_id)?,
+            &near_actions,
+        )?;
+        (
+            RelaySubmission::MetaTransaction(MetaRelay::PostQuantum {
+                sender_id: api_account(&signed.delegate_action.sender_id)?,
+                bytes: raw.to_vec(),
+            }),
+            calls,
+        )
+    };
+    let (operation, attached_deposit, proposal_storage_bytes) =
+        validate_calls(&treasury_id, calls)?;
+    Ok(ParsedRelay {
+        treasury_id,
+        submission,
+        operation,
+        attached_deposit,
+        proposal_storage_bytes,
+    })
+}
+
+fn api_account(id: &near_primitives::types::AccountId) -> Result<AccountId, String> {
+    id.as_str()
+        .parse()
+        .map_err(|error| format!("Invalid account id '{id}': {error}"))
+}
+
+fn protocol_function_calls(
+    actions: &[near_primitives::action::delegate::NonDelegateAction],
+) -> Result<Vec<NonDelegateAction>, String> {
+    actions
+        .iter()
+        .map(|action| match near_primitives::action::Action::from(action.clone()) {
+            near_primitives::action::Action::FunctionCall(call) => {
+                NonDelegateAction::try_from(Action::FunctionCall(Box::new(FunctionCallAction {
+                    method_name: call.method_name.clone(),
+                    args: call.args.clone(),
+                    gas: NearGas::from_gas(call.gas.as_gas()),
+                    deposit: NearToken::from_yoctonear(call.deposit.as_yoctonear()),
+                })))
+                .map_err(|_| "Delegate action contains a nested delegate action".to_owned())
+            }
+            _ => Err("Delegate action contains a non-FunctionCall action".to_owned()),
+        })
+        .collect()
+}
+
 /// Consume the treasury id and a relayed delegate action into the operation to
 /// sponsor and the on-chain submission ([`RelaySubmission`]), rejecting anything that
 /// is not a homogeneous set of `add_proposal`/`act_proposal` calls targeting the
@@ -326,7 +436,7 @@ pub fn parse_sponsored_proposals(
     } else {
         let calls = collect_direct_calls(&delegate_action.receiver_id, &delegate_action.actions)?;
         (
-            RelaySubmission::MetaTransaction(signed_delegate_action),
+            RelaySubmission::MetaTransaction(MetaRelay::Supported(signed_delegate_action)),
             calls,
         )
     };
@@ -478,6 +588,7 @@ struct ActProposalArgs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use borsh::BorshDeserialize;
     use serde_json::json;
 
     const TREASURY: &str = "dao.sputnik-dao.near";
@@ -637,5 +748,98 @@ mod tests {
         )
         .unwrap_err();
         assert!(err.contains("only the treasury"), "{err}");
+    }
+
+    fn mldsa_delegate(method_name: &str, args: Vec<u8>) -> Vec<u8> {
+        use near_crypto::{KeyType, PublicKey, Signature};
+        use near_primitives::action::delegate::{
+            DelegateAction, NonDelegateAction as ProtocolNonDelegate, SignedDelegateAction,
+        };
+        use near_primitives::action::{Action as ProtocolAction, FunctionCallAction};
+
+        let call = ProtocolNonDelegate::try_from(ProtocolAction::FunctionCall(Box::new(
+            FunctionCallAction {
+                method_name: method_name.to_owned(),
+                args,
+                gas: near_primitives::gas::Gas::from_gas(10),
+                deposit: NearToken::from_yoctonear(0),
+            },
+        )))
+        .expect("function call is not a delegate");
+        let signed = SignedDelegateAction {
+            delegate_action: DelegateAction {
+                sender_id: "user.near".parse().unwrap(),
+                receiver_id: TREASURY.parse().unwrap(),
+                actions: vec![call],
+                nonce: 1,
+                max_block_height: 100,
+                public_key: PublicKey::empty(KeyType::MLDSA65),
+            },
+            signature: Signature::empty(KeyType::MLDSA65),
+        };
+        borsh::to_vec(&signed).unwrap()
+    }
+
+    #[test]
+    fn ml_dsa_delegate_is_kept_as_original_bytes() {
+        let args = serde_json::to_vec(&json!({
+            "proposal": { "description": "d", "kind": { "Transfer": {} } }
+        }))
+        .unwrap();
+        let raw = mldsa_delegate("add_proposal", args);
+        let err = SignedDelegateAction::try_from_slice(&raw).unwrap_err();
+        assert!(
+            is_post_quantum_key(&err),
+            "near-api should reject the ML-DSA key, got {err}"
+        );
+
+        let parsed = parse_relay(acc(TREASURY), &raw).expect("ml-dsa relay parses");
+        match parsed.submission {
+            RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id, bytes }) => {
+                assert_eq!(sender_id.as_str(), "user.near");
+                assert_eq!(bytes, raw);
+            }
+            other => panic!("expected the original bytes, got {other:?}"),
+        }
+        assert!(parsed.operation.is_add_proposals());
+    }
+
+    #[test]
+    fn ed25519_delegate_stays_on_the_near_api_path() {
+        use near_crypto::{KeyType, PublicKey, Signature};
+        use near_primitives::action::delegate::{
+            DelegateAction, NonDelegateAction as ProtocolNonDelegate, SignedDelegateAction,
+        };
+        use near_primitives::action::{Action as ProtocolAction, FunctionCallAction};
+
+        let call = ProtocolNonDelegate::try_from(ProtocolAction::FunctionCall(Box::new(
+            FunctionCallAction {
+                method_name: "add_proposal".to_owned(),
+                args: serde_json::to_vec(&json!({
+                    "proposal": { "description": "d", "kind": { "Transfer": {} } }
+                }))
+                .unwrap(),
+                gas: near_primitives::gas::Gas::from_gas(10),
+                deposit: NearToken::from_yoctonear(0),
+            },
+        )))
+        .unwrap();
+        let signed = SignedDelegateAction {
+            delegate_action: DelegateAction {
+                sender_id: "user.near".parse().unwrap(),
+                receiver_id: TREASURY.parse().unwrap(),
+                actions: vec![call],
+                nonce: 1,
+                max_block_height: 100,
+                public_key: PublicKey::empty(KeyType::ED25519),
+            },
+            signature: Signature::empty(KeyType::ED25519),
+        };
+        let raw = borsh::to_vec(&signed).unwrap();
+        let parsed = parse_relay(acc(TREASURY), &raw).expect("ed25519 relay parses");
+        assert!(matches!(
+            parsed.submission,
+            RelaySubmission::MetaTransaction(MetaRelay::Supported(_))
+        ));
     }
 }

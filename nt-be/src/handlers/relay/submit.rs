@@ -3,13 +3,9 @@
 use std::sync::Arc;
 
 use axum::{Json, extract::State, http::StatusCode};
-use borsh::BorshDeserialize;
 use near_api::{
     AccountId, NearToken,
-    types::transaction::{
-        delegate_action::SignedDelegateAction,
-        result::{ExecutionFinalResult, ValueOrReceiptId},
-    },
+    types::transaction::result::{ExecutionFinalResult, ValueOrReceiptId},
 };
 
 use crate::{
@@ -20,11 +16,11 @@ use crate::{
         confidential,
         effects::{accounting, registrations},
         parse::{
-            self, RelayError, RelayRequest, RelayResponse, RelaySubmission, error_response,
-            success_response,
+            self, MetaRelay, RelayError, RelayRequest, RelayResponse, RelaySubmission,
+            error_response, success_response,
         },
         sponsor::{
-            OutcomeDebug, Sponsor,
+            Sponsor,
             policy::{self, SpentNear},
         },
     },
@@ -66,18 +62,10 @@ pub async fn relay_delegate_action(
     } = relay_request;
     tracing::Span::current().record("treasury_id", tracing::field::display(&treasury_id));
 
-    // 1. Decode the borsh bytes once; the raw form is dropped here.
-    let signed_delegate_action =
-        SignedDelegateAction::try_from_slice(&raw_signed_delegate_action.0).map_err(|e| {
-            error_response(
-                StatusCode::BAD_REQUEST,
-                format!("Invalid delegate action: {}", e),
-            )
-        })?;
-
-    // 2. Consume the signed action into the operation to sponsor and how to submit
-    //    it; reject anything that is not an add_proposal/act_proposal on the treasury.
-    let parsed = parse::parse_sponsored_proposals(treasury_id, signed_delegate_action)
+    // 1–2. Decode the signed action and reject anything that is not an
+    // add_proposal/act_proposal on the treasury. An ML-DSA-65 key is decoded
+    // with near-primitives; ed25519 and secp256k1 stay on the near-api path.
+    let parsed = parse::parse_relay(treasury_id, &raw_signed_delegate_action.0)
         .map_err(|msg| error_response(StatusCode::BAD_REQUEST, msg))?;
 
     // 3. Load the treasury record and authorize, consuming the parsed relay. The
@@ -158,7 +146,7 @@ pub async fn relay_delegate_action(
     // 8. Submit (retried on transient send errors via on-chain nonce protection).
     //    On failure the NEAR already fronted is still recorded and the reserved credit
     //    is refunded.
-    let outcome = match submit_relay(&state, submission).await {
+    let outcome = match submit_relay(&state, &treasury_id, submission).await {
         Ok(outcome) => outcome,
         Err(submit_error) => {
             accounting::spawn_record_spend(
@@ -189,7 +177,18 @@ pub async fn relay_delegate_action(
         proposal_type.as_deref(),
         address_book_payment,
     );
-    let outcome_debug: OutcomeDebug = format!("{:?}", outcome);
+    let (tx_hash, outcome_debug, receipt_proposal_ids) = match outcome {
+        RelaySend::Classic(outcome) => (
+            outcome.transaction().get_hash().to_string(),
+            format!("{:?}", outcome),
+            created_proposal_ids(&outcome, &treasury_id),
+        ),
+        RelaySend::PostQuantum(outcome) => (
+            outcome.tx_hash,
+            outcome.debug,
+            outcome.proposal_ids,
+        ),
+    };
     // Empty for add-proposal relays, so this is a no-op outside confidential votes.
     confidential::spawn_auto_submit_intents(
         &state,
@@ -200,11 +199,8 @@ pub async fn relay_delegate_action(
 
     let proposal_ids = operation
         .is_add_proposals()
-        .then(|| created_proposal_ids(&outcome, &treasury_id));
-    Ok(success_response(
-        proposal_ids,
-        outcome.transaction().get_hash().to_string(),
-    ))
+        .then_some(receipt_proposal_ids);
+    Ok(success_response(proposal_ids, tx_hash))
 }
 
 /// Ids of the proposals this relay created, read from the execution outcome:
@@ -222,23 +218,44 @@ fn created_proposal_ids(outcome: &ExecutionFinalResult, treasury_id: &AccountId)
         .collect()
 }
 
+/// A relay that landed. The classic path keeps the near-api outcome. An
+/// ML-DSA relay keeps the RPC JSON, because that outcome view contains a key
+/// near-api cannot decode.
+enum RelaySend {
+    Classic(ExecutionFinalResult),
+    PostQuantum(crate::handlers::relay::post_quantum::ProtocolRelayOutcome),
+}
+
 /// Submit the relay transaction and return its execution outcome; `confidential`
 /// later mines its debug form for MPC signatures.
 #[tracing::instrument(level = "info", skip_all, fields(step = "submit_relay"))]
 async fn submit_relay(
     state: &Arc<AppState>,
+    treasury_id: &AccountId,
     submission: RelaySubmission,
-) -> Result<ExecutionFinalResult, RelayError> {
+) -> Result<RelaySend, RelayError> {
     let sponsor = Sponsor::from_state(state);
     let result = match submission {
-        RelaySubmission::WalletContract(replay) => {
+        RelaySubmission::WalletContract(replay) => sponsor
+            .replay_actions(&replay.wallet_account, replay.actions)
+            .await
+            .map(RelaySend::Classic),
+        RelaySubmission::MetaTransaction(MetaRelay::Supported(signed_delegate_action)) => {
             sponsor
-                .replay_actions(&replay.wallet_account, replay.actions)
+                .relay_meta_tx(signed_delegate_action)
                 .await
+                .map(RelaySend::Classic)
         }
-        RelaySubmission::MetaTransaction(signed_delegate_action) => {
-            sponsor.relay_meta_tx(signed_delegate_action).await
-        }
+        RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id, bytes }) => sponsor
+            .relay_post_quantum_meta_tx(
+                &state.http_client,
+                &state.env_vars.signer_key,
+                &sender_id,
+                treasury_id,
+                &bytes,
+            )
+            .await
+            .map(RelaySend::PostQuantum),
     };
 
     // `logged` is the only log of this failure; an extra one here would produce

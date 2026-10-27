@@ -100,6 +100,126 @@ impl Sponsor {
         .await
     }
 
+    /// Relay an ML-DSA-65 meta-transaction. The user's signed bytes are embedded
+    /// as-is; this signs only the outer transaction with the sponsor key.
+    /// Safe to retry — the delegate nonce rejects a double-land.
+    pub async fn relay_post_quantum_meta_tx(
+        &self,
+        http: &reqwest::Client,
+        signer_key: &near_api::SecretKey,
+        sender_id: &AccountId,
+        treasury_id: &AccountId,
+        delegate_bytes: &[u8],
+    ) -> Result<crate::handlers::relay::post_quantum::ProtocolRelayOutcome, RelayFailure> {
+        use borsh::BorshDeserialize;
+        use near_primitives::action::delegate::SignedDelegateAction as ProtocolSigned;
+
+        use crate::handlers::relay::post_quantum::{
+            self, read_send_tx_result, rpc_rejected_before_broadcast,
+        };
+
+        let secret = post_quantum::sponsor_secret(signer_key)
+            .map_err(|message| RelayFailure::NotSent { message })?;
+        let delegate = ProtocolSigned::try_from_slice(delegate_bytes)
+            .map_err(|error| RelayFailure::NotSent {
+                message: format!("Invalid delegate action: {error}"),
+            })?;
+        let policy = RetryPolicy::rpc();
+        let mut signed_tx: Option<(String, CryptoHash)> = None;
+        let mut last_error = String::new();
+        let mut maybe_broadcast = false;
+
+        for attempt in 1..=policy.max_attempts {
+            if attempt > 1 {
+                tokio::time::sleep(policy.delay).await;
+            }
+            let (tx_base64, tx_hash) = if let Some(signed) = &signed_tx {
+                signed.clone()
+            } else {
+                let public_key = secret.public_key();
+                let api_public_key = public_key
+                    .to_string()
+                    .parse()
+                    .map_err(|error| RelayFailure::NotSent {
+                        message: format!("sponsor public key: {error}"),
+                    })?;
+                let (nonce, block_hash, _) = match self
+                    .signer
+                    .fetch_tx_nonce(self.signer_id.clone(), api_public_key, &self.network)
+                    .await
+                {
+                    Ok(nonce) => nonce,
+                    Err(error) => {
+                        tracing::warn!(
+                            "relay post-quantum attempt {attempt}/{} failed to fetch nonce: {error}",
+                            policy.max_attempts
+                        );
+                        last_error = error.to_string();
+                        continue;
+                    }
+                };
+                let transaction = match post_quantum::unsigned_relay_transaction(
+                    &self.signer_id,
+                    &public_key,
+                    nonce,
+                    sender_id,
+                    block_hash.0,
+                    delegate.clone(),
+                ) {
+                    Ok(transaction) => transaction,
+                    Err(message) => return Err(RelayFailure::NotSent { message }),
+                };
+                let signed = post_quantum::sign_transaction(&secret, transaction);
+                let tx_hash = CryptoHash(signed.get_hash().0);
+                let tx_base64 = post_quantum::signed_tx_base64(&signed);
+                signed_tx = Some((tx_base64.clone(), tx_hash));
+                (tx_base64, tx_hash)
+            };
+
+            for (index, endpoint) in self.network.rpc_endpoints.iter().enumerate() {
+                match Self::send_once(http, endpoint, &tx_base64).await {
+                    Ok(result) => {
+                        return read_send_tx_result(&result, treasury_id.as_str(), &tx_hash.to_string())
+                            .map_err(|failure| RelayFailure::FailedOnChain {
+                                tx_hash,
+                                reason: failure.reason,
+                                message: failure.message,
+                            });
+                    }
+                    Err(send_error) => {
+                        let rejected = send_error
+                            .rpc_error
+                            .as_ref()
+                            .is_some_and(rpc_rejected_before_broadcast);
+                        if !rejected && !send_error.connect_error {
+                            maybe_broadcast = true;
+                        } else if rejected {
+                            // The node refused these bytes. A new nonce is safe.
+                            signed_tx = None;
+                        }
+                        tracing::warn!(
+                            "relay post-quantum attempt {attempt}/{} endpoint {index} failed: {}",
+                            policy.max_attempts,
+                            send_error.message
+                        );
+                        last_error = send_error.message;
+                    }
+                }
+            }
+        }
+
+        Err(if maybe_broadcast {
+            RelayFailure::StatusUnknown {
+                tx_hash: signed_tx.as_ref().map(|(_, hash)| *hash),
+                message: last_error,
+            }
+        } else {
+            RelayFailure::NotSent {
+                message: last_error,
+            }
+        })
+    }
+
     /// Replay the sponsor's prepared actions directly to the user's wallet contract.
     /// Safe to retry — the wallet request nonce rejects a double-land.
     pub async fn replay_actions(
@@ -151,6 +271,67 @@ impl Sponsor {
             .map_err(|e| e.to_string())
     }
 
+    /// `send_tx` against one RPC endpoint. A connect failure has not been
+    /// broadcast. A JSON-RPC error is returned with its body so the caller can
+    /// tell a refusal from a timeout.
+    async fn send_once(
+        http: &reqwest::Client,
+        endpoint: &near_api::RPCEndpoint,
+        signed_tx_base64: &str,
+    ) -> Result<serde_json::Value, TxSendError> {
+        let body = serde_json::json!({
+            "jsonrpc": "2.0",
+            "id": "0",
+            "method": "send_tx",
+            "params": {
+                "signed_tx_base64": signed_tx_base64,
+                "wait_until": "FINAL",
+            }
+        });
+        let mut request = http.post(endpoint.url.clone()).json(&body);
+        if let Some(authorization) = &endpoint.bearer_header {
+            request = request.header(reqwest::header::AUTHORIZATION, authorization);
+        }
+        let response = match request.send().await {
+            Ok(response) => response,
+            Err(error) => {
+                return Err(TxSendError {
+                    message: error.to_string(),
+                    connect_error: error.is_connect() || error.is_request(),
+                    rpc_error: None,
+                });
+            }
+        };
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        let parsed = serde_json::from_str::<serde_json::Value>(&text).ok();
+        if let Some(error) = parsed.as_ref().and_then(|value| value.get("error")) {
+            return Err(TxSendError {
+                message: error.to_string(),
+                connect_error: false,
+                rpc_error: Some(error.clone()),
+            });
+        }
+        if let Some(result) = parsed.as_ref().and_then(|value| value.get("result")) {
+            return Ok(result.clone());
+        }
+        Err(TxSendError {
+            message: format!("send_tx HTTP {status}: {text}"),
+            // A gateway timeout or a body we cannot read may already have been
+            // accepted by the node.
+            connect_error: status.is_client_error(),
+            rpc_error: None,
+        })
+    }
+}
+
+struct TxSendError {
+    message: String,
+    connect_error: bool,
+    rpc_error: Option<serde_json::Value>,
+}
+
+impl Sponsor {
     /// Send a user's relayed transaction, owning every broadcast so the relay
     /// always knows what may have reached the network.
     ///
