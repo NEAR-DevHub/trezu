@@ -216,7 +216,7 @@ fn created_proposal_ids(outcome: &ExecutionFinalResult, treasury_id: &AccountId)
 /// ML-DSA relay keeps the RPC JSON, because that outcome view contains a key
 /// near-api cannot decode.
 enum RelaySend {
-    Classic(ExecutionFinalResult),
+    Classic(Box<ExecutionFinalResult>),
     PostQuantum(crate::handlers::relay::post_quantum::ProtocolRelayOutcome),
 }
 
@@ -233,11 +233,11 @@ async fn submit_relay(
         RelaySubmission::WalletContract(replay) => sponsor
             .replay_actions(&replay.wallet_account, replay.actions)
             .await
-            .map(RelaySend::Classic),
+            .map(|outcome| RelaySend::Classic(Box::new(outcome))),
         RelaySubmission::MetaTransaction(MetaRelay::Supported(signed_delegate_action)) => sponsor
             .relay_meta_tx(signed_delegate_action)
             .await
-            .map(RelaySend::Classic),
+            .map(|outcome| RelaySend::Classic(Box::new(outcome))),
         RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id, bytes }) => sponsor
             .relay_post_quantum_meta_tx(
                 &state.http_client,
