@@ -7,8 +7,8 @@
 use base64::Engine as _;
 use near_api::{AccountId, SecretKey as ApiSecretKey};
 use near_crypto::SecretKey;
-use near_primitives::action::delegate::SignedDelegateAction;
 use near_primitives::action::Action;
+use near_primitives::action::delegate::SignedDelegateAction;
 use near_primitives::hash::CryptoHash;
 use near_primitives::transaction::{SignedTransaction, Transaction, TransactionV0};
 use near_primitives::types::AccountId as ProtocolAccountId;
@@ -105,7 +105,11 @@ fn execution_failure(result: &Value) -> Option<String> {
     let receipts = result.get("receipts_outcome")?.as_array()?;
     let failures: Vec<String> = receipts
         .iter()
-        .filter_map(|receipt| receipt.pointer("/outcome/status/Failure").map(ToString::to_string))
+        .filter_map(|receipt| {
+            receipt
+                .pointer("/outcome/status/Failure")
+                .map(ToString::to_string)
+        })
         .collect();
     if failures.is_empty() {
         return None;
@@ -157,16 +161,17 @@ mod tests {
     use serde_json::json;
 
     fn delegate_bytes() -> Vec<u8> {
-        let call = NonDelegateAction::try_from(Action::FunctionCall(Box::new(FunctionCallAction {
-            method_name: "add_proposal".to_owned(),
-            args: serde_json::to_vec(&json!({
-                "proposal": { "description": "d", "kind": { "Transfer": {} } }
-            }))
-            .unwrap(),
-            gas: near_primitives::gas::Gas::from_gas(10),
-            deposit: near_api::NearToken::from_yoctonear(0),
-        })))
-        .unwrap();
+        let call =
+            NonDelegateAction::try_from(Action::FunctionCall(Box::new(FunctionCallAction {
+                method_name: "add_proposal".to_owned(),
+                args: serde_json::to_vec(&json!({
+                    "proposal": { "description": "d", "kind": { "Transfer": {} } }
+                }))
+                .unwrap(),
+                gas: near_primitives::gas::Gas::from_gas(10),
+                deposit: near_api::NearToken::from_yoctonear(0),
+            })))
+            .unwrap();
         let signed = SignedDelegateAction {
             delegate_action: DelegateAction {
                 sender_id: "user.near".parse().unwrap(),
@@ -249,6 +254,8 @@ mod tests {
     fn an_invalid_transaction_was_never_broadcast() {
         let error = json!({"name": "HANDLER_ERROR", "cause": {"name": "InvalidTransaction"}});
         assert!(rpc_rejected_before_broadcast(&error));
-        assert!(!rpc_rejected_before_broadcast(&json!({"name": "TIMEOUT_ERROR"})));
+        assert!(!rpc_rejected_before_broadcast(
+            &json!({"name": "TIMEOUT_ERROR"})
+        ));
     }
 }

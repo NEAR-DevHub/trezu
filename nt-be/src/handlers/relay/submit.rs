@@ -183,11 +183,7 @@ pub async fn relay_delegate_action(
             format!("{:?}", outcome),
             created_proposal_ids(&outcome, &treasury_id),
         ),
-        RelaySend::PostQuantum(outcome) => (
-            outcome.tx_hash,
-            outcome.debug,
-            outcome.proposal_ids,
-        ),
+        RelaySend::PostQuantum(outcome) => (outcome.tx_hash, outcome.debug, outcome.proposal_ids),
     };
     // Empty for add-proposal relays, so this is a no-op outside confidential votes.
     confidential::spawn_auto_submit_intents(
@@ -197,9 +193,7 @@ pub async fn relay_delegate_action(
         &outcome_debug,
     );
 
-    let proposal_ids = operation
-        .is_add_proposals()
-        .then_some(receipt_proposal_ids);
+    let proposal_ids = operation.is_add_proposals().then_some(receipt_proposal_ids);
     Ok(success_response(proposal_ids, tx_hash))
 }
 
@@ -240,12 +234,10 @@ async fn submit_relay(
             .replay_actions(&replay.wallet_account, replay.actions)
             .await
             .map(RelaySend::Classic),
-        RelaySubmission::MetaTransaction(MetaRelay::Supported(signed_delegate_action)) => {
-            sponsor
-                .relay_meta_tx(signed_delegate_action)
-                .await
-                .map(RelaySend::Classic)
-        }
+        RelaySubmission::MetaTransaction(MetaRelay::Supported(signed_delegate_action)) => sponsor
+            .relay_meta_tx(signed_delegate_action)
+            .await
+            .map(RelaySend::Classic),
         RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id, bytes }) => sponsor
             .relay_post_quantum_meta_tx(
                 &state.http_client,

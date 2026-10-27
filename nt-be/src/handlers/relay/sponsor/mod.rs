@@ -120,10 +120,11 @@ impl Sponsor {
 
         let secret = post_quantum::sponsor_secret(signer_key)
             .map_err(|message| RelayFailure::NotSent { message })?;
-        let delegate = ProtocolSigned::try_from_slice(delegate_bytes)
-            .map_err(|error| RelayFailure::NotSent {
+        let delegate = ProtocolSigned::try_from_slice(delegate_bytes).map_err(|error| {
+            RelayFailure::NotSent {
                 message: format!("Invalid delegate action: {error}"),
-            })?;
+            }
+        })?;
         let policy = RetryPolicy::rpc();
         let mut signed_tx: Option<(String, CryptoHash)> = None;
         let mut last_error = String::new();
@@ -137,12 +138,13 @@ impl Sponsor {
                 signed.clone()
             } else {
                 let public_key = secret.public_key();
-                let api_public_key = public_key
-                    .to_string()
-                    .parse()
-                    .map_err(|error| RelayFailure::NotSent {
-                        message: format!("sponsor public key: {error}"),
-                    })?;
+                let api_public_key =
+                    public_key
+                        .to_string()
+                        .parse()
+                        .map_err(|error| RelayFailure::NotSent {
+                            message: format!("sponsor public key: {error}"),
+                        })?;
                 let (nonce, block_hash, _) = match self
                     .signer
                     .fetch_tx_nonce(self.signer_id.clone(), api_public_key, &self.network)
@@ -179,12 +181,16 @@ impl Sponsor {
             for (index, endpoint) in self.network.rpc_endpoints.iter().enumerate() {
                 match Self::send_once(http, endpoint, &tx_base64).await {
                     Ok(result) => {
-                        return read_send_tx_result(&result, treasury_id.as_str(), &tx_hash.to_string())
-                            .map_err(|failure| RelayFailure::FailedOnChain {
-                                tx_hash,
-                                reason: failure.reason,
-                                message: failure.message,
-                            });
+                        return read_send_tx_result(
+                            &result,
+                            treasury_id.as_str(),
+                            &tx_hash.to_string(),
+                        )
+                        .map_err(|failure| RelayFailure::FailedOnChain {
+                            tx_hash,
+                            reason: failure.reason,
+                            message: failure.message,
+                        });
                     }
                     Err(send_error) => {
                         let rejected = send_error

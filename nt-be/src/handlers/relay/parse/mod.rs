@@ -205,7 +205,10 @@ pub enum RelaySubmission {
 #[derive(Debug)]
 pub enum MetaRelay {
     Supported(SignedDelegateAction),
-    PostQuantum { sender_id: AccountId, bytes: Vec<u8> },
+    PostQuantum {
+        sender_id: AccountId,
+        bytes: Vec<u8>,
+    },
 }
 
 /// The sponsor-prepared replay of a `w_execute_signed` relay.
@@ -357,12 +360,10 @@ fn parse_post_quantum(treasury_id: AccountId, raw: &[u8]) -> Result<ParsedRelay,
         // The user's ML-DSA signature covers these exact bytes. Rebuilding
         // them through near-api would change the signature, so keep the
         // original and only continue when they round-trip.
-        let reserialized = borsh::to_vec(&signed)
-            .map_err(|error| format!("Invalid delegate action: {error}"))?;
+        let reserialized =
+            borsh::to_vec(&signed).map_err(|error| format!("Invalid delegate action: {error}"))?;
         if reserialized.as_slice() != raw {
-            return Err(
-                "Invalid delegate action: signed bytes did not round-trip".to_owned(),
-            );
+            return Err("Invalid delegate action: signed bytes did not round-trip".to_owned());
         }
         let calls = collect_direct_calls(
             &api_account(&signed.delegate_action.receiver_id)?,
@@ -398,18 +399,20 @@ fn protocol_function_calls(
 ) -> Result<Vec<NonDelegateAction>, String> {
     actions
         .iter()
-        .map(|action| match near_primitives::action::Action::from(action.clone()) {
-            near_primitives::action::Action::FunctionCall(call) => {
-                NonDelegateAction::try_from(Action::FunctionCall(Box::new(FunctionCallAction {
-                    method_name: call.method_name.clone(),
-                    args: call.args.clone(),
-                    gas: NearGas::from_gas(call.gas.as_gas()),
-                    deposit: NearToken::from_yoctonear(call.deposit.as_yoctonear()),
-                })))
-                .map_err(|_| "Delegate action contains a nested delegate action".to_owned())
-            }
-            _ => Err("Delegate action contains a non-FunctionCall action".to_owned()),
-        })
+        .map(
+            |action| match near_primitives::action::Action::from(action.clone()) {
+                near_primitives::action::Action::FunctionCall(call) => NonDelegateAction::try_from(
+                    Action::FunctionCall(Box::new(FunctionCallAction {
+                        method_name: call.method_name.clone(),
+                        args: call.args.clone(),
+                        gas: NearGas::from_gas(call.gas.as_gas()),
+                        deposit: NearToken::from_yoctonear(call.deposit.as_yoctonear()),
+                    })),
+                )
+                .map_err(|_| "Delegate action contains a nested delegate action".to_owned()),
+                _ => Err("Delegate action contains a non-FunctionCall action".to_owned()),
+            },
+        )
         .collect()
 }
 
