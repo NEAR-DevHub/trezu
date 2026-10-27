@@ -163,7 +163,7 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 
 ## 9. Defect Management & Metrics
 
-**Workflow:** bugs are filed with risk tier, environment, and reproduction steps; merged PRs auto-move linked issues to "QA In Progress" (`move-linked-issues-to-qa.yml`) where QA verifies on staging before closing.
+**Workflow:** bugs are filed with risk tier, environment, and reproduction steps; merged PRs auto-move linked Trezu issues by author — tickets opened by `olskik12` to "UX Review", all others to "QA In Progress" (`move-linked-issues-to-qa.yml`) — where QA verifies on staging before closing.
 
 **Severity ↔ response:**
 
