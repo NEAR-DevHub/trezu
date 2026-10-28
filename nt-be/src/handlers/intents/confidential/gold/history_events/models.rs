@@ -35,7 +35,8 @@ pub(crate) struct GoldHistoryEvent {
     pub(crate) proposal_execution_block_height: Option<i64>,
     pub(crate) proposal_executed_at: Option<DateTime<Utc>>,
     pub(crate) proposal_execution_transaction_hash: Option<String>,
-    pub(crate) quote_created_at: DateTime<Utc>,
+    /// Replay position (see `BronzeProjectionRow::effective_time`).
+    pub(crate) event_time: DateTime<Utc>,
     pub(crate) proposal_created_at: Option<DateTime<Utc>>,
     pub(crate) proposal_id: Option<i64>,
     /// On-chain deposit tx hash from quoteTransactions[0].txHash.
@@ -101,7 +102,11 @@ pub(crate) struct GoldBalanceSeedRow {
 pub(crate) struct BronzeProjectionRow {
     pub(crate) id: i64,
     pub(crate) account_id: String,
-    pub(crate) created_at_external: DateTime<Utc>,
+    /// Ledger position: the proposal execution time when the quote belongs
+    /// to an executed proposal, otherwise the quote creation time. A quote is
+    /// created when the request is made but only moves funds once the
+    /// proposal executes, which can be hours or days later.
+    pub(crate) effective_time: DateTime<Utc>,
     pub(crate) deposit_address: String,
     pub(crate) deposit_type: String,
     pub(crate) recipient_type: Option<String>,
@@ -114,6 +119,13 @@ pub(crate) struct BronzeProjectionRow {
     pub(crate) proposal_executed_at: Option<DateTime<Utc>>,
     pub(crate) proposal_execution_block_height: Option<i64>,
     pub(crate) proposal_execution_transaction_hash: Option<String>,
+}
+
+/// Implied USD unit price of one asset, derived from a ledger leg.
+#[derive(Debug, Clone, sqlx::FromRow)]
+pub(crate) struct GoldUnitPriceRow {
+    pub(crate) asset: String,
+    pub(crate) unit_price: BigDecimal,
 }
 
 /// Real deposited quantity for one confidential deposit, overriding the
