@@ -1,8 +1,37 @@
 "use client";
 
+import {
+    type ColumnDef,
+    createColumnHelper,
+    type ExpandedState,
+    flexRender,
+    getCoreRowModel,
+    getExpandedRowModel,
+    getPaginationRowModel,
+    useReactTable,
+} from "@tanstack/react-table";
+import {
+    ArrowRightLeft,
+    ArrowUpRight,
+    Check,
+    ChevronDown,
+    ChevronRight,
+    Info,
+    SearchX,
+    Send,
+    X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { Proposal } from "@/lib/proposals-api";
+import { buildDepositDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
+import { Address } from "@/components/address";
+import { AuthButton } from "@/components/auth-button";
+import { Button } from "@/components/button";
+import { EmptyState } from "@/components/empty-state";
+import { FormattedDate } from "@/components/formatted-date";
+import { HighlightedText } from "@/components/highlighted-text";
+import { Pagination } from "@/components/pagination";
 import {
     Table,
     TableBody,
@@ -11,70 +40,39 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/table";
-import { Button } from "@/components/button";
-import {
-    ChevronDown,
-    ChevronRight,
-    X,
-    Check,
-    SearchX,
-    Send,
-    ArrowUpRight,
-    ArrowRightLeft,
-    Info,
-} from "lucide-react";
-import { TransactionCell } from "./transaction-cell";
-import { ExpandedView } from "./expanded-view";
-import { ProposalTypeIcon } from "./proposal-type-icon";
-import { VotingIndicator } from "./voting-indicator";
-import { Policy } from "@/types/policy";
-import { TreasuryConfig } from "@/lib/api";
-import { FormattedDate } from "@/components/formatted-date";
-
-import { Address } from "@/components/address";
-import { TooltipUser } from "@/components/user";
-import { Checkbox } from "@/components/ui/checkbox";
-import { getProposalStatus, getProposalUIKind } from "../utils/proposal-utils";
-import { useProposalKindLabel } from "../hooks/use-proposal-kind-label";
-import { extractConfidentialRequestData } from "../utils/proposal-extractors";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import { Pagination } from "@/components/pagination";
-import { ProposalStatusPill } from "./proposal-status-pill";
-import { useNear } from "@/stores/near-store";
-import { buildDepositDeepLink } from "@/app/(treasury)/[treasuryId]/dashboard/components/deposit/deposit-transfer-url";
-import { useTreasury } from "@/hooks/use-treasury";
-import { useResponsiveSidebar } from "@/stores/sidebar-store";
-import {
-    getApproversAndThreshold,
-    getKindFromProposal,
-} from "@/lib/config-utils";
-
-import {
-    ColumnDef,
-    flexRender,
-    getCoreRowModel,
-    useReactTable,
-    getExpandedRowModel,
-    createColumnHelper,
-    ExpandedState,
-    getPaginationRowModel,
-} from "@tanstack/react-table";
-import { VoteModal } from "./vote-modal";
-import { EmptyState } from "@/components/empty-state";
-import { AuthButton } from "@/components/auth-button";
-import { useRouter } from "next/navigation";
 import { Tooltip } from "@/components/tooltip";
-import { useProposalsInsufficientBalance } from "../hooks/use-proposals-insufficient-balance";
-import { useProposalTransaction, useSwapStatus } from "@/hooks/use-proposals";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TooltipUser } from "@/components/user";
+import { useProposalStatus } from "@/features/proposals/hooks/use-proposal-status";
+import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
 import {
     extractReceiptProposalData,
     resolveExecutionTimestamp,
 } from "@/features/proposals/utils/receipt-utils";
-import { Skeleton } from "@/components/ui/skeleton";
-import { HighlightedText } from "@/components/highlighted-text";
+import { useProposalTransaction, useSwapStatus } from "@/hooks/use-proposals";
+import { useTreasury } from "@/hooks/use-treasury";
+import type { TreasuryConfig } from "@/lib/api";
+import {
+    getApproversAndThreshold,
+    getKindFromProposal,
+} from "@/lib/config-utils";
+import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
-import { useProposalStatus } from "@/features/proposals/hooks/use-proposal-status";
-import { useVoteActionSlots } from "@/features/proposals/hooks/use-vote-action-slots";
+import { useNear } from "@/stores/near-store";
+import { useResponsiveSidebar } from "@/stores/sidebar-store";
+import type { Policy } from "@/types/policy";
+import { useProposalKindLabel } from "../hooks/use-proposal-kind-label";
+import { useProposalsInsufficientBalance } from "../hooks/use-proposals-insufficient-balance";
+import { extractConfidentialRequestData } from "../utils/proposal-extractors";
+import { getProposalStatus, getProposalUIKind } from "../utils/proposal-utils";
+import { ExpandedView } from "./expanded-view";
+import { ProposalStatusPill } from "./proposal-status-pill";
+import { ProposalTypeIcon } from "./proposal-type-icon";
+import { TransactionCell } from "./transaction-cell";
+import { VoteModal } from "./vote-modal";
+import { VotingIndicator } from "./voting-indicator";
 
 const columnHelper = createColumnHelper<Proposal>();
 
@@ -135,6 +133,7 @@ function ProposalTimelineDate({
         undefined,
         shouldUseSwapDate,
         treasuryId,
+        proposal,
     );
 
     // Swap status is still loading. The row may already be settled, so hold
@@ -485,7 +484,7 @@ export function ProposalsTable({
     }>({ vote: "Approve", proposals: [] });
 
     // Notify parent when selection changes
-    let selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
     useEffect(() => {
         const selectedCount = selectedRows.length;
         onSelectionChange?.(selectedCount);
