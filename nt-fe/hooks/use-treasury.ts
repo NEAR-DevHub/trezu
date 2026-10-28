@@ -63,6 +63,11 @@ export function useTreasury() {
         (currentTreasury?.isConfidential ||
             guestTreasuryConfig?.isConfidential) ??
         false;
+    const confidentialReusableDeposits =
+        isConfidential &&
+        ((currentTreasury?.config?.confidentialReusableDeposits ||
+            guestTreasuryConfig?.confidentialReusableDeposits) ??
+            false);
 
     // Store the latest treasury ID when it changes
     useEffect(() => {
@@ -77,6 +82,7 @@ export function useTreasury() {
         isLoading,
         treasuryId,
         isConfidential,
+        confidentialReusableDeposits,
         lastTreasuryId,
         config: currentTreasury?.config || guestTreasuryConfig,
         treasuries: visibleTreasuries,

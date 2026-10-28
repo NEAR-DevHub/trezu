@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
         "oneTimeAddressTitle": "Einmalige Einzahlungsadresse {symbol} auf dem {network}-Netzwerk",
         "oneTimeAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
+        "reusableAddressTitle": "Einzahlungsadresse {symbol} im {network}-Netzwerk",
+        "reusableAddressSubtitle": "Senden Sie nur diesen Token über dieses Netzwerk an die unten stehende Adresse. Sie können beliebig oft darauf einzahlen.",
         "confidentialTrezuTitle": "Einzahlung von vertraulichem Trezu im near.com-Netzwerk",
         "confidentialTrezuSubtitle": "Empfange jedes Asset von vertraulichem Trezu.",
         "confidentialNearcomTitle": "Einzahlung von vertraulichem near.com im internen Netzwerk",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "Von einer öffentlichen Wallet",
-                "subtitle": "Einmalige Einzahlungsadresse erstellen"
+                "subtitle": "Einmalige Einzahlungsadresse erstellen",
+                "subtitleReusable": "Wiederverwendbare Einzahlungsadresse nutzen"
             },
             "confidentialUser": {
                 "title": "Von vertraulichem Nutzer",

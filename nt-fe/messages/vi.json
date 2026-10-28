@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "Chỉ gửi token này, trên mạng này, tới địa chỉ bên dưới.",
         "oneTimeAddressTitle": "Địa chỉ nạp một lần {symbol} trên mạng {network}",
         "oneTimeAddressSubtitle": "Chỉ gửi token này, trên mạng này, tới địa chỉ bên dưới.",
+        "reusableAddressTitle": "Địa chỉ nạp {symbol} trên mạng {network}",
+        "reusableAddressSubtitle": "Chỉ gửi token này, trên mạng này, đến địa chỉ bên dưới. Bạn có thể nạp vào địa chỉ này bao nhiêu lần tùy ý.",
         "confidentialTrezuTitle": "Nạp từ Trezu bảo mật trên mạng near.com",
         "confidentialTrezuSubtitle": "Nhận bất kỳ tài sản nào từ Trezu bảo mật.",
         "confidentialNearcomTitle": "Nạp từ near.com bảo mật trên mạng nội bộ",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "Từ ví công khai",
-                "subtitle": "Tạo địa chỉ nạp một lần"
+                "subtitle": "Tạo địa chỉ nạp một lần",
+                "subtitleReusable": "Dùng địa chỉ nạp có thể tái sử dụng"
             },
             "confidentialUser": {
                 "title": "Từ người dùng bảo mật",

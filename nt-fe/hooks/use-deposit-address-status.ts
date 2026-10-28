@@ -18,6 +18,8 @@ export type DepositAddressStatusState = {
     status: string | null;
     expiresAtMs: number | null;
     originAsset: string | null;
+    /** The id is a reusable address: nothing to poll, never used up. */
+    reusable: boolean;
     /** True when used, expired, or history miss after a successful fetch. */
     isTerminal: boolean;
 };
@@ -28,6 +30,7 @@ const IDLE: DepositAddressStatusState = {
     status: null,
     expiresAtMs: null,
     originAsset: null,
+    reusable: false,
     isTerminal: false,
 };
 
@@ -44,6 +47,8 @@ function isTerminalResult(
     stopOnNotFound: boolean,
 ): boolean {
     if (!result.found) return stopOnNotFound;
+    // A reusable address has no lifecycle to follow: stop polling, stay live.
+    if (result.reusable) return true;
     const expiresAtMs = parseExpiresAtMs(result);
     if (isDepositAddressUsed(result.status)) return true;
     if (isDepositAddressExpired(expiresAtMs)) return true;
@@ -113,6 +118,7 @@ export function useDepositAddressStatus(options: {
         status: data.status ?? null,
         expiresAtMs,
         originAsset: data.originAsset ?? null,
-        isTerminal: isTerminalResult(data, stopOnNotFound),
+        reusable: data.reusable === true,
+        isTerminal: !data.reusable && isTerminalResult(data, stopOnNotFound),
     };
 }

@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "このトークンのみを、このネットワークで下のアドレスに送ってください。",
         "oneTimeAddressTitle": "{network} ネットワーク上のワンタイム {symbol} 入金アドレス",
         "oneTimeAddressSubtitle": "このトークンのみを、このネットワークで下のアドレスに送ってください。",
+        "reusableAddressTitle": "{network} ネットワークの {symbol} 入金アドレス",
+        "reusableAddressSubtitle": "このトークンのみを、このネットワークで、下記のアドレスに送金してください。何度でも入金できます。",
         "confidentialTrezuTitle": "near.com ネットワーク上の機密 Trezu からの入金",
         "confidentialTrezuSubtitle": "機密 Trezu から任意の資産を受け取れます。",
         "confidentialNearcomTitle": "内部ネットワーク上の機密 near.com からの入金",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "公開ウォレットから",
-                "subtitle": "ワンタイム入金アドレスを作成"
+                "subtitle": "ワンタイム入金アドレスを作成",
+                "subtitleReusable": "再利用できる入金アドレスを使う"
             },
             "confidentialUser": {
                 "title": "機密ユーザーから",

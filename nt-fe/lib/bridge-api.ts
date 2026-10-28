@@ -43,6 +43,8 @@ export type DepositAddressResponse = {
      * Differs from `address` when the bridge remaps onto a chain deposit address.
      */
     quoteDepositAddress?: string | null;
+    /** Reusable confidential address: no expiry, any number of deposits. */
+    reusable?: boolean | null;
 };
 
 export type ConfidentialDepositAddressStatusResponse = {
@@ -50,6 +52,8 @@ export type ConfidentialDepositAddressStatusResponse = {
     status?: string | null;
     expiresAt?: string | null;
     originAsset?: string | null;
+    /** The id is one of the treasury's reusable addresses: never used up. */
+    reusable?: boolean | null;
 };
 
 export const fetchDepositAddress = async (

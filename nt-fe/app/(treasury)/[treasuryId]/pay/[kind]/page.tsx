@@ -42,6 +42,7 @@ import {
     buildConfidentialOriginNotices,
     buildPublicTreasuryNotices,
     buildPublicWalletOneTimeNotices,
+    buildPublicWalletReusableNotices,
 } from "../../dashboard/components/deposit/deposit-notices";
 import { DepositPayTreasuryModal } from "../../dashboard/components/deposit/deposit-pay-treasury-modal";
 import { DepositTrackerPanel } from "../../dashboard/components/deposit/deposit-tracker-panel";
@@ -126,7 +127,14 @@ export default function PaySharePage() {
     const confidentialOrigin: ConfidentialOrigin =
         searchParams.get("source") === "nearcom" ? "nearcom" : "trezu";
 
-    const isOneTimeConfidentialShare = kind === "public" && isConfidential;
+    // Confidential wallet share links carry the quote address as `id`. A
+    // reusable address also carries token + network (the chain address is
+    // re-derived for the treasury); a one-time quote carries only the id.
+    const isConfidentialWalletShare = kind === "public" && isConfidential;
+    const isReusableConfidentialShare =
+        isConfidentialWalletShare && !!networkFromUrl;
+    const isOneTimeConfidentialShare =
+        isConfidentialWalletShare && !networkFromUrl;
     const isPublicTreasuryShare = kind === "public" && !isConfidential;
 
     const {
@@ -186,12 +194,13 @@ export default function PaySharePage() {
     }, [bridgeAssets, networkId]);
 
     const shouldFetchBridge =
-        isOneTimeConfidentialShare &&
-        hasFetchedStatus &&
-        statusFound === true &&
-        !statusIsTerminal &&
-        !!shareId &&
-        !!bridgeChainId;
+        (isOneTimeConfidentialShare &&
+            hasFetchedStatus &&
+            statusFound === true &&
+            !statusIsTerminal &&
+            !!shareId &&
+            !!bridgeChainId) ||
+        (isReusableConfidentialShare && !!bridgeChainId && !!tokenId);
 
     const {
         address: bridgeAddress,
@@ -201,14 +210,18 @@ export default function PaySharePage() {
         enabled: shouldFetchBridge,
         quoteDepositAddress: shareId,
         bridgeChainId,
+        treasuryId: isReusableConfidentialShare ? treasuryId : null,
+        tokenId: isReusableConfidentialShare ? tokenId : null,
     });
 
     // Settle when status says skip bridge, chain is missing, or the query finished.
-    const hasFetchedBridge = !hasFetchedStatus
-        ? false
-        : statusFound !== true || statusIsTerminal || !bridgeChainId
-          ? true
-          : bridgeQueryFetched;
+    const hasFetchedBridge = isReusableConfidentialShare
+        ? !bridgeChainId || !tokenId || bridgeQueryFetched
+        : !hasFetchedStatus
+          ? false
+          : statusFound !== true || statusIsTerminal || !bridgeChainId
+            ? true
+            : bridgeQueryFetched;
 
     const sendTokenMeta = useMemo(
         () =>
@@ -231,10 +244,10 @@ export default function PaySharePage() {
             enabled:
                 kind === "public" &&
                 !isLoading &&
-                (isOneTimeConfidentialShare ? !!shareId : !!bridgeChainId),
+                (isConfidentialWalletShare ? !!shareId : !!bridgeChainId),
             accountId: treasuryId,
             chain: isPublicTreasuryShare ? bridgeChainId : null,
-            quoteDepositAddress: isOneTimeConfidentialShare ? shareId : null,
+            quoteDepositAddress: isConfidentialWalletShare ? shareId : null,
             shownAtMs: pageShownAtMs,
             inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
         });
@@ -284,7 +297,8 @@ export default function PaySharePage() {
     const isStatusLoading =
         kind === "public" &&
         (isLoading ||
-            (isConfidential &&
+            (isReusableConfidentialShare && !hasFetchedBridge) ||
+            (isOneTimeConfidentialShare &&
                 (!hasFetchedStatus ||
                     (statusFound === true &&
                         !statusIsTerminal &&
@@ -308,7 +322,7 @@ export default function PaySharePage() {
     const depositAddress =
         kind === "confidential"
             ? withNearComAddressPrefix(recipientDaoId)
-            : isOneTimeConfidentialShare
+            : isConfidentialWalletShare
               ? bridgeAddress || ""
               : shareId;
 
@@ -338,6 +352,15 @@ export default function PaySharePage() {
             );
         }
 
+        if (isReusableConfidentialShare) {
+            return buildPublicWalletReusableNotices(
+                t,
+                symbol,
+                network,
+                minDepositDisplay,
+            );
+        }
+
         return buildPublicWalletOneTimeNotices(t, symbol, network, {
             expiresAtMs: statusExpiresAtMs,
             nowMs,
@@ -346,6 +369,7 @@ export default function PaySharePage() {
     }, [
         kind,
         isConfidential,
+        isReusableConfidentialShare,
         confidentialOrigin,
         sendTokenMeta?.symbol,
         sendTokenMeta?.networkName,

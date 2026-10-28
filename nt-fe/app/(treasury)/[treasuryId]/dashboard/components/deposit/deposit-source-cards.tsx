@@ -8,12 +8,15 @@ interface DepositSourceCardsProps {
     value: DepositSource;
     onChange: (source: DepositSource) => void;
     disablePublicWallet?: boolean;
+    /** The wallet source hands out the treasury's reusable address. */
+    reusableWalletAddress?: boolean;
 }
 
 export function DepositSourceCards({
     value,
     onChange,
     disablePublicWallet = false,
+    reusableWalletAddress = false,
 }: DepositSourceCardsProps) {
     const t = useTranslations("depositModal.sourceCards");
 
@@ -26,7 +29,9 @@ export function DepositSourceCards({
         {
             id: "public_wallet",
             title: t("publicWallet.title"),
-            subtitle: t("publicWallet.subtitle"),
+            subtitle: reusableWalletAddress
+                ? t("publicWallet.subtitleReusable")
+                : t("publicWallet.subtitle"),
             disabled: disablePublicWallet,
         },
         {

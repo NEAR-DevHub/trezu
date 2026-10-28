@@ -451,7 +451,15 @@ pub async fn load_recent_deposits_for_scope(
                 COALESCE(finalized_at, detected_at),
                 COALESCE(ledger_confirmed_at, detected_at)
               ) > NOW() - $2
-          AND ($3::text IS NULL OR provider_deposit_key = $3)
+          AND (
+                $3::text IS NULL
+                OR provider_deposit_key = $3
+                -- Reusable address: every payout of the DAO's quote.
+                OR watch_id IN (
+                    SELECT id FROM deposit_watches
+                    WHERE dao_id = $1 AND kind = 'confidential' AND quote_deposit_address = $3
+                )
+              )
           AND ($4::text IS NULL OR chain = $4)
         ORDER BY detected_at DESC
         LIMIT 20
@@ -541,6 +549,45 @@ pub async fn find_confidential_ledger_match(
     )
     .bind(dao_id)
     .bind(quote_deposit_address)
+    .fetch_optional(pool)
+    .await
+}
+
+/// Reusable-address deposits settle as one 1Click history row each, whose
+/// `refundTo` is the quote address. Amount plus a time window around the
+/// tracker's first sighting picks the row; the `NOT EXISTS` guard keeps
+/// each gold row linked at most once.
+pub async fn find_reusable_ledger_match(
+    pool: &PgPool,
+    dao_id: &str,
+    quote_deposit_address: &str,
+    amount: Option<&BigDecimal>,
+    not_before: DateTime<Utc>,
+    not_after: DateTime<Utc>,
+) -> Result<Option<LedgerMatch>, sqlx::Error> {
+    sqlx::query_as(
+        r#"
+        SELECT g.id AS event_id, g.amount_in AS amount
+        FROM bronze_confidential_history_events he
+        JOIN gold_treasury_ledger_events g
+          ON g.gold_event_key = 'confidential:' || he.id::text
+        WHERE he.account_id = $1
+          AND he.raw_payload->>'refundTo' = $2
+          AND he.deposit_type = 'INTENTS'
+          AND he.created_at_external BETWEEN $4 AND $5
+          AND ($3::numeric IS NULL OR g.amount_in = $3)
+          AND NOT EXISTS (
+              SELECT 1 FROM in_process_deposits d WHERE d.ledger_event_id = g.id
+          )
+        ORDER BY he.created_at_external ASC, he.id ASC
+        LIMIT 1
+        "#,
+    )
+    .bind(dao_id)
+    .bind(quote_deposit_address)
+    .bind(amount)
+    .bind(not_before)
+    .bind(not_after)
     .fetch_optional(pool)
     .await
 }

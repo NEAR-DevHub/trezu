@@ -293,6 +293,8 @@
         "publicAddressSubtitle": "Send only this token, on this network, to the address below.",
         "oneTimeAddressTitle": "One-time deposit address {symbol} on {network} network",
         "oneTimeAddressSubtitle": "Send only this token, on this network, to the address below.",
+        "reusableAddressTitle": "Deposit address {symbol} on {network} network",
+        "reusableAddressSubtitle": "Send only this token, on this network, to the address below. You can deposit to it as often as you like.",
         "confidentialTrezuTitle": "Deposit from confidential Trezu on near.com network",
         "confidentialTrezuSubtitle": "Receive any asset from confidential Trezu.",
         "confidentialNearcomTitle": "Deposit from confidential near.com on internal network",
@@ -341,7 +343,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "From a public wallet",
-                "subtitle": "Create one-time deposit address"
+                "subtitle": "Create one-time deposit address",
+                "subtitleReusable": "Use a reusable deposit address"
             },
             "confidentialUser": {
                 "title": "From confidential user",

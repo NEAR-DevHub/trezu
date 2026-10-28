@@ -12,6 +12,11 @@ export interface DepositInfo {
     expiresAtMs: number | null;
     /** Intents quote address for confidential status polling; null when N/A. */
     quoteDepositAddress: string | null;
+    /**
+     * The treasury's reusable 1Click deposit address: takes any number of
+     * deposits and never expires. One-time quote addresses are `false`.
+     */
+    reusable: boolean;
 }
 
 export interface SelectOption {

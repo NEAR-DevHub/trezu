@@ -63,7 +63,7 @@ fn chain_id_from_defuse_id(defuse_id: &str) -> String {
     }
 }
 
-fn fallback_chain_id_for_name(chain_name: &str) -> String {
+pub(crate) fn fallback_chain_id_for_name(chain_name: &str) -> String {
     let normalized = chain_name.to_lowercase();
     // Source of truth: Defuse `PoaBridgeNetworkReference` /
     // `BlockchainEnum` in `@defuse-protocol/internal-utils`

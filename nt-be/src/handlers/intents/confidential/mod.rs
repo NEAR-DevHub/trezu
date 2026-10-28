@@ -17,6 +17,7 @@ pub mod gold;
 pub mod history_refresh;
 pub mod prepare_auth;
 pub mod proposal_signals;
+pub mod reusable_deposit;
 pub mod types;
 
 pub use bronze::store::{link_intent_to_history_event, recover_unsubmitted_intent_from_history};

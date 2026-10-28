@@ -73,6 +73,7 @@ import {
     buildConfidentialOriginNotices,
     buildPublicTreasuryNotices,
     buildPublicWalletOneTimeNotices,
+    buildPublicWalletReusableNotices,
 } from "./deposit/deposit-notices";
 import { DepositSourceCards } from "./deposit/deposit-source-cards";
 import { DepositTrackerPanel } from "./deposit/deposit-tracker-panel";
@@ -222,8 +223,13 @@ export function DepositModal({
             }),
         [t],
     );
-    const { treasuryId, isConfidential, isGuestTreasury, config } =
-        useTreasury();
+    const {
+        treasuryId,
+        isConfidential,
+        isGuestTreasury,
+        config,
+        confidentialReusableDeposits,
+    } = useTreasury();
     const { accountId } = useNear();
     const showGuestBanner = isConfidential && (isGuestTreasury || !accountId);
     const router = useRouter();
@@ -309,6 +315,12 @@ export function DepositModal({
     const isDepositSlotWideBlocked =
         depositBlocked && !depositTokenNetworkScoped;
     const isConfidentialUserSource = depositSource === "confidential_user";
+    // Reusable confidential address: resolved as soon as asset + network are
+    // chosen, like a public treasury address, with no one-time acknowledgement.
+    const reusableWalletDeposits =
+        isConfidential &&
+        confidentialReusableDeposits &&
+        depositSource === "public_wallet";
     // Public wallet (or public treasury): scoped pause/slow placement.
     const showPublicSelectWarnings =
         step === "select" && !isConfidentialUserSource && depositBlocked;
@@ -603,6 +615,7 @@ export function DepositModal({
                     minDepositAmount: null,
                     expiresAtMs: null,
                     quoteDepositAddress: null,
+                    reusable: false,
                 };
             }
 
@@ -623,6 +636,7 @@ export function DepositModal({
                         minDepositAmount: null,
                         expiresAtMs: null,
                         quoteDepositAddress: null,
+                        reusable: false,
                     };
                 }
             }
@@ -655,6 +669,7 @@ export function DepositModal({
                             ? parsedExpiresAt
                             : null,
                         quoteDepositAddress: result.quoteDepositAddress ?? null,
+                        reusable: result.reusable === true,
                     };
                 }
 
@@ -697,7 +712,7 @@ export function DepositModal({
     // A critical (blocking) warning on this token/network pauses deposits, so we
     // skip fetching the address entirely and show the paused notice instead.
     useEffect(() => {
-        if (isConfidential) return;
+        if (isConfidential && !reusableWalletDeposits) return;
 
         if (depositBlocked) {
             if (step === "address") {
@@ -751,6 +766,7 @@ export function DepositModal({
         };
     }, [
         isConfidential,
+        reusableWalletDeposits,
         step,
         selectedAsset?.id,
         selectedNetwork?.id,
@@ -807,8 +823,10 @@ export function DepositModal({
         }
         setDepositInfo({
             ...info,
-            expiresAtMs:
-                info.expiresAtMs ?? Date.now() + DEPOSIT_ADDRESS_VALIDITY_MS,
+            expiresAtMs: info.reusable
+                ? null
+                : (info.expiresAtMs ??
+                  Date.now() + DEPOSIT_ADDRESS_VALIDITY_MS),
         });
     };
 
@@ -828,6 +846,7 @@ export function DepositModal({
             minDepositAmount: null,
             expiresAtMs: null,
             quoteDepositAddress: null,
+            reusable: false,
         });
         setStep("address");
     };
@@ -849,6 +868,16 @@ export function DepositModal({
               ? buildPaySharePath(treasuryId, {
                     kind: "public",
                     id: depositInfo.quoteDepositAddress,
+                    // Reusable: the share page re-derives the chain address
+                    // for this token and network instead of a quote lookup.
+                    ...(depositInfo.reusable &&
+                    selectedAsset?.id &&
+                    selectedNetwork?.id
+                        ? {
+                              token: selectedAsset.id,
+                              network: selectedNetwork.id,
+                          }
+                        : {}),
                 })
               : selectedAsset?.id && selectedNetwork?.id
                 ? buildPaySharePath(treasuryId, {
@@ -865,7 +894,7 @@ export function DepositModal({
 
     const handleBack = () => {
         if (step === "address") {
-            if (!isConfidential) {
+            if (!isConfidential || reusableWalletDeposits) {
                 // Clear network so re-selecting auto-opens the address step again.
                 invalidatePendingAddressRequest();
                 form.setValue("network", null);
@@ -889,6 +918,7 @@ export function DepositModal({
     const showOneTimeAck =
         isConfidential &&
         depositSource === "public_wallet" &&
+        !reusableWalletDeposits &&
         !!selectedAsset &&
         !!selectedNetwork &&
         !depositBlocked &&
@@ -905,7 +935,8 @@ export function DepositModal({
         step === "address" &&
         isConfidential &&
         depositSource === "public_wallet" &&
-        !!depositInfo?.quoteDepositAddress;
+        !!depositInfo?.quoteDepositAddress &&
+        !depositInfo.reusable;
 
     const { expiresAtMs: statusExpiresAtMs, isTerminal: statusIsTerminal } =
         useDepositAddressStatus({
@@ -938,6 +969,15 @@ export function DepositModal({
             return buildConfidentialOriginNotices(t, confidentialOrigin);
         }
 
+        if (depositInfo?.reusable) {
+            return buildPublicWalletReusableNotices(
+                t,
+                assetSymbol,
+                networkDisplayName,
+                minDepositDisplay,
+            );
+        }
+
         return buildPublicWalletOneTimeNotices(
             t,
             assetSymbol,
@@ -952,6 +992,7 @@ export function DepositModal({
         isConfidential,
         depositSource,
         confidentialOrigin,
+        depositInfo?.reusable,
         minDepositDisplay,
         assetSymbol,
         networkDisplayName,
@@ -964,11 +1005,13 @@ export function DepositModal({
     const oneTimeAddressExpired =
         isConfidential &&
         depositSource === "public_wallet" &&
+        !depositInfo?.reusable &&
         isDepositAddressExpired(oneTimeExpiresAtMs, nowMs);
     const oneTimeAddressInactive =
         oneTimeAddressExpired ||
         (isConfidential &&
             depositSource === "public_wallet" &&
+            !depositInfo?.reusable &&
             statusIsTerminal);
 
     // Live deposit progress from the backend tracker. Bridge-routed addresses
@@ -1013,7 +1056,10 @@ export function DepositModal({
     // detected the address view gives way to the deposit's progress, and a
     // terminal outcome offers a fresh address.
     const oneTimeDepositDetected =
-        depositTrackerEnabled && isConfidential && trackedDeposits.length > 0;
+        depositTrackerEnabled &&
+        isConfidential &&
+        !depositInfo?.reusable &&
+        trackedDeposits.length > 0;
     const oneTimeDepositsSettled =
         oneTimeDepositDetected &&
         trackedDeposits.every(
@@ -1034,6 +1080,12 @@ export function DepositModal({
                 ? t("confidentialTrezuTitle")
                 : t("confidentialNearcomTitle");
         }
+        if (depositInfo?.reusable) {
+            return t("reusableAddressTitle", {
+                symbol: assetSymbol,
+                network: networkDisplayName,
+            });
+        }
         return t("oneTimeAddressTitle", {
             symbol: assetSymbol,
             network: networkDisplayName,
@@ -1042,6 +1094,7 @@ export function DepositModal({
         isConfidential,
         depositSource,
         confidentialOrigin,
+        depositInfo?.reusable,
         assetSymbol,
         networkDisplayName,
         t,
@@ -1054,8 +1107,15 @@ export function DepositModal({
                 ? t("confidentialTrezuSubtitle")
                 : t("confidentialNearcomSubtitle");
         }
+        if (depositInfo?.reusable) return t("reusableAddressSubtitle");
         return t("oneTimeAddressSubtitle");
-    }, [isConfidential, depositSource, confidentialOrigin, t]);
+    }, [
+        isConfidential,
+        depositSource,
+        confidentialOrigin,
+        depositInfo?.reusable,
+        t,
+    ]);
 
     return (
         <PageCard className="gap-2 w-full">
@@ -1088,6 +1148,7 @@ export function DepositModal({
                     <DepositSourceCards
                         value={depositSource}
                         onChange={handleSourceChange}
+                        reusableWalletAddress={confidentialReusableDeposits}
                     />
                 )}
 
@@ -1280,7 +1341,8 @@ export function DepositModal({
                             showShare={!oneTimeAddressInactive}
                             onCreateNewAddress={
                                 isConfidential &&
-                                depositSource === "public_wallet"
+                                depositSource === "public_wallet" &&
+                                !depositInfo.reusable
                                     ? handleCreateNewAddress
                                     : undefined
                             }

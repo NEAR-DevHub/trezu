@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
         "oneTimeAddressTitle": "כתובת הפקדה חד-פעמית של {symbol} ברשת {network}",
         "oneTimeAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
+        "reusableAddressTitle": "כתובת הפקדה {symbol} ברשת {network}",
+        "reusableAddressSubtitle": "שלחו רק את הטוקן הזה, ברשת הזו, לכתובת שלמטה. אפשר להפקיד אליה כמה פעמים שתרצו.",
         "confidentialTrezuTitle": "הפקדה מ-Trezu חסוי ברשת near.com",
         "confidentialTrezuSubtitle": "קבל כל נכס מ-Trezu חסוי.",
         "confidentialNearcomTitle": "הפקדה מ-near.com חסוי ברשת הפנימית",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "מארנק ציבורי",
-                "subtitle": "צור כתובת הפקדה חד-פעמית"
+                "subtitle": "צור כתובת הפקדה חד-פעמית",
+                "subtitleReusable": "שימוש בכתובת הפקדה רב-פעמית"
             },
             "confidentialUser": {
                 "title": "ממשתמש חסוי",

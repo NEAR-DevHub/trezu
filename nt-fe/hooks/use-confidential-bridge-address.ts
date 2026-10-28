@@ -18,36 +18,46 @@ const IDLE: ConfidentialBridgeAddressState = {
 /**
  * Resolve the chain deposit address for a confidential quote id.
  * Quote id is not a DAO — POST deposit-address only runs the bridge lookup.
+ *
+ * With `treasuryId` + `tokenId` (reusable address share links) the lookup
+ * runs for the treasury instead: the backend serves its cached reusable
+ * address set for the chain, which needs no quote and no membership.
  */
 export function useConfidentialBridgeAddress(options: {
     enabled: boolean;
     quoteDepositAddress: string | null | undefined;
     bridgeChainId: string | null | undefined;
+    treasuryId?: string | null;
+    tokenId?: string | null;
 }): ConfidentialBridgeAddressState {
-    const { enabled, quoteDepositAddress, bridgeChainId } = options;
+    const { enabled, quoteDepositAddress, bridgeChainId, treasuryId, tokenId } =
+        options;
+    const lookupAccount = treasuryId || quoteDepositAddress;
 
     const query = useQuery({
         queryKey: [
             "confidential-bridge-deposit-address",
-            quoteDepositAddress,
+            lookupAccount,
             bridgeChainId,
+            treasuryId ? tokenId : null,
         ],
         queryFn: async () => {
             const result = await fetchDepositAddress(
-                quoteDepositAddress!,
+                lookupAccount!,
                 bridgeChainId!,
+                treasuryId ? (tokenId ?? undefined) : undefined,
             );
             return {
                 address: result?.address ?? null,
                 memo: result?.memo ?? null,
             };
         },
-        enabled: enabled && !!quoteDepositAddress && !!bridgeChainId,
+        enabled: enabled && !!lookupAccount && !!bridgeChainId,
         staleTime: 1000 * 60 * 5,
         retry: 1,
     });
 
-    if (!enabled || !quoteDepositAddress || !bridgeChainId) {
+    if (!enabled || !lookupAccount || !bridgeChainId) {
         return IDLE;
     }
 

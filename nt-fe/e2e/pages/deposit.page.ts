@@ -57,6 +57,14 @@ export class DepositPage extends BasePage {
         return this.page.getByText(/One-time deposit address/i).first();
     }
 
+    reusableAddressText() {
+        return this.page.getByText(/^Deposit address .* network$/i).first();
+    }
+
+    reusableNoticeText() {
+        return this.page.getByText(/Doesn't expire/i).first();
+    }
+
     /** The rendered deposit address — always the first `<code>` on the page, public or confidential. */
     addressCode() {
         return this.page.locator("code").first();

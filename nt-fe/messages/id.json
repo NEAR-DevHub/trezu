@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "Kirim hanya token ini, di jaringan ini, ke alamat di bawah.",
         "oneTimeAddressTitle": "Alamat deposit sekali pakai {symbol} di jaringan {network}",
         "oneTimeAddressSubtitle": "Kirim hanya token ini, di jaringan ini, ke alamat di bawah.",
+        "reusableAddressTitle": "Alamat deposit {symbol} di jaringan {network}",
+        "reusableAddressSubtitle": "Kirim hanya token ini, di jaringan ini, ke alamat di bawah. Anda dapat menyetor ke alamat ini sesering yang Anda mau.",
         "confidentialTrezuTitle": "Deposit dari Trezu rahasia di jaringan near.com",
         "confidentialTrezuSubtitle": "Terima aset apa pun dari Trezu rahasia.",
         "confidentialNearcomTitle": "Deposit dari near.com rahasia di jaringan internal",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "Dari dompet publik",
-                "subtitle": "Buat alamat deposit sekali pakai"
+                "subtitle": "Buat alamat deposit sekali pakai",
+                "subtitleReusable": "Gunakan alamat deposit yang dapat dipakai ulang"
             },
             "confidentialUser": {
                 "title": "Dari pengguna rahasia",

@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "Envie apenas este token, nesta rede, para o endereço abaixo.",
         "oneTimeAddressTitle": "Endereço de depósito de uso único {symbol} na rede {network}",
         "oneTimeAddressSubtitle": "Envie apenas este token, nesta rede, para o endereço abaixo.",
+        "reusableAddressTitle": "Endereço de depósito {symbol} na rede {network}",
+        "reusableAddressSubtitle": "Envie apenas este token, nesta rede, para o endereço abaixo. Você pode depositar nele quantas vezes quiser.",
         "confidentialTrezuTitle": "Depósito do Trezu confidencial na rede near.com",
         "confidentialTrezuSubtitle": "Receba qualquer ativo do Trezu confidencial.",
         "confidentialNearcomTitle": "Depósito do near.com confidencial na rede interna",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "De uma carteira pública",
-                "subtitle": "Criar endereço de depósito de uso único"
+                "subtitle": "Criar endereço de depósito de uso único",
+                "subtitleReusable": "Usar um endereço de depósito reutilizável"
             },
             "confidentialUser": {
                 "title": "De usuário confidencial",

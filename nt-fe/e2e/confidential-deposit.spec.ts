@@ -6,7 +6,7 @@
  * 2. Navigate to the dashboard
  * 3. Open the deposit page from dashboard action
  * 4. Choose "From a public wallet", select asset/network
- * 5. Acknowledge + Generate Address → one-time intents address
+ * 5. Asset + network → the treasury's reusable intents address (no acknowledgement)
  * 6. Switch to confidential user path and show treasury address
  *
  * Bridge/catalog RPC (deposit-tokens, swap-tokens, deposit-address) is mocked at the Playwright
@@ -22,6 +22,8 @@ import {
 import { createAccount, transferNear } from "./helpers/sandbox-rpc";
 
 const DAO_ID = "confdeposit.sputnik-dao.near";
+const MOCK_REUSABLE_QUOTE_ADDRESS =
+    "5b6ef8b1c2a4d7e90f1234567890abcdef1234567890abcdef1234567890abcd";
 const ACCOUNT_ID = "confdeposit.near";
 const SANDBOX_MOCK_URL = "http://localhost:4000";
 
@@ -170,9 +172,8 @@ test("Confidential deposit — dashboard deposit page flow", async ({
                     address: MOCK_DEPOSIT_ADDRESS,
                     memo: null,
                     minAmount: "5000000",
-                    expiresAt: new Date(
-                        Date.now() + 14 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
+                    quoteDepositAddress: MOCK_REUSABLE_QUOTE_ADDRESS,
+                    reusable: true,
                 }),
             });
         }
@@ -260,12 +261,9 @@ test("Confidential deposit — dashboard deposit page flow", async ({
     await depositPage.selectAsset(/USD Coin/i);
     await depositPage.selectNetwork("Near Protocol");
 
-    // Address must NOT be fetched until Generate Address is clicked
-    expect(depositAddressRequested).toBe(false);
-
-    await depositPage.acknowledgeAndContinue();
-
-    await expect(depositPage.oneTimeAddressText()).toBeVisible({
+    // Reusable address: resolved as soon as asset + network are chosen, with
+    // no one-time acknowledgement step.
+    await expect(depositPage.reusableAddressText()).toBeVisible({
         timeout: 15_000,
     });
 
@@ -276,7 +274,8 @@ test("Confidential deposit — dashboard deposit page flow", async ({
     expect(publicAddressText).not.toContain(DAO_ID);
     expect(depositAddressRequested).toBe(true);
 
-    await expect(depositPage.expiresInText()).toBeVisible();
+    await expect(depositPage.reusableNoticeText()).toBeVisible();
+    await expect(depositPage.expiresInText()).toHaveCount(0);
 
     // Back to select, then switch to confidential user source
     await depositPage.backButton().click();

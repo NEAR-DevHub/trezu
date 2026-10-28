@@ -9,6 +9,7 @@ use std::sync::Arc;
 use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, Utc};
 use futures::StreamExt;
+use near_account_id::AccountIdRef;
 use near_api::AccountId;
 use sqlx::PgPool;
 
@@ -16,6 +17,10 @@ use crate::AppState;
 use crate::handlers::intents::confidential::bronze::api::fetch_history;
 use crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::bronze::store::upsert_history_events;
+use crate::handlers::intents::confidential::reusable_deposit::{
+    REUSABLE_DEPOSIT_KEY_PREFIX, ReusableDepositAddresses, ReusableDepositResolver,
+    ReusableWithdrawal, load_cached,
+};
 use crate::handlers::intents::swap_status::{
     FullSwapStatusResponse, SwapStatus, fetch_public_swap_status,
 };
@@ -52,6 +57,10 @@ const MAX_REFRESH_ATTEMPTS: i32 = 12;
 const REFRESH_BACKOFF: [i64; 5] = [10, 30, 60, 120, 300];
 /// The bridge can mint slightly before the tracker first sees the deposit.
 pub(super) const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
+/// A reusable-address payout can be listed hours after its history row was
+/// created (the tracker may first see it late in a slow discovery tier).
+const REUSABLE_LEDGER_MATCH_LOOKBACK: Duration = Duration::hours(6);
+const REUSABLE_LEDGER_MATCH_LOOKAHEAD: Duration = Duration::hours(1);
 
 #[derive(Debug, Default, Clone)]
 pub struct TrackerTickSummary {
@@ -75,6 +84,13 @@ impl std::fmt::Display for TrackerTickSummary {
 struct PollResult {
     changed: usize,
     baseline_keys: Option<Vec<String>>,
+}
+
+/// What a confidential watch is polling: a one-time quote, or the DAO's
+/// reusable deposit set.
+enum ConfidentialScope {
+    OneTime,
+    Reusable(ReusableDepositAddresses),
 }
 
 #[derive(Debug, Default)]
@@ -154,9 +170,22 @@ impl<'a> DepositTrackerWorker<'a> {
     async fn process_watch(&self, watch: &DepositWatch) -> WatchOutcome {
         let mut outcome = WatchOutcome::default();
 
-        let poll = match watch.kind {
-            WatchKind::Public => self.poll_public(watch).await,
-            WatchKind::Confidential => self.poll_confidential(watch).await,
+        let scope = match self.confidential_scope(watch).await {
+            Ok(scope) => scope,
+            Err(error) => {
+                outcome.error = Some(error);
+                ConfidentialScope::OneTime
+            }
+        };
+        let reusable = matches!(scope, ConfidentialScope::Reusable(_));
+        let poll = match (watch.kind, &scope) {
+            (WatchKind::Public, _) => self.poll_public(watch).await,
+            (WatchKind::Confidential, ConfidentialScope::OneTime) => {
+                self.poll_confidential(watch).await
+            }
+            (WatchKind::Confidential, ConfidentialScope::Reusable(set)) => {
+                self.poll_reusable(watch, set).await
+            }
         };
         match poll {
             Ok(result) => {
@@ -191,12 +220,119 @@ impl<'a> DepositTrackerWorker<'a> {
         outcome.next_poll_at = WatchSchedule {
             watch,
             now,
+            reusable,
             has_active_deposit: has_active,
             has_terminal_deposit: has_terminal,
             errored: outcome.error.is_some(),
         }
         .next_poll_at();
         outcome
+    }
+
+    /// A confidential watch whose quote address is the DAO's cached reusable
+    /// deposit set polls payouts; any other quote address is a one-time quote.
+    async fn confidential_scope(&self, watch: &DepositWatch) -> Result<ConfidentialScope, String> {
+        if watch.kind != WatchKind::Confidential {
+            return Ok(ConfidentialScope::OneTime);
+        }
+        let set = load_cached(self.pool(), &watch.dao_id)
+            .await
+            .map_err(|error| format!("load reusable deposit set: {error}"))?;
+        Ok(match set {
+            Some(set)
+                if watch.quote_deposit_address.as_deref() == Some(set.quote_deposit_address.as_str()) =>
+            {
+                ConfidentialScope::Reusable(set)
+            }
+            _ => ConfidentialScope::OneTime,
+        })
+    }
+
+    /// Reusable address: every payout of the DAO's quote is one deposit.
+    /// The first poll files what settled before the watch as its baseline;
+    /// later polls observe only payouts outside it.
+    async fn poll_reusable(
+        &self,
+        watch: &DepositWatch,
+        set: &ReusableDepositAddresses,
+    ) -> Result<PollResult, String> {
+        let dao = AccountIdRef::new(&watch.dao_id).map_err(|e| e.to_string())?;
+        let page = ReusableDepositResolver::new(self.state)
+            .withdrawals(dao, set)
+            .await
+            .map_err(|(status, message)| format!("{status}: {message}"))?;
+        let known = store::load_watch_deposits(self.pool(), watch.id)
+            .await
+            .map_err(|error| format!("load deposits: {error}"))?;
+        let known_status = |key: &str| {
+            known
+                .iter()
+                .find(|deposit| deposit.provider_deposit_key == key)
+                .map(|deposit| deposit.status)
+        };
+
+        let mut result = PollResult::default();
+        let candidates: Vec<&ReusableWithdrawal> = match watch.baseline_keys.as_deref() {
+            None => {
+                let is_history = |withdrawal: &ReusableWithdrawal| {
+                    known_status(&withdrawal.provider_deposit_key()).is_none()
+                        && withdrawal.timestamp < watch.created_at
+                };
+                result.baseline_keys = Some(
+                    page.withdrawals
+                        .iter()
+                        .filter(|withdrawal| is_history(withdrawal))
+                        .map(ReusableWithdrawal::provider_deposit_key)
+                        .collect(),
+                );
+                page.withdrawals
+                    .iter()
+                    .filter(|withdrawal| !is_history(withdrawal))
+                    .collect()
+            }
+            Some(baseline) => page
+                .withdrawals
+                .iter()
+                .filter(|withdrawal| !baseline.contains(&withdrawal.provider_deposit_key()))
+                .collect(),
+        };
+
+        for withdrawal in candidates {
+            let key = withdrawal.provider_deposit_key();
+            let known = known_status(&key);
+            if known.is_some_and(DepositStatus::is_terminal) {
+                continue;
+            }
+            let observed = ObservedDeposit {
+                provider_deposit_key: key.clone(),
+                chain: watch.chain.clone(),
+                origin_tx_hash: None,
+                near_tx_hash: Some(withdrawal.hash.clone()),
+                // 1Click does not name the credited token per payout; the
+                // token the modal was opened for is the best available label.
+                token_id: watch
+                    .token_id
+                    .clone()
+                    .unwrap_or_else(|| page.asset.clone()),
+                amount: withdrawal.amount(),
+                provider_status: withdrawal.status.clone(),
+                status: if withdrawal.is_success() {
+                    DepositStatus::Finalized
+                } else if withdrawal.is_failed() {
+                    DepositStatus::Failed
+                } else {
+                    DepositStatus::Detected
+                },
+            };
+            let transition = self
+                .record_observation(watch, &observed, known)
+                .await
+                .map_err(|error| format!("record deposit {key}: {error}"))?;
+            if transition.changed() {
+                result.changed += 1;
+            }
+        }
+        Ok(result)
     }
 
     async fn poll_public(&self, watch: &DepositWatch) -> Result<PollResult, String> {
@@ -444,6 +580,21 @@ impl<'a> DepositTrackerWorker<'a> {
                     )
                     .await?
                 }
+                WatchKind::Confidential
+                    if deposit
+                        .provider_deposit_key
+                        .starts_with(REUSABLE_DEPOSIT_KEY_PREFIX) =>
+                {
+                    store::find_reusable_ledger_match(
+                        self.pool(),
+                        &deposit.dao_id,
+                        watch.quote_deposit_address.as_deref().unwrap_or_default(),
+                        deposit.amount.as_ref(),
+                        deposit.detected_at - REUSABLE_LEDGER_MATCH_LOOKBACK,
+                        deposit.detected_at + REUSABLE_LEDGER_MATCH_LOOKAHEAD,
+                    )
+                    .await?
+                }
                 WatchKind::Confidential => {
                     store::find_confidential_ledger_match(
                         self.pool(),
@@ -529,6 +680,8 @@ impl InProcessDeposit {
 struct WatchSchedule<'a> {
     watch: &'a DepositWatch,
     now: DateTime<Utc>,
+    /// Reusable deposit set: never spent by a settled deposit.
+    reusable: bool,
     has_active_deposit: bool,
     has_terminal_deposit: bool,
     errored: bool,
@@ -551,7 +704,10 @@ impl WatchSchedule<'_> {
             return Some(ACTIVE_DEPOSIT_POLL);
         }
         // A one-time quote is spent once its deposit reached a terminal state.
-        if self.watch.kind == WatchKind::Confidential && self.has_terminal_deposit {
+        if self.watch.kind == WatchKind::Confidential
+            && !self.reusable
+            && self.has_terminal_deposit
+        {
             return None;
         }
         if self.now < self.watch.fast_until {
@@ -642,6 +798,7 @@ mod tests {
         WatchSchedule {
             watch,
             now,
+            reusable: false,
             has_active_deposit: has_active,
             has_terminal_deposit: has_terminal,
             errored: false,
@@ -693,6 +850,7 @@ mod tests {
         let mut watch = watch(start, WatchKind::Public);
         watch.attempts = 3;
         let next = WatchSchedule {
+            reusable: false,
             watch: &watch,
             now: start,
             has_active_deposit: false,

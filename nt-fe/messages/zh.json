@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
         "oneTimeAddressTitle": "{network} 网络上的一次性 {symbol} 充值地址",
         "oneTimeAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
+        "reusableAddressTitle": "{network} 网络上的 {symbol} 充值地址",
+        "reusableAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。您可以多次向该地址充值。",
         "confidentialTrezuTitle": "从机密 Trezu 在 near.com 网络充值",
         "confidentialTrezuSubtitle": "接收来自机密 Trezu 的任意资产。",
         "confidentialNearcomTitle": "从机密 near.com 在内部网络充值",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "来自公开钱包",
-                "subtitle": "创建一次性充值地址"
+                "subtitle": "创建一次性充值地址",
+                "subtitleReusable": "使用可重复使用的充值地址"
             },
             "confidentialUser": {
                 "title": "来自机密用户",

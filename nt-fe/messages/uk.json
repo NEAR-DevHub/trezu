@@ -318,6 +318,8 @@
         "publicAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
         "oneTimeAddressTitle": "Одноразова адреса депозиту {symbol} у мережі {network}",
         "oneTimeAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
+        "reusableAddressTitle": "Адреса для поповнення {symbol} у мережі {network}",
+        "reusableAddressSubtitle": "Надсилайте лише цей токен у цій мережі на адресу нижче. Поповнювати її можна скільки завгодно разів.",
         "confidentialTrezuTitle": "Депозит із конфіденційного Trezu у мережі near.com",
         "confidentialTrezuSubtitle": "Отримуйте будь-який актив із конфіденційного Trezu.",
         "confidentialNearcomTitle": "Депозит із конфіденційного near.com у внутрішній мережі",
@@ -353,7 +355,8 @@
         "sourceCards": {
             "publicWallet": {
                 "title": "З публічного гаманця",
-                "subtitle": "Створити одноразову адресу депозиту"
+                "subtitle": "Створити одноразову адресу депозиту",
+                "subtitleReusable": "Використати багаторазову адресу для поповнення"
             },
             "confidentialUser": {
                 "title": "Від конфіденційного користувача",
