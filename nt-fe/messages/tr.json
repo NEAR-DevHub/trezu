@@ -1786,7 +1786,8 @@
             "passkeyCardTitle": "Touch ID ve Face ID için Passkey",
             "passkeyCardSubtitle": "Cihazınızın biyometriği veya parolasıyla oturum açın",
             "passkeyCardBadge": "Kolay ve Güvenli",
-            "web3WalletsSeparator": "Web3 cüzdanları"
+            "web3WalletsSeparator": "Web3 cüzdanları",
+            "connectFailed": "Cüzdan bağlanamadı"
         },
         "unexpectedError": "Beklenmedik bir hata oluştu",
         "creationFailed": "Hazine oluşturulamadı. Lütfen tekrar deneyin.",

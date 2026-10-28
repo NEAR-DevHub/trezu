@@ -446,6 +446,35 @@ pub async fn delete_stale_gold_rows(
     Ok(result.rows_affected())
 }
 
+/// Exchange rows are upserted in silver order, so a payout leg that moves from
+/// one exchange to another would collide with the unique counter-leg index
+/// before its previous holder is rewritten. Release every leg the new plan
+/// assigns up front; each holder is re-upserted or deleted later in the same
+/// transaction.
+pub async fn release_counter_legs(
+    tx: &mut Transaction<'_, Postgres>,
+    dao_id: &str,
+    incoming_leg_ids: &[i64],
+) -> Result<u64, sqlx::Error> {
+    if incoming_leg_ids.is_empty() {
+        return Ok(0);
+    }
+    let result = sqlx::query(
+        r#"
+        UPDATE gold_treasury_ledger_events
+        SET counter_transfer_leg_id = NULL
+        WHERE dao_id = $1
+          AND source_kind = 'public_silver_leg'
+          AND counter_transfer_leg_id = ANY($2)
+        "#,
+    )
+    .bind(dao_id)
+    .bind(incoming_leg_ids)
+    .execute(&mut **tx)
+    .await?;
+    Ok(result.rows_affected())
+}
+
 #[allow(dead_code)]
 pub fn zero() -> BigDecimal {
     BigDecimal::from(0)
@@ -692,6 +721,82 @@ mod tests {
         tx.rollback().await?;
 
         assert_eq!(boundary, first_outgoing_time);
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn released_counter_leg_can_move_to_another_exchange(pool: PgPool) -> sqlx::Result<()> {
+        let block_time = Utc.with_ymd_and_hms(2026, 10, 27, 9, 39, 0).unwrap();
+        let first_outgoing = insert_silver_leg(
+            &pool,
+            "release-first-outgoing",
+            "token-out-a.near",
+            "outgoing",
+            10,
+            block_time,
+        )
+        .await?;
+        let second_outgoing = insert_silver_leg(
+            &pool,
+            "release-second-outgoing",
+            "token-out-b.near",
+            "outgoing",
+            10,
+            block_time,
+        )
+        .await?;
+        let payout = insert_silver_leg(
+            &pool,
+            "release-payout",
+            "token-in.near",
+            "incoming",
+            11,
+            block_time,
+        )
+        .await?;
+        insert_completed_exchange(
+            &pool,
+            "release-first-exchange",
+            first_outgoing,
+            payout,
+            block_time,
+        )
+        .await?;
+
+        let mut tx = pool.begin().await?;
+        assert_eq!(release_counter_legs(&mut tx, DAO_ID, &[]).await?, 0);
+        assert_eq!(release_counter_legs(&mut tx, DAO_ID, &[payout]).await?, 1);
+        // The second exchange can take the payout before the first row is
+        // rewritten; without the release this insert hits the unique index.
+        sqlx::query(
+            r#"
+            INSERT INTO gold_treasury_ledger_events (
+                gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+                status, event_time, token_in, amount_in, token_in_user_balance_after,
+                token_out, amount_out, token_out_user_balance_after,
+                primary_transfer_leg_id, counter_transfer_leg_id
+            )
+            VALUES (
+                'release-second-exchange', $1, 'public_silver_leg', TRUE, 'exchange',
+                'success', $2, 'token-in.near', 1, 1, 'token-out-b.near', 1, 0, $3, $4
+            )
+            "#,
+        )
+        .bind(DAO_ID)
+        .bind(block_time)
+        .bind(second_outgoing)
+        .bind(payout)
+        .execute(&mut *tx)
+        .await?;
+        tx.commit().await?;
+
+        let holder: Option<i64> = sqlx::query_scalar(
+            "SELECT primary_transfer_leg_id FROM gold_treasury_ledger_events WHERE counter_transfer_leg_id = $1",
+        )
+        .bind(payout)
+        .fetch_optional(&pool)
+        .await?;
+        assert_eq!(holder, Some(second_outgoing));
         Ok(())
     }
 

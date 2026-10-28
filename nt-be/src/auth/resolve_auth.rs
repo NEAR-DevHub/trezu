@@ -15,7 +15,7 @@ use crate::utils::jsonrpc::create_rpc_client;
 use base64::Engine;
 use near_api::NetworkConfig;
 use near_jsonrpc_client::{JsonRpcClient, methods};
-use near_jsonrpc_primitives::types::query::QueryResponseKind;
+use near_jsonrpc_primitives::types::query::{QueryResponseKind, RpcQueryError};
 use near_primitives::types::{BlockId, BlockReference, FunctionArgs};
 use near_primitives::views::QueryRequest;
 use serde::Deserialize;
@@ -35,6 +35,7 @@ const MAX_RECURSION_DEPTH: usize = 8;
 const ACCOUNT_NOT_FOUND_RETRY_DELAYS_MS: [u64; 5] = [1000, 2000, 4000, 8000, 16000];
 
 /// Outcome of resolving an authorization (sub-)graph.
+#[derive(Debug, PartialEq)]
 enum ResolveOutcome {
     /// Authorization is valid; carries the unwrapped payload.
     Resolved(String),
@@ -341,39 +342,42 @@ async fn nep413_fallback(
     };
 
     // Verify the public key is registered on `account_id` at the pinned block.
+    // Query that single key rather than the full key list: an ML-DSA-65 key is
+    // stored on chain as its `ml-dsa-65-hash:` handle, which the RPC resolves
+    // from the full `ml-dsa-65:` key we have.
     let account: near_primitives::types::AccountId = match account_id.parse() {
         Ok(account) => account,
         Err(e) => return ResolveOutcome::Invalid(format!("invalid account id: {e}")),
     };
-    let keys = match client
+    match client
         .call(methods::query::RpcQueryRequest {
             block_reference: BlockReference::BlockId(BlockId::Height(block_height)),
-            request: QueryRequest::ViewAccessKeyList {
+            request: QueryRequest::ViewAccessKey {
                 account_id: account,
+                public_key: public_key.clone(),
             },
         })
         .await
     {
-        Ok(response) => match response.kind {
-            QueryResponseKind::AccessKeyList(list) => list.keys,
-            _ => {
+        Ok(response) => {
+            if !matches!(response.kind, QueryResponseKind::AccessKey(_)) {
                 return ResolveOutcome::Invalid(
-                    "unexpected query response kind for access key list".to_string(),
+                    "unexpected query response kind for access key".to_string(),
                 );
             }
-        },
+        }
         Err(e) => {
+            if let Some(RpcQueryError::UnknownAccessKey { .. }) = e.handler_error() {
+                return ResolveOutcome::Invalid(
+                    "public key not registered on account at pinned block".to_string(),
+                );
+            }
             let err = format!("{e:?}");
             if is_unknown_account(&err) {
                 return ResolveOutcome::UnknownAccount(err);
             }
-            return ResolveOutcome::Invalid(format!("failed to fetch access keys: {err}"));
+            return ResolveOutcome::Invalid(format!("failed to fetch access key: {err}"));
         }
-    };
-    if !keys.iter().any(|k| k.public_key == public_key) {
-        return ResolveOutcome::Invalid(
-            "public key not registered on account at pinned block".to_string(),
-        );
     }
 
     // Recompute the NEP-413 borsh hash (tag 2^31 + 413) over the signed payload.
@@ -389,7 +393,7 @@ async fn nep413_fallback(
         Err(e) => return ResolveOutcome::Invalid(format!("failed to compute NEP-413 hash: {e}")),
     };
 
-    let signature = match parse_ed25519_signature(&msg.signature) {
+    let signature = match parse_signature(&msg.signature, public_key.key_type()) {
         Ok(signature) => signature,
         Err(e) => return ResolveOutcome::Invalid(e),
     };
@@ -402,23 +406,115 @@ async fn nep413_fallback(
 }
 
 /// Accept either raw base64 (NEP-413 `signMessage` canonical output) or
-/// `"ed25519:<base58>"`.
-fn parse_ed25519_signature(s: &str) -> Result<near_crypto::Signature, String> {
-    let raw = if let Some(b58) = s.strip_prefix("ed25519:") {
-        bs58::decode(b58)
+/// `"<key-type>:<base58>"`, sized for the signing key's type.
+fn parse_signature(
+    s: &str,
+    key_type: near_crypto::KeyType,
+) -> Result<near_crypto::Signature, String> {
+    let raw = match s.strip_prefix(&format!("{key_type}:")) {
+        Some(b58) => bs58::decode(b58)
             .into_vec()
-            .map_err(|e| format!("invalid base58 signature: {e}"))?
-    } else {
-        base64::engine::general_purpose::STANDARD
+            .map_err(|e| format!("invalid base58 signature: {e}"))?,
+        None => base64::engine::general_purpose::STANDARD
             .decode(s)
-            .map_err(|e| format!("invalid base64 signature: {e}"))?
+            .map_err(|e| format!("invalid base64 signature: {e}"))?,
     };
-    if raw.len() != 64 {
-        return Err(format!(
-            "ed25519 signature must be 64 bytes, got {}",
-            raw.len()
-        ));
+    near_crypto::Signature::from_parts(key_type, &raw)
+        .map_err(|e| format!("invalid {key_type} signature: {e}"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn nep413_hash(msg: &Nep413SignedMessage) -> Vec<u8> {
+        let nonce = base64::engine::general_purpose::STANDARD
+            .decode(&msg.nonce)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        near_api::signer::NEP413Payload {
+            message: msg.message.clone(),
+            nonce,
+            recipient: msg.recipient.clone(),
+            callback_url: msg.callback_url.clone(),
+        }
+        .compute_hash()
+        .unwrap()
+        .0
+        .to_vec()
     }
-    near_crypto::Signature::from_parts(near_crypto::KeyType::ED25519, &raw)
-        .map_err(|e| format!("invalid signature: {e}"))
+
+    fn assert_verifies(authorization: &str) {
+        let msg: Nep413SignedMessage = serde_json::from_str(authorization).unwrap();
+        let key: near_crypto::PublicKey = msg.public_key.parse().unwrap();
+        let signature = parse_signature(&msg.signature, key.key_type()).unwrap();
+        assert!(signature.verify(&nep413_hash(&msg), &key));
+
+        let tampered = Nep413SignedMessage {
+            message: format!("{}!", msg.message),
+            ..msg
+        };
+        assert!(!signature.verify(&nep413_hash(&tampered), &key));
+    }
+
+    #[test]
+    fn verifies_ml_dsa_65_signed_login() {
+        assert_verifies(ML_DSA_65_LOGIN);
+    }
+
+    const ML_DSA_65_LOGIN: &str = include_str!("testdata/nep413_ml_dsa_65_login.json");
+
+    /// Finalized shortly after the fixture login, with its ML-DSA-65 key on the
+    /// account. Queried on archival RPC so the fixture stays re-recordable.
+    const ML_DSA_65_LOGIN_BLOCK: u64 = 220_938_347;
+
+    async fn nep413_fallback_at_login_block(authorization: &str) -> ResolveOutcome {
+        let state = crate::utils::test_utils::init_test_state().await;
+        let client = create_rpc_client(&state.archival_network).unwrap();
+        nep413_fallback(
+            &client,
+            "nearprotocolua.near",
+            "PROVE_OWNERSHIP",
+            "Trezu App",
+            authorization,
+            ML_DSA_65_LOGIN_BLOCK,
+        )
+        .await
+    }
+
+    /// Locks in the RPC resolving a full `ml-dsa-65:` key to the account's
+    /// on-chain `ml-dsa-65-hash:` handle.
+    #[tokio::test]
+    async fn resolves_ml_dsa_65_login_on_chain() {
+        let msg: Nep413SignedMessage = serde_json::from_str(ML_DSA_65_LOGIN).unwrap();
+        assert_eq!(
+            nep413_fallback_at_login_block(ML_DSA_65_LOGIN).await,
+            ResolveOutcome::Resolved(msg.message)
+        );
+    }
+
+    /// Locks in the RPC's missing-key response shape and wording.
+    #[tokio::test]
+    async fn rejects_unregistered_ml_dsa_65_key() {
+        let mut authorization: serde_json::Value = serde_json::from_str(ML_DSA_65_LOGIN).unwrap();
+        let key = authorization["publicKey"].as_str().unwrap();
+        let (head, last) = key.split_at(key.len() - 1);
+        authorization["publicKey"] =
+            format!("{head}{}", if last == "1" { "2" } else { "1" }).into();
+
+        assert_eq!(
+            nep413_fallback_at_login_block(&authorization.to_string()).await,
+            ResolveOutcome::Invalid(
+                "public key not registered on account at pinned block".to_string()
+            )
+        );
+    }
+
+    #[test]
+    fn verifies_ed25519_signed_login() {
+        assert_verifies(
+            r#"{"accountId":"nearprotocolua.near","publicKey":"ed25519:34fZjXn7DmM2XrAxZWK7XE6EnZugAusMtkKM9Zbb3P4J","signature":"zoOHb9AmdY2Ujg6CmJedaAdmiZxlbCbE6l5vZbmn3FZumGjKiJehXJ1gsZd98gIXYP/yTqGmMOD/X8cqceIaCQ==","message":"Login to Trezu initiated at 2026-10-21T10:43:06.669144502+00:00 with request ID: AY2KXvdQszhz58SUIni4bg==","recipient":"PROVE_OWNERSHIP@Trezu App","nonce":"uRzKRsykx/xO8BmmAvyjoCAWQLTvvnTreu4LxDZDLe4=","callbackUrl":null,"state":null}"#,
+        );
+    }
 }

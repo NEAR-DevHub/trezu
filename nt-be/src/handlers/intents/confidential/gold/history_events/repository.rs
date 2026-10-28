@@ -8,7 +8,7 @@ use sqlx::{PgPool, Postgres, Transaction};
 use super::convert::{confidential_gold_event_key, unified_bind_from_event};
 use super::models::{
     BronzeProjectionRow, ConfidentialDepositCorrection, ConfidentialDepositCorrectionIndex,
-    DirtyDao, GoldBalanceSeedRow, ProjectedRow,
+    DirtyDao, GoldBalanceSeedRow, GoldUnitPriceRow, ProjectedRow,
 };
 use crate::handlers::intents::confidential::gold::cursors::mark_gold_dirty;
 
@@ -36,6 +36,37 @@ pub async fn refresh_gold_metadata_for_intent(
     .bind(payload_hash)
     .execute(pool)
     .await?;
+
+    // An execution stamp moves the row's replay position from quote time to
+    // execution time. Re-project from the earlier of the two so the replay
+    // re-orders it against deposits that landed in between.
+    if result.rows_affected() > 0 {
+        let moved = sqlx::query_as::<_, (DateTime<Utc>,)>(
+            r#"
+            SELECT LEAST(
+                gle.event_time,
+                GREATEST(he.created_at_external, COALESCE(ci.proposal_executed_at, he.created_at_external))
+            )
+            FROM confidential_intents ci
+            JOIN bronze_confidential_history_events he ON he.id = ci.history_event_id
+            JOIN gold_treasury_ledger_events gle
+                ON gle.gold_event_key = 'confidential:' || ci.history_event_id
+            WHERE ci.dao_id = $1
+              AND ci.payload_hash = $2
+              AND gle.event_time <> GREATEST(he.created_at_external, COALESCE(ci.proposal_executed_at, he.created_at_external))
+            ORDER BY 1 ASC
+            LIMIT 1
+            "#,
+        )
+        .bind(dao_id)
+        .bind(payload_hash)
+        .fetch_optional(pool)
+        .await?;
+
+        if let Some((recompute_from,)) = moved {
+            mark_gold_dirty(pool, dao_id, Some(recompute_from)).await?;
+        }
+    }
 
     if result.rows_affected() == 0 {
         let row = sqlx::query_as::<_, (DateTime<Utc>,)>(
@@ -200,6 +231,60 @@ const BALANCE_CHECK_REASON_PREFIX: &str = "balance check: ";
 /// Record a ledger-vs-1Click balance mismatch on the DAO's newest bronze
 /// event so drift is visible in the existing projection-errors table. Rows
 /// keep serving — event data stays the feed's truth.
+/// Implied USD unit price per asset from the DAO's most recent confidential
+/// ledger leg that carries both a positive quantity and a positive USD value.
+/// Only used to size dust in the inline balance check; assets without one
+/// compare exactly. A zero USD value (unpriced token) must not qualify: a
+/// zero price would make every gap look like dust.
+pub(crate) async fn load_ledger_unit_prices(
+    pool: &PgPool,
+    dao_id: &str,
+) -> Result<HashMap<String, BigDecimal>, sqlx::Error> {
+    let rows = sqlx::query_as::<_, GoldUnitPriceRow>(
+        r#"
+        SELECT DISTINCT ON (asset) asset, unit_price
+        FROM (
+            SELECT
+                token_out AS asset,
+                amount_out_usd / amount_out AS unit_price,
+                event_time,
+                source_order,
+                id
+            FROM gold_treasury_ledger_events
+            WHERE dao_id = $1
+              AND source_kind = 'confidential_history_event'
+              AND token_out IS NOT NULL
+              AND amount_out > 0
+              AND amount_out_usd > 0
+
+            UNION ALL
+
+            SELECT
+                token_in AS asset,
+                amount_in_usd / amount_in AS unit_price,
+                event_time,
+                source_order,
+                id
+            FROM gold_treasury_ledger_events
+            WHERE dao_id = $1
+              AND source_kind = 'confidential_history_event'
+              AND token_in IS NOT NULL
+              AND amount_in > 0
+              AND amount_in_usd > 0
+        ) prices
+        ORDER BY asset, event_time DESC, source_order DESC, id DESC
+        "#,
+    )
+    .bind(dao_id)
+    .fetch_all(pool)
+    .await?;
+
+    Ok(rows
+        .into_iter()
+        .map(|row| (row.asset, row.unit_price))
+        .collect())
+}
+
 pub(crate) async fn record_balance_check_mismatch(
     pool: &PgPool,
     dao_id: &str,
@@ -290,6 +375,10 @@ pub(crate) async fn has_gold_before(
     .await
 }
 
+/// Replay order is (effective time, bronze id). Every gold reader orders by
+/// (event_time, source_order, id) with `source_order` = bronze id, so a tie
+/// on the execution instant (all intents of one bulk proposal) resolves the
+/// same way on both sides and the readers' newest row is the replay's last.
 pub(crate) async fn load_bronze_suffix(
     tx: &mut Transaction<'_, Postgres>,
     dao_id: &str,
@@ -300,7 +389,6 @@ pub(crate) async fn load_bronze_suffix(
         SELECT
             he.id,
             he.account_id,
-            he.created_at_external,
             he.deposit_address,
             he.deposit_type,
             he.recipient_type,
@@ -308,6 +396,7 @@ pub(crate) async fn load_bronze_suffix(
             he.origin_asset,
             he.destination_asset,
             he.raw_payload,
+            GREATEST(he.created_at_external, COALESCE(ci.proposal_executed_at, he.created_at_external)) AS effective_time,
             ci.proposal_id::bigint AS proposal_id,
             ci.proposal_created_at,
             ci.proposal_executed_at,
@@ -317,8 +406,9 @@ pub(crate) async fn load_bronze_suffix(
         LEFT JOIN confidential_intents ci ON ci.history_event_id = he.id
         WHERE he.account_id = $1
           AND he.status = 'SUCCESS'
-          AND he.created_at_external >= $2
-        ORDER BY he.created_at_external ASC, he.id ASC
+          AND GREATEST(he.created_at_external, COALESCE(ci.proposal_executed_at, he.created_at_external)) >= $2
+        ORDER BY GREATEST(he.created_at_external, COALESCE(ci.proposal_executed_at, he.created_at_external)) ASC,
+                 he.id ASC
         "#,
     )
     .bind(dao_id)

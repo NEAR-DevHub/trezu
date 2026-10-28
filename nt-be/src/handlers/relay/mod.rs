@@ -15,5 +15,6 @@ pub mod access;
 pub mod confidential;
 pub mod effects;
 pub mod parse;
+pub mod post_quantum;
 pub mod sponsor;
 pub mod submit;

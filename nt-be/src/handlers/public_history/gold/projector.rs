@@ -17,7 +17,7 @@ use super::models::{
 use super::repository::{
     clear_projection_error, delete_stale_gold_rows, earliest_pending_exchange_time,
     earliest_silver_time, has_gold_before, load_balance_stamps, load_dirty_accounts,
-    load_silver_suffix, upsert_gold_event, upsert_projection_error,
+    load_silver_suffix, release_counter_legs, upsert_gold_event, upsert_projection_error,
     widen_for_overlapping_completed_exchanges,
 };
 use crate::handlers::notifications::emitter::emit_gold_ledger_notification;
@@ -549,6 +549,17 @@ fn plan_exchange_pairs(
             }
         }
 
+        // The fallback can only confirm a payout by amount. Until 1Click
+        // reports `amountOut`, a same-asset incoming leg may belong to another
+        // live exchange, so stay pending instead of guessing.
+        let amount_out_known = quote
+            .and_then(|quote| quote.status.as_ref())
+            .and_then(|status| status.amount_out_raw.as_ref())
+            .is_some();
+        if !amount_out_known {
+            continue;
+        }
+
         let candidates = rows
             .iter()
             .filter(|incoming| !matched_incoming_ids.contains(&incoming.id))
@@ -941,6 +952,12 @@ pub async fn project_public_gold_for_account(
             });
         }
     };
+    let planned_incoming = exchange_pairs
+        .incoming_to_outgoing
+        .keys()
+        .copied()
+        .collect::<Vec<_>>();
+    release_counter_legs(&mut tx, account_id, &planned_incoming).await?;
     let mut preserve_keys: HashSet<String> = HashSet::new();
     let mut pending_exchanges: HashMap<i64, PendingExchange> = HashMap::new();
     let mut deferred_incoming: HashMap<i64, SilverTransferLegRow> = HashMap::new();
@@ -1820,6 +1837,57 @@ mod tests {
         assert_eq!(
             pairs.incoming_to_outgoing.get(&incoming.id),
             Some(&outgoing.id)
+        );
+    }
+
+    #[test]
+    fn fallback_waits_for_reported_amount_out() {
+        let (outgoing, incoming) = quote_linked_exchange_rows(serde_json::json!({
+            "status": "PENDING_DEPOSIT",
+            "nearTxHashes": [],
+            "swapDetails": { "amountOut": null }
+        }));
+
+        let pairs = plan_exchange_pairs(&[outgoing, incoming], TEST_RELAYER_ACCOUNT)
+            .expect("exchange pair plan");
+
+        assert!(pairs.outgoing_to_incoming.is_empty());
+        assert!(pairs.incoming_to_outgoing.is_empty());
+    }
+
+    #[test]
+    fn live_exchange_without_amount_out_does_not_claim_another_payout() {
+        // Two same-destination exchanges in flight. The first still has no
+        // reported amount; the second already names the incoming leg by hash.
+        let (stale_outgoing, incoming) = quote_linked_exchange_rows(serde_json::json!({
+            "status": "PENDING_DEPOSIT",
+            "nearTxHashes": [],
+            "swapDetails": { "amountOut": null }
+        }));
+        let (mut fulfilled_outgoing, _) = quote_linked_exchange_rows(serde_json::json!({
+            "status": "SUCCESS",
+            "nearTxHashes": ["proposal-tx", "fulfillment-tx"],
+            "destinationChainTxHashes": [{ "hash": "fulfillment-tx" }],
+            "swapDetails": { "amountOut": "2000000" }
+        }));
+        fulfilled_outgoing.id = 3;
+        fulfilled_outgoing.leg_key = "fulfilled-outgoing".to_string();
+        fulfilled_outgoing.proposal_ref = Some(8);
+
+        let pairs = plan_exchange_pairs(
+            &[stale_outgoing, fulfilled_outgoing.clone(), incoming.clone()],
+            TEST_RELAYER_ACCOUNT,
+        )
+        .expect("exchange pair plan");
+
+        assert_eq!(pairs.outgoing_to_incoming.len(), 1);
+        assert_eq!(
+            pairs.outgoing_to_incoming.get(&fulfilled_outgoing.id),
+            Some(&incoming.id)
+        );
+        assert_eq!(
+            pairs.incoming_to_outgoing.get(&incoming.id),
+            Some(&fulfilled_outgoing.id)
         );
     }
 

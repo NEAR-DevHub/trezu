@@ -1786,7 +1786,8 @@
             "passkeyCardTitle": "Touch ID・Face ID対応のパスキー",
             "passkeyCardSubtitle": "デバイスの生体認証またはパスコードでサインイン",
             "passkeyCardBadge": "簡単・安全",
-            "web3WalletsSeparator": "Web3ウォレット"
+            "web3WalletsSeparator": "Web3ウォレット",
+            "connectFailed": "ウォレットの接続に失敗しました"
         },
         "unexpectedError": "予期しないエラーが発生しました",
         "creationFailed": "トレジャリーの作成に失敗しました。もう一度お試しください。",

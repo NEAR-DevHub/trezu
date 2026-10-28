@@ -237,6 +237,23 @@ mod tests {
     }
 
     #[test]
+    fn nep245_multitoken_contract_is_not_allowlisted() {
+        let supported = json!({
+            "tokens": [
+                {
+                    "standard": "nep245",
+                    "intents_token_id": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+                    "defuse_asset_identifier": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+                    "near_token_id": "v2_1.omni.hot.tg"
+                }
+            ]
+        });
+        let contracts = extract_intents_whitelist_contracts(&supported);
+        assert!(!contracts.contains("v2_1.omni.hot.tg"));
+        assert!(contracts.is_empty());
+    }
+
+    #[test]
     fn always_includes_wrap_near() {
         assert!(always_allowed().contains(WRAP_NEAR));
     }

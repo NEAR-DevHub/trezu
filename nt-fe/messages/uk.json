@@ -1769,7 +1769,8 @@
             "passkeyCardTitle": "Passkey для Touch ID та Face ID",
             "passkeyCardSubtitle": "Увійдіть за допомогою біометрії або коду доступу пристрою",
             "passkeyCardBadge": "Просто й безпечно",
-            "web3WalletsSeparator": "Web3-гаманці"
+            "web3WalletsSeparator": "Web3-гаманці",
+            "connectFailed": "Не вдалось підключити гаманець"
         },
         "unexpectedError": "Сталася неочікувана помилка",
         "creationFailed": "Не вдалось створити скарбницю. Спробуйте ще раз.",
