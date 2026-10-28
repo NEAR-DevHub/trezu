@@ -25,3 +25,18 @@ WHERE he.id = ci.history_event_id
   AND ci.submit_result IS NULL
   AND ci.status IN ('pending', 'submitted')
   AND ci.proposal_execution_transaction_hash IS NOT NULL;
+
+-- Legacy single intents 1Click rejected at submit time (e.g. "Quote has
+-- expired") before the submit queue existed: the error was stored but the
+-- row stayed `submitted`, so the request shows as Processing although nothing
+-- ever reached the deposit address. Retire them the way `finish_failed` does.
+UPDATE confidential_intents
+SET status = 'failed',
+    submit_state = 'failed',
+    submit_next_attempt_at = NULL,
+    submit_last_error = COALESCE(submit_last_error, submit_result->>'error'),
+    updated_at = NOW()
+WHERE intent_type = 'shield'
+  AND status IN ('pending', 'submitted')
+  AND submit_result ? 'error'
+  AND proposal_execution_transaction_hash IS NOT NULL;

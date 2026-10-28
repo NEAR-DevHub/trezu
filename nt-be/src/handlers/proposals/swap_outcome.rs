@@ -62,7 +62,7 @@ impl<'a> SwapStatusLookup<'a> {
                 extract_payload_hash_from_kind(&proposal.kind).map(|hash| (hash, proposal.id))
             })
             .collect();
-        if proposal_ids.is_empty() {
+        if proposal_ids.is_empty() && id_by_payload_hash.is_empty() {
             return Ok(());
         }
 
