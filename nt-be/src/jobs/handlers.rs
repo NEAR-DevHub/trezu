@@ -72,6 +72,18 @@ pub async fn gold_usd_enrichment(
     }
 }
 
+/// Drives due relay operations, sweeps orphaned transactions and checks
+/// the queue for stalls. The request path runs the same engine first; this
+/// job only picks up what was deferred, crashed or lost its lease.
+pub async fn relay_submissions(
+    _t: Tick,
+    state: Data<Arc<AppState>>,
+) -> Result<String, BoxDynError> {
+    let engine = crate::handlers::relay::operations::engine::RelayEngine::new(Arc::clone(&state));
+    let summary = engine.run_due().await.map_err(erase)?;
+    Ok(summary.to_string())
+}
+
 pub async fn token_price_ingest(
     _t: Tick,
     state: Data<Arc<AppState>>,

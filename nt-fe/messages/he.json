@@ -2469,7 +2469,9 @@
         "viewRequest": "הצג בקשה",
         "proposalRemoved": "ההצעה שלך הוסרה",
         "voteSubmitted": "ההצבעה שלך נשלחה",
-        "votesSubmitted": "ההצבעות שלך נשלחו"
+        "votesSubmitted": "ההצבעות שלך נשלחו",
+        "confirmingTransaction": "מאשרים את העסקה שלך…",
+        "confirmingTransactionBody": "הרשת איטית כרגע. אפשר להמשיך לעבוד; נעדכן כאן ברגע שהעסקה תאושר."
     },
     "tokenInput": {
         "max": "MAX",

@@ -3,7 +3,7 @@ use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},
 };
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 /// Which user-facing error this is. The frontend owns the copy; a code it does
 /// not know falls back to `UNEXPECTED`.
@@ -31,7 +31,7 @@ pub enum FundsState {
 }
 
 /// Why a landed transaction failed on-chain.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum TxFailureReason {
     InsufficientBalance,
@@ -190,6 +190,12 @@ impl ApiError {
                 details: &self.details,
             },
         }
+    }
+
+    /// The inner `{code, funds_state, retryable, details}` object, for callers
+    /// that embed an error in another payload.
+    pub fn body(&self) -> serde_json::Value {
+        serde_json::to_value(self.envelope().error).unwrap_or_default()
     }
 
     /// Whether this failure should alert (→ Sentry) rather than only be logged.

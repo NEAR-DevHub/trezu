@@ -2469,7 +2469,9 @@
         "viewRequest": "Talebi Görüntüle",
         "proposalRemoved": "Öneriniz kaldırıldı",
         "voteSubmitted": "Oyunuz gönderildi",
-        "votesSubmitted": "Oylarınız gönderildi"
+        "votesSubmitted": "Oylarınız gönderildi",
+        "confirmingTransaction": "İşleminiz onaylanıyor…",
+        "confirmingTransactionBody": "Ağ şu anda yavaş. Çalışmaya devam edebilirsiniz; onaylanır onaylanmaz burayı güncelleyeceğiz."
     },
     "tokenInput": {
         "max": "MAX",

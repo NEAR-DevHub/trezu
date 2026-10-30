@@ -276,6 +276,10 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
             "/api/relay/delegate-action",
             post(handlers::relay::submit::relay_delegate_action),
         )
+        .route(
+            "/api/relay/submissions/{id}",
+            get(handlers::relay::operations::status::get_relay_submission),
+        )
         // Monitored accounts endpoints
         .route(
             "/api/monitored-accounts",

@@ -46,8 +46,24 @@ pub async fn record_event(pool: &PgPool, dao_id: &str, metric: PlatformMetric) {
 /// All columns are incremented by 1 in one round-trip.
 /// Non-critical: logs a warning on failure but does NOT propagate the error.
 pub async fn record_events(pool: &PgPool, dao_id: &str, metrics: &[PlatformMetric]) {
+    if let Err(e) = record_events_on(pool, dao_id, metrics).await {
+        tracing::warn!(
+            "Failed to record platform metrics {:?} for {}: {}",
+            metrics,
+            dao_id,
+            e
+        );
+    }
+}
+
+/// The same upsert on the caller's executor, so it can share a transaction.
+pub async fn record_events_on<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
+    dao_id: &str,
+    metrics: &[PlatformMetric],
+) -> Result<(), sqlx::Error> {
     if metrics.is_empty() {
-        return;
+        return Ok(());
     }
 
     let now = Utc::now();
@@ -76,18 +92,11 @@ pub async fn record_events(pool: &PgPool, dao_id: &str, metrics: &[PlatformMetri
         "#,
     );
 
-    if let Err(e) = sqlx::query(&sql)
+    sqlx::query(&sql)
         .bind(dao_id)
         .bind(year)
         .bind(month)
-        .execute(pool)
-        .await
-    {
-        tracing::warn!(
-            "Failed to record platform metrics {:?} for {}: {}",
-            metrics,
-            dao_id,
-            e
-        );
-    }
+        .execute(executor)
+        .await?;
+    Ok(())
 }

@@ -10,7 +10,7 @@ use near_api::AccountId;
 use serde::Deserialize;
 use tokio::sync::broadcast;
 
-use crate::{AppEvent, AppState, auth::OptionalAuthUser};
+use crate::{AppState, auth::OptionalAuthUser};
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -36,7 +36,7 @@ pub async fn app_events(
                     match serde_json::to_string(&event) {
                         Ok(payload) => {
                             yield Ok(Event::default()
-                                .event(AppEvent::TREASURY_PROJECTION_UPDATED)
+                                .event(event.event_type)
                                 .data(payload));
                         }
                         Err(e) => {

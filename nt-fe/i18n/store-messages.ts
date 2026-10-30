@@ -12,6 +12,8 @@ export interface NearStoreMessages {
     proposalRemoved: string;
     voteSubmitted: string;
     votesSubmitted: string;
+    confirmingTransaction: string;
+    confirmingTransactionBody: string;
 }
 
 const fallback: NearStoreMessages = {
@@ -22,6 +24,9 @@ const fallback: NearStoreMessages = {
     proposalRemoved: "Your proposal has been removed",
     voteSubmitted: "Your vote has been submitted",
     votesSubmitted: "Your votes have been submitted",
+    confirmingTransaction: "Confirming your transaction…",
+    confirmingTransactionBody:
+        "The network is slow right now. You can keep working; we'll update this as soon as it's confirmed.",
 };
 
 let current: Readonly<NearStoreMessages> = Object.freeze(fallback);
@@ -57,6 +62,8 @@ export function useSyncNearStoreMessages() {
             proposalRemoved: t("proposalRemoved"),
             voteSubmitted: t("voteSubmitted"),
             votesSubmitted: t("votesSubmitted"),
+            confirmingTransaction: t("confirmingTransaction"),
+            confirmingTransactionBody: t("confirmingTransactionBody"),
         });
     }, [t]);
 }

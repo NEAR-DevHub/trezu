@@ -2469,7 +2469,9 @@
         "viewRequest": "Ver solicitação",
         "proposalRemoved": "Sua proposta foi removida",
         "voteSubmitted": "Seu voto foi enviado",
-        "votesSubmitted": "Seus votos foram enviados"
+        "votesSubmitted": "Seus votos foram enviados",
+        "confirmingTransaction": "Confirmando sua transação…",
+        "confirmingTransactionBody": "A rede está lenta no momento. Você pode continuar trabalhando; atualizaremos isto assim que for confirmada."
     },
     "tokenInput": {
         "max": "MAX",

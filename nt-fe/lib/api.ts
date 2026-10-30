@@ -1670,15 +1670,48 @@ export interface RelayDelegateActionResponse {
     txHash: string;
 }
 
+export type RelaySubmissionState =
+    | "pending"
+    | "succeeded"
+    | "failed"
+    | "manual_review";
+
+/** The backend's error body, as embedded in a failed submission's status. */
+export interface RelaySubmissionError {
+    code: string;
+    funds_state: string;
+    retryable: boolean;
+    details?: { tx_hash?: string; reason?: string };
+}
+
+/**
+ * A durable relay submission: the `202` body, the status endpoint and the
+ * `relay_submission_updated` SSE event all carry this shape.
+ */
+export interface RelaySubmissionStatus {
+    submissionId: string;
+    treasuryId: string;
+    state: RelaySubmissionState;
+    txHash?: string;
+    proposalIds?: number[];
+    error?: RelaySubmissionError;
+}
+
+export type RelayDelegateActionResult =
+    | { status: "confirmed"; response: RelayDelegateActionResponse }
+    | { status: "pending"; submission: RelaySubmissionStatus };
+
 export async function relayDelegateAction(
     treasuryId: string,
     signedDelegateAction: string,
     storageBytes: Big,
     proposalType?: string,
     addressBookPayment?: boolean,
-): Promise<RelayDelegateActionResponse> {
+): Promise<RelayDelegateActionResult> {
     const url = `${BACKEND_API_BASE}/relay/delegate-action`;
-    const response = await axios.post<RelayDelegateActionResponse>(
+    const response = await axios.post<
+        RelayDelegateActionResponse | RelaySubmissionStatus
+    >(
         url,
         {
             signedDelegateAction: signedDelegateAction,
@@ -1687,6 +1720,26 @@ export async function relayDelegateAction(
             ...(proposalType ? { proposalType } : {}),
             ...(addressBookPayment ? { addressBookPayment } : {}),
         },
+        { withCredentials: true },
+    );
+    if (response.status === 202) {
+        return {
+            status: "pending",
+            submission: response.data as RelaySubmissionStatus,
+        };
+    }
+    return {
+        status: "confirmed",
+        response: response.data as RelayDelegateActionResponse,
+    };
+}
+
+/** Recovery read for a `202` submission; the SSE event is the primary path. */
+export async function getRelaySubmission(
+    submissionId: string,
+): Promise<RelaySubmissionStatus> {
+    const response = await axios.get<RelaySubmissionStatus>(
+        `${BACKEND_API_BASE}/relay/submissions/${encodeURIComponent(submissionId)}`,
         { withCredentials: true },
     );
     return response.data;
