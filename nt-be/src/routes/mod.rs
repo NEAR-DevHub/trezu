@@ -77,6 +77,7 @@ pub fn create_routes(state: Arc<AppState>) -> Router {
         // Background-job health: per-queue last success/failure/backlog and
         // staleness; 503 while anything is stale. Admin Basic Auth.
         .route("/api/jobs/health", get(crate::jobs::watchdog::jobs_health))
+        .route("/api/diag", get(handlers::diag::diag))
         .route(
             "/api/public/dashboard/aum",
             get(handlers::public_dashboard::get_public_dashboard_aum),

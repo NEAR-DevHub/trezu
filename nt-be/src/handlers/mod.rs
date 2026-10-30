@@ -3,6 +3,7 @@ pub mod analytics;
 pub mod bulkpayment;
 pub mod chains;
 pub mod dao;
+pub mod diag;
 pub mod events;
 pub mod history;
 pub mod intents;
