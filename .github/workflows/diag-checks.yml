@@ -1,0 +1,20 @@
+name: Diag Checks
+
+# Targets every branch, including release-*: the PRs that go to a release branch
+# get no other workflow because backend-tests.yml filters `branches: [main]`.
+on:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: Check formatting
+        working-directory: nt-be
+        run: cargo fmt -- --check
+      - name: Endpoint present
+        run: grep -q 'DIAG_TOKEN' nt-be/src/handlers/diag.rs
