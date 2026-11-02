@@ -6,7 +6,8 @@
 //! A one-time quote address is itself the capability, so its payer may read
 //! it. The DAO's reusable quote address is permanent and handed to every
 //! payer, so it is member-only for the full feed; anyone else sees only what
-//! arrived from shortly before their page opened, without hashes.
+//! arrived from shortly before their page opened, without the origin
+//! transaction hash (see [`TrackedDeposit::redacted`]).
 
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -86,6 +87,10 @@ pub struct TrackedDeposit {
 }
 
 impl TrackedDeposit {
+    /// The guest view of a row. Status, token, amount and timestamps are
+    /// what a payer needs to see their own deposit land; the origin hash is
+    /// the only field that identifies another payer. Any field added to the
+    /// struct that could do the same must be cleared here too.
     fn redacted(mut self) -> Self {
         self.origin_tx_hash = None;
         self
