@@ -10,7 +10,7 @@
 
 use std::sync::Arc;
 
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, Duration, Utc};
 use near_account_id::AccountIdRef;
 use reqwest::{StatusCode, Url};
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,13 @@ const CONFIDENTIALITY: &str = "basic";
 const SLIPPAGE_TOLERANCE_BPS: u32 = 50;
 const QUOTES_PATH: &str = "/v0/quotes";
 const MAX_QUOTE_PAGES: usize = 50;
+/// A cached set older than this is re-listed from 1Click before it is served
+/// (rotated quotes, chains 1Click added since). 1Click being down keeps the
+/// cached set in service.
+const REVERIFY_AFTER: Duration = Duration::hours(24);
+/// An explicit refresh within this window of the last 1Click read is a no-op,
+/// so a run of requests for an unsupported chain costs one listing a minute.
+const REFRESH_DEBOUNCE: Duration = Duration::minutes(1);
 
 /// One funding address of the set.
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -139,23 +146,46 @@ fn is_reusable_set_for(attributes: &Value, dao_id: &str) -> bool {
         && accounts_equal(field("refundTo"), dao_id)
 }
 
-pub async fn load_cached(
-    pool: &PgPool,
-    dao_id: &str,
-) -> Result<Option<ReusableDepositAddresses>, sqlx::Error> {
-    let stored: Option<Option<Value>> = sqlx::query_scalar(
-        "SELECT confidential_reusable_deposit FROM monitored_accounts WHERE account_id = $1",
+/// The cached set with when 1Click last confirmed it.
+struct CachedSet {
+    set: ReusableDepositAddresses,
+    confirmed_at: Option<DateTime<Utc>>,
+}
+
+impl CachedSet {
+    fn confirmed_within(&self, window: Duration, now: DateTime<Utc>) -> bool {
+        self.confirmed_at
+            .is_some_and(|confirmed_at| now - confirmed_at < window)
+    }
+}
+
+async fn load_cached_entry(pool: &PgPool, dao_id: &str) -> Result<Option<CachedSet>, sqlx::Error> {
+    let stored: Option<(Option<Value>, Option<DateTime<Utc>>)> = sqlx::query_as(
+        r#"
+        SELECT confidential_reusable_deposit, confidential_reusable_deposit_updated_at
+        FROM monitored_accounts
+        WHERE account_id = $1
+        "#,
     )
     .bind(dao_id)
     .fetch_optional(pool)
     .await?;
-    Ok(stored.flatten().and_then(|value| {
-        serde_json::from_value(value)
-            .inspect_err(|e| {
-                tracing::warn!(dao_id, "stored reusable deposit set is unreadable: {e}")
-            })
-            .ok()
-    }))
+    let Some((Some(value), confirmed_at)) = stored else {
+        return Ok(None);
+    };
+    Ok(serde_json::from_value(value)
+        .inspect_err(|e| tracing::warn!(dao_id, "stored reusable deposit set is unreadable: {e}"))
+        .ok()
+        .map(|set| CachedSet { set, confirmed_at }))
+}
+
+pub async fn load_cached(
+    pool: &PgPool,
+    dao_id: &str,
+) -> Result<Option<ReusableDepositAddresses>, sqlx::Error> {
+    Ok(load_cached_entry(pool, dao_id)
+        .await?
+        .map(|cached| cached.set))
 }
 
 async fn store_cached(
@@ -208,14 +238,104 @@ impl<'a> ReusableDepositResolver<'a> {
 
     /// The DAO's reusable deposit set: cached, else discovered from 1Click,
     /// else created. Needs the DAO's 1Click JWT for the 1Click paths.
+    /// A cached set 1Click has not confirmed within `REVERIFY_AFTER` is
+    /// re-listed first; if that fails the cached set is served as is.
     pub async fn resolve(
         &self,
         dao_id: &AccountIdRef,
     ) -> Result<ReusableDepositAddresses, (StatusCode, String)> {
         let pool = &self.state.db_pool;
-        if let Some(cached) = load_cached(pool, dao_id.as_str()).await.map_err(db_error)? {
-            return Ok(cached);
+        let cached = load_cached_entry(pool, dao_id.as_str())
+            .await
+            .map_err(db_error)?;
+        if let Some(cached) = cached {
+            if cached.confirmed_within(REVERIFY_AFTER, Utc::now()) {
+                return Ok(cached.set);
+            }
+            return match self.resolve_from_oneclick(dao_id).await {
+                Ok(set) => {
+                    self.record_confirmed(dao_id, &set, &cached.set).await?;
+                    Ok(set)
+                }
+                Err((status, message)) => {
+                    tracing::warn!(
+                        dao_id = dao_id.as_str(),
+                        %status,
+                        "reusable deposit set re-verify failed; serving the cached set: {message}"
+                    );
+                    Ok(cached.set)
+                }
+            };
         }
+        let set = self.resolve_from_oneclick(dao_id).await?;
+        store_cached(pool, dao_id.as_str(), &set)
+            .await
+            .map_err(db_error)?;
+        tracing::info!(
+            dao_id = dao_id.as_str(),
+            chains = set.chain_deposit_addresses.len(),
+            "resolved reusable confidential deposit set"
+        );
+        Ok(set)
+    }
+
+    /// Re-read the set from 1Click regardless of its age (a chain missing
+    /// from the cached set may have been added since), debounced to one
+    /// 1Click read per `REFRESH_DEBOUNCE`.
+    pub async fn refresh(
+        &self,
+        dao_id: &AccountIdRef,
+    ) -> Result<ReusableDepositAddresses, (StatusCode, String)> {
+        let cached = load_cached_entry(&self.state.db_pool, dao_id.as_str())
+            .await
+            .map_err(db_error)?;
+        if let Some(recent) = cached
+            .as_ref()
+            .filter(|cached| cached.confirmed_within(REFRESH_DEBOUNCE, Utc::now()))
+        {
+            return Ok(recent.set.clone());
+        }
+        let set = self.resolve_from_oneclick(dao_id).await?;
+        match &cached {
+            Some(cached) => self.record_confirmed(dao_id, &set, &cached.set).await?,
+            None => store_cached(&self.state.db_pool, dao_id.as_str(), &set)
+                .await
+                .map_err(db_error)?,
+        }
+        Ok(set)
+    }
+
+    async fn record_confirmed(
+        &self,
+        dao_id: &AccountIdRef,
+        set: &ReusableDepositAddresses,
+        previous: &ReusableDepositAddresses,
+    ) -> Result<(), (StatusCode, String)> {
+        store_cached(&self.state.db_pool, dao_id.as_str(), set)
+            .await
+            .map_err(db_error)?;
+        if set.quote_deposit_address != previous.quote_deposit_address {
+            tracing::warn!(
+                dao_id = dao_id.as_str(),
+                previous = %previous.quote_deposit_address,
+                current = %set.quote_deposit_address,
+                "reusable deposit set changed on 1Click; addresses shared earlier are stale"
+            );
+        } else if set.chain_deposit_addresses != previous.chain_deposit_addresses {
+            tracing::info!(
+                dao_id = dao_id.as_str(),
+                chains = set.chain_deposit_addresses.len(),
+                "reusable deposit set chains changed on 1Click"
+            );
+        }
+        Ok(())
+    }
+
+    /// Discover the DAO's set on 1Click, else create it.
+    async fn resolve_from_oneclick(
+        &self,
+        dao_id: &AccountIdRef,
+    ) -> Result<ReusableDepositAddresses, (StatusCode, String)> {
         let jwt = refresh_dao_jwt(self.state, dao_id).await?;
         let set = match self.discover(dao_id.as_str(), &jwt).await? {
             Some(existing) => existing,
@@ -230,14 +350,6 @@ impl<'a> ReusableDepositResolver<'a> {
                 Err(error) => return Err(error),
             },
         };
-        store_cached(pool, dao_id.as_str(), &set)
-            .await
-            .map_err(db_error)?;
-        tracing::info!(
-            dao_id = dao_id.as_str(),
-            chains = set.chain_deposit_addresses.len(),
-            "resolved reusable confidential deposit set"
-        );
         Ok(set)
     }
 
@@ -287,20 +399,18 @@ impl<'a> ReusableDepositResolver<'a> {
                 ));
             }
             let page = self.get_json(url, jwt).await?;
-            let items = page
-                .get("data")
-                .and_then(Value::as_array)
-                .ok_or_else(|| {
-                    (
-                        StatusCode::BAD_GATEWAY,
-                        "1Click quote listing has no data array".to_string(),
-                    )
-                })?;
+            let items = page.get("data").and_then(Value::as_array).ok_or_else(|| {
+                (
+                    StatusCode::BAD_GATEWAY,
+                    "1Click quote listing has no data array".to_string(),
+                )
+            })?;
             for item in items {
                 let Some(attributes) = item.get("attributes") else {
                     continue;
                 };
-                if attributes.get("originAsset").and_then(Value::as_str) != Some(ANY_INPUT_ORIGIN_ASSET)
+                if attributes.get("originAsset").and_then(Value::as_str)
+                    != Some(ANY_INPUT_ORIGIN_ASSET)
                     || attributes.get("destinationAsset").and_then(Value::as_str)
                         != Some(ANY_INPUT_DESTINATION_ASSET)
                 {
@@ -413,8 +523,9 @@ pub const REUSABLE_DEPOSIT_KEY_PREFIX: &str = "rda:";
 const WITHDRAWALS_PATH: &str = "/v0/any-input/withdrawals";
 const WITHDRAWALS_PAGE_LIMIT: u32 = 50;
 
-/// One settled payout of the reusable quote: one deposit credited (or
-/// failed). `hash` is the payout transaction, not the depositor's.
+/// One payout of the reusable quote: one deposit credited (or failed).
+/// `hash` is the payout transaction, not the depositor's, and is empty
+/// while the payout is still PROCESSING.
 #[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
 #[serde(rename_all = "camelCase")]
 pub struct ReusableWithdrawal {
@@ -425,17 +536,26 @@ pub struct ReusableWithdrawal {
     #[serde(default)]
     pub amount_out_usd: Option<String>,
     pub timestamp: DateTime<Utc>,
+    #[serde(default)]
     pub hash: String,
 }
 
 impl ReusableWithdrawal {
-    /// Stable tracker key: a payout is identified by its hash and time.
+    /// Stable tracker key: the payout's timestamp. The hash is not part of
+    /// it because 1Click fills it in only once the payout succeeds, and a
+    /// key that changes mid-flight would record the same deposit twice.
     pub fn provider_deposit_key(&self) -> String {
         format!(
-            "{REUSABLE_DEPOSIT_KEY_PREFIX}{}:{}",
-            self.hash,
+            "{REUSABLE_DEPOSIT_KEY_PREFIX}{}",
             self.timestamp.to_rfc3339()
         )
+    }
+
+    /// The payout hash once 1Click has one.
+    pub fn payout_hash(&self) -> Option<String> {
+        Some(self.hash.trim())
+            .filter(|hash| !hash.is_empty())
+            .map(str::to_string)
     }
 
     pub fn is_success(&self) -> bool {
@@ -483,18 +603,38 @@ where
     })
 }
 
+/// Why the reusable quote's payouts could not be read.
+#[derive(Debug)]
+pub enum WithdrawalsError {
+    /// 1Click no longer serves the cached quote as this DAO's: the cached
+    /// set is stale and must be re-resolved.
+    StaleSet(String),
+    Upstream(StatusCode, String),
+}
+
+impl std::fmt::Display for WithdrawalsError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::StaleSet(reason) => write!(f, "stale reusable deposit set: {reason}"),
+            Self::Upstream(status, message) => write!(f, "{status}: {message}"),
+        }
+    }
+}
+
 impl ReusableDepositResolver<'_> {
     /// Latest payouts of the DAO's reusable quote (newest first, one page).
     pub async fn withdrawals(
         &self,
         dao_id: &AccountIdRef,
         set: &ReusableDepositAddresses,
-    ) -> Result<ReusableWithdrawals, (StatusCode, String)> {
-        let jwt = refresh_dao_jwt(self.state, dao_id).await?;
+    ) -> Result<ReusableWithdrawals, WithdrawalsError> {
+        let jwt = refresh_dao_jwt(self.state, dao_id)
+            .await
+            .map_err(|(status, message)| WithdrawalsError::Upstream(status, message))?;
         let mut url = Url::parse(&self.state.env_vars.confidential_api_url)
             .and_then(|base| base.join(WITHDRAWALS_PATH))
             .map_err(|e| {
-                (
+                WithdrawalsError::Upstream(
                     StatusCode::INTERNAL_SERVER_ERROR,
                     format!("invalid CONFIDENTIAL_API_URL: {e}"),
                 )
@@ -509,16 +649,22 @@ impl ReusableDepositResolver<'_> {
             query.append_pair("sortOrder", "desc");
             query.append_pair("page", "1");
         }
-        let body = self.get_json(url, &jwt).await?;
+        // 1Click answers 404 for a quote address it no longer serves.
+        let body = self
+            .get_json(url, &jwt)
+            .await
+            .map_err(|(status, message)| match status {
+                StatusCode::NOT_FOUND => WithdrawalsError::StaleSet(message),
+                _ => WithdrawalsError::Upstream(status, message),
+            })?;
         let page: ReusableWithdrawals = serde_json::from_value(body).map_err(|e| {
-            (
+            WithdrawalsError::Upstream(
                 StatusCode::BAD_GATEWAY,
                 format!("invalid 1Click withdrawals response: {e}"),
             )
         })?;
         if !accounts_equal(&page.recipient, dao_id.as_str()) {
-            return Err((
-                StatusCode::BAD_GATEWAY,
+            return Err(WithdrawalsError::StaleSet(
                 "1Click withdrawals belong to another recipient".to_string(),
             ));
         }
@@ -649,7 +795,8 @@ mod tests {
         let set = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
         assert_eq!(set.quote_deposit_address, "rda-monitoring-account");
         assert_eq!(
-            set.address_for_chain("eth:8453").map(|e| e.address.as_str()),
+            set.address_for_chain("eth:8453")
+                .map(|e| e.address.as_str()),
             Some("0xbase")
         );
         assert_eq!(
@@ -717,6 +864,141 @@ mod tests {
             .expect("cached resolve");
         assert_eq!(again, set);
         assert_eq!(load_cached(&pool, DAO).await.unwrap(), Some(set));
+    }
+
+    /// Cache `set` as confirmed `age` (a Postgres interval) ago.
+    async fn seed_cached(pool: &PgPool, set: &ReusableDepositAddresses, age: &str) {
+        store_cached(pool, DAO, set).await.expect("cache set");
+        sqlx::query(
+            r#"
+            UPDATE monitored_accounts
+            SET confidential_reusable_deposit_updated_at = NOW() - $2::interval
+            WHERE account_id = $1
+            "#,
+        )
+        .bind(DAO)
+        .bind(age)
+        .execute(pool)
+        .await
+        .expect("age cache");
+    }
+
+    fn rotated_quote_json() -> Value {
+        let mut quote = quote_json(DAO);
+        quote["depositAddress"] = Value::String("rda-rotated-account".to_string());
+        quote
+    }
+
+    #[sqlx::test]
+    async fn stale_cache_is_reverified_and_replaced(pool: PgPool) {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path(QUOTES_PATH))
+            .and(header("Authorization", format!("Bearer {JWT}").as_str()))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(listing(vec![listed("rotated", rotated_quote_json())], None)),
+            )
+            .expect(1)
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let old = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+        seed_cached(&pool, &old, "2 days").await;
+        let state = state_with_mock(pool.clone(), &mock);
+        let dao = AccountIdRef::new(DAO).unwrap();
+
+        let set = ReusableDepositResolver::new(&state)
+            .resolve(dao)
+            .await
+            .expect("resolve");
+        assert_eq!(set.quote_deposit_address, "rda-rotated-account");
+        assert_eq!(set.quote_id.as_deref(), Some("rotated"));
+
+        // Confirmed just now: served from the cache without another listing.
+        let again = ReusableDepositResolver::new(&state)
+            .resolve(dao)
+            .await
+            .expect("cached resolve");
+        assert_eq!(again, set);
+    }
+
+    #[sqlx::test]
+    async fn stale_cache_is_served_when_oneclick_fails(pool: PgPool) {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path(QUOTES_PATH))
+            .respond_with(ResponseTemplate::new(503))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let old = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+        seed_cached(&pool, &old, "2 days").await;
+        let state = state_with_mock(pool.clone(), &mock);
+
+        let set = ReusableDepositResolver::new(&state)
+            .resolve(AccountIdRef::new(DAO).unwrap())
+            .await
+            .expect("cached set survives a 1Click outage");
+        assert_eq!(set, old);
+    }
+
+    #[sqlx::test]
+    async fn refresh_is_debounced_then_relists(pool: PgPool) {
+        let mock = MockServer::start().await;
+        let mut wider = quote_json(DAO);
+        wider["chainDepositAddresses"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!({ "blockchain": "sol", "address": "SOLADDR" }));
+        Mock::given(method("GET"))
+            .and(path(QUOTES_PATH))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(listing(vec![listed("mine", wider)], None)),
+            )
+            .expect(1)
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let cached = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+        seed_cached(&pool, &cached, "10 seconds").await;
+        let state = state_with_mock(pool.clone(), &mock);
+        let dao = AccountIdRef::new(DAO).unwrap();
+        let resolver = ReusableDepositResolver::new(&state);
+
+        let debounced = resolver.refresh(dao).await.expect("debounced refresh");
+        assert_eq!(debounced, cached);
+        assert!(debounced.address_for_chain("sol:mainnet").is_none());
+
+        seed_cached(&pool, &cached, "5 minutes").await;
+        let fresh = resolver.refresh(dao).await.expect("refresh");
+        assert_eq!(fresh.chain_deposit_addresses.len(), 4);
+        assert!(fresh.address_for_chain("sol:mainnet").is_some());
+        assert_eq!(load_cached(&pool, DAO).await.unwrap(), Some(fresh));
+    }
+
+    #[sqlx::test]
+    async fn withdrawals_not_found_is_a_stale_set(pool: PgPool) {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path(WITHDRAWALS_PATH))
+            .respond_with(
+                ResponseTemplate::new(404)
+                    .set_body_json(serde_json::json!({ "message": "quote not found" })),
+            )
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let state = state_with_mock(pool.clone(), &mock);
+        let set = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+
+        let error = ReusableDepositResolver::new(&state)
+            .withdrawals(AccountIdRef::new(DAO).unwrap(), &set)
+            .await
+            .expect_err("stale");
+        assert!(matches!(error, WithdrawalsError::StaleSet(_)), "{error}");
     }
 
     #[sqlx::test]
@@ -792,10 +1074,10 @@ mod tests {
             .await;
         Mock::given(method("GET"))
             .and(path(QUOTES_PATH))
-            .respond_with(ResponseTemplate::new(200).set_body_json(listing(
-                vec![listed("late", quote_json(DAO))],
-                None,
-            )))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(listing(vec![listed("late", quote_json(DAO))], None)),
+            )
             .mount(&mock)
             .await;
         seed_authenticated_dao(&pool).await;
@@ -815,10 +1097,10 @@ mod tests {
         public["confidentiality"] = Value::String("public".to_string());
         Mock::given(method("GET"))
             .and(path(QUOTES_PATH))
-            .respond_with(ResponseTemplate::new(200).set_body_json(listing(
-                vec![listed("public", public)],
-                None,
-            )))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(listing(vec![listed("public", public)], None)),
+            )
             .mount(&mock)
             .await;
         seed_authenticated_dao(&pool).await;
@@ -830,6 +1112,30 @@ mod tests {
             .expect_err("conflict");
         assert_eq!(error.0, StatusCode::CONFLICT);
         assert!(load_cached(&pool, DAO).await.unwrap().is_none());
+    }
+
+    #[test]
+    fn processing_payout_keeps_its_key_once_it_succeeds() {
+        let page: ReusableWithdrawals = serde_json::from_value(serde_json::json!({
+            "asset": "1cs_v1:original",
+            "recipient": DAO,
+            "withdrawals": [
+                { "status": "PROCESSING", "amountOutFormatted": "0.2",
+                  "timestamp": "2026-10-30T09:48:25.342Z", "hash": "" },
+                { "status": "SUCCESS", "amountOutFormatted": "0.2",
+                  "timestamp": "2026-10-30T09:48:25.342Z", "hash": "E9MM" }
+            ]
+        }))
+        .unwrap();
+        let [processing, success] = page.withdrawals.as_slice() else {
+            panic!("two payouts");
+        };
+        assert_eq!(
+            processing.provider_deposit_key(),
+            success.provider_deposit_key()
+        );
+        assert_eq!(processing.payout_hash(), None);
+        assert_eq!(success.payout_hash().as_deref(), Some("E9MM"));
     }
 
     #[test]
@@ -846,7 +1152,7 @@ mod tests {
         assert_eq!(one.withdrawals.len(), 1);
         assert_eq!(
             one.withdrawals[0].provider_deposit_key(),
-            "rda:h1:2026-10-28T10:00:00+00:00"
+            "rda:2026-10-28T10:00:00+00:00"
         );
         assert_eq!(
             one.withdrawals[0].amount(),

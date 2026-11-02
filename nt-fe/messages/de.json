@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Unterstützte Netzwerke",
             "networksWithAssets": "Netzwerke mit Vermögenswerten",
+            "internalNetwork": "Internes Netzwerk",
             "yourAssets": "Ihre Vermögenswerte",
             "otherAssets": "Andere Vermögenswerte",
             "popularAssets": "Beliebte Vermögenswerte",
@@ -298,7 +299,6 @@
         "memoWarning": "Sie <bold>müssen</bold> das Memo angeben, wenn Sie Mittel an diese Adresse senden. Ein Versand ohne Memo kann zum dauerhaften Verlust der Mittel führen.",
         "onlyDeposit": "Zahlen Sie nur <symbolTag>{symbol}</symbolTag> aus dem <networkTag>{network}</networkTag>-Netzwerk ein.",
         "testTransactionRecommendation": "Wir empfehlen, mit einer kleinen Testtransaktion zu beginnen, um sicherzustellen, dass alles korrekt funktioniert, bevor Sie den vollen Betrag senden.",
-        "minimumDeposit": "Mindesteinzahlung: <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "Aus öffentlichem",
             "fromConfidential": "Aus vertraulichem"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "Die Bearbeitungszeit hängt vom Netzwerk ab."
         },
         "back": "Zurück",
-        "publicAddressTitle": "Einzahlungsadresse {symbol} auf {network}",
-        "publicAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
         "oneTimeAddressTitle": "Einmalige Einzahlungsadresse {symbol} auf dem {network}-Netzwerk",
         "oneTimeAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
-        "reusableAddressTitle": "Einzahlungsadresse {symbol} im {network}-Netzwerk",
-        "reusableAddressSubtitle": "Senden Sie nur diesen Token über dieses Netzwerk an die unten stehende Adresse. Sie können beliebig oft darauf einzahlen.",
         "confidentialTrezuTitle": "Einzahlung von vertraulichem Trezu im near.com-Netzwerk",
         "confidentialTrezuSubtitle": "Empfange jedes Asset von vertraulichem Trezu.",
         "confidentialNearcomTitle": "Einzahlung von vertraulichem near.com im internen Netzwerk",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>Wiederverwendbar.</bold> Läuft nicht ab",
         "fundsOutsideTrezuLost": "Mittel von außerhalb vertraulichem Trezu gehen verloren",
         "fundsOutsideNearcomLost": "Mittel von außerhalb vertraulichem near.com gehen verloren",
-        "publicNetworkRecommendation": "Zahle nur aus dem <bold>{network}</bold>-Netzwerk ein. Beginne mit einer kleinen Testtransaktion, bevor du den vollen Betrag sendest.",
         "sourceCards": {
             "publicWallet": {
                 "title": "Von einer öffentlichen Wallet",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Einzahlung fehlgeschlagen",
         "depositFailedBody": "Eine Einzahlung von <amount></amount> wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
         "depositFailedBodyNoAmount": "Eine Einzahlung wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
-        "depositAgain": "Erneut einzahlen"
+        "depositAgain": "Erneut einzahlen",
+        "anyTokenAssetName": "Beliebiger Token",
+        "receive": {
+            "sendAtLeastUsd": "Senden Sie mindestens {usd} in {symbol}",
+            "sendAtLeastAmount": "Senden Sie mindestens {amount} {symbol}",
+            "sendAsset": "{symbol} senden",
+            "sendAnyToken": "Beliebigen Token senden",
+            "onNetwork": "im {network}-Netzwerk",
+            "onNearcomNetwork": "im near.com-Netzwerk",
+            "networkAddressLabel": "{network}-Adresse",
+            "nearcomAddressLabel": "near.com-Adresse",
+            "internalOnly": "Nur zum Empfang von Assets von Trezu- oder near.com-Nutzern im internen Netzwerk verwenden.",
+            "internalLost": "Ihr Guthaben geht verloren, wenn Sie auf einer Blockchain an diese Adresse senden.",
+            "qrLabel": "QR-Code für Ihre {network}-Adresse",
+            "copyAddress": "Adresse kopieren",
+            "shareAddress": "Adresse teilen"
+        }
     },
     "assetDetails": {
         "coinPrice": "Coin-Preis",

@@ -110,6 +110,8 @@ pub struct WatchActivation {
     pub dao_id: String,
     pub chain: String,
     pub token_id: Option<String>,
+    /// The address shown is the DAO's reusable deposit address.
+    pub reusable: bool,
 }
 
 impl WatchActivation {
@@ -124,6 +126,7 @@ impl WatchActivation {
             None,
             &self.chain,
             self.token_id.as_deref(),
+            false,
             now + FAST_WINDOW,
             now + DISCOVERY_WINDOW,
         )
@@ -163,6 +166,7 @@ impl WatchActivation {
             Some(quote_deposit_address),
             &self.chain,
             self.token_id.as_deref(),
+            self.reusable,
             (now + FAST_WINDOW).min(discovery_until),
             discovery_until,
         )

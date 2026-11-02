@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "支持的网络",
             "networksWithAssets": "包含资产的网络",
+            "internalNetwork": "内部网络",
             "yourAssets": "您的资产",
             "otherAssets": "其他资产",
             "popularAssets": "热门资产",
@@ -298,7 +299,6 @@
         "memoWarning": "向此地址转账时,您<bold>必须</bold>包含 Memo。未包含 Memo 的转账可能导致资金永久丢失。",
         "onlyDeposit": "仅可从 <networkTag>{network}</networkTag> 网络存入 <symbolTag>{symbol}</symbolTag>。",
         "testTransactionRecommendation": "建议先进行小额测试交易,确认一切正常后再发送全部金额。",
-        "minimumDeposit": "最低存款金额为 <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "从公开",
             "fromConfidential": "从保密"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "处理时间取决于网络。"
         },
         "back": "返回",
-        "publicAddressTitle": "{network} 上的 {symbol} 充值地址",
-        "publicAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
         "oneTimeAddressTitle": "{network} 网络上的一次性 {symbol} 充值地址",
         "oneTimeAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
-        "reusableAddressTitle": "{network} 网络上的 {symbol} 充值地址",
-        "reusableAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。您可以多次向该地址充值。",
         "confidentialTrezuTitle": "从机密 Trezu 在 near.com 网络充值",
         "confidentialTrezuSubtitle": "接收来自机密 Trezu 的任意资产。",
         "confidentialNearcomTitle": "从机密 near.com 在内部网络充值",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>可重复使用。</bold>不会过期",
         "fundsOutsideTrezuLost": "从机密 Trezu 以外发送的资金将丢失",
         "fundsOutsideNearcomLost": "从机密 near.com 以外发送的资金将丢失",
-        "publicNetworkRecommendation": "请仅从 <bold>{network}</bold> 网络充值。建议先进行小额测试交易，再发送全额。",
         "sourceCards": {
             "publicWallet": {
                 "title": "来自公开钱包",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "充值失败",
         "depositFailedBody": "服务商报告一笔 <amount></amount> 的充值失败或已退款",
         "depositFailedBodyNoAmount": "服务商报告一笔充值失败或已退款",
-        "depositAgain": "再次充值"
+        "depositAgain": "再次充值",
+        "anyTokenAssetName": "任意代币",
+        "receive": {
+            "sendAtLeastUsd": "请发送至少 {usd} 的 {symbol}",
+            "sendAtLeastAmount": "请发送至少 {amount} {symbol}",
+            "sendAsset": "发送 {symbol}",
+            "sendAnyToken": "发送任意代币",
+            "onNetwork": "在 {network} 网络上",
+            "onNearcomNetwork": "在 near.com 网络上",
+            "networkAddressLabel": "{network} 地址",
+            "nearcomAddressLabel": "near.com 地址",
+            "internalOnly": "仅用于在内部网络上接收来自 Trezu 或 near.com 用户的资产。",
+            "internalLost": "如果您在任何区块链上向此地址发送资产，资金将会丢失。",
+            "qrLabel": "您的 {network} 地址二维码",
+            "copyAddress": "复制地址",
+            "shareAddress": "分享地址"
+        }
     },
     "assetDetails": {
         "coinPrice": "币价",

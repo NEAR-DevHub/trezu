@@ -63,6 +63,26 @@ fn chain_id_from_defuse_id(defuse_id: &str) -> String {
     }
 }
 
+/// Bridge chain a credit id arrived from, for ids as the tracker stores them:
+/// `1cs_v1:<chain>:…` routing ids and `nep141:<chain>[-<contract>].omft.near`
+/// bridge mints. Any other `nep141:` id is a native NEAR token; other
+/// families are unknown.
+pub(crate) fn chain_id_for_balance_asset(asset_id: &str) -> Option<String> {
+    if let Some(rest) = asset_id.strip_prefix("1cs_v1:") {
+        return rest
+            .split(':')
+            .next()
+            .filter(|chain| !chain.is_empty())
+            .map(fallback_chain_id_for_name);
+    }
+    let contract = asset_id.strip_prefix("nep141:")?;
+    if let Some(prefix) = contract.strip_suffix(".omft.near") {
+        let chain = prefix.split('-').next().unwrap_or(prefix);
+        return Some(fallback_chain_id_for_name(chain));
+    }
+    Some(NEAR_MAINNET_NETWORK_ID.to_string())
+}
+
 pub(crate) fn fallback_chain_id_for_name(chain_name: &str) -> String {
     let normalized = chain_name.to_lowercase();
     // Source of truth: Defuse `PoaBridgeNetworkReference` /
@@ -738,6 +758,33 @@ mod tests {
             contract_address_from_asset_id("eth:8453:0x0382e3fee4a420bd446367d468a6f00225853420")
                 .as_deref(),
             Some("0x0382e3fee4a420bd446367d468a6f00225853420")
+        );
+    }
+
+    #[test]
+    fn chain_for_balance_asset_follows_the_id_family() {
+        assert_eq!(
+            chain_id_for_balance_asset(
+                "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near"
+            )
+            .as_deref(),
+            Some("eth:8453")
+        );
+        assert_eq!(
+            chain_id_for_balance_asset("nep141:btc.omft.near").as_deref(),
+            Some("btc:mainnet")
+        );
+        assert_eq!(
+            chain_id_for_balance_asset("1cs_v1:sol:native").as_deref(),
+            Some("sol:mainnet")
+        );
+        assert_eq!(
+            chain_id_for_balance_asset("nep141:wrap.near").as_deref(),
+            Some(NEAR_MAINNET_NETWORK_ID)
+        );
+        assert_eq!(
+            chain_id_for_balance_asset("nep245:v2_1.omni.hot.tg:56_11111"),
+            None
         );
     }
 

@@ -146,7 +146,12 @@ export interface DepositTrackerResponse {
  */
 export const fetchDepositTracker = async (
     accountId: string,
-    scope: { chain?: string | null; quoteDepositAddress?: string | null },
+    scope: {
+        chain?: string | null;
+        quoteDepositAddress?: string | null;
+        /** RFC 3339 lower bound on detection time; required for guests on a reusable address. */
+        since?: string | null;
+    },
 ): Promise<DepositTrackerResponse> => {
     if (!accountId) {
         throw new Error("Account ID is required");
@@ -158,6 +163,7 @@ export const fetchDepositTracker = async (
                 accountId,
                 chain: scope.chain ?? undefined,
                 quoteDepositAddress: scope.quoteDepositAddress ?? undefined,
+                since: scope.since ?? undefined,
             },
             withCredentials: true,
         },

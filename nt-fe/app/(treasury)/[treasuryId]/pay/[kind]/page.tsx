@@ -38,17 +38,19 @@ import { DepositAddressSkeleton } from "../../dashboard/components/deposit/depos
 import { DepositConfidentialSourceTabs } from "../../dashboard/components/deposit/deposit-confidential-source-tabs";
 import { isDepositAddressUsed } from "../../dashboard/components/deposit/deposit-expires";
 import { DepositNoticeList } from "../../dashboard/components/deposit/deposit-notice-list";
-import {
-    buildConfidentialOriginNotices,
-    buildPublicTreasuryNotices,
-    buildPublicWalletOneTimeNotices,
-    buildPublicWalletReusableNotices,
-} from "../../dashboard/components/deposit/deposit-notices";
+import { buildPublicWalletOneTimeNotices } from "../../dashboard/components/deposit/deposit-notices";
 import { DepositPayTreasuryModal } from "../../dashboard/components/deposit/deposit-pay-treasury-modal";
+import { DepositReceiveCard } from "../../dashboard/components/deposit/deposit-receive-card";
+import {
+    buildExternalReceiveCopy,
+    buildInternalReceiveCopy,
+    resolveMinDepositCopy,
+} from "../../dashboard/components/deposit/deposit-receive-copy";
 import { DepositTrackerPanel } from "../../dashboard/components/deposit/deposit-tracker-panel";
 import { DepositTransferInactive } from "../../dashboard/components/deposit/deposit-transfer-inactive";
 import {
     resolveBridgeChainId,
+    resolveBridgeQuoteAssetId,
     resolvePayWithTrezuNextStep,
     resolveSendTokenMeta,
 } from "../../dashboard/components/deposit/deposit-transfer-resolve";
@@ -192,6 +194,12 @@ export default function PaySharePage() {
         if (!networkId) return null;
         return resolveBridgeChainId(bridgeAssets, networkId) || networkId;
     }, [bridgeAssets, networkId]);
+    // Reusable links name the asset by catalog id in `token`; the backend
+    // wants the routing id the modal used, which the network row carries.
+    const reusableTokenId = useMemo(
+        () => resolveBridgeQuoteAssetId(bridgeAssets, networkFromUrl),
+        [bridgeAssets, networkFromUrl],
+    );
 
     const shouldFetchBridge =
         (isOneTimeConfidentialShare &&
@@ -200,7 +208,7 @@ export default function PaySharePage() {
             !statusIsTerminal &&
             !!shareId &&
             !!bridgeChainId) ||
-        (isReusableConfidentialShare && !!bridgeChainId && !!tokenId);
+        (isReusableConfidentialShare && !!bridgeChainId && !!reusableTokenId);
 
     const {
         address: bridgeAddress,
@@ -211,12 +219,12 @@ export default function PaySharePage() {
         quoteDepositAddress: shareId,
         bridgeChainId,
         treasuryId: isReusableConfidentialShare ? treasuryId : null,
-        tokenId: isReusableConfidentialShare ? tokenId : null,
+        tokenId: isReusableConfidentialShare ? reusableTokenId : null,
     });
 
     // Settle when status says skip bridge, chain is missing, or the query finished.
     const hasFetchedBridge = isReusableConfidentialShare
-        ? !bridgeChainId || !tokenId || bridgeQueryFetched
+        ? !bridgeChainId || !reusableTokenId || bridgeQueryFetched
         : !hasFetchedStatus
           ? false
           : statusFound !== true || statusIsTerminal || !bridgeChainId
@@ -248,6 +256,7 @@ export default function PaySharePage() {
             accountId: treasuryId,
             chain: isPublicTreasuryShare ? bridgeChainId : null,
             quoteDepositAddress: isConfidentialWalletShare ? shareId : null,
+            reusable: isReusableConfidentialShare,
             shownAtMs: pageShownAtMs,
             inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
         });
@@ -335,45 +344,19 @@ export default function PaySharePage() {
         [sendTokenMeta?.minDepositAmount, sendTokenMeta?.decimals],
     );
 
+    // Legacy one-time links only; every other kind renders the receive card.
     const notices = useMemo(() => {
-        if (kind === "confidential") {
-            return buildConfidentialOriginNotices(t, confidentialOrigin);
-        }
-
-        const symbol = sendTokenMeta?.symbol || tokenId;
-        const network = sendTokenMeta?.networkName || networkId;
-
-        if (!isConfidential) {
-            return buildPublicTreasuryNotices(
-                t,
-                network,
-                minDepositDisplay,
-                symbol,
-            );
-        }
-
-        if (isReusableConfidentialShare) {
-            return buildPublicWalletReusableNotices(
-                t,
-                symbol,
-                network,
-                minDepositDisplay,
-            );
-        }
-
-        return buildPublicWalletOneTimeNotices(t, symbol, network, {
-            expiresAtMs: statusExpiresAtMs,
-            nowMs,
-            locale,
-        });
+        if (!isOneTimeConfidentialShare) return [];
+        return buildPublicWalletOneTimeNotices(
+            t,
+            sendTokenMeta?.symbol || tokenId,
+            sendTokenMeta?.networkName || networkId,
+            { expiresAtMs: statusExpiresAtMs, nowMs, locale },
+        );
     }, [
-        kind,
-        isConfidential,
-        isReusableConfidentialShare,
-        confidentialOrigin,
+        isOneTimeConfidentialShare,
         sendTokenMeta?.symbol,
         sendTokenMeta?.networkName,
-        minDepositDisplay,
         tokenId,
         networkId,
         statusExpiresAtMs,
@@ -385,6 +368,45 @@ export default function PaySharePage() {
     const isConfidentialShare = kind === "confidential";
     const isConfidentialNearcomShare =
         isConfidentialShare && confidentialOrigin === "nearcom";
+
+    // Reusable confidential and public treasury links render as the dark
+    // receive card; legacy one-time links keep the plain address card with
+    // their expiry notices.
+    const receiveCard = useMemo(() => {
+        if (isConfidentialShare) return buildInternalReceiveCopy(t);
+        if (!isReusableConfidentialShare && !isPublicTreasuryShare) {
+            return null;
+        }
+        const network = sendTokenMeta?.networkName || networkId;
+        return buildExternalReceiveCopy(t, {
+            symbol: sendTokenMeta?.symbol || tokenId,
+            network,
+            locale,
+            minCopy: resolveMinDepositCopy({
+                minDepositRaw: sendTokenMeta?.minDepositAmount,
+                decimals: sendTokenMeta?.decimals ?? 0,
+                priceUsd: null,
+                minDepositDisplay,
+                // Direct deposits land on the treasury account: no 1Click floor.
+                usdFloor: !(isPublicTreasuryShare && shareId === treasuryId),
+            }),
+            centerIcon: sendTokenMeta?.chainIcons?.icon
+                ? { icon: sendTokenMeta.chainIcons.icon, name: network }
+                : null,
+        });
+    }, [
+        isConfidentialShare,
+        isReusableConfidentialShare,
+        isPublicTreasuryShare,
+        shareId,
+        treasuryId,
+        sendTokenMeta,
+        tokenId,
+        networkId,
+        minDepositDisplay,
+        locale,
+        t,
+    ]);
 
     const paymentPrefill = useMemo(() => {
         // near.com CTA opens near.com/home — no Trezu payments prefill.
@@ -514,6 +536,21 @@ export default function PaySharePage() {
             toast.success(t("linkCopied"));
         } catch {
             toast.error(t("errors.fetchFailed"));
+        }
+    };
+
+    // Card share icon: the native share sheet where there is one, else copy.
+    const handleShareLink = async () => {
+        if (typeof navigator.share !== "function") {
+            await handleCopyLink();
+            return;
+        }
+        try {
+            await navigator.share({
+                url: getAbsoluteTransferUrl(currentSharePath),
+            });
+        } catch {
+            // Dismissed share sheet — nothing to report.
         }
     };
 
@@ -651,27 +688,57 @@ export default function PaySharePage() {
                                     deposits={visibleDeposits}
                                     assetIcon={sendTokenMeta?.icon}
                                     assetName={sendTokenMeta?.symbol}
+                                    theme={isConfidential ? "dark" : "light"}
                                 />
                             ) : (
                                 <>
-                                    <DepositAddressCard
-                                        address={depositAddress}
-                                        memo={bridgeMemo}
-                                        copyMode="inline"
-                                        showShare={false}
-                                        footer={
-                                            <div className="px-3 py-2.5 border-t border-general-tertiary">
-                                                <DepositNoticeList
-                                                    notices={notices}
-                                                />
-                                            </div>
-                                        }
-                                    />
+                                    {receiveCard ? (
+                                        <DepositReceiveCard
+                                            tone={
+                                                isConfidential
+                                                    ? "dark"
+                                                    : "light"
+                                            }
+                                            title={receiveCard.title}
+                                            subtitle={receiveCard.subtitle}
+                                            address={depositAddress}
+                                            memo={bridgeMemo}
+                                            addressLabel={
+                                                receiveCard.addressLabel
+                                            }
+                                            preferPlainAddress={
+                                                receiveCard.preferPlainAddress
+                                            }
+                                            centerIcon={receiveCard.centerIcon}
+                                            qrLabel={receiveCard.qrLabel}
+                                            onShare={handleShareLink}
+                                            notices={receiveCard.notices}
+                                        />
+                                    ) : (
+                                        <DepositAddressCard
+                                            address={depositAddress}
+                                            memo={bridgeMemo}
+                                            copyMode="inline"
+                                            showShare={false}
+                                            footer={
+                                                <div className="px-3 py-2.5 border-t border-general-tertiary">
+                                                    <DepositNoticeList
+                                                        notices={notices}
+                                                    />
+                                                </div>
+                                            }
+                                        />
+                                    )}
                                     {hasTrackedDeposits ? (
                                         <DepositTrackerPanel
                                             deposits={visibleDeposits}
                                             assetIcon={sendTokenMeta?.icon}
                                             assetName={sendTokenMeta?.symbol}
+                                            theme={
+                                                isConfidential
+                                                    ? "dark"
+                                                    : "light"
+                                            }
                                         />
                                     ) : null}
                                 </>

@@ -57,10 +57,6 @@ export class DepositPage extends BasePage {
         return this.page.getByText(/One-time deposit address/i).first();
     }
 
-    reusableAddressText() {
-        return this.page.getByText(/^Deposit address .* network$/i).first();
-    }
-
     reusableNoticeText() {
         return this.page.getByText(/Doesn't expire/i).first();
     }
@@ -89,6 +85,21 @@ export class DepositPage extends BasePage {
     /** The QR code rendered next to the confidential deposit address — no test id, so matched generically. */
     qrCodeIcon() {
         return this.page.locator("svg").first();
+    }
+
+    /** The dark receive card shown for reusable confidential addresses. */
+    receiveCard() {
+        return this.page.getByTestId("deposit-receive-card");
+    }
+
+    /** The address inside the receive card. */
+    receiveAddress() {
+        return this.page.getByTestId("deposit-receive-address");
+    }
+
+    /** The styled QR drawing inside the receive card (an `<svg>` once drawn). */
+    receiveQrCode() {
+        return this.receiveCard().getByTestId("qr-code").locator("svg");
     }
 
     /** Opens the asset picker and selects the given option. */

@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Redes compatibles",
             "networksWithAssets": "Redes con activos",
+            "internalNetwork": "Red interna",
             "yourAssets": "Tus activos",
             "otherAssets": "Otros activos",
             "popularAssets": "Activos populares",
@@ -298,7 +299,6 @@
         "memoWarning": "<bold>Debes</bold> incluir el memo al enviar fondos a esta dirección. Enviar sin el memo puede provocar la pérdida permanente de los fondos.",
         "onlyDeposit": "Deposita solo <symbolTag>{symbol}</symbolTag> desde la red <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Te recomendamos empezar con una pequeña transacción de prueba para asegurarte de que todo funciona correctamente antes de enviar el importe completo.",
-        "minimumDeposit": "Depósito mínimo: <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "Desde pública",
             "fromConfidential": "Desde confidencial"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "El tiempo de procesamiento depende de la red."
         },
         "back": "Atrás",
-        "publicAddressTitle": "Dirección de depósito {symbol} en {network}",
-        "publicAddressSubtitle": "Envía solo este token, en esta red, a la dirección de abajo.",
         "oneTimeAddressTitle": "Dirección de depósito de un solo uso {symbol} en la red {network}",
         "oneTimeAddressSubtitle": "Envía solo este token, en esta red, a la dirección de abajo.",
-        "reusableAddressTitle": "Dirección de depósito {symbol} en la red {network}",
-        "reusableAddressSubtitle": "Envía solo este token, en esta red, a la dirección de abajo. Puedes depositar en ella tantas veces como quieras.",
         "confidentialTrezuTitle": "Depósito desde Trezu confidencial en la red near.com",
         "confidentialTrezuSubtitle": "Recibe cualquier activo desde Trezu confidencial.",
         "confidentialNearcomTitle": "Depósito desde near.com confidencial en la red interna",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>Reutilizable.</bold> No caduca",
         "fundsOutsideTrezuLost": "Los fondos enviados desde fuera de Trezu confidencial se perderán",
         "fundsOutsideNearcomLost": "Los fondos enviados desde fuera de near.com confidencial se perderán",
-        "publicNetworkRecommendation": "Deposita solo desde la red <bold>{network}</bold>. Empieza con una transacción de prueba pequeña antes de enviar el importe completo.",
         "sourceCards": {
             "publicWallet": {
                 "title": "Desde una cartera pública",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Depósito fallido",
         "depositFailedBody": "El proveedor informó de que un depósito de <amount></amount> falló o fue reembolsado",
         "depositFailedBodyNoAmount": "El proveedor informó de que un depósito falló o fue reembolsado",
-        "depositAgain": "Depositar de nuevo"
+        "depositAgain": "Depositar de nuevo",
+        "anyTokenAssetName": "Cualquier token",
+        "receive": {
+            "sendAtLeastUsd": "Envía al menos {usd} en {symbol}",
+            "sendAtLeastAmount": "Envía al menos {amount} {symbol}",
+            "sendAsset": "Envía {symbol}",
+            "sendAnyToken": "Envía cualquier token",
+            "onNetwork": "en la red {network}",
+            "onNearcomNetwork": "en la red near.com",
+            "networkAddressLabel": "Dirección {network}",
+            "nearcomAddressLabel": "Dirección near.com",
+            "internalOnly": "Úsala solo para recibir activos de usuarios de Trezu o near.com, en la red interna.",
+            "internalLost": "Perderás tus fondos si envías a esta dirección en cualquier blockchain.",
+            "qrLabel": "Código QR de tu dirección {network}",
+            "copyAddress": "Copiar dirección",
+            "shareAddress": "Compartir dirección"
+        }
     },
     "assetDetails": {
         "coinPrice": "Precio de la moneda",

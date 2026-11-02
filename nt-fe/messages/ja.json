@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "対応ネットワーク",
             "networksWithAssets": "資産のあるネットワーク",
+            "internalNetwork": "内部ネットワーク",
             "yourAssets": "あなたの資産",
             "otherAssets": "その他の資産",
             "popularAssets": "人気の資産",
@@ -298,7 +299,6 @@
         "memoWarning": "このアドレスに資金を送る際は<bold>必ず</bold>メモを含めてください。メモなしで送信すると資金が永久に失われる可能性があります。",
         "onlyDeposit": "<networkTag>{network}</networkTag>ネットワークから<symbolTag>{symbol}</symbolTag>のみを入金してください。",
         "testTransactionRecommendation": "全額を送る前に、まず少額のテストトランザクションで動作を確認することをおすすめします。",
-        "minimumDeposit": "最小入金額は<amountTag>{amount} {symbol}</amountTag>です",
         "tabs": {
             "fromPublic": "公開から",
             "fromConfidential": "機密から"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "処理時間はネットワークによって異なります。"
         },
         "back": "戻る",
-        "publicAddressTitle": "{network} 上の {symbol} 入金アドレス",
-        "publicAddressSubtitle": "このトークンのみを、このネットワークで下のアドレスに送ってください。",
         "oneTimeAddressTitle": "{network} ネットワーク上のワンタイム {symbol} 入金アドレス",
         "oneTimeAddressSubtitle": "このトークンのみを、このネットワークで下のアドレスに送ってください。",
-        "reusableAddressTitle": "{network} ネットワークの {symbol} 入金アドレス",
-        "reusableAddressSubtitle": "このトークンのみを、このネットワークで、下記のアドレスに送金してください。何度でも入金できます。",
         "confidentialTrezuTitle": "near.com ネットワーク上の機密 Trezu からの入金",
         "confidentialTrezuSubtitle": "機密 Trezu から任意の資産を受け取れます。",
         "confidentialNearcomTitle": "内部ネットワーク上の機密 near.com からの入金",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>再利用可能。</bold>期限なし",
         "fundsOutsideTrezuLost": "機密 Trezu 以外から送られた資金は失われます",
         "fundsOutsideNearcomLost": "機密 near.com 以外から送られた資金は失われます",
-        "publicNetworkRecommendation": "<bold>{network}</bold> ネットワークからのみ入金してください。全額を送る前に少額のテスト取引から始めることをおすすめします。",
         "sourceCards": {
             "publicWallet": {
                 "title": "公開ウォレットから",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "入金失敗",
         "depositFailedBody": "<amount></amount> の入金はプロバイダーにより失敗または返金として報告されました",
         "depositFailedBodyNoAmount": "入金はプロバイダーにより失敗または返金として報告されました",
-        "depositAgain": "もう一度入金する"
+        "depositAgain": "もう一度入金する",
+        "anyTokenAssetName": "任意のトークン",
+        "receive": {
+            "sendAtLeastUsd": "{symbol} を {usd} 以上送金してください",
+            "sendAtLeastAmount": "{symbol} を {amount} 以上送金してください",
+            "sendAsset": "{symbol} を送金",
+            "sendAnyToken": "任意のトークンを送金",
+            "onNetwork": "{network} ネットワーク上",
+            "onNearcomNetwork": "near.com ネットワーク上",
+            "networkAddressLabel": "{network} アドレス",
+            "nearcomAddressLabel": "near.com アドレス",
+            "internalOnly": "内部ネットワーク上で Trezu または near.com ユーザーから資産を受け取る場合にのみ使用してください。",
+            "internalLost": "いずれかのブロックチェーン上でこのアドレスに送金すると、資金は失われます。",
+            "qrLabel": "{network} アドレスの QR コード",
+            "copyAddress": "アドレスをコピー",
+            "shareAddress": "アドレスを共有"
+        }
     },
     "assetDetails": {
         "coinPrice": "コイン価格",

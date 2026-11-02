@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Supported Networks",
             "networksWithAssets": "Networks with Assets",
+            "internalNetwork": "Internal network",
             "yourAssets": "Your Assets",
             "otherAssets": "Other Assets",
             "popularAssets": "Popular Assets",
@@ -289,12 +290,8 @@
         "otherNetworkInfo": "You can deposit any token not listed in the assets, but only via the NEAR network.",
         "depositAddressHeading": "Deposit Address",
         "depositAddressSubtitle": "Always double-check your deposit address.",
-        "publicAddressTitle": "Deposit address {symbol} on {network}",
-        "publicAddressSubtitle": "Send only this token, on this network, to the address below.",
         "oneTimeAddressTitle": "One-time deposit address {symbol} on {network} network",
         "oneTimeAddressSubtitle": "Send only this token, on this network, to the address below.",
-        "reusableAddressTitle": "Deposit address {symbol} on {network} network",
-        "reusableAddressSubtitle": "Send only this token, on this network, to the address below. You can deposit to it as often as you like.",
         "confidentialTrezuTitle": "Deposit from confidential Trezu on near.com network",
         "confidentialTrezuSubtitle": "Receive any asset from confidential Trezu.",
         "confidentialNearcomTitle": "Deposit from confidential near.com on internal network",
@@ -328,7 +325,6 @@
         "reusableDoesntExpire": "<bold>Reusable.</bold> Doesn't expire",
         "fundsOutsideTrezuLost": "Funds sent from outside confidential trezu will be lost",
         "fundsOutsideNearcomLost": "Funds sent from outside confidential near.com will be lost",
-        "publicNetworkRecommendation": "Only deposit from the <bold>{network}</bold> network. We recommend starting with a small test transaction to ensure everything works correctly before sending the full amount.",
         "depositAddressSubtitleConfidential": "<semibold>Single-use deposit address.</semibold> Reusing this address or sending funds after expiration may result in a permanent loss of funds.",
         "depositAddressSubtitleConfidentialExpiry": "Valid for 14 days from the time of generation. Expires in: {expiresIn} remaining",
         "singleUseAcknowledgement": "I will use this address only once",
@@ -339,7 +335,6 @@
         "memoWarning": "You <bold>must</bold> include the memo when sending funds to this address. Sending without the memo may result in permanent loss of funds.",
         "onlyDeposit": "Only deposit <symbolTag>{symbol}</symbolTag> from the <networkTag>{network}</networkTag> network.",
         "testTransactionRecommendation": "We recommend starting with a small test transaction to ensure everything works correctly before sending the full amount.",
-        "minimumDeposit": "Minimum deposit is <amountTag>{amount} {symbol}</amountTag>",
         "sourceCards": {
             "publicWallet": {
                 "title": "From a public wallet",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Deposit failed",
         "depositFailedBody": "A deposit of <amount></amount> was reported as failed or refunded by the provider",
         "depositFailedBodyNoAmount": "A deposit was reported as failed or refunded by the provider",
-        "depositAgain": "Deposit again"
+        "depositAgain": "Deposit again",
+        "anyTokenAssetName": "Any token",
+        "receive": {
+            "sendAtLeastUsd": "Send at least {usd} of {symbol}",
+            "sendAtLeastAmount": "Send at least {amount} {symbol}",
+            "sendAsset": "Send {symbol}",
+            "sendAnyToken": "Send any token",
+            "onNetwork": "on the {network} network",
+            "onNearcomNetwork": "on near.com network",
+            "networkAddressLabel": "{network} address",
+            "nearcomAddressLabel": "near.com address",
+            "internalOnly": "Use only to receive assets from Trezu or near.com users, on the internal network.",
+            "internalLost": "Your funds will be lost if you send to this address on any blockchain.",
+            "qrLabel": "QR code for your {network} address",
+            "copyAddress": "Copy address",
+            "shareAddress": "Share address"
+        }
     },
     "assetDetails": {
         "coinPrice": "Coin Price",

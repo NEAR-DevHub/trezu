@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Підтримувані мережі",
             "networksWithAssets": "Мережі з активами",
+            "internalNetwork": "Внутрішня мережа",
             "yourAssets": "Ваші активи",
             "otherAssets": "Інші активи",
             "popularAssets": "Популярні активи",
@@ -298,7 +299,6 @@
         "memoWarning": "Ви <bold>мусите</bold> вказати мемо, надсилаючи кошти на цю адресу. Надсилання без мемо може призвести до безповоротної втрати коштів.",
         "onlyDeposit": "Поповнюйте лише <symbolTag>{symbol}</symbolTag> з мережі <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Рекомендуємо спершу зробити невеликий тестовий переказ, щоб переконатись, що все працює правильно, а потім вже надсилати повну суму.",
-        "minimumDeposit": "Мінімальний депозит: <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "З публічного",
             "fromConfidential": "З конфіденційного"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "Час обробки залежить від мережі."
         },
         "back": "Назад",
-        "publicAddressTitle": "Адреса депозиту {symbol} у мережі {network}",
-        "publicAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
         "oneTimeAddressTitle": "Одноразова адреса депозиту {symbol} у мережі {network}",
         "oneTimeAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
-        "reusableAddressTitle": "Адреса для поповнення {symbol} у мережі {network}",
-        "reusableAddressSubtitle": "Надсилайте лише цей токен у цій мережі на адресу нижче. Поповнювати її можна скільки завгодно разів.",
         "confidentialTrezuTitle": "Депозит із конфіденційного Trezu у мережі near.com",
         "confidentialTrezuSubtitle": "Отримуйте будь-який актив із конфіденційного Trezu.",
         "confidentialNearcomTitle": "Депозит із конфіденційного near.com у внутрішній мережі",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>Багаторазова.</bold> Не закінчується",
         "fundsOutsideTrezuLost": "Кошти, надіслані з-поза конфіденційного Trezu, буде втрачено",
         "fundsOutsideNearcomLost": "Кошти, надіслані з-поза конфіденційного near.com, буде втрачено",
-        "publicNetworkRecommendation": "Вносьте депозит лише з мережі <bold>{network}</bold>. Почніть із невеликої тестової транзакції, перш ніж надсилати повну суму.",
         "sourceCards": {
             "publicWallet": {
                 "title": "З публічного гаманця",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Депозит не вдався",
         "depositFailedBody": "Провайдер повідомив, що депозит на <amount></amount> не вдався або був повернутий",
         "depositFailedBodyNoAmount": "Провайдер повідомив, що депозит не вдався або був повернутий",
-        "depositAgain": "Поповнити ще раз"
+        "depositAgain": "Поповнити ще раз",
+        "anyTokenAssetName": "Будь-який токен",
+        "receive": {
+            "sendAtLeastUsd": "Надішліть щонайменше {usd} у {symbol}",
+            "sendAtLeastAmount": "Надішліть щонайменше {amount} {symbol}",
+            "sendAsset": "Надішліть {symbol}",
+            "sendAnyToken": "Надішліть будь-який токен",
+            "onNetwork": "у мережі {network}",
+            "onNearcomNetwork": "у мережі near.com",
+            "networkAddressLabel": "Адреса {network}",
+            "nearcomAddressLabel": "Адреса near.com",
+            "internalOnly": "Використовуйте лише для отримання активів від користувачів Trezu або near.com у внутрішній мережі.",
+            "internalLost": "Ваші кошти буде втрачено, якщо ви надішлете їх на цю адресу в будь-якому блокчейні.",
+            "qrLabel": "QR-код вашої адреси {network}",
+            "copyAddress": "Копіювати адресу",
+            "shareAddress": "Поділитися адресою"
+        }
     },
     "assetDetails": {
         "coinPrice": "Ціна токена",

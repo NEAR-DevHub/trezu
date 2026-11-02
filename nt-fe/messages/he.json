@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "רשתות נתמכות",
             "networksWithAssets": "רשתות עם נכסים",
+            "internalNetwork": "רשת פנימית",
             "yourAssets": "הנכסים שלך",
             "otherAssets": "נכסים אחרים",
             "popularAssets": "נכסים פופולריים",
@@ -298,7 +299,6 @@
         "memoWarning": "אתה <bold>חייב</bold> לכלול את ההערה בעת שליחת כספים לכתובת זו. שליחה ללא ההערה עלולה לגרום לאובדן קבוע של כספים.",
         "onlyDeposit": "הפקד רק <symbolTag>{symbol}</symbolTag> מרשת <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "אנו ממליצים להתחיל בעסקת בדיקה קטנה כדי לוודא שהכל עובד כראוי לפני שליחת הסכום המלא.",
-        "minimumDeposit": "הפקדה מינימלית היא <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "מציבורי",
             "fromConfidential": "מחסוי"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "זמן העיבוד תלוי ברשת."
         },
         "back": "חזרה",
-        "publicAddressTitle": "כתובת הפקדה של {symbol} ב-{network}",
-        "publicAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
         "oneTimeAddressTitle": "כתובת הפקדה חד-פעמית של {symbol} ברשת {network}",
         "oneTimeAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
-        "reusableAddressTitle": "כתובת הפקדה {symbol} ברשת {network}",
-        "reusableAddressSubtitle": "שלחו רק את הטוקן הזה, ברשת הזו, לכתובת שלמטה. אפשר להפקיד אליה כמה פעמים שתרצו.",
         "confidentialTrezuTitle": "הפקדה מ-Trezu חסוי ברשת near.com",
         "confidentialTrezuSubtitle": "קבל כל נכס מ-Trezu חסוי.",
         "confidentialNearcomTitle": "הפקדה מ-near.com חסוי ברשת הפנימית",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>ניתן לשימוש חוזר.</bold> לא פג תוקף",
         "fundsOutsideTrezuLost": "כספים שנשלחו מחוץ ל-Trezu חסוי יאבדו",
         "fundsOutsideNearcomLost": "כספים שנשלחו מחוץ ל-near.com חסוי יאבדו",
-        "publicNetworkRecommendation": "הפקד רק מרשת <bold>{network}</bold>. התחל בעסקה קטנה לבדיקה לפני שליחת הסכום המלא.",
         "sourceCards": {
             "publicWallet": {
                 "title": "מארנק ציבורי",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "ההפקדה נכשלה",
         "depositFailedBody": "הספק דיווח שהפקדה של <amount></amount> נכשלה או הוחזרה",
         "depositFailedBodyNoAmount": "הספק דיווח שההפקדה נכשלה או הוחזרה",
-        "depositAgain": "הפקד שוב"
+        "depositAgain": "הפקד שוב",
+        "anyTokenAssetName": "כל טוקן",
+        "receive": {
+            "sendAtLeastUsd": "שלחו לפחות {usd} של {symbol}",
+            "sendAtLeastAmount": "שלחו לפחות {amount} {symbol}",
+            "sendAsset": "שלחו {symbol}",
+            "sendAnyToken": "שלחו כל טוקן",
+            "onNetwork": "ברשת {network}",
+            "onNearcomNetwork": "ברשת near.com",
+            "networkAddressLabel": "כתובת {network}",
+            "nearcomAddressLabel": "כתובת near.com",
+            "internalOnly": "לשימוש רק לקבלת נכסים ממשתמשי Trezu או near.com, ברשת הפנימית.",
+            "internalLost": "הכספים שלכם יאבדו אם תשלחו לכתובת זו בבלוקצ'יין כלשהו.",
+            "qrLabel": "קוד QR של כתובת ה-{network} שלכם",
+            "copyAddress": "העתק כתובת",
+            "shareAddress": "שתף כתובת"
+        }
     },
     "assetDetails": {
         "coinPrice": "מחיר מטבע",

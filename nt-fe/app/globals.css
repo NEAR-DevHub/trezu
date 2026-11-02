@@ -197,6 +197,8 @@
     --muted-foreground: rgb(115, 115, 115);
     --accent: rgb(229, 229, 229);
     --accent-foreground: rgb(64, 64, 64);
+    --general-info-foreground: rgb(29, 78, 216);
+    --general-tertiary: rgb(250, 250, 249);
     /* Skeletons use accent-0; keep the light-theme value in forced light cards. */
     --general-unofficial-accent-0: rgba(250, 250, 250);
     --border: rgba(229, 229, 229);

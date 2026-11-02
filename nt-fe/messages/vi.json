@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Mạng được hỗ trợ",
             "networksWithAssets": "Mạng có tài sản",
+            "internalNetwork": "Mạng nội bộ",
             "yourAssets": "Tài sản của bạn",
             "otherAssets": "Tài sản khác",
             "popularAssets": "Tài sản phổ biến",
@@ -298,7 +299,6 @@
         "memoWarning": "Bạn <bold>phải</bold> thêm memo khi gửi tiền đến địa chỉ này. Gửi mà không có memo có thể dẫn đến mất tiền vĩnh viễn.",
         "onlyDeposit": "Chỉ nạp <symbolTag>{symbol}</symbolTag> từ mạng <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Chúng tôi khuyên bạn bắt đầu với một giao dịch thử nhỏ để đảm bảo mọi thứ hoạt động chính xác trước khi gửi toàn bộ số tiền.",
-        "minimumDeposit": "Số tiền nạp tối thiểu là <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "Từ công khai",
             "fromConfidential": "Từ bảo mật"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "Thời gian xử lý phụ thuộc vào mạng."
         },
         "back": "Quay lại",
-        "publicAddressTitle": "Địa chỉ nạp {symbol} trên {network}",
-        "publicAddressSubtitle": "Chỉ gửi token này, trên mạng này, tới địa chỉ bên dưới.",
         "oneTimeAddressTitle": "Địa chỉ nạp một lần {symbol} trên mạng {network}",
         "oneTimeAddressSubtitle": "Chỉ gửi token này, trên mạng này, tới địa chỉ bên dưới.",
-        "reusableAddressTitle": "Địa chỉ nạp {symbol} trên mạng {network}",
-        "reusableAddressSubtitle": "Chỉ gửi token này, trên mạng này, đến địa chỉ bên dưới. Bạn có thể nạp vào địa chỉ này bao nhiêu lần tùy ý.",
         "confidentialTrezuTitle": "Nạp từ Trezu bảo mật trên mạng near.com",
         "confidentialTrezuSubtitle": "Nhận bất kỳ tài sản nào từ Trezu bảo mật.",
         "confidentialNearcomTitle": "Nạp từ near.com bảo mật trên mạng nội bộ",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>Dùng lại được.</bold> Không hết hạn",
         "fundsOutsideTrezuLost": "Tiền gửi từ ngoài Trezu bảo mật sẽ bị mất",
         "fundsOutsideNearcomLost": "Tiền gửi từ ngoài near.com bảo mật sẽ bị mất",
-        "publicNetworkRecommendation": "Chỉ nạp từ mạng <bold>{network}</bold>. Hãy bắt đầu bằng một giao dịch thử nhỏ trước khi gửi toàn bộ số tiền.",
         "sourceCards": {
             "publicWallet": {
                 "title": "Từ ví công khai",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Nạp thất bại",
         "depositFailedBody": "Nhà cung cấp báo cáo khoản nạp <amount></amount> đã thất bại hoặc được hoàn lại",
         "depositFailedBodyNoAmount": "Nhà cung cấp báo cáo khoản nạp đã thất bại hoặc được hoàn lại",
-        "depositAgain": "Nạp lại"
+        "depositAgain": "Nạp lại",
+        "anyTokenAssetName": "Bất kỳ token nào",
+        "receive": {
+            "sendAtLeastUsd": "Gửi ít nhất {usd} {symbol}",
+            "sendAtLeastAmount": "Gửi ít nhất {amount} {symbol}",
+            "sendAsset": "Gửi {symbol}",
+            "sendAnyToken": "Gửi bất kỳ token nào",
+            "onNetwork": "trên mạng {network}",
+            "onNearcomNetwork": "trên mạng near.com",
+            "networkAddressLabel": "Địa chỉ {network}",
+            "nearcomAddressLabel": "Địa chỉ near.com",
+            "internalOnly": "Chỉ dùng để nhận tài sản từ người dùng Trezu hoặc near.com, trên mạng nội bộ.",
+            "internalLost": "Bạn sẽ mất tiền nếu gửi đến địa chỉ này trên bất kỳ blockchain nào.",
+            "qrLabel": "Mã QR cho địa chỉ {network} của bạn",
+            "copyAddress": "Sao chép địa chỉ",
+            "shareAddress": "Chia sẻ địa chỉ"
+        }
     },
     "assetDetails": {
         "coinPrice": "Giá Coin",

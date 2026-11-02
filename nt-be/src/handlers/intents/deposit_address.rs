@@ -233,7 +233,8 @@ async fn get_confidential_deposit_address(
 
     // The quote address lives inside intents.near (INTENTS deposit type);
     // funding it requires the Bridge origin-chain address that forwards to it.
-    let mut bridge_result = fetch_bridge_deposit_address(state, &quote_deposit_address, chain).await?;
+    let mut bridge_result =
+        fetch_bridge_deposit_address(state, &quote_deposit_address, chain).await?;
     bridge_result.min_amount = Some(min_amount);
     if bridge_result.memo.is_none() {
         bridge_result.memo = memo;
@@ -254,7 +255,20 @@ async fn get_reusable_confidential_deposit_address(
     token_id: &str,
     amount: u128,
 ) -> Result<DepositAddressResult, (StatusCode, String)> {
-    let set = ReusableDepositResolver::new(state).resolve(account_id).await?;
+    let resolver = ReusableDepositResolver::new(state);
+    let mut set = resolver.resolve(account_id).await?;
+    if set.address_for_chain(chain).is_none() {
+        // 1Click may have added the chain since the set was cached.
+        match resolver.refresh(account_id).await {
+            Ok(fresh) => set = fresh,
+            Err((status, message)) => tracing::warn!(
+                dao_id = account_id.as_str(),
+                chain,
+                %status,
+                "reusable deposit set refresh failed: {message}"
+            ),
+        }
+    }
     let entry = set.address_for_chain(chain).ok_or_else(|| {
         (
             StatusCode::NOT_FOUND,
@@ -386,8 +400,7 @@ pub async fn get_deposit_address(
             )
             .await?
         } else {
-            get_confidential_deposit_address(&state, &account_id, &chain, &token_id, amount)
-                .await?
+            get_confidential_deposit_address(&state, &account_id, &chain, &token_id, amount).await?
         };
         if let Some(quote_deposit_address) = result.quote_deposit_address.as_deref() {
             let quote_expires_at = result
@@ -401,6 +414,7 @@ pub async fn get_deposit_address(
                     dao_id: account_id.to_string(),
                     chain: chain.clone(),
                     token_id: Some(token_id.clone()),
+                    reusable: result.reusable == Some(true),
                 },
                 Some((quote_deposit_address, quote_expires_at)),
             )
@@ -428,6 +442,7 @@ pub async fn get_deposit_address(
             dao_id: account_id.to_string(),
             chain,
             token_id: request.token_id,
+            reusable: false,
         },
         None,
     )

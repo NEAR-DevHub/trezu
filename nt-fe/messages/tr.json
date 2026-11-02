@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Desteklenen Ağlar",
             "networksWithAssets": "Varlıkları Olan Ağlar",
+            "internalNetwork": "Dahili ağ",
             "yourAssets": "Varlıklarınız",
             "otherAssets": "Diğer Varlıklar",
             "popularAssets": "Popüler Varlıklar",
@@ -298,7 +299,6 @@
         "memoWarning": "Bu adrese para gönderirken notu <bold>mutlaka</bold> eklemelisiniz. Not olmadan göndermek paranın kalıcı olarak kaybolmasına neden olabilir.",
         "onlyDeposit": "Yalnızca <networkTag>{network}</networkTag> ağından <symbolTag>{symbol}</symbolTag> yatırın.",
         "testTransactionRecommendation": "Tüm tutarı göndermeden önce her şeyin doğru çalıştığından emin olmak için küçük bir test işlemiyle başlamanızı öneririz.",
-        "minimumDeposit": "Minimum para yatırma <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "Genelden",
             "fromConfidential": "Gizliden"
@@ -314,12 +314,8 @@
             "arrivalAnswer": "İşlem süresi ağa bağlıdır."
         },
         "back": "Geri",
-        "publicAddressTitle": "{network} üzerinde {symbol} yatırma adresi",
-        "publicAddressSubtitle": "Yalnızca bu tokeni, bu ağ üzerinden aşağıdaki adrese gönderin.",
         "oneTimeAddressTitle": "{network} ağında tek kullanımlık {symbol} yatırma adresi",
         "oneTimeAddressSubtitle": "Yalnızca bu tokeni, bu ağ üzerinden aşağıdaki adrese gönderin.",
-        "reusableAddressTitle": "{network} ağında {symbol} yatırma adresi",
-        "reusableAddressSubtitle": "Yalnızca bu tokeni, bu ağ üzerinden, aşağıdaki adrese gönderin. Bu adrese istediğiniz kadar yatırım yapabilirsiniz.",
         "confidentialTrezuTitle": "near.com ağında gizli Trezu’dan yatırma",
         "confidentialTrezuSubtitle": "Gizli Trezu’dan herhangi bir varlığı alın.",
         "confidentialNearcomTitle": "Dahili ağda gizli near.com’dan yatırma",
@@ -351,7 +347,6 @@
         "reusableDoesntExpire": "<bold>Yeniden kullanılabilir.</bold> Süresi dolmaz",
         "fundsOutsideTrezuLost": "Gizli Trezu dışından gönderilen fonlar kaybolur",
         "fundsOutsideNearcomLost": "Gizli near.com dışından gönderilen fonlar kaybolur",
-        "publicNetworkRecommendation": "Yalnızca <bold>{network}</bold> ağından yatırın. Tam tutarı göndermeden önce küçük bir test işlemiyle başlayın.",
         "sourceCards": {
             "publicWallet": {
                 "title": "Genel bir cüzdandan",
@@ -409,7 +404,23 @@
         "depositFailedTitle": "Yatırma başarısız",
         "depositFailedBody": "Sağlayıcı, <amount></amount> tutarındaki yatırmayı başarısız veya iade edildi olarak bildirdi",
         "depositFailedBodyNoAmount": "Sağlayıcı, yatırmayı başarısız veya iade edildi olarak bildirdi",
-        "depositAgain": "Tekrar yatır"
+        "depositAgain": "Tekrar yatır",
+        "anyTokenAssetName": "Herhangi bir token",
+        "receive": {
+            "sendAtLeastUsd": "En az {usd} değerinde {symbol} gönderin",
+            "sendAtLeastAmount": "En az {amount} {symbol} gönderin",
+            "sendAsset": "{symbol} gönderin",
+            "sendAnyToken": "Herhangi bir token gönderin",
+            "onNetwork": "{network} ağında",
+            "onNearcomNetwork": "near.com ağında",
+            "networkAddressLabel": "{network} adresi",
+            "nearcomAddressLabel": "near.com adresi",
+            "internalOnly": "Yalnızca dahili ağda Trezu veya near.com kullanıcılarından varlık almak için kullanın.",
+            "internalLost": "Herhangi bir blok zincirinde bu adrese gönderirseniz fonlarınız kaybolur.",
+            "qrLabel": "{network} adresiniz için QR kodu",
+            "copyAddress": "Adresi kopyala",
+            "shareAddress": "Adresi paylaş"
+        }
     },
     "assetDetails": {
         "coinPrice": "Coin Fiyatı",

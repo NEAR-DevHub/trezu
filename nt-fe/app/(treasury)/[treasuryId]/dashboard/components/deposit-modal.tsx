@@ -59,6 +59,7 @@ import {
 import {
     type AssetSection,
     buildDepositAssetCatalog,
+    isInternalNetworkId,
     type NetworkBalanceDisplay,
     resolvePrefillSelection,
 } from "./deposit/deposit-asset-catalog";
@@ -71,10 +72,17 @@ import {
 import { DepositGuestBanner } from "./deposit/deposit-guest-banner";
 import {
     buildConfidentialOriginNotices,
-    buildPublicTreasuryNotices,
     buildPublicWalletOneTimeNotices,
-    buildPublicWalletReusableNotices,
 } from "./deposit/deposit-notices";
+import {
+    DepositReceiveCard,
+    DepositReceiveCardSkeleton,
+} from "./deposit/deposit-receive-card";
+import {
+    buildExternalReceiveCopy,
+    buildInternalReceiveCopy,
+    resolveMinDepositCopy,
+} from "./deposit/deposit-receive-copy";
 import { DepositSourceCards } from "./deposit/deposit-source-cards";
 import { DepositTrackerPanel } from "./deposit/deposit-tracker-panel";
 import { buildPaySharePath } from "./deposit/deposit-transfer-url";
@@ -321,6 +329,13 @@ export function DepositModal({
         isConfidential &&
         confidentialReusableDeposits &&
         depositSource === "public_wallet";
+    // Reusable confidential deposits use one picker for every source;
+    // "Any token" on near.com is the internal address.
+    const confidentialReceiveMode =
+        isConfidential && confidentialReusableDeposits;
+    // Receive-card layout (public treasuries and reusable confidential): the
+    // asset/network form stays on screen and the address renders beneath it.
+    const receiveCardMode = !isConfidential || confidentialReceiveMode;
     // Public wallet (or public treasury): scoped pause/slow placement.
     const showPublicSelectWarnings =
         step === "select" && !isConfidentialUserSource && depositBlocked;
@@ -415,10 +430,15 @@ export function DepositModal({
     }, [selectedAsset, selectedNetwork, bridgeAssets]);
 
     const networkSections = useMemo(() => {
+        const internal: SelectOption[] = [];
         const withAssets: SelectOption[] = [];
         const supportedNetworks: SelectOption[] = [];
 
         for (const network of filteredNetworks) {
+            if (isInternalNetworkId(network.id)) {
+                internal.push(network);
+                continue;
+            }
             const balance = selectedNetworkBalances.get(network.id);
             const hasBalance = !!balance && Big(balance.amount).gt(0);
             if (hasBalance) {
@@ -441,6 +461,12 @@ export function DepositModal({
         });
 
         const sections: { title: string; options: SelectOption[] }[] = [];
+        if (internal.length > 0) {
+            sections.push({
+                title: t("sections.internalNetwork"),
+                options: internal,
+            });
+        }
         if (withAssets.length > 0) {
             sections.push({
                 title: t("sections.networksWithAssets"),
@@ -467,6 +493,9 @@ export function DepositModal({
             popularAssets,
             isConfidential,
             otherAssetName: t("otherAssetName"),
+            internalAnyTokenName: confidentialReceiveMode
+                ? t("anyTokenAssetName")
+                : undefined,
             labels: {
                 popularAssets: t("sections.popularAssets"),
                 yourAssets: t("sections.yourAssets"),
@@ -474,7 +503,7 @@ export function DepositModal({
             },
         });
 
-        const selectionKey = `${treasuryId}|${isConfidential}|${prefillTokenId ?? ""}|${prefillNetworkId ?? ""}`;
+        const selectionKey = `${treasuryId}|${isConfidential}|${confidentialReceiveMode}|${prefillTokenId ?? ""}|${prefillNetworkId ?? ""}`;
         const currentAssetId = form.getValues("asset")?.id;
         if (
             appliedSelectionKeyRef.current === selectionKey &&
@@ -545,6 +574,7 @@ export function DepositModal({
         prefillNetworkId,
         popularAssets,
         isConfidential,
+        confidentialReceiveMode,
         treasuryId,
         t,
     ]);
@@ -606,6 +636,19 @@ export function DepositModal({
             }
 
             const requestId = ++latestAddressRequestRef.current;
+
+            // Internal network: the treasury's own nearcom: address.
+            if (isInternalNetworkId(selectedNetwork.id)) {
+                if (requestId !== latestAddressRequestRef.current) return null;
+                return {
+                    address: withNearComAddressPrefix(treasuryId),
+                    memo: null,
+                    minDepositAmount: null,
+                    expiresAtMs: null,
+                    quoteDepositAddress: null,
+                    reusable: true,
+                };
+            }
 
             if (selectedNetwork.id === NEAR_COM_DIRECT_NETWORK_ID) {
                 if (requestId !== latestAddressRequestRef.current) return null;
@@ -855,7 +898,9 @@ export function DepositModal({
         if (!treasuryId || !depositInfo?.address) return;
 
         const isConfidentialShare =
-            isConfidential && depositSource === "confidential_user";
+            isConfidential &&
+            (depositSource === "confidential_user" ||
+                isInternalNetworkId(selectedNetwork?.id));
 
         // Confidential one-time: quote id only (asset/expiry from status API).
         // Public treasury: bridge address + token/network for display.
@@ -893,7 +938,7 @@ export function DepositModal({
     };
 
     const handleBack = () => {
-        if (step === "address") {
+        if (step === "address" && !receiveCardMode) {
             if (!isConfidential || reusableWalletDeposits) {
                 // Clear network so re-selecting auto-opens the address step again.
                 invalidatePendingAddressRequest();
@@ -955,27 +1000,11 @@ export function DepositModal({
         oneTimeExpiresAtMs,
     );
 
+    // Legacy (flag off) confidential address view only; the receive card
+    // builds its own copy.
     const addressNotices = useMemo(() => {
-        if (!isConfidential) {
-            return buildPublicTreasuryNotices(
-                t,
-                networkDisplayName,
-                minDepositDisplay,
-                assetSymbol,
-            );
-        }
-
         if (depositSource === "confidential_user") {
             return buildConfidentialOriginNotices(t, confidentialOrigin);
-        }
-
-        if (depositInfo?.reusable) {
-            return buildPublicWalletReusableNotices(
-                t,
-                assetSymbol,
-                networkDisplayName,
-                minDepositDisplay,
-            );
         }
 
         return buildPublicWalletOneTimeNotices(
@@ -989,11 +1018,8 @@ export function DepositModal({
             },
         );
     }, [
-        isConfidential,
         depositSource,
         confidentialOrigin,
-        depositInfo?.reusable,
-        minDepositDisplay,
         assetSymbol,
         networkDisplayName,
         oneTimeExpiresAtMs,
@@ -1048,6 +1074,7 @@ export function DepositModal({
         quoteDepositAddress: isConfidential
             ? depositInfo?.quoteDepositAddress
             : null,
+        reusable: depositInfo?.reusable ?? false,
         shownAtMs: addressShownAtMs,
         inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
     });
@@ -1069,51 +1096,74 @@ export function DepositModal({
         );
 
     const addressTitle = useMemo(() => {
-        if (!isConfidential) {
-            return t("publicAddressTitle", {
-                symbol: assetSymbol,
-                network: networkDisplayName,
-            });
-        }
         if (depositSource === "confidential_user") {
             return confidentialOrigin === "trezu"
                 ? t("confidentialTrezuTitle")
                 : t("confidentialNearcomTitle");
         }
-        if (depositInfo?.reusable) {
-            return t("reusableAddressTitle", {
-                symbol: assetSymbol,
-                network: networkDisplayName,
-            });
-        }
         return t("oneTimeAddressTitle", {
             symbol: assetSymbol,
             network: networkDisplayName,
         });
-    }, [
-        isConfidential,
-        depositSource,
-        confidentialOrigin,
-        depositInfo?.reusable,
-        assetSymbol,
-        networkDisplayName,
-        t,
-    ]);
+    }, [depositSource, confidentialOrigin, assetSymbol, networkDisplayName, t]);
 
     const addressSubtitle = useMemo(() => {
-        if (!isConfidential) return t("publicAddressSubtitle");
         if (depositSource === "confidential_user") {
             return confidentialOrigin === "trezu"
                 ? t("confidentialTrezuSubtitle")
                 : t("confidentialNearcomSubtitle");
         }
-        if (depositInfo?.reusable) return t("reusableAddressSubtitle");
         return t("oneTimeAddressSubtitle");
+    }, [depositSource, confidentialOrigin, t]);
+
+    const isInternalNetwork = isInternalNetworkId(selectedNetwork?.id);
+    const selectedAssetPriceUsd = useMemo(() => {
+        if (!selectedAsset) return null;
+        const id = selectedAsset.id.toLowerCase();
+        return (
+            aggregatedTreasuryTokens.find(
+                (asset) => asset.id.toLowerCase() === id,
+            )?.price ?? null
+        );
+    }, [aggregatedTreasuryTokens, selectedAsset]);
+
+    const receiveCard = useMemo(() => {
+        if (!receiveCardMode) return null;
+        if (isInternalNetwork) return buildInternalReceiveCopy(t);
+        return buildExternalReceiveCopy(t, {
+            symbol: assetSymbol,
+            network: networkDisplayName,
+            locale,
+            minCopy: resolveMinDepositCopy({
+                minDepositRaw:
+                    depositInfo?.minDepositAmount ??
+                    selectedBridgeNetwork?.minDepositAmount,
+                decimals: selectedBridgeNetwork?.decimals ?? 0,
+                priceUsd: selectedAssetPriceUsd,
+                minDepositDisplay,
+                // Direct deposits land on the treasury account: no 1Click floor.
+                usdFloor: depositInfo?.address !== treasuryId,
+            }),
+            centerIcon: selectedNetwork
+                ? { icon: selectedNetwork.icon, name: selectedNetwork.name }
+                : null,
+            anyToken: selectedAsset?.id === "other",
+        });
     }, [
-        isConfidential,
-        depositSource,
-        confidentialOrigin,
-        depositInfo?.reusable,
+        receiveCardMode,
+        isInternalNetwork,
+        depositInfo?.address,
+        treasuryId,
+        depositInfo?.minDepositAmount,
+        selectedBridgeNetwork?.minDepositAmount,
+        selectedBridgeNetwork?.decimals,
+        selectedAssetPriceUsd,
+        minDepositDisplay,
+        assetSymbol,
+        networkDisplayName,
+        selectedNetwork,
+        selectedAsset?.id,
+        locale,
         t,
     ]);
 
@@ -1131,57 +1181,64 @@ export function DepositModal({
                     >
                         <ArrowLeft className="size-4" />
                     </Button>
-                    {step === "address" ? (
+                    {step === "address" && !receiveCardMode ? (
                         <p className="font-semibold text-sm">{t("back")}</p>
                     ) : (
                         <p className="font-semibold">{t("title")}</p>
                     )}
                 </div>
 
-                {step === "select" && showGuestBanner && <DepositGuestBanner />}
+                {(step === "select" || receiveCardMode) && showGuestBanner && (
+                    <DepositGuestBanner />
+                )}
 
                 {showSelectSlotWideBanner && (
                     <SlotWarning slot="deposit" className="mb-0" />
                 )}
 
-                {step === "select" && isConfidential && (
-                    <DepositSourceCards
-                        value={depositSource}
-                        onChange={handleSourceChange}
-                        reusableWalletAddress={confidentialReusableDeposits}
-                    />
-                )}
+                {step === "select" &&
+                    isConfidential &&
+                    !confidentialReceiveMode && (
+                        <DepositSourceCards
+                            value={depositSource}
+                            onChange={handleSourceChange}
+                            reusableWalletAddress={confidentialReusableDeposits}
+                        />
+                    )}
 
-                {step === "select" && showAssetNetworkForm && (
-                    <DepositAssetNetworkForm
-                        form={form}
-                        selectedAsset={selectedAsset}
-                        selectedNetwork={selectedNetwork}
-                        selectorsDisabled={depositSelectorsDisabled}
-                        isAssetsPending={isAssetsPending}
-                        showTopBorder={isConfidential}
-                        onOpenAssetModal={() => setModalType("asset")}
-                        onOpenNetworkModal={() => setModalType("network")}
-                        tokenWarning={
-                            showSelectTokenPausedInline ? (
-                                <WarningMessage
-                                    variant="inline"
-                                    message={inlineScopedMessage}
-                                    className="text-sm whitespace-normal"
-                                />
-                            ) : null
-                        }
-                        networkWarning={
-                            showSelectNetworkPausedInline ? (
-                                <WarningMessage
-                                    variant="inline"
-                                    message={inlineScopedMessage}
-                                    className="text-sm whitespace-normal"
-                                />
-                            ) : null
-                        }
-                    />
-                )}
+                {(step === "select" || receiveCardMode) &&
+                    showAssetNetworkForm && (
+                        <DepositAssetNetworkForm
+                            form={form}
+                            selectedAsset={selectedAsset}
+                            selectedNetwork={selectedNetwork}
+                            selectorsDisabled={depositSelectorsDisabled}
+                            isAssetsPending={isAssetsPending}
+                            showTopBorder={
+                                isConfidential && !confidentialReceiveMode
+                            }
+                            onOpenAssetModal={() => setModalType("asset")}
+                            onOpenNetworkModal={() => setModalType("network")}
+                            tokenWarning={
+                                showSelectTokenPausedInline ? (
+                                    <WarningMessage
+                                        variant="inline"
+                                        message={inlineScopedMessage}
+                                        className="text-sm whitespace-normal"
+                                    />
+                                ) : null
+                            }
+                            networkWarning={
+                                showSelectNetworkPausedInline ? (
+                                    <WarningMessage
+                                        variant="inline"
+                                        message={inlineScopedMessage}
+                                        className="text-sm whitespace-normal"
+                                    />
+                                ) : null
+                            }
+                        />
+                    )}
 
                 {/* Token + one network paused (public wallet) → banner below selectors */}
                 {showSelectTokenNetworkBannerBelow && (
@@ -1288,9 +1345,61 @@ export function DepositModal({
                     />
                 )}
 
-                {step === "address" && (isLoadingAddress || !depositInfo) && (
-                    <DepositAddressSkeleton />
-                )}
+                {step === "address" &&
+                    (isLoadingAddress || !depositInfo) &&
+                    (receiveCardMode ? (
+                        <DepositReceiveCardSkeleton
+                            tone={isConfidential ? "dark" : "light"}
+                        />
+                    ) : (
+                        <DepositAddressSkeleton />
+                    ))}
+
+                {step === "address" &&
+                    depositInfo &&
+                    !isLoadingAddress &&
+                    receiveCard && (
+                        <div className="space-y-3">
+                            {showAddressWarningBanner && (
+                                <SlotWarning
+                                    slot={
+                                        depositScopeWarning?.slot ?? "deposit"
+                                    }
+                                    token={
+                                        depositScopeWarning?.token ?? undefined
+                                    }
+                                    network={
+                                        depositScopeWarning?.network ??
+                                        undefined
+                                    }
+                                    action="deposit"
+                                />
+                            )}
+                            <DepositReceiveCard
+                                tone={isConfidential ? "dark" : "light"}
+                                title={receiveCard.title}
+                                subtitle={receiveCard.subtitle}
+                                address={depositInfo.address}
+                                memo={depositInfo.memo}
+                                addressLabel={receiveCard.addressLabel}
+                                preferPlainAddress={
+                                    receiveCard.preferPlainAddress
+                                }
+                                centerIcon={receiveCard.centerIcon}
+                                qrLabel={receiveCard.qrLabel}
+                                onShare={handleShare}
+                                notices={receiveCard.notices}
+                            />
+                            {depositTrackerEnabled && (
+                                <DepositTrackerPanel
+                                    deposits={trackedDeposits}
+                                    assetIcon={selectedAsset?.icon}
+                                    assetName={selectedAsset?.name}
+                                    theme={isConfidential ? "dark" : "light"}
+                                />
+                            )}
+                        </div>
+                    )}
 
                 {step === "address" &&
                     depositInfo &&
@@ -1325,6 +1434,7 @@ export function DepositModal({
                 {step === "address" &&
                     depositInfo &&
                     !isLoadingAddress &&
+                    !receiveCardMode &&
                     !oneTimeDepositDetected && (
                         <DepositAddressView
                             title={addressTitle}
