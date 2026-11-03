@@ -31,6 +31,7 @@ use std::sync::Arc;
 use crate::handlers::intents::quote::quote_deadline_for_dao;
 use crate::handlers::subscription::plans::get_account_plan_info;
 use crate::handlers::treasury::confidential_setup::derive_bulk_subaccount_id;
+use crate::utils::url::api_url_or_500;
 use crate::{AppState, auth::AuthUser};
 
 const MAX_RECIPIENTS_PER_BULK_PAYMENT: usize = 25;
@@ -214,10 +215,10 @@ async fn quote_and_generate(
     signer_id: &str,
 ) -> Result<(String, Value, Value), (StatusCode, String)> {
     // Quote
-    let quote_url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
+    let quote_url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/quote")?;
     let quote_response = crate::handlers::intents::quote::send_oneclick_request(
         state,
-        &quote_url,
+        quote_url.as_str(),
         quote_body,
         Some(access_token),
     )
@@ -236,7 +237,7 @@ async fn quote_and_generate(
         .to_string();
 
     // Generate-intent
-    let gen_url = format!("{}/v0/generate-intent", state.env_vars.confidential_api_url);
+    let gen_url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/generate-intent")?;
     let gen_body = json!({
         "type": "swap_transfer",
         "standard": "nep413",
@@ -245,7 +246,7 @@ async fn quote_and_generate(
     });
     let gen_response = crate::handlers::intents::quote::send_oneclick_request(
         state,
-        &gen_url,
+        gen_url.as_str(),
         &gen_body,
         Some(access_token),
     )

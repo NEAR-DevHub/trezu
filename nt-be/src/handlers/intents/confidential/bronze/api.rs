@@ -13,6 +13,7 @@ use crate::AppState;
 use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::handlers::intents::confidential::types::{HistoryApiEvent, HistoryApiItem};
 use crate::observability::sanitize_sensitive_text;
+use crate::utils::url::api_url_or_500;
 
 /// Bronze ingest event: typed API item + original JSON for storage.
 pub type HistoryEvent = HistoryApiEvent;
@@ -77,10 +78,10 @@ pub async fn fetch_history_with_token(
 ) -> Result<HistoryPage, (StatusCode, String)> {
     let access_token = jwt_token.to_string();
 
-    let url = format!(
-        "{}/v0/account/history",
-        state.env_vars.confidential_history_base_url
-    );
+    let url = api_url_or_500(
+        &state.env_vars.confidential_history_base_url,
+        "v0/account/history",
+    )?;
     let mut params: Vec<(&str, String)> = Vec::new();
 
     params.push(("limit", limit.to_string()));
@@ -98,7 +99,7 @@ pub async fn fetch_history_with_token(
 
     let mut req = state
         .http_client
-        .get(&url)
+        .get(url)
         .query(&params)
         .header("Authorization", format!("Bearer {}", access_token));
 

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::utils::url::api_url_or_500;
 use crate::{
     AppState,
     handlers::public_history::{
@@ -168,9 +169,9 @@ pub async fn fetch_public_swap_status(
     deposit_address: &str,
     deposit_memo: Option<&str>,
 ) -> Result<FullSwapStatusResponse, (StatusCode, String)> {
-    let url = format!("{}/v0/status", oneclick_api_url.trim_end_matches('/'));
+    let url = api_url_or_500(oneclick_api_url, "v0/status")?;
     let mut request = http_client
-        .get(&url)
+        .get(url)
         .query(&[("depositAddress", deposit_address)])
         .timeout(Duration::from_secs(15));
 

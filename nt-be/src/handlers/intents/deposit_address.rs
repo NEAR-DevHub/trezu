@@ -10,6 +10,7 @@ use crate::handlers::intents::deposit_tracker::WatchActivation;
 use crate::handlers::public_history::confidential_list::is_confidential_dao;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
+use crate::utils::url::api_url_or_500;
 
 /// Deadline given to the dry 1Click quote that probes a token's bridge
 /// minimum; the probe quote is never funded.
@@ -69,7 +70,7 @@ async fn mint_confidential_deposit_quote(
     deadline: &str,
     dry: bool,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
-    let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/quote")?;
     if amount == 0 {
         amount = 1;
     }
@@ -93,7 +94,7 @@ async fn mint_confidential_deposit_quote(
         });
 
         // API key is attached in send_oneclick_request; DAO JWT is not required.
-        match super::quote::send_oneclick_request(state, &url, &quote_body, None).await {
+        match super::quote::send_oneclick_request(state, url.as_str(), &quote_body, None).await {
             Ok(mut response_body) => {
                 return match response_body.get_mut("quote") {
                     Some(quote) => Ok(quote.take()),

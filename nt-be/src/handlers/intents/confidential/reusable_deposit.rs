@@ -23,6 +23,7 @@ use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::handlers::intents::confidential::types::accounts_equal;
 use crate::handlers::intents::quote::send_oneclick_request;
 use crate::observability::sanitize_sensitive_text;
+use crate::utils::url::api_url_or_500;
 
 /// 1Click requires this fixed deadline for reusable quotes; never derive it
 /// from the current time.
@@ -473,7 +474,7 @@ impl<'a> ReusableDepositResolver<'a> {
         dao_id: &str,
         jwt: &str,
     ) -> Result<ReusableDepositAddresses, (StatusCode, String)> {
-        let url = format!("{}/v0/quote", self.state.env_vars.confidential_api_url);
+        let url = api_url_or_500(&self.state.env_vars.confidential_api_url, "v0/quote")?;
         let mut body = serde_json::json!({
             "dry": false,
             "swapType": "ANY_INPUT",
@@ -492,7 +493,7 @@ impl<'a> ReusableDepositResolver<'a> {
         if let Some(referral) = &self.state.env_vars.oneclick_referral {
             body["referral"] = Value::String(referral.clone());
         }
-        let response = send_oneclick_request(self.state, &url, &body, Some(jwt)).await?;
+        let response = send_oneclick_request(self.state, url.as_str(), &body, Some(jwt)).await?;
         let quote = response.get("quote").ok_or_else(|| {
             (
                 StatusCode::BAD_GATEWAY,

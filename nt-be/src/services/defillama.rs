@@ -7,6 +7,7 @@
 //! - `coingecko:{id}` - For major coins using CoinGecko IDs
 //! - `near:{contract}` - For NEAR native tokens using contract addresses
 
+use crate::utils::url::api_url;
 use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -240,10 +241,10 @@ impl DeFiLlamaClient {
         }
 
         let coins_param = asset_ids.join(",");
-        let url = format!(
-            "{}/prices/historical/{}/{}",
-            self.base_url, timestamp, coins_param
-        );
+        let url = api_url(
+            &self.base_url,
+            &format!("prices/historical/{timestamp}/{coins_param}"),
+        )?;
 
         tracing::debug!(
             "Fetching prices from DeFiLlama at timestamp {} for {} assets",
@@ -253,7 +254,7 @@ impl DeFiLlamaClient {
 
         let response = self
             .http_client
-            .get(&url)
+            .get(url)
             .header("accept", "application/json")
             .send()
             .await?;
@@ -304,7 +305,7 @@ impl DeFiLlamaClient {
         }
 
         let coins_param = asset_ids.join(",");
-        let url = format!("{}/prices/current/{}", self.base_url, coins_param);
+        let url = api_url(&self.base_url, &format!("prices/current/{coins_param}"))?;
 
         tracing::debug!(
             "Fetching current prices from DeFiLlama for {} assets",
@@ -313,7 +314,7 @@ impl DeFiLlamaClient {
 
         let response = self
             .http_client
-            .get(&url)
+            .get(url)
             .header("accept", "application/json")
             .send()
             .await?;
@@ -361,10 +362,13 @@ impl DeFiLlamaClient {
             return Ok(HashMap::new());
         }
 
-        let url = format!("{}/prices/current/{}", self.base_url, asset_ids.join(","));
+        let url = api_url(
+            &self.base_url,
+            &format!("prices/current/{}", asset_ids.join(",")),
+        )?;
         let response = self
             .http_client
-            .get(&url)
+            .get(url)
             .header("accept", "application/json")
             .send()
             .await?;
@@ -400,11 +404,12 @@ impl DeFiLlamaClient {
 
         let coins_param = serde_json::to_string(requests)
             .map_err(|e| BatchHistoricalError::Decode(e.to_string()))?;
-        let url = format!("{}/batchHistorical", self.base_url);
+        let url = api_url(&self.base_url, "batchHistorical")
+            .map_err(|e| BatchHistoricalError::Decode(e.to_string()))?;
 
         let response = self
             .http_client
-            .get(&url)
+            .get(url)
             .query(&[
                 ("coins", coins_param.as_str()),
                 ("searchWidth", &search_width_secs.to_string()),

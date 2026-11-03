@@ -9,6 +9,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::AppState;
 use crate::utils::cache::{CacheKey, CacheTier};
+use crate::utils::url::api_url;
 
 /// Fetches JSON data from an external API
 ///
@@ -27,26 +28,16 @@ pub async fn fetch_proxy_api(
     path: &str,
     params: &HashMap<String, String>,
 ) -> Result<Value, String> {
-    // Construct the full URL
-    let mut url = format!("{}/{}", base_url, path);
-
-    // Add query parameters if any
-    if !params.is_empty() {
-        let mut sorted_params: Vec<_> = params.iter().collect();
-        sorted_params.sort_by_key(|(k, _)| *k);
-        let qs = sorted_params
-            .iter()
-            .map(|(k, v)| format!("{}={}", k, v))
-            .collect::<Vec<_>>()
-            .join("&");
-        url = format!("{}?{}", url, qs);
-    }
+    let mut url = api_url(base_url, path).map_err(|e| format!("Invalid proxy URL: {e}"))?;
+    let mut sorted_params: Vec<_> = params.iter().collect();
+    sorted_params.sort_by_key(|(k, _)| *k);
+    url.query_pairs_mut().extend_pairs(sorted_params);
 
     println!("Proxying request to: {}", url);
 
     // Proxy the request to the external API
     let response = client
-        .get(&url)
+        .get(url.clone())
         .header("accept", "application/json")
         .send()
         .await

@@ -10,6 +10,7 @@ use crate::AppState;
 use crate::auth::OptionalAuthUser;
 use crate::constants::intents_tokens::{is_stablecoin_to_stablecoin, same_quote_asset};
 use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
+use crate::utils::url::api_url_or_500;
 
 /// Default DAO proposal period (7 days) used when policy is unavailable.
 const DEFAULT_PROPOSAL_PERIOD_NS: u64 = 604_800_000_000_000;
@@ -196,16 +197,16 @@ pub async fn get_quote(
 
         if confidential {
             let access_token = super::confidential::refresh_dao_jwt(&state, dao_id).await?;
-            let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
-            return send_oneclick_request(&state, &url, &body, Some(&access_token))
+            let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/quote")?;
+            return send_oneclick_request(&state, url.as_str(), &body, Some(&access_token))
                 .await
                 .map(|value| Json(with_has_app_fee(value, has_app_fee)));
         }
     }
 
-    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
+    let url = api_url_or_500(&state.env_vars.oneclick_api_url, "v0/quote")?;
     let access_token = state.env_vars.oneclick_jwt_token.as_deref();
-    send_oneclick_request(&state, &url, &body, access_token)
+    send_oneclick_request(&state, url.as_str(), &body, access_token)
         .await
         .map(|value| Json(with_has_app_fee(value, has_app_fee)))
 }

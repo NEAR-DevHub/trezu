@@ -1,3 +1,5 @@
+use crate::constants::external_apis::FASTNEAR_ACCOUNT_API_BASE;
+use crate::utils::url::api_url;
 use crate::{
     handlers::user::{
         ft_lockups::{FtLockupPosition, fetch_ft_lockup_positions},
@@ -214,10 +216,10 @@ pub async fn fetch_fastnear_account_full(
     account_id: &str,
 ) -> Result<FastNearResponse, Box<dyn std::error::Error + Send + Sync>> {
     let response = http_client
-        .get(format!(
-            "https://api.fastnear.com/v1/account/{}/full",
-            account_id
-        ))
+        .get(api_url(
+            FASTNEAR_ACCOUNT_API_BASE,
+            &format!("v1/account/{account_id}/full"),
+        )?)
         .header("Authorization", format!("Bearer {}", fastnear_api_key))
         .send()
         .await?

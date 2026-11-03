@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::AppState;
 use crate::observability::sanitize_sensitive_text;
 use crate::services::{CredentialScope, TokenBundle};
+use crate::utils::url::api_url_or_500;
 
 pub mod balances;
 pub mod bronze;
@@ -108,10 +109,10 @@ async fn refresh_jwt_inner(
         }
     }
 
-    let url = format!("{}/v0/auth/refresh", state.env_vars.confidential_api_url);
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/auth/refresh")?;
     let mut req = state
         .http_client
-        .post(&url)
+        .post(url)
         .header("content-type", "application/json");
     if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
