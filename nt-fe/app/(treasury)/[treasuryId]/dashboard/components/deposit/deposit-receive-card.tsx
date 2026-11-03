@@ -143,9 +143,7 @@ export function DepositReceiveCard({
                     <span>
                         {t.rich("memoWarning", {
                             bold: (chunks) => (
-                                <span className="font-semibold">
-                                    {chunks}
-                                </span>
+                                <span className="font-semibold">{chunks}</span>
                             ),
                         })}
                     </span>
