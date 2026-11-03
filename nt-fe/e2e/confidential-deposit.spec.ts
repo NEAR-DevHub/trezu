@@ -258,8 +258,7 @@ test("Confidential deposit — dashboard deposit page flow", async ({
     await depositPage.selectAsset(/USD Coin/i);
     await depositPage.selectNetwork("Near Protocol");
 
-    // Reusable address: resolved as soon as asset + network are chosen, on
-    // the dark receive card, with no one-time acknowledgement step.
+    // Resolved as soon as asset + network are chosen, on the dark receive card.
     const receiveCard = depositPage.receiveCard();
     await expect(receiveCard).toBeVisible({ timeout: 15_000 });
     await expect(receiveCard).toContainText(/Send at least .* USDC/i);
@@ -273,8 +272,6 @@ test("Confidential deposit — dashboard deposit page flow", async ({
     expect(depositAddressRequested).toBe(true);
 
     await expect(depositPage.receiveQrCode()).toBeVisible({ timeout: 10_000 });
-    await expect(depositPage.ackCheckbox()).toHaveCount(0);
-    await expect(depositPage.expiresInText()).toHaveCount(0);
 
     // The picker stays on screen: switch to "Any token" on near.com for the
     // treasury's internal address.

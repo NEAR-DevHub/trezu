@@ -16,48 +16,42 @@ const IDLE: ConfidentialBridgeAddressState = {
 };
 
 /**
- * Resolve the chain deposit address for a confidential quote id.
- * Quote id is not a DAO — POST deposit-address only runs the bridge lookup.
- *
- * With `treasuryId` + `tokenId` (reusable address share links) the lookup
- * runs for the treasury instead: the backend serves its cached reusable
- * address set for the chain, which needs no quote and no membership.
+ * Resolve the chain funding address of a confidential treasury's reusable
+ * deposit set for `tokenId` on `bridgeChainId`. The backend serves the
+ * cached set, which needs no quote and no membership.
  */
 export function useConfidentialBridgeAddress(options: {
     enabled: boolean;
-    quoteDepositAddress: string | null | undefined;
     bridgeChainId: string | null | undefined;
-    treasuryId?: string | null;
-    tokenId?: string | null;
+    treasuryId: string | null | undefined;
+    tokenId: string | null | undefined;
 }): ConfidentialBridgeAddressState {
-    const { enabled, quoteDepositAddress, bridgeChainId, treasuryId, tokenId } =
-        options;
-    const lookupAccount = treasuryId || quoteDepositAddress;
+    const { enabled, bridgeChainId, treasuryId, tokenId } = options;
 
     const query = useQuery({
         queryKey: [
             "confidential-bridge-deposit-address",
-            lookupAccount,
+            treasuryId,
             bridgeChainId,
-            treasuryId ? tokenId : null,
+            tokenId,
         ],
         queryFn: async () => {
             const result = await fetchDepositAddress(
-                lookupAccount!,
+                treasuryId!,
                 bridgeChainId!,
-                treasuryId ? (tokenId ?? undefined) : undefined,
+                tokenId ?? undefined,
             );
             return {
                 address: result?.address ?? null,
                 memo: result?.memo ?? null,
             };
         },
-        enabled: enabled && !!lookupAccount && !!bridgeChainId,
+        enabled: enabled && !!treasuryId && !!bridgeChainId,
         staleTime: 1000 * 60 * 5,
         retry: 1,
     });
 
-    if (!enabled || !lookupAccount || !bridgeChainId) {
+    if (!enabled || !treasuryId || !bridgeChainId) {
         return IDLE;
     }
 

@@ -48,10 +48,6 @@ pub struct TreasuryConfig {
     pub name: Option<String>,
     pub purpose: Option<String>,
     pub is_confidential: bool,
-    /// Confidential deposits use the treasury's reusable 1Click address set
-    /// (no one-time quotes, no expiry).
-    #[serde(default)]
-    pub confidential_reusable_deposits: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -254,8 +250,6 @@ pub async fn fetch_treasury_config(
         name: result.name,
         purpose: result.purpose,
         is_confidential: matches!(is_confidential, Some(Some(true))),
-        confidential_reusable_deposits: state.env_vars.confidential_reusable_deposits
-            && matches!(is_confidential, Some(Some(true))),
     };
 
     // Historical reads should reflect on-chain state only.
@@ -358,7 +352,6 @@ mod tests {
                 flag_logo: Some("https://example.com/old.png".into()),
             }),
             is_confidential: false,
-            confidential_reusable_deposits: false,
         };
 
         apply_local_treasury_settings(
@@ -398,7 +391,6 @@ mod tests {
                 flag_logo: Some("https://example.com/old.png".into()),
             }),
             is_confidential: false,
-            confidential_reusable_deposits: false,
         };
 
         apply_local_treasury_settings(

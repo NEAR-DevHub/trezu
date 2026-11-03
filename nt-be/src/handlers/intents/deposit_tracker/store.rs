@@ -19,9 +19,6 @@ pub struct DepositWatch {
     pub quote_deposit_address: Option<String>,
     pub chain: Option<String>,
     pub token_id: Option<String>,
-    /// The DAO's reusable deposit address, for life: survives the cached set
-    /// being cleared or rotated.
-    pub reusable: bool,
     pub fast_until: DateTime<Utc>,
     pub discovery_until: DateTime<Utc>,
     pub baseline_keys: Option<Vec<String>>,
@@ -41,7 +38,6 @@ impl FromRow<'_, PgRow> for DepositWatch {
             quote_deposit_address: row.try_get("quote_deposit_address")?,
             chain: row.try_get("chain")?,
             token_id: row.try_get("token_id")?,
-            reusable: row.try_get("reusable")?,
             fast_until: row.try_get("fast_until")?,
             discovery_until: row.try_get("discovery_until")?,
             baseline_keys: row.try_get("baseline_keys")?,
@@ -146,8 +142,7 @@ impl DepositTransition {
 }
 
 /// Create or renew a watch. Windows only ever extend; a renewed watch is
-/// un-retired and due immediately. `reusable` marks the DAO's reusable
-/// address and sticks once set. `Ok(false)` when `dao_id` is not a
+/// un-retired and due immediately. `Ok(false)` when `dao_id` is not a
 /// monitored account.
 #[allow(clippy::too_many_arguments)]
 pub async fn upsert_watch(
@@ -157,21 +152,19 @@ pub async fn upsert_watch(
     quote_deposit_address: Option<&str>,
     chain: &str,
     token_id: Option<&str>,
-    reusable: bool,
     fast_until: DateTime<Utc>,
     discovery_until: DateTime<Utc>,
 ) -> Result<bool, sqlx::Error> {
     let result = sqlx::query(
         r#"
         INSERT INTO deposit_watches (
-            dao_id, kind, quote_deposit_address, chain, token_id, reusable,
+            dao_id, kind, quote_deposit_address, chain, token_id,
             fast_until, discovery_until, next_poll_at
         )
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+        VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
         ON CONFLICT (dao_id, kind, COALESCE(quote_deposit_address, '')) DO UPDATE SET
             chain = EXCLUDED.chain,
             token_id = COALESCE(EXCLUDED.token_id, deposit_watches.token_id),
-            reusable = deposit_watches.reusable OR EXCLUDED.reusable,
             fast_until = GREATEST(deposit_watches.fast_until, EXCLUDED.fast_until),
             discovery_until = GREATEST(deposit_watches.discovery_until, EXCLUDED.discovery_until),
             next_poll_at = NOW(),
@@ -195,7 +188,6 @@ pub async fn upsert_watch(
     .bind(quote_deposit_address)
     .bind(chain)
     .bind(token_id)
-    .bind(reusable)
     .bind(fast_until)
     .bind(discovery_until)
     .execute(pool)
@@ -208,26 +200,17 @@ pub async fn upsert_watch(
     }
 }
 
-/// The watch a confidential quote address was handed out with, looked up
+/// The treasury a confidential quote address was handed out to, looked up
 /// by the address alone so the caller cannot steer the answer with a
-/// different `dao_id`. Retired watches count: a reusable address stays
-/// public for life. Prefers the reusable row should an address ever carry
-/// both.
-#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
-pub struct QuoteOwner {
-    pub dao_id: String,
-    pub reusable: bool,
-}
-
+/// different `dao_id`. Retired watches count: the address stays public.
 pub async fn find_quote_owner(
     pool: &PgPool,
     quote_deposit_address: &str,
-) -> Result<Option<QuoteOwner>, sqlx::Error> {
-    sqlx::query_as(
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar(
         r#"
-        SELECT dao_id, reusable FROM deposit_watches
+        SELECT dao_id FROM deposit_watches
         WHERE kind = 'confidential' AND quote_deposit_address = $1
-        ORDER BY reusable DESC
         LIMIT 1
         "#,
     )
@@ -433,43 +416,8 @@ pub async fn load_visible_deposits(
     .await
 }
 
-/// Share pages re-derive the bridge address with the quote address as the
-/// account id, so they cannot upsert by DAO. Renewing the quote's existing
-/// watch (reviving it if discovery already stopped) keeps the payer's own
-/// deposit tracked for as long as they keep the page open. A live watch
-/// keeps its schedule and error backoff; only a retired one starts a new
-/// life, as in `upsert_watch`. `Ok(false)`: no watch exists for this quote
-/// (minted before the tracker, or not a quote).
-pub async fn renew_confidential_watch_by_quote(
-    pool: &PgPool,
-    quote_deposit_address: &str,
-    fast_until: DateTime<Utc>,
-    discovery_until: DateTime<Utc>,
-) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query(
-        r#"
-        UPDATE deposit_watches
-        SET fast_until = GREATEST(fast_until, $2),
-            discovery_until = GREATEST(discovery_until, $3),
-            next_poll_at = CASE WHEN retired_at IS NULL THEN next_poll_at ELSE NOW() END,
-            attempts = CASE WHEN retired_at IS NULL THEN attempts ELSE 0 END,
-            last_error = CASE WHEN retired_at IS NULL THEN last_error END,
-            retired_at = NULL,
-            updated_at = NOW()
-        WHERE kind = 'confidential'
-          AND quote_deposit_address = $1
-        "#,
-    )
-    .bind(quote_deposit_address)
-    .bind(fast_until)
-    .bind(discovery_until)
-    .execute(pool)
-    .await?;
-    Ok(result.rows_affected() > 0)
-}
-
-/// Rows the deposit modal shows for one address scope: a confidential quote
-/// (its provider key) or a public chain. Confirmed rows stay for the
+/// Rows the deposit modal shows for one address scope: the treasury's
+/// reusable quote address or a public chain. Confirmed rows stay for the
 /// activity window so the modal can say "received". `since` narrows the
 /// window to rows first seen at or after an instant (a page open).
 pub async fn load_recent_deposits_for_scope(
@@ -491,7 +439,6 @@ pub async fn load_recent_deposits_for_scope(
               ) > NOW() - $2
           AND (
                 $3::text IS NULL
-                OR provider_deposit_key = $3
                 -- Reusable address: every payout of the DAO's quote.
                 OR watch_id IN (
                     SELECT id FROM deposit_watches
@@ -738,7 +685,6 @@ mod tests {
             None,
             "eth:8453",
             None,
-            false,
             now + Duration::minutes(10),
             now + Duration::minutes(120),
         )
@@ -773,119 +719,6 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn share_page_renews_a_quote_watch_by_its_address(pool: PgPool) {
-        seed_dao(&pool, "dao.sputnik-dao.near", true).await;
-        let now = Utc::now();
-        upsert_watch(
-            &pool,
-            "dao.sputnik-dao.near",
-            WatchKind::Confidential,
-            Some("quote-addr"),
-            "eth:8453",
-            None,
-            false,
-            now + Duration::minutes(10),
-            now + Duration::minutes(120),
-        )
-        .await
-        .expect("upsert watch");
-        // Discovery ran out before the payer opened the link.
-        sqlx::query(
-            "UPDATE deposit_watches SET retired_at = NOW(), attempts = 7, \
-             last_error = 'x' WHERE quote_deposit_address = 'quote-addr'",
-        )
-        .execute(&pool)
-        .await
-        .expect("retire");
-        assert!(
-            claim_due_watches(&pool, 10, Duration::seconds(60))
-                .await
-                .expect("claim")
-                .is_empty(),
-            "retired watch is not due"
-        );
-
-        assert!(
-            !renew_confidential_watch_by_quote(
-                &pool,
-                "unknown-quote",
-                now + Duration::minutes(10),
-                now + Duration::minutes(120),
-            )
-            .await
-            .expect("renew unknown"),
-            "no watch for an unknown quote"
-        );
-        let later = now + Duration::minutes(30);
-        assert!(
-            renew_confidential_watch_by_quote(
-                &pool,
-                "quote-addr",
-                later + Duration::minutes(10),
-                later + Duration::minutes(120),
-            )
-            .await
-            .expect("renew"),
-        );
-
-        let revived = claim_due_watches(&pool, 10, Duration::seconds(60))
-            .await
-            .expect("claim after renew");
-        assert_eq!(revived.len(), 1, "renewal revives the watch");
-        let watch = &revived[0];
-        assert_eq!(watch.quote_deposit_address.as_deref(), Some("quote-addr"));
-        assert_eq!(
-            watch.attempts, 1,
-            "attempt counter restarted (claim adds one)"
-        );
-        let last_error: Option<String> =
-            sqlx::query_scalar("SELECT last_error FROM deposit_watches WHERE id = $1")
-                .bind(watch.id)
-                .fetch_one(&pool)
-                .await
-                .expect("read last_error");
-        assert!(last_error.is_none(), "revival clears the last error");
-        assert!(watch.fast_until >= later + Duration::minutes(9));
-        assert!(watch.discovery_until >= later + Duration::minutes(119));
-
-        // A live watch that is backing off from errors keeps its schedule:
-        // page opens must not turn into immediate re-polls of a broken quote.
-        sqlx::query(
-            "UPDATE deposit_watches SET attempts = 5, last_error = 'boom', \
-             next_poll_at = NOW() + interval '5 minutes' WHERE id = $1",
-        )
-        .bind(watch.id)
-        .execute(&pool)
-        .await
-        .expect("simulate backoff");
-        assert!(
-            renew_confidential_watch_by_quote(
-                &pool,
-                "quote-addr",
-                later + Duration::minutes(20),
-                later + Duration::minutes(130),
-            )
-            .await
-            .expect("renew live"),
-        );
-        assert!(
-            claim_due_watches(&pool, 10, Duration::seconds(60))
-                .await
-                .expect("claim live")
-                .is_empty(),
-            "live watch keeps its backoff schedule"
-        );
-        let (attempts, last_error): (i32, Option<String>) =
-            sqlx::query_as("SELECT attempts, last_error FROM deposit_watches WHERE id = $1")
-                .bind(watch.id)
-                .fetch_one(&pool)
-                .await
-                .expect("read backoff state");
-        assert_eq!(attempts, 5, "live watch keeps its attempts");
-        assert_eq!(last_error.as_deref(), Some("boom"));
-    }
-
-    #[sqlx::test]
     async fn watch_lifecycle_and_deposit_transitions(pool: PgPool) {
         seed_dao(&pool, "dao.sputnik-dao.near", false).await;
         let now = Utc::now();
@@ -898,7 +731,6 @@ mod tests {
                 None,
                 "eth:8453",
                 Some("usdc"),
-                false,
                 now + Duration::minutes(10),
                 now + Duration::minutes(120),
             )
@@ -914,7 +746,6 @@ mod tests {
                 None,
                 "eth:8453",
                 None,
-                false,
                 now,
                 now,
             )
@@ -930,7 +761,6 @@ mod tests {
             None,
             "sol:mainnet",
             None,
-            false,
             now + Duration::minutes(5),
             now + Duration::minutes(60),
         )
@@ -1190,7 +1020,6 @@ mod tests {
             None,
             "eth:8453",
             None,
-            false,
             revived_at + Duration::minutes(10),
             revived_at + Duration::minutes(120),
         )
@@ -1223,7 +1052,6 @@ mod tests {
                 None,
                 "eth:8453",
                 None,
-                false,
                 now + Duration::minutes(10),
                 now + Duration::minutes(120),
             )
@@ -1268,7 +1096,6 @@ mod tests {
                 None,
                 "eth:8453",
                 None,
-                false,
                 at + Duration::minutes(10),
                 at + Duration::minutes(120),
             )
@@ -1340,7 +1167,6 @@ mod tests {
             Some("rda-quote"),
             "sol:mainnet",
             Some("nep141:sol.omft.near"),
-            true,
             now + Duration::minutes(10),
             now + Duration::minutes(120),
         )
@@ -1562,35 +1388,5 @@ mod tests {
             None,
             "the parent quote row never matches the reusable address"
         );
-    }
-
-    #[sqlx::test]
-    async fn confidential_watch_is_keyed_by_quote(pool: PgPool) {
-        seed_dao(&pool, "conf.sputnik-dao.near", true).await;
-        let now = Utc::now();
-        for quote in ["quote-a", "quote-b", "quote-a"] {
-            upsert_watch(
-                &pool,
-                "conf.sputnik-dao.near",
-                WatchKind::Confidential,
-                Some(quote),
-                "eth:8453",
-                Some("nep141:usdc"),
-                false,
-                now + Duration::minutes(10),
-                now + Duration::minutes(120),
-            )
-            .await
-            .expect("upsert confidential watch");
-        }
-        let claimed = claim_due_watches(&pool, 10, Duration::seconds(60))
-            .await
-            .expect("claim");
-        let mut quotes: Vec<_> = claimed
-            .iter()
-            .filter_map(|w| w.quote_deposit_address.clone())
-            .collect();
-        quotes.sort();
-        assert_eq!(quotes, vec!["quote-a".to_string(), "quote-b".to_string()]);
     }
 }

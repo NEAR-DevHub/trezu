@@ -3,27 +3,19 @@
 //! rows once the ledger carries them.
 
 use std::collections::HashSet;
-use std::str::FromStr;
 use std::sync::Arc;
 
-use bigdecimal::BigDecimal;
 use chrono::{DateTime, Duration, Utc};
 use futures::StreamExt;
 use near_account_id::AccountIdRef;
-use near_api::AccountId;
 use sqlx::PgPool;
 
 use crate::AppState;
 use crate::handlers::intents::bridge_tokens::chain_id_for_balance_asset;
-use crate::handlers::intents::confidential::bronze::api::fetch_history;
 use crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due;
-use crate::handlers::intents::confidential::bronze::store::upsert_history_events;
 use crate::handlers::intents::confidential::reusable_deposit::{
     REUSABLE_DEPOSIT_KEY_PREFIX, ReusableDepositAddresses, ReusableDepositResolver,
     ReusableWithdrawal, WITHDRAWALS_PAGE_LIMIT, WithdrawalsError, clear_cached, load_cached,
-};
-use crate::handlers::intents::swap_status::{
-    FullSwapStatusResponse, SwapStatus, fetch_public_swap_status,
 };
 use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::api::fetch_latest_indexed_block_height;
@@ -89,13 +81,6 @@ impl std::fmt::Display for TrackerTickSummary {
 struct PollResult {
     changed: usize,
     baseline_keys: Option<Vec<String>>,
-}
-
-/// What a confidential watch is polling: a one-time quote, or the DAO's
-/// reusable deposit set.
-enum ConfidentialScope {
-    OneTime,
-    Reusable(ReusableDepositAddresses),
 }
 
 #[derive(Debug, Default)]
@@ -175,17 +160,12 @@ impl<'a> DepositTrackerWorker<'a> {
     async fn process_watch(&self, watch: &DepositWatch) -> WatchOutcome {
         let mut outcome = WatchOutcome::default();
 
-        let scope = self.confidential_scope(watch).await;
-        let reusable = watch.reusable || matches!(scope, Ok(ConfidentialScope::Reusable(_)));
-        let poll = match (watch.kind, &scope) {
-            (WatchKind::Public, _) => self.poll_public(watch).await,
-            (WatchKind::Confidential, Ok(ConfidentialScope::OneTime)) => {
-                self.poll_confidential(watch).await
-            }
-            (WatchKind::Confidential, Ok(ConfidentialScope::Reusable(set))) => {
-                self.poll_reusable(watch, set).await
-            }
-            (WatchKind::Confidential, Err(error)) => Err(error.clone()),
+        let poll = match watch.kind {
+            WatchKind::Public => self.poll_public(watch).await,
+            WatchKind::Confidential => match self.reusable_set(watch).await {
+                Ok(set) => self.poll_reusable(watch, &set).await,
+                Err(error) => Err(error),
+            },
         };
         match poll {
             Ok(result) => {
@@ -216,28 +196,20 @@ impl<'a> DepositTrackerWorker<'a> {
 
         let now = Utc::now();
         let has_active = deposits.iter().any(|deposit| deposit.is_active(now));
-        let has_terminal = deposits.iter().any(|deposit| deposit.status.is_terminal());
         outcome.next_poll_at = WatchSchedule {
             watch,
             now,
-            reusable,
             has_active_deposit: has_active,
-            has_terminal_deposit: has_terminal,
             errored: outcome.error.is_some(),
         }
         .next_poll_at();
         outcome
     }
 
-    /// A confidential watch whose quote address is the DAO's cached reusable
-    /// deposit set polls payouts; any other quote address is a one-time quote.
-    /// A watch marked reusable whose set is no longer cached waits for the
-    /// next deposit request to re-resolve it rather than polling the address
-    /// as a quote.
-    async fn confidential_scope(&self, watch: &DepositWatch) -> Result<ConfidentialScope, String> {
-        if watch.kind != WatchKind::Confidential {
-            return Ok(ConfidentialScope::OneTime);
-        }
+    /// The DAO's cached reusable deposit set this watch polls. A watch whose
+    /// set is not cached (cleared as stale, or rotated) waits for the next
+    /// deposit request to re-resolve it.
+    async fn reusable_set(&self, watch: &DepositWatch) -> Result<ReusableDepositAddresses, String> {
         let set = load_cached(self.pool(), &watch.dao_id)
             .await
             .map_err(|error| format!("load reusable deposit set: {error}"))?;
@@ -246,10 +218,9 @@ impl<'a> DepositTrackerWorker<'a> {
                 if watch.quote_deposit_address.as_deref()
                     == Some(set.quote_deposit_address.as_str()) =>
             {
-                Ok(ConfidentialScope::Reusable(set))
+                Ok(set)
             }
-            _ if watch.reusable => Err("reusable deposit set is not cached".to_string()),
-            _ => Ok(ConfidentialScope::OneTime),
+            _ => Err("reusable deposit set is not cached".to_string()),
         }
     }
 
@@ -471,81 +442,6 @@ impl<'a> DepositTrackerWorker<'a> {
         Ok(result)
     }
 
-    async fn poll_confidential(&self, watch: &DepositWatch) -> Result<PollResult, String> {
-        let quote_deposit_address = watch
-            .quote_deposit_address
-            .as_deref()
-            .ok_or_else(|| "confidential watch without quote address".to_string())?;
-        let account_id = AccountId::from_str(&watch.dao_id).map_err(|e| e.to_string())?;
-
-        let page = fetch_history(
-            self.state,
-            &account_id,
-            5,
-            None,
-            None,
-            Some(quote_deposit_address),
-        )
-        .await
-        .map_err(|(status, message)| format!("{status}: {message}"))?;
-
-        let mut result = PollResult::default();
-        let Some(newest) = page.items.first() else {
-            return Ok(result);
-        };
-
-        // Same dedup path as the account-level ingest, so the eventual gold
-        // projection has its bronze row regardless of which poller saw it first.
-        upsert_history_events(self.pool(), &watch.dao_id, &page.items)
-            .await
-            .map_err(|error| format!("bronze upsert: {error}"))?;
-
-        let Some(status) = confidential_tracker_status(&newest.item.status) else {
-            return Ok(result);
-        };
-        // History reports the quote nominal as the amount until settlement.
-        // `/v0/status` (the quote was minted with the app key) carries the
-        // deposit 1Click actually saw; without it the amount stays unknown.
-        let amount = match fetch_public_swap_status(
-            &self.state.http_client,
-            &self.state.env_vars.confidential_api_url,
-            self.state.env_vars.oneclick_jwt_token.as_ref(),
-            quote_deposit_address,
-            newest.item.deposit_memo.as_deref(),
-        )
-        .await
-        {
-            Ok(full) => confidential_amount(&full),
-            Err((_, message)) => {
-                tracing::debug!(
-                    dao_id = %watch.dao_id,
-                    quote_deposit_address,
-                    error = %message,
-                    "deposit tracker: 1Click status unavailable, amount unknown"
-                );
-                None
-            }
-        };
-        let observed = ObservedDeposit {
-            provider_deposit_key: quote_deposit_address.to_string(),
-            chain: watch.chain.clone(),
-            origin_tx_hash: newest.item.first_quote_tx_hash().map(str::to_string),
-            near_tx_hash: None,
-            token_id: newest.item.destination_asset.clone(),
-            amount,
-            provider_status: newest.item.status.clone(),
-            status,
-        };
-        let transition = self
-            .record_observation(watch, &observed, None)
-            .await
-            .map_err(|error| format!("record deposit {quote_deposit_address}: {error}"))?;
-        if transition.changed() {
-            result.changed += 1;
-        }
-        Ok(result)
-    }
-
     /// Persist one observation. A deposit that just settled commits together
     /// with its history-refresh demand so a crash cannot lose the handoff.
     /// `known` is the row's current status when the caller has it, so the
@@ -729,10 +625,7 @@ impl InProcessDeposit {
 struct WatchSchedule<'a> {
     watch: &'a DepositWatch,
     now: DateTime<Utc>,
-    /// Reusable deposit set: never spent by a settled deposit.
-    reusable: bool,
     has_active_deposit: bool,
-    has_terminal_deposit: bool,
     errored: bool,
 }
 
@@ -751,11 +644,6 @@ impl WatchSchedule<'_> {
     fn discovery_delay(&self) -> Option<Duration> {
         if self.has_active_deposit {
             return Some(ACTIVE_DEPOSIT_POLL);
-        }
-        // A one-time quote is spent once its deposit reached a terminal state.
-        if self.watch.kind == WatchKind::Confidential && !self.reusable && self.has_terminal_deposit
-        {
-            return None;
         }
         if self.now < self.watch.fast_until {
             Some(FAST_POLL)
@@ -788,34 +676,6 @@ fn jitter(delay: Duration) -> Duration {
     Duration::milliseconds(delay.num_milliseconds().saturating_mul(percent) / 100)
 }
 
-/// 1Click status → tracker state. `PENDING_DEPOSIT` is "address unused" and
-/// `EXPIRED` is "address dead": neither is deposit evidence, so they yield
-/// no row. Unknown statuses are treated as in-progress rather than terminal.
-fn confidential_tracker_status(raw: &str) -> Option<DepositStatus> {
-    match raw.trim().to_ascii_uppercase().as_str() {
-        "PENDING_DEPOSIT" | "EXPIRED" => None,
-        "SUCCESS" => Some(DepositStatus::Finalized),
-        "REFUNDED" | "FAILED" | "INCOMPLETE_DEPOSIT" => Some(DepositStatus::Failed),
-        _ => Some(DepositStatus::Detected),
-    }
-}
-
-/// Credited amount once settled, otherwise the deposit 1Click has observed
-/// on chain. Never the quote nominal: that is only what the address was
-/// minted with, not what the user sent.
-fn confidential_amount(full: &FullSwapStatusResponse) -> Option<BigDecimal> {
-    let details = full.swap_details.as_ref()?;
-    let text = if matches!(full.status, SwapStatus::Success) {
-        details
-            .amount_out_formatted
-            .as_deref()
-            .or(details.deposited_amount_formatted.as_deref())
-    } else {
-        details.deposited_amount_formatted.as_deref()
-    };
-    text.and_then(|text| BigDecimal::from_str(text.trim()).ok())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -826,7 +686,6 @@ mod tests {
             dao_id: "dao.sputnik-dao.near".to_string(),
             kind,
             quote_deposit_address: (kind == WatchKind::Confidential).then(|| "quote".to_string()),
-            reusable: false,
             chain: Some("eth:8453".to_string()),
             token_id: None,
             fast_until: now + Duration::minutes(10),
@@ -841,14 +700,11 @@ mod tests {
         watch: &DepositWatch,
         now: DateTime<Utc>,
         has_active: bool,
-        has_terminal: bool,
     ) -> Option<Duration> {
         WatchSchedule {
             watch,
             now,
-            reusable: false,
             has_active_deposit: has_active,
-            has_terminal_deposit: has_terminal,
             errored: false,
         }
         .discovery_delay()
@@ -858,17 +714,17 @@ mod tests {
     fn discovery_tiers_follow_the_windows() {
         let start = Utc::now();
         let watch = watch(start, WatchKind::Public);
-        assert_eq!(schedule_delay(&watch, start, false, false), Some(FAST_POLL));
+        assert_eq!(schedule_delay(&watch, start, false), Some(FAST_POLL));
         assert_eq!(
-            schedule_delay(&watch, start + Duration::minutes(15), false, false),
+            schedule_delay(&watch, start + Duration::minutes(15), false),
             Some(MEDIUM_POLL)
         );
         assert_eq!(
-            schedule_delay(&watch, start + Duration::minutes(60), false, false),
+            schedule_delay(&watch, start + Duration::minutes(60), false),
             Some(SLOW_POLL)
         );
         assert_eq!(
-            schedule_delay(&watch, start + Duration::minutes(121), false, false),
+            schedule_delay(&watch, start + Duration::minutes(121), false),
             None
         );
     }
@@ -878,18 +734,9 @@ mod tests {
         let start = Utc::now();
         let watch = watch(start, WatchKind::Public);
         assert_eq!(
-            schedule_delay(&watch, start + Duration::hours(5), true, false),
+            schedule_delay(&watch, start + Duration::hours(5), true),
             Some(ACTIVE_DEPOSIT_POLL)
         );
-    }
-
-    #[test]
-    fn confidential_watch_retires_once_its_deposit_is_terminal() {
-        let start = Utc::now();
-        let confidential = watch(start, WatchKind::Confidential);
-        assert_eq!(schedule_delay(&confidential, start, false, true), None);
-        let public = watch(start, WatchKind::Public);
-        assert_eq!(schedule_delay(&public, start, false, true), Some(FAST_POLL));
     }
 
     #[test]
@@ -898,11 +745,9 @@ mod tests {
         let mut watch = watch(start, WatchKind::Public);
         watch.attempts = 3;
         let next = WatchSchedule {
-            reusable: false,
             watch: &watch,
             now: start,
             has_active_deposit: false,
-            has_terminal_deposit: false,
             errored: true,
         }
         .next_poll_at()
@@ -919,77 +764,5 @@ mod tests {
         assert_eq!(error_backoff(20), ERROR_BACKOFF_MAX);
         assert_eq!(refresh_backoff(0), Duration::seconds(10));
         assert_eq!(refresh_backoff(9), Duration::seconds(300));
-    }
-
-    fn status_response(status: SwapStatus, details: serde_json::Value) -> FullSwapStatusResponse {
-        serde_json::from_value(serde_json::json!({
-            "status": status,
-            "updatedAt": "2026-10-08T00:00:00Z",
-            "swapDetails": details,
-        }))
-        .expect("status response parses")
-    }
-
-    #[test]
-    fn confidential_amount_is_the_observed_deposit_never_the_quote_nominal() {
-        // Deposit known but not settled: the on-chain amount, not the quote.
-        let processing = status_response(
-            SwapStatus::Processing,
-            serde_json::json!({
-                "depositedAmountFormatted": "5",
-                "amountInFormatted": "0.15",
-                "amountOutFormatted": "0.15"
-            }),
-        );
-        assert_eq!(confidential_amount(&processing), Some(BigDecimal::from(5)));
-
-        // Nothing observed yet: unknown, not the nominal.
-        let waiting = status_response(
-            SwapStatus::KnownDepositTx,
-            serde_json::json!({ "amountInFormatted": "0.15", "amountOutFormatted": "0.15" }),
-        );
-        assert_eq!(confidential_amount(&waiting), None);
-
-        // Settled: the credited amount.
-        let settled = status_response(
-            SwapStatus::Success,
-            serde_json::json!({ "depositedAmountFormatted": "5", "amountOutFormatted": "4.99" }),
-        );
-        assert_eq!(
-            confidential_amount(&settled),
-            Some(BigDecimal::from_str("4.99").unwrap())
-        );
-        let no_details: FullSwapStatusResponse = serde_json::from_value(serde_json::json!({
-            "status": "PENDING_DEPOSIT",
-            "updatedAt": "2026-10-08T00:00:00Z"
-        }))
-        .unwrap();
-        assert_eq!(confidential_amount(&no_details), None);
-    }
-
-    #[test]
-    fn confidential_statuses_map_to_tracker_states() {
-        assert_eq!(confidential_tracker_status("PENDING_DEPOSIT"), None);
-        assert_eq!(confidential_tracker_status("EXPIRED"), None);
-        assert_eq!(
-            confidential_tracker_status("KNOWN_DEPOSIT_TX"),
-            Some(DepositStatus::Detected)
-        );
-        assert_eq!(
-            confidential_tracker_status("processing"),
-            Some(DepositStatus::Detected)
-        );
-        assert_eq!(
-            confidential_tracker_status("SUCCESS"),
-            Some(DepositStatus::Finalized)
-        );
-        assert_eq!(
-            confidential_tracker_status("REFUNDED"),
-            Some(DepositStatus::Failed)
-        );
-        assert_eq!(
-            confidential_tracker_status("BRAND_NEW"),
-            Some(DepositStatus::Detected)
-        );
     }
 }

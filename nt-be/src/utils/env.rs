@@ -29,9 +29,6 @@ pub struct EnvVars {
     pub signer_id: AccountId,
     pub bulk_payment_signer: SecretKey,
     pub disable_balance_monitoring: bool,
-    /// Serve confidential treasury deposits from the DAO's reusable 1Click
-    /// deposit address set instead of minting a one-time quote per request.
-    pub confidential_reusable_deposits: bool,
     /// How many times the confidential bulk processor resets `SignFailed`
     /// recipient hashes (`retry_failed`) before giving up on them.
     pub confidential_bulk_max_sign_retries: i32,
@@ -156,10 +153,6 @@ impl Default for EnvVars {
                 .parse()
                 .unwrap(),
             disable_balance_monitoring: std::env::var("DISABLE_BALANCE_MONITORING")
-                .unwrap_or_else(|_| "false".to_string())
-                .parse()
-                .unwrap_or(false),
-            confidential_reusable_deposits: std::env::var("CONFIDENTIAL_REUSABLE_DEPOSITS")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),

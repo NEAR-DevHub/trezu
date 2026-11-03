@@ -20,24 +20,23 @@ const TERMINAL_STATUSES: ReadonlySet<TrackedDepositStatus> = new Set([
  * SSE `treasury_projection_updated` also invalidates this key, so the poll is
  * only a fallback for missed events.
  *
- * Reusable addresses (public, and confidential behind a reusable quote) scope
- * the view to this showing: deposits still in flight count from
+ * Every address is shared and permanent (a public chain address, or the
+ * confidential treasury's reusable quote address), so the view is scoped to
+ * this showing: deposits still in flight count from
  * `shownAtMs - inFlightLookbackMs` (a transfer sent just before opening the
  * page), while completed or failed deposits count only when detected after
  * `shownAtMs`. Reopening the page after a deposit settled therefore starts
- * clean. One-time quote addresses show their whole history instead.
+ * clean.
  *
- * A reusable quote address is shared by every payer, so the backend applies
- * the same window server-side: the request carries the stamp as `since`,
- * and non-members get nothing without it.
+ * The reusable quote address is handed to every payer, so the backend
+ * applies the same window server-side: the request carries the stamp as
+ * `since`, and non-members get nothing without it.
  */
 export function useDepositTracker(options: {
     enabled: boolean;
     accountId: string | null | undefined;
     chain?: string | null;
     quoteDepositAddress?: string | null;
-    /** Quote address is reusable: apply the per-showing filter. */
-    reusable?: boolean;
     shownAtMs?: number | null;
     inFlightLookbackMs?: number;
 }): { deposits: TrackedDeposit[]; hasFetched: boolean } {
@@ -46,18 +45,15 @@ export function useDepositTracker(options: {
         accountId,
         chain,
         quoteDepositAddress,
-        reusable = false,
         shownAtMs,
         inFlightLookbackMs = 0,
     } = options;
-    const oneTimeQuote = !!quoteDepositAddress && !reusable;
-    const reusableQuote = !!quoteDepositAddress && reusable;
+    const quoteScope = !!quoteDepositAddress;
     const since =
-        reusableQuote && shownAtMs != null
+        quoteScope && shownAtMs != null
             ? new Date(shownAtMs - inFlightLookbackMs).toISOString()
             : null;
-    const scopeReady =
-        (!!quoteDepositAddress || !!chain) && (!reusableQuote || !!since);
+    const scopeReady = (quoteScope || !!chain) && (!quoteScope || !!since);
 
     const query = useQuery({
         queryKey: [
@@ -99,7 +95,6 @@ export function useDepositTracker(options: {
     }
     const shownIds = shown.current.ids;
     const deposits = (query.data?.deposits ?? []).filter((deposit) => {
-        if (oneTimeQuote) return true;
         // No stamp yet (first render, or not on the address step): the
         // showing has not started, so nothing is visible or remembered.
         if (shownAtMs == null) return false;

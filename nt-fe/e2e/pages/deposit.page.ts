@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
-/** The dashboard's deposit page (`/dashboard/deposit`) — source-card picker, asset/network selectors, and the acknowledgement gate shared by every source's address-reveal step. */
+/** The dashboard's deposit page (`/dashboard/deposit`): asset/network selectors and the receive card. */
 export class DepositPage extends BasePage {
     heading() {
         return this.page.getByText("Deposit", { exact: true });
@@ -45,18 +45,6 @@ export class DepositPage extends BasePage {
         return this.page.getByRole("button", { name });
     }
 
-    ackCheckbox() {
-        return this.page.getByTestId("deposit-ack-checkbox");
-    }
-
-    ackCta() {
-        return this.page.getByTestId("deposit-ack-cta");
-    }
-
-    oneTimeAddressText() {
-        return this.page.getByText(/One-time deposit address/i).first();
-    }
-
     reusableNoticeText() {
         return this.page.getByText(/Doesn't expire/i).first();
     }
@@ -64,10 +52,6 @@ export class DepositPage extends BasePage {
     /** The rendered deposit address — always the first `<code>` on the page, public or confidential. */
     addressCode() {
         return this.page.locator("code").first();
-    }
-
-    expiresInText() {
-        return this.page.getByText(/Expires in/i);
     }
 
     backButton() {
@@ -140,15 +124,5 @@ export class DepositPage extends BasePage {
             .locator('[data-slot="dialog-content"]')
             .first()
             .waitFor({ state: "detached", timeout: 10_000 });
-    }
-
-    /** Ticks the acknowledgement checkbox and clicks the CTA once it enables — shared by the public-wallet "Generate Address" and confidential "Show address" sub-flows. */
-    async acknowledgeAndContinue(): Promise<void> {
-        await expect(this.ackCheckbox()).toBeVisible({ timeout: 10_000 });
-        const cta = this.ackCta();
-        await expect(cta).toBeDisabled();
-        await this.ackCheckbox().click();
-        await expect(cta).toBeEnabled();
-        await cta.click();
     }
 }

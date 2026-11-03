@@ -37,8 +37,6 @@ export interface TreasuryConfig {
     name?: string;
     purpose?: string;
     isConfidential: boolean;
-    /** Confidential deposits use the treasury's reusable 1Click address set. */
-    confidentialReusableDeposits?: boolean;
 }
 
 export interface Treasury {

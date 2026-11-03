@@ -22,32 +22,27 @@ import { ActivityStatusPill } from "@/features/activity/components/activity-stat
 import type { ActivityStatus } from "@/features/activity/utils/history-utils";
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useConfidentialBridgeAddress } from "@/hooks/use-confidential-bridge-address";
-import { useDepositAddressStatus } from "@/hooks/use-deposit-address-status";
-import { useDepositExpiryClock } from "@/hooks/use-deposit-expiry-clock";
 import { useDepositTracker } from "@/hooks/use-deposit-tracker";
 import { useTreasury } from "@/hooks/use-treasury";
-import type { TrackedDeposit, TrackedDepositStatus } from "@/lib/bridge-api";
+import type { TrackedDeposit } from "@/lib/bridge-api";
 import {
     buildNearComSendHref,
     NEAR_COM_SEND_INTERNAL_NETWORK,
     withNearComAddressPrefix,
 } from "@/lib/nearcom-address";
 import { useNear } from "@/stores/near-store";
-import { DepositAddressCard } from "../../dashboard/components/deposit/deposit-address-card";
-import { DepositAddressSkeleton } from "../../dashboard/components/deposit/deposit-address-view";
 import { DepositConfidentialSourceTabs } from "../../dashboard/components/deposit/deposit-confidential-source-tabs";
-import { isDepositAddressUsed } from "../../dashboard/components/deposit/deposit-expires";
-import { DepositNoticeList } from "../../dashboard/components/deposit/deposit-notice-list";
-import { buildPublicWalletOneTimeNotices } from "../../dashboard/components/deposit/deposit-notices";
 import { DepositPayTreasuryModal } from "../../dashboard/components/deposit/deposit-pay-treasury-modal";
-import { DepositReceiveCard } from "../../dashboard/components/deposit/deposit-receive-card";
+import {
+    DepositReceiveCard,
+    DepositReceiveCardSkeleton,
+} from "../../dashboard/components/deposit/deposit-receive-card";
 import {
     buildExternalReceiveCopy,
     buildInternalReceiveCopy,
     resolveMinDepositCopy,
 } from "../../dashboard/components/deposit/deposit-receive-copy";
 import { DepositTrackerPanel } from "../../dashboard/components/deposit/deposit-tracker-panel";
-import { DepositTransferInactive } from "../../dashboard/components/deposit/deposit-transfer-inactive";
 import {
     resolveBridgeChainId,
     resolveBridgeQuoteAssetId,
@@ -68,32 +63,6 @@ import { formatMinDepositDisplay } from "../../dashboard/components/deposit/form
 
 /** Public addresses are reusable: in-flight deposits seen this long before the page opened still count. */
 const TRACKER_IN_FLIGHT_LOOKBACK_MS = 10 * 60 * 1000;
-
-/**
- * 1Click quote status → tracker state, mirroring the backend's
- * `confidential_tracker_status`. `PENDING_DEPOSIT` is an unused address and
- * `EXPIRED` a dead one: neither is deposit evidence. `SUCCESS` is the
- * bridge's claim, not the ledger's, so it stays "finalized"; only a tracker
- * row (which takes precedence when it exists) can say ledger-confirmed.
- */
-function statusDepositState(
-    status: string | null | undefined,
-): TrackedDepositStatus | null {
-    switch ((status ?? "").trim().toUpperCase()) {
-        case "":
-        case "PENDING_DEPOSIT":
-        case "EXPIRED":
-            return null;
-        case "SUCCESS":
-            return "finalized";
-        case "REFUNDED":
-        case "FAILED":
-        case "INCOMPLETE_DEPOSIT":
-            return "failed";
-        default:
-            return "detected";
-    }
-}
 
 /** Header pill for the tracked deposits: processing beats failed beats completed. */
 function trackerPillStatus(deposits: { status: string }[]): ActivityStatus {
@@ -129,38 +98,20 @@ export default function PaySharePage() {
     const confidentialOrigin: ConfidentialOrigin =
         searchParams.get("source") === "nearcom" ? "nearcom" : "trezu";
 
-    // Confidential wallet share links carry the quote address as `id`. A
-    // reusable address also carries token + network (the chain address is
-    // re-derived for the treasury); a one-time quote carries only the id.
+    // Confidential wallet share links carry the treasury's reusable quote
+    // address as `id` plus token + network; the chain address is re-derived
+    // for the treasury. Links without a network predate the reusable address
+    // and are no longer servable.
     const isConfidentialWalletShare = kind === "public" && isConfidential;
     const isReusableConfidentialShare =
         isConfidentialWalletShare && !!networkFromUrl;
-    const isOneTimeConfidentialShare =
-        isConfidentialWalletShare && !networkFromUrl;
     const isPublicTreasuryShare = kind === "public" && !isConfidential;
 
-    const {
-        hasFetched: hasFetchedStatus,
-        found: statusFound,
-        status: depositStatus,
-        expiresAtMs: statusExpiresAtMs,
-        originAsset: statusOriginAsset,
-        isTerminal: statusIsTerminal,
-    } = useDepositAddressStatus({
-        enabled: isOneTimeConfidentialShare,
-        accountId: treasuryId,
-        depositAddress: shareId,
-    });
-
-    const networkId = isOneTimeConfidentialShare
-        ? statusOriginAsset || ""
-        : networkFromUrl;
+    const networkId = networkFromUrl;
 
     const isShareIncomplete =
         !kind ||
-        (kind === "public" &&
-            (!shareId ||
-                (isPublicTreasuryShare && !isLoading && !networkFromUrl)));
+        (kind === "public" && (!shareId || (!isLoading && !networkFromUrl)));
 
     const setConfidentialOrigin = useCallback(
         (origin: ConfidentialOrigin) => {
@@ -201,35 +152,21 @@ export default function PaySharePage() {
         [bridgeAssets, networkFromUrl],
     );
 
-    const shouldFetchBridge =
-        (isOneTimeConfidentialShare &&
-            hasFetchedStatus &&
-            statusFound === true &&
-            !statusIsTerminal &&
-            !!shareId &&
-            !!bridgeChainId) ||
-        (isReusableConfidentialShare && !!bridgeChainId && !!reusableTokenId);
-
     const {
         address: bridgeAddress,
         memo: bridgeMemo,
         hasFetched: bridgeQueryFetched,
     } = useConfidentialBridgeAddress({
-        enabled: shouldFetchBridge,
-        quoteDepositAddress: shareId,
+        enabled:
+            isReusableConfidentialShare && !!bridgeChainId && !!reusableTokenId,
         bridgeChainId,
-        treasuryId: isReusableConfidentialShare ? treasuryId : null,
-        tokenId: isReusableConfidentialShare ? reusableTokenId : null,
+        treasuryId,
+        tokenId: reusableTokenId,
     });
 
-    // Settle when status says skip bridge, chain is missing, or the query finished.
-    const hasFetchedBridge = isReusableConfidentialShare
-        ? !bridgeChainId || !reusableTokenId || bridgeQueryFetched
-        : !hasFetchedStatus
-          ? false
-          : statusFound !== true || statusIsTerminal || !bridgeChainId
-            ? true
-            : bridgeQueryFetched;
+    // Settled when the chain or token is missing, or the query finished.
+    const hasFetchedBridge =
+        !bridgeChainId || !reusableTokenId || bridgeQueryFetched;
 
     const sendTokenMeta = useMemo(
         () =>
@@ -239,94 +176,25 @@ export default function PaySharePage() {
         [kind, bridgeAssets, tokenId, networkId],
     );
 
-    const nowMs = useDepositExpiryClock(
-        isOneTimeConfidentialShare && !statusIsTerminal,
-        statusExpiresAtMs,
-    );
-
-    // Live deposit progress for the payer. One-time links are scoped to their
-    // quote; public treasury links to the bridge chain, from page open.
+    // Live deposit progress for the payer, scoped to the treasury's quote
+    // address (confidential) or the bridge chain (public), from page open.
     const [pageShownAtMs] = useState(() => Date.now());
-    const { deposits: trackedDeposits, hasFetched: hasFetchedTracker } =
-        useDepositTracker({
-            enabled:
-                kind === "public" &&
-                !isLoading &&
-                (isConfidentialWalletShare ? !!shareId : !!bridgeChainId),
-            accountId: treasuryId,
-            chain: isPublicTreasuryShare ? bridgeChainId : null,
-            quoteDepositAddress: isConfidentialWalletShare ? shareId : null,
-            reusable: isReusableConfidentialShare,
-            shownAtMs: pageShownAtMs,
-            inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
-        });
-    // The tracker row can lag 1Click's status by a poll or two, and a quote
-    // whose watch stopped before the payer sent (discovery ends after two
-    // hours) never gets one. Either way the status alone proves a deposit,
-    // so it stands in for the row rather than reading as a dead link.
-    const statusFallbackDeposit = useMemo((): TrackedDeposit | null => {
-        if (!isOneTimeConfidentialShare) return null;
-        const status = statusDepositState(depositStatus);
-        if (!status) return null;
-        const detectedAt = new Date(pageShownAtMs).toISOString();
-        return {
-            id: -1,
-            status,
-            providerStatus: depositStatus ?? "",
-            chain: bridgeChainId,
-            tokenId: sendTokenMeta?.assetId ?? tokenId,
-            tokenMetadata: {
-                symbol: sendTokenMeta?.symbol ?? tokenId,
-                decimals: sendTokenMeta?.decimals ?? 0,
-            },
-            amount: null,
-            originTxHash: null,
-            detectedAt,
-            finalizedAt: status === "finalized" ? detectedAt : null,
-            updatedAt: detectedAt,
-        };
-    }, [
-        isOneTimeConfidentialShare,
-        depositStatus,
-        pageShownAtMs,
-        bridgeChainId,
-        sendTokenMeta?.assetId,
-        sendTokenMeta?.symbol,
-        sendTokenMeta?.decimals,
-        tokenId,
-    ]);
-    const visibleDeposits =
-        trackedDeposits.length > 0
-            ? trackedDeposits
-            : statusFallbackDeposit
-              ? [statusFallbackDeposit]
-              : [];
+    const { deposits: visibleDeposits } = useDepositTracker({
+        enabled:
+            kind === "public" &&
+            !isLoading &&
+            (isConfidentialWalletShare ? !!shareId : !!bridgeChainId),
+        accountId: treasuryId,
+        chain: isPublicTreasuryShare ? bridgeChainId : null,
+        quoteDepositAddress: isConfidentialWalletShare ? shareId : null,
+        shownAtMs: pageShownAtMs,
+        inFlightLookbackMs: TRACKER_IN_FLIGHT_LOOKBACK_MS,
+    });
     const hasTrackedDeposits = visibleDeposits.length > 0;
 
     const isStatusLoading =
         kind === "public" &&
-        (isLoading ||
-            (isReusableConfidentialShare && !hasFetchedBridge) ||
-            (isOneTimeConfidentialShare &&
-                (!hasFetchedStatus ||
-                    (statusFound === true &&
-                        !statusIsTerminal &&
-                        !hasFetchedBridge) ||
-                    // A used quote is either a deposit in progress or a dead
-                    // link; the tracker decides which, so wait for it.
-                    (statusIsTerminal && !hasFetchedTracker))));
-
-    const isUsed = isDepositAddressUsed(depositStatus);
-    const isInactive =
-        !isStatusLoading &&
-        isOneTimeConfidentialShare &&
-        statusIsTerminal &&
-        !hasTrackedDeposits;
-    // A one-time address is spent once a deposit is seen: its card and pay
-    // actions give way to the deposit's progress. Public addresses stay
-    // usable, so their progress renders under the card.
-    const showProgressInsteadOfAddress =
-        isOneTimeConfidentialShare && hasTrackedDeposits;
+        (isLoading || (isReusableConfidentialShare && !hasFetchedBridge));
 
     const depositAddress =
         kind === "confidential"
@@ -344,34 +212,10 @@ export default function PaySharePage() {
         [sendTokenMeta?.minDepositAmount, sendTokenMeta?.decimals],
     );
 
-    // Legacy one-time links only; every other kind renders the receive card.
-    const notices = useMemo(() => {
-        if (!isOneTimeConfidentialShare) return [];
-        return buildPublicWalletOneTimeNotices(
-            t,
-            sendTokenMeta?.symbol || tokenId,
-            sendTokenMeta?.networkName || networkId,
-            { expiresAtMs: statusExpiresAtMs, nowMs, locale },
-        );
-    }, [
-        isOneTimeConfidentialShare,
-        sendTokenMeta?.symbol,
-        sendTokenMeta?.networkName,
-        tokenId,
-        networkId,
-        statusExpiresAtMs,
-        nowMs,
-        locale,
-        t,
-    ]);
-
     const isConfidentialShare = kind === "confidential";
     const isConfidentialNearcomShare =
         isConfidentialShare && confidentialOrigin === "nearcom";
 
-    // Reusable confidential and public treasury links render as the dark
-    // receive card; legacy one-time links keep the plain address card with
-    // their expiry notices.
     const receiveCard = useMemo(() => {
         if (isConfidentialShare) return buildInternalReceiveCopy(t);
         if (!isReusableConfidentialShare && !isPublicTreasuryShare) {
@@ -609,8 +453,6 @@ export default function PaySharePage() {
         return null;
     }
 
-    const inactiveBadge = isUsed ? t("transfer.used") : t("transfer.expired");
-
     return (
         <PageComponentLayout
             title={pageTitle}
@@ -630,17 +472,14 @@ export default function PaySharePage() {
                                 <Skeleton className="h-7 w-56" />
                                 <Skeleton className="h-6 w-36 rounded-full" />
                             </div>
-                            <DepositAddressSkeleton />
+                            <DepositReceiveCardSkeleton
+                                tone={isConfidential ? "dark" : "light"}
+                            />
                             <div className="space-y-2 mt-4">
                                 <Skeleton className="h-10 w-full rounded-xl" />
                                 <Skeleton className="h-10 w-full rounded-xl" />
                             </div>
                         </div>
-                    ) : isInactive ? (
-                        <DepositTransferInactive
-                            pageTitle={pageTitle}
-                            badgeLabel={inactiveBadge}
-                        />
                     ) : (
                         <>
                             <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between sm:gap-3 pb-3 border-b border-general-border mb-3">
@@ -683,68 +522,33 @@ export default function PaySharePage() {
                                 isConfidentialTreasury={isConfidential}
                             />
 
-                            {showProgressInsteadOfAddress ? (
+                            {receiveCard ? (
+                                <DepositReceiveCard
+                                    tone={isConfidential ? "dark" : "light"}
+                                    title={receiveCard.title}
+                                    subtitle={receiveCard.subtitle}
+                                    address={depositAddress}
+                                    memo={bridgeMemo}
+                                    addressLabel={receiveCard.addressLabel}
+                                    preferPlainAddress={
+                                        receiveCard.preferPlainAddress
+                                    }
+                                    centerIcon={receiveCard.centerIcon}
+                                    qrLabel={receiveCard.qrLabel}
+                                    onShare={handleShareLink}
+                                    notices={receiveCard.notices}
+                                />
+                            ) : null}
+                            {hasTrackedDeposits ? (
                                 <DepositTrackerPanel
                                     deposits={visibleDeposits}
                                     assetIcon={sendTokenMeta?.icon}
                                     assetName={sendTokenMeta?.symbol}
                                     theme={isConfidential ? "dark" : "light"}
                                 />
-                            ) : (
-                                <>
-                                    {receiveCard ? (
-                                        <DepositReceiveCard
-                                            tone={
-                                                isConfidential
-                                                    ? "dark"
-                                                    : "light"
-                                            }
-                                            title={receiveCard.title}
-                                            subtitle={receiveCard.subtitle}
-                                            address={depositAddress}
-                                            memo={bridgeMemo}
-                                            addressLabel={
-                                                receiveCard.addressLabel
-                                            }
-                                            preferPlainAddress={
-                                                receiveCard.preferPlainAddress
-                                            }
-                                            centerIcon={receiveCard.centerIcon}
-                                            qrLabel={receiveCard.qrLabel}
-                                            onShare={handleShareLink}
-                                            notices={receiveCard.notices}
-                                        />
-                                    ) : (
-                                        <DepositAddressCard
-                                            address={depositAddress}
-                                            memo={bridgeMemo}
-                                            copyMode="inline"
-                                            showShare={false}
-                                            footer={
-                                                <div className="px-3 py-2.5 border-t border-general-tertiary">
-                                                    <DepositNoticeList
-                                                        notices={notices}
-                                                    />
-                                                </div>
-                                            }
-                                        />
-                                    )}
-                                    {hasTrackedDeposits ? (
-                                        <DepositTrackerPanel
-                                            deposits={visibleDeposits}
-                                            assetIcon={sendTokenMeta?.icon}
-                                            assetName={sendTokenMeta?.symbol}
-                                            theme={
-                                                isConfidential
-                                                    ? "dark"
-                                                    : "light"
-                                            }
-                                        />
-                                    ) : null}
-                                </>
-                            )}
+                            ) : null}
 
-                            {showProgressInsteadOfAddress ? null : (
+                            {
                                 <div className="space-y-2">
                                     <Button
                                         type="button"
@@ -780,13 +584,13 @@ export default function PaySharePage() {
                                         {t("transfer.copyLink")}
                                     </Button>
                                 </div>
-                            )}
+                            }
                         </>
                     )}
                 </PageCard>
             </div>
 
-            {!isInactive && !isConfidentialNearcomShare && (
+            {!isConfidentialNearcomShare && (
                 <DepositPayTreasuryModal
                     open={showPicker}
                     onOpenChange={handlePickerOpenChange}
