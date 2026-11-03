@@ -707,7 +707,7 @@ fn configure_cron_runtime(
         state,
         wake_hub,
         "deposit-tracker",
-        schedule_every_secs(env_secs("DEPOSIT_TRACKER_INTERVAL_SECONDS", 5)),
+        schedule_every_secs(env_secs("DEPOSIT_TRACKER_INTERVAL_SECONDS", 2)),
         handlers::deposit_tracker
     );
 
