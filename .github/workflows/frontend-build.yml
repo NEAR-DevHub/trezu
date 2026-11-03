@@ -19,9 +19,16 @@ on:
       - '.env.example'
   workflow_dispatch:
 
+# Cancel superseded runs when a PR gets a new push. Other events group per
+# commit, so every push to main runs to completion.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
     - uses: actions/checkout@v4
