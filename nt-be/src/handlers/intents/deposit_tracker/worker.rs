@@ -63,7 +63,8 @@ pub(super) const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
 const REUSABLE_LEDGER_MATCH_LOOKBACK: Duration = Duration::hours(6);
 const REUSABLE_LEDGER_MATCH_LOOKAHEAD: Duration = Duration::hours(1);
 /// Pages of payouts one reusable poll may read when every entry on a full
-/// page is new: more arrivals than one page between two polls.
+/// page is new: more arrivals than one page since the last poll (or, on the
+/// first poll, since the watch was created).
 const REUSABLE_MAX_PAGES: u32 = 5;
 
 #[derive(Debug, Default, Clone)]
@@ -288,31 +289,34 @@ impl<'a> DepositTrackerWorker<'a> {
                 .map(|deposit| deposit.status)
         };
 
-        // After the baseline, a full page holding nothing already seen may
-        // continue on the next page: read on until a seen payout bounds it.
-        if let Some(baseline) = watch.baseline_keys.as_deref() {
-            let is_seen = |withdrawal: &ReusableWithdrawal| {
-                let key = withdrawal.provider_deposit_key();
-                baseline.contains(&key) || known_status(&key).is_some()
-            };
-            let mut tail = page.withdrawals.as_slice();
-            let mut page_no = 1;
-            while tail.len() == WITHDRAWALS_PAGE_LIMIT as usize
-                && !tail.iter().any(is_seen)
-                && page_no < REUSABLE_MAX_PAGES
-            {
-                page_no += 1;
-                let next = resolver
-                    .withdrawals_page(dao, set, page_no)
-                    .await
-                    .map_err(|error| error.to_string())?;
-                if next.withdrawals.is_empty() {
-                    break;
+        // A full page holding nothing that bounds it may continue on the
+        // next page: read on until a payout already seen (or, on the first
+        // poll, one older than the watch) appears.
+        let bounds = |withdrawal: &ReusableWithdrawal| {
+            let key = withdrawal.provider_deposit_key();
+            known_status(&key).is_some()
+                || match watch.baseline_keys.as_deref() {
+                    Some(baseline) => baseline.contains(&key),
+                    None => withdrawal.timestamp < watch.created_at,
                 }
-                let start = page.withdrawals.len();
-                page.withdrawals.extend(next.withdrawals);
-                tail = &page.withdrawals[start..];
+        };
+        let mut tail = page.withdrawals.as_slice();
+        let mut page_no = 1;
+        while tail.len() == WITHDRAWALS_PAGE_LIMIT as usize
+            && !tail.iter().any(bounds)
+            && page_no < REUSABLE_MAX_PAGES
+        {
+            page_no += 1;
+            let next = resolver
+                .withdrawals_page(dao, set, page_no)
+                .await
+                .map_err(|error| error.to_string())?;
+            if next.withdrawals.is_empty() {
+                break;
             }
+            let start = page.withdrawals.len();
+            page.withdrawals.extend(next.withdrawals);
+            tail = &page.withdrawals[start..];
         }
 
         let mut result = PollResult::default();
