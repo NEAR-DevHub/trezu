@@ -12,7 +12,8 @@
 use crate::{
     constants::{
         intents_tokens::{
-            BaseTokenInfo, TokenDeployment, UnifiedTokenInfo, find_unified_asset_id, get_tokens_map,
+            BaseTokenInfo, TokenDeployment, UnifiedTokenInfo, find_token_by_defuse_asset_id,
+            find_unified_asset_id, get_tokens_map,
         },
         nearcom_ranking::{
             is_hidden_catalog_token, is_near_network, is_swap_excluded_symbol, network_volume_rank,
@@ -33,7 +34,7 @@ use crate::{
     services::oneclick_asset_routing::{
         NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
-    services::oneclick_tokens::fetch_oneclick_tokens,
+    services::oneclick_tokens::{OneClickToken, fetch_oneclick_tokens},
 };
 use serde_json::Value;
 
@@ -63,24 +64,37 @@ fn chain_id_from_defuse_id(defuse_id: &str) -> String {
     }
 }
 
-/// Bridge chain a credit id arrived from, for ids as the tracker stores them:
-/// `1cs_v1:<chain>:…` routing ids and `nep141:<chain>[-<contract>].omft.near`
-/// bridge mints. Any other `nep141:` id is a native NEAR token; other
-/// families are unknown.
-pub(crate) fn chain_id_for_balance_asset(asset_id: &str) -> Option<String> {
-    if let Some(rest) = asset_id.strip_prefix("1cs_v1:") {
-        return rest
-            .split(':')
-            .next()
-            .filter(|chain| !chain.is_empty() && *chain != "any")
-            .map(fallback_chain_id_for_name);
-    }
-    let contract = asset_id.strip_prefix("nep141:")?;
-    if let Some(prefix) = contract.strip_suffix(".omft.near") {
-        let chain = prefix.split('-').next().unwrap_or(prefix);
-        return Some(fallback_chain_id_for_name(chain));
-    }
-    Some(NEAR_MAINNET_NETWORK_ID.to_string())
+/// Bridge chain a credited token id came from, read from the token
+/// catalogs rather than inferred from the id's shape: the live 1Click list
+/// names each asset's `blockchain`; the vendored near.com catalog covers an
+/// id the list is missing or a list that is unavailable. Ids neither
+/// catalog knows yield `None`.
+pub(crate) async fn chain_id_for_credited_asset(
+    state: &Arc<AppState>,
+    asset_id: &str,
+) -> Option<String> {
+    let live = fetch_oneclick_tokens(state)
+        .await
+        .inspect_err(|(_, message)| {
+            tracing::debug!(
+                asset_id,
+                message,
+                "1Click token list unavailable for chain lookup"
+            );
+        })
+        .unwrap_or_default();
+    chain_id_from_catalogs(&live, asset_id)
+}
+
+fn chain_id_from_catalogs(live: &[OneClickToken], asset_id: &str) -> Option<String> {
+    let chain = live
+        .iter()
+        .find(|token| token.asset_id == asset_id)
+        .map(|token| token.blockchain.as_str())
+        .or_else(|| {
+            find_token_by_defuse_asset_id(asset_id).map(|token| token.origin_chain_name.as_str())
+        })?;
+    Some(fallback_chain_id_for_name(chain))
 }
 
 pub(crate) fn fallback_chain_id_for_name(chain_name: &str) -> String {
@@ -762,29 +776,36 @@ mod tests {
     }
 
     #[test]
-    fn chain_for_balance_asset_follows_the_id_family() {
+    fn chain_for_credited_asset_comes_from_the_catalogs() {
+        let live: Vec<OneClickToken> = serde_json::from_value(serde_json::json!([{
+            "assetId": "nep141:example.omft.near",
+            "decimals": 6,
+            "blockchain": "sol",
+            "symbol": "EX"
+        }]))
+        .unwrap();
+        // The live list wins when it names the id.
         assert_eq!(
-            chain_id_for_balance_asset(
+            chain_id_from_catalogs(&live, "nep141:example.omft.near").as_deref(),
+            Some("sol:mainnet")
+        );
+        // The vendored catalog covers ids the live list lacks.
+        assert_eq!(
+            chain_id_from_catalogs(
+                &live,
                 "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near"
             )
             .as_deref(),
             Some("eth:8453")
         );
         assert_eq!(
-            chain_id_for_balance_asset("nep141:btc.omft.near").as_deref(),
-            Some("btc:mainnet")
-        );
-        assert_eq!(
-            chain_id_for_balance_asset("1cs_v1:sol:native").as_deref(),
-            Some("sol:mainnet")
-        );
-        assert_eq!(chain_id_for_balance_asset("1cs_v1:any"), None);
-        assert_eq!(
-            chain_id_for_balance_asset("nep141:wrap.near").as_deref(),
+            chain_id_from_catalogs(&[], "nep141:wrap.near").as_deref(),
             Some(NEAR_MAINNET_NETWORK_ID)
         );
+        // Placeholders and unknown ids are not guessed from their shape.
+        assert_eq!(chain_id_from_catalogs(&[], "1cs_v1:any"), None);
         assert_eq!(
-            chain_id_for_balance_asset("nep245:v2_1.omni.hot.tg:56_11111"),
+            chain_id_from_catalogs(&[], "nep245:v2_1.omni.hot.tg:56_11111"),
             None
         );
     }

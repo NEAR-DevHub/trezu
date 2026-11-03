@@ -11,7 +11,7 @@ use near_account_id::AccountIdRef;
 use sqlx::PgPool;
 
 use crate::AppState;
-use crate::handlers::intents::bridge_tokens::chain_id_for_balance_asset;
+use crate::handlers::intents::bridge_tokens::chain_id_for_credited_asset;
 use crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::reusable_deposit::{
     REUSABLE_DEPOSIT_KEY_PREFIX, ReusableDepositAddresses, ReusableDepositResolver,
@@ -547,10 +547,10 @@ impl<'a> DepositTrackerWorker<'a> {
             };
 
             if let Some(ledger) = ledger {
-                let chain = ledger
-                    .token_id
-                    .as_deref()
-                    .and_then(chain_id_for_balance_asset);
+                let chain = match ledger.token_id.as_deref() {
+                    Some(token_id) => chain_id_for_credited_asset(self.state, token_id).await,
+                    None => None,
+                };
                 store::confirm_ledger(self.pool(), deposit.id, &ledger, chain.as_deref()).await?;
                 changed += 1;
                 continue;
