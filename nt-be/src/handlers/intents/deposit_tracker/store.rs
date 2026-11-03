@@ -208,25 +208,31 @@ pub async fn upsert_watch(
     }
 }
 
-/// Whether a quote address was ever handed out as the DAO's reusable
-/// deposit address. Retired watches count: the address stays public.
-pub async fn is_reusable_quote(
+/// The watch a confidential quote address was handed out with, looked up
+/// by the address alone so the caller cannot steer the answer with a
+/// different `dao_id`. Retired watches count: a reusable address stays
+/// public for life. Prefers the reusable row should an address ever carry
+/// both.
+#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
+pub struct QuoteOwner {
+    pub dao_id: String,
+    pub reusable: bool,
+}
+
+pub async fn find_quote_owner(
     pool: &PgPool,
-    dao_id: &str,
     quote_deposit_address: &str,
-) -> Result<bool, sqlx::Error> {
-    sqlx::query_scalar(
+) -> Result<Option<QuoteOwner>, sqlx::Error> {
+    sqlx::query_as(
         r#"
-        SELECT EXISTS (
-            SELECT 1 FROM deposit_watches
-            WHERE dao_id = $1 AND kind = 'confidential'
-              AND quote_deposit_address = $2 AND reusable
-        )
+        SELECT dao_id, reusable FROM deposit_watches
+        WHERE kind = 'confidential' AND quote_deposit_address = $1
+        ORDER BY reusable DESC
+        LIMIT 1
         "#,
     )
-    .bind(dao_id)
     .bind(quote_deposit_address)
-    .fetch_one(pool)
+    .fetch_optional(pool)
     .await
 }
 
@@ -594,6 +600,13 @@ pub async fn find_confidential_ledger_match(
 /// tracker's first sighting picks the row; the `NOT EXISTS` guard keeps
 /// each gold row linked at most once. The row's `originAsset` names the
 /// credited token, which the payout feed does not.
+///
+/// Shape of a payout row (1Click files each payout on the reusable address
+/// as its own child swap; see `fixtures/reusable_payout_history_row.json`,
+/// captured from a live row): `refundTo` is the reusable address,
+/// `depositAddress` a per-payout child address, `originAsset` the credited
+/// token. The parent ANY_INPUT quote (`refundTo` = the DAO, `originAsset`
+/// = `1cs_v1:any`) is not a payout and never matches.
 pub async fn find_reusable_ledger_match(
     pool: &PgPool,
     dao_id: &str,
@@ -605,7 +618,7 @@ pub async fn find_reusable_ledger_match(
     sqlx::query_as(
         r#"
         SELECT g.id AS event_id, g.amount_in AS amount,
-               he.raw_payload->>'originAsset' AS token_id
+               NULLIF(he.raw_payload->>'originAsset', '1cs_v1:any') AS token_id
         FROM bronze_confidential_history_events he
         JOIN gold_treasury_ledger_events g
           ON g.gold_event_key = 'confidential:' || he.id::text
@@ -1423,6 +1436,132 @@ mod tests {
             .expect("old row");
         assert_eq!(provisional.token_id, "nep141:sol.omft.near");
         assert_eq!(provisional.chain.as_deref(), Some("sol:mainnet"));
+    }
+
+    const REUSABLE_PAYOUT_ROW: &str = include_str!("fixtures/reusable_payout_history_row.json");
+
+    async fn seed_history_row(
+        pool: &PgPool,
+        dao_id: &str,
+        payload: &serde_json::Value,
+        amount: &str,
+    ) -> i64 {
+        let bronze_id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO bronze_confidential_history_events (
+                account_id, created_at_external, deposit_address, deposit_memo, status,
+                deposit_type, recipient_type, recipient, origin_asset, destination_asset,
+                raw_payload
+            )
+            VALUES ($1, NOW(), $2->>'depositAddress', $2->>'depositMemo', $2->>'status',
+                    $2->>'depositType', $2->>'recipientType', $2->>'recipient',
+                    $2->>'originAsset', $2->>'destinationAsset', $2)
+            RETURNING id
+            "#,
+        )
+        .bind(dao_id)
+        .bind(payload)
+        .fetch_one(pool)
+        .await
+        .expect("seed bronze row");
+        sqlx::query_scalar(
+            r#"
+            INSERT INTO gold_treasury_ledger_events (
+                gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+                status, event_time, token_in, amount_in
+            )
+            VALUES ('confidential:' || $1::text, $2, 'confidential_history_event', true, 'deposit',
+                    'success', NOW(), $3, $4::numeric)
+            RETURNING id
+            "#,
+        )
+        .bind(bronze_id)
+        .bind(dao_id)
+        .bind(payload["originAsset"].as_str())
+        .bind(amount)
+        .fetch_one(pool)
+        .await
+        .expect("seed gold row")
+    }
+
+    /// Pins the live payload shape: the payout row's `refundTo` is the
+    /// reusable address and its `originAsset` the credited token. The parent
+    /// quote's shape (`refundTo` = DAO, `originAsset` = `1cs_v1:any`) must
+    /// neither match nor leak its placeholder as a token.
+    #[sqlx::test]
+    async fn reusable_match_keys_on_the_payout_refund_to(pool: PgPool) {
+        let payout: serde_json::Value =
+            serde_json::from_str(REUSABLE_PAYOUT_ROW).expect("fixture parses");
+        let dao_id = payout["recipient"].as_str().unwrap().to_string();
+        let rda = payout["refundTo"].as_str().unwrap().to_string();
+        let child = payout["depositAddress"].as_str().unwrap().to_string();
+        assert_ne!(
+            rda, child,
+            "fixture: child address differs from the reusable one"
+        );
+        seed_dao(&pool, &dao_id, true).await;
+        let event_id = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let window = (
+            Utc::now() - Duration::hours(1),
+            Utc::now() + Duration::hours(1),
+        );
+
+        let matched = find_reusable_ledger_match(&pool, &dao_id, &rda, None, window.0, window.1)
+            .await
+            .expect("query")
+            .expect("payout row matches on refundTo");
+        assert_eq!(matched.event_id, event_id);
+        assert_eq!(
+            matched.token_id.as_deref(),
+            Some("nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near")
+        );
+        assert_eq!(
+            find_reusable_ledger_match(&pool, &dao_id, &child, None, window.0, window.1)
+                .await
+                .expect("query"),
+            None,
+            "the per-payout child address is not the key"
+        );
+
+        let mut parent = payout.clone();
+        parent["refundTo"] = serde_json::Value::String(dao_id.clone());
+        parent["originAsset"] = serde_json::Value::String("1cs_v1:any".to_string());
+        parent["depositAddress"] = serde_json::Value::String(rda.clone());
+        seed_history_row(&pool, &dao_id, &parent, "0.3").await;
+        let mut placeholder = payout.clone();
+        placeholder["originAsset"] = serde_json::Value::String("1cs_v1:any".to_string());
+        placeholder["depositAddress"] = serde_json::Value::String("child-2".to_string());
+        seed_history_row(&pool, &dao_id, &placeholder, "0.4").await;
+
+        let again = find_reusable_ledger_match(
+            &pool,
+            &dao_id,
+            &rda,
+            Some(&"0.4".parse().unwrap()),
+            window.0,
+            window.1,
+        )
+        .await
+        .expect("query")
+        .expect("payout without a usable asset still matches");
+        assert_eq!(
+            again.token_id, None,
+            "the ANY_INPUT placeholder is not a token"
+        );
+        assert_eq!(
+            find_reusable_ledger_match(
+                &pool,
+                &dao_id,
+                &rda,
+                Some(&"0.3".parse().unwrap()),
+                window.0,
+                window.1
+            )
+            .await
+            .expect("query"),
+            None,
+            "the parent quote row never matches the reusable address"
+        );
     }
 
     #[sqlx::test]

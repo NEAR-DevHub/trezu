@@ -1,11 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import {
-    formatWholeUsd,
-    resolveMinDepositCopy,
-} from "./deposit-min-deposit-copy";
+import { resolveMinDepositCopy } from "./deposit-min-deposit-copy";
 
 describe("resolveMinDepositCopy", () => {
-    test("rounds a priced minimum up to whole dollars", () => {
+    test("shows a priced minimum to the cent, rounded up", () => {
+        expect(
+            resolveMinDepositCopy({
+                minDepositRaw: "149500",
+                decimals: 6,
+                priceUsd: 1,
+                minDepositDisplay: "0.1495",
+            }),
+        ).toEqual({ kind: "usd", usd: 0.15 });
         expect(
             resolveMinDepositCopy({
                 minDepositRaw: "3200000",
@@ -13,18 +18,18 @@ describe("resolveMinDepositCopy", () => {
                 priceUsd: 1,
                 minDepositDisplay: "3.2",
             }),
-        ).toEqual({ kind: "usd", usd: 4 });
+        ).toEqual({ kind: "usd", usd: 3.2 });
     });
 
-    test("never shows less than $1", () => {
+    test("a minimum under a cent still reads as a cent, never zero", () => {
         expect(
             resolveMinDepositCopy({
-                minDepositRaw: "50000",
+                minDepositRaw: "4000",
                 decimals: 6,
                 priceUsd: 1,
-                minDepositDisplay: "0.05",
+                minDepositDisplay: "0.004",
             }),
-        ).toEqual({ kind: "usd", usd: 1 });
+        ).toEqual({ kind: "usd", usd: 0.01 });
     });
 
     test("falls back to the token amount without a price", () => {
@@ -59,12 +64,5 @@ describe("resolveMinDepositCopy", () => {
                 minDepositDisplay: null,
             }),
         ).toEqual({ kind: "usd", usd: 1 });
-    });
-});
-
-describe("formatWholeUsd", () => {
-    test("formats without cents", () => {
-        expect(formatWholeUsd(1, "en-US")).toBe("$1");
-        expect(formatWholeUsd(12, "en-US")).toBe("$12");
     });
 });

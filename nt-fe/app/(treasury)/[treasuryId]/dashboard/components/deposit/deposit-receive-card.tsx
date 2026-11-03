@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Info, Send } from "lucide-react";
+import { Check, Copy, Info, Send, TriangleAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { type ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -133,6 +133,24 @@ export function DepositReceiveCard({
                     />
                 )}
             </div>
+
+            {memo && (
+                <div
+                    className="mx-4 mt-3 flex gap-2 items-start text-sm bg-destructive/10 text-destructive rounded-lg p-3"
+                    data-testid="deposit-receive-memo-warning"
+                >
+                    <TriangleAlert className="size-4 shrink-0 mt-0.5" />
+                    <span>
+                        {t.rich("memoWarning", {
+                            bold: (chunks) => (
+                                <span className="font-semibold">
+                                    {chunks}
+                                </span>
+                            ),
+                        })}
+                    </span>
+                </div>
+            )}
 
             <div className="px-4 py-3 space-y-2">
                 {notices.map((notice) => (

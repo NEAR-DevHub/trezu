@@ -72,7 +72,7 @@ pub(crate) fn chain_id_for_balance_asset(asset_id: &str) -> Option<String> {
         return rest
             .split(':')
             .next()
-            .filter(|chain| !chain.is_empty())
+            .filter(|chain| !chain.is_empty() && *chain != "any")
             .map(fallback_chain_id_for_name);
     }
     let contract = asset_id.strip_prefix("nep141:")?;
@@ -778,6 +778,7 @@ mod tests {
             chain_id_for_balance_asset("1cs_v1:sol:native").as_deref(),
             Some("sol:mainnet")
         );
+        assert_eq!(chain_id_for_balance_asset("1cs_v1:any"), None);
         assert_eq!(
             chain_id_for_balance_asset("nep141:wrap.near").as_deref(),
             Some(NEAR_MAINNET_NETWORK_ID)

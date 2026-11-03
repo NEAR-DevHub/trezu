@@ -239,7 +239,8 @@ impl<'a> ReusableDepositResolver<'a> {
     /// The DAO's reusable deposit set: cached, else discovered from 1Click,
     /// else created. Needs the DAO's 1Click JWT for the 1Click paths.
     /// A cached set 1Click has not confirmed within `REVERIFY_AFTER` is
-    /// re-listed first; if that fails the cached set is served as is.
+    /// re-listed first; if that fails the cached set is served as long as
+    /// 1Click still answers for its address.
     pub async fn resolve(
         &self,
         dao_id: &AccountIdRef,
@@ -258,6 +259,17 @@ impl<'a> ReusableDepositResolver<'a> {
                     Ok(set)
                 }
                 Err((status, message)) => {
+                    if self.cached_set_is_dead(dao_id, &cached.set).await {
+                        clear_cached(pool, dao_id.as_str())
+                            .await
+                            .map_err(db_error)?;
+                        tracing::warn!(
+                            dao_id = dao_id.as_str(),
+                            %status,
+                            "reusable deposit set re-verify failed and 1Click no longer serves the cached set; cleared it: {message}"
+                        );
+                        return Err((status, message));
+                    }
                     tracing::warn!(
                         dao_id = dao_id.as_str(),
                         %status,
@@ -303,6 +315,21 @@ impl<'a> ReusableDepositResolver<'a> {
                 .map_err(db_error)?,
         }
         Ok(set)
+    }
+
+    /// Whether 1Click has definitely stopped serving the cached set: its
+    /// withdrawals read answers 404 or names another recipient. An auth or
+    /// transport failure proves nothing about the address and is not a
+    /// reason to withhold it.
+    async fn cached_set_is_dead(
+        &self,
+        dao_id: &AccountIdRef,
+        set: &ReusableDepositAddresses,
+    ) -> bool {
+        matches!(
+            self.withdrawals(dao_id, set).await,
+            Err(WithdrawalsError::StaleSet(_))
+        )
     }
 
     async fn record_confirmed(
@@ -521,7 +548,7 @@ impl<'a> ReusableDepositResolver<'a> {
 /// Prefix of tracker provider keys for reusable-address deposits.
 pub const REUSABLE_DEPOSIT_KEY_PREFIX: &str = "rda:";
 const WITHDRAWALS_PATH: &str = "/v0/any-input/withdrawals";
-const WITHDRAWALS_PAGE_LIMIT: u32 = 50;
+pub const WITHDRAWALS_PAGE_LIMIT: u32 = 50;
 
 /// One payout of the reusable quote: one deposit credited (or failed).
 /// `hash` is the payout transaction, not the depositor's, and is empty
@@ -622,11 +649,22 @@ impl std::fmt::Display for WithdrawalsError {
 }
 
 impl ReusableDepositResolver<'_> {
-    /// Latest payouts of the DAO's reusable quote (newest first, one page).
+    /// Latest payouts of the DAO's reusable quote (newest first, first page).
     pub async fn withdrawals(
         &self,
         dao_id: &AccountIdRef,
         set: &ReusableDepositAddresses,
+    ) -> Result<ReusableWithdrawals, WithdrawalsError> {
+        self.withdrawals_page(dao_id, set, 1).await
+    }
+
+    /// One page of the DAO's payouts, newest first, `WITHDRAWALS_PAGE_LIMIT`
+    /// per page.
+    pub async fn withdrawals_page(
+        &self,
+        dao_id: &AccountIdRef,
+        set: &ReusableDepositAddresses,
+        page: u32,
     ) -> Result<ReusableWithdrawals, WithdrawalsError> {
         let jwt = refresh_dao_jwt(self.state, dao_id)
             .await
@@ -647,7 +685,7 @@ impl ReusableDepositResolver<'_> {
             }
             query.append_pair("limit", &WITHDRAWALS_PAGE_LIMIT.to_string());
             query.append_pair("sortOrder", "desc");
-            query.append_pair("page", "1");
+            query.append_pair("page", &page.to_string());
         }
         // 1Click answers 404 for a quote address it no longer serves.
         let body = self
@@ -932,6 +970,12 @@ mod tests {
             .expect(1)
             .mount(&mock)
             .await;
+        Mock::given(method("GET"))
+            .and(path(WITHDRAWALS_PATH))
+            .respond_with(ResponseTemplate::new(503))
+            .expect(1)
+            .mount(&mock)
+            .await;
         seed_authenticated_dao(&pool).await;
         let old = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
         seed_cached(&pool, &old, "2 days").await;
@@ -942,6 +986,43 @@ mod tests {
             .await
             .expect("cached set survives a 1Click outage");
         assert_eq!(set, old);
+    }
+
+    /// Re-verify finds only an incompatible set and 1Click no longer answers
+    /// for the cached address: the cached set is dropped, not served.
+    #[sqlx::test]
+    async fn dead_cached_set_is_cleared_not_served(pool: PgPool) {
+        let mock = MockServer::start().await;
+        let mut public = quote_json(DAO);
+        public["confidentiality"] = Value::String("public".to_string());
+        Mock::given(method("GET"))
+            .and(path(QUOTES_PATH))
+            .respond_with(
+                ResponseTemplate::new(200)
+                    .set_body_json(listing(vec![listed("theirs", public)], None)),
+            )
+            .mount(&mock)
+            .await;
+        Mock::given(method("GET"))
+            .and(path(WITHDRAWALS_PATH))
+            .respond_with(
+                ResponseTemplate::new(404)
+                    .set_body_json(serde_json::json!({ "message": "quote not found" })),
+            )
+            .expect(1)
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let old = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+        seed_cached(&pool, &old, "2 days").await;
+        let state = state_with_mock(pool.clone(), &mock);
+
+        let (status, _) = ReusableDepositResolver::new(&state)
+            .resolve(AccountIdRef::new(DAO).unwrap())
+            .await
+            .expect_err("dead set is not served");
+        assert_eq!(status, StatusCode::CONFLICT);
+        assert_eq!(load_cached(&pool, DAO).await.unwrap(), None);
     }
 
     #[sqlx::test]
@@ -977,6 +1058,32 @@ mod tests {
         assert_eq!(fresh.chain_deposit_addresses.len(), 4);
         assert!(fresh.address_for_chain("sol:mainnet").is_some());
         assert_eq!(load_cached(&pool, DAO).await.unwrap(), Some(fresh));
+    }
+
+    #[sqlx::test]
+    async fn withdrawals_page_is_requested_by_number(pool: PgPool) {
+        let mock = MockServer::start().await;
+        Mock::given(method("GET"))
+            .and(path(WITHDRAWALS_PATH))
+            .and(query_param("page", "3"))
+            .and(query_param("limit", "50"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "asset": "1cs_v1:original",
+                "recipient": DAO,
+                "withdrawals": []
+            })))
+            .expect(1)
+            .mount(&mock)
+            .await;
+        seed_authenticated_dao(&pool).await;
+        let state = state_with_mock(pool.clone(), &mock);
+        let set = ReusableDepositAddresses::from_quote(&quote_json(DAO), None, None).unwrap();
+
+        let page = ReusableDepositResolver::new(&state)
+            .withdrawals_page(AccountIdRef::new(DAO).unwrap(), &set, 3)
+            .await
+            .expect("page 3");
+        assert!(page.withdrawals.is_empty());
     }
 
     #[sqlx::test]

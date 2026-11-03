@@ -27,7 +27,7 @@ use crate::auth::OptionalAuthUser;
 use crate::handlers::intents::confidential::reusable_deposit::load_cached;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 
-use super::store::{InProcessDeposit, is_reusable_quote, load_recent_deposits_for_scope};
+use super::store::{InProcessDeposit, find_quote_owner, load_recent_deposits_for_scope};
 
 /// How far before their page open a non-member may look on a reusable
 /// address: a transfer sent just before opening the link, nothing older.
@@ -87,10 +87,11 @@ pub struct TrackedDeposit {
 }
 
 impl TrackedDeposit {
-    /// The guest view of a row. Status, token, amount and timestamps are
-    /// what a payer needs to see their own deposit land; the origin hash is
-    /// the only field that identifies another payer. Any field added to the
-    /// struct that could do the same must be cleared here too.
+    /// The guest view of a row: status, token, amount and timestamps, which
+    /// a payer needs to see their own deposit land, and no transaction hash.
+    /// `guest_row_exposes_a_fixed_field_set` pins the serialised key set, so
+    /// a field added to the struct fails that test until this view decides
+    /// whether to keep or clear it.
     fn redacted(mut self) -> Self {
         self.origin_tx_hash = None;
         self
@@ -121,20 +122,42 @@ impl TrackedDeposit {
     }
 }
 
-/// A reusable address stays one after the cached set is cleared or rotated:
-/// the watch it was handed out with carries the mark for life. The live
-/// cache covers a set whose watch never registered.
-async fn reusable_quote(
+/// What a quote address is to the requesting treasury.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum QuoteScope {
+    /// The treasury's own one-time quote (or an address no watch knows,
+    /// which has no rows): the payer's capability.
+    OneTime,
+    /// The treasury's reusable address, by the watch's mark or the live set.
+    Reusable,
+    /// Handed out by a different treasury: no capability here.
+    Foreign,
+}
+
+/// Classified from the watch the address was handed out with, looked up by
+/// the address alone, so a caller cannot turn another treasury's reusable
+/// address into a capability by naming the wrong account. A reusable
+/// address stays one after the cached set is cleared or rotated: the watch
+/// carries the mark for life; the live cache covers a set whose watch
+/// never registered.
+async fn quote_scope(
     pool: &sqlx::PgPool,
     dao_id: &str,
     quote: &str,
-) -> Result<bool, sqlx::Error> {
-    if is_reusable_quote(pool, dao_id, quote).await? {
-        return Ok(true);
+) -> Result<QuoteScope, sqlx::Error> {
+    match find_quote_owner(pool, quote).await? {
+        Some(owner) if owner.dao_id != dao_id => return Ok(QuoteScope::Foreign),
+        Some(owner) if owner.reusable => return Ok(QuoteScope::Reusable),
+        _ => {}
     }
-    Ok(load_cached(pool, dao_id)
+    let cached = load_cached(pool, dao_id)
         .await?
-        .is_some_and(|set| set.quote_deposit_address == quote))
+        .is_some_and(|set| set.quote_deposit_address == quote);
+    Ok(if cached {
+        QuoteScope::Reusable
+    } else {
+        QuoteScope::OneTime
+    })
 }
 
 pub async fn get_deposit_tracker(
@@ -159,35 +182,38 @@ pub async fn get_deposit_tracker(
         ));
     }
     let dao_id = query.account_id.as_str();
-    let reusable_scope = match quote {
-        Some(quote) => reusable_quote(&state.db_pool, dao_id, quote)
-            .await
-            .map_err(|e| {
-                tracing::error!("deposit tracker reusable scope read failed: {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to load deposit tracker state".to_string(),
-                )
-            })?,
-        None => false,
+    let scope = match quote {
+        Some(quote) => Some(
+            quote_scope(&state.db_pool, dao_id, quote)
+                .await
+                .map_err(|e| {
+                    tracing::error!("deposit tracker quote scope read failed: {}", e);
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to load deposit tracker state".to_string(),
+                    )
+                })?,
+        ),
+        None => None,
     };
     // A one-time quote address is the capability: share pages let the payer
     // (not a member) watch their own deposit, exactly like the confidential
-    // deposit-address status endpoint. Chain-wide reads and the reusable
-    // address are member-only for the full feed.
-    let visibility = if quote.is_some() && !reusable_scope {
-        Visibility::Full
-    } else {
-        match user
+    // deposit-address status endpoint. Chain-wide reads, the reusable
+    // address, and another treasury's address go through the member check.
+    let visibility = match scope {
+        Some(QuoteScope::OneTime) => Visibility::Full,
+        _ => match user
             .verify_member_if_confidential(&state.db_pool, &query.account_id)
             .await
         {
             Ok(_) => Visibility::Full,
-            Err((StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN, _)) if reusable_scope => {
+            Err((StatusCode::UNAUTHORIZED | StatusCode::FORBIDDEN, _))
+                if scope == Some(QuoteScope::Reusable) =>
+            {
                 Visibility::GuestWindow
             }
             Err(error) => return Err(error),
-        }
+        },
     };
     let since = match visibility {
         Visibility::Full => query.since,
@@ -240,9 +266,19 @@ mod tests {
     use sqlx::PgPool;
 
     const DAO: &str = "rda.sputnik-dao.near";
+    const OTHER_DAO: &str = "other.sputnik-dao.near";
 
     async fn tracker(
         pool: &PgPool,
+        quote: &str,
+        since: Option<DateTime<Utc>>,
+    ) -> Result<DepositTrackerResponse, StatusCode> {
+        tracker_for(pool, DAO, quote, since).await
+    }
+
+    async fn tracker_for(
+        pool: &PgPool,
+        dao: &str,
         quote: &str,
         since: Option<DateTime<Utc>>,
     ) -> Result<DepositTrackerResponse, StatusCode> {
@@ -250,7 +286,7 @@ mod tests {
             State(Arc::new(build_test_state(pool.clone()))),
             OptionalAuthUser(None),
             Query(DepositTrackerQuery {
-                account_id: DAO.parse().expect("dao id"),
+                account_id: dao.parse().expect("dao id"),
                 chain: None,
                 quote_deposit_address: Some(quote.to_string()),
                 since,
@@ -343,6 +379,71 @@ mod tests {
             .await
             .expect("one-time quote is its own capability");
         assert!(one_time.deposits.is_empty());
+
+        sqlx::query(
+            "INSERT INTO monitored_accounts (account_id, enabled, is_confidential_account) \
+             VALUES ($1, true, true)",
+        )
+        .bind(OTHER_DAO)
+        .execute(&pool)
+        .await
+        .expect("seed other dao");
+        assert_eq!(
+            tracker_for(&pool, OTHER_DAO, "rda-quote", Some(Utc::now()))
+                .await
+                .map(|r| r.deposits.len()),
+            Err(StatusCode::UNAUTHORIZED),
+            "another treasury's reusable address is no capability"
+        );
+    }
+
+    /// The guest view is redacted by hand, so the shape it serialises is
+    /// pinned here: a new field on `TrackedDeposit` must be added to this
+    /// list on purpose, after deciding whether a non-member may see it.
+    #[test]
+    fn guest_row_exposes_a_fixed_field_set() {
+        let now = Utc::now();
+        let row = TrackedDeposit {
+            id: 1,
+            status: "finalized",
+            provider_status: "SUCCESS".to_string(),
+            chain: Some("eth:8453".to_string()),
+            token_id: "nep141:usdc.omft.near".to_string(),
+            token_metadata: crate::handlers::public_history::public_list::fallback_metadata(
+                "nep141:usdc.omft.near",
+            ),
+            amount: Some(BigDecimal::from(1)),
+            origin_tx_hash: Some("0xabc".to_string()),
+            detected_at: now,
+            finalized_at: Some(now),
+            updated_at: now,
+        }
+        .redacted();
+        let json = serde_json::to_value(&row).expect("serialises");
+        let mut keys: Vec<&str> = json
+            .as_object()
+            .unwrap()
+            .keys()
+            .map(String::as_str)
+            .collect();
+        keys.sort_unstable();
+        assert_eq!(
+            keys,
+            [
+                "amount",
+                "chain",
+                "detectedAt",
+                "finalizedAt",
+                "id",
+                "originTxHash",
+                "providerStatus",
+                "status",
+                "tokenId",
+                "tokenMetadata",
+                "updatedAt",
+            ]
+        );
+        assert!(json["originTxHash"].is_null());
     }
 
     #[test]

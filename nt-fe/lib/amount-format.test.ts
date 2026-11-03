@@ -152,6 +152,17 @@ describe("fiat, prices, rates, percentages, and locales", () => {
         expect(formatFiatValue(Number.POSITIVE_INFINITY).display).toBe("—");
     });
 
+    it("renders whole currency units when asked", () => {
+        expect(formatFiatValue(12, { fractionDigits: 0 }).display).toBe("$12");
+        expect(
+            formatFiatValue("4.2", { fractionDigits: 0, rounding: "up" })
+                .display,
+        ).toBe("$5");
+        expect(formatFiatValue("0.4", { fractionDigits: 0 }).display).toBe(
+            "<$1",
+        );
+    });
+
     it("formats unit prices, rates, and small percentages", () => {
         expect(formatUnitPrice("1.23456789").display).toBe("$1.23457");
         expect(formatRate("0.000123456789").display).toBe("0.00012346");

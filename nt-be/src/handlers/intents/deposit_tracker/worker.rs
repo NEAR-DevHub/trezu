@@ -20,7 +20,7 @@ use crate::handlers::intents::confidential::bronze::store::mark_confidential_his
 use crate::handlers::intents::confidential::bronze::store::upsert_history_events;
 use crate::handlers::intents::confidential::reusable_deposit::{
     REUSABLE_DEPOSIT_KEY_PREFIX, ReusableDepositAddresses, ReusableDepositResolver,
-    ReusableWithdrawal, WithdrawalsError, clear_cached, load_cached,
+    ReusableWithdrawal, WITHDRAWALS_PAGE_LIMIT, WithdrawalsError, clear_cached, load_cached,
 };
 use crate::handlers::intents::swap_status::{
     FullSwapStatusResponse, SwapStatus, fetch_public_swap_status,
@@ -62,6 +62,9 @@ pub(super) const LEDGER_MATCH_LOOKBACK: Duration = Duration::minutes(30);
 /// created (the tracker may first see it late in a slow discovery tier).
 const REUSABLE_LEDGER_MATCH_LOOKBACK: Duration = Duration::hours(6);
 const REUSABLE_LEDGER_MATCH_LOOKAHEAD: Duration = Duration::hours(1);
+/// Pages of payouts one reusable poll may read when every entry on a full
+/// page is new: more arrivals than one page between two polls.
+const REUSABLE_MAX_PAGES: u32 = 5;
 
 #[derive(Debug, Default, Clone)]
 pub struct TrackerTickSummary {
@@ -258,10 +261,8 @@ impl<'a> DepositTrackerWorker<'a> {
         set: &ReusableDepositAddresses,
     ) -> Result<PollResult, String> {
         let dao = AccountIdRef::new(&watch.dao_id).map_err(|e| e.to_string())?;
-        let page = match ReusableDepositResolver::new(self.state)
-            .withdrawals(dao, set)
-            .await
-        {
+        let resolver = ReusableDepositResolver::new(self.state);
+        let mut page = match resolver.withdrawals(dao, set).await {
             Ok(page) => page,
             // Forget the set so the next deposit request re-resolves it.
             Err(error @ WithdrawalsError::StaleSet(_)) => {
@@ -286,6 +287,33 @@ impl<'a> DepositTrackerWorker<'a> {
                 .find(|deposit| deposit.provider_deposit_key == key)
                 .map(|deposit| deposit.status)
         };
+
+        // After the baseline, a full page holding nothing already seen may
+        // continue on the next page: read on until a seen payout bounds it.
+        if let Some(baseline) = watch.baseline_keys.as_deref() {
+            let is_seen = |withdrawal: &ReusableWithdrawal| {
+                let key = withdrawal.provider_deposit_key();
+                baseline.contains(&key) || known_status(&key).is_some()
+            };
+            let mut tail = page.withdrawals.as_slice();
+            let mut page_no = 1;
+            while tail.len() == WITHDRAWALS_PAGE_LIMIT as usize
+                && !tail.iter().any(is_seen)
+                && page_no < REUSABLE_MAX_PAGES
+            {
+                page_no += 1;
+                let next = resolver
+                    .withdrawals_page(dao, set, page_no)
+                    .await
+                    .map_err(|error| error.to_string())?;
+                if next.withdrawals.is_empty() {
+                    break;
+                }
+                let start = page.withdrawals.len();
+                page.withdrawals.extend(next.withdrawals);
+                tail = &page.withdrawals[start..];
+            }
+        }
 
         let mut result = PollResult::default();
         let candidates: Vec<&ReusableWithdrawal> = match watch.baseline_keys.as_deref() {

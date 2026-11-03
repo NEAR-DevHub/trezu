@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { NEAR_COM_ICON } from "@/constants/token";
+import { formatFiatValue } from "@/lib/amount-format";
 import {
-    formatWholeUsd,
     type MinDepositCopy,
     resolveMinDepositCopy,
 } from "./deposit-min-deposit-copy";
@@ -67,7 +67,11 @@ export function buildExternalReceiveCopy(
         ? t("receive.sendAnyToken")
         : minCopy.kind === "usd"
           ? t("receive.sendAtLeastUsd", {
-                usd: formatWholeUsd(minCopy.usd, locale),
+                usd: formatFiatValue(minCopy.usd, {
+                    locale,
+                    // Whole dollars stay bare ("$1"); real minimums keep cents.
+                    fractionDigits: Number.isInteger(minCopy.usd) ? 0 : 2,
+                }).display,
                 symbol,
             })
           : minCopy.kind === "amount"

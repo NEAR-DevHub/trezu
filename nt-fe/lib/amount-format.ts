@@ -27,6 +27,8 @@ export interface FiatValueOptions {
     currency?: string;
     locale?: string;
     rounding?: AmountRounding;
+    /** Fraction digits to show; default 2. `0` renders whole currency units. */
+    fractionDigits?: number;
 }
 
 export interface UnitPriceOptions extends FiatValueOptions {
@@ -347,13 +349,15 @@ export function formatFiatValue(
         currency = "USD",
         locale = "en-US",
         rounding = "half-up",
+        fractionDigits = FIAT_FRACTION_DIGITS,
     } = options;
+    assertDecimals(fractionDigits);
     const exact = canonicalDecimal(parsed);
-    const threshold = Big(10).pow(-FIAT_FRACTION_DIGITS);
+    const threshold = Big(10).pow(-fractionDigits);
 
     if (parsed.abs().gt(0) && parsed.abs().lt(threshold)) {
         const thresholdCurrency = currencyFromCanonical(
-            threshold.toFixed(FIAT_FRACTION_DIGITS),
+            threshold.toFixed(fractionDigits),
             locale,
             currency,
         );
@@ -365,8 +369,8 @@ export function formatFiatValue(
         };
     }
 
-    const rounded = parsed.round(FIAT_FRACTION_DIGITS, roundingMode(rounding));
-    const fixed = rounded.toFixed(FIAT_FRACTION_DIGITS);
+    const rounded = parsed.round(fractionDigits, roundingMode(rounding));
+    const fixed = rounded.toFixed(fractionDigits);
     return {
         display: currencyFromCanonical(fixed, locale, currency),
         exact,
