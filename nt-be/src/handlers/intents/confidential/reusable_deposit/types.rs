@@ -119,3 +119,15 @@ pub(super) fn is_reusable_set_for(attributes: &Value, dao_id: &str) -> bool {
         && accounts_equal(field("recipient"), dao_id)
         && accounts_equal(field("refundTo"), dao_id)
 }
+
+/// The funding address served for one chain, with the bridge floor for the
+/// token the payer chose.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ResolvedDepositAddress {
+    pub address: String,
+    pub memo: Option<String>,
+    /// 1Click `quote.minAmountIn`, absent when the probe failed.
+    pub min_amount: Option<String>,
+    /// The set's monitoring address: the deposit tracker scope.
+    pub quote_deposit_address: String,
+}

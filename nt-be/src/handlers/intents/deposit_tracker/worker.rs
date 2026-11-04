@@ -290,46 +290,22 @@ impl<'a> DepositTrackerWorker<'a> {
             tail = &page.withdrawals[start..];
         }
 
-        let mut result = PollResult::default();
-        let candidates: Vec<&ReusableWithdrawal> = match watch.baseline_keys.as_deref() {
-            None => {
-                let is_history = |withdrawal: &ReusableWithdrawal| {
-                    known_status(&withdrawal.provider_deposit_key()).is_none()
-                        && withdrawal.timestamp < watch.created_at
-                };
-                result.baseline_keys = Some(
-                    page.withdrawals
-                        .iter()
-                        .filter(|withdrawal| is_history(withdrawal))
-                        .map(ReusableWithdrawal::provider_deposit_key)
-                        .collect(),
-                );
-                page.withdrawals
-                    .iter()
-                    .filter(|withdrawal| !is_history(withdrawal))
-                    .collect()
-            }
-            Some(baseline) => page
-                .withdrawals
-                .iter()
-                .filter(|withdrawal| !baseline.contains(&withdrawal.provider_deposit_key()))
-                .collect(),
-        };
-
-        for withdrawal in candidates {
-            let key = withdrawal.provider_deposit_key();
-            let known = known_status(&key);
-            if known.is_some_and(DepositStatus::is_terminal) {
-                continue;
-            }
-            let observed = ObservedDeposit {
-                provider_deposit_key: key.clone(),
+        // 1Click does not name the credited token per payout; the token the
+        // modal was opened for is the best available label until the ledger
+        // row names it.
+        let asset = page.asset.clone();
+        self.observe_page(
+            watch,
+            &page.withdrawals,
+            &known,
+            ReusableWithdrawal::provider_deposit_key,
+            |withdrawal| withdrawal.timestamp < watch.created_at,
+            |withdrawal| ObservedDeposit {
+                provider_deposit_key: withdrawal.provider_deposit_key(),
                 chain: watch.chain.clone(),
                 origin_tx_hash: None,
                 near_tx_hash: withdrawal.payout_hash(),
-                // 1Click does not name the credited token per payout; the
-                // token the modal was opened for is the best available label.
-                token_id: watch.token_id.clone().unwrap_or_else(|| page.asset.clone()),
+                token_id: watch.token_id.clone().unwrap_or_else(|| asset.clone()),
                 amount: withdrawal.amount(),
                 provider_status: withdrawal.status.clone(),
                 status: if withdrawal.is_success() {
@@ -339,16 +315,9 @@ impl<'a> DepositTrackerWorker<'a> {
                 } else {
                     DepositStatus::Detected
                 },
-            };
-            let transition = self
-                .record_observation(watch, &observed, known)
-                .await
-                .map_err(|error| format!("record deposit {key}: {error}"))?;
-            if transition.changed() {
-                result.changed += 1;
-            }
-        }
-        Ok(result)
+            },
+        )
+        .await
     }
 
     async fn poll_public(&self, watch: &DepositWatch) -> Result<PollResult, String> {
@@ -358,60 +327,24 @@ impl<'a> DepositTrackerWorker<'a> {
         let known = store::load_watch_deposits(self.pool(), watch.id)
             .await
             .map_err(|error| format!("load deposits: {error}"))?;
-        let known_status = |key: &str| {
-            known
-                .iter()
-                .find(|deposit| deposit.provider_deposit_key == key)
-                .map(|deposit| deposit.status)
-        };
-
-        let mut result = PollResult::default();
-        let candidates: Vec<_> = match watch.baseline_keys.as_deref() {
-            // First read: a settled deposit the bridge recorded before this
-            // watch existed is history. One recorded after it (settled while
-            // the first poll was failing), anything in flight, and anything
-            // this watch already tracks in an earlier life is observed.
-            None => {
-                let is_history = |deposit: &BridgeDeposit| {
-                    known_status(&deposit.key).is_none()
-                        && deposit.status.tracker_status() != DepositStatus::Detected
+        // A settled deposit the bridge recorded before this watch existed is
+        // history; one in flight, or settled while the first poll was
+        // failing, is observed.
+        let mut result = self
+            .observe_page(
+                watch,
+                deposits,
+                &known,
+                |deposit| deposit.key.clone(),
+                |deposit| {
+                    deposit.status.tracker_status() != DepositStatus::Detected
                         && deposit
                             .created_at
                             .is_none_or(|recorded_at| recorded_at < watch.created_at)
-                };
-                result.baseline_keys = Some(
-                    deposits
-                        .iter()
-                        .filter(|deposit| is_history(deposit))
-                        .map(|deposit| deposit.key.clone())
-                        .collect(),
-                );
-                deposits
-                    .iter()
-                    .filter(|deposit| !is_history(deposit))
-                    .collect()
-            }
-            Some(baseline) => deposits
-                .iter()
-                .filter(|deposit| !baseline.iter().any(|key| key == &deposit.key))
-                .collect(),
-        };
-
-        for deposit in candidates {
-            let known = known_status(&deposit.key);
-            // Settled rows are owned by the ledger now; the bridge keeps
-            // listing them but there is nothing left to observe.
-            if known.is_some_and(DepositStatus::is_terminal) {
-                continue;
-            }
-            let transition = self
-                .record_observation(watch, &deposit.observed(), known)
-                .await
-                .map_err(|error| format!("record deposit {}: {error}", deposit.key))?;
-            if transition.changed() {
-                result.changed += 1;
-            }
-        }
+                },
+                BridgeDeposit::observed,
+            )
+            .await?;
 
         // A tracked deposit still in flight that newer deposits pushed off
         // the first page keeps advancing from the pages behind it.
@@ -437,6 +370,62 @@ impl<'a> DepositTrackerWorker<'a> {
                         result.changed += 1;
                     }
                 }
+            }
+        }
+        Ok(result)
+    }
+
+    /// What every provider page goes through. On the watch's first poll the
+    /// rows the provider settled before the watch existed are filed as its
+    /// baseline, not observed; afterwards every row outside the baseline is
+    /// recorded, except one this watch already settled.
+    async fn observe_page<T>(
+        &self,
+        watch: &DepositWatch,
+        rows: &[T],
+        known: &[InProcessDeposit],
+        key: impl Fn(&T) -> String,
+        settled_before_watch: impl Fn(&T) -> bool,
+        observe: impl Fn(&T) -> ObservedDeposit,
+    ) -> Result<PollResult, String> {
+        let known_status = |key: &str| {
+            known
+                .iter()
+                .find(|deposit| deposit.provider_deposit_key == key)
+                .map(|deposit| deposit.status)
+        };
+        let mut result = PollResult::default();
+        let candidates: Vec<&T> = match watch.baseline_keys.as_deref() {
+            None => {
+                let is_history =
+                    |row: &T| known_status(&key(row)).is_none() && settled_before_watch(row);
+                result.baseline_keys = Some(
+                    rows.iter()
+                        .filter(|row| is_history(row))
+                        .map(&key)
+                        .collect(),
+                );
+                rows.iter().filter(|row| !is_history(row)).collect()
+            }
+            Some(baseline) => rows
+                .iter()
+                .filter(|row| !baseline.contains(&key(row)))
+                .collect(),
+        };
+        for row in candidates {
+            let key = key(row);
+            let known = known_status(&key);
+            // Settled rows are owned by the ledger now; the provider keeps
+            // listing them but there is nothing left to observe.
+            if known.is_some_and(DepositStatus::is_terminal) {
+                continue;
+            }
+            let transition = self
+                .record_observation(watch, &observe(row), known)
+                .await
+                .map_err(|error| format!("record deposit {key}: {error}"))?;
+            if transition.changed() {
+                result.changed += 1;
             }
         }
         Ok(result)

@@ -9,6 +9,7 @@
 //! Mirrors near.com `features/deposit/server/rdaApi.ts`.
 
 mod client;
+mod minimum;
 mod repository;
 mod resolver;
 #[cfg(test)]
@@ -20,4 +21,6 @@ pub use client::{
 };
 pub use repository::{clear_cached, load_cached};
 pub use resolver::ReusableDepositResolver;
-pub use types::{ChainDepositAddress, REUSABLE_QUOTE_DEADLINE, ReusableDepositAddresses};
+pub use types::{
+    ChainDepositAddress, REUSABLE_QUOTE_DEADLINE, ResolvedDepositAddress, ReusableDepositAddresses,
+};

@@ -11,8 +11,9 @@ use crate::AppState;
 use crate::handlers::intents::confidential::refresh_dao_jwt;
 
 use super::client::WithdrawalsError;
+use super::minimum::bridge_minimum;
 use super::repository::{clear_cached, db_error, load_cached_entry, store_cached};
-use super::types::ReusableDepositAddresses;
+use super::types::{ResolvedDepositAddress, ReusableDepositAddresses};
 
 /// A cached set older than this is re-listed from 1Click before it is served
 /// (rotated quotes, chains 1Click added since). 1Click being down keeps the
@@ -84,6 +85,43 @@ impl<'a> ReusableDepositResolver<'a> {
             "resolved reusable confidential deposit set"
         );
         Ok(set)
+    }
+
+    /// The funding address for `chain` with the bridge floor for `token_id`.
+    /// A chain missing from the cached set costs one refresh first, since
+    /// 1Click may have added it.
+    pub async fn deposit_address(
+        &self,
+        dao_id: &AccountIdRef,
+        chain: &str,
+        token_id: &str,
+        amount: u128,
+    ) -> Result<ResolvedDepositAddress, (StatusCode, String)> {
+        let mut set = self.resolve(dao_id).await?;
+        if set.address_for_chain(chain).is_none() {
+            match self.refresh(dao_id).await {
+                Ok(fresh) => set = fresh,
+                Err((status, message)) => tracing::warn!(
+                    dao_id = dao_id.as_str(),
+                    chain,
+                    %status,
+                    "reusable deposit set refresh failed: {message}"
+                ),
+            }
+        }
+        let entry = set.address_for_chain(chain).ok_or_else(|| {
+            (
+                StatusCode::NOT_FOUND,
+                format!("No reusable deposit address for network {chain}"),
+            )
+        })?;
+        let min_amount = bridge_minimum(self.state, dao_id.as_str(), token_id, amount).await;
+        Ok(ResolvedDepositAddress {
+            address: entry.address.clone(),
+            memo: entry.memo.clone(),
+            min_amount,
+            quote_deposit_address: set.quote_deposit_address.clone(),
+        })
     }
 
     /// Re-read the set from 1Click regardless of its age (a chain missing
