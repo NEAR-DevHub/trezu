@@ -21,8 +21,7 @@ use crate::AppState;
 use crate::handlers::intents::bridge_tokens::fallback_chain_id_for_name;
 use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::handlers::intents::confidential::types::accounts_equal;
-use crate::handlers::intents::quote::send_oneclick_request;
-use crate::observability::sanitize_sensitive_text;
+use crate::handlers::intents::oneclick::OneClickClient;
 use crate::utils::url::api_url_or_500;
 
 /// 1Click requires this fixed deadline for reusable quotes; never derive it
@@ -426,7 +425,7 @@ impl<'a> ReusableDepositResolver<'a> {
                     "1Click quote pagination did not advance".to_string(),
                 ));
             }
-            let page = self.get_json(url, jwt).await?;
+            let page = OneClickClient::new(self.state).get(url, Some(jwt)).await?;
             let items = page.get("data").and_then(Value::as_array).ok_or_else(|| {
                 (
                     StatusCode::BAD_GATEWAY,
@@ -493,7 +492,9 @@ impl<'a> ReusableDepositResolver<'a> {
         if let Some(referral) = &self.state.env_vars.oneclick_referral {
             body["referral"] = Value::String(referral.clone());
         }
-        let response = send_oneclick_request(self.state, url.as_str(), &body, Some(jwt)).await?;
+        let response = OneClickClient::new(self.state)
+            .post(url, &body, Some(jwt))
+            .await?;
         let quote = response.get("quote").ok_or_else(|| {
             (
                 StatusCode::BAD_GATEWAY,
@@ -506,43 +507,6 @@ impl<'a> ReusableDepositResolver<'a> {
             .map(str::to_string);
         ReusableDepositAddresses::from_quote(quote, None, correlation_id)
             .map_err(|e| (StatusCode::BAD_GATEWAY, e))
-    }
-
-    async fn get_json(&self, url: Url, jwt: &str) -> Result<Value, (StatusCode, String)> {
-        let mut request = self
-            .state
-            .http_client
-            .get(url.clone())
-            .header("Authorization", format!("Bearer {jwt}"));
-        if let Some(api_key) = &self.state.env_vars.oneclick_api_key {
-            request = request.header("x-api-key", api_key);
-        }
-        let response = request.send().await.map_err(|e| {
-            tracing::error!("1Click request to {} failed: {}", url.path(), e);
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to call 1Click API: {e}"),
-            )
-        })?;
-        let status = response.status();
-        let body: Value = response.json().await.map_err(|e| {
-            (
-                StatusCode::BAD_GATEWAY,
-                format!("Failed to parse 1Click response: {e}"),
-            )
-        })?;
-        if !status.is_success() {
-            let message = body
-                .get("message")
-                .or_else(|| body.get("error"))
-                .and_then(Value::as_str)
-                .unwrap_or("Unknown error from 1Click API");
-            return Err((
-                StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-                sanitize_sensitive_text(message),
-            ));
-        }
-        Ok(body)
     }
 }
 
@@ -689,8 +653,8 @@ impl ReusableDepositResolver<'_> {
             query.append_pair("page", &page.to_string());
         }
         // 1Click answers 404 for a quote address it no longer serves.
-        let body = self
-            .get_json(url, &jwt)
+        let body = OneClickClient::new(self.state)
+            .get(url, Some(&jwt))
             .await
             .map_err(|(status, message)| match status {
                 StatusCode::NOT_FOUND => WithdrawalsError::StaleSet(message),

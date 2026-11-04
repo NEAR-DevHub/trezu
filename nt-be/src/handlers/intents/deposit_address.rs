@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::AppState;
 use crate::handlers::intents::confidential::reusable_deposit::ReusableDepositResolver;
 use crate::handlers::intents::deposit_tracker::WatchActivation;
+use crate::handlers::intents::oneclick::OneClickClient;
 use crate::handlers::public_history::confidential_list::is_confidential_dao;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
@@ -93,8 +94,11 @@ async fn mint_confidential_deposit_quote(
             "quoteWaitingTimeMs": 5000,
         });
 
-        // API key is attached in send_oneclick_request; DAO JWT is not required.
-        match super::quote::send_oneclick_request(state, url.as_str(), &quote_body, None).await {
+        // The app key suffices for a dry probe; no DAO JWT is needed.
+        match OneClickClient::new(state)
+            .post(url.clone(), &quote_body, None)
+            .await
+        {
             Ok(mut response_body) => {
                 return match response_body.get_mut("quote") {
                     Some(quote) => Ok(quote.take()),
