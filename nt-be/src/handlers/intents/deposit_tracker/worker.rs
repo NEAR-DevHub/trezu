@@ -14,8 +14,8 @@ use crate::AppState;
 use crate::handlers::intents::bridge_tokens::chain_id_for_credited_asset;
 use crate::handlers::intents::confidential::bronze::store::mark_confidential_history_activity_due;
 use crate::handlers::intents::confidential::reusable_deposit::{
-    REUSABLE_DEPOSIT_KEY_PREFIX, ReusableDepositAddresses, ReusableDepositResolver,
-    ReusableWithdrawal, WITHDRAWALS_PAGE_LIMIT, WithdrawalsError, clear_cached, load_cached,
+    ReusableDepositAddresses, ReusableDepositResolver, ReusableWithdrawal, WITHDRAWALS_PAGE_LIMIT,
+    WithdrawalsError, clear_cached, load_cached,
 };
 use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::api::fetch_latest_indexed_block_height;
@@ -521,11 +521,7 @@ impl<'a> DepositTrackerWorker<'a> {
                     )
                     .await?
                 }
-                WatchKind::Confidential
-                    if deposit
-                        .provider_deposit_key
-                        .starts_with(REUSABLE_DEPOSIT_KEY_PREFIX) =>
-                {
+                WatchKind::Confidential => {
                     store::find_reusable_ledger_match(
                         self.pool(),
                         &deposit.dao_id,
@@ -533,14 +529,6 @@ impl<'a> DepositTrackerWorker<'a> {
                         deposit.amount.as_ref(),
                         deposit.detected_at - REUSABLE_LEDGER_MATCH_LOOKBACK,
                         deposit.detected_at + REUSABLE_LEDGER_MATCH_LOOKAHEAD,
-                    )
-                    .await?
-                }
-                WatchKind::Confidential => {
-                    store::find_confidential_ledger_match(
-                        self.pool(),
-                        &deposit.dao_id,
-                        &deposit.provider_deposit_key,
                     )
                     .await?
                 }

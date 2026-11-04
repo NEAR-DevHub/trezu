@@ -416,6 +416,28 @@ pub async fn load_visible_deposits(
     .await
 }
 
+/// Ledger rows a tracker row has already been linked to. The activity
+/// feed never lets one of these stand in for a second, still-processing
+/// deposit of the same token and amount.
+pub async fn load_claimed_ledger_event_ids(
+    pool: &PgPool,
+    dao_id: &str,
+) -> Result<Vec<i64>, sqlx::Error> {
+    sqlx::query_scalar(
+        r#"
+        SELECT ledger_event_id
+        FROM in_process_deposits
+        WHERE dao_id = $1
+          AND ledger_event_id IS NOT NULL
+          AND ledger_confirmed_at > NOW() - $2
+        "#,
+    )
+    .bind(dao_id)
+    .bind(lease_interval(ACTIVE_DEPOSIT_MAX_AGE))
+    .fetch_all(pool)
+    .await
+}
+
 /// Rows the deposit modal shows for one address scope: the treasury's
 /// reusable quote address or a public chain. Confirmed rows stay for the
 /// activity window so the modal can say "received". `since` narrows the
@@ -513,31 +535,6 @@ pub async fn find_public_ledger_match(
     .bind(token_id)
     .bind(amount)
     .bind(not_before)
-    .fetch_optional(pool)
-    .await
-}
-
-/// Confidential rows carry their bronze provenance in `gold_event_key`, so
-/// the quote address is an exact key.
-pub async fn find_confidential_ledger_match(
-    pool: &PgPool,
-    dao_id: &str,
-    quote_deposit_address: &str,
-) -> Result<Option<LedgerMatch>, sqlx::Error> {
-    sqlx::query_as(
-        r#"
-        SELECT g.id AS event_id, g.amount_in AS amount, NULL::text AS token_id
-        FROM bronze_confidential_history_events he
-        JOIN gold_treasury_ledger_events g
-          ON g.gold_event_key = 'confidential:' || he.id::text
-        WHERE he.account_id = $1
-          AND he.deposit_address = $2
-        ORDER BY he.created_at_external DESC
-        LIMIT 1
-        "#,
-    )
-    .bind(dao_id)
-    .bind(quote_deposit_address)
     .fetch_optional(pool)
     .await
 }

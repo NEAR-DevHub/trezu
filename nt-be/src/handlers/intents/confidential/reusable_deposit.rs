@@ -547,7 +547,7 @@ impl<'a> ReusableDepositResolver<'a> {
 }
 
 /// Prefix of tracker provider keys for reusable-address deposits.
-pub const REUSABLE_DEPOSIT_KEY_PREFIX: &str = "rda:";
+const REUSABLE_DEPOSIT_KEY_PREFIX: &str = "rda:";
 const WITHDRAWALS_PATH: &str = "/v0/any-input/withdrawals";
 pub const WITHDRAWALS_PAGE_LIMIT: u32 = 50;
 

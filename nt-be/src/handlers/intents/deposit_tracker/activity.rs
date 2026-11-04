@@ -2,7 +2,7 @@
 //! `EnrichedBalanceChange` shape as ledger rows so the frontend needs no
 //! merge logic. Ids are negated so they never collide with gold ids.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use bigdecimal::{BigDecimal, Zero};
@@ -13,7 +13,8 @@ use crate::handlers::public_history::public_list::fallback_metadata;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange};
 
-use super::store::{InProcessDeposit, load_visible_deposits};
+use super::WatchKind;
+use super::store::{InProcessDeposit, load_claimed_ledger_event_ids, load_visible_deposits};
 use super::worker::LEDGER_MATCH_LOOKBACK;
 
 /// Selects which tracker rows a list request may show. Tracker rows only
@@ -137,19 +138,25 @@ impl InProcessDeposit {
 }
 
 /// Whether a ledger row already on the page represents this tracker row,
-/// even though the worker has not linked them yet. Mirrors
-/// `find_public_ledger_match`: the NEAR mint hash when the provider gave
-/// one (PoA, HOT), otherwise the same token and amount inside the lookback
-/// window (Omni rows arrive with an empty `mint_tx_hash`).
+/// even though the worker has not linked them yet. A public row with the
+/// NEAR mint hash (PoA, HOT) pairs by that hash only. Otherwise the same
+/// token and amount inside the lookback window: Omni rows arrive with an
+/// empty `mint_tx_hash`, and a reusable-address row holds the NEAR payout
+/// hash while its ledger row carries the depositor's origin hash. Ledger
+/// rows another tracker row already claimed never stand in, so a run of
+/// equal deposits keeps each Processing row until its own ledger row lands.
 ///
-/// Accepted imprecision for the hashless path: Omni has no identity on
-/// either side (the bridge omits the mint hash, the NEAR mint carries no
-/// origin hash), so two equal deposits inside the window, or an unrelated
-/// transfer of the same token and amount, can hide a Processing row until
-/// its own mint lands. Cosmetic and bounded by the mint delay; the ledger
-/// is never affected.
-fn served_by_ledger(deposit: &InProcessDeposit, ledger_rows: &[EnrichedBalanceChange]) -> bool {
-    if let Some(hash) = deposit.near_tx_hash.as_deref() {
+/// Accepted imprecision: an unclaimed, unrelated transfer of the same
+/// token and amount inside the window hides a Processing row until its own
+/// row lands. Cosmetic and bounded by the ledger delay.
+fn served_by_ledger(
+    deposit: &InProcessDeposit,
+    ledger_rows: &[EnrichedBalanceChange],
+    claimed: &HashSet<i64>,
+) -> bool {
+    if deposit.kind == WatchKind::Public
+        && let Some(hash) = deposit.near_tx_hash.as_deref()
+    {
         return ledger_rows
             .iter()
             .any(|row| row.transaction_hashes.iter().any(|h| h == hash));
@@ -160,6 +167,7 @@ fn served_by_ledger(deposit: &InProcessDeposit, ledger_rows: &[EnrichedBalanceCh
     let not_before = deposit.detected_at - LEDGER_MATCH_LOOKBACK;
     ledger_rows.iter().any(|row| {
         row.id > 0
+            && !claimed.contains(&row.id)
             && row.token_id == deposit.token_id
             && row.amount == *amount
             && row.block_time >= not_before
@@ -181,14 +189,18 @@ pub async fn in_process_activity_rows(
         return Ok(Vec::new());
     }
 
-    let deposits: Vec<InProcessDeposit> =
-        load_visible_deposits(&state.db_pool, params.account_id.as_str())
-            .await?
-            .into_iter()
-            .filter(|deposit| filter.allows_token(&deposit.token_id))
-            .filter(|deposit| filter.allows_time(deposit.detected_at))
-            .filter(|deposit| !served_by_ledger(deposit, ledger_rows))
-            .collect();
+    let dao_id = params.account_id.as_str();
+    let claimed: HashSet<i64> = load_claimed_ledger_event_ids(&state.db_pool, dao_id)
+        .await?
+        .into_iter()
+        .collect();
+    let deposits: Vec<InProcessDeposit> = load_visible_deposits(&state.db_pool, dao_id)
+        .await?
+        .into_iter()
+        .filter(|deposit| filter.allows_token(&deposit.token_id))
+        .filter(|deposit| filter.allows_time(deposit.detected_at))
+        .filter(|deposit| !served_by_ledger(deposit, ledger_rows, &claimed))
+        .collect();
     if deposits.is_empty() {
         return Ok(Vec::new());
     }
@@ -288,11 +300,13 @@ mod tests {
         // Same token + amount but a different hash: not the same deposit.
         assert!(!served_by_ledger(
             &tracked,
-            &[ledger_row(1, &token, 100, &["other"], now)]
+            &[ledger_row(1, &token, 100, &["other"], now)],
+            &HashSet::new()
         ));
         assert!(served_by_ledger(
             &tracked,
-            &[ledger_row(1, &token, 100, &["other", "mint"], now)]
+            &[ledger_row(1, &token, 100, &["other", "mint"], now)],
+            &HashSet::new()
         ));
     }
 
@@ -303,16 +317,19 @@ mod tests {
         let now = Utc::now();
         assert!(served_by_ledger(
             &tracked,
-            &[ledger_row(1, &token, 100, &["mint"], now)]
+            &[ledger_row(1, &token, 100, &["mint"], now)],
+            &HashSet::new()
         ));
         // Wrong amount, wrong token, too old, or another tracker row: no.
         assert!(!served_by_ledger(
             &tracked,
-            &[ledger_row(1, &token, 99, &["mint"], now)]
+            &[ledger_row(1, &token, 99, &["mint"], now)],
+            &HashSet::new()
         ));
         assert!(!served_by_ledger(
             &tracked,
-            &[ledger_row(1, "intents.near:nep141:x", 100, &["mint"], now)]
+            &[ledger_row(1, "intents.near:nep141:x", 100, &["mint"], now)],
+            &HashSet::new()
         ));
         assert!(!served_by_ledger(
             &tracked,
@@ -322,11 +339,57 @@ mod tests {
                 100,
                 &["mint"],
                 now - LEDGER_MATCH_LOOKBACK - chrono::Duration::minutes(1)
-            )]
+            )],
+            &HashSet::new()
         ));
         assert!(!served_by_ledger(
             &tracked,
-            &[ledger_row(-9, &token, 100, &[], now)]
+            &[ledger_row(-9, &token, 100, &[], now)],
+            &HashSet::new()
+        ));
+    }
+
+    #[test]
+    fn reusable_row_is_served_by_an_unclaimed_amount_match_not_payout_hash() {
+        let mut tracked = deposit(WatchKind::Confidential, DepositStatus::Finalized);
+        tracked.near_tx_hash = Some("payout-near-hash".to_string());
+        tracked.amount = Some("0.2".parse().unwrap());
+        let token = tracked.token_id.clone();
+        let now = Utc::now();
+        let ledger = |id: i64, amount: &str, at: chrono::DateTime<Utc>| EnrichedBalanceChange {
+            amount: amount.parse().unwrap(),
+            ..ledger_row(id, &token, 0, &["0xorigin"], at)
+        };
+        let none = HashSet::new();
+        // The ledger row only knows the origin hash; the credited amount
+        // (at the ledger's scale) inside the window pairs them.
+        assert!(served_by_ledger(
+            &tracked,
+            &[ledger(1, "0.2000", now)],
+            &none
+        ));
+        assert!(!served_by_ledger(&tracked, &[ledger(1, "0.3", now)], &none));
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger(
+                1,
+                "0.2",
+                now - LEDGER_MATCH_LOOKBACK - chrono::Duration::minutes(1)
+            )],
+            &none
+        ));
+        // An earlier equal deposit already linked to its own tracker row
+        // does not stand in for this one.
+        let claimed: HashSet<i64> = [1].into_iter().collect();
+        assert!(!served_by_ledger(
+            &tracked,
+            &[ledger(1, "0.2", now)],
+            &claimed
+        ));
+        assert!(served_by_ledger(
+            &tracked,
+            &[ledger(1, "0.2", now), ledger(2, "0.2", now)],
+            &claimed
         ));
     }
 
