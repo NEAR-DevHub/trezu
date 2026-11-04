@@ -3,10 +3,15 @@
 //! treasuries, a quote address for confidential addresses).
 //!
 //! Who may read what: chain scopes of a confidential treasury are member-only.
-//! The DAO's reusable quote address is permanent and handed to every payer,
-//! so it is member-only for the full feed; anyone else sees only what
-//! arrived from shortly before their page opened, without the origin
-//! transaction hash (see [`TrackedDeposit::redacted`]).
+//! The DAO's reusable quote address is permanent and handed to every payer.
+//! Members read its feed with hashes; anyone else holding the address reads
+//! rows first seen from shortly before their page opened onward, without
+//! the origin transaction hash (see [`TrackedDeposit::redacted`]). That
+//! guest read is a convenience view, not a secret: every payout of the
+//! address is a transfer to a public-chain 1Click funding address or an
+//! `mt_transfer` on intents.near, so the token, amount and time are already
+//! on an explorer for whoever holds the address. The treasury's confidential
+//! balance and internal transfers never pass through here.
 
 use std::collections::HashSet;
 use std::sync::Arc;
