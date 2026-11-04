@@ -29,7 +29,7 @@
     "dependencies": {
         "@defuse-protocol/intents-sdk": "^0.58.2",
         "@hookform/resolvers": "^5.7.1",
-        "@hot-labs/near-connect": "NEAR-DevHub/near-connect#passkeys",
+        "@hot-labs/near-connect": "NEAR-DevHub/near-connect#passkeys-20261104",
         "@near-js/transactions": "^2.5.1",
         "@noble/hashes": "1.7.1",
         "@radix-ui/react-checkbox": "^1.3.11",
