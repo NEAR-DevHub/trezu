@@ -542,8 +542,8 @@ pub async fn find_public_ledger_match(
 /// Reusable-address deposits settle as one 1Click history row each, whose
 /// `refundTo` is the quote address. Amount plus a time window around the
 /// tracker's first sighting picks the row; the `NOT EXISTS` guard keeps
-/// each gold row linked at most once. The row's `originAsset` names the
-/// credited token, which the payout feed does not.
+/// each gold row linked at most once. The gold row's `token_in` is the
+/// credited token, which the payout feed does not name.
 ///
 /// Shape of a payout row (1Click files each payout on the reusable address
 /// as its own child swap; see `fixtures/reusable_payout_history_row.json`,
@@ -562,7 +562,7 @@ pub async fn find_reusable_ledger_match(
     sqlx::query_as(
         r#"
         SELECT g.id AS event_id, g.amount_in AS amount,
-               NULLIF(he.raw_payload->>'originAsset', '1cs_v1:any') AS token_id
+               NULLIF(g.token_in, '1cs_v1:any') AS token_id
         FROM bronze_confidential_history_events he
         JOIN gold_treasury_ledger_events g
           ON g.gold_event_key = 'confidential:' || he.id::text
@@ -1384,6 +1384,91 @@ mod tests {
             .expect("query"),
             None,
             "the parent quote row never matches the reusable address"
+        );
+    }
+
+    /// Two equal payouts in sequence each get their own ledger row, in
+    /// order, and the unique link index refuses a second claim of a row
+    /// that reconcile would otherwise never make.
+    #[sqlx::test]
+    async fn equal_payouts_each_claim_their_own_ledger_row(pool: PgPool) {
+        let payout: serde_json::Value =
+            serde_json::from_str(REUSABLE_PAYOUT_ROW).expect("fixture parses");
+        let dao_id = payout["recipient"].as_str().unwrap().to_string();
+        let rda = payout["refundTo"].as_str().unwrap().to_string();
+        seed_dao(&pool, &dao_id, true).await;
+        let now = Utc::now();
+        upsert_watch(
+            &pool,
+            &dao_id,
+            WatchKind::Confidential,
+            Some(&rda),
+            "eth:8453",
+            None,
+            now + Duration::minutes(10),
+            now + Duration::minutes(120),
+        )
+        .await
+        .expect("upsert watch");
+        let watch = claim_due_watches(&pool, 1, Duration::seconds(60))
+            .await
+            .expect("claim")
+            .remove(0);
+        let first_event = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let second_event = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let mut rows = Vec::new();
+        for key in [
+            "rda:2026-11-03T12:00:00+00:00",
+            "rda:2026-11-03T12:00:05+00:00",
+        ] {
+            let mut seen = observed(key, DepositStatus::Finalized);
+            seen.amount = Some("0.2".parse().unwrap());
+            rows.push(
+                upsert_deposit(&pool, watch.id, &dao_id, WatchKind::Confidential, &seen)
+                    .await
+                    .expect("upsert deposit")
+                    .id,
+            );
+        }
+        let amount: BigDecimal = "0.2".parse().unwrap();
+        let window = (now - Duration::hours(1), now + Duration::hours(1));
+
+        let first =
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .expect("first payout matches");
+        assert_eq!(first.event_id, first_event, "earliest unclaimed row first");
+        confirm_ledger(&pool, rows[0], &first, None)
+            .await
+            .expect("link first");
+
+        let second =
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .expect("second payout matches");
+        assert_eq!(second.event_id, second_event, "claimed row is skipped");
+        confirm_ledger(&pool, rows[1], &second, None)
+            .await
+            .expect("link second");
+
+        assert!(
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .is_none(),
+            "nothing left to claim"
+        );
+        let double_claim =
+            sqlx::query("UPDATE in_process_deposits SET ledger_event_id = $1 WHERE id = $2")
+                .bind(first_event)
+                .bind(rows[1])
+                .execute(&pool)
+                .await;
+        assert!(
+            double_claim.is_err(),
+            "unique link index refuses a second claim"
         );
     }
 }

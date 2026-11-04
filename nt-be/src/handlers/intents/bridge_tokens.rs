@@ -804,9 +804,19 @@ mod tests {
         );
         // Placeholders and unknown ids are not guessed from their shape.
         assert_eq!(chain_id_from_catalogs(&[], "1cs_v1:any"), None);
+        assert_eq!(chain_id_from_catalogs(&[], "nep245:unknown.near:1_x"), None);
+        // HOT omni (nep245) ids resolve like any other once a catalog names them.
+        let hot: Vec<OneClickToken> = serde_json::from_value(serde_json::json!([{
+            "assetId": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+            "decimals": 18,
+            "blockchain": "bsc",
+            "symbol": "BNB"
+        }]))
+        .unwrap();
         assert_eq!(
-            chain_id_from_catalogs(&[], "nep245:v2_1.omni.hot.tg:56_11111"),
-            None
+            chain_id_from_catalogs(&hot, "nep245:v2_1.omni.hot.tg:56_11111111111111111111")
+                .as_deref(),
+            Some("eth:56")
         );
     }
 

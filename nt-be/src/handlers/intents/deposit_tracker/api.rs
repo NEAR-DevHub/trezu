@@ -40,8 +40,9 @@ pub struct DepositTrackerQuery {
     pub chain: Option<String>,
     /// Confidential treasuries: the 1Click quote deposit address.
     pub quote_deposit_address: Option<String>,
-    /// Only rows first seen at or after this instant (RFC 3339). Required
-    /// from non-members reading a reusable address.
+    /// Only rows whose `detected_at` (the tracker's first sighting, not the
+    /// provider's timestamp) is at or after this instant (RFC 3339).
+    /// Required from non-members reading a reusable address.
     pub since: Option<DateTime<Utc>>,
 }
 
