@@ -1786,8 +1786,7 @@
             "passkeyCardTitle": "Passkey untuk Touch ID dan Face ID",
             "passkeyCardSubtitle": "Masuk dengan biometrik atau kode sandi perangkat Anda",
             "passkeyCardBadge": "Mudah & Aman",
-            "web3WalletsSeparator": "Dompet Web3",
-            "connectFailed": "Gagal menghubungkan dompet"
+            "web3WalletsSeparator": "Dompet Web3"
         },
         "unexpectedError": "Terjadi kesalahan tak terduga",
         "creationFailed": "Gagal membuat treasury. Silakan coba lagi.",

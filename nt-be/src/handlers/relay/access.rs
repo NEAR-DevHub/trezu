@@ -11,9 +11,7 @@ use crate::{
     auth::AuthUser,
     config::plans::{PlanType, has_gas_covered_credits},
     handlers::relay::{
-        parse::{
-            MetaRelay, ParsedRelay, RelayError, RelayOperation, RelaySubmission, error_response,
-        },
+        parse::{ParsedRelay, RelayError, RelayOperation, RelaySubmission, error_response},
         sponsor::policy::SponsorshipTier,
     },
 };
@@ -125,11 +123,8 @@ pub async fn authorize(
                 ));
             }
         }
-        RelaySubmission::MetaTransaction(meta) => {
-            let sender_id = match meta {
-                MetaRelay::Supported(signed) => &signed.delegate_action.sender_id,
-                MetaRelay::PostQuantum { sender_id, .. } => sender_id,
-            };
+        RelaySubmission::MetaTransaction(signed_delegate_action) => {
+            let sender_id = &signed_delegate_action.delegate_action.sender_id;
             if sender_id != &auth_user.account_id {
                 return Err(error_response(
                     StatusCode::FORBIDDEN,
