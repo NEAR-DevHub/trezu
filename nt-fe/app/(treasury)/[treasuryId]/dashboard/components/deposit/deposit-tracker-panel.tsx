@@ -10,6 +10,7 @@ import type { TrackedDeposit } from "@/lib/bridge-api";
 import { cn } from "@/lib/utils";
 import { DepositOptionIcon } from "./deposit-option-icon";
 import type { DepositReceiveCardTone } from "./deposit-receive-card";
+import { trackerAssetState } from "./deposit-tracker-asset";
 
 interface DepositTrackerPanelProps {
     deposits: TrackedDeposit[];
@@ -76,7 +77,13 @@ function DepositStatusTile({
 }) {
     const t = useTranslations("depositModal");
     const tone = toneFor(deposit);
-    const symbol = deposit.tokenMetadata.symbol;
+    const assetState = trackerAssetState(deposit);
+    // A failed reusable-address payout never learns its asset; say so
+    // instead of showing the asset the address was last shown for.
+    const symbol =
+        assetState === "unknown"
+            ? t("unknownAsset")
+            : deposit.tokenMetadata.symbol;
 
     const title =
         tone === "success"
@@ -115,8 +122,12 @@ function DepositStatusTile({
         >
             <span className="relative shrink-0">
                 <DepositOptionIcon
-                    icon={assetIcon ?? ""}
-                    name={assetName ?? symbol}
+                    icon={assetState === "unknown" ? "" : (assetIcon ?? "")}
+                    name={
+                        assetState === "unknown"
+                            ? symbol
+                            : (assetName ?? symbol)
+                    }
                     className="size-12 text-base"
                 />
                 <StatusBadge tone={tone} />
@@ -124,6 +135,14 @@ function DepositStatusTile({
             <div className="min-w-0 flex-1">
                 <p className="font-semibold text-base leading-snug">{title}</p>
                 <p className="text-sm text-muted-foreground mt-0.5">{body}</p>
+                {assetState === "confirming" ? (
+                    <p
+                        className="text-xs text-muted-foreground mt-1"
+                        data-testid="deposit-tracker-confirming-asset"
+                    >
+                        {t("confirmingAsset")}
+                    </p>
+                ) : null}
             </div>
         </div>
     );

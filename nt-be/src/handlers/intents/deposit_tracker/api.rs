@@ -83,6 +83,10 @@ pub struct TrackedDeposit {
     pub chain: Option<String>,
     pub token_id: String,
     pub token_metadata: TokenMetadata,
+    /// False while `token_id` and `chain` are the watch's last-shown asset
+    /// rather than what the ledger credited (reusable-address payouts before
+    /// their ledger row lands, and failed ones for good).
+    pub asset_confirmed: bool,
     /// Decimal-adjusted amount, when the provider reported one.
     pub amount: Option<BigDecimal>,
     pub origin_tx_hash: Option<String>,
@@ -111,10 +115,12 @@ pub struct DepositTrackerResponse {
 
 impl TrackedDeposit {
     fn from_row(row: InProcessDeposit, metadata: TokenMetadata) -> Self {
+        let asset_confirmed = row.asset_confirmed();
         Self {
             id: row.id,
             status: row.status.as_str(),
             provider_status: row.provider_status,
+            asset_confirmed,
             chain: row.chain,
             token_id: row.token_id,
             token_metadata: metadata,
@@ -384,6 +390,7 @@ mod tests {
             id: 1,
             status: "finalized",
             provider_status: "SUCCESS".to_string(),
+            asset_confirmed: true,
             chain: Some("eth:8453".to_string()),
             token_id: "nep141:usdc.omft.near".to_string(),
             token_metadata: crate::handlers::public_history::public_list::fallback_metadata(
@@ -408,6 +415,7 @@ mod tests {
             keys,
             [
                 "amount",
+                "assetConfirmed",
                 "chain",
                 "detectedAt",
                 "finalizedAt",

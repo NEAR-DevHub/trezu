@@ -369,6 +369,8 @@
         "depositFailedTitle": "Yatırma başarısız",
         "depositFailedBody": "Sağlayıcı, <amount></amount> tutarındaki yatırmayı başarısız veya iade edildi olarak bildirdi",
         "depositFailedBodyNoAmount": "Sağlayıcı, yatırmayı başarısız veya iade edildi olarak bildirdi",
+        "unknownAsset": "Bilinmeyen varlık",
+        "confirmingAsset": "Hangi varlığın alındığı doğrulanıyor…",
         "anyTokenAssetName": "Herhangi bir token",
         "receive": {
             "sendAtLeastUsd": "En az {usd} değerinde {symbol} gönderin",

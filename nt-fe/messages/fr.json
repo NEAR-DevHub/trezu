@@ -369,6 +369,8 @@
         "depositFailedTitle": "Dépôt échoué",
         "depositFailedBody": "Le prestataire a signalé un dépôt de <amount></amount> comme échoué ou remboursé",
         "depositFailedBodyNoAmount": "Le prestataire a signalé un dépôt comme échoué ou remboursé",
+        "unknownAsset": "Actif inconnu",
+        "confirmingAsset": "Confirmation de l’actif reçu…",
         "anyTokenAssetName": "N'importe quel token",
         "receive": {
             "sendAtLeastUsd": "Envoyez au moins {usd} en {symbol}",

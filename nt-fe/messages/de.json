@@ -369,6 +369,8 @@
         "depositFailedTitle": "Einzahlung fehlgeschlagen",
         "depositFailedBody": "Eine Einzahlung von <amount></amount> wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
         "depositFailedBodyNoAmount": "Eine Einzahlung wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
+        "unknownAsset": "Unbekannter Vermögenswert",
+        "confirmingAsset": "Es wird bestätigt, welches Asset eingegangen ist …",
         "anyTokenAssetName": "Beliebiger Token",
         "receive": {
             "sendAtLeastUsd": "Senden Sie mindestens {usd} in {symbol}",

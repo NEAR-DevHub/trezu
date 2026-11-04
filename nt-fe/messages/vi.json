@@ -369,6 +369,8 @@
         "depositFailedTitle": "Nạp thất bại",
         "depositFailedBody": "Nhà cung cấp báo cáo khoản nạp <amount></amount> đã thất bại hoặc được hoàn lại",
         "depositFailedBodyNoAmount": "Nhà cung cấp báo cáo khoản nạp đã thất bại hoặc được hoàn lại",
+        "unknownAsset": "Tài sản không xác định",
+        "confirmingAsset": "Đang xác nhận tài sản đã nhận…",
         "anyTokenAssetName": "Bất kỳ token nào",
         "receive": {
             "sendAtLeastUsd": "Gửi ít nhất {usd} {symbol}",

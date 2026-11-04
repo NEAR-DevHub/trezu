@@ -369,6 +369,8 @@
         "depositFailedTitle": "Depósito fallido",
         "depositFailedBody": "El proveedor informó de que un depósito de <amount></amount> falló o fue reembolsado",
         "depositFailedBodyNoAmount": "El proveedor informó de que un depósito falló o fue reembolsado",
+        "unknownAsset": "Activo desconocido",
+        "confirmingAsset": "Confirmando qué activo se recibió…",
         "anyTokenAssetName": "Cualquier token",
         "receive": {
             "sendAtLeastUsd": "Envía al menos {usd} en {symbol}",

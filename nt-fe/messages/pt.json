@@ -369,6 +369,8 @@
         "depositFailedTitle": "Depósito falhou",
         "depositFailedBody": "O provedor informou que um depósito de <amount></amount> falhou ou foi reembolsado",
         "depositFailedBodyNoAmount": "O provedor informou que um depósito falhou ou foi reembolsado",
+        "unknownAsset": "Ativo desconhecido",
+        "confirmingAsset": "Confirmando qual ativo foi recebido…",
         "anyTokenAssetName": "Qualquer token",
         "receive": {
             "sendAtLeastUsd": "Envie pelo menos {usd} em {symbol}",

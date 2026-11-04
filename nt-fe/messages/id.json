@@ -369,6 +369,8 @@
         "depositFailedTitle": "Deposit gagal",
         "depositFailedBody": "Penyedia melaporkan deposit sebesar <amount></amount> gagal atau dikembalikan",
         "depositFailedBodyNoAmount": "Penyedia melaporkan deposit gagal atau dikembalikan",
+        "unknownAsset": "Aset tidak dikenal",
+        "confirmingAsset": "Mengonfirmasi aset yang diterima…",
         "anyTokenAssetName": "Token apa pun",
         "receive": {
             "sendAtLeastUsd": "Kirim minimal {usd} dalam {symbol}",

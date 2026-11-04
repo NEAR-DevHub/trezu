@@ -369,6 +369,8 @@
         "depositFailedTitle": "Депозит не вдався",
         "depositFailedBody": "Провайдер повідомив, що депозит на <amount></amount> не вдався або був повернутий",
         "depositFailedBodyNoAmount": "Провайдер повідомив, що депозит не вдався або був повернутий",
+        "unknownAsset": "Невідомий актив",
+        "confirmingAsset": "Підтверджуємо, який актив отримано…",
         "anyTokenAssetName": "Будь-який токен",
         "receive": {
             "sendAtLeastUsd": "Надішліть щонайменше {usd} у {symbol}",

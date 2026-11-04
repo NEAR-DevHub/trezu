@@ -369,6 +369,8 @@
         "depositFailedTitle": "充值失败",
         "depositFailedBody": "服务商报告一笔 <amount></amount> 的充值失败或已退款",
         "depositFailedBodyNoAmount": "服务商报告一笔充值失败或已退款",
+        "unknownAsset": "未知资产",
+        "confirmingAsset": "正在确认收到的资产…",
         "anyTokenAssetName": "任意代币",
         "receive": {
             "sendAtLeastUsd": "请发送至少 {usd} 的 {symbol}",

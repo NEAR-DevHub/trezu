@@ -369,6 +369,8 @@
         "depositFailedTitle": "入金失敗",
         "depositFailedBody": "<amount></amount> の入金はプロバイダーにより失敗または返金として報告されました",
         "depositFailedBodyNoAmount": "入金はプロバイダーにより失敗または返金として報告されました",
+        "unknownAsset": "不明な資産",
+        "confirmingAsset": "受け取った資産を確認しています…",
         "anyTokenAssetName": "任意のトークン",
         "receive": {
             "sendAtLeastUsd": "{symbol} を {usd} 以上送金してください",

@@ -77,6 +77,13 @@ impl InProcessDeposit {
         self.detected_at
             .max(self.finalized_at.unwrap_or(self.detected_at))
     }
+
+    /// Whether `token_id` and `chain` are known for this deposit. The bridge
+    /// names both per public deposit; a reusable-address payout carries the
+    /// watch's last-shown asset until its ledger row names the credited one.
+    pub fn asset_confirmed(&self) -> bool {
+        self.kind == WatchKind::Public || self.ledger_event_id.is_some()
+    }
 }
 
 impl FromRow<'_, PgRow> for InProcessDeposit {

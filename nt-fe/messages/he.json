@@ -369,6 +369,8 @@
         "depositFailedTitle": "ההפקדה נכשלה",
         "depositFailedBody": "הספק דיווח שהפקדה של <amount></amount> נכשלה או הוחזרה",
         "depositFailedBodyNoAmount": "הספק דיווח שההפקדה נכשלה או הוחזרה",
+        "unknownAsset": "נכס לא ידוע",
+        "confirmingAsset": "מאמתים איזה נכס התקבל…",
         "anyTokenAssetName": "כל טוקן",
         "receive": {
             "sendAtLeastUsd": "שלחו לפחות {usd} של {symbol}",

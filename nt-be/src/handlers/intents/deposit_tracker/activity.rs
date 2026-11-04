@@ -13,9 +13,28 @@ use crate::handlers::public_history::public_list::fallback_metadata;
 use crate::handlers::token::{TokenMetadata, fetch_tokens_with_fallback};
 use crate::routes::{BalanceChangesQuery, EnrichedBalanceChange};
 
-use super::WatchKind;
 use super::store::{InProcessDeposit, load_claimed_ledger_event_ids, load_visible_deposits};
 use super::worker::LEDGER_MATCH_LOOKBACK;
+use super::{DepositStatus, WatchKind};
+
+/// Token id of a feed row whose asset the ledger never named: a failed
+/// reusable-address payout. The frontend keys its "unknown asset" copy on it.
+pub const UNKNOWN_ASSET_TOKEN_ID: &str = "unknown";
+
+fn unknown_asset_metadata() -> TokenMetadata {
+    TokenMetadata {
+        token_id: UNKNOWN_ASSET_TOKEN_ID.to_string(),
+        name: "Unknown asset".to_string(),
+        symbol: "UNKNOWN".to_string(),
+        decimals: 8,
+        icon: None,
+        price: None,
+        price_updated_at: None,
+        network: None,
+        chain_name: None,
+        chain_icons: None,
+    }
+}
 
 /// Selects which tracker rows a list request may show. Tracker rows only
 /// make sense on the first page of an unfiltered or incoming-only feed.
@@ -102,7 +121,37 @@ impl InProcessDeposit {
         // Without an amount the feed would label the row a zero "Transaction";
         // the modal panel still shows it as detected.
         let amount = self.amount.clone()?;
-        Some(EnrichedBalanceChange {
+        // A failed payout never gets the ledger row that would name its
+        // asset, so the feed says so rather than keeping the watch's label.
+        // An in-flight one keeps the label: the ledger row replaces it.
+        if self.status == DepositStatus::Failed && !self.asset_confirmed() {
+            return Some(EnrichedBalanceChange {
+                token_id: UNKNOWN_ASSET_TOKEN_ID.to_string(),
+                token_metadata: Some(unknown_asset_metadata()),
+                ..self.enriched(action_kind, amount, None)
+            });
+        }
+        Some(
+            self.enriched(
+                action_kind,
+                amount,
+                Some(
+                    metadata
+                        .get(&self.token_id)
+                        .cloned()
+                        .unwrap_or_else(|| fallback_metadata(&self.token_id)),
+                ),
+            ),
+        )
+    }
+
+    fn enriched(
+        &self,
+        action_kind: String,
+        amount: BigDecimal,
+        token_metadata: Option<TokenMetadata>,
+    ) -> EnrichedBalanceChange {
+        EnrichedBalanceChange {
             id: -self.id,
             account_id: self.dao_id.clone(),
             block_height: 0,
@@ -117,12 +166,7 @@ impl InProcessDeposit {
             balance_before: BigDecimal::zero(),
             balance_after: BigDecimal::zero(),
             created_at: self.detected_at,
-            token_metadata: Some(
-                metadata
-                    .get(&self.token_id)
-                    .cloned()
-                    .unwrap_or_else(|| fallback_metadata(&self.token_id)),
-            ),
+            token_metadata,
             swap: None,
             action_kind: Some(action_kind),
             method_name: None,
@@ -133,7 +177,7 @@ impl InProcessDeposit {
             notes: None,
             fully_confidential: None,
             has_app_fee: None,
-        })
+        }
     }
 }
 
@@ -230,7 +274,6 @@ pub async fn in_process_activity_rows(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::handlers::intents::deposit_tracker::{DepositStatus, WatchKind};
 
     fn deposit(kind: WatchKind, status: DepositStatus) -> InProcessDeposit {
         InProcessDeposit {
@@ -420,6 +463,44 @@ mod tests {
             ..september
         };
         assert!(open.allows_time(at("2026-10-08T12:00:00Z")));
+    }
+
+    #[test]
+    fn asset_is_confirmed_by_the_bridge_or_the_ledger_and_failed_rows_say_unknown() {
+        let public = deposit(WatchKind::Public, DepositStatus::Failed);
+        assert!(
+            public.asset_confirmed(),
+            "the bridge names each deposit's asset"
+        );
+        let mut pending = deposit(WatchKind::Confidential, DepositStatus::Finalized);
+        assert!(!pending.asset_confirmed(), "the watch label is provisional");
+        pending.ledger_event_id = Some(42);
+        assert!(pending.asset_confirmed(), "the ledger row named it");
+
+        let metadata = HashMap::new();
+        let in_flight = deposit(WatchKind::Confidential, DepositStatus::Finalized)
+            .to_enriched(&metadata)
+            .expect("row");
+        assert_eq!(in_flight.token_id, "intents.near:nep141:usdc.omft.near");
+
+        let failed = deposit(WatchKind::Confidential, DepositStatus::Failed)
+            .to_enriched(&metadata)
+            .expect("row");
+        assert_eq!(failed.token_id, UNKNOWN_ASSET_TOKEN_ID);
+        assert_eq!(
+            failed.token_metadata.as_ref().map(|m| m.symbol.as_str()),
+            Some("UNKNOWN")
+        );
+        assert_eq!(failed.amount, BigDecimal::from(100));
+        assert_eq!(
+            failed.action_kind.as_deref(),
+            Some("ConfidentialDeposit:failed")
+        );
+
+        let failed_public = deposit(WatchKind::Public, DepositStatus::Failed)
+            .to_enriched(&metadata)
+            .expect("row");
+        assert_eq!(failed_public.token_id, "intents.near:nep141:usdc.omft.near");
     }
 
     #[test]

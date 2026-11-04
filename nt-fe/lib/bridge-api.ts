@@ -84,6 +84,12 @@ export interface TrackedDeposit {
     providerStatus: string;
     chain: string | null;
     tokenId: string;
+    /**
+     * False while `tokenId` and `chain` are the watch's last-shown asset
+     * rather than what the ledger credited: a reusable-address payout before
+     * its ledger row lands, and a failed one for good.
+     */
+    assetConfirmed: boolean;
     tokenMetadata: {
         symbol: string;
         decimals: number;

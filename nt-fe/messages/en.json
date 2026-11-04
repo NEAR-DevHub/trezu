@@ -369,6 +369,8 @@
         "depositFailedTitle": "Deposit failed",
         "depositFailedBody": "A deposit of <amount></amount> was reported as failed or refunded by the provider",
         "depositFailedBodyNoAmount": "A deposit was reported as failed or refunded by the provider",
+        "unknownAsset": "Unknown asset",
+        "confirmingAsset": "Confirming which asset was received…",
         "anyTokenAssetName": "Any token",
         "receive": {
             "sendAtLeastUsd": "Send at least {usd} of {symbol}",

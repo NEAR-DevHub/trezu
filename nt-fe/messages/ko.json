@@ -369,6 +369,8 @@
         "depositFailedTitle": "입금 실패",
         "depositFailedBody": "제공업체가 <amount></amount> 입금을 실패 또는 환불로 보고했습니다",
         "depositFailedBodyNoAmount": "제공업체가 입금을 실패 또는 환불로 보고했습니다",
+        "unknownAsset": "알 수 없는 자산",
+        "confirmingAsset": "수신된 자산을 확인하는 중…",
         "anyTokenAssetName": "모든 토큰",
         "receive": {
             "sendAtLeastUsd": "{symbol} {usd} 이상 보내기",
