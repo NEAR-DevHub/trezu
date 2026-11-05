@@ -54,15 +54,6 @@ fn coalesce_str(primary: Option<&String>, payload: &Value, key: &str) -> Option<
     normalized_str(primary.map(String::as_str)).or_else(|| payload_str(payload, key))
 }
 
-fn resolve_account(
-    stored: Option<&String>,
-    payload: &Value,
-    field: &str,
-) -> Result<String, String> {
-    let raw = coalesce_str(stored, payload, field).ok_or_else(|| format!("missing {field}"))?;
-    Ok(bare_account(&raw))
-}
-
 fn parse_decimal(value: Option<String>, field: &str) -> Result<BigDecimal, String> {
     let Some(value) = value else {
         return Err(format!("missing {}", field));
@@ -135,6 +126,11 @@ fn classify(
 /// NEAR chain) into its confidential balance. 1Click reports the executed
 /// amount for these, so `amount_out` is the full credit — unlike
 /// deposit-address quotes, where the nominal is misreported.
+///
+/// A plain transfer into a 1Click deposit address (no quote) is listed with
+/// the origin side only: no `recipient`, `destinationAsset` or `amountOut*`.
+/// The history is the DAO's own, so the recipient is the DAO, the credited
+/// asset is `originAsset` and the credit is `amountIn`.
 fn is_public_to_confidential_deposit(row: &BronzeProjectionRow) -> bool {
     let deposit_type = DepositType::parse(&row.deposit_type);
     let recipient_type = row
@@ -162,16 +158,38 @@ pub(crate) fn project_row(
     let dao_account_id = dao_id
         .parse::<near_api::AccountId>()
         .map_err(|e| format!("invalid dao_id: {e}"))?;
-    let origin_asset_opt = coalesce_str(row.origin_asset.as_ref(), &row.raw_payload, "originAsset");
+    let public_to_confidential = is_public_to_confidential_deposit(row);
+    let origin_asset = coalesce_str(row.origin_asset.as_ref(), &row.raw_payload, "originAsset");
     let destination_asset_opt = coalesce_str(
-        Some(&row.destination_asset),
+        row.destination_asset.as_ref(),
         &row.raw_payload,
         "destinationAsset",
     );
-    let recipient = resolve_account(row.recipient.as_ref(), &row.raw_payload, "recipient")?;
-    let destination_asset =
-        destination_asset_opt.ok_or_else(|| "missing destinationAsset".to_string())?;
-    let origin_asset = origin_asset_opt;
+    let recipient_opt = coalesce_str(row.recipient.as_ref(), &row.raw_payload, "recipient");
+    let api = history_api_item(&row.raw_payload);
+    let amount_out_formatted = api
+        .as_ref()
+        .and_then(|i| i.amount_out_formatted.clone())
+        .or_else(|| payload_str(&row.raw_payload, "amountOutFormatted"));
+    // Deposit-only entry: 1Click reports the origin side only. The three
+    // destination fields are absent together; a row missing only some of them
+    // is a malformed normal entry and keeps failing below.
+    let deposit_only = public_to_confidential
+        && recipient_opt.is_none()
+        && destination_asset_opt.is_none()
+        && amount_out_formatted.is_none();
+    let recipient = match recipient_opt {
+        Some(raw) => bare_account(&raw),
+        None if deposit_only => dao_id.clone(),
+        None => return Err("missing recipient".to_string()),
+    };
+    let destination_asset = match destination_asset_opt {
+        Some(asset) => asset,
+        None if deposit_only => origin_asset
+            .clone()
+            .ok_or_else(|| "missing destinationAsset and originAsset".to_string())?,
+        None => return Err("missing destinationAsset".to_string()),
+    };
     // Validation only: a SUCCESS row without a deposit address never
     // projected cleanly, so keep refusing it.
     coalesce_str(
@@ -199,17 +217,26 @@ pub(crate) fn project_row(
         return Ok(None);
     };
 
-    let api = history_api_item(&row.raw_payload);
+    let amount_out_usd_formatted = api
+        .as_ref()
+        .and_then(|i| i.amount_out_usd.clone())
+        .or_else(|| payload_str(&row.raw_payload, "amountOutUsd"));
+    // A deposit-only entry has no output side: the credit is the deposit.
+    let deposit_only = deposit_only && kind == ConfidentialTxType::Deposit;
     let mut amount_out = parse_decimal(
-        api.as_ref()
-            .and_then(|i| i.amount_out_formatted.clone())
-            .or_else(|| payload_str(&row.raw_payload, "amountOutFormatted")),
+        if deposit_only {
+            payload_str(&row.raw_payload, "amountInFormatted")
+        } else {
+            amount_out_formatted
+        },
         "amountOutFormatted",
     )?;
     let mut amount_out_usd = parse_optional_decimal(
-        api.as_ref()
-            .and_then(|i| i.amount_out_usd.clone())
-            .or_else(|| payload_str(&row.raw_payload, "amountOutUsd")),
+        if deposit_only {
+            payload_str(&row.raw_payload, "amountInUsd")
+        } else {
+            amount_out_usd_formatted
+        },
         "amountOutUsd",
     )?;
     let mut amount_in_usd = parse_optional_decimal(
@@ -234,7 +261,7 @@ pub(crate) fn project_row(
     let zero = BigDecimal::zero();
     let amount_out_usd_for_delta = amount_out_usd.clone().unwrap_or_else(BigDecimal::zero);
     let intents_to_confidential_deposit =
-        kind == ConfidentialTxType::Deposit && is_public_to_confidential_deposit(row);
+        kind == ConfidentialTxType::Deposit && public_to_confidential;
 
     // 1Click can refund part (slippage remainder) or most (nominal-executed
     // quote) of a transfer. When the refund destination is this DAO's
@@ -535,7 +562,7 @@ mod tests {
             recipient_type: Some("CONFIDENTIAL_INTENTS".to_string()),
             recipient: recipient.map(ToString::to_string),
             origin_asset: origin_asset.map(ToString::to_string),
-            destination_asset: destination_asset.to_string(),
+            destination_asset: Some(destination_asset.to_string()),
             raw_payload,
             proposal_id: None,
             proposal_created_at: None,
@@ -672,6 +699,135 @@ mod tests {
             Some(&BigDecimal::from_str("7.5").unwrap())
         );
         assert!(!ledger.contains_key("nep141:wrap.near"));
+    }
+
+    /// agentic.sputnik-dao.near, 2026-11-05: Sputnik proposal 65 (external
+    /// SDK) `ft_transfer`red 1 USDC to a 1Click deposit address, swept into
+    /// the DAO's confidential account. 1Click lists it with the origin side
+    /// only — no recipient, destinationAsset or amountOut.
+    #[test]
+    fn test_project_deposit_only_entry_without_destination_side_credits_amount_in() {
+        const USDC: &str =
+            "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+        let raw_payload = payload(&[
+            ("status", Value::String("SUCCESS".to_string())),
+            ("depositType", Value::String("ORIGIN_CHAIN".to_string())),
+            (
+                "recipientType",
+                Value::String("CONFIDENTIAL_INTENTS".to_string()),
+            ),
+            (
+                "depositAddress",
+                Value::String(
+                    "c25f7c3ab12474a0ca6c39216680d9e6ebbf9907f3aa018e77a1cd616634eb1a".to_string(),
+                ),
+            ),
+            ("originAsset", Value::String(USDC.to_string())),
+            ("amountInFormatted", Value::String("1.0".to_string())),
+            ("amountInUsd", Value::String("0.999701".to_string())),
+            (
+                "refundType",
+                Value::String("CONFIDENTIAL_INTENTS".to_string()),
+            ),
+        ]);
+        let mut row = row(
+            "agentic.sputnik-dao.near",
+            None,
+            Some(USDC),
+            USDC,
+            raw_payload,
+        );
+        row.deposit_type = "ORIGIN_CHAIN".to_string();
+        row.destination_asset = None;
+        let mut ledger = HashMap::from([(USDC.to_string(), BigDecimal::from(4))]);
+
+        let projected = project_row(
+            &row,
+            &mut ledger,
+            &ConfidentialDepositCorrectionIndex::empty_disabled(),
+        )
+        .expect("deposit-only row should project")
+        .expect("deposit-only row should not skip");
+
+        assert_eq!(projected.transaction_type, ConfidentialTxType::Deposit);
+        assert_eq!(projected.destination_asset, USDC);
+        assert_eq!(projected.recipient, "agentic.sputnik-dao.near");
+        assert_eq!(projected.amount_out, BigDecimal::from_str("1.0").unwrap());
+        assert_eq!(
+            projected.amount_out_usd,
+            Some(BigDecimal::from_str("0.999701").unwrap())
+        );
+        assert_eq!(
+            projected.destination_balance_before,
+            Some(BigDecimal::from(4))
+        );
+        assert_eq!(
+            projected.destination_balance_after,
+            Some(BigDecimal::from_str("5.0").unwrap())
+        );
+        assert_eq!(
+            ledger.get(USDC),
+            Some(&BigDecimal::from_str("5.0").unwrap())
+        );
+    }
+
+    /// The deposit-only fallback needs recipient, destinationAsset and
+    /// amountOutFormatted absent together; a normal entry missing one of
+    /// them is malformed and must stay a projection error.
+    #[test]
+    fn test_project_partial_public_deposit_entry_still_errors() {
+        const USDC: &str =
+            "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
+        let base = [
+            ("status", Value::String("SUCCESS".to_string())),
+            ("depositType", Value::String("ORIGIN_CHAIN".to_string())),
+            (
+                "recipientType",
+                Value::String("CONFIDENTIAL_INTENTS".to_string()),
+            ),
+            (
+                "depositAddress",
+                Value::String("deposit-address".to_string()),
+            ),
+            ("originAsset", Value::String(USDC.to_string())),
+            ("amountInFormatted", Value::String("1.0".to_string())),
+        ];
+        let cases = [
+            (
+                "recipient present, no destination side",
+                vec![("recipient", Value::String("dao.near".to_string()))],
+                "missing destinationAsset",
+            ),
+            (
+                "destinationAsset present, no recipient or amountOut",
+                vec![("destinationAsset", Value::String(USDC.to_string()))],
+                "missing recipient",
+            ),
+            (
+                "amountOut present, no recipient or destinationAsset",
+                vec![("amountOutFormatted", Value::String("1.0".to_string()))],
+                "missing recipient",
+            ),
+        ];
+        for (name, extra, expected) in cases {
+            let mut fields = base.to_vec();
+            fields.extend(extra);
+            let mut row = row("dao.near", None, Some(USDC), USDC, payload(&fields));
+            row.deposit_type = "ORIGIN_CHAIN".to_string();
+            row.destination_asset = None;
+            let mut ledger = HashMap::new();
+
+            let error = match project_row(
+                &row,
+                &mut ledger,
+                &ConfidentialDepositCorrectionIndex::empty_disabled(),
+            ) {
+                Err(error) => error,
+                Ok(_) => panic!("{name}: partial entry must not project"),
+            };
+            assert_eq!(error, expected, "{name}");
+            assert!(ledger.is_empty(), "{name}: ledger must stay untouched");
+        }
     }
 
     #[test]

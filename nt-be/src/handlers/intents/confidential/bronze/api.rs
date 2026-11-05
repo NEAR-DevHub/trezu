@@ -240,7 +240,57 @@ mod tests {
 
         let second = &page.items[1];
         assert!(second.item.origin_asset.is_none());
-        assert_eq!(second.item.destination_asset, "nep141:wrap.near");
+        assert_eq!(
+            second.item.destination_asset.as_deref(),
+            Some("nep141:wrap.near")
+        );
+    }
+
+    /// The newest agentic.sputnik-dao.near entry on 2026-11-05, verbatim
+    /// shape: Sputnik proposal 65 (external SDK) did `storage_deposit` +
+    /// `ft_transfer` of 1 USDC to a 1Click deposit address, which 1Click
+    /// swept into the DAO's confidential account. The entry has no
+    /// destination side, and the whole page was rejected on it.
+    const DEPOSIT_ONLY_HISTORY_RESPONSE: &str = r#"
+    {
+      "items": [
+        {
+          "status": "SUCCESS",
+          "depositType": "ORIGIN_CHAIN",
+          "recipientType": "CONFIDENTIAL_INTENTS",
+          "createdAt": "2026-11-05T03:21:21.666734Z",
+          "depositAddress": "c25f7c3ab12474a0ca6c39216680d9e6ebbf9907f3aa018e77a1cd616634eb1a",
+          "depositMemo": null,
+          "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+          "amountInFormatted": "1.0",
+          "amountInUsd": "0.999701000000",
+          "refundType": "CONFIDENTIAL_INTENTS",
+          "quoteTransactions": [
+            {
+              "sender": "agentic.sputnik-dao.near",
+              "txHash": "AaJsScv5wsQFURBj2iRu8gxwckkfdW2DDu3Wei6WtuiD"
+            }
+          ]
+        }
+      ],
+      "nextCursor": null,
+      "prevCursor": null
+    }
+    "#;
+
+    #[test]
+    fn test_parse_history_page_accepts_deposit_only_entry_without_destination_asset() {
+        let page = parse_history_page(DEPOSIT_ONLY_HISTORY_RESPONSE)
+            .expect("a deposit-only entry must not reject the page");
+
+        let item = &page.items[0].item;
+        assert_eq!(item.status, "SUCCESS");
+        assert_eq!(item.deposit_type, "ORIGIN_CHAIN");
+        assert!(item.destination_asset.is_none());
+        assert!(item.recipient.is_none());
+        assert!(item.amount_out_formatted.is_none());
+        assert_eq!(item.amount_in_formatted.as_deref(), Some("1.0"));
+        assert_eq!(item.first_quote_sender(), Some("agentic.sputnik-dao.near"));
     }
 
     /// Helper to create AppState pointing at the real 1Click confidential
@@ -285,7 +335,7 @@ mod tests {
                 i,
                 item.created_at,
                 item.origin_asset.as_deref().unwrap_or("-"),
-                item.destination_asset,
+                item.destination_asset.as_deref().unwrap_or("-"),
                 item.status,
                 item.recipient,
             );

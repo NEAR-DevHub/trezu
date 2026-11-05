@@ -345,12 +345,22 @@ impl<'a> DepositTrackerWorker<'a> {
                 None
             }
         };
+        // Only a deposit-only entry credits its origin asset; any other entry
+        // without a destination asset falls back to the watch's asset.
+        let Some(token_id) = newest
+            .item
+            .credited_asset()
+            .map(str::to_string)
+            .or_else(|| watch.token_id.clone())
+        else {
+            return Ok(result);
+        };
         let observed = ObservedDeposit {
             provider_deposit_key: quote_deposit_address.to_string(),
             chain: watch.chain.clone(),
             origin_tx_hash: newest.item.first_quote_tx_hash().map(str::to_string),
             near_tx_hash: None,
-            token_id: newest.item.destination_asset.clone(),
+            token_id,
             amount,
             provider_status: newest.item.status.clone(),
             status,
