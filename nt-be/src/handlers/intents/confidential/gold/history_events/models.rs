@@ -112,7 +112,7 @@ pub(crate) struct BronzeProjectionRow {
     pub(crate) recipient_type: Option<String>,
     pub(crate) recipient: Option<String>,
     pub(crate) origin_asset: Option<String>,
-    pub(crate) destination_asset: String,
+    pub(crate) destination_asset: Option<String>,
     pub(crate) raw_payload: Value,
     pub(crate) proposal_id: Option<i64>,
     pub(crate) proposal_created_at: Option<DateTime<Utc>>,
