@@ -41,6 +41,7 @@ import {
     submitWhitelistRequest,
 } from "@/lib/api";
 import { trackEvent } from "@/lib/analytics";
+import { sanitizeReturnTo } from "@/lib/auth-redirect";
 import { cn } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 
@@ -70,12 +71,6 @@ type FormValues = {
     accountName: string;
     isConfidential: boolean | null;
 };
-
-function sanitizeReturnTo(raw: string | null): string | null {
-    if (!raw) return null;
-    if (!raw.startsWith("/")) return null;
-    return raw;
-}
 
 function TreasuryTypeOption({
     icon,
