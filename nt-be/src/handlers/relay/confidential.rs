@@ -180,10 +180,10 @@ pub async fn store_pending_intent(
     Ok(())
 }
 
-/// Extract MPC signature from the execution result debug string.
-/// Searches for the base64 marker "eyJzY2hlbWUi" (= `{"scheme"`).
-/// Base64 prefix of the signer's `{"scheme":…}` signature payload; its
-/// presence in a vote outcome means a signature was produced.
+/// Extract the MPC signature from one callback `SuccessValue`, or from the
+/// debug string of a single-vote outcome. Searches for the base64 marker
+/// "eyJzY2hlbWUi" (= `{"scheme"`) and returns the FIRST match, so a
+/// multi-vote outcome must go through `signature_for_payload` instead.
 pub(crate) const MPC_SIGNATURE_MARKER: &str = "eyJzY2hlbWUi";
 
 pub(crate) fn extract_mpc_signature(result_debug: &str) -> Option<Vec<u8>> {
@@ -242,9 +242,24 @@ pub fn extract_v1_signer_hash_from_kind(kind: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// Where the vote relay reads each intent's MPC signature. One relay can
+/// approve several proposals, so the signature is always matched to the
+/// payload hash (`signature_for_payload`) rather than taken as the first one
+/// in the outcome.
+#[derive(Debug, Clone)]
+pub enum RelaySignatureSource {
+    /// Classic relay: near-api's outcome drops receipt ids, so the landed
+    /// execution transaction is re-read from the RPC by hash.
+    ExecutionTx(String),
+    /// Post-quantum relay: the raw `send_tx` result, the same shape as an
+    /// `EXPERIMENTAL_tx_status` response.
+    TxStatus(Value),
+}
+
 /// Spawn a background auto-submit for each confidential intent referenced by an
 /// approving vote relay. Each task matches its payload hash to a pending intent
-/// and, if the MPC signature is in the execution result, submits it to 1Click.
+/// and, if the execution carries that payload's MPC signature, submits it to
+/// 1Click.
 ///
 /// Each entry pairs the `v1.signer` payload hash with the on-chain proposal id
 /// being voted on; the proposal id is forwarded so bulk-payment headers can be
@@ -258,23 +273,17 @@ pub fn spawn_auto_submit_intents(
     state: &Arc<AppState>,
     treasury_id: &str,
     payloads: Vec<(String, u64)>,
-    result_debug: &str,
+    source: RelaySignatureSource,
 ) {
     tracing::Span::current().record("intent_count", payloads.len());
 
+    let source = Arc::new(source);
     for (payload_hash, proposal_id) in payloads {
         let state = state.clone();
         let treasury_id = treasury_id.to_owned();
-        let result_debug = result_debug.to_owned();
+        let source = source.clone();
         background::spawn("auto-submit confidential intent", async move {
-            try_auto_submit_intent(
-                &state,
-                &treasury_id,
-                &payload_hash,
-                proposal_id,
-                &result_debug,
-            )
-            .await;
+            try_auto_submit_intent(&state, &treasury_id, &payload_hash, proposal_id, &source).await;
         });
     }
 }
@@ -416,34 +425,60 @@ pub async fn try_auto_submit_intent(
     treasury_id: &str,
     payload_hash: &str,
     proposal_id: u64,
-    result_debug: &str,
+    source: &RelaySignatureSource,
 ) {
     tracing::Span::current().record("hash", tracing::field::display(payload_hash));
 
-    // Extract MPC signature from execution result. Presence of the sig is
-    // the signal that the vote actually approved the proposal — only then
-    // do we link bulk rows or auto-submit the intent.
-    let sig_bytes = match extract_mpc_signature(result_debug) {
-        Some(bytes) => bytes,
-        None => {
-            // The marker present but unparseable means the signer produced a
-            // signature we no longer understand (format/protocol drift) — the
-            // intent will sit `pending` forever. Marker absent is the routine
-            // non-approving vote (no signature expected yet).
-            if result_debug.contains(MPC_SIGNATURE_MARKER) {
-                crate::error_event!(
-                    crate::error_event::ErrorCode::ConfIntentSigParseFailed,
-                    treasury_id,
-                    payload_hash,
-                    proposal_id
-                );
-            } else {
-                tracing::debug!(
-                    treasury_id,
-                    payload_hash,
-                    "no MPC signature in vote result (vote did not approve yet)"
-                );
-            }
+    // The signature for THIS payload. Its presence is the signal that the vote
+    // actually approved the proposal — only then do we link bulk rows or
+    // auto-submit the intent. Anything short of that is left to the per-DAO
+    // poll, which submits from chain once the detector stamps the execution.
+    let submitter = ConfidentialIntentSubmitter::new(state);
+    let lookup = match source {
+        RelaySignatureSource::TxStatus(tx_status) => {
+            Ok(signature_for_payload(tx_status, payload_hash))
+        }
+        RelaySignatureSource::ExecutionTx(tx_hash) => {
+            submitter
+                .signature_from_chain(treasury_id, payload_hash, tx_hash, treasury_id)
+                .await
+        }
+    };
+    let sig_bytes = match lookup {
+        Ok(SignatureLookup::Found(bytes)) => bytes,
+        Ok(SignatureLookup::NotInTransaction) => {
+            tracing::debug!(
+                treasury_id,
+                payload_hash,
+                "relay did not sign this payload (vote did not approve yet)"
+            );
+            return;
+        }
+        Ok(SignatureLookup::CallbackPending) => {
+            tracing::info!(
+                treasury_id,
+                payload_hash,
+                "MPC callback not in the relay outcome yet; the poll submits from chain"
+            );
+            return;
+        }
+        Ok(SignatureLookup::Failed(error)) => {
+            crate::error_event!(
+                crate::error_event::ErrorCode::ConfIntentSigParseFailed,
+                treasury_id,
+                payload_hash,
+                proposal_id,
+                error = %error
+            );
+            return;
+        }
+        Err(error) => {
+            tracing::warn!(
+                treasury_id,
+                payload_hash,
+                %error,
+                "could not read the relay outcome; the poll submits from chain"
+            );
             return;
         }
     };
@@ -488,7 +523,7 @@ pub async fn try_auto_submit_intent(
         }
     }
 
-    let outcome = ConfidentialIntentSubmitter::new(state)
+    let outcome = submitter
         .submit_signed(treasury_id, payload_hash, &sig_bytes)
         .await;
     if outcome.needs_poll()
@@ -1626,7 +1661,7 @@ fn outcome_signs_payload(entry: &Value, payload_hash: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use near_api::{NetworkConfig, RPCEndpoint};
-    use wiremock::matchers::{method, path, query_param};
+    use wiremock::matchers::{body_partial_json, method, path, query_param};
     use wiremock::{Mock, MockServer, Request, Respond, ResponseTemplate};
 
     use super::*;
@@ -2456,6 +2491,71 @@ mod tests {
         // A second pass finds nothing to do and never re-posts (wiremock
         // enforces `expect(1)` on drop).
         assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+    }
+
+    /// One relay approving several proposals carries several MPC signatures.
+    /// Each intent is posted with the signature of its own payload, and a
+    /// payload the transaction never signed is left to the poll (rri #46-54,
+    /// 2026-11-03: every intent went out with the first signature in the
+    /// outcome, so only one settled).
+    #[sqlx::test]
+    async fn relay_submits_each_intent_with_its_own_signature_only(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        mount_rpc_stub(&rpc).await;
+        let oneclick = MockServer::start().await;
+        let SignatureLookup::Found(signature) =
+            signature_for_payload(&tx_status_fixture(), RRI_29_PAYLOAD_HASH)
+        else {
+            panic!("signature present in fixture");
+        };
+        Mock::given(method("POST"))
+            .and(path("/v0/submit-intent"))
+            .and(body_partial_json(serde_json::json!({
+                "signedData": {
+                    "signature": format!("ed25519:{}", bs58::encode(&signature).into_string())
+                }
+            })))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "intentHash": "mock-intent-hash",
+                "correlationId": "mock-correlation"
+            })))
+            .expect(2)
+            .mount(&oneclick)
+            .await;
+        let state = Arc::new(state_with_mocks(pool.clone(), &rpc, &oneclick));
+        let unsigned = "0".repeat(64);
+        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
+        seed_executed_intent(&pool, &unsigned, "2099-01-01T00:00:00Z").await;
+
+        // Classic relay: the execution transaction is re-read by hash.
+        let from_chain = RelaySignatureSource::ExecutionTx(RRI_29_TX_HASH.to_string());
+        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &from_chain).await;
+        try_auto_submit_intent(&state, DAO, &unsigned, 30, &from_chain).await;
+
+        let signed = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(signed.status, "submitted");
+        assert_eq!(signed.submit_state, "done");
+        let untouched = load_intent(&pool, &unsigned).await;
+        assert_eq!(untouched.status, "pending");
+        assert_eq!(untouched.submit_attempts, 0);
+        assert!(untouched.submit_result.is_none());
+
+        // Post-quantum relay: the raw tx status is handed over; same pairing.
+        sqlx::query(
+            "UPDATE confidential_intents SET status = 'pending', submit_state = 'due', submit_result = NULL WHERE payload_hash = $1",
+        )
+        .bind(RRI_29_PAYLOAD_HASH)
+        .execute(&pool)
+        .await
+        .expect("reset row");
+        let from_json = RelaySignatureSource::TxStatus(tx_status_fixture());
+        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &from_json).await;
+        try_auto_submit_intent(&state, DAO, &unsigned, 30, &from_json).await;
+        assert_eq!(
+            load_intent(&pool, RRI_29_PAYLOAD_HASH).await.submit_state,
+            "done"
+        );
+        assert_eq!(load_intent(&pool, &unsigned).await.submit_attempts, 0);
     }
 
     /// Signing failed on chain: no retry can help, so the poll fails the

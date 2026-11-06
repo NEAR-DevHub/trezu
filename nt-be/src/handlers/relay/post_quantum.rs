@@ -23,7 +23,9 @@ use crate::utils::api_error::TxFailureReason;
 pub struct ProtocolRelayOutcome {
     pub tx_hash: String,
     pub proposal_ids: Vec<u64>,
-    pub debug: String,
+    /// The `send_tx` result as the RPC returned it: `confidential` reads the
+    /// MPC signatures from its `receipts_outcome`.
+    pub result: Value,
 }
 
 /// On-chain failure of a landed transaction, classified the same way as the
@@ -94,7 +96,7 @@ pub fn read_send_tx_result(
     Ok(ProtocolRelayOutcome {
         tx_hash: tx_hash.to_owned(),
         proposal_ids: proposal_ids(result, treasury_id),
-        debug: result.to_string(),
+        result: result.clone(),
     })
 }
 
