@@ -2,8 +2,10 @@ import { describe, expect, it } from "bun:test";
 import type { Policy } from "@/types/policy";
 import {
     canChangePolicy,
+    getApproversAndThreshold,
     hasActionPermission,
     isRequestor,
+    thresholdToRequiredVotes,
 } from "./config-utils";
 
 /**
@@ -197,5 +199,39 @@ describe("isRequestor (file-a-request gate)", () => {
 
     it("denies a pure manager (policy:* is not call/transfer AddProposal)", () => {
         expect(isRequestor(policyWith(["policy:*"]), ACCOUNT)).toBe(false);
+    });
+});
+
+describe("thresholdToRequiredVotes (SputnikDAO WeightOrRatio::to_weight)", () => {
+    it("ratio: strictly more than the ratio, capped at the group size", () => {
+        expect(thresholdToRequiredVotes([1, 2], 2)).toBe(2);
+        expect(thresholdToRequiredVotes([1, 2], 3)).toBe(2);
+        expect(thresholdToRequiredVotes([1, 2], 5)).toBe(3);
+        expect(thresholdToRequiredVotes([1, 1], 5)).toBe(5);
+        expect(thresholdToRequiredVotes([1, 2], 1)).toBe(1);
+    });
+
+    it("count: parsed as a number, capped at the group size, never below 1", () => {
+        expect(thresholdToRequiredVotes("2", 3)).toBe(2);
+        expect(thresholdToRequiredVotes("3", 2)).toBe(2);
+        expect(thresholdToRequiredVotes("0", 2)).toBe(1);
+        expect(thresholdToRequiredVotes("", 2)).toBe(1);
+    });
+});
+
+describe("getApproversAndThreshold (ratio default policy)", () => {
+    it("matches the contract for a 1/2 ratio over two voters", () => {
+        const policy = policyWith(
+            ["*:VoteApprove", "*:VoteReject"],
+            ["a.near", "b.near"],
+        );
+        const { requiredVotes, approverAccounts } = getApproversAndThreshold(
+            policy,
+            "a.near",
+            "policy",
+            false,
+        );
+        expect(approverAccounts).toEqual(["a.near", "b.near"]);
+        expect(requiredVotes).toBe(2);
     });
 });
