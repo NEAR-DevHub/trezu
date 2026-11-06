@@ -10,6 +10,8 @@ use futures::{StreamExt, TryStreamExt};
 use near_api::{AccountId, Contract, NearToken, NetworkConfig};
 use serde::{Deserialize, Serialize};
 
+use crate::constants::external_apis::FASTNEAR_ACCOUNT_API_BASE;
+use crate::utils::url::api_url_or_500;
 use crate::{
     AppState,
     handlers::user::lockup::StakingPoolAccount,
@@ -182,10 +184,10 @@ async fn fetch_staking_pools_fastnear(
 ) -> Result<Vec<String>, (StatusCode, String)> {
     let response = state
         .http_client
-        .get(format!(
-            "https://api.fastnear.com/v1/account/{}/staking",
-            account_id
-        ))
+        .get(api_url_or_500(
+            FASTNEAR_ACCOUNT_API_BASE,
+            &format!("v1/account/{account_id}/staking"),
+        )?)
         .header(
             "Authorization",
             format!("Bearer {}", state.env_vars.fastnear_api_key),
@@ -223,10 +225,10 @@ async fn fetch_staking_pools_neartreasury(
 ) -> Result<Vec<String>, (StatusCode, String)> {
     let response = state
         .http_client
-        .get(format!(
-            "https://staking-pools-api.neartreasury.com/v1/account/{}/staking",
-            account_id
-        ))
+        .get(api_url_or_500(
+            "https://staking-pools-api.neartreasury.com",
+            &format!("v1/account/{account_id}/staking"),
+        )?)
         .send()
         .await
         .map_err(|e| {

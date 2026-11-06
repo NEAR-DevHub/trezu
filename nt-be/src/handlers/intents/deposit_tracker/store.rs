@@ -77,6 +77,13 @@ impl InProcessDeposit {
         self.detected_at
             .max(self.finalized_at.unwrap_or(self.detected_at))
     }
+
+    /// Whether `token_id` and `chain` are known for this deposit. The bridge
+    /// names both per public deposit; a reusable-address payout carries the
+    /// watch's last-shown asset until its ledger row names the credited one.
+    pub fn asset_confirmed(&self) -> bool {
+        self.kind == WatchKind::Public || self.ledger_event_id.is_some()
+    }
 }
 
 impl FromRow<'_, PgRow> for InProcessDeposit {
@@ -198,6 +205,25 @@ pub async fn upsert_watch(
         Err(sqlx::Error::Database(error)) if error.is_foreign_key_violation() => Ok(false),
         Err(error) => Err(error),
     }
+}
+
+/// The treasury a confidential quote address was handed out to, looked up
+/// by the address alone so the caller cannot steer the answer with a
+/// different `dao_id`. Retired watches count: the address stays public.
+pub async fn find_quote_owner(
+    pool: &PgPool,
+    quote_deposit_address: &str,
+) -> Result<Option<String>, sqlx::Error> {
+    sqlx::query_scalar(
+        r#"
+        SELECT dao_id FROM deposit_watches
+        WHERE kind = 'confidential' AND quote_deposit_address = $1
+        LIMIT 1
+        "#,
+    )
+    .bind(quote_deposit_address)
+    .fetch_optional(pool)
+    .await
 }
 
 /// Claim due watches. The bumped `next_poll_at` is the lease: a crashed
@@ -397,49 +423,38 @@ pub async fn load_visible_deposits(
     .await
 }
 
-/// Share pages re-derive the bridge address with the quote address as the
-/// account id, so they cannot upsert by DAO. Renewing the quote's existing
-/// watch (reviving it if discovery already stopped) keeps the payer's own
-/// deposit tracked for as long as they keep the page open. A live watch
-/// keeps its schedule and error backoff; only a retired one starts a new
-/// life, as in `upsert_watch`. `Ok(false)`: no watch exists for this quote
-/// (minted before the tracker, or not a quote).
-pub async fn renew_confidential_watch_by_quote(
+/// Ledger rows a tracker row has already been linked to. The activity
+/// feed never lets one of these stand in for a second, still-processing
+/// deposit of the same token and amount.
+pub async fn load_claimed_ledger_event_ids(
     pool: &PgPool,
-    quote_deposit_address: &str,
-    fast_until: DateTime<Utc>,
-    discovery_until: DateTime<Utc>,
-) -> Result<bool, sqlx::Error> {
-    let result = sqlx::query(
+    dao_id: &str,
+) -> Result<Vec<i64>, sqlx::Error> {
+    sqlx::query_scalar(
         r#"
-        UPDATE deposit_watches
-        SET fast_until = GREATEST(fast_until, $2),
-            discovery_until = GREATEST(discovery_until, $3),
-            next_poll_at = CASE WHEN retired_at IS NULL THEN next_poll_at ELSE NOW() END,
-            attempts = CASE WHEN retired_at IS NULL THEN attempts ELSE 0 END,
-            last_error = CASE WHEN retired_at IS NULL THEN last_error END,
-            retired_at = NULL,
-            updated_at = NOW()
-        WHERE kind = 'confidential'
-          AND quote_deposit_address = $1
+        SELECT ledger_event_id
+        FROM in_process_deposits
+        WHERE dao_id = $1
+          AND ledger_event_id IS NOT NULL
+          AND ledger_confirmed_at > NOW() - $2
         "#,
     )
-    .bind(quote_deposit_address)
-    .bind(fast_until)
-    .bind(discovery_until)
-    .execute(pool)
-    .await?;
-    Ok(result.rows_affected() > 0)
+    .bind(dao_id)
+    .bind(lease_interval(ACTIVE_DEPOSIT_MAX_AGE))
+    .fetch_all(pool)
+    .await
 }
 
-/// Rows the deposit modal shows for one address scope: a confidential quote
-/// (its provider key) or a public chain. Confirmed rows stay for the
-/// activity window so the modal can say "received".
+/// Rows the deposit modal shows for one address scope: the treasury's
+/// reusable quote address or a public chain. Confirmed rows stay for the
+/// activity window so the modal can say "received". `since` narrows the
+/// window to rows first seen at or after an instant (a page open).
 pub async fn load_recent_deposits_for_scope(
     pool: &PgPool,
     dao_id: &str,
     quote_deposit_address: Option<&str>,
     chain: Option<&str>,
+    since: Option<DateTime<Utc>>,
 ) -> Result<Vec<InProcessDeposit>, sqlx::Error> {
     sqlx::query_as::<_, InProcessDeposit>(
         r#"
@@ -451,8 +466,16 @@ pub async fn load_recent_deposits_for_scope(
                 COALESCE(finalized_at, detected_at),
                 COALESCE(ledger_confirmed_at, detected_at)
               ) > NOW() - $2
-          AND ($3::text IS NULL OR provider_deposit_key = $3)
+          AND (
+                $3::text IS NULL
+                -- Reusable address: every payout of the DAO's quote.
+                OR watch_id IN (
+                    SELECT id FROM deposit_watches
+                    WHERE dao_id = $1 AND kind = 'confidential' AND quote_deposit_address = $3
+                )
+              )
           AND ($4::text IS NULL OR chain = $4)
+          AND ($5::timestamptz IS NULL OR detected_at >= $5)
         ORDER BY detected_at DESC
         LIMIT 20
         "#,
@@ -461,6 +484,7 @@ pub async fn load_recent_deposits_for_scope(
     .bind(lease_interval(ACTIVE_DEPOSIT_MAX_AGE))
     .bind(quote_deposit_address)
     .bind(chain)
+    .bind(since)
     .fetch_all(pool)
     .await
 }
@@ -470,11 +494,13 @@ pub async fn load_recent_deposits_for_scope(
 /// NEAR hash; without it, token + decimal amount + time window is the
 /// strongest key available.
 /// The gold row a settled deposit resolves to, with the amount it booked so
-/// a row the provider reported without one can be filled in on confirm.
+/// a row the provider reported without one can be filled in on confirm, and
+/// the credited token when the ledger names it better than the tracker did.
 #[derive(Debug, Clone, PartialEq, FromRow)]
 pub struct LedgerMatch {
     pub event_id: i64,
     pub amount: Option<BigDecimal>,
+    pub token_id: Option<String>,
 }
 
 /// Links a settled public deposit to its gold row: by NEAR mint hash when
@@ -493,7 +519,7 @@ pub async fn find_public_ledger_match(
 ) -> Result<Option<LedgerMatch>, sqlx::Error> {
     sqlx::query_as(
         r#"
-        SELECT g.id AS event_id, g.amount_in AS amount
+        SELECT g.id AS event_id, g.amount_in AS amount, NULL::text AS token_id
         FROM gold_treasury_ledger_events g
         WHERE g.dao_id = $1
           AND g.source_kind = 'public_silver_leg'
@@ -520,35 +546,62 @@ pub async fn find_public_ledger_match(
     .await
 }
 
-/// Confidential rows carry their bronze provenance in `gold_event_key`, so
-/// the quote address is an exact key.
-pub async fn find_confidential_ledger_match(
+/// Reusable-address deposits settle as one 1Click history row each, whose
+/// `refundTo` is the quote address. Amount plus a time window around the
+/// tracker's first sighting picks the row; the `NOT EXISTS` guard keeps
+/// each gold row linked at most once. The gold row's `token_in` is the
+/// credited token, which the payout feed does not name.
+///
+/// Shape of a payout row (1Click files each payout on the reusable address
+/// as its own child swap; see `fixtures/reusable_payout_history_row.json`,
+/// captured from a live row): `refundTo` is the reusable address,
+/// `depositAddress` a per-payout child address, `originAsset` the credited
+/// token. The parent ANY_INPUT quote (`refundTo` = the DAO, `originAsset`
+/// = `1cs_v1:any`) is not a payout and never matches.
+pub async fn find_reusable_ledger_match(
     pool: &PgPool,
     dao_id: &str,
     quote_deposit_address: &str,
+    amount: Option<&BigDecimal>,
+    not_before: DateTime<Utc>,
+    not_after: DateTime<Utc>,
 ) -> Result<Option<LedgerMatch>, sqlx::Error> {
     sqlx::query_as(
         r#"
-        SELECT g.id AS event_id, g.amount_in AS amount
+        SELECT g.id AS event_id, g.amount_in AS amount,
+               NULLIF(g.token_in, '1cs_v1:any') AS token_id
         FROM bronze_confidential_history_events he
         JOIN gold_treasury_ledger_events g
           ON g.gold_event_key = 'confidential:' || he.id::text
         WHERE he.account_id = $1
-          AND he.deposit_address = $2
-        ORDER BY he.created_at_external DESC
+          AND he.raw_payload->>'refundTo' = $2
+          AND he.deposit_type = 'INTENTS'
+          AND he.created_at_external BETWEEN $4 AND $5
+          AND ($3::numeric IS NULL OR g.amount_in = $3)
+          AND NOT EXISTS (
+              SELECT 1 FROM in_process_deposits d WHERE d.ledger_event_id = g.id
+          )
+        ORDER BY he.created_at_external ASC, he.id ASC
         LIMIT 1
         "#,
     )
     .bind(dao_id)
     .bind(quote_deposit_address)
+    .bind(amount)
+    .bind(not_before)
+    .bind(not_after)
     .fetch_optional(pool)
     .await
 }
 
+/// Links the row to its gold row. A match that names the credited token
+/// (and the chain derived from it) replaces the tracker's provisional label,
+/// which for a shared reusable watch is only whichever asset was last shown.
 pub async fn confirm_ledger(
     pool: &PgPool,
     deposit_id: i64,
     ledger: &LedgerMatch,
+    chain: Option<&str>,
 ) -> Result<(), sqlx::Error> {
     sqlx::query(
         r#"
@@ -556,6 +609,8 @@ pub async fn confirm_ledger(
         SET status = 'ledger_confirmed',
             ledger_event_id = $2,
             amount = COALESCE(amount, $3),
+            token_id = COALESCE($4, token_id),
+            chain = COALESCE($5, chain),
             ledger_confirmed_at = NOW(),
             updated_at = NOW()
         WHERE id = $1
@@ -565,6 +620,8 @@ pub async fn confirm_ledger(
     .bind(deposit_id)
     .bind(ledger.event_id)
     .bind(&ledger.amount)
+    .bind(&ledger.token_id)
+    .bind(chain)
     .execute(pool)
     .await?;
     Ok(())
@@ -663,118 +720,6 @@ mod tests {
                 "failed is terminal"
             );
         }
-    }
-
-    #[sqlx::test]
-    async fn share_page_renews_a_quote_watch_by_its_address(pool: PgPool) {
-        seed_dao(&pool, "dao.sputnik-dao.near", true).await;
-        let now = Utc::now();
-        upsert_watch(
-            &pool,
-            "dao.sputnik-dao.near",
-            WatchKind::Confidential,
-            Some("quote-addr"),
-            "eth:8453",
-            None,
-            now + Duration::minutes(10),
-            now + Duration::minutes(120),
-        )
-        .await
-        .expect("upsert watch");
-        // Discovery ran out before the payer opened the link.
-        sqlx::query(
-            "UPDATE deposit_watches SET retired_at = NOW(), attempts = 7, \
-             last_error = 'x' WHERE quote_deposit_address = 'quote-addr'",
-        )
-        .execute(&pool)
-        .await
-        .expect("retire");
-        assert!(
-            claim_due_watches(&pool, 10, Duration::seconds(60))
-                .await
-                .expect("claim")
-                .is_empty(),
-            "retired watch is not due"
-        );
-
-        assert!(
-            !renew_confidential_watch_by_quote(
-                &pool,
-                "unknown-quote",
-                now + Duration::minutes(10),
-                now + Duration::minutes(120),
-            )
-            .await
-            .expect("renew unknown"),
-            "no watch for an unknown quote"
-        );
-        let later = now + Duration::minutes(30);
-        assert!(
-            renew_confidential_watch_by_quote(
-                &pool,
-                "quote-addr",
-                later + Duration::minutes(10),
-                later + Duration::minutes(120),
-            )
-            .await
-            .expect("renew"),
-        );
-
-        let revived = claim_due_watches(&pool, 10, Duration::seconds(60))
-            .await
-            .expect("claim after renew");
-        assert_eq!(revived.len(), 1, "renewal revives the watch");
-        let watch = &revived[0];
-        assert_eq!(watch.quote_deposit_address.as_deref(), Some("quote-addr"));
-        assert_eq!(
-            watch.attempts, 1,
-            "attempt counter restarted (claim adds one)"
-        );
-        let last_error: Option<String> =
-            sqlx::query_scalar("SELECT last_error FROM deposit_watches WHERE id = $1")
-                .bind(watch.id)
-                .fetch_one(&pool)
-                .await
-                .expect("read last_error");
-        assert!(last_error.is_none(), "revival clears the last error");
-        assert!(watch.fast_until >= later + Duration::minutes(9));
-        assert!(watch.discovery_until >= later + Duration::minutes(119));
-
-        // A live watch that is backing off from errors keeps its schedule:
-        // page opens must not turn into immediate re-polls of a broken quote.
-        sqlx::query(
-            "UPDATE deposit_watches SET attempts = 5, last_error = 'boom', \
-             next_poll_at = NOW() + interval '5 minutes' WHERE id = $1",
-        )
-        .bind(watch.id)
-        .execute(&pool)
-        .await
-        .expect("simulate backoff");
-        assert!(
-            renew_confidential_watch_by_quote(
-                &pool,
-                "quote-addr",
-                later + Duration::minutes(20),
-                later + Duration::minutes(130),
-            )
-            .await
-            .expect("renew live"),
-        );
-        assert!(
-            claim_due_watches(&pool, 10, Duration::seconds(60))
-                .await
-                .expect("claim live")
-                .is_empty(),
-            "live watch keeps its backoff schedule"
-        );
-        let (attempts, last_error): (i32, Option<String>) =
-            sqlx::query_as("SELECT attempts, last_error FROM deposit_watches WHERE id = $1")
-                .bind(watch.id)
-                .fetch_one(&pool)
-                .await
-                .expect("read backoff state");
-        assert_eq!(attempts, 5, "live watch keeps its attempts");
-        assert_eq!(last_error.as_deref(), Some("boom"));
     }
 
     #[sqlx::test]
@@ -967,6 +912,7 @@ mod tests {
         let ledger = LedgerMatch {
             event_id: ledger_id,
             amount: Some(BigDecimal::from_str("100.000000").unwrap()),
+            token_id: None,
         };
         assert_eq!(
             matched,
@@ -1021,7 +967,7 @@ mod tests {
             .execute(&pool)
             .await
             .expect("blank amount");
-        confirm_ledger(&pool, deposits[0].id, &ledger)
+        confirm_ledger(&pool, deposits[0].id, &ledger, None)
             .await
             .expect("confirm");
         assert!(
@@ -1215,31 +1161,321 @@ mod tests {
     }
 
     #[sqlx::test]
-    async fn confidential_watch_is_keyed_by_quote(pool: PgPool) {
-        seed_dao(&pool, "conf.sputnik-dao.near", true).await;
+    async fn reusable_scope_filters_by_since_and_relabels_on_confirm(pool: PgPool) {
+        seed_dao(&pool, "rda.sputnik-dao.near", true).await;
         let now = Utc::now();
-        for quote in ["quote-a", "quote-b", "quote-a"] {
-            upsert_watch(
+        upsert_watch(
+            &pool,
+            "rda.sputnik-dao.near",
+            WatchKind::Confidential,
+            Some("rda-quote"),
+            "sol:mainnet",
+            Some("nep141:sol.omft.near"),
+            now + Duration::minutes(10),
+            now + Duration::minutes(120),
+        )
+        .await
+        .expect("upsert reusable watch");
+        let watch = claim_due_watches(&pool, 10, Duration::seconds(60))
+            .await
+            .expect("claim")
+            .into_iter()
+            .find(|w| w.quote_deposit_address.as_deref() == Some("rda-quote"))
+            .expect("reusable watch");
+        // The shared watch labels every payout with the asset last shown.
+        for key in ["rda:old", "rda:new"] {
+            let mut payout = observed(key, DepositStatus::Finalized);
+            payout.chain = Some("sol:mainnet".to_string());
+            payout.token_id = "nep141:sol.omft.near".to_string();
+            upsert_deposit(
                 &pool,
-                "conf.sputnik-dao.near",
+                watch.id,
+                &watch.dao_id,
                 WatchKind::Confidential,
-                Some(quote),
-                "eth:8453",
-                Some("nep141:usdc"),
-                now + Duration::minutes(10),
-                now + Duration::minutes(120),
+                &payout,
             )
             .await
-            .expect("upsert confidential watch");
+            .expect("upsert payout");
         }
-        let claimed = claim_due_watches(&pool, 10, Duration::seconds(60))
+        sqlx::query(
+            "UPDATE in_process_deposits SET detected_at = NOW() - interval '2 hours' \
+             WHERE provider_deposit_key = 'rda:old'",
+        )
+        .execute(&pool)
+        .await
+        .expect("age the old payout");
+
+        let all =
+            load_recent_deposits_for_scope(&pool, &watch.dao_id, Some("rda-quote"), None, None)
+                .await
+                .expect("full scope");
+        assert_eq!(all.len(), 2);
+        let recent = load_recent_deposits_for_scope(
+            &pool,
+            &watch.dao_id,
+            Some("rda-quote"),
+            None,
+            Some(now - Duration::minutes(30)),
+        )
+        .await
+        .expect("since scope");
+        assert_eq!(
+            recent
+                .iter()
+                .map(|d| d.provider_deposit_key.as_str())
+                .collect::<Vec<_>>(),
+            vec!["rda:new"]
+        );
+
+        let event_id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO gold_treasury_ledger_events (
+                gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+                status, event_time, token_in, amount_in
+            )
+            VALUES ('confidential:relabel-test', $1, 'public_silver_leg', true, 'deposit',
+                    'success', NOW(), $2, 100.000000)
+            RETURNING id
+            "#,
+        )
+        .bind(&watch.dao_id)
+        .bind("nep141:base-0x8335.omft.near")
+        .fetch_one(&pool)
+        .await
+        .expect("seed gold row");
+        let ledger = LedgerMatch {
+            event_id,
+            amount: Some(BigDecimal::from(100)),
+            token_id: Some("nep141:base-0x8335.omft.near".to_string()),
+        };
+        confirm_ledger(&pool, recent[0].id, &ledger, Some("eth:8453"))
             .await
-            .expect("claim");
-        let mut quotes: Vec<_> = claimed
+            .expect("confirm");
+
+        let rows = load_watch_deposits(&pool, watch.id).await.expect("rows");
+        let confirmed = rows
             .iter()
-            .filter_map(|w| w.quote_deposit_address.clone())
-            .collect();
-        quotes.sort();
-        assert_eq!(quotes, vec!["quote-a".to_string(), "quote-b".to_string()]);
+            .find(|d| d.provider_deposit_key == "rda:new")
+            .expect("confirmed row");
+        assert_eq!(confirmed.status, DepositStatus::LedgerConfirmed);
+        assert_eq!(confirmed.token_id, "nep141:base-0x8335.omft.near");
+        assert_eq!(confirmed.chain.as_deref(), Some("eth:8453"));
+        let provisional = rows
+            .iter()
+            .find(|d| d.provider_deposit_key == "rda:old")
+            .expect("old row");
+        assert_eq!(provisional.token_id, "nep141:sol.omft.near");
+        assert_eq!(provisional.chain.as_deref(), Some("sol:mainnet"));
+    }
+
+    const REUSABLE_PAYOUT_ROW: &str = include_str!("fixtures/reusable_payout_history_row.json");
+
+    async fn seed_history_row(
+        pool: &PgPool,
+        dao_id: &str,
+        payload: &serde_json::Value,
+        amount: &str,
+    ) -> i64 {
+        let bronze_id: i64 = sqlx::query_scalar(
+            r#"
+            INSERT INTO bronze_confidential_history_events (
+                account_id, created_at_external, deposit_address, deposit_memo, status,
+                deposit_type, recipient_type, recipient, origin_asset, destination_asset,
+                raw_payload
+            )
+            VALUES ($1, NOW(), $2->>'depositAddress', $2->>'depositMemo', $2->>'status',
+                    $2->>'depositType', $2->>'recipientType', $2->>'recipient',
+                    $2->>'originAsset', $2->>'destinationAsset', $2)
+            RETURNING id
+            "#,
+        )
+        .bind(dao_id)
+        .bind(payload)
+        .fetch_one(pool)
+        .await
+        .expect("seed bronze row");
+        sqlx::query_scalar(
+            r#"
+            INSERT INTO gold_treasury_ledger_events (
+                gold_event_key, dao_id, source_kind, history_visible, transaction_type,
+                status, event_time, token_in, amount_in
+            )
+            VALUES ('confidential:' || $1::text, $2, 'confidential_history_event', true, 'deposit',
+                    'success', NOW(), $3, $4::numeric)
+            RETURNING id
+            "#,
+        )
+        .bind(bronze_id)
+        .bind(dao_id)
+        .bind(payload["originAsset"].as_str())
+        .bind(amount)
+        .fetch_one(pool)
+        .await
+        .expect("seed gold row")
+    }
+
+    /// Pins the live payload shape: the payout row's `refundTo` is the
+    /// reusable address and its `originAsset` the credited token. The parent
+    /// quote's shape (`refundTo` = DAO, `originAsset` = `1cs_v1:any`) must
+    /// neither match nor leak its placeholder as a token.
+    #[sqlx::test]
+    async fn reusable_match_keys_on_the_payout_refund_to(pool: PgPool) {
+        let payout: serde_json::Value =
+            serde_json::from_str(REUSABLE_PAYOUT_ROW).expect("fixture parses");
+        let dao_id = payout["recipient"].as_str().unwrap().to_string();
+        let rda = payout["refundTo"].as_str().unwrap().to_string();
+        let child = payout["depositAddress"].as_str().unwrap().to_string();
+        assert_ne!(
+            rda, child,
+            "fixture: child address differs from the reusable one"
+        );
+        seed_dao(&pool, &dao_id, true).await;
+        let event_id = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let window = (
+            Utc::now() - Duration::hours(1),
+            Utc::now() + Duration::hours(1),
+        );
+
+        let matched = find_reusable_ledger_match(&pool, &dao_id, &rda, None, window.0, window.1)
+            .await
+            .expect("query")
+            .expect("payout row matches on refundTo");
+        assert_eq!(matched.event_id, event_id);
+        assert_eq!(
+            matched.token_id.as_deref(),
+            Some("nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near")
+        );
+        assert_eq!(
+            find_reusable_ledger_match(&pool, &dao_id, &child, None, window.0, window.1)
+                .await
+                .expect("query"),
+            None,
+            "the per-payout child address is not the key"
+        );
+
+        let mut parent = payout.clone();
+        parent["refundTo"] = serde_json::Value::String(dao_id.clone());
+        parent["originAsset"] = serde_json::Value::String("1cs_v1:any".to_string());
+        parent["depositAddress"] = serde_json::Value::String(rda.clone());
+        seed_history_row(&pool, &dao_id, &parent, "0.3").await;
+        let mut placeholder = payout.clone();
+        placeholder["originAsset"] = serde_json::Value::String("1cs_v1:any".to_string());
+        placeholder["depositAddress"] = serde_json::Value::String("child-2".to_string());
+        seed_history_row(&pool, &dao_id, &placeholder, "0.4").await;
+
+        let again = find_reusable_ledger_match(
+            &pool,
+            &dao_id,
+            &rda,
+            Some(&"0.4".parse().unwrap()),
+            window.0,
+            window.1,
+        )
+        .await
+        .expect("query")
+        .expect("payout without a usable asset still matches");
+        assert_eq!(
+            again.token_id, None,
+            "the ANY_INPUT placeholder is not a token"
+        );
+        assert_eq!(
+            find_reusable_ledger_match(
+                &pool,
+                &dao_id,
+                &rda,
+                Some(&"0.3".parse().unwrap()),
+                window.0,
+                window.1
+            )
+            .await
+            .expect("query"),
+            None,
+            "the parent quote row never matches the reusable address"
+        );
+    }
+
+    /// Two equal payouts in sequence each get their own ledger row, in
+    /// order, and the unique link index refuses a second claim of a row
+    /// that reconcile would otherwise never make.
+    #[sqlx::test]
+    async fn equal_payouts_each_claim_their_own_ledger_row(pool: PgPool) {
+        let payout: serde_json::Value =
+            serde_json::from_str(REUSABLE_PAYOUT_ROW).expect("fixture parses");
+        let dao_id = payout["recipient"].as_str().unwrap().to_string();
+        let rda = payout["refundTo"].as_str().unwrap().to_string();
+        seed_dao(&pool, &dao_id, true).await;
+        let now = Utc::now();
+        upsert_watch(
+            &pool,
+            &dao_id,
+            WatchKind::Confidential,
+            Some(&rda),
+            "eth:8453",
+            None,
+            now + Duration::minutes(10),
+            now + Duration::minutes(120),
+        )
+        .await
+        .expect("upsert watch");
+        let watch = claim_due_watches(&pool, 1, Duration::seconds(60))
+            .await
+            .expect("claim")
+            .remove(0);
+        let first_event = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let second_event = seed_history_row(&pool, &dao_id, &payout, "0.2").await;
+        let mut rows = Vec::new();
+        for key in [
+            "rda:2026-11-03T12:00:00+00:00",
+            "rda:2026-11-03T12:00:05+00:00",
+        ] {
+            let mut seen = observed(key, DepositStatus::Finalized);
+            seen.amount = Some("0.2".parse().unwrap());
+            rows.push(
+                upsert_deposit(&pool, watch.id, &dao_id, WatchKind::Confidential, &seen)
+                    .await
+                    .expect("upsert deposit")
+                    .id,
+            );
+        }
+        let amount: BigDecimal = "0.2".parse().unwrap();
+        let window = (now - Duration::hours(1), now + Duration::hours(1));
+
+        let first =
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .expect("first payout matches");
+        assert_eq!(first.event_id, first_event, "earliest unclaimed row first");
+        confirm_ledger(&pool, rows[0], &first, None)
+            .await
+            .expect("link first");
+
+        let second =
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .expect("second payout matches");
+        assert_eq!(second.event_id, second_event, "claimed row is skipped");
+        confirm_ledger(&pool, rows[1], &second, None)
+            .await
+            .expect("link second");
+
+        assert!(
+            find_reusable_ledger_match(&pool, &dao_id, &rda, Some(&amount), window.0, window.1)
+                .await
+                .expect("query")
+                .is_none(),
+            "nothing left to claim"
+        );
+        let double_claim =
+            sqlx::query("UPDATE in_process_deposits SET ledger_event_id = $1 WHERE id = $2")
+                .bind(first_event)
+                .bind(rows[1])
+                .execute(&pool)
+                .await;
+        assert!(
+            double_claim.is_err(),
+            "unique link index refuses a second claim"
+        );
     }
 }

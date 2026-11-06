@@ -59,6 +59,22 @@ const MIN_SPAN_DAYS: Record<string, number> = {
     "1Y": 250, // 4 quarterly labels span ~9 months (Mar→Dec)
 };
 
+// Month-only labels ("Nov") carry no year, so they are resolved against the
+// fixture's last data point rather than today's date. Resolving against
+// today breaks once the calendar passes the fixture's first month: "Nov"
+// then parses as the current year and opens a months-wide phantom gap.
+function fixtureEndDate(
+    fixture: Record<string, Array<{ timestamp: string }>>,
+): Date {
+    const series = Object.values(fixture)[0];
+    return new Date(series[series.length - 1].timestamp);
+}
+
+const FIXTURE_END: Record<"3M" | "1Y", Date> = {
+    "3M": fixtureEndDate(CHART_3M),
+    "1Y": fixtureEndDate(CHART_1Y),
+};
+
 async function setupMocks(page: Page) {
     let currentPeriod = "1W";
 
@@ -228,7 +244,7 @@ test.describe("Dashboard chart time period aggregation (issue #228)", () => {
             });
 
             // Parse label dates and calculate the span
-            const refDate = new Date();
+            const refDate = FIXTURE_END[period];
             const parsedDates = labels
                 .map((l) => ({
                     text: l.text,

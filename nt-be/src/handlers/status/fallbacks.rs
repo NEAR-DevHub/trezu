@@ -2,6 +2,7 @@ use chrono::{DateTime, Utc};
 use serde_json::json;
 use sqlx::PgPool;
 
+use crate::utils::url::api_url;
 use crate::{
     AppState,
     handlers::warnings::{
@@ -612,11 +613,24 @@ pub fn backend_base_url() -> String {
 }
 
 pub fn admin_page_url() -> String {
-    backend_base_url() + "/internal/warnings"
+    backend_url("internal/warnings")
 }
 
 pub fn oh_dear_status_url(service: &str) -> String {
-    format!("{}/api/oh-dear/status/{}", backend_base_url(), service)
+    backend_url(&format!("api/oh-dear/status/{service}"))
+}
+
+/// A link under the backend's own base URL; an unparsable `BACKEND_BASE_URL`
+/// yields an empty link rather than a broken one.
+fn backend_url(path: &str) -> String {
+    let base = backend_base_url();
+    match api_url(&base, path) {
+        Ok(url) => url.into(),
+        Err(error) => {
+            tracing::warn!(base, %error, "BACKEND_BASE_URL is not a valid URL");
+            String::new()
+        }
+    }
 }
 
 #[derive(Debug, sqlx::FromRow)]

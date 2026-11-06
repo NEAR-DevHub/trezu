@@ -1,7 +1,6 @@
 import { getNetworkDisplayName } from "@/components/token-display";
 import type { BridgeAsset } from "@/hooks/use-bridge-tokens";
-import type { Treasury } from "@/lib/api";
-import type { ChainIcons } from "@/lib/api";
+import type { ChainIcons, Treasury } from "@/lib/api";
 
 export type SendTokenMeta = {
     /** Bridge asset id (e.g. "usdc") for payments `?token=`. */
@@ -67,6 +66,24 @@ export function resolveBridgeChainId(
     for (const asset of bridgeAssets) {
         const network = asset.networks.find((item) => item.id === networkId);
         if (network) return network.chainId || network.id;
+    }
+    return networkId;
+}
+
+/**
+ * The 1Click routing id for a catalog network row: what the deposit modal
+ * sends as `tokenId` (may be `1cs_v1:`), so the share page asks the backend
+ * for the same asset. Falls back to the network id, which is the routing id
+ * for most rows, when the catalog does not list it.
+ */
+export function resolveBridgeQuoteAssetId(
+    bridgeAssets: BridgeAsset[],
+    networkId: string,
+): string | null {
+    if (!networkId) return null;
+    for (const asset of bridgeAssets) {
+        const network = asset.networks.find((item) => item.id === networkId);
+        if (network) return network.quoteAssetId || network.id;
     }
     return networkId;
 }

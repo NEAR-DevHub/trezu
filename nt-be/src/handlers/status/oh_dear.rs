@@ -16,6 +16,7 @@ use super::config::OhDearHealthConfig;
 use crate::AppState;
 use crate::constants::external_apis::{FASTNEAR_ACCOUNT_API_BASE, NEARBLOCKS_API_BASE};
 use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
+use crate::utils::url::api_url;
 
 pub const SUPPORTED_SERVICES: &[&str] = &[
     "backend",
@@ -525,7 +526,16 @@ fn map_bridge_rpc_status(body: JsonRpcResponse<Value>, duration_ms: u128) -> OhD
 
 async fn check_exchange(state: &AppState) -> OhDearCheckResult {
     let config = OhDearHealthConfig::default();
-    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
+    let url = match api_url(&state.env_vars.oneclick_api_url, "v0/quote") {
+        Ok(url) => url,
+        Err(error) => {
+            return EXCHANGE_QUOTE_CHECK.failed(
+                &format!("1Click base URL is invalid: {error}"),
+                "1Click URL invalid",
+                json!({}),
+            );
+        }
+    };
     let deadline =
         (Utc::now() + chrono::Duration::hours(config.exchange_deadline_hours)).to_rfc3339();
     let body = json!({
@@ -546,7 +556,7 @@ async fn check_exchange(state: &AppState) -> OhDearCheckResult {
 
     let mut request = state
         .http_client
-        .post(&url)
+        .post(url)
         .header("content-type", "application/json")
         .json(&body);
 
@@ -835,10 +845,22 @@ async fn check_goldsky(state: &AppState) -> OhDearCheckResult {
 
 async fn check_defillama(state: &AppState) -> OhDearCheckResult {
     let config = OhDearHealthConfig::default();
-    let base_url = state.env_vars.defillama_api_base_url.trim_end_matches('/');
+    let url = match api_url(
+        &state.env_vars.defillama_api_base_url,
+        "prices/current/coingecko:near",
+    ) {
+        Ok(url) => url,
+        Err(error) => {
+            return DEFILLAMA_CHECK.failed(
+                &format!("DeFiLlama base URL is invalid: {error}"),
+                "DeFiLlama URL invalid",
+                json!({}),
+            );
+        }
+    };
     let request = state
         .http_client
-        .get(format!("{base_url}/prices/current/coingecko:near"))
+        .get(url)
         .header("accept", "application/json");
 
     fetch_json_check::<Value, _>(

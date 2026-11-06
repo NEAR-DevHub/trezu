@@ -1,0 +1,28 @@
+{
+    "status": "SUCCESS",
+    "refundTo": "32d1ef68a691cc598ff6dae2f58a56523aa95cd632fe8882dfaefe7053bafbc8",
+    "createdAt": "2026-11-02T07:45:55.366203Z",
+    "recipient": "myy-bizz.sputnik-dao.near",
+    "refundFee": "0",
+    "refundType": "INTENTS",
+    "amountInUsd": "0.199899400000",
+    "depositMemo": null,
+    "depositType": "INTENTS",
+    "originAsset": "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near",
+    "amountOutUsd": "0.199899400000",
+    "refundReason": null,
+    "recipientType": "CONFIDENTIAL_INTENTS",
+    "depositAddress": "0ad21b6e46b89b527b8b7442fd805fe1d8464a4e7a332c5e721004cde8e9e023",
+    "destinationAsset": "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near",
+    "amountInFormatted": "0.2",
+    "quoteTransactions": [
+        {
+            "sender": "0x64a199D621e7b63DFEA37b549997cdCd8A9E28f8",
+            "txHash": "0x49ee6458f5da2452d467f098186930b970b0ae832aa7403096f6d2d3d3bddeef"
+        }
+    ],
+    "refundedAmountUsd": "0",
+    "amountOutFormatted": "0.2",
+    "refundFeeFormatted": "0.0",
+    "refundedAmountFormatted": "0"
+}

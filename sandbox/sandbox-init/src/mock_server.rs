@@ -23,12 +23,16 @@ const PORT: u16 = 4000;
 struct MockState {
     submitted_intents: Arc<Mutex<Vec<Value>>>,
     genesis_secret_key: String,
+    /// Recipient of the last reusable (ANY_INPUT) quote: echoed by the
+    /// withdrawals endpoint, which the backend checks against the DAO.
+    reusable_recipient: Arc<Mutex<Option<String>>>,
 }
 
 pub async fn start(genesis_secret_key: String) {
     let state = MockState {
         submitted_intents: Arc::new(Mutex::new(Vec::new())),
         genesis_secret_key,
+        reusable_recipient: Arc::new(Mutex::new(None)),
     };
 
     let app = Router::new()
@@ -36,6 +40,8 @@ pub async fn start(genesis_secret_key: String) {
         .route("/v0/auth/authenticate", post(auth_authenticate))
         .route("/v0/auth/refresh", post(auth_refresh))
         .route("/v0/quote", post(quote))
+        .route("/v0/quotes", get(list_quotes))
+        .route("/v0/any-input/withdrawals", get(any_input_withdrawals))
         .route("/v0/generate-intent", post(generate_intent))
         .route("/v0/submit-intent", post(submit_intent))
         .route("/v0/account/balances", get(balances))
@@ -93,7 +99,50 @@ async fn auth_refresh() -> Json<Value> {
     }))
 }
 
-async fn quote(Json(body): Json<Value>) -> Json<Value> {
+/// Monitoring address of the mock reusable (ANY_INPUT) deposit quote.
+const REUSABLE_QUOTE_ADDRESS: &str =
+    "5b6ef8b1c2a4d7e90f1234567890abcdef1234567890abcdef1234567890abcd";
+/// Funding addresses of the mock reusable quote, one per chain.
+fn reusable_chain_deposit_addresses() -> Value {
+    json!([
+        { "blockchain": "near", "address": "reusable-deposit.near" },
+        { "blockchain": "base", "address": "0x1111111111111111111111111111111111111111" },
+        { "blockchain": "eth", "address": "0x2222222222222222222222222222222222222222" },
+        { "blockchain": "arb", "address": "0x3333333333333333333333333333333333333333" },
+        { "blockchain": "sol", "address": "ReUsAbLeSoLaNaAdDrEsS1111111111111111111111" },
+        { "blockchain": "btc", "address": "bc1qreusable0000000000000000000000000000000" },
+        { "blockchain": "stellar", "address": "GREUSABLESTELLARADDRESS", "memo": "424242" }
+    ])
+}
+
+async fn quote(State(state): State<MockState>, Json(body): Json<Value>) -> Json<Value> {
+    if body.get("swapType").and_then(|s| s.as_str()) == Some("ANY_INPUT") {
+        *state.reusable_recipient.lock().unwrap() = body
+            .get("recipient")
+            .and_then(|r| r.as_str())
+            .map(String::from);
+        return Json(json!({
+            "quote": {
+                "amountIn": "0",
+                "amountInFormatted": "0.0",
+                "amountInUsd": "0.0",
+                "minAmountIn": "0",
+                "amountOut": "0",
+                "amountOutFormatted": "0.0",
+                "amountOutUsd": "0.0",
+                "minAmountOut": "0",
+                "timeEstimate": 10,
+                "depositAddress": REUSABLE_QUOTE_ADDRESS,
+                "depositMemo": null,
+                "chainDepositAddresses": reusable_chain_deposit_addresses(),
+                "deadline": body.get("deadline").cloned().unwrap_or(json!("2038-01-01T00:00:00.000Z")),
+            },
+            "quoteRequest": body,
+            "signature": "mock-signature",
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "correlationId": format!("mock-rda-{}", chrono::Utc::now().timestamp_millis()),
+        }));
+    }
     let amount = body
         .get("amount")
         .and_then(|a| a.as_str())
@@ -189,6 +238,44 @@ async fn balances() -> Json<Value> {
 
 async fn status() -> Json<Value> {
     Json(json!({ "status": "SUCCESS" }))
+}
+
+/// `GET /v0/quotes`: the account never has a reusable set yet, so the
+/// backend creates one through `/v0/quote` (ANY_INPUT).
+async fn list_quotes() -> Json<Value> {
+    Json(json!({
+        "data": [],
+        "links": { "next": null },
+        "meta": { "correlationId": "mock-quotes", "timestamp": chrono::Utc::now().to_rfc3339() }
+    }))
+}
+
+/// `GET /v0/any-input/withdrawals`: one settled payout, stamped now so a
+/// tracker watch opened earlier sees it as a new deposit, for the DAO that
+/// created the reusable quote.
+async fn any_input_withdrawals(State(state): State<MockState>) -> Json<Value> {
+    let recipient = state
+        .reusable_recipient
+        .lock()
+        .unwrap()
+        .clone()
+        .unwrap_or_else(|| "sandbox-confidential.sputnik-dao.near".to_string());
+    Json(json!({
+        "asset": "1cs_v1:original",
+        "recipient": recipient,
+        "affiliateRecipient": "",
+        "withdrawals": [{
+            "status": "SUCCESS",
+            "amountOut": "10000",
+            "amountOutFormatted": "0.01",
+            "amountOutUsd": "0.01",
+            "withdrawFee": "0",
+            "withdrawFeeFormatted": "0.0",
+            "withdrawFeeUsd": "0.0",
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+            "hash": "mock-reusable-payout-1"
+        }]
+    }))
 }
 
 // ── Test helpers ────────────────────────────────────────────

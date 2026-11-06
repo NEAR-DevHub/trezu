@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "지원 네트워크",
             "networksWithAssets": "자산이 있는 네트워크",
+            "internalNetwork": "내부 네트워크",
             "yourAssets": "내 자산",
             "otherAssets": "기타 자산",
             "popularAssets": "인기 자산",
@@ -298,7 +299,6 @@
         "memoWarning": "이 주소로 자금을 보낼 때 메모를 <bold>반드시</bold> 포함해야 합니다. 메모 없이 보내면 자금이 영구적으로 손실될 수 있습니다.",
         "onlyDeposit": "<networkTag>{network}</networkTag> 네트워크에서 <symbolTag>{symbol}</symbolTag>만 입금하세요.",
         "testTransactionRecommendation": "전체 금액을 보내기 전에 모든 것이 올바르게 작동하는지 확인하기 위해 소액 테스트 트랜잭션부터 시작하는 것을 권장합니다.",
-        "minimumDeposit": "최소 입금액은 <amountTag>{amount} {symbol}</amountTag>입니다",
         "tabs": {
             "fromPublic": "공개에서",
             "fromConfidential": "기밀에서"
@@ -314,46 +314,14 @@
             "arrivalAnswer": "처리 시간은 네트워크에 따라 다릅니다."
         },
         "back": "뒤로",
-        "publicAddressTitle": "{network}의 {symbol} 입금 주소",
-        "publicAddressSubtitle": "이 토큰만 이 네트워크에서 아래 주소로 보내세요.",
-        "oneTimeAddressTitle": "{network} 네트워크의 일회용 {symbol} 입금 주소",
-        "oneTimeAddressSubtitle": "이 토큰만 이 네트워크에서 아래 주소로 보내세요.",
-        "confidentialTrezuTitle": "near.com 네트워크의 기밀 Trezu에서 입금",
-        "confidentialTrezuSubtitle": "기밀 Trezu에서 모든 자산을 받을 수 있습니다.",
-        "confidentialNearcomTitle": "내부 네트워크의 기밀 near.com에서 입금",
-        "confidentialNearcomSubtitle": "기밀 near.com에서 모든 자산을 받을 수 있습니다.",
-        "oneTimeSectionTitle": "일회용 기밀 입금 주소",
-        "oneTimeSectionSubtitle": "한 번만 사용하세요. 첫 입금 이후에는 손실됩니다.",
-        "internalAddressTitle": "이것은 내부 기밀 주소입니다",
-        "generateAddress": "주소 생성",
-        "showAddress": "주소 보기",
         "copy": "복사",
-        "share": "공유",
         "linkCopied": "링크가 클립보드에 복사되었습니다",
-        "minDepositValue": "최소 입금액 <bold>{amount} {symbol}</bold>",
-        "doNotSendTestDeposit": "테스트 입금을 <bold>보내지 마세요</bold>",
-        "doNotReuseAddress": "주소를 <bold>재사용·저장·화이트리스트·공유하지 마세요</bold>",
-        "doNotReuseAddressShort": "주소를 <bold>재사용·저장·화이트리스트에 추가하지 마세요</bold>",
-        "oneTimeAckCheckbox": "이 주소는 일회용이며, 한 번의 전송으로 최소 {amount} {symbol}를 보내야 함을 이해합니다.",
-        "oneTimeAckCheckboxNoMin": "이 주소는 한 번의 전송에만 사용하는 일회용 주소임을 이해합니다.",
         "onlySendAssetNetwork": "<bold>{network}</bold> 네트워크에서 <bold>{symbol}</bold>만 보내세요. 다른 자산이나 네트워크는 자금 손실을 초래합니다.",
-        "expiresInDays": "<bold>{days}일</bold> 후 만료 – <bold>사용하지 않아도</bold>.",
-        "createNewAddressHint": "다른 입금 정보가 필요하신가요? <link>새 주소 만들기</link>. 다른 주소를 만들어도 이 주소는 비활성화되지 않습니다.",
-        "receivesOnlyConfidential": "기밀 Trezu 또는 near.com 계정에서만 자금을 받습니다",
-        "receivesOnlyConfidentialSub": "재사용 가능. 만료되지 않음.",
-        "anythingElseLost": "다른 곳에서 보낸 것은 모두 손실됩니다",
-        "anythingElseLostSub": "거래소, 공개 지갑, 다른 네트워크 – 복구할 수 없습니다.",
-        "confidentialAckCheckbox": "기밀 Trezu 또는 near.com 외부에서의 입금은 손실됨을 이해합니다.",
-        "onlyFromConfidentialTrezu": "기밀 <bold>Trezu</bold>에서만",
-        "onlyFromConfidentialNearcom": "기밀 <bold>near.com</bold>에서만",
-        "reusableDoesntExpire": "<bold>재사용 가능.</bold> 만료되지 않음",
-        "fundsOutsideTrezuLost": "기밀 Trezu 외부에서 보낸 자금은 손실됩니다",
-        "fundsOutsideNearcomLost": "기밀 near.com 외부에서 보낸 자금은 손실됩니다",
-        "publicNetworkRecommendation": "<bold>{network}</bold> 네트워크에서만 입금하세요. 전액을 보내기 전에 소액 테스트 거래로 시작하세요.",
         "sourceCards": {
             "publicWallet": {
                 "title": "공개 지갑에서",
-                "subtitle": "일회용 입금 주소 만들기"
+                "subtitle": "일회용 입금 주소 만들기",
+                "subtitleReusable": "재사용 가능한 입금 주소 사용"
             },
             "confidentialUser": {
                 "title": "기밀 사용자에서",
@@ -390,13 +358,8 @@
             "chooseTreasuryDescription": "이 결제는 어느 treasury에서 나오나요?",
             "noMemberTreasuries": "아직 어떤 treasury의 멤버도 아닙니다.",
             "createTreasury": "Treasury 만들기",
-            "expired": "만료됨",
-            "used": "사용됨",
-            "linkInactiveTitle": "이 링크는 더 이상 유효하지 않습니다",
-            "linkInactiveDescription": "이 결제를 하려면 링크를 보낸 사람에게 새 링크를 요청하세요."
+            "used": "사용됨"
         },
-        "expiresInRemaining": "<time>{duration}</time> 후 만료 – <bold>사용하지 않아도</bold>.",
-        "addressExpired": "이 주소는 만료되었습니다.",
         "depositProcessingTitle": "입금 처리 중",
         "depositProcessingBody": "<amount></amount> 입금이 등록되었으며 확인을 기다리고 있습니다",
         "depositProcessingBodyNoAmount": "입금이 등록되었으며 확인을 기다리고 있습니다",
@@ -406,7 +369,24 @@
         "depositFailedTitle": "입금 실패",
         "depositFailedBody": "제공업체가 <amount></amount> 입금을 실패 또는 환불로 보고했습니다",
         "depositFailedBodyNoAmount": "제공업체가 입금을 실패 또는 환불로 보고했습니다",
-        "depositAgain": "다시 입금하기"
+        "unknownAsset": "알 수 없는 자산",
+        "confirmingAsset": "수신된 자산을 확인하는 중…",
+        "anyTokenAssetName": "모든 토큰",
+        "receive": {
+            "sendAtLeastUsd": "{symbol} {usd} 이상 보내기",
+            "sendAtLeastAmount": "{symbol} {amount} 이상 보내기",
+            "sendAsset": "{symbol} 보내기",
+            "sendAnyToken": "모든 토큰 보내기",
+            "onNetwork": "{network} 네트워크에서",
+            "onNearcomNetwork": "near.com 네트워크에서",
+            "networkAddressLabel": "{network} 주소",
+            "nearcomAddressLabel": "near.com 주소",
+            "internalOnly": "내부 네트워크에서 Trezu 또는 near.com 사용자로부터 자산을 받을 때만 사용하세요.",
+            "internalLost": "블록체인에서 이 주소로 보내면 자금을 잃게 됩니다.",
+            "qrLabel": "{network} 주소 QR 코드",
+            "copyAddress": "주소 복사",
+            "shareAddress": "주소 공유"
+        }
     },
     "assetDetails": {
         "coinPrice": "코인 가격",

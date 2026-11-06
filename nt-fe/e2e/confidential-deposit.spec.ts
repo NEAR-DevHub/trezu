@@ -1,13 +1,13 @@
 /**
  * E2E test for confidential treasury deposits.
  *
- * Verifies the redesigned deposit page flow:
+ * Verifies the reusable deposit page flow:
  * 1. Create a confidential DAO on sandbox
  * 2. Navigate to the dashboard
  * 3. Open the deposit page from dashboard action
- * 4. Choose "From a public wallet", select asset/network
- * 5. Acknowledge + Generate Address → one-time intents address
- * 6. Switch to confidential user path and show treasury address
+ * 4. Select asset/network (no source cards, no acknowledgement)
+ * 5. Asset + network → the treasury's reusable intents address on a receive card
+ * 6. "Any token" on near.com → the treasury's internal nearcom: address
  *
  * Bridge/catalog RPC (deposit-tokens, swap-tokens, deposit-address) is mocked at the Playwright
  * route level since the sandbox doesn't include a bridge RPC mock.
@@ -22,6 +22,8 @@ import {
 import { createAccount, transferNear } from "./helpers/sandbox-rpc";
 
 const DAO_ID = "confdeposit.sputnik-dao.near";
+const MOCK_REUSABLE_QUOTE_ADDRESS =
+    "5b6ef8b1c2a4d7e90f1234567890abcdef1234567890abcdef1234567890abcd";
 const ACCOUNT_ID = "confdeposit.near";
 const SANDBOX_MOCK_URL = "http://localhost:4000";
 
@@ -170,9 +172,8 @@ test("Confidential deposit — dashboard deposit page flow", async ({
                     address: MOCK_DEPOSIT_ADDRESS,
                     memo: null,
                     minAmount: "5000000",
-                    expiresAt: new Date(
-                        Date.now() + 14 * 24 * 60 * 60 * 1000,
-                    ).toISOString(),
+                    quoteDepositAddress: MOCK_REUSABLE_QUOTE_ADDRESS,
+                    reusable: true,
                 }),
             });
         }
@@ -249,56 +250,46 @@ test("Confidential deposit — dashboard deposit page flow", async ({
 
     await expect(depositPage.heading()).toBeVisible({ timeout: 10_000 });
 
-    // Source cards appear first for confidential treasuries
-    const publicSource = depositPage.publicWalletSource();
-    const confidentialSource = depositPage.confidentialUserSource();
-    await expect(publicSource).toBeVisible({ timeout: 10_000 });
-    await expect(confidentialSource).toBeVisible({ timeout: 10_000 });
-
-    await expect(depositPage.selectPrompt()).toBeVisible();
+    // Reusable deposits: one picker for every source, no source cards.
+    await expect(depositPage.selectPrompt()).toBeVisible({ timeout: 10_000 });
+    await expect(depositPage.publicWalletSource()).toHaveCount(0);
+    await expect(depositPage.confidentialUserSource()).toHaveCount(0);
 
     await depositPage.selectAsset(/USD Coin/i);
     await depositPage.selectNetwork("Near Protocol");
 
-    // Address must NOT be fetched until Generate Address is clicked
-    expect(depositAddressRequested).toBe(false);
+    // Resolved as soon as asset + network are chosen, on the dark receive card.
+    const receiveCard = depositPage.receiveCard();
+    await expect(receiveCard).toBeVisible({ timeout: 15_000 });
+    await expect(receiveCard).toContainText(/Send at least .* USDC/i);
+    await expect(receiveCard).toContainText(/on the Near Protocol network/i);
 
-    await depositPage.acknowledgeAndContinue();
-
-    await expect(depositPage.oneTimeAddressText()).toBeVisible({
-        timeout: 15_000,
-    });
-
-    const publicAddressElement = depositPage.addressCode();
+    const publicAddressElement = depositPage.receiveAddress();
     await expect(publicAddressElement).toBeVisible({ timeout: 10_000 });
     const publicAddressText = await publicAddressElement.textContent();
     expect(publicAddressText).toContain(MOCK_DEPOSIT_ADDRESS.slice(0, 6));
     expect(publicAddressText).not.toContain(DAO_ID);
     expect(depositAddressRequested).toBe(true);
 
-    await expect(depositPage.expiresInText()).toBeVisible();
+    await expect(depositPage.receiveQrCode()).toBeVisible({ timeout: 10_000 });
 
-    // Back to select, then switch to confidential user source
-    await depositPage.backButton().click();
-    await expect(confidentialSource).toBeVisible({ timeout: 10_000 });
-    await confidentialSource.click();
+    // The picker stays on screen: switch to "Any token" on near.com for the
+    // treasury's internal address.
+    await depositPage.selectAsset(/Any token/i);
+    await depositPage.selectNetwork("near.com");
 
-    await depositPage.acknowledgeAndContinue();
+    await expect(receiveCard).toBeVisible({ timeout: 15_000 });
+    await expect(receiveCard).toContainText(/Send any token/i);
+    await expect(receiveCard).toContainText(/on near.com network/i);
 
-    await expect(depositPage.confidentialOriginTrezu()).toBeVisible({
-        timeout: 10_000,
-    });
-    await expect(depositPage.confidentialOriginNearcom()).toBeVisible();
+    const internalAddressElement = depositPage.receiveAddress();
+    await expect(internalAddressElement).toBeVisible({ timeout: 10_000 });
+    expect(await internalAddressElement.textContent()).toBe(
+        `nearcom:${DAO_ID}`,
+    );
+    await expect(depositPage.receiveQrCode()).toBeVisible({ timeout: 10_000 });
 
-    const confidentialAddressElement = depositPage.addressCode();
-    await expect(confidentialAddressElement).toBeVisible({ timeout: 10_000 });
-    expect(await confidentialAddressElement.textContent()).toContain(DAO_ID);
-
-    await expect(depositPage.qrCodeIcon()).toBeVisible();
-
-    // Verify "Other" asset is not available on public-wallet path
-    await depositPage.backButton().click();
-    await publicSource.click();
+    // "Other" (public-only) is never offered to confidential treasuries.
     await depositPage.assetSelectorButton().click();
     await expect(depositPage.selectAssetHeading()).toBeVisible({
         timeout: 10_000,

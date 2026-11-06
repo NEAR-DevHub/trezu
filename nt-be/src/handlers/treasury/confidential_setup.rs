@@ -25,6 +25,7 @@ use crate::handlers::intents::confidential::prepare_auth::{
 use crate::handlers::relay::confidential::{extract_mpc_signature, fetch_mpc_public_key};
 use crate::observability::sanitize_sensitive_json_value;
 use crate::services::{CredentialScope, TokenBundle};
+use crate::utils::url::api_url_or_500;
 
 /// Run the full confidential setup for a newly created treasury.
 ///
@@ -483,10 +484,7 @@ pub(crate) async fn authenticate_bulk_payment_with_1click(
     auth_payload: &Value,
     signature: &str,
 ) -> Result<(), (StatusCode, String)> {
-    let url = format!(
-        "{}/v0/auth/authenticate",
-        state.env_vars.confidential_api_url
-    );
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/auth/authenticate")?;
 
     let body = json!({
         "signedData": {
@@ -499,7 +497,7 @@ pub(crate) async fn authenticate_bulk_payment_with_1click(
 
     let mut req = state
         .http_client
-        .post(&url)
+        .post(url)
         .header("content-type", "application/json");
     if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);
@@ -828,10 +826,7 @@ async fn authenticate_with_1click(
     auth_payload: &Value,
     signature: &str,
 ) -> Result<(), (StatusCode, String)> {
-    let url = format!(
-        "{}/v0/auth/authenticate",
-        state.env_vars.confidential_api_url
-    );
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/auth/authenticate")?;
 
     let body = json!({
         "signedData": {
@@ -844,7 +839,7 @@ async fn authenticate_with_1click(
 
     let mut req = state
         .http_client
-        .post(&url)
+        .post(url)
         .header("content-type", "application/json");
 
     if let Some(api_key) = &state.env_vars.oneclick_api_key {

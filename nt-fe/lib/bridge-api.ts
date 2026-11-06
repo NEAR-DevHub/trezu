@@ -36,20 +36,11 @@ export type DepositAddressResponse = {
     address: string;
     memo?: string | null;
     minAmount?: string | null;
-    /** ISO-8601 expiry for one-time confidential deposit addresses (14 days). */
-    expiresAt?: string | null;
     /**
-     * Intents quote deposit address for confidential status lookups.
-     * Differs from `address` when the bridge remaps onto a chain deposit address.
+     * Confidential: the treasury's reusable 1Click quote address (the deposit
+     * tracker scope). Differs from `address`, the funding address on the chain.
      */
     quoteDepositAddress?: string | null;
-};
-
-export type ConfidentialDepositAddressStatusResponse = {
-    found: boolean;
-    status?: string | null;
-    expiresAt?: string | null;
-    originAsset?: string | null;
 };
 
 export const fetchDepositAddress = async (
@@ -81,32 +72,6 @@ export const fetchDepositAddress = async (
     }
 };
 
-/**
- * Look up confidential one-time deposit status via 1Click history
- * (`depositAddress` filter). Pass the quote deposit address from generate.
- */
-export const fetchConfidentialDepositAddressStatus = async (
-    accountId: string,
-    depositAddress: string,
-): Promise<ConfidentialDepositAddressStatusResponse> => {
-    if (!accountId || !depositAddress) {
-        throw new Error("Account ID and deposit address are required");
-    }
-
-    const response = await axios.get<ConfidentialDepositAddressStatusResponse>(
-        `${BACKEND_API_BASE}/intents/confidential/deposit-address/status`,
-        {
-            params: {
-                accountId,
-                depositAddress,
-            },
-            withCredentials: true,
-        },
-    );
-
-    return response.data;
-};
-
 export type TrackedDepositStatus =
     | "detected"
     | "finalized"
@@ -119,6 +84,12 @@ export interface TrackedDeposit {
     providerStatus: string;
     chain: string | null;
     tokenId: string;
+    /**
+     * False while `tokenId` and `chain` are the watch's last-shown asset
+     * rather than what the ledger credited: a reusable-address payout before
+     * its ledger row lands, and a failed one for good.
+     */
+    assetConfirmed: boolean;
     tokenMetadata: {
         symbol: string;
         decimals: number;
@@ -142,7 +113,12 @@ export interface DepositTrackerResponse {
  */
 export const fetchDepositTracker = async (
     accountId: string,
-    scope: { chain?: string | null; quoteDepositAddress?: string | null },
+    scope: {
+        chain?: string | null;
+        quoteDepositAddress?: string | null;
+        /** RFC 3339 lower bound on detection time; required for guests on a reusable address. */
+        since?: string | null;
+    },
 ): Promise<DepositTrackerResponse> => {
     if (!accountId) {
         throw new Error("Account ID is required");
@@ -154,6 +130,7 @@ export const fetchDepositTracker = async (
                 accountId,
                 chain: scope.chain ?? undefined,
                 quoteDepositAddress: scope.quoteDepositAddress ?? undefined,
+                since: scope.since ?? undefined,
             },
             withCredentials: true,
         },

@@ -129,8 +129,11 @@ fn classify(
 ///
 /// A plain transfer into a 1Click deposit address (no quote) is listed with
 /// the origin side only: no `recipient`, `destinationAsset` or `amountOut*`.
-/// The history is the DAO's own, so the recipient is the DAO, the credited
-/// asset is `originAsset` and the credit is `amountIn`.
+/// It is in the DAO's history because the DAO was the on-chain sender, and
+/// it funds some other confidential account — agentic.sputnik-dao.near,
+/// 2026-11-05, "Fund Treasury agent …" proposal 65: crediting it put the
+/// ledger exactly 1 USDC above the live balance. No confidential leg for the
+/// DAO, so such an entry is skipped.
 fn is_public_to_confidential_deposit(row: &BronzeProjectionRow) -> bool {
     let deposit_type = DepositType::parse(&row.deposit_type);
     let recipient_type = row
@@ -174,22 +177,16 @@ pub(crate) fn project_row(
     // Deposit-only entry: 1Click reports the origin side only. The three
     // destination fields are absent together; a row missing only some of them
     // is a malformed normal entry and keeps failing below.
-    let deposit_only = public_to_confidential
+    if public_to_confidential
         && recipient_opt.is_none()
         && destination_asset_opt.is_none()
-        && amount_out_formatted.is_none();
-    let recipient = match recipient_opt {
-        Some(raw) => bare_account(&raw),
-        None if deposit_only => dao_id.clone(),
-        None => return Err("missing recipient".to_string()),
-    };
-    let destination_asset = match destination_asset_opt {
-        Some(asset) => asset,
-        None if deposit_only => origin_asset
-            .clone()
-            .ok_or_else(|| "missing destinationAsset and originAsset".to_string())?,
-        None => return Err("missing destinationAsset".to_string()),
-    };
+        && amount_out_formatted.is_none()
+    {
+        return Ok(None);
+    }
+    let recipient = bare_account(&recipient_opt.ok_or_else(|| "missing recipient".to_string())?);
+    let destination_asset =
+        destination_asset_opt.ok_or_else(|| "missing destinationAsset".to_string())?;
     // Validation only: a SUCCESS row without a deposit address never
     // projected cleanly, so keep refusing it.
     coalesce_str(
@@ -217,26 +214,11 @@ pub(crate) fn project_row(
         return Ok(None);
     };
 
-    let amount_out_usd_formatted = api
-        .as_ref()
-        .and_then(|i| i.amount_out_usd.clone())
-        .or_else(|| payload_str(&row.raw_payload, "amountOutUsd"));
-    // A deposit-only entry has no output side: the credit is the deposit.
-    let deposit_only = deposit_only && kind == ConfidentialTxType::Deposit;
-    let mut amount_out = parse_decimal(
-        if deposit_only {
-            payload_str(&row.raw_payload, "amountInFormatted")
-        } else {
-            amount_out_formatted
-        },
-        "amountOutFormatted",
-    )?;
+    let mut amount_out = parse_decimal(amount_out_formatted, "amountOutFormatted")?;
     let mut amount_out_usd = parse_optional_decimal(
-        if deposit_only {
-            payload_str(&row.raw_payload, "amountInUsd")
-        } else {
-            amount_out_usd_formatted
-        },
+        api.as_ref()
+            .and_then(|i| i.amount_out_usd.clone())
+            .or_else(|| payload_str(&row.raw_payload, "amountOutUsd")),
         "amountOutUsd",
     )?;
     let mut amount_in_usd = parse_optional_decimal(
@@ -702,11 +684,12 @@ mod tests {
     }
 
     /// agentic.sputnik-dao.near, 2026-11-05: Sputnik proposal 65 (external
-    /// SDK) `ft_transfer`red 1 USDC to a 1Click deposit address, swept into
-    /// the DAO's confidential account. 1Click lists it with the origin side
-    /// only — no recipient, destinationAsset or amountOut.
+    /// SDK) `ft_transfer`red 1 USDC to a 1Click deposit address that funded
+    /// another confidential account ("Fund Treasury agent …"). 1Click lists
+    /// it in the DAO's history with the origin side only. Crediting the DAO
+    /// put the ledger 1 USDC above the live balance, so it has no DAO leg.
     #[test]
-    fn test_project_deposit_only_entry_without_destination_side_credits_amount_in() {
+    fn test_project_deposit_only_entry_without_destination_side_is_skipped() {
         const USDC: &str =
             "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";
         let raw_payload = payload(&[
@@ -746,29 +729,10 @@ mod tests {
             &mut ledger,
             &ConfidentialDepositCorrectionIndex::empty_disabled(),
         )
-        .expect("deposit-only row should project")
-        .expect("deposit-only row should not skip");
+        .expect("deposit-only row should not error");
 
-        assert_eq!(projected.transaction_type, ConfidentialTxType::Deposit);
-        assert_eq!(projected.destination_asset, USDC);
-        assert_eq!(projected.recipient, "agentic.sputnik-dao.near");
-        assert_eq!(projected.amount_out, BigDecimal::from_str("1.0").unwrap());
-        assert_eq!(
-            projected.amount_out_usd,
-            Some(BigDecimal::from_str("0.999701").unwrap())
-        );
-        assert_eq!(
-            projected.destination_balance_before,
-            Some(BigDecimal::from(4))
-        );
-        assert_eq!(
-            projected.destination_balance_after,
-            Some(BigDecimal::from_str("5.0").unwrap())
-        );
-        assert_eq!(
-            ledger.get(USDC),
-            Some(&BigDecimal::from_str("5.0").unwrap())
-        );
+        assert!(projected.is_none(), "deposit-only row has no DAO leg");
+        assert_eq!(ledger.get(USDC), Some(&BigDecimal::from(4)));
     }
 
     /// The deposit-only fallback needs recipient, destinationAsset and

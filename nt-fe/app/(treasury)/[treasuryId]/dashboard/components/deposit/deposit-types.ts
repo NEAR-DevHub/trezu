@@ -1,16 +1,12 @@
 export type DepositStep = "select" | "address";
 
-export type DepositSource = "public_wallet" | "confidential_user";
-
 export type ConfidentialOrigin = "trezu" | "nearcom";
 
 export interface DepositInfo {
     address: string;
     memo: string | null;
     minDepositAmount: string | null;
-    /** Epoch ms expiry from backend (`expiresAt`); null when not applicable. */
-    expiresAtMs: number | null;
-    /** Intents quote address for confidential status polling; null when N/A. */
+    /** Confidential: the treasury's reusable quote address (tracker scope). */
     quoteDepositAddress: string | null;
 }
 

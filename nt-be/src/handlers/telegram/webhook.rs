@@ -11,6 +11,7 @@ use teloxide::{
     utils::command::parse_command,
 };
 
+use crate::utils::url::api_url;
 use crate::{
     AppState,
     handlers::status::{
@@ -105,10 +106,17 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
         }
     };
 
-    let connect_url = format!(
-        "{}/telegram/connect?token={}",
-        state.env_vars.frontend_base_url, token
-    );
+    let connect_url = match api_url(&state.env_vars.frontend_base_url, "telegram/connect") {
+        Ok(mut url) => {
+            url.query_pairs_mut()
+                .append_pair("token", &token.to_string());
+            url.to_string()
+        }
+        Err(error) => {
+            tracing::error!(%error, "FRONTEND_BASE_URL is not a valid URL");
+            return;
+        }
+    };
 
     let existing_connections = sqlx::query_scalar::<_, i64>(
         "SELECT COUNT(*) FROM telegram_treasury_connections WHERE chat_id = $1",

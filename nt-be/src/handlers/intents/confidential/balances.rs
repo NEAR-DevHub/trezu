@@ -11,6 +11,7 @@ use serde::Deserialize;
 use crate::AppState;
 use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::observability::sanitize_sensitive_text;
+use crate::utils::url::api_url_or_500;
 
 #[derive(Deserialize, Debug)]
 struct BalanceEntry {
@@ -46,14 +47,11 @@ pub async fn fetch_confidential_balances(
 ) -> Result<ConfidentialBalanceFetch, (StatusCode, String)> {
     let access_token = refresh_dao_jwt(state, dao_id).await?;
 
-    let url = format!(
-        "{}/v0/account/balances",
-        state.env_vars.confidential_api_url
-    );
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/account/balances")?;
 
     let mut req = state
         .http_client
-        .get(&url)
+        .get(url)
         .header("Authorization", format!("Bearer {}", access_token));
     if let Some(api_key) = &state.env_vars.oneclick_api_key {
         req = req.header("x-api-key", api_key);

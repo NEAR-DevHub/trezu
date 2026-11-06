@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::handlers::intents::confidential::types::{ConfidentialQuoteMetadata, as_near_account};
 use crate::observability::sanitize_sensitive_text;
+use crate::utils::url::api_url_or_500;
 use crate::{AppState, auth::AuthUser};
 
 /// Request body for generating an intent to sign.
@@ -87,7 +88,7 @@ pub async fn generate_intent(
         request.r#type,
         request.signer_id
     );
-    let url = format!("{}/v0/generate-intent", state.env_vars.confidential_api_url);
+    let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/generate-intent")?;
 
     let body = serde_json::json!({
         "type": request.r#type,
@@ -101,7 +102,7 @@ pub async fn generate_intent(
 
     let mut req = state
         .http_client
-        .post(&url)
+        .post(url)
         .header("content-type", "application/json")
         .header("Authorization", format!("Bearer {}", access_token));
     if let Some(api_key) = &state.env_vars.oneclick_api_key {

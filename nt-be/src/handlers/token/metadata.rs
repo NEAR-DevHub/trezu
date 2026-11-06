@@ -11,6 +11,8 @@ use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 
+use crate::constants::external_apis::NEARBLOCKS_API_BASE;
+use crate::utils::url::api_url_or_500;
 use crate::{
     AppState,
     constants::{
@@ -204,10 +206,11 @@ async fn fetch_nearblocks_ft_metadata(
                 &token_id_str
             };
 
-            let url = format!("https://api.nearblocks.io/v1/fts/?search={}", search_query);
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
+            url.query_pairs_mut().append_pair("search", search_query);
 
             let response = http_client
-                .get(&url)
+                .get(url)
                 .header("accept", "application/json")
                 .header("Authorization", format!("Bearer {}", nearblocks_api_key))
                 .send()
@@ -1006,11 +1009,12 @@ pub async fn search_token_by_symbol(
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            let url = format!("https://api.nearblocks.io/v1/fts/?search={}", symbol);
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
+            url.query_pairs_mut().append_pair("search", symbol);
 
             let response = state
                 .http_client
-                .get(&url)
+                .get(url)
                 .header(
                     "Authorization",
                     format!(
