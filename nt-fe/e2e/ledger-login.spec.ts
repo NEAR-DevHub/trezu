@@ -432,6 +432,21 @@ test("Ledger login flow", async ({ page, context, loginPage, startPage }) => {
     console.log("Clicked Continue on derivation path dialog");
     await page.waitForTimeout(2000); // Pause for GET_PUBLIC_KEY mock response
 
+    // Newer executors list the key's implicit account and fold manual entry
+    // behind a disclosure; older ones show the input directly. Open the
+    // disclosure only when it is there.
+    const manualEntryToggle = iframe.getByRole("button", {
+        name: /enter an account id manually/i,
+    });
+    const manualEntryFolded = await manualEntryToggle
+        .waitFor({ state: "visible", timeout: 10000 })
+        .then(() => true)
+        .catch(() => false);
+    if (manualEntryFolded) {
+        console.log("Manual entry is folded, opening it");
+        await manualEntryToggle.click();
+    }
+
     // Wait for account ID input to appear
     const accountIdInput = iframe.getByPlaceholder("example.near");
     await expect(accountIdInput).toBeVisible({ timeout: 10000 });
@@ -444,8 +459,10 @@ test("Ledger login flow", async ({ page, context, loginPage, startPage }) => {
     console.log("Typed account ID: test.near");
     await page.waitForTimeout(1500); // Pause to show the completed text
 
-    // Click the confirm button
-    const confirmBtn = iframe.getByRole("button", { name: /confirm/i });
+    // Submit: "Use This Account" on newer executors, "Confirm" on older ones.
+    const confirmBtn = iframe.getByRole("button", {
+        name: /use this account|confirm/i,
+    });
     await confirmBtn.click();
     console.log("Clicked confirm button");
 
