@@ -6,6 +6,7 @@ import { hasChoosePayerParam } from "@/app/(treasury)/[treasuryId]/dashboard/com
 import { ConnectWalletSelector } from "@/components/connect-wallet-selector";
 import Logo from "@/components/icons/logo";
 import { PageComponentLayout } from "@/components/page-component-layout";
+import { sanitizeReturnTo } from "@/lib/auth-redirect";
 import { useNear } from "@/stores/near-store";
 
 const UTM_KEYS = [
@@ -14,12 +15,6 @@ const UTM_KEYS = [
     "utm_campaign",
     "utm_content",
 ] as const;
-
-function sanitizeReturnTo(raw: string | null): string | null {
-    if (!raw) return null;
-    if (!raw.startsWith("/")) return null;
-    return raw;
-}
 
 function appendUtmParamsToReturnTo(
     returnTo: string,
@@ -44,7 +39,13 @@ export default function LoginPage() {
     const searchParams = useSearchParams();
     const { accountId, connect, isAuthenticating } = useNear();
 
-    const returnTo = sanitizeReturnTo(searchParams.get("returnTo"));
+    const requestedReturnTo = searchParams.get("returnTo");
+    // A rejected target still redirects, to the root. A bare /login keeps its
+    // own flow, which has nowhere to go back to.
+    const returnTo =
+        requestedReturnTo === null
+            ? null
+            : (sanitizeReturnTo(requestedReturnTo) ?? "/");
     // Pay-with-Trezu resume also shows create CTA (users may have no treasury yet).
     const shouldShowCreateTreasuryCta =
         !returnTo || returnTo === "/" || hasChoosePayerParam(returnTo);

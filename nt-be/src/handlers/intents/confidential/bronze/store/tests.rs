@@ -548,7 +548,7 @@ async fn link_intent_matches_cross_chain_destination_recipient() {
     event.item.deposit_address = format!("deposit-{}", uuid::Uuid::new_v4());
     event.item.recipient = Some(evm_recipient.to_string());
     event.item.recipient_type = Some("DESTINATION_CHAIN".to_string());
-    event.item.destination_asset = destination_asset.to_string();
+    event.item.destination_asset = Some(destination_asset.to_string());
     if let serde_json::Value::Object(ref mut raw) = event.raw_payload {
         raw.insert(
             "recipient".to_string(),
@@ -620,4 +620,58 @@ async fn link_intent_matches_cross_chain_destination_recipient() {
     .await
     .expect("bronze row should exist");
     assert_eq!(bronze_recipient.as_deref(), Some(evm_recipient));
+}
+
+/// agentic.sputnik-dao.near, 2026-11-05: a deposit-only entry (plain
+/// `ft_transfer` of 1 USDC into a 1Click deposit address, Sputnik proposal
+/// 65 from an external SDK) carries no destination side. It must land in
+/// bronze with a NULL destination_asset instead of rejecting the page.
+#[tokio::test]
+#[ignore]
+async fn test_upsert_deposit_only_event_without_destination_asset() {
+    let pool = test_pool().await;
+    let account_id = format!(
+        "test-deposit-only-{}.sputnik-dao.near",
+        uuid::Uuid::new_v4()
+    );
+    let raw_payload = serde_json::json!({
+        "status": "SUCCESS",
+        "depositType": "ORIGIN_CHAIN",
+        "recipientType": "CONFIDENTIAL_INTENTS",
+        "createdAt": "2026-11-05T03:21:21.666734Z",
+        "depositAddress": format!("deposit-{}", uuid::Uuid::new_v4()),
+        "depositMemo": null,
+        "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+        "amountInFormatted": "1.0",
+        "amountInUsd": "0.999701000000",
+        "refundType": "CONFIDENTIAL_INTENTS",
+        "quoteTransactions": [{
+            "sender": account_id,
+            "txHash": "AaJsScv5wsQFURBj2iRu8gxwckkfdW2DDu3Wei6WtuiD"
+        }]
+    });
+    let item = serde_json::from_value::<HistoryItem>(raw_payload.clone())
+        .expect("deposit-only item should parse");
+    assert!(item.destination_asset.is_none());
+    let event = HistoryEvent { item, raw_payload };
+
+    let result = upsert_history_events(&pool, &account_id, std::slice::from_ref(&event))
+        .await
+        .expect("deposit-only event should upsert");
+    assert_eq!(result.rows_inserted, 1);
+
+    let stored: (Option<String>, Option<String>, String) = sqlx::query_as(
+        "SELECT destination_asset, origin_asset, deposit_type \
+         FROM bronze_confidential_history_events WHERE account_id = $1",
+    )
+    .bind(&account_id)
+    .fetch_one(&pool)
+    .await
+    .expect("stored row");
+    assert_eq!(stored.0, None);
+    assert_eq!(
+        stored.1.as_deref(),
+        Some("nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1")
+    );
+    assert_eq!(stored.2, "ORIGIN_CHAIN");
 }
