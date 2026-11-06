@@ -172,7 +172,6 @@ export function getApproversAndThreshold(
         if (votePolicy.weight_kind === "RoleWeight") {
             if (Array.isArray(votePolicy.threshold)) {
                 ratios = ratios.concat(votePolicy.threshold);
-                ratios = ratios.concat(votePolicy.threshold);
             } else {
                 countThreshold = votePolicy.threshold;
             }
