@@ -24,7 +24,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { useNear } from "@/stores/near-store";
-import { hasPermission } from "@/lib/config-utils";
+import { hasPermission, thresholdToRequiredVotes } from "@/lib/config-utils";
 import { MemberAvatarsWithOverflow } from "./member-avatars-with-overflow";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -190,24 +190,13 @@ export function VotingTab() {
                 ) as string[];
                 const memberCount = members.length;
 
-                // Calculate threshold for THIS specific role
-                let threshold = 1;
-                if (votePolicy.weight_kind === "RoleWeight") {
-                    if (Array.isArray(votePolicy.threshold)) {
-                        // It's a ratio array: [numerator, denominator]
-                        const [numerator, denominator] = votePolicy.threshold;
-                        if (denominator > 0) {
-                            threshold = Math.ceil(
-                                (numerator / denominator) * memberCount,
-                            );
-                        }
-                    } else if (typeof votePolicy.threshold === "string") {
-                        // It's a direct number as string (U128)
-                        threshold = parseFloat(votePolicy.threshold);
-                    }
-                }
-
-                threshold = Math.max(1, threshold || 1);
+                const threshold =
+                    votePolicy.weight_kind === "RoleWeight"
+                        ? thresholdToRequiredVotes(
+                              votePolicy.threshold,
+                              memberCount,
+                          )
+                        : 1;
                 return {
                     name: role.name,
                     members,

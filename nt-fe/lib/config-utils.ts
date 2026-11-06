@@ -1,4 +1,4 @@
-import type { Policy, RoleKind } from "@/types/policy";
+import type { Policy, RoleKind, WeightOrRatio } from "@/types/policy";
 import type { ProposalKind } from "./proposals-api";
 
 export type ProposalPermissionKind =
@@ -100,6 +100,29 @@ export function getKindFromProposal(
 }
 
 /**
+ * Converts a SputnikDAO vote threshold into the number of votes the contract requires.
+ * Mirrors `WeightOrRatio::to_weight`: a count is `min(count, members)`; a ratio is
+ * `min(floor(num * members / denom) + 1, members)`, i.e. strictly more than the ratio.
+ */
+export function thresholdToRequiredVotes(
+    threshold: WeightOrRatio,
+    memberCount: number,
+): number {
+    let votes: number;
+    if (Array.isArray(threshold)) {
+        const [numerator, denominator] = threshold;
+        votes =
+            denominator > 0
+                ? Math.floor((numerator * memberCount) / denominator) + 1
+                : 1;
+    } else {
+        votes = parseFloat(threshold);
+    }
+    if (memberCount > 0) votes = Math.min(votes, memberCount);
+    return Number.isFinite(votes) && votes >= 1 ? votes : 1;
+}
+
+/**
  * Calculates the required number of votes and lists the approvers for a given action kind.
  *
  * @param daoPolicy - The DAO's policy configuration
@@ -134,7 +157,7 @@ export function getApproversAndThreshold(
 
     let approversGroup: string[] = [];
     let ratios: number[] = [];
-    let requiredVotes = null;
+    let countThreshold: string | null = null;
     let everyoneHasAccess = false;
     // if group kind is everyone, current user will have access
     groupWithPermission.map((i) => {
@@ -149,9 +172,8 @@ export function getApproversAndThreshold(
         if (votePolicy.weight_kind === "RoleWeight") {
             if (Array.isArray(votePolicy.threshold)) {
                 ratios = ratios.concat(votePolicy.threshold);
-                ratios = ratios.concat(votePolicy.threshold);
             } else {
-                requiredVotes = parseFloat(votePolicy.threshold as string);
+                countThreshold = votePolicy.threshold;
             }
         }
     });
@@ -179,12 +201,10 @@ export function getApproversAndThreshold(
                 ? [...approverAccounts, accountId]
                 : approverAccounts,
 
-        requiredVotes:
-            typeof requiredVotes === "number"
-                ? requiredVotes
-                : Math.floor(
-                      (numerator / denominator) * approverAccounts.length,
-                  ) + 1,
+        requiredVotes: thresholdToRequiredVotes(
+            countThreshold ?? [numerator, denominator],
+            approverAccounts.length,
+        ),
     };
 }
 
