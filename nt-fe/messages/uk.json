@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Потрібен ID акаунта",
             "invalidNearAddress": "Некоректна адреса NEAR.",
+            "ethImplicitNotAllowed": "Адреси 0x не можна додавати як учасників. Використайте акаунт NEAR.",
             "atLeastOneRole": "Потрібно обрати щонайменше одну роль",
             "atLeastOneMember": "Потрібен щонайменше один учасник",
             "alreadyAdded": "Цього учасника вже додано вище",

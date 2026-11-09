@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Bắt buộc nhập ID tài khoản",
             "invalidNearAddress": "Địa chỉ NEAR không hợp lệ.",
+            "ethImplicitNotAllowed": "Địa chỉ 0x không thể là thành viên. Hãy dùng tài khoản NEAR.",
             "atLeastOneRole": "Phải chọn ít nhất một vai trò",
             "atLeastOneMember": "Cần ít nhất một thành viên",
             "alreadyAdded": "Thành viên này đã được thêm ở trên",

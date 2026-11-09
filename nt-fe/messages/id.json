@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "ID Akun diperlukan",
             "invalidNearAddress": "Alamat NEAR tidak valid.",
+            "ethImplicitNotAllowed": "Alamat 0x tidak dapat menjadi anggota. Gunakan akun NEAR.",
             "atLeastOneRole": "Setidaknya satu peran harus dipilih",
             "atLeastOneMember": "Setidaknya satu anggota diperlukan",
             "alreadyAdded": "Anggota ini sudah ditambahkan di atas",
