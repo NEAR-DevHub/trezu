@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "生成時点から14日間有効です。失効まで: 残り{expiresIn}",
         "singleUseAcknowledgement": "このアドレスは一度だけ使用します",
         "addressLabel": "アドレス",
-        "addressCopied": "アドレスをクリップボードにコピーしました",
         "memoLabel": "メモ",
-        "memoCopied": "メモをクリップボードにコピーしました",
         "memoWarning": "このアドレスに資金を送る際は<bold>必ず</bold>メモを含めてください。メモなしで送信すると資金が永久に失われる可能性があります。",
         "onlyDeposit": "<networkTag>{network}</networkTag>ネットワークから<symbolTag>{symbol}</symbolTag>のみを入金してください。",
         "testTransactionRecommendation": "全額を送る前に、まず少額のテストトランザクションで動作を確認することをおすすめします。",
@@ -370,7 +368,6 @@
         "depositFailedBody": "<amount></amount> の入金はプロバイダーにより失敗または返金として報告されました",
         "depositFailedBodyNoAmount": "入金はプロバイダーにより失敗または返金として報告されました",
         "unknownAsset": "不明な資産",
-        "confirmingAsset": "受け取った資産を確認しています…",
         "anyTokenAssetName": "任意のトークン",
         "receive": {
             "sendAtLeastUsd": "{symbol} を {usd} 以上送金してください",

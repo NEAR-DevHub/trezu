@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Дійсна 14 днів з моменту створення. Закінчується через: залишилось {expiresIn}",
         "singleUseAcknowledgement": "Я використаю цю адресу лише один раз",
         "addressLabel": "Адреса",
-        "addressCopied": "Адресу скопійовано в буфер обміну",
         "memoLabel": "Мемо",
-        "memoCopied": "Мемо скопійовано в буфер обміну",
         "memoWarning": "Ви <bold>мусите</bold> вказати мемо, надсилаючи кошти на цю адресу. Надсилання без мемо може призвести до безповоротної втрати коштів.",
         "onlyDeposit": "Поповнюйте лише <symbolTag>{symbol}</symbolTag> з мережі <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Рекомендуємо спершу зробити невеликий тестовий переказ, щоб переконатись, що все працює правильно, а потім вже надсилати повну суму.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "Провайдер повідомив, що депозит на <amount></amount> не вдався або був повернутий",
         "depositFailedBodyNoAmount": "Провайдер повідомив, що депозит не вдався або був повернутий",
         "unknownAsset": "Невідомий актив",
-        "confirmingAsset": "Підтверджуємо, який актив отримано…",
         "anyTokenAssetName": "Будь-який токен",
         "receive": {
             "sendAtLeastUsd": "Надішліть щонайменше {usd} у {symbol}",

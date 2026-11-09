@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Có hiệu lực 14 ngày kể từ khi tạo. Hết hạn sau: còn {expiresIn}",
         "singleUseAcknowledgement": "Tôi sẽ chỉ sử dụng địa chỉ này một lần",
         "addressLabel": "Địa chỉ",
-        "addressCopied": "Đã sao chép địa chỉ vào bộ nhớ tạm",
         "memoLabel": "Memo",
-        "memoCopied": "Đã sao chép memo vào bộ nhớ tạm",
         "memoWarning": "Bạn <bold>phải</bold> thêm memo khi gửi tiền đến địa chỉ này. Gửi mà không có memo có thể dẫn đến mất tiền vĩnh viễn.",
         "onlyDeposit": "Chỉ nạp <symbolTag>{symbol}</symbolTag> từ mạng <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Chúng tôi khuyên bạn bắt đầu với một giao dịch thử nhỏ để đảm bảo mọi thứ hoạt động chính xác trước khi gửi toàn bộ số tiền.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "Nhà cung cấp báo cáo khoản nạp <amount></amount> đã thất bại hoặc được hoàn lại",
         "depositFailedBodyNoAmount": "Nhà cung cấp báo cáo khoản nạp đã thất bại hoặc được hoàn lại",
         "unknownAsset": "Tài sản không xác định",
-        "confirmingAsset": "Đang xác nhận tài sản đã nhận…",
         "anyTokenAssetName": "Bất kỳ token nào",
         "receive": {
             "sendAtLeastUsd": "Gửi ít nhất {usd} {symbol}",

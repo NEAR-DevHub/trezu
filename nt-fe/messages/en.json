@@ -297,9 +297,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Valid for 14 days from the time of generation. Expires in: {expiresIn} remaining",
         "singleUseAcknowledgement": "I will use this address only once",
         "addressLabel": "Address",
-        "addressCopied": "Address copied to clipboard",
         "memoLabel": "Memo",
-        "memoCopied": "Memo copied to clipboard",
         "memoWarning": "You <bold>must</bold> include the memo when sending funds to this address. Sending without the memo may result in permanent loss of funds.",
         "onlyDeposit": "Only deposit <symbolTag>{symbol}</symbolTag> from the <networkTag>{network}</networkTag> network.",
         "testTransactionRecommendation": "We recommend starting with a small test transaction to ensure everything works correctly before sending the full amount.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "A deposit of <amount></amount> was reported as failed or refunded by the provider",
         "depositFailedBodyNoAmount": "A deposit was reported as failed or refunded by the provider",
         "unknownAsset": "Unknown asset",
-        "confirmingAsset": "Confirming which asset was received…",
         "anyTokenAssetName": "Any token",
         "receive": {
             "sendAtLeastUsd": "Send at least {usd} of {symbol}",

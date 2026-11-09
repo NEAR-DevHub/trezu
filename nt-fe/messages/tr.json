@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Oluşturulduğu andan itibaren 14 gün geçerlidir. Süre dolumu: kalan {expiresIn}",
         "singleUseAcknowledgement": "Bu adresi yalnızca bir kez kullanacağım",
         "addressLabel": "Adres",
-        "addressCopied": "Adres panoya kopyalandı",
         "memoLabel": "Not",
-        "memoCopied": "Not panoya kopyalandı",
         "memoWarning": "Bu adrese para gönderirken notu <bold>mutlaka</bold> eklemelisiniz. Not olmadan göndermek paranın kalıcı olarak kaybolmasına neden olabilir.",
         "onlyDeposit": "Yalnızca <networkTag>{network}</networkTag> ağından <symbolTag>{symbol}</symbolTag> yatırın.",
         "testTransactionRecommendation": "Tüm tutarı göndermeden önce her şeyin doğru çalıştığından emin olmak için küçük bir test işlemiyle başlamanızı öneririz.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "Sağlayıcı, <amount></amount> tutarındaki yatırmayı başarısız veya iade edildi olarak bildirdi",
         "depositFailedBodyNoAmount": "Sağlayıcı, yatırmayı başarısız veya iade edildi olarak bildirdi",
         "unknownAsset": "Bilinmeyen varlık",
-        "confirmingAsset": "Hangi varlığın alındığı doğrulanıyor…",
         "anyTokenAssetName": "Herhangi bir token",
         "receive": {
             "sendAtLeastUsd": "En az {usd} değerinde {symbol} gönderin",

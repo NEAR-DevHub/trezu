@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Valable 14 jours à compter de la génération. Expire dans : {expiresIn} restants",
         "singleUseAcknowledgement": "J'utiliserai cette adresse une seule fois",
         "addressLabel": "Adresse",
-        "addressCopied": "Adresse copiée dans le presse-papiers",
         "memoLabel": "Mémo",
-        "memoCopied": "Mémo copié dans le presse-papiers",
         "memoWarning": "Vous <bold>devez</bold> inclure le mémo lors de l'envoi de fonds à cette adresse. Envoyer sans le mémo peut entraîner une perte permanente des fonds.",
         "onlyDeposit": "Déposez uniquement <symbolTag>{symbol}</symbolTag> depuis le réseau <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Nous recommandons de commencer par une petite transaction de test pour vous assurer que tout fonctionne correctement avant d'envoyer le montant complet.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "Le prestataire a signalé un dépôt de <amount></amount> comme échoué ou remboursé",
         "depositFailedBodyNoAmount": "Le prestataire a signalé un dépôt comme échoué ou remboursé",
         "unknownAsset": "Actif inconnu",
-        "confirmingAsset": "Confirmation de l’actif reçu…",
         "anyTokenAssetName": "N'importe quel token",
         "receive": {
             "sendAtLeastUsd": "Envoyez au moins {usd} en {symbol}",
