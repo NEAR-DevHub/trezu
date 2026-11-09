@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Account ID is required",
             "invalidNearAddress": "Invalid NEAR address.",
+            "ethImplicitNotAllowed": "0x addresses can't be members. Use a NEAR account.",
             "atLeastOneRole": "At least one role must be selected",
             "atLeastOneMember": "At least one member is required",
             "alreadyAdded": "This member has already been added above",

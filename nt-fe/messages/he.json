@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "מזהה חשבון נדרש",
             "invalidNearAddress": "כתובת NEAR לא תקינה.",
+            "ethImplicitNotAllowed": "כתובות 0x לא יכולות להיות חברות. השתמשו בחשבון NEAR.",
             "atLeastOneRole": "יש לבחור לפחות תפקיד אחד",
             "atLeastOneMember": "יש צורך בלפחות חבר אחד",
             "alreadyAdded": "חבר זה כבר נוסף למעלה",

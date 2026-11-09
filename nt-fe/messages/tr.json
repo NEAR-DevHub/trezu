@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Hesap kimliği gereklidir",
             "invalidNearAddress": "Geçersiz NEAR adresi.",
+            "ethImplicitNotAllowed": "0x adresleri üye olamaz. Bir NEAR hesabı kullanın.",
             "atLeastOneRole": "En az bir rol seçilmelidir",
             "atLeastOneMember": "En az bir üye gereklidir",
             "alreadyAdded": "Bu üye yukarıda zaten eklenmiş",

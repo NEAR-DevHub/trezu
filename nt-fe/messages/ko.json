@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "계정 ID는 필수입니다",
             "invalidNearAddress": "잘못된 NEAR 주소입니다.",
+            "ethImplicitNotAllowed": "0x 주소는 멤버로 추가할 수 없습니다. NEAR 계정을 사용하세요.",
             "atLeastOneRole": "최소 하나의 역할을 선택해야 합니다",
             "atLeastOneMember": "최소 한 명의 멤버가 필요합니다",
             "alreadyAdded": "이 멤버는 이미 위에 추가되었습니다",

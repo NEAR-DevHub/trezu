@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "账户 ID 为必填项",
             "invalidNearAddress": "无效的 NEAR 地址。",
+            "ethImplicitNotAllowed": "0x 地址不能作为成员。请使用 NEAR 账户。",
             "atLeastOneRole": "必须至少选择一个角色",
             "atLeastOneMember": "至少需要一名成员",
             "alreadyAdded": "该成员已在上方添加",

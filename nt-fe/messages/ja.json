@@ -1261,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "アカウントIDは必須です",
             "invalidNearAddress": "無効なNEARアドレスです。",
+            "ethImplicitNotAllowed": "0xアドレスはメンバーにできません。NEARアカウントを使用してください。",
             "atLeastOneRole": "少なくとも1つのロールを選択する必要があります",
             "atLeastOneMember": "少なくとも1名のメンバーが必要です",
             "alreadyAdded": "このメンバーはすでに上記に追加されています",
