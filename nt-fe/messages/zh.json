@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "自生成起有效 14 天。剩余有效期：{expiresIn}",
         "singleUseAcknowledgement": "我只会使用该地址一次",
         "addressLabel": "地址",
-        "addressCopied": "地址已复制到剪贴板",
         "memoLabel": "Memo",
-        "memoCopied": "Memo 已复制到剪贴板",
         "memoWarning": "向此地址转账时,您<bold>必须</bold>包含 Memo。未包含 Memo 的转账可能导致资金永久丢失。",
         "onlyDeposit": "仅可从 <networkTag>{network}</networkTag> 网络存入 <symbolTag>{symbol}</symbolTag>。",
         "testTransactionRecommendation": "建议先进行小额测试交易,确认一切正常后再发送全部金额。",
@@ -370,7 +368,6 @@
         "depositFailedBody": "服务商报告一笔 <amount></amount> 的充值失败或已退款",
         "depositFailedBodyNoAmount": "服务商报告一笔充值失败或已退款",
         "unknownAsset": "未知资产",
-        "confirmingAsset": "正在确认收到的资产…",
         "anyTokenAssetName": "任意代币",
         "receive": {
             "sendAtLeastUsd": "请发送至少 {usd} 的 {symbol}",

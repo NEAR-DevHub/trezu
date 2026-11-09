@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "Válido por 14 dias a partir da geração. Expira em: {expiresIn} restantes",
         "singleUseAcknowledgement": "Usarei este endereço apenas uma vez",
         "addressLabel": "Endereço",
-        "addressCopied": "Endereço copiado para a área de transferência",
         "memoLabel": "Memo",
-        "memoCopied": "Memo copiado para a área de transferência",
         "memoWarning": "Você <bold>deve</bold> incluir o memo ao enviar fundos para este endereço. Enviar sem o memo pode resultar em perda permanente de fundos.",
         "onlyDeposit": "Deposite apenas <symbolTag>{symbol}</symbolTag> da rede <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Recomendamos começar com uma pequena transação de teste para garantir que tudo funcione corretamente antes de enviar o valor total.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "O provedor informou que um depósito de <amount></amount> falhou ou foi reembolsado",
         "depositFailedBodyNoAmount": "O provedor informou que um depósito falhou ou foi reembolsado",
         "unknownAsset": "Ativo desconhecido",
-        "confirmingAsset": "Confirmando qual ativo foi recebido…",
         "anyTokenAssetName": "Qualquer token",
         "receive": {
             "sendAtLeastUsd": "Envie pelo menos {usd} em {symbol}",

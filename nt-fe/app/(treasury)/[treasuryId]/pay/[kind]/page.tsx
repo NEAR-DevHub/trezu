@@ -383,21 +383,6 @@ export default function PaySharePage() {
         }
     };
 
-    // Card share icon: the native share sheet where there is one, else copy.
-    const handleShareLink = async () => {
-        if (typeof navigator.share !== "function") {
-            await handleCopyLink();
-            return;
-        }
-        try {
-            await navigator.share({
-                url: getAbsoluteTransferUrl(currentSharePath),
-            });
-        } catch {
-            // Dismissed share sheet — nothing to report.
-        }
-    };
-
     const handlePayWithNearcom = () => {
         if (!recipientDaoId) return;
         window.open(
@@ -465,7 +450,7 @@ export default function PaySharePage() {
             }
         >
             <div className="flex justify-center w-full md:mt-4">
-                <PageCard className="w-full max-w-150 gap-4">
+                <PageCard className="w-full max-w-136 gap-4">
                     {isStatusLoading ? (
                         <div data-testid="deposit-transfer-status-skeleton">
                             <div className="flex flex-col items-start gap-2 sm:flex-row sm:justify-between sm:gap-3 pb-3 border-b border-general-border mb-3">
@@ -535,7 +520,6 @@ export default function PaySharePage() {
                                     }
                                     centerIcon={receiveCard.centerIcon}
                                     qrLabel={receiveCard.qrLabel}
-                                    onShare={handleShareLink}
                                     notices={receiveCard.notices}
                                 />
                             ) : null}

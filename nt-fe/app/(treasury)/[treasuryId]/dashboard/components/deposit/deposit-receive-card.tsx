@@ -118,7 +118,6 @@ export function DepositReceiveCard({
                     label={addressLabel}
                     value={address}
                     display={formatDepositAddress(address, preferPlainAddress)}
-                    copiedToast={t("addressCopied")}
                     onShare={onShare}
                     testId="deposit-receive-address"
                 />
@@ -127,7 +126,6 @@ export function DepositReceiveCard({
                         label={t("memoLabel")}
                         value={memo}
                         display={memo}
-                        copiedToast={t("memoCopied")}
                         testId="deposit-receive-memo"
                         className="border-t border-border pt-3"
                     />
@@ -169,7 +167,6 @@ function AddressField({
     label,
     value,
     display,
-    copiedToast,
     onShare,
     testId,
     className,
@@ -177,7 +174,6 @@ function AddressField({
     label: string;
     value: string;
     display: ReactNode;
-    copiedToast: string;
     onShare?: () => void;
     testId: string;
     className?: string;
@@ -195,7 +191,6 @@ function AddressField({
         try {
             await navigator.clipboard.writeText(value);
             setCopied(true);
-            toast.success(copiedToast);
         } catch {
             toast.error(t("errors.fetchFailed"));
         }

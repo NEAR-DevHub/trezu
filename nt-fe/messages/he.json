@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "בתוקף ל-14 יום ממועד היצירה. פג תוקף בעוד: נותרו {expiresIn}",
         "singleUseAcknowledgement": "אשתמש בכתובת הזו פעם אחת בלבד",
         "addressLabel": "כתובת",
-        "addressCopied": "הכתובת הועתקה ללוח",
         "memoLabel": "הערה",
-        "memoCopied": "ההערה הועתקה ללוח",
         "memoWarning": "אתה <bold>חייב</bold> לכלול את ההערה בעת שליחת כספים לכתובת זו. שליחה ללא ההערה עלולה לגרום לאובדן קבוע של כספים.",
         "onlyDeposit": "הפקד רק <symbolTag>{symbol}</symbolTag> מרשת <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "אנו ממליצים להתחיל בעסקת בדיקה קטנה כדי לוודא שהכל עובד כראוי לפני שליחת הסכום המלא.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "הספק דיווח שהפקדה של <amount></amount> נכשלה או הוחזרה",
         "depositFailedBodyNoAmount": "הספק דיווח שההפקדה נכשלה או הוחזרה",
         "unknownAsset": "נכס לא ידוע",
-        "confirmingAsset": "מאמתים איזה נכס התקבל…",
         "anyTokenAssetName": "כל טוקן",
         "receive": {
             "sendAtLeastUsd": "שלחו לפחות {usd} של {symbol}",

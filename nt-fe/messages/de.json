@@ -293,9 +293,7 @@
         "depositAddressSubtitleConfidentialExpiry": "14 Tage ab Erstellung gültig. Läuft ab in: noch {expiresIn}",
         "singleUseAcknowledgement": "Ich werde diese Adresse nur einmal verwenden",
         "addressLabel": "Adresse",
-        "addressCopied": "Adresse in die Zwischenablage kopiert",
         "memoLabel": "Memo",
-        "memoCopied": "Memo in die Zwischenablage kopiert",
         "memoWarning": "Sie <bold>müssen</bold> das Memo angeben, wenn Sie Mittel an diese Adresse senden. Ein Versand ohne Memo kann zum dauerhaften Verlust der Mittel führen.",
         "onlyDeposit": "Zahlen Sie nur <symbolTag>{symbol}</symbolTag> aus dem <networkTag>{network}</networkTag>-Netzwerk ein.",
         "testTransactionRecommendation": "Wir empfehlen, mit einer kleinen Testtransaktion zu beginnen, um sicherzustellen, dass alles korrekt funktioniert, bevor Sie den vollen Betrag senden.",
@@ -370,7 +368,6 @@
         "depositFailedBody": "Eine Einzahlung von <amount></amount> wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
         "depositFailedBodyNoAmount": "Eine Einzahlung wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
         "unknownAsset": "Unbekannter Vermögenswert",
-        "confirmingAsset": "Es wird bestätigt, welches Asset eingegangen ist …",
         "anyTokenAssetName": "Beliebiger Token",
         "receive": {
             "sendAtLeastUsd": "Senden Sie mindestens {usd} in {symbol}",
