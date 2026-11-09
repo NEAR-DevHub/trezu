@@ -301,6 +301,10 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
             return "Function Call";
         }
         case "policy":
+        case "policy_add_or_update_role":
+        case "policy_remove_role":
+        case "policy_update_default_vote_policy":
+        case "policy_update_parameters":
             return "Change Policy";
         case "config":
             return "Update General Settings";
@@ -310,7 +314,7 @@ export function getProposalUIKind(proposal: Proposal): ProposalUIKind {
         case "add_member_to_role":
         case "remove_member_from_role":
             return "Members";
-        case "set_staking_contract":
+        case "set_vote_token":
             return "Set Staking Contract";
         case "add_bounty":
         case "bounty_done":
