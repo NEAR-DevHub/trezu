@@ -10,12 +10,21 @@ export type ProposalPermissionKind =
     | "remove_member_from_role"
     | "upgrade_self"
     | "upgrade_remote"
-    | "set_staking_contract"
+    | "set_vote_token"
     | "add_bounty"
     | "bounty_done"
     | "vote"
-    | "factory_info_update";
+    | "factory_info_update"
+    | "policy_add_or_update_role"
+    | "policy_remove_role"
+    | "policy_update_default_vote_policy"
+    | "policy_update_parameters";
 
+/**
+ * Maps a proposal kind to the label the Sputnik contract uses for permission and
+ * vote-policy lookups (`ProposalKind::to_policy_label`). The `ChangePolicy*` variants
+ * each have their own label; a role's `policy` rule does not apply to them.
+ */
 export function getKindFromProposal(
     proposalKind: ProposalKind,
 ): ProposalPermissionKind | undefined {
@@ -45,7 +54,7 @@ export function getKindFromProposal(
     }
 
     if ("ChangePolicyUpdateParameters" in proposalKind) {
-        return "policy";
+        return "policy_update_parameters";
     }
 
     if ("AddMemberToRole" in proposalKind) {
@@ -65,7 +74,7 @@ export function getKindFromProposal(
     }
 
     if ("SetStakingContract" in proposalKind) {
-        return "set_staking_contract";
+        return "set_vote_token";
     }
 
     if ("AddBounty" in proposalKind) {
@@ -85,15 +94,15 @@ export function getKindFromProposal(
     }
 
     if ("ChangePolicyAddOrUpdateRole" in proposalKind) {
-        return "policy";
+        return "policy_add_or_update_role";
     }
 
     if ("ChangePolicyRemoveRole" in proposalKind) {
-        return "policy";
+        return "policy_remove_role";
     }
 
     if ("ChangePolicyUpdateDefaultVotePolicy" in proposalKind) {
-        return "policy";
+        return "policy_update_default_vote_policy";
     }
 
     return undefined;

@@ -3,10 +3,12 @@ import type { Policy } from "@/types/policy";
 import {
     canChangePolicy,
     getApproversAndThreshold,
+    getKindFromProposal,
     hasActionPermission,
     isRequestor,
     thresholdToRequiredVotes,
 } from "./config-utils";
+import type { ProposalKind } from "./proposals-api";
 
 /**
  * The permission tiers behind the Request Templates gates: `canChangePolicy` (admin — delete a
@@ -233,5 +235,76 @@ describe("getApproversAndThreshold (ratio default policy)", () => {
         );
         expect(approverAccounts).toEqual(["a.near", "b.near"]);
         expect(requiredVotes).toBe(2);
+    });
+});
+
+const kind = (k: object) => k as unknown as ProposalKind;
+
+describe("getKindFromProposal (contract policy labels)", () => {
+    it("gives each ChangePolicy* variant its own label", () => {
+        expect(
+            getKindFromProposal(kind({ ChangePolicy: { policy: {} } })),
+        ).toBe("policy");
+        expect(
+            getKindFromProposal(
+                kind({
+                    ChangePolicyUpdateParameters: { parameters: {} },
+                }),
+            ),
+        ).toBe("policy_update_parameters");
+        expect(
+            getKindFromProposal(
+                kind({
+                    ChangePolicyAddOrUpdateRole: { role: {} },
+                }),
+            ),
+        ).toBe("policy_add_or_update_role");
+        expect(
+            getKindFromProposal(
+                kind({ ChangePolicyRemoveRole: { role: "x" } }),
+            ),
+        ).toBe("policy_remove_role");
+        expect(
+            getKindFromProposal(
+                kind({
+                    ChangePolicyUpdateDefaultVotePolicy: { vote_policy: {} },
+                }),
+            ),
+        ).toBe("policy_update_default_vote_policy");
+        expect(
+            getKindFromProposal(
+                kind({
+                    SetStakingContract: { staking_id: "x" },
+                }),
+            ),
+        ).toBe("set_vote_token");
+    });
+});
+
+describe("getApproversAndThreshold (per-label vote policy, trezu#358)", () => {
+    it("falls back to the default ratio when the role has no rule for the label", () => {
+        const admins = Array.from({ length: 19 }, (_, i) => `admin${i}.near`);
+        const policy = policyWith(
+            ["policy:*", "policy_update_parameters:*"],
+            admins,
+        );
+        policy.roles[0].vote_policy = {
+            policy: { weight_kind: "RoleWeight", quorum: "0", threshold: "1" },
+        };
+        const params = kind({
+            ChangePolicyUpdateParameters: { parameters: {} },
+        });
+        expect(
+            getApproversAndThreshold(policy, admins[0], params, false)
+                .requiredVotes,
+        ).toBe(10);
+        expect(
+            getApproversAndThreshold(
+                policy,
+                admins[0],
+                kind({ ChangePolicy: { policy: {} } }),
+                false,
+            ).requiredVotes,
+        ).toBe(1);
     });
 });

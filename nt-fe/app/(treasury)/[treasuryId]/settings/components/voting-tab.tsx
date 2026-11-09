@@ -58,6 +58,11 @@ const proposalKinds = [
     "upgrade_self",
     "upgrade_remote",
     "set_vote_token",
+    "factory_info_update",
+    "policy_add_or_update_role",
+    "policy_remove_role",
+    "policy_update_default_vote_policy",
+    "policy_update_parameters",
 ];
 
 interface VotingRequestActionProps {
