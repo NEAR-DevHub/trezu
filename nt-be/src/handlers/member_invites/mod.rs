@@ -10,6 +10,7 @@ use sqlx::Postgres;
 use std::sync::Arc;
 use uuid::Uuid;
 
+use crate::utils::url::api_url;
 use crate::{
     AppState,
     auth::{AuthUser, OptionalAuthUser},
@@ -62,11 +63,9 @@ pub async fn create_member_invite(
     .await
     .map_err(|e| internal_error("Failed to create member invite link", e))?;
 
-    let url = format!(
-        "{}/join/{}",
-        state.env_vars.frontend_base_url.trim_end_matches('/'),
-        token
-    );
+    let url = api_url(&state.env_vars.frontend_base_url, &format!("join/{token}"))
+        .map_err(|e| internal_error("Invalid FRONTEND_BASE_URL", e))?
+        .to_string();
 
     Ok(Json(CreateInviteResponse { token, url }))
 }

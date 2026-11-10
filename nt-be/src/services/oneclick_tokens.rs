@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::utils::cache::CacheTier;
+use crate::utils::url::api_url_or_500;
 
 pub const ONECLICK_TOKENS_PATH: &str = "/v0/tokens";
 
@@ -43,14 +44,10 @@ pub async fn fetch_oneclick_tokens(
 pub async fn fetch_oneclick_tokens_uncached(
     state: &Arc<AppState>,
 ) -> Result<Vec<OneClickToken>, (axum::http::StatusCode, String)> {
-    let url = format!(
-        "{}{}",
-        state.env_vars.oneclick_api_url.trim_end_matches('/'),
-        ONECLICK_TOKENS_PATH
-    );
+    let url = api_url_or_500(&state.env_vars.oneclick_api_url, ONECLICK_TOKENS_PATH)?;
     let mut request = state
         .http_client
-        .get(&url)
+        .get(url)
         .header("accept", "application/json");
     if let Some(api_key) = state.env_vars.oneclick_api_key.as_deref() {
         request = request.header("x-api-key", api_key);

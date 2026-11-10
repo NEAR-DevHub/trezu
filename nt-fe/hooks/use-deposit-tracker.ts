@@ -20,12 +20,17 @@ const TERMINAL_STATUSES: ReadonlySet<TrackedDepositStatus> = new Set([
  * SSE `treasury_projection_updated` also invalidates this key, so the poll is
  * only a fallback for missed events.
  *
- * Public addresses are reusable, so the view is scoped to this showing:
- * deposits still in flight count from `shownAtMs - inFlightLookbackMs` (a
- * transfer sent just before opening the page), while completed or failed
- * deposits count only when detected after `shownAtMs`. Reopening the page
- * after a deposit settled therefore starts clean. Quote-scoped
- * (confidential) addresses are one-time, so no time filter applies.
+ * Every address is shared and permanent (a public chain address, or the
+ * confidential treasury's reusable quote address), so the view is scoped to
+ * this showing: deposits still in flight count from
+ * `shownAtMs - inFlightLookbackMs` (a transfer sent just before opening the
+ * page), while completed or failed deposits count only when detected after
+ * `shownAtMs`. Reopening the page after a deposit settled therefore starts
+ * clean.
+ *
+ * The reusable quote address is handed to every payer, so the backend
+ * applies the same window server-side: the request carries the stamp as
+ * `since`, and non-members get nothing without it.
  */
 export function useDepositTracker(options: {
     enabled: boolean;
@@ -43,7 +48,12 @@ export function useDepositTracker(options: {
         shownAtMs,
         inFlightLookbackMs = 0,
     } = options;
-    const scopeReady = !!quoteDepositAddress || !!chain;
+    const quoteScope = !!quoteDepositAddress;
+    const since =
+        quoteScope && shownAtMs != null
+            ? new Date(shownAtMs - inFlightLookbackMs).toISOString()
+            : null;
+    const scopeReady = (quoteScope || !!chain) && (!quoteScope || !!since);
 
     const query = useQuery({
         queryKey: [
@@ -51,6 +61,7 @@ export function useDepositTracker(options: {
             accountId,
             quoteDepositAddress ?? null,
             chain ?? null,
+            since,
         ],
         queryFn: () => {
             if (!accountId) {
@@ -59,6 +70,7 @@ export function useDepositTracker(options: {
             return fetchDepositTracker(accountId, {
                 chain,
                 quoteDepositAddress,
+                since,
             });
         },
         enabled: enabled && !!accountId && scopeReady,
@@ -83,7 +95,6 @@ export function useDepositTracker(options: {
     }
     const shownIds = shown.current.ids;
     const deposits = (query.data?.deposits ?? []).filter((deposit) => {
-        if (quoteDepositAddress) return true;
         // No stamp yet (first render, or not on the address step): the
         // showing has not started, so nothing is visible or remembered.
         if (shownAtMs == null) return false;

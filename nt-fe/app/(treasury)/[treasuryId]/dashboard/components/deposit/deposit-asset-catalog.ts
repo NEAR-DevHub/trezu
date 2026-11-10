@@ -2,8 +2,8 @@ import {
     getNetworkDisplayName,
     networksMatchAliased,
 } from "@/components/token-display";
-import { NEAR_NETWORK_ID } from "@/constants/network-ids";
-import { NEAR_CHAIN_ICONS } from "@/constants/token";
+import { NEAR_COM_NETWORK_ID, NEAR_NETWORK_ID } from "@/constants/network-ids";
+import { NEAR_CHAIN_ICONS, NEAR_COM_ICON } from "@/constants/token";
 import type { AggregatedAsset } from "@/hooks/use-assets";
 import type { BridgeAsset, BridgeNetwork } from "@/hooks/use-bridge-tokens";
 import Big from "@/lib/big";
@@ -178,12 +178,41 @@ function buildOtherAsset(otherAssetName: string): SelectOption {
     };
 }
 
+/** "Any token" asset: confidential deposits from Trezu / near.com users over the internal network. */
+export const INTERNAL_ANY_TOKEN_ASSET_ID = "nearcom:any";
+
+export function isInternalNetworkId(networkId?: string | null): boolean {
+    return networkId === NEAR_COM_NETWORK_ID;
+}
+
+function buildInternalAnyTokenAsset(name: string): SelectOption {
+    return {
+        id: INTERNAL_ANY_TOKEN_ASSET_ID,
+        name,
+        symbol: name,
+        icon: NEAR_COM_ICON,
+        gradient: "bg-brand-blue",
+        networks: [
+            {
+                id: NEAR_COM_NETWORK_ID,
+                name: NEAR_COM_NETWORK_ID,
+                symbol: "",
+                chainIcons: { icon: NEAR_COM_ICON },
+                chainId: NEAR_COM_NETWORK_ID,
+                decimals: 0,
+            },
+        ],
+    };
+}
+
 export function buildDepositAssetCatalog(params: {
     bridgeAssets: BridgeAsset[];
     aggregatedTreasuryTokens: AggregatedAsset[];
     popularAssets: { tokenId?: string | null }[];
     isConfidential: boolean;
     otherAssetName: string;
+    /** Adds the "Any token" on near.com entry (confidential reusable deposits). */
+    internalAnyTokenName?: string;
     labels: {
         popularAssets: string;
         yourAssets: string;
@@ -196,10 +225,22 @@ export function buildDepositAssetCatalog(params: {
         popularAssets,
         isConfidential,
         otherAssetName,
+        internalAnyTokenName,
         labels,
     } = params;
 
     const otherAsset = buildOtherAsset(otherAssetName);
+    const internalAsset =
+        isConfidential && internalAnyTokenName
+            ? buildInternalAnyTokenAsset(internalAnyTokenName)
+            : null;
+    // near.com lists the internal network first under every token: the same
+    // nearcom: address receives any asset, so each asset gets it on top.
+    const internalNetworks = internalAsset
+        ? ((internalAsset.networks ?? []) as BridgeNetwork[]).map(
+              toNetworkOption,
+          )
+        : [];
     const newAssetNetworksMap = new Map<string, SelectOption[]>();
     const networkBalancesByAssetId = new Map<
         string,
@@ -232,7 +273,10 @@ export function buildDepositAssetCatalog(params: {
         if (depositNetworks.length === 0) {
             continue;
         }
-        const networks = depositNetworks.map(toNetworkOption);
+        const networks = [
+            ...internalNetworks,
+            ...depositNetworks.map(toNetworkOption),
+        ];
         newAssetNetworksMap.set(asset.id, networks);
         networkBalancesByAssetId.set(
             asset.id,
@@ -280,6 +324,10 @@ export function buildDepositAssetCatalog(params: {
         formattedAssets.push(otherAsset);
         const otherNetworks = (otherAsset.networks ?? []) as BridgeNetwork[];
         newAssetNetworksMap.set("other", otherNetworks.map(toNetworkOption));
+    }
+    if (internalAsset) {
+        formattedAssets.push(internalAsset);
+        newAssetNetworksMap.set(internalAsset.id, internalNetworks);
     }
 
     const assetsByNormalizedId = new Map<string, SelectOption>();
@@ -334,7 +382,11 @@ export function buildDepositAssetCatalog(params: {
     });
     sections.push({
         title: labels.otherAssets,
-        options: isConfidential ? otherAssets : [...otherAssets, otherAsset],
+        options: [
+            ...otherAssets,
+            ...(isConfidential ? [] : [otherAsset]),
+            ...(internalAsset ? [internalAsset] : []),
+        ],
     });
 
     return {

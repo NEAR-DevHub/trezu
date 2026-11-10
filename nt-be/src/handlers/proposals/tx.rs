@@ -10,7 +10,9 @@ use serde_json::Value;
 use std::sync::Arc;
 
 use crate::AppState;
+use crate::constants::external_apis::NEARBLOCKS_API_BASE;
 use crate::utils::cache::{CacheKey, CacheTier};
+use crate::utils::url::api_url_or_500;
 
 #[derive(Deserialize, Debug)]
 struct NearBlocksTransaction {
@@ -80,16 +82,20 @@ async fn fetch_nearblocks_transactions(
     before_date: NaiveDate,
     cursor: Option<&str>,
 ) -> Result<NearBlocksResponse, (StatusCode, String)> {
-    let mut url = format!(
-        "https://api.nearblocks.io/v1/account/{}/receipts?method={}&after_date={}&before_date={}",
-        dao_id, method, after_date, before_date
-    );
+    let mut url = api_url_or_500(
+        NEARBLOCKS_API_BASE,
+        &format!("v1/account/{dao_id}/receipts"),
+    )?;
+    url.query_pairs_mut()
+        .append_pair("method", method)
+        .append_pair("after_date", &after_date.to_string())
+        .append_pair("before_date", &before_date.to_string());
     if let Some(cursor) = cursor {
-        url.push_str(&format!("&cursor={}", cursor));
+        url.query_pairs_mut().append_pair("cursor", cursor);
     }
 
     let response = http_client
-        .get(&url)
+        .get(url)
         .header("accept", "application/json")
         .header("Authorization", format!("Bearer {}", api_key))
         .send()
@@ -367,13 +373,11 @@ pub async fn search_receipt(
     state
         .cache
         .cached_json(CacheTier::LongTerm, cache_key, async move {
-            let url = format!(
-                "https://api.nearblocks.io/v1/search/receipts?keyword={}",
-                keyword
-            );
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/search/receipts")?;
+            url.query_pairs_mut().append_pair("keyword", &keyword);
 
             let response = http_client
-                .get(&url)
+                .get(url)
                 .header("accept", "application/json")
                 .header("Authorization", format!("Bearer {}", api_key))
                 .send()

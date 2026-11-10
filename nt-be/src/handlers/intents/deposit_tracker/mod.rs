@@ -2,10 +2,10 @@
 //! between address display and permanent ledger projection.
 //!
 //! Public treasuries are polled through the bridge `recent_deposits` method,
-//! coalesced per DAO. Confidential treasuries are polled through the
-//! authenticated 1Click history filtered by the one-time quote address. Both
-//! normalise into `in_process_deposits`, which the recent-activity read path
-//! unions ahead of ledger rows until an exact ledger match retires them.
+//! coalesced per DAO. Confidential treasuries are polled through the payout
+//! list of the DAO's reusable 1Click deposit set. Both normalise into
+//! `in_process_deposits`, which the recent-activity read path unions ahead of
+//! ledger rows until an exact ledger match retires them.
 //!
 //! The tracker owns temporary deposit progress; the ledger owns history.
 
@@ -15,7 +15,7 @@ pub mod bridge;
 pub mod store;
 pub mod worker;
 
-use chrono::{DateTime, Duration, Utc};
+use chrono::{Duration, Utc};
 use sqlx::PgPool;
 
 pub use store::{DepositWatch, InProcessDeposit};
@@ -116,55 +116,36 @@ impl WatchActivation {
     /// Public treasuries: one watch per DAO, renewed on every address display.
     /// Returns `Ok(false)` when the account is not monitored (nothing to track).
     pub async fn activate_public(&self, pool: &PgPool) -> Result<bool, sqlx::Error> {
-        let now = Utc::now();
-        store::upsert_watch(
-            pool,
-            &self.dao_id,
-            WatchKind::Public,
-            None,
-            &self.chain,
-            self.token_id.as_deref(),
-            now + FAST_WINDOW,
-            now + DISCOVERY_WINDOW,
-        )
-        .await
+        self.activate(pool, WatchKind::Public, None).await
     }
 
-    /// Share page for a one-time quote: `dao_id` is the quote address itself
-    /// (that is what the page re-derives the bridge address with). Renews
-    /// the quote's watch; `Ok(false)` when none exists.
-    pub async fn renew_confidential_by_quote(&self, pool: &PgPool) -> Result<bool, sqlx::Error> {
-        let now = Utc::now();
-        store::renew_confidential_watch_by_quote(
-            pool,
-            &self.dao_id,
-            now + FAST_WINDOW,
-            now + DISCOVERY_WINDOW,
-        )
-        .await
-    }
-
-    /// Confidential treasuries: one watch per one-time quote. The watch window
-    /// is bounded by the quote deadline when that is sooner.
+    /// Confidential treasuries: one watch per DAO on its reusable deposit
+    /// set, keyed by the set's quote address and renewed on every display.
     pub async fn activate_confidential(
         &self,
         pool: &PgPool,
         quote_deposit_address: &str,
-        quote_expires_at: Option<DateTime<Utc>>,
+    ) -> Result<bool, sqlx::Error> {
+        self.activate(pool, WatchKind::Confidential, Some(quote_deposit_address))
+            .await
+    }
+
+    async fn activate(
+        &self,
+        pool: &PgPool,
+        kind: WatchKind,
+        quote_deposit_address: Option<&str>,
     ) -> Result<bool, sqlx::Error> {
         let now = Utc::now();
-        let discovery_until = quote_expires_at
-            .map(|deadline| deadline.min(now + DISCOVERY_WINDOW))
-            .unwrap_or(now + DISCOVERY_WINDOW);
         store::upsert_watch(
             pool,
             &self.dao_id,
-            WatchKind::Confidential,
-            Some(quote_deposit_address),
+            kind,
+            quote_deposit_address,
             &self.chain,
             self.token_id.as_deref(),
-            (now + FAST_WINDOW).min(discovery_until),
-            discovery_until,
+            now + FAST_WINDOW,
+            now + DISCOVERY_WINDOW,
         )
         .await
     }

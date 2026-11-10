@@ -9,7 +9,9 @@ use std::sync::Arc;
 use crate::AppState;
 use crate::auth::OptionalAuthUser;
 use crate::constants::intents_tokens::{is_stablecoin_to_stablecoin, same_quote_asset};
+use crate::handlers::intents::oneclick::OneClickClient;
 use crate::handlers::treasury::policy::fetch_treasury_policy_cached;
+use crate::utils::url::api_url_or_500;
 
 /// Default DAO proposal period (7 days) used when policy is unavailable.
 const DEFAULT_PROPOSAL_PERIOD_NS: u64 = 604_800_000_000_000;
@@ -70,59 +72,6 @@ pub struct QuoteRequest {
     /// destination are the same token on different networks (no swap).
     #[serde(default)]
     pub is_payment: Option<bool>,
-}
-
-/// Send a JSON body to a 1click-style API endpoint and return the parsed response.
-/// Handles auth headers, error extraction, and status propagation.
-pub async fn send_oneclick_request(
-    state: &Arc<AppState>,
-    url: &str,
-    body: &Value,
-    access_token: Option<&str>,
-) -> Result<Value, (StatusCode, String)> {
-    let mut req = state
-        .http_client
-        .post(url)
-        .header("content-type", "application/json");
-
-    if let Some(token) = access_token {
-        req = req.header("Authorization", format!("Bearer {}", token));
-    }
-
-    if let Some(api_key) = &state.env_vars.oneclick_api_key {
-        req = req.header("x-api-key", api_key);
-    }
-
-    let response = req.json(body).send().await.map_err(|e| {
-        tracing::error!("Error calling 1click API at {}: {}", url, e);
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to call 1click API: {}", e),
-        )
-    })?;
-
-    let status = response.status();
-    let response_body: Value = response.json().await.map_err(|e| {
-        (
-            StatusCode::BAD_GATEWAY,
-            format!("Failed to parse 1click API response: {}", e),
-        )
-    })?;
-
-    if !status.is_success() {
-        let error_message = response_body
-            .get("error")
-            .or_else(|| response_body.get("message"))
-            .and_then(|v| v.as_str())
-            .unwrap_or("Unknown error from 1click API");
-
-        return Err((
-            StatusCode::from_u16(status.as_u16()).unwrap_or(StatusCode::BAD_GATEWAY),
-            error_message.to_string(),
-        ));
-    }
-
-    Ok(response_body)
 }
 
 /// Build the camelCase JSON body from a QuoteRequest, injecting server-side
@@ -196,16 +145,18 @@ pub async fn get_quote(
 
         if confidential {
             let access_token = super::confidential::refresh_dao_jwt(&state, dao_id).await?;
-            let url = format!("{}/v0/quote", state.env_vars.confidential_api_url);
-            return send_oneclick_request(&state, &url, &body, Some(&access_token))
+            let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/quote")?;
+            return OneClickClient::new(&state)
+                .post(url, &body, Some(&access_token))
                 .await
                 .map(|value| Json(with_has_app_fee(value, has_app_fee)));
         }
     }
 
-    let url = format!("{}/v0/quote", state.env_vars.oneclick_api_url);
+    let url = api_url_or_500(&state.env_vars.oneclick_api_url, "v0/quote")?;
     let access_token = state.env_vars.oneclick_jwt_token.as_deref();
-    send_oneclick_request(&state, &url, &body, access_token)
+    OneClickClient::new(&state)
+        .post(url, &body, access_token)
         .await
         .map(|value| Json(with_has_app_fee(value, has_app_fee)))
 }

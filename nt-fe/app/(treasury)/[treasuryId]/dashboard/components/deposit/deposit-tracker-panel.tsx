@@ -9,13 +9,25 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import type { TrackedDeposit } from "@/lib/bridge-api";
 import { cn } from "@/lib/utils";
 import { DepositOptionIcon } from "./deposit-option-icon";
+import type { DepositReceiveCardTone } from "./deposit-receive-card";
+import { trackerAssetState } from "./deposit-tracker-asset";
 
 interface DepositTrackerPanelProps {
     deposits: TrackedDeposit[];
     /** Asset icon shown on each tile (falls back to the token symbol). */
     assetIcon?: string | null;
     assetName?: string | null;
+    /** Fixed tile theme matching the receive card above; app theme when unset. */
+    theme?: DepositReceiveCardTone;
     className?: string;
+}
+
+function tileThemeClasses(theme?: DepositReceiveCardTone) {
+    if (!theme) return null;
+    return cn(
+        theme === "dark" ? "dark" : "force-light-theme",
+        "bg-secondary text-foreground",
+    );
 }
 
 type Tone = "pending" | "success" | "failed";
@@ -56,14 +68,22 @@ function DepositStatusTile({
     deposit,
     assetIcon,
     assetName,
+    theme,
 }: {
     deposit: TrackedDeposit;
     assetIcon?: string | null;
     assetName?: string | null;
+    theme?: DepositReceiveCardTone;
 }) {
     const t = useTranslations("depositModal");
     const tone = toneFor(deposit);
-    const symbol = deposit.tokenMetadata.symbol;
+    const assetState = trackerAssetState(deposit);
+    // A failed reusable-address payout never learns its asset; say so
+    // instead of showing the asset the address was last shown for.
+    const symbol =
+        assetState === "unknown"
+            ? t("unknownAsset")
+            : deposit.tokenMetadata.symbol;
 
     const title =
         tone === "success"
@@ -94,13 +114,20 @@ function DepositStatusTile({
 
     return (
         <div
-            className="flex items-center gap-4 rounded-xl bg-muted p-4"
+            className={cn(
+                "flex items-center gap-4 rounded-xl bg-muted p-4",
+                tileThemeClasses(theme),
+            )}
             data-testid={`deposit-tracker-row-${deposit.status}`}
         >
             <span className="relative shrink-0">
                 <DepositOptionIcon
-                    icon={assetIcon ?? ""}
-                    name={assetName ?? symbol}
+                    icon={assetState === "unknown" ? "" : (assetIcon ?? "")}
+                    name={
+                        assetState === "unknown"
+                            ? symbol
+                            : (assetName ?? symbol)
+                    }
                     className="size-12 text-base"
                 />
                 <StatusBadge tone={tone} />
@@ -122,9 +149,11 @@ export function DepositTrackerPanel({
     deposits,
     assetIcon,
     assetName,
+    theme,
     className,
 }: DepositTrackerPanelProps) {
     const { resolvedTheme } = useTheme();
+    const beamTheme = theme ?? (resolvedTheme === "dark" ? "dark" : "light");
     const reducedMotion = useMediaQuery("(prefers-reduced-motion: reduce)");
 
     if (deposits.length === 0) {
@@ -143,6 +172,7 @@ export function DepositTrackerPanel({
                         deposit={deposit}
                         assetIcon={assetIcon}
                         assetName={assetName}
+                        theme={theme}
                     />
                 );
                 if (toneFor(deposit) !== "pending") return tile;
@@ -151,7 +181,7 @@ export function DepositTrackerPanel({
                         key={deposit.id}
                         size="md"
                         colorVariant="mono"
-                        theme={resolvedTheme === "dark" ? "dark" : "light"}
+                        theme={beamTheme}
                         active={!reducedMotion}
                         borderRadius={12}
                         className="rounded-xl"

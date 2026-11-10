@@ -34,7 +34,13 @@ pub struct HistoryApiItem {
     pub recipient_type: Option<String>,
     pub recipient: Option<String>,
     pub origin_asset: Option<String>,
-    pub destination_asset: String,
+    /// Absent on a deposit-only entry: a plain transfer the account sent
+    /// on-chain into a 1Click deposit address that funds another confidential
+    /// account (agentic.sputnik-dao.near, 2026-11-05: 1 USDC sent by Sputnik
+    /// proposal 65 from an external SDK). 1Click then reports only the origin
+    /// side — no `destinationAsset`, `recipient` or `amountOut*`.
+    #[serde(default)]
+    pub destination_asset: Option<String>,
     #[serde(default)]
     pub amount_in_formatted: Option<String>,
     #[serde(default)]

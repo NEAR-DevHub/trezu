@@ -197,20 +197,28 @@ pub async fn relay_delegate_action(
         proposal_type.as_deref(),
         address_book_payment,
     );
-    let (tx_hash, outcome_debug, receipt_proposal_ids) = match outcome {
-        RelaySend::Classic(outcome) => (
-            outcome.transaction().get_hash().to_string(),
-            format!("{:?}", outcome),
-            created_proposal_ids(&outcome, &treasury_id),
+    let (tx_hash, signature_source, receipt_proposal_ids) = match outcome {
+        RelaySend::Classic(outcome) => {
+            let tx_hash = outcome.transaction().get_hash().to_string();
+            let proposal_ids = created_proposal_ids(&outcome, &treasury_id);
+            (
+                tx_hash.clone(),
+                confidential::RelaySignatureSource::ExecutionTx(tx_hash),
+                proposal_ids,
+            )
+        }
+        RelaySend::PostQuantum(outcome) => (
+            outcome.tx_hash,
+            confidential::RelaySignatureSource::TxStatus(outcome.result),
+            outcome.proposal_ids,
         ),
-        RelaySend::PostQuantum(outcome) => (outcome.tx_hash, outcome.debug, outcome.proposal_ids),
     };
     // Empty for add-proposal relays, so this is a no-op outside confidential votes.
     confidential::spawn_auto_submit_intents(
         &state,
         treasury_id.as_str(),
         operation.confidential_payloads_with_ids(),
-        &outcome_debug,
+        signature_source,
     );
 
     let proposal_ids = operation.is_add_proposals().then_some(receipt_proposal_ids);
@@ -241,7 +249,7 @@ enum RelaySend {
 }
 
 /// Submit the relay transaction and return its execution outcome; `confidential`
-/// later mines its debug form for MPC signatures.
+/// later reads the MPC signature of each voted payload from the landed transaction.
 #[tracing::instrument(level = "info", skip_all, fields(step = "submit_relay"))]
 async fn submit_relay(
     state: &Arc<AppState>,

@@ -16,38 +16,42 @@ const IDLE: ConfidentialBridgeAddressState = {
 };
 
 /**
- * Resolve the chain deposit address for a confidential quote id.
- * Quote id is not a DAO — POST deposit-address only runs the bridge lookup.
+ * Resolve the chain funding address of a confidential treasury's reusable
+ * deposit set for `tokenId` on `bridgeChainId`. The backend serves the
+ * cached set, which needs no quote and no membership.
  */
 export function useConfidentialBridgeAddress(options: {
     enabled: boolean;
-    quoteDepositAddress: string | null | undefined;
     bridgeChainId: string | null | undefined;
+    treasuryId: string | null | undefined;
+    tokenId: string | null | undefined;
 }): ConfidentialBridgeAddressState {
-    const { enabled, quoteDepositAddress, bridgeChainId } = options;
+    const { enabled, bridgeChainId, treasuryId, tokenId } = options;
 
     const query = useQuery({
         queryKey: [
             "confidential-bridge-deposit-address",
-            quoteDepositAddress,
+            treasuryId,
             bridgeChainId,
+            tokenId,
         ],
         queryFn: async () => {
             const result = await fetchDepositAddress(
-                quoteDepositAddress!,
+                treasuryId!,
                 bridgeChainId!,
+                tokenId ?? undefined,
             );
             return {
                 address: result?.address ?? null,
                 memo: result?.memo ?? null,
             };
         },
-        enabled: enabled && !!quoteDepositAddress && !!bridgeChainId,
+        enabled: enabled && !!treasuryId && !!bridgeChainId,
         staleTime: 1000 * 60 * 5,
         retry: 1,
     });
 
-    if (!enabled || !quoteDepositAddress || !bridgeChainId) {
+    if (!enabled || !treasuryId || !bridgeChainId) {
         return IDLE;
     }
 

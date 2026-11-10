@@ -13,6 +13,8 @@ import { PageComponentLayout } from "@/components/page-component-layout";
 import { StepWizard } from "@/components/step-wizard";
 import { useTreasury } from "@/hooks/use-treasury";
 import { trackEvent } from "@/lib/analytics";
+import { wasShownToUser } from "@/lib/app-error";
+import { isDisallowedMemberAccountId } from "@/lib/member-account";
 import {
     isValidNearAddressFormat,
     validateNearAddress,
@@ -22,14 +24,13 @@ import { reportError } from "@/lib/report-error";
 import { encodeToMarkdown } from "@/lib/utils";
 import { useNear } from "@/stores/near-store";
 import {
-    MemberFormStep,
     type MemberFormData,
+    MemberFormStep,
 } from "../components/member-form-step";
 import { MemberReviewStep } from "../components/member-review-step";
 import { useDisabledMemberRoles } from "../hooks/use-disabled-member-roles";
 import { useMemberPolicyGate } from "../hooks/use-member-policy-gate";
 import { applyMemberRolesToPolicy } from "../utils/policy-helpers";
-import { wasShownToUser } from "@/lib/app-error";
 
 export default function AddMemberPage() {
     const t = useTranslations("pages.members");
@@ -78,6 +79,18 @@ export default function AddMemberPage() {
                             .string()
                             .min(1, tMembers("validation.accountIdRequired"))
                             .superRefine(async (accountIdValue, ctx) => {
+                                if (
+                                    isDisallowedMemberAccountId(accountIdValue)
+                                ) {
+                                    ctx.addIssue({
+                                        code: "custom",
+                                        message: tMembers(
+                                            "validation.ethImplicitNotAllowed",
+                                        ),
+                                    });
+                                    return;
+                                }
+
                                 if (!isValidNearAddressFormat(accountIdValue)) {
                                     ctx.addIssue({
                                         code: "custom",
@@ -224,27 +237,33 @@ export default function AddMemberPage() {
 
         try {
             const validationResults = await Promise.all(
-                members.map((member, index) =>
-                    validateNearAddress(member.accountId).then((error) => ({
-                        index,
-                        error,
-                    })),
-                ),
+                members.map((member, index) => {
+                    if (isDisallowedMemberAccountId(member.accountId)) {
+                        return Promise.resolve({
+                            index,
+                            error: "ethImplicit" as const,
+                        });
+                    }
+                    return validateNearAddress(member.accountId).then(
+                        (error) => ({
+                            index,
+                            error,
+                        }),
+                    );
+                }),
             );
 
             const failedValidation = validationResults.find(
                 (result) => result.error,
             );
-            if (failedValidation) {
+            if (failedValidation?.error) {
+                const message =
+                    failedValidation.error === "ethImplicit"
+                        ? tMembers("validation.ethImplicitNotAllowed")
+                        : getAccountValidationMessage(failedValidation.error);
                 form.setError(`members.${failedValidation.index}.accountId`, {
                     type: "manual",
-                    message:
-                        (failedValidation.error
-                            ? getAccountValidationMessage(
-                                  failedValidation.error,
-                              )
-                            : undefined) ||
-                        tMembers("validation.invalidNearAddress"),
+                    message,
                 });
                 setIsValidatingAddresses(false);
                 return;
@@ -263,6 +282,18 @@ export default function AddMemberPage() {
         if (!policy || !treasuryId || isMemberActionsDisabled) return;
 
         const data = form.getValues();
+        const disallowedIndex = data.members.findIndex((member) =>
+            isDisallowedMemberAccountId(member.accountId),
+        );
+        if (disallowedIndex !== -1) {
+            form.setError(`members.${disallowedIndex}.accountId`, {
+                type: "manual",
+                message: tMembers("validation.ethImplicitNotAllowed"),
+            });
+            setStep(0);
+            return;
+        }
+
         const membersList = data.members.map(({ accountId, roles }) => ({
             member: accountId,
             roles,

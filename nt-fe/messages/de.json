@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Unterstützte Netzwerke",
             "networksWithAssets": "Netzwerke mit Vermögenswerten",
+            "internalNetwork": "Internes Netzwerk",
             "yourAssets": "Ihre Vermögenswerte",
             "otherAssets": "Andere Vermögenswerte",
             "popularAssets": "Beliebte Vermögenswerte",
@@ -292,13 +293,10 @@
         "depositAddressSubtitleConfidentialExpiry": "14 Tage ab Erstellung gültig. Läuft ab in: noch {expiresIn}",
         "singleUseAcknowledgement": "Ich werde diese Adresse nur einmal verwenden",
         "addressLabel": "Adresse",
-        "addressCopied": "Adresse in die Zwischenablage kopiert",
         "memoLabel": "Memo",
-        "memoCopied": "Memo in die Zwischenablage kopiert",
         "memoWarning": "Sie <bold>müssen</bold> das Memo angeben, wenn Sie Mittel an diese Adresse senden. Ein Versand ohne Memo kann zum dauerhaften Verlust der Mittel führen.",
         "onlyDeposit": "Zahlen Sie nur <symbolTag>{symbol}</symbolTag> aus dem <networkTag>{network}</networkTag>-Netzwerk ein.",
         "testTransactionRecommendation": "Wir empfehlen, mit einer kleinen Testtransaktion zu beginnen, um sicherzustellen, dass alles korrekt funktioniert, bevor Sie den vollen Betrag senden.",
-        "minimumDeposit": "Mindesteinzahlung: <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "Aus öffentlichem",
             "fromConfidential": "Aus vertraulichem"
@@ -314,46 +312,14 @@
             "arrivalAnswer": "Die Bearbeitungszeit hängt vom Netzwerk ab."
         },
         "back": "Zurück",
-        "publicAddressTitle": "Einzahlungsadresse {symbol} auf {network}",
-        "publicAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
-        "oneTimeAddressTitle": "Einmalige Einzahlungsadresse {symbol} auf dem {network}-Netzwerk",
-        "oneTimeAddressSubtitle": "Sende nur diesen Token, auf diesem Netzwerk, an die Adresse unten.",
-        "confidentialTrezuTitle": "Einzahlung von vertraulichem Trezu im near.com-Netzwerk",
-        "confidentialTrezuSubtitle": "Empfange jedes Asset von vertraulichem Trezu.",
-        "confidentialNearcomTitle": "Einzahlung von vertraulichem near.com im internen Netzwerk",
-        "confidentialNearcomSubtitle": "Empfange jedes Asset von vertraulichem near.com.",
-        "oneTimeSectionTitle": "Einmalige vertrauliche Einzahlungsadresse",
-        "oneTimeSectionSubtitle": "Nur einmal verwenden – alles nach der ersten Einzahlung geht verloren.",
-        "internalAddressTitle": "Dies ist deine interne vertrauliche Adresse",
-        "generateAddress": "Adresse erstellen",
-        "showAddress": "Adresse anzeigen",
         "copy": "Kopieren",
-        "share": "Teilen",
         "linkCopied": "Link in die Zwischenablage kopiert",
-        "minDepositValue": "Mindesteinzahlung <bold>{amount} {symbol}</bold>",
-        "doNotSendTestDeposit": "<bold>Keine</bold> Testeinzahlung senden",
-        "doNotReuseAddress": "Adresse <bold>nicht</bold> wiederverwenden, speichern, whitelisten oder teilen",
-        "doNotReuseAddressShort": "Adresse <bold>nicht</bold> wiederverwenden, speichern oder whitelisten",
-        "oneTimeAckCheckbox": "Ich verstehe, dass dies eine einmalige Adresse ist und ich mindestens {amount} {symbol} in einer Überweisung senden muss.",
-        "oneTimeAckCheckboxNoMin": "Ich verstehe, dass dies eine einmalige Adresse ist, die ich nur in einer Überweisung verwenden darf.",
         "onlySendAssetNetwork": "Sende nur <bold>{symbol}</bold> im <bold>{network}</bold>-Netzwerk. Andere Assets oder Netzwerke führen zum Verlust der Mittel.",
-        "expiresInDays": "Läuft in <bold>{days} Tagen</bold> ab – <bold>auch wenn ungenutzt</bold>.",
-        "createNewAddressHint": "Andere Einzahlungsdetails nötig? <link>Neue Adresse erstellen</link>. Eine weitere Adresse deaktiviert diese nicht.",
-        "receivesOnlyConfidential": "Empfängt Mittel nur von vertraulichen Trezu- oder near.com-Konten",
-        "receivesOnlyConfidentialSub": "Wiederverwendbar. Läuft nicht ab.",
-        "anythingElseLost": "Alles von woanders Gesendete geht verloren",
-        "anythingElseLostSub": "Börsen, öffentliche Wallets, andere Netzwerke – nicht wiederherstellbar.",
-        "confidentialAckCheckbox": "Ich verstehe, dass Einzahlungen von außerhalb vertraulichem Trezu oder near.com verloren gehen.",
-        "onlyFromConfidentialTrezu": "Nur von vertraulichem <bold>Trezu</bold>",
-        "onlyFromConfidentialNearcom": "Nur von vertraulichem <bold>near.com</bold>",
-        "reusableDoesntExpire": "<bold>Wiederverwendbar.</bold> Läuft nicht ab",
-        "fundsOutsideTrezuLost": "Mittel von außerhalb vertraulichem Trezu gehen verloren",
-        "fundsOutsideNearcomLost": "Mittel von außerhalb vertraulichem near.com gehen verloren",
-        "publicNetworkRecommendation": "Zahle nur aus dem <bold>{network}</bold>-Netzwerk ein. Beginne mit einer kleinen Testtransaktion, bevor du den vollen Betrag sendest.",
         "sourceCards": {
             "publicWallet": {
                 "title": "Von einer öffentlichen Wallet",
-                "subtitle": "Einmalige Einzahlungsadresse erstellen"
+                "subtitle": "Einmalige Einzahlungsadresse erstellen",
+                "subtitleReusable": "Wiederverwendbare Einzahlungsadresse nutzen"
             },
             "confidentialUser": {
                 "title": "Von vertraulichem Nutzer",
@@ -390,13 +356,8 @@
             "chooseTreasuryDescription": "Von welcher Treasury kommt diese Zahlung?",
             "noMemberTreasuries": "Du bist noch Mitglied keiner Treasury.",
             "createTreasury": "Treasury erstellen",
-            "expired": "Abgelaufen",
-            "used": "Verwendet",
-            "linkInactiveTitle": "Dieser Link ist nicht mehr aktiv",
-            "linkInactiveDescription": "Bitten Sie die Person, die Ihnen den Link gesendet hat, um einen neuen."
+            "used": "Verwendet"
         },
-        "expiresInRemaining": "Läuft in <time>{duration}</time> ab – <bold>auch wenn ungenutzt</bold>.",
-        "addressExpired": "Diese Adresse ist abgelaufen.",
         "depositProcessingTitle": "Einzahlung wird verarbeitet",
         "depositProcessingBody": "Eine Einzahlung von <amount></amount> wurde registriert und wartet auf Bestätigung",
         "depositProcessingBodyNoAmount": "Eine Einzahlung wurde registriert und wartet auf Bestätigung",
@@ -406,7 +367,23 @@
         "depositFailedTitle": "Einzahlung fehlgeschlagen",
         "depositFailedBody": "Eine Einzahlung von <amount></amount> wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
         "depositFailedBodyNoAmount": "Eine Einzahlung wurde vom Anbieter als fehlgeschlagen oder erstattet gemeldet",
-        "depositAgain": "Erneut einzahlen"
+        "unknownAsset": "Unbekannter Vermögenswert",
+        "anyTokenAssetName": "Beliebiger Token",
+        "receive": {
+            "sendAtLeastUsd": "Senden Sie mindestens {usd} in {symbol}",
+            "sendAtLeastAmount": "Senden Sie mindestens {amount} {symbol}",
+            "sendAsset": "{symbol} senden",
+            "sendAnyToken": "Beliebigen Token senden",
+            "onNetwork": "im {network}-Netzwerk",
+            "onNearcomNetwork": "im near.com-Netzwerk",
+            "networkAddressLabel": "{network}-Adresse",
+            "nearcomAddressLabel": "near.com-Adresse",
+            "internalOnly": "Nur zum Empfang von Assets von Trezu- oder near.com-Nutzern im internen Netzwerk verwenden.",
+            "internalLost": "Ihr Guthaben geht verloren, wenn Sie auf einer Blockchain an diese Adresse senden.",
+            "qrLabel": "QR-Code für Ihre {network}-Adresse",
+            "copyAddress": "Adresse kopieren",
+            "shareAddress": "Adresse teilen"
+        }
     },
     "assetDetails": {
         "coinPrice": "Coin-Preis",
@@ -1284,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Konto-ID ist erforderlich",
             "invalidNearAddress": "Ungültige NEAR-Adresse.",
+            "ethImplicitNotAllowed": "0x-Adressen können keine Mitglieder sein. Verwenden Sie ein NEAR-Konto.",
             "atLeastOneRole": "Mindestens eine Rolle muss ausgewählt sein",
             "atLeastOneMember": "Mindestens ein Mitglied ist erforderlich",
             "alreadyAdded": "Dieses Mitglied wurde oben bereits hinzugefügt",

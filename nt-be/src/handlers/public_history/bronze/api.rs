@@ -12,6 +12,7 @@ use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::store::{
     BronzePublicHistoryEvent, PublicHistorySource,
 };
+use crate::utils::url::api_url_or_500;
 
 const NEARBLOCKS_V3_BASE_URL: &str = "https://api.nearblocks.io";
 
@@ -208,16 +209,16 @@ async fn fetch_raw_page(
     limit: u32,
     priority: NearblocksPriority,
 ) -> Result<Value, (StatusCode, String)> {
-    let url = format!(
-        "{}/v3/accounts/{}/{}",
-        NEARBLOCKS_V3_BASE_URL, account_id, path
-    );
+    let url = api_url_or_500(
+        NEARBLOCKS_V3_BASE_URL,
+        &format!("v3/accounts/{account_id}/{path}"),
+    )?;
     let mut params = vec![("limit", limit.to_string())];
     if let Some(cursor) = cursor {
         params.push(("next", cursor.as_str().to_string()));
     }
 
-    fetch_raw_json(state, &url, &params, priority, path).await
+    fetch_raw_json(state, url.as_str(), &params, priority, path).await
 }
 
 async fn fetch_raw_json(
@@ -363,9 +364,9 @@ pub(crate) async fn fetch_latest_indexed_block_height(
     state: &AppState,
     priority: NearblocksPriority,
 ) -> Result<i64, (StatusCode, String)> {
-    let url = format!("{}/v3/blocks/latest", NEARBLOCKS_V3_BASE_URL);
+    let url = api_url_or_500(NEARBLOCKS_V3_BASE_URL, "v3/blocks/latest")?;
     let params = [("limit", "1".to_string())];
-    let raw = fetch_raw_json(state, &url, &params, priority, "blocks/latest").await?;
+    let raw = fetch_raw_json(state, url.as_str(), &params, priority, "blocks/latest").await?;
     latest_indexed_block_height(&raw)
 }
 

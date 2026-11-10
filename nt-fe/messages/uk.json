@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "Підтримувані мережі",
             "networksWithAssets": "Мережі з активами",
+            "internalNetwork": "Внутрішня мережа",
             "yourAssets": "Ваші активи",
             "otherAssets": "Інші активи",
             "popularAssets": "Популярні активи",
@@ -292,13 +293,10 @@
         "depositAddressSubtitleConfidentialExpiry": "Дійсна 14 днів з моменту створення. Закінчується через: залишилось {expiresIn}",
         "singleUseAcknowledgement": "Я використаю цю адресу лише один раз",
         "addressLabel": "Адреса",
-        "addressCopied": "Адресу скопійовано в буфер обміну",
         "memoLabel": "Мемо",
-        "memoCopied": "Мемо скопійовано в буфер обміну",
         "memoWarning": "Ви <bold>мусите</bold> вказати мемо, надсилаючи кошти на цю адресу. Надсилання без мемо може призвести до безповоротної втрати коштів.",
         "onlyDeposit": "Поповнюйте лише <symbolTag>{symbol}</symbolTag> з мережі <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "Рекомендуємо спершу зробити невеликий тестовий переказ, щоб переконатись, що все працює правильно, а потім вже надсилати повну суму.",
-        "minimumDeposit": "Мінімальний депозит: <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "З публічного",
             "fromConfidential": "З конфіденційного"
@@ -314,46 +312,14 @@
             "arrivalAnswer": "Час обробки залежить від мережі."
         },
         "back": "Назад",
-        "publicAddressTitle": "Адреса депозиту {symbol} у мережі {network}",
-        "publicAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
-        "oneTimeAddressTitle": "Одноразова адреса депозиту {symbol} у мережі {network}",
-        "oneTimeAddressSubtitle": "Надсилайте лише цей токен, у цій мережі, на адресу нижче.",
-        "confidentialTrezuTitle": "Депозит із конфіденційного Trezu у мережі near.com",
-        "confidentialTrezuSubtitle": "Отримуйте будь-який актив із конфіденційного Trezu.",
-        "confidentialNearcomTitle": "Депозит із конфіденційного near.com у внутрішній мережі",
-        "confidentialNearcomSubtitle": "Отримуйте будь-який актив із конфіденційного near.com.",
-        "oneTimeSectionTitle": "Одноразова конфіденційна адреса депозиту",
-        "oneTimeSectionSubtitle": "Використовуйте лише один раз; усе після першого депозиту буде втрачено.",
-        "internalAddressTitle": "Це ваша внутрішня конфіденційна адреса",
-        "generateAddress": "Створити адресу",
-        "showAddress": "Показати адресу",
         "copy": "Копіювати",
-        "share": "Поділитися",
         "linkCopied": "Посилання скопійовано в буфер обміну",
-        "minDepositValue": "Мінімальний депозит <bold>{amount} {symbol}</bold>",
-        "doNotSendTestDeposit": "<bold>Не</bold> надсилайте тестовий депозит",
-        "doNotReuseAddress": "<bold>Не</bold> повторно використовуйте, зберігайте, додавайте до білого списку чи поширюйте адресу",
-        "doNotReuseAddressShort": "<bold>Не</bold> повторно використовуйте, зберігайте чи додавайте адресу до білого списку",
-        "oneTimeAckCheckbox": "Я розумію, що це одноразова адреса, і я маю надіслати щонайменше {amount} {symbol} в одному переказі.",
-        "oneTimeAckCheckboxNoMin": "Я розумію, що це одноразова адреса, яку потрібно використати в одному переказі.",
         "onlySendAssetNetwork": "Надсилайте лише <bold>{symbol}</bold> у мережі <bold>{network}</bold>. Інші активи чи мережі призведуть до втрати коштів.",
-        "expiresInDays": "Дійсна <bold>{days} днів</bold> – <bold>навіть якщо не використана</bold>.",
-        "createNewAddressHint": "Потрібні інші дані для депозиту? <link>Створити нову адресу</link>. Створення іншої не деактивує цю.",
-        "receivesOnlyConfidential": "Приймає кошти лише з конфіденційних акаунтів Trezu або near.com",
-        "receivesOnlyConfidentialSub": "Багаторазова. Не закінчується.",
-        "anythingElseLost": "Усе надіслане звідкись ще буде втрачено",
-        "anythingElseLostSub": "Біржі, публічні гаманці, інші мережі – відновити неможливо.",
-        "confidentialAckCheckbox": "Я розумію, що депозити з-поза конфіденційного Trezu або near.com буде втрачено.",
-        "onlyFromConfidentialTrezu": "Лише з конфіденційного <bold>Trezu</bold>",
-        "onlyFromConfidentialNearcom": "Лише з конфіденційного <bold>near.com</bold>",
-        "reusableDoesntExpire": "<bold>Багаторазова.</bold> Не закінчується",
-        "fundsOutsideTrezuLost": "Кошти, надіслані з-поза конфіденційного Trezu, буде втрачено",
-        "fundsOutsideNearcomLost": "Кошти, надіслані з-поза конфіденційного near.com, буде втрачено",
-        "publicNetworkRecommendation": "Вносьте депозит лише з мережі <bold>{network}</bold>. Почніть із невеликої тестової транзакції, перш ніж надсилати повну суму.",
         "sourceCards": {
             "publicWallet": {
                 "title": "З публічного гаманця",
-                "subtitle": "Створити одноразову адресу депозиту"
+                "subtitle": "Створити одноразову адресу депозиту",
+                "subtitleReusable": "Використати багаторазову адресу для поповнення"
             },
             "confidentialUser": {
                 "title": "Від конфіденційного користувача",
@@ -390,13 +356,8 @@
             "chooseTreasuryDescription": "З якої treasury надходить цей платіж?",
             "noMemberTreasuries": "Ви ще не є учасником жодної treasury.",
             "createTreasury": "Створити treasury",
-            "expired": "Прострочено",
-            "used": "Використано",
-            "linkInactiveTitle": "Це посилання більше не активне",
-            "linkInactiveDescription": "Щоб здійснити цей платіж, попросіть у того, хто надіслав посилання, нове."
+            "used": "Використано"
         },
-        "expiresInRemaining": "Дійсна ще <time>{duration}</time> – <bold>навіть якщо не використана</bold>.",
-        "addressExpired": "Термін дії цієї адреси закінчився.",
         "depositProcessingTitle": "Депозит обробляється",
         "depositProcessingBody": "Депозит на <amount></amount> зареєстровано, очікує підтвердження",
         "depositProcessingBodyNoAmount": "Депозит зареєстровано, очікує підтвердження",
@@ -406,7 +367,23 @@
         "depositFailedTitle": "Депозит не вдався",
         "depositFailedBody": "Провайдер повідомив, що депозит на <amount></amount> не вдався або був повернутий",
         "depositFailedBodyNoAmount": "Провайдер повідомив, що депозит не вдався або був повернутий",
-        "depositAgain": "Поповнити ще раз"
+        "unknownAsset": "Невідомий актив",
+        "anyTokenAssetName": "Будь-який токен",
+        "receive": {
+            "sendAtLeastUsd": "Надішліть щонайменше {usd} у {symbol}",
+            "sendAtLeastAmount": "Надішліть щонайменше {amount} {symbol}",
+            "sendAsset": "Надішліть {symbol}",
+            "sendAnyToken": "Надішліть будь-який токен",
+            "onNetwork": "у мережі {network}",
+            "onNearcomNetwork": "у мережі near.com",
+            "networkAddressLabel": "Адреса {network}",
+            "nearcomAddressLabel": "Адреса near.com",
+            "internalOnly": "Використовуйте лише для отримання активів від користувачів Trezu або near.com у внутрішній мережі.",
+            "internalLost": "Ваші кошти буде втрачено, якщо ви надішлете їх на цю адресу в будь-якому блокчейні.",
+            "qrLabel": "QR-код вашої адреси {network}",
+            "copyAddress": "Копіювати адресу",
+            "shareAddress": "Поділитися адресою"
+        }
     },
     "assetDetails": {
         "coinPrice": "Ціна токена",
@@ -1284,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "Потрібен ID акаунта",
             "invalidNearAddress": "Некоректна адреса NEAR.",
+            "ethImplicitNotAllowed": "Адреси 0x не можна додавати як учасників. Використайте акаунт NEAR.",
             "atLeastOneRole": "Потрібно обрати щонайменше одну роль",
             "atLeastOneMember": "Потрібен щонайменше один учасник",
             "alreadyAdded": "Цього учасника вже додано вище",

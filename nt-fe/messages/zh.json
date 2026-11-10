@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "支持的网络",
             "networksWithAssets": "包含资产的网络",
+            "internalNetwork": "内部网络",
             "yourAssets": "您的资产",
             "otherAssets": "其他资产",
             "popularAssets": "热门资产",
@@ -292,13 +293,10 @@
         "depositAddressSubtitleConfidentialExpiry": "自生成起有效 14 天。剩余有效期：{expiresIn}",
         "singleUseAcknowledgement": "我只会使用该地址一次",
         "addressLabel": "地址",
-        "addressCopied": "地址已复制到剪贴板",
         "memoLabel": "Memo",
-        "memoCopied": "Memo 已复制到剪贴板",
         "memoWarning": "向此地址转账时,您<bold>必须</bold>包含 Memo。未包含 Memo 的转账可能导致资金永久丢失。",
         "onlyDeposit": "仅可从 <networkTag>{network}</networkTag> 网络存入 <symbolTag>{symbol}</symbolTag>。",
         "testTransactionRecommendation": "建议先进行小额测试交易,确认一切正常后再发送全部金额。",
-        "minimumDeposit": "最低存款金额为 <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "从公开",
             "fromConfidential": "从保密"
@@ -314,46 +312,14 @@
             "arrivalAnswer": "处理时间取决于网络。"
         },
         "back": "返回",
-        "publicAddressTitle": "{network} 上的 {symbol} 充值地址",
-        "publicAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
-        "oneTimeAddressTitle": "{network} 网络上的一次性 {symbol} 充值地址",
-        "oneTimeAddressSubtitle": "请仅通过此网络将此代币发送到下方地址。",
-        "confidentialTrezuTitle": "从机密 Trezu 在 near.com 网络充值",
-        "confidentialTrezuSubtitle": "接收来自机密 Trezu 的任意资产。",
-        "confidentialNearcomTitle": "从机密 near.com 在内部网络充值",
-        "confidentialNearcomSubtitle": "接收来自机密 near.com 的任意资产。",
-        "oneTimeSectionTitle": "一次性机密充值地址",
-        "oneTimeSectionSubtitle": "仅可使用一次，首次充值之后的资金将丢失。",
-        "internalAddressTitle": "这是你的内部机密地址",
-        "generateAddress": "生成地址",
-        "showAddress": "显示地址",
         "copy": "复制",
-        "share": "分享",
         "linkCopied": "链接已复制到剪贴板",
-        "minDepositValue": "最低充值金额 <bold>{amount} {symbol}</bold>",
-        "doNotSendTestDeposit": "<bold>请勿</bold>发送测试充值",
-        "doNotReuseAddress": "<bold>请勿</bold>重复使用、保存、加入白名单或分享该地址",
-        "doNotReuseAddressShort": "<bold>请勿</bold>重复使用、保存或将该地址加入白名单",
-        "oneTimeAckCheckbox": "我理解这是一次性地址，且必须在一次转账中至少发送 {amount} {symbol}。",
-        "oneTimeAckCheckboxNoMin": "我理解这是一次性地址，且只能用于一次转账。",
         "onlySendAssetNetwork": "请仅在 <bold>{network}</bold> 网络发送 <bold>{symbol}</bold>。发送其他资产或使用其他网络将导致资金损失。",
-        "expiresInDays": "<bold>{days} 天后</bold>过期 – <bold>即使未使用</bold>。",
-        "createNewAddressHint": "需要其他充值信息？<link>创建新地址</link>。创建另一个地址不会停用此地址。",
-        "receivesOnlyConfidential": "仅接收来自机密 Trezu 或 near.com 账户的资金",
-        "receivesOnlyConfidentialSub": "可重复使用。不会过期。",
-        "anythingElseLost": "从其他地方发送的资金将丢失",
-        "anythingElseLostSub": "交易所、公开钱包、其他网络 – 无法找回。",
-        "confidentialAckCheckbox": "我理解从机密 Trezu 或 near.com 以外充值将会丢失。",
-        "onlyFromConfidentialTrezu": "仅来自机密 <bold>Trezu</bold>",
-        "onlyFromConfidentialNearcom": "仅来自机密 <bold>near.com</bold>",
-        "reusableDoesntExpire": "<bold>可重复使用。</bold>不会过期",
-        "fundsOutsideTrezuLost": "从机密 Trezu 以外发送的资金将丢失",
-        "fundsOutsideNearcomLost": "从机密 near.com 以外发送的资金将丢失",
-        "publicNetworkRecommendation": "请仅从 <bold>{network}</bold> 网络充值。建议先进行小额测试交易，再发送全额。",
         "sourceCards": {
             "publicWallet": {
                 "title": "来自公开钱包",
-                "subtitle": "创建一次性充值地址"
+                "subtitle": "创建一次性充值地址",
+                "subtitleReusable": "使用可重复使用的充值地址"
             },
             "confidentialUser": {
                 "title": "来自机密用户",
@@ -390,13 +356,8 @@
             "chooseTreasuryDescription": "这笔付款来自哪个 treasury？",
             "noMemberTreasuries": "你还不是任何 treasury 的成员。",
             "createTreasury": "创建 treasury",
-            "expired": "已过期",
-            "used": "已使用",
-            "linkInactiveTitle": "此链接已失效",
-            "linkInactiveDescription": "如需完成此付款，请向发送链接的人索取新链接。"
+            "used": "已使用"
         },
-        "expiresInRemaining": "<time>{duration}</time>后过期 – <bold>即使未使用</bold>。",
-        "addressExpired": "此地址已过期。",
         "depositProcessingTitle": "充值处理中",
         "depositProcessingBody": "已登记一笔 <amount></amount> 的充值，正在等待确认",
         "depositProcessingBodyNoAmount": "已登记一笔充值，正在等待确认",
@@ -406,7 +367,23 @@
         "depositFailedTitle": "充值失败",
         "depositFailedBody": "服务商报告一笔 <amount></amount> 的充值失败或已退款",
         "depositFailedBodyNoAmount": "服务商报告一笔充值失败或已退款",
-        "depositAgain": "再次充值"
+        "unknownAsset": "未知资产",
+        "anyTokenAssetName": "任意代币",
+        "receive": {
+            "sendAtLeastUsd": "请发送至少 {usd} 的 {symbol}",
+            "sendAtLeastAmount": "请发送至少 {amount} {symbol}",
+            "sendAsset": "发送 {symbol}",
+            "sendAnyToken": "发送任意代币",
+            "onNetwork": "在 {network} 网络上",
+            "onNearcomNetwork": "在 near.com 网络上",
+            "networkAddressLabel": "{network} 地址",
+            "nearcomAddressLabel": "near.com 地址",
+            "internalOnly": "仅用于在内部网络上接收来自 Trezu 或 near.com 用户的资产。",
+            "internalLost": "如果您在任何区块链上向此地址发送资产，资金将会丢失。",
+            "qrLabel": "您的 {network} 地址二维码",
+            "copyAddress": "复制地址",
+            "shareAddress": "分享地址"
+        }
     },
     "assetDetails": {
         "coinPrice": "币价",
@@ -1284,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "账户 ID 为必填项",
             "invalidNearAddress": "无效的 NEAR 地址。",
+            "ethImplicitNotAllowed": "0x 地址不能作为成员。请使用 NEAR 账户。",
             "atLeastOneRole": "必须至少选择一个角色",
             "atLeastOneMember": "至少需要一名成员",
             "alreadyAdded": "该成员已在上方添加",

@@ -14,6 +14,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::AppState;
+use crate::utils::url::api_url;
 
 const UPSTREAM_REPO: &str = "defuse-protocol/defuse-frontend-monorepos";
 const UPSTREAM_PATH: &str = "packages/token-catalog/src/production.json";
@@ -211,10 +212,14 @@ async fn fetch_upstream_catalog(
     state: &Arc<AppState>,
     github_token: &str,
 ) -> Result<(String, String), String> {
-    let url = format!("https://api.github.com/repos/{UPSTREAM_REPO}/contents/{UPSTREAM_PATH}");
+    let url = api_url(
+        "https://api.github.com",
+        &format!("repos/{UPSTREAM_REPO}/contents/{UPSTREAM_PATH}"),
+    )
+    .map_err(|e| format!("invalid GitHub URL: {e}"))?;
     let response = state
         .http_client
-        .get(&url)
+        .get(url)
         .header("Authorization", format!("Bearer {github_token}"))
         .header("Accept", "application/vnd.github+json")
         .header("User-Agent", "treasury26-nearcom-catalog-watch")

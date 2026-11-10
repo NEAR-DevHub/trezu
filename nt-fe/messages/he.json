@@ -267,6 +267,7 @@
         "sections": {
             "supportedNetworks": "רשתות נתמכות",
             "networksWithAssets": "רשתות עם נכסים",
+            "internalNetwork": "רשת פנימית",
             "yourAssets": "הנכסים שלך",
             "otherAssets": "נכסים אחרים",
             "popularAssets": "נכסים פופולריים",
@@ -292,13 +293,10 @@
         "depositAddressSubtitleConfidentialExpiry": "בתוקף ל-14 יום ממועד היצירה. פג תוקף בעוד: נותרו {expiresIn}",
         "singleUseAcknowledgement": "אשתמש בכתובת הזו פעם אחת בלבד",
         "addressLabel": "כתובת",
-        "addressCopied": "הכתובת הועתקה ללוח",
         "memoLabel": "הערה",
-        "memoCopied": "ההערה הועתקה ללוח",
         "memoWarning": "אתה <bold>חייב</bold> לכלול את ההערה בעת שליחת כספים לכתובת זו. שליחה ללא ההערה עלולה לגרום לאובדן קבוע של כספים.",
         "onlyDeposit": "הפקד רק <symbolTag>{symbol}</symbolTag> מרשת <networkTag>{network}</networkTag>.",
         "testTransactionRecommendation": "אנו ממליצים להתחיל בעסקת בדיקה קטנה כדי לוודא שהכל עובד כראוי לפני שליחת הסכום המלא.",
-        "minimumDeposit": "הפקדה מינימלית היא <amountTag>{amount} {symbol}</amountTag>",
         "tabs": {
             "fromPublic": "מציבורי",
             "fromConfidential": "מחסוי"
@@ -314,46 +312,14 @@
             "arrivalAnswer": "זמן העיבוד תלוי ברשת."
         },
         "back": "חזרה",
-        "publicAddressTitle": "כתובת הפקדה של {symbol} ב-{network}",
-        "publicAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
-        "oneTimeAddressTitle": "כתובת הפקדה חד-פעמית של {symbol} ברשת {network}",
-        "oneTimeAddressSubtitle": "שלח רק את הטוקן הזה, ברשת הזו, לכתובת למטה.",
-        "confidentialTrezuTitle": "הפקדה מ-Trezu חסוי ברשת near.com",
-        "confidentialTrezuSubtitle": "קבל כל נכס מ-Trezu חסוי.",
-        "confidentialNearcomTitle": "הפקדה מ-near.com חסוי ברשת הפנימית",
-        "confidentialNearcomSubtitle": "קבל כל נכס מ-near.com חסוי.",
-        "oneTimeSectionTitle": "כתובת הפקדה חסויה חד-פעמית",
-        "oneTimeSectionSubtitle": "השתמש בה פעם אחת בלבד; כל דבר אחרי ההפקדה הראשונה יאבד.",
-        "internalAddressTitle": "זו כתובת החסויה הפנימית שלך",
-        "generateAddress": "צור כתובת",
-        "showAddress": "הצג כתובת",
         "copy": "העתק",
-        "share": "שתף",
         "linkCopied": "הקישור הועתק ללוח",
-        "minDepositValue": "סכום הפקדה מינימלי <bold>{amount} {symbol}</bold>",
-        "doNotSendTestDeposit": "<bold>אל</bold> תשלח הפקדת בדיקה",
-        "doNotReuseAddress": "<bold>אל</bold> תעשה שימוש חוזר, תשמור, תוסיף לרשימה לבנה או תשתף את הכתובת",
-        "doNotReuseAddressShort": "<bold>אל</bold> תעשה שימוש חוזר, תשמור או תוסיף את הכתובת לרשימה לבנה",
-        "oneTimeAckCheckbox": "אני מבין שזו כתובת חד-פעמית ושעליי לשלוח לפחות {amount} {symbol} בהעברה אחת.",
-        "oneTimeAckCheckboxNoMin": "אני מבין שזו כתובת חד-פעמית שיש להשתמש בה בהעברה אחת בלבד.",
         "onlySendAssetNetwork": "שלח רק <bold>{symbol}</bold> ברשת <bold>{network}</bold>. נכסים או רשתות אחרים יובילו לאובדן כספים.",
-        "expiresInDays": "פג תוקף בעוד <bold>{days} ימים</bold> – <bold>גם אם לא נעשה שימוש</bold>.",
-        "createNewAddressHint": "צריך פרטי הפקדה אחרים? <link>צור כתובת חדשה</link>. יצירת כתובת נוספת לא תשבית את זו.",
-        "receivesOnlyConfidential": "מקבל כספים רק מחשבונות Trezu או near.com חסויים",
-        "receivesOnlyConfidentialSub": "ניתן לשימוש חוזר. לא פג תוקף.",
-        "anythingElseLost": "כל דבר שנשלח ממקום אחר יאבד",
-        "anythingElseLostSub": "בורסות, ארנקים ציבוריים, רשתות אחרות – לא ניתן לשחזר.",
-        "confidentialAckCheckbox": "אני מבין שהפקדות מחוץ ל-Trezu או near.com חסויים יאבדו.",
-        "onlyFromConfidentialTrezu": "רק מ-<bold>Trezu</bold> חסוי",
-        "onlyFromConfidentialNearcom": "רק מ-<bold>near.com</bold> חסוי",
-        "reusableDoesntExpire": "<bold>ניתן לשימוש חוזר.</bold> לא פג תוקף",
-        "fundsOutsideTrezuLost": "כספים שנשלחו מחוץ ל-Trezu חסוי יאבדו",
-        "fundsOutsideNearcomLost": "כספים שנשלחו מחוץ ל-near.com חסוי יאבדו",
-        "publicNetworkRecommendation": "הפקד רק מרשת <bold>{network}</bold>. התחל בעסקה קטנה לבדיקה לפני שליחת הסכום המלא.",
         "sourceCards": {
             "publicWallet": {
                 "title": "מארנק ציבורי",
-                "subtitle": "צור כתובת הפקדה חד-פעמית"
+                "subtitle": "צור כתובת הפקדה חד-פעמית",
+                "subtitleReusable": "שימוש בכתובת הפקדה רב-פעמית"
             },
             "confidentialUser": {
                 "title": "ממשתמש חסוי",
@@ -390,13 +356,8 @@
             "chooseTreasuryDescription": "מאיזו treasury מגיע התשלום הזה?",
             "noMemberTreasuries": "אינך חבר עדיין באף treasury.",
             "createTreasury": "צור treasury",
-            "expired": "פג תוקף",
-            "used": "בשימוש",
-            "linkInactiveTitle": "הקישור הזה כבר לא פעיל",
-            "linkInactiveDescription": "כדי לבצע את התשלום, בקשו מהשולח קישור חדש."
+            "used": "בשימוש"
         },
-        "expiresInRemaining": "פג תוקף בעוד <time>{duration}</time> – <bold>גם אם לא נעשה בו שימוש</bold>.",
-        "addressExpired": "תוקף הכתובת הזו פג.",
         "depositProcessingTitle": "ההפקדה בעיבוד",
         "depositProcessingBody": "הפקדה של <amount></amount> נרשמה וממתינה לאישור",
         "depositProcessingBodyNoAmount": "הפקדה נרשמה וממתינה לאישור",
@@ -406,7 +367,23 @@
         "depositFailedTitle": "ההפקדה נכשלה",
         "depositFailedBody": "הספק דיווח שהפקדה של <amount></amount> נכשלה או הוחזרה",
         "depositFailedBodyNoAmount": "הספק דיווח שההפקדה נכשלה או הוחזרה",
-        "depositAgain": "הפקד שוב"
+        "unknownAsset": "נכס לא ידוע",
+        "anyTokenAssetName": "כל טוקן",
+        "receive": {
+            "sendAtLeastUsd": "שלחו לפחות {usd} של {symbol}",
+            "sendAtLeastAmount": "שלחו לפחות {amount} {symbol}",
+            "sendAsset": "שלחו {symbol}",
+            "sendAnyToken": "שלחו כל טוקן",
+            "onNetwork": "ברשת {network}",
+            "onNearcomNetwork": "ברשת near.com",
+            "networkAddressLabel": "כתובת {network}",
+            "nearcomAddressLabel": "כתובת near.com",
+            "internalOnly": "לשימוש רק לקבלת נכסים ממשתמשי Trezu או near.com, ברשת הפנימית.",
+            "internalLost": "הכספים שלכם יאבדו אם תשלחו לכתובת זו בבלוקצ'יין כלשהו.",
+            "qrLabel": "קוד QR של כתובת ה-{network} שלכם",
+            "copyAddress": "העתק כתובת",
+            "shareAddress": "שתף כתובת"
+        }
     },
     "assetDetails": {
         "coinPrice": "מחיר מטבע",
@@ -1284,6 +1261,7 @@
         "validation": {
             "accountIdRequired": "מזהה חשבון נדרש",
             "invalidNearAddress": "כתובת NEAR לא תקינה.",
+            "ethImplicitNotAllowed": "כתובות 0x לא יכולות להיות חברות. השתמשו בחשבון NEAR.",
             "atLeastOneRole": "יש לבחור לפחות תפקיד אחד",
             "atLeastOneMember": "יש צורך בלפחות חבר אחד",
             "alreadyAdded": "חבר זה כבר נוסף למעלה",

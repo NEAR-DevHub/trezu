@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 import { BasePage } from "./base.page";
 
-/** The dashboard's deposit page (`/dashboard/deposit`) — source-card picker, asset/network selectors, and the acknowledgement gate shared by every source's address-reveal step. */
+/** The dashboard's deposit page (`/dashboard/deposit`): asset/network selectors and the receive card. */
 export class DepositPage extends BasePage {
     heading() {
         return this.page.getByText("Deposit", { exact: true });
@@ -45,25 +45,13 @@ export class DepositPage extends BasePage {
         return this.page.getByRole("button", { name });
     }
 
-    ackCheckbox() {
-        return this.page.getByTestId("deposit-ack-checkbox");
-    }
-
-    ackCta() {
-        return this.page.getByTestId("deposit-ack-cta");
-    }
-
-    oneTimeAddressText() {
-        return this.page.getByText(/One-time deposit address/i).first();
+    reusableNoticeText() {
+        return this.page.getByText(/Doesn't expire/i).first();
     }
 
     /** The rendered deposit address — always the first `<code>` on the page, public or confidential. */
     addressCode() {
         return this.page.locator("code").first();
-    }
-
-    expiresInText() {
-        return this.page.getByText(/Expires in/i);
     }
 
     backButton() {
@@ -81,6 +69,21 @@ export class DepositPage extends BasePage {
     /** The QR code rendered next to the confidential deposit address — no test id, so matched generically. */
     qrCodeIcon() {
         return this.page.locator("svg").first();
+    }
+
+    /** The dark receive card shown for reusable confidential addresses. */
+    receiveCard() {
+        return this.page.getByTestId("deposit-receive-card");
+    }
+
+    /** The address inside the receive card. */
+    receiveAddress() {
+        return this.page.getByTestId("deposit-receive-address");
+    }
+
+    /** The styled QR drawing inside the receive card (an `<svg>` once drawn). */
+    receiveQrCode() {
+        return this.receiveCard().getByTestId("qr-code").locator("svg");
     }
 
     /** Opens the asset picker and selects the given option. */
@@ -121,15 +124,5 @@ export class DepositPage extends BasePage {
             .locator('[data-slot="dialog-content"]')
             .first()
             .waitFor({ state: "detached", timeout: 10_000 });
-    }
-
-    /** Ticks the acknowledgement checkbox and clicks the CTA once it enables — shared by the public-wallet "Generate Address" and confidential "Show address" sub-flows. */
-    async acknowledgeAndContinue(): Promise<void> {
-        await expect(this.ackCheckbox()).toBeVisible({ timeout: 10_000 });
-        const cta = this.ackCta();
-        await expect(cta).toBeDisabled();
-        await this.ackCheckbox().click();
-        await expect(cta).toBeEnabled();
-        await cta.click();
     }
 }
