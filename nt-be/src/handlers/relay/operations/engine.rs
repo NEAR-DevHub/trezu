@@ -129,7 +129,7 @@ impl std::fmt::Display for CycleSummary {
 enum Step {
     Continue,
     Wait(Duration, Option<String>),
-    Done(OperationOutcome, Option<String>),
+    Done(OperationOutcome),
 }
 
 enum EngineError {
@@ -296,8 +296,6 @@ impl RelayEngine {
                         OperationOutcome::ManualReview {
                             reason: format!("stored payload no longer parses: {error}"),
                         },
-                        None,
-                        None,
                     )
                     .await;
             }
@@ -324,10 +322,8 @@ impl RelayEngine {
                         return self.release(&operation, &lease, after, note).await;
                     }
                 }
-                Ok(Step::Done(outcome, outcome_debug)) => {
-                    return self
-                        .finish(&operation, &lease, outcome, outcome_debug, Some(&plan))
-                        .await;
+                Ok(Step::Done(outcome)) => {
+                    return self.finish(&operation, &lease, outcome).await;
                 }
                 Err(EngineError::Store(RelayStoreError::LeaseLost)) => {
                     return RunOutcome::Pending(self.reload(&operation).await);
@@ -361,8 +357,6 @@ impl RelayEngine {
                             &operation,
                             &lease,
                             OperationOutcome::ManualReview { reason: error },
-                            None,
-                            Some(&plan),
                         )
                         .await;
                 }
@@ -471,7 +465,7 @@ impl RelayEngine {
         // Nothing in flight: before signing anything new, make sure the
         // user's action can still succeed at all.
         if let Some(outcome) = self.expired_outcome(operation, plan, None).await? {
-            return Ok(Step::Done(outcome, None));
+            return Ok(Step::Done(outcome));
         }
         let done: HashSet<StepKey> = transactions
             .iter()
@@ -506,15 +500,12 @@ impl RelayEngine {
                 return self.sign_step(lease, step, token, actions, spend).await;
             }
             RegistrationPlan::TooMany(count) => {
-                return Ok(Step::Done(
-                    OperationOutcome::Failed {
-                        failure_code: FailureCode::SponsorStepFailed,
-                        reason: format!(
-                            "too many storage_deposit registrations required ({count} > {MAX_STORAGE_DEPOSITS})"
-                        ),
-                    },
-                    None,
-                ));
+                return Ok(Step::Done(OperationOutcome::Failed {
+                    failure_code: FailureCode::SponsorStepFailed,
+                    reason: format!(
+                        "too many storage_deposit registrations required ({count} > {MAX_STORAGE_DEPOSITS})"
+                    ),
+                }));
             }
             RegistrationPlan::None => {}
         }
@@ -678,13 +669,10 @@ impl RelayEngine {
                         },
                     )
                     .await?;
-                Ok(Step::Done(
-                    OperationOutcome::Failed {
-                        failure_code: FailureCode::NotSent,
-                        reason: message,
-                    },
-                    None,
-                ))
+                Ok(Step::Done(OperationOutcome::Failed {
+                    failure_code: FailureCode::NotSent,
+                    reason: message,
+                }))
             }
             SendOutcome::Unknown(message) | SendOutcome::Unreachable(message) => {
                 store
@@ -745,7 +733,7 @@ impl RelayEngine {
             .await
             .map_err(EngineError::Transient)?;
         if let Some(outcome) = self.expired_outcome(operation, plan, Some(height)).await? {
-            return Ok(Step::Done(outcome, None));
+            return Ok(Step::Done(outcome));
         }
         if height as i64 > tx.valid_until_height && absent_votes >= self.rpc.absence_quorum() {
             store
@@ -831,16 +819,13 @@ impl RelayEngine {
                         .await?;
                 }
                 if tx.step_key.is_relay() {
-                    Ok(Step::Done(
-                        OperationOutcome::Succeeded {
-                            proposal_ids: outcome
-                                .proposal_ids
-                                .iter()
-                                .map(|id| *id as i64)
-                                .collect(),
-                        },
-                        Some(outcome.debug),
-                    ))
+                    // Awaited before the operation turns terminal: a crash here
+                    // re-enters through the landed-relay branch of `step`, and
+                    // each submit is idempotent on the intent's lease.
+                    self.auto_submit_confidential(plan, outcome.result).await;
+                    Ok(Step::Done(OperationOutcome::Succeeded {
+                        proposal_ids: outcome.proposal_ids.iter().map(|id| *id as i64).collect(),
+                    }))
                 } else {
                     Ok(Step::Continue)
                 }
@@ -860,15 +845,33 @@ impl RelayEngine {
                 } else {
                     FailureCode::SponsorStepFailed
                 };
-                Ok(Step::Done(
-                    OperationOutcome::Failed {
-                        failure_code,
-                        reason: failure.message,
-                    },
-                    None,
-                ))
+                Ok(Step::Done(OperationOutcome::Failed {
+                    failure_code,
+                    reason: failure.message,
+                }))
             }
         }
+    }
+
+    /// Hand each confidential intent this relay voted on to 1Click, matched to
+    /// its MPC signature in the landed outcome.
+    async fn auto_submit_confidential(&self, plan: &RelayPlan, tx_status: Value) {
+        let payloads = plan.dao_operation.confidential_payloads_with_ids();
+        if payloads.is_empty() {
+            return;
+        }
+        let source = confidential::RelaySignatureSource::TxStatus(tx_status);
+        let treasury_id = plan.treasury_id.as_str();
+        let submits = payloads.iter().map(|(payload_hash, proposal_id)| {
+            confidential::try_auto_submit_intent(
+                &self.state,
+                treasury_id,
+                payload_hash,
+                *proposal_id,
+                &source,
+            )
+        });
+        futures::future::join_all(submits).await;
     }
 
     /// Commit the terminal state with its accounting, then publish it.
@@ -877,8 +880,6 @@ impl RelayEngine {
         operation: &RelayOperation,
         lease: &OperationLease,
         outcome: OperationOutcome,
-        outcome_debug: Option<String>,
-        plan: Option<&RelayPlan>,
     ) -> RunOutcome {
         let committed: Result<(), RelayStoreError> = async {
             let mut tx = self.state.db_pool.begin().await?;
@@ -920,16 +921,6 @@ impl RelayEngine {
             .unwrap_or_default();
         let status = RelaySubmissionStatus::from_rows(&updated, &transactions);
         self.log_outcome(&updated, &outcome, &status);
-        if let (OperationOutcome::Succeeded { .. }, Some(plan), Some(debug)) =
-            (&outcome, plan, outcome_debug.as_deref())
-        {
-            confidential::spawn_auto_submit_intents(
-                &self.state,
-                updated.treasury_id.as_str(),
-                plan.dao_operation.confidential_payloads_with_ids(),
-                debug,
-            );
-        }
         self.state.publish_relay_submission_updated(status);
         RunOutcome::Terminal(updated)
     }
@@ -1063,7 +1054,7 @@ impl RelayEngine {
             }
         };
         match self.settle_orphan(tx, &outcome).await {
-            Ok(()) => true,
+            Ok(settled) => settled,
             Err(error) => {
                 tracing::warn!(tx_hash = %tx.tx_hash, error = %error, "relay orphan settle failed");
                 false
@@ -1106,13 +1097,15 @@ impl RelayEngine {
         }
     }
 
+    /// Returns `false` when another settlement already moved the row, in which
+    /// case nothing is credited.
     async fn settle_orphan(
         &self,
         tx: &RelayTransaction,
         outcome: &TransactionOutcome,
-    ) -> Result<(), RelayStoreError> {
+    ) -> Result<bool, RelayStoreError> {
         let mut db = self.state.db_pool.begin().await?;
-        sqlx::query(
+        let moved = sqlx::query(
             r#"
             UPDATE relay_transactions t
             SET state = $2, updated_at = NOW()
@@ -1123,7 +1116,12 @@ impl RelayEngine {
         .bind(tx.id)
         .bind(outcome.state())
         .execute(&mut *db)
-        .await?;
+        .await?
+        .rows_affected();
+        if moved == 0 {
+            db.rollback().await?;
+            return Ok(false);
+        }
         if matches!(outcome, TransactionOutcome::Succeeded) && !tx.spend_yocto.is_zero() {
             sqlx::query(
                 r#"
@@ -1139,7 +1137,7 @@ impl RelayEngine {
             .await?;
         }
         db.commit().await?;
-        Ok(())
+        Ok(true)
     }
 
     fn check_stalls(&self, health: &super::models::RelayQueueHealth) {

@@ -1,8 +1,10 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { RelaySubmissionStatus } from "./api";
+import { RelaySubmissionFailedError } from "./app-error";
 import {
     awaitRelaySubmission,
+    forgetPendingSubmission,
     hasPendingWaiters,
     pendingSubmissionIds,
     recoverPendingSubmissions,
@@ -80,6 +82,36 @@ describe("relay submissions", () => {
         expect(fetched.sort()).toEqual(["done", "gone", "still"]);
         expect((await waiting).state).toBe("succeeded");
         expect(pendingSubmissionIds(TREASURY)).toEqual(["still"]);
+    });
+
+    test("a 404 during recovery fails the waiter and stops tracking it", async () => {
+        const waiting = awaitRelaySubmission(TREASURY, "vanished");
+        await recoverPendingSubmissions(TREASURY, async () => {
+            throw notFound();
+        });
+        const error = await waiting.catch((e: unknown) => e);
+        expect(error).toBeInstanceOf(RelaySubmissionFailedError);
+        expect((error as RelaySubmissionFailedError).submissionId).toBe(
+            "vanished",
+        );
+        expect(pendingSubmissionIds(TREASURY)).toEqual([]);
+        expect(hasPendingWaiters()).toBe(false);
+    });
+
+    test("recovery still checks a waited submission another tab forgot", async () => {
+        const waiting = awaitRelaySubmission(TREASURY, "shared");
+        forgetPendingSubmission(TREASURY, "shared");
+        expect(pendingSubmissionIds(TREASURY)).toEqual([]);
+
+        const fetched: string[] = [];
+        await recoverPendingSubmissions(TREASURY, async (id) => {
+            fetched.push(id);
+            return status(id, "succeeded");
+        });
+
+        expect(fetched).toEqual(["shared"]);
+        expect((await waiting).state).toBe("succeeded");
+        expect(hasPendingWaiters()).toBe(false);
     });
 
     test("recovery survives a failing status fetch", async () => {
