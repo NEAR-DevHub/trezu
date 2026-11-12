@@ -317,6 +317,11 @@ pub fn classify_rpc_error(error: &Value) -> RpcErrorKind {
 /// they can never land once no provider has them. Only the node's own
 /// `InvalidTxError::Expired` counts; an action-level expiry inside a landed
 /// outcome or a message that merely mentions the word does not.
+///
+/// The `data.TxExecutionError.InvalidTxError` pointer is the proof by itself,
+/// so `cause.name` is deliberately not required: nodes before the structured
+/// `cause` envelope returned only `data`, and a missed expiry here parks a
+/// lane for the whole validity window, which is the worse failure.
 pub fn is_expired_rejection(message: &str) -> bool {
     serde_json::from_str::<Value>(message).is_ok_and(|error| {
         error
@@ -391,6 +396,14 @@ mod tests {
         ));
 
         assert!(!is_expired_rejection("send_tx HTTP 504: Expired upstream"));
+
+        // Legacy envelope: no `cause`, only `data`.
+        let legacy = json!({
+            "code": -32000,
+            "message": "Server error",
+            "data": {"TxExecutionError": {"InvalidTxError": "Expired"}}
+        });
+        assert!(is_expired_rejection(&legacy.to_string()));
     }
 
     #[test]
