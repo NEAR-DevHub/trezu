@@ -52,11 +52,13 @@ interface PaymentDisplayProps {
     destinationAssetId?: string;
 }
 
-const paymentStatusToText = (status: PaymentStatus): "Pending" | "Paid" => {
+const paymentStatusToText = (
+    status: PaymentStatus,
+): "Pending" | "Paid" | "Processing" | "Failed" => {
     if (typeof status === "string") {
         return status;
     }
-    return Object.keys(status)[0] as "Pending" | "Paid";
+    return Object.keys(status)[0] as "Paid";
 };
 
 function PaymentDisplay({
@@ -436,9 +438,10 @@ export function BatchPaymentRequestExpanded({
         isError,
     } = useBatchPayment(data.batchId);
 
-    const hasPendingPayments = batchData?.payments?.some(
-        (payment) => paymentStatusToText(payment.status) === "Pending",
-    );
+    const hasPendingPayments = batchData?.payments?.some((payment) => {
+        const status = paymentStatusToText(payment.status);
+        return status === "Pending" || status === "Processing";
+    });
 
     const shouldAutoRefetch = isExecuted && hasPendingPayments;
     const { data: liveBatchData } = useBatchPayment(

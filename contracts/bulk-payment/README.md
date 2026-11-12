@@ -50,6 +50,15 @@ View payment list details.
 #### `payout_batch(list_id: ListId) -> u64`
 Process approved payments in batches. Returns remaining pending count.
 
+For cross-chain tokens (`nep141:*.omft.near`) a row is not marked `Paid` when the
+withdrawal is sent. It becomes `Processing`, and `on_withdraw_resolved` marks it
+`Paid` (full amount withdrawn) or `Failed` (refunded by `intents.near`).
+
+#### `retry_failed_payments(list_id: ListId) -> u64`
+Sets every `Failed` row of an approved list back to `Pending` so `payout_batch`
+sends it again. Returns the number of rows reset. The list must be re-queued for
+the backend worker afterwards.
+
 #### `get_payment_transactions(list_id: ListId) -> Vec<PaymentTransaction>`
 Get completed payment transactions with block heights.
 

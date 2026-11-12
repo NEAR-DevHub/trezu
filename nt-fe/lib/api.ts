@@ -904,7 +904,15 @@ export async function updateProfile(
     return response.data;
 }
 
-export type PaymentStatus = "Pending" | { Paid: { block_height: number } };
+/**
+ * `Processing` / `Failed` only occur for cross-chain (PoA bridge) rows:
+ * the withdrawal was sent and its result is not resolved yet / was refunded.
+ */
+export type PaymentStatus =
+    | "Pending"
+    | "Processing"
+    | "Failed"
+    | { Paid: { block_height: number } };
 
 export interface BatchPayment {
     recipient: string;
