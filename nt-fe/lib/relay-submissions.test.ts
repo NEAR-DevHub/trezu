@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { AxiosError, type AxiosResponse } from "axios";
 import type { RelaySubmissionStatus } from "./api";
 import { RelaySubmissionFailedError } from "./app-error";
@@ -39,10 +39,22 @@ function notFound(): AxiosError {
     return new AxiosError("Not found", "ERR", undefined, null, response);
 }
 
+type WindowHost = { window?: unknown };
+const hadWindow = "window" in globalThis;
+const realWindow = (globalThis as WindowHost).window;
+
 beforeEach(() => {
-    (globalThis as { window?: unknown }).window = {
+    (globalThis as WindowHost).window = {
         localStorage: new MemoryStorage(),
     };
+});
+
+afterEach(() => {
+    if (hadWindow) {
+        (globalThis as WindowHost).window = realWindow;
+    } else {
+        delete (globalThis as WindowHost).window;
+    }
 });
 
 describe("relay submissions", () => {
