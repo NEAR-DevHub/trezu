@@ -630,7 +630,13 @@ pub struct BulkPayment {
 #[serde(rename_all = "PascalCase")]
 pub enum BatchPaymentStatus {
     Pending,
-    Paid { block_height: u64 },
+    Paid {
+        block_height: u64,
+    },
+    /// Cross-chain withdrawal sent, `intents.near` result not resolved yet.
+    Processing,
+    /// `intents.near` refunded the withdrawal: nothing was delivered.
+    Failed,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]
