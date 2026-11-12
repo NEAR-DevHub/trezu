@@ -1740,7 +1740,7 @@ export async function getRelaySubmission(
 ): Promise<RelaySubmissionStatus> {
     const response = await axios.get<RelaySubmissionStatus>(
         `${BACKEND_API_BASE}/relay/submissions/${encodeURIComponent(submissionId)}`,
-        { withCredentials: true },
+        { withCredentials: true, timeout: 10_000 },
     );
     return response.data;
 }

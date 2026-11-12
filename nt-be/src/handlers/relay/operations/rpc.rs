@@ -314,9 +314,16 @@ pub fn classify_rpc_error(error: &Value) -> RpcErrorKind {
 }
 
 /// Whether a refusal says the bytes' validity window is over: proof that
-/// they can never land once no provider has them.
+/// they can never land once no provider has them. Only the node's own
+/// `InvalidTxError::Expired` counts; an action-level expiry inside a landed
+/// outcome or a message that merely mentions the word does not.
 pub fn is_expired_rejection(message: &str) -> bool {
-    message.contains("Expired")
+    serde_json::from_str::<Value>(message).is_ok_and(|error| {
+        error
+            .pointer("/data/TxExecutionError/InvalidTxError")
+            .and_then(Value::as_str)
+            == Some("Expired")
+    })
 }
 
 #[cfg(test)]
@@ -356,6 +363,34 @@ mod tests {
         assert!(is_expired_rejection(
             &json!({"data": {"TxExecutionError": {"InvalidTxError": "Expired"}}}).to_string()
         ));
+    }
+
+    #[test]
+    fn only_the_nodes_own_expiry_counts_as_an_expired_rejection() {
+        let expired = json!({
+            "name": "HANDLER_ERROR",
+            "cause": {"name": "INVALID_TRANSACTION", "info": {}},
+            "code": -32000,
+            "message": "Server error",
+            "data": {"TxExecutionError": {"InvalidTxError": "Expired"}}
+        });
+        assert!(is_expired_rejection(&expired.to_string()));
+
+        let invalid_nonce = json!({
+            "cause": {"name": "INVALID_TRANSACTION"},
+            "data": {"TxExecutionError": {"InvalidTxError": {"InvalidNonce": {"ak_nonce": 8, "tx_nonce": 7}}}}
+        });
+        assert!(!is_expired_rejection(&invalid_nonce.to_string()));
+
+        let delegate_expired_in_receipt = json!({
+            "cause": {"name": "INVALID_TRANSACTION"},
+            "data": {"TxExecutionError": {"ActionError": {"index": 0, "kind": "DelegateActionExpired"}}}
+        });
+        assert!(!is_expired_rejection(
+            &delegate_expired_in_receipt.to_string()
+        ));
+
+        assert!(!is_expired_rejection("send_tx HTTP 504: Expired upstream"));
     }
 
     #[test]

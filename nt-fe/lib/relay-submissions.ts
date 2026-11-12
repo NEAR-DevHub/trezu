@@ -23,6 +23,9 @@ type Waiter = {
 };
 
 const waiters = new Map<string, Waiter[]>();
+// One recovery per treasury at a time; concurrent triggers (stream open, tab
+// visible, safety tick) share the run already in flight.
+const recoveries = new Map<string, Promise<void>>();
 let safetyTimer: ReturnType<typeof setInterval> | null = null;
 // Terminal results seen before anyone waited on them (the event can beat the
 // `202` response back to the caller).
@@ -190,11 +193,24 @@ export function awaitRelaySubmission(
  * (re)connect, on the tab becoming visible, and on mount, because events
  * emitted while the stream was down are never replayed.
  */
-export async function recoverPendingSubmissions(
+export function recoverPendingSubmissions(
     treasuryId: string,
     fetchStatus: (
         submissionId: string,
     ) => Promise<RelaySubmissionStatus> = getRelaySubmission,
+): Promise<void> {
+    const inFlight = recoveries.get(treasuryId);
+    if (inFlight) return inFlight;
+    const run = recoverOnce(treasuryId, fetchStatus).finally(() => {
+        recoveries.delete(treasuryId);
+    });
+    recoveries.set(treasuryId, run);
+    return run;
+}
+
+async function recoverOnce(
+    treasuryId: string,
+    fetchStatus: (submissionId: string) => Promise<RelaySubmissionStatus>,
 ): Promise<void> {
     const ids = new Set([
         ...readRemembered(treasuryId),

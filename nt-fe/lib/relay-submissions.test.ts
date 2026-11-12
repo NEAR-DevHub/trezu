@@ -126,6 +126,31 @@ describe("relay submissions", () => {
         expect(hasPendingWaiters()).toBe(false);
     });
 
+    test("overlapping recoveries for one treasury share a single run", async () => {
+        rememberPendingSubmission(TREASURY, "r1");
+        rememberPendingSubmission(TREASURY, "r2");
+        const fetched: string[] = [];
+        let release: () => void = () => {};
+        const gate = new Promise<void>((resolve) => {
+            release = resolve;
+        });
+        const fetchStatus = async (id: string) => {
+            fetched.push(id);
+            await gate;
+            return status(id, "succeeded");
+        };
+
+        const first = recoverPendingSubmissions(TREASURY, fetchStatus);
+        const second = recoverPendingSubmissions(TREASURY, fetchStatus);
+        expect(second).toBe(first);
+        release();
+        await Promise.all([first, second]);
+        expect(fetched.sort()).toEqual(["r1", "r2"]);
+
+        await recoverPendingSubmissions(TREASURY, fetchStatus);
+        expect(fetched.length).toBe(2);
+    });
+
     test("recovery survives a failing status fetch", async () => {
         rememberPendingSubmission(TREASURY, "flaky");
         await recoverPendingSubmissions(TREASURY, async () => {
