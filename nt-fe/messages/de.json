@@ -2447,7 +2447,9 @@
         "viewRequest": "Anfrage anzeigen",
         "proposalRemoved": "Ihr Vorschlag wurde entfernt",
         "voteSubmitted": "Ihre Stimme wurde übermittelt",
-        "votesSubmitted": "Ihre Stimmen wurden übermittelt"
+        "votesSubmitted": "Ihre Stimmen wurden übermittelt",
+        "confirmingTransaction": "Ihre Transaktion wird bestätigt…",
+        "confirmingTransactionBody": "Das Netzwerk ist gerade langsam. Sie können weiterarbeiten; wir aktualisieren dies, sobald sie bestätigt ist."
     },
     "tokenInput": {
         "max": "MAX",

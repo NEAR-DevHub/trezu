@@ -4,6 +4,7 @@ import {
     type AppError,
     type AppErrorAction,
     appErrorAction,
+    RelaySubmissionFailedError,
     toAppError,
 } from "./app-error";
 
@@ -17,6 +18,28 @@ function axiosError(
 }
 
 describe("toAppError", () => {
+    test("reads the envelope of a relay that failed after being accepted", () => {
+        const error = toAppError(
+            new RelaySubmissionFailedError(
+                {
+                    code: "TX_FAILED",
+                    funds_state: "failed_onchain",
+                    retryable: false,
+                    details: { tx_hash: "8xQk", reason: "REQUEST_EXPIRED" },
+                },
+                "0190",
+            ),
+        );
+        expect(error).toEqual({
+            code: "TX_FAILED",
+            fundsState: "failed_onchain",
+            retryable: false,
+            requestId: undefined,
+            txHash: "8xQk",
+            reason: "REQUEST_EXPIRED",
+        });
+    });
+
     test("reads the backend envelope and the request id header", () => {
         const error = toAppError(
             axiosError(

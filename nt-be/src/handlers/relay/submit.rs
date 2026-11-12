@@ -2,7 +2,12 @@
 
 use std::sync::Arc;
 
-use axum::{Json, extract::State, http::StatusCode};
+use axum::{
+    Json,
+    extract::State,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 use near_api::{
     AccountId, NearToken,
     types::transaction::result::{ExecutionFinalResult, ValueOrReceiptId},
@@ -15,9 +20,10 @@ use crate::{
         access::{self, AuthorizedRelay},
         confidential,
         effects::{accounting, registrations},
+        operations,
         parse::{
-            self, MetaRelay, RelayError, RelayRequest, RelayResponse, RelaySubmission,
-            error_response, success_response,
+            self, MetaRelay, RelayError, RelayRequest, RelaySubmission, error_response,
+            success_response,
         },
         sponsor::{
             Sponsor,
@@ -48,7 +54,7 @@ pub async fn relay_delegate_action(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
     Json(relay_request): Json<RelayRequest>,
-) -> Result<Json<RelayResponse>, RelayError> {
+) -> Result<Response, RelayError> {
     // Decouple the request into owned parts so the raw signed action and the
     // treasury id are independent from here on.
     let RelayRequest {
@@ -71,15 +77,7 @@ pub async fn relay_delegate_action(
     // 3. Load the treasury record and authorize, consuming the parsed relay. The
     //    returned AuthorizedRelay proves the treasury is a tracked Sputnik DAO.
     let treasury_record = access::fetch_treasury_record(&state, &parsed.treasury_id).await?;
-    let AuthorizedRelay {
-        treasury_id,
-        submission,
-        operation,
-        attached_deposit,
-        tier,
-        plan_type,
-        proposal_storage_bytes,
-    } = access::authorize(&state, &auth_user, parsed, treasury_record).await?;
+    let authorized = access::authorize(&state, &auth_user, parsed, treasury_record).await?;
 
     // 4. Bound the attached deposit and size the DAO-storage compensation: measured
     //    proposal args for `add_proposal`, a flat allowance per `act_proposal` (a vote
@@ -88,20 +86,42 @@ pub async fn relay_delegate_action(
     //    `storageBytes` is never trusted. Both `enforce_deposit_limit` and the
     //    reservation below are pure validation/bookkeeping that complete BEFORE any
     //    sponsor NEAR moves.
-    let compensate_proposal_storage = proposal_storage_bytes > 0;
+    let compensate_proposal_storage = authorized.proposal_storage_bytes > 0;
     let proposal_storage_cost = if compensate_proposal_storage {
-        policy::proposal_storage_cost(proposal_storage_bytes)
+        policy::proposal_storage_cost(authorized.proposal_storage_bytes)
     } else {
         NearToken::from_near(0)
     };
     policy::enforce_deposit_limit(
         &state,
-        &treasury_id,
-        tier,
-        attached_deposit,
+        &authorized.treasury_id,
+        authorized.tier,
+        authorized.attached_deposit,
         proposal_storage_cost,
     )
     .await?;
+
+    // Durable path: persist the operation with its credit, then drive it with
+    // a bounded budget; anything unfinished continues in the worker.
+    if state.env_vars.durable_relay_submissions {
+        return operations::intake::submit(
+            &state,
+            &auth_user,
+            raw_signed_delegate_action.0,
+            authorized,
+            proposal_type,
+            address_book_payment,
+        )
+        .await;
+    }
+    let AuthorizedRelay {
+        treasury_id,
+        submission,
+        operation,
+        attached_deposit,
+        plan_type,
+        ..
+    } = authorized;
 
     // 5. Atomically reserve the gas credit BEFORE any sponsor spend, so concurrent
     //    relays cannot double-spend one credit. Nothing has moved yet, so any failure
@@ -202,7 +222,7 @@ pub async fn relay_delegate_action(
     );
 
     let proposal_ids = operation.is_add_proposals().then_some(receipt_proposal_ids);
-    Ok(success_response(proposal_ids, tx_hash))
+    Ok(success_response(proposal_ids, tx_hash).into_response())
 }
 
 /// Ids of the proposals this relay created, read from the execution outcome:

@@ -706,6 +706,16 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
+        "relay-submissions",
+        schedule_every_secs(2),
+        handlers::relay_submissions
+    );
+
+    monitor = register_cron_worker!(
+        monitor,
+        queues,
+        state,
+        wake_hub,
         "deposit-tracker",
         schedule_every_secs(env_secs("DEPOSIT_TRACKER_INTERVAL_SECONDS", 5)),
         handlers::deposit_tracker

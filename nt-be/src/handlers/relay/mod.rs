@@ -9,11 +9,13 @@
 //! - [`sponsor`] — the relayer: signing/sending ([`sponsor::Sponsor`]), retry, and
 //!   the spend policy ([`sponsor::policy`]: limits, tier, storage top-up).
 //! - [`effects`] — side effects: NEP-141 registrations, usage accounting, metrics.
+//! - [`operations`] — the durable `relay_operations` / `relay_transactions` store.
 //! - [`confidential`] — auto-submit confidential intents after an approving vote.
 
 pub mod access;
 pub mod confidential;
 pub mod effects;
+pub mod operations;
 pub mod parse;
 pub mod post_quantum;
 pub mod sponsor;

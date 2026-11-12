@@ -35,16 +35,16 @@ use crate::{
 /// Standard NEP-141 registration cost (0.00125 NEAR). The contract refunds any
 /// excess, and `registration_only: true` is a no-op when already registered.
 pub(crate) const STORAGE_DEPOSIT_AMOUNT: NearToken = NearToken::from_micronear(1250);
-const STORAGE_DEPOSIT_GAS: NearGas = NearGas::from_tgas(30);
+pub(crate) const STORAGE_DEPOSIT_GAS: NearGas = NearGas::from_tgas(30);
 /// Upper bound on registrations performed for a single approval. Bulk payment
 /// lists are capped well under this on the contract side; this is a backstop.
-const MAX_STORAGE_DEPOSITS: usize = 200;
+pub(crate) const MAX_STORAGE_DEPOSITS: usize = 200;
 
 /// A single account that must be registered on a token contract.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub(crate) struct Registration {
-    account_id: AccountId,
-    token_id: AccountId,
+    pub(crate) account_id: AccountId,
+    pub(crate) token_id: AccountId,
 }
 
 // ─── Typed views over the on-chain action args ──────────────────────────────────

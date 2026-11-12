@@ -15,8 +15,19 @@ import { APP_WALLET_SETUP_URL } from "@/constants/config";
 import { markPaymentPending } from "@/features/onboarding/payment-pending";
 import { getAppErrorCopy, getNearStoreMessages } from "@/i18n/store-messages";
 import { trackEvent } from "@/lib/analytics";
-import { markDaoDirty, refreshProposal, relayDelegateAction } from "@/lib/api";
-import { appErrorAction, markShownToUser, toAppError } from "@/lib/app-error";
+import {
+    markDaoDirty,
+    type RelayDelegateActionResponse,
+    type RelaySubmissionStatus,
+    refreshProposal,
+    relayDelegateAction,
+} from "@/lib/api";
+import {
+    appErrorAction,
+    markShownToUser,
+    RelaySubmissionFailedError,
+    toAppError,
+} from "@/lib/app-error";
 import {
     type AuthUserInfo,
     acceptTerms as apiAcceptTerms,
@@ -36,6 +47,7 @@ import {
     type Proposal,
     type Vote as ProposalVote,
 } from "@/lib/proposals-api";
+import { awaitRelaySubmission } from "@/lib/relay-submissions";
 import { reportError } from "@/lib/report-error";
 import { clearSessionQueries } from "@/lib/session-query-cleanup";
 import {
@@ -269,6 +281,47 @@ const isFullyAuthenticated = (state: NearStore): boolean => {
         !!state.walletAccountId
     );
 };
+
+/**
+ * The backend accepted the relay but could not confirm it within the request
+ * window (`202`). Hold the caller until the outcome arrives over the
+ * treasury's event stream, showing the user that the transaction is still
+ * being confirmed rather than an error.
+ */
+async function awaitRelayConfirmation(
+    treasuryId: string,
+    submission: RelaySubmissionStatus,
+): Promise<RelayDelegateActionResponse> {
+    const messages = getNearStoreMessages();
+    trackEvent("relay_submission_pending", { treasury_id: treasuryId });
+    const toastId = toast.loading(messages.confirmingTransaction, {
+        description: messages.confirmingTransactionBody,
+    });
+    try {
+        const status = await awaitRelaySubmission(
+            treasuryId,
+            submission.submissionId,
+        );
+        if (status.state === "succeeded") {
+            return {
+                success: true,
+                proposalIds: status.proposalIds,
+                txHash: status.txHash ?? "",
+            };
+        }
+        throw new RelaySubmissionFailedError(
+            status.error ?? {
+                code: "TX_STATUS_UNKNOWN",
+                funds_state: "unknown",
+                retryable: false,
+                details: { tx_hash: status.txHash },
+            },
+            status.submissionId,
+        );
+    } finally {
+        toast.dismiss(toastId);
+    }
+}
 
 /**
  * Tell the user why their action failed. Declining in the wallet keeps its
@@ -704,8 +757,15 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 i === 0 ? proposalType : undefined,
                 i === 0 ? addressBookPayment : undefined,
             );
-            if (relayResult.proposalIds) {
-                proposalIds.push(...relayResult.proposalIds);
+            const relayResponse =
+                relayResult.status === "confirmed"
+                    ? relayResult.response
+                    : await awaitRelayConfirmation(
+                          treasuryId,
+                          relayResult.submission,
+                      );
+            if (relayResponse.proposalIds) {
+                proposalIds.push(...relayResponse.proposalIds);
             }
         }
 

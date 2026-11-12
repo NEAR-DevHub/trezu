@@ -49,8 +49,8 @@ pub enum CreditReservation {
 /// This closes the check-then-spend race: previously the credit was read during
 /// authorization and decremented only in a later background task, so concurrent
 /// requests could all observe the same balance.
-pub async fn reserve_gas_credit(
-    pool: &sqlx::PgPool,
+pub async fn reserve_gas_credit<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
     treasury_id: &AccountId,
     plan_type: PlanType,
 ) -> Result<CreditReservation, RelayError> {
@@ -82,7 +82,7 @@ pub async fn reserve_gas_credit(
         "#,
     )
     .bind(treasury_id.as_str())
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await
     .map_err(|e| {
         error_response(

@@ -112,6 +112,13 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     ));
 
     let (event_tx, _) = tokio::sync::broadcast::channel(crate::events::EVENT_BUS_CAPACITY);
+    let relay_lanes = Arc::new(
+        crate::handlers::relay::operations::lanes::SponsorLanes::from_keys(
+            &env_vars.signer_key,
+            &env_vars.sponsor_lane_keys,
+        )
+        .expect("sponsor lanes"),
+    );
 
     AppState {
         cache: Cache::new(),
@@ -139,6 +146,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         event_tx,
         background_jobs_status: Arc::new(crate::jobs::leadership::BackgroundJobsStatus::new()),
         creation_sweep_notify: Arc::new(tokio::sync::Notify::new()),
+        relay_lanes,
     }
 }
 

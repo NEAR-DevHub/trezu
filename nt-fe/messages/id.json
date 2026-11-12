@@ -2447,7 +2447,9 @@
         "viewRequest": "Lihat Permintaan",
         "proposalRemoved": "Usulan Anda telah dihapus",
         "voteSubmitted": "Suara Anda telah dikirim",
-        "votesSubmitted": "Suara Anda telah dikirim"
+        "votesSubmitted": "Suara Anda telah dikirim",
+        "confirmingTransaction": "Mengonfirmasi transaksi Anda…",
+        "confirmingTransactionBody": "Jaringan sedang lambat. Anda bisa terus bekerja; kami akan memperbarui ini begitu transaksi dikonfirmasi."
     },
     "tokenInput": {
         "max": "MAX",

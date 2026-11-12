@@ -10,6 +10,7 @@
 //!   - every p0 and p1 event, immediately
 //!   - PROPOSAL_EXECUTION_FAILED (3 events -> frequency rule)
 //!   - BULK_PAYOUT_FAILED (5 events -> frequency rule)
+//!
 //! Expected in Sentry ONLY (never Discord):
 //!   - all other p2 events, the untagged error, and no event at all for warn!
 
