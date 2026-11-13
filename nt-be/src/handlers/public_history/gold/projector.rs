@@ -349,10 +349,10 @@ fn is_quote_matched_exchange_deposit(
         return Ok(false);
     }
     let expected_amount = proposal_quote.origin_amount_raw.parse::<BigDecimal>().ok();
-    if !quote_amount_matches(expected_amount.as_ref(), &leg.amount_raw) {
-        return Ok(false);
-    }
-    Ok(true)
+    Ok(quote_amount_matches(
+        expected_amount.as_ref(),
+        &leg.amount_raw,
+    ))
 }
 
 fn is_quote_payment_outgoing(

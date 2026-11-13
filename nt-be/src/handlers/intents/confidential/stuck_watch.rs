@@ -15,6 +15,8 @@
 //!   the grace period, so the poll is not getting to it.
 //!
 //! The `confidential-intent-watch` cron runs the sweep every two minutes.
+//! Chain reads are budgeted per sweep and rotate least-recently-read first,
+//! so a pile of unstamped rows costs a bounded number of RPC calls per tick.
 //! Each stuck intent alerts once per repeat interval until the row moves.
 
 use std::collections::{HashMap, HashSet};
@@ -38,6 +40,9 @@ const UNSTAMPED_GRACE: Duration = Duration::from_secs(300);
 /// every ~2 min and backs failed attempts off to at most 5 min.
 const STALLED_GRACE: Duration = Duration::from_secs(600);
 const ALERT_REPEAT: Duration = Duration::from_secs(3600);
+/// Upper bound on `get_proposal` reads in one sweep; rows beyond it wait
+/// their turn.
+const CHAIN_READS_PER_SWEEP: usize = 20;
 
 #[derive(sqlx::FromRow)]
 struct CandidateRow {
@@ -99,6 +104,8 @@ pub struct WatchMemory {
     finished: HashSet<String>,
     /// When an approved intent was first seen without its execution stamp.
     first_seen_unstamped: HashMap<String, Instant>,
+    /// When chain was last asked about a row; drives the read rotation.
+    last_chain_read: HashMap<String, Instant>,
     last_alerted: HashMap<String, Instant>,
 }
 
@@ -118,6 +125,7 @@ pub struct StuckIntentWatch<'a> {
     unstamped_grace: Duration,
     stalled_grace: Duration,
     alert_repeat: Duration,
+    chain_reads_per_sweep: usize,
 }
 
 impl<'a> StuckIntentWatch<'a> {
@@ -132,7 +140,14 @@ impl<'a> StuckIntentWatch<'a> {
             unstamped_grace: UNSTAMPED_GRACE,
             stalled_grace: STALLED_GRACE,
             alert_repeat: ALERT_REPEAT,
+            chain_reads_per_sweep: CHAIN_READS_PER_SWEEP,
         }
+    }
+
+    #[cfg(test)]
+    fn with_chain_read_budget(mut self, reads: usize) -> Self {
+        self.chain_reads_per_sweep = reads;
+        self
     }
 
     #[cfg(test)]
@@ -155,24 +170,25 @@ impl<'a> StuckIntentWatch<'a> {
             checked: rows.len(),
             ..StuckIntentReport::default()
         };
-        let mut seen = HashSet::with_capacity(rows.len());
-        for row in rows {
+        let seen: HashSet<String> = rows.iter().map(CandidateRow::key).collect();
+        let (unstamped, stamped): (Vec<CandidateRow>, Vec<CandidateRow>) = rows
+            .into_iter()
+            .partition(|row| row.proposal_execution_transaction_hash.is_none());
+        for row in stamped {
+            if row.deadline_passed(now) {
+                continue;
+            }
+            report.stalled += 1;
+            if self.alert_due(&row.key()) {
+                report.alerted += 1;
+                self.alert_stalled(&row, now);
+            }
+        }
+        for row in self.chain_reads_this_sweep(unstamped) {
             let key = row.key();
-            seen.insert(key.clone());
-            if row.proposal_execution_transaction_hash.is_some() {
-                if row.deadline_passed(now) {
-                    continue;
-                }
-                report.stalled += 1;
-                if self.alert_due(&key) {
-                    report.alerted += 1;
-                    self.alert_stalled(&row, now);
-                }
-                continue;
-            }
-            if self.memory().finished.contains(&key) {
-                continue;
-            }
+            self.memory()
+                .last_chain_read
+                .insert(key.clone(), Instant::now());
             match self.chain_verdict(&row).await {
                 ChainVerdict::Approved => {
                     report.unstamped += 1;
@@ -248,6 +264,20 @@ impl<'a> StuckIntentWatch<'a> {
         }
     }
 
+    /// The unstamped rows chain is asked about this sweep: none chain already
+    /// reported finished, least recently read first, at most the per-sweep
+    /// budget. The rest wait for the next sweep.
+    fn chain_reads_this_sweep(&self, unstamped: Vec<CandidateRow>) -> Vec<CandidateRow> {
+        let memory = self.memory();
+        let mut rows: Vec<CandidateRow> = unstamped
+            .into_iter()
+            .filter(|row| !memory.finished.contains(&row.key()))
+            .collect();
+        rows.sort_by_key(|row| memory.last_chain_read.get(&row.key()).copied());
+        rows.truncate(self.chain_reads_per_sweep);
+        rows
+    }
+
     fn memory(&self) -> MutexGuard<'_, WatchMemory> {
         self.memory
             .lock()
@@ -284,6 +314,7 @@ impl<'a> StuckIntentWatch<'a> {
         memory
             .first_seen_unstamped
             .retain(|key, _| seen.contains(key));
+        memory.last_chain_read.retain(|key, _| seen.contains(key));
         memory.last_alerted.retain(|key, _| seen.contains(key));
     }
 
@@ -324,6 +355,8 @@ impl<'a> StuckIntentWatch<'a> {
 mod tests {
     use super::*;
     use crate::utils::test_utils::build_test_state;
+    use base64::Engine as _;
+    use base64::prelude::BASE64_STANDARD;
     use near_api::{NetworkConfig, RPCEndpoint};
     use sqlx::PgPool;
     use wiremock::{MockServer, Request, Respond, ResponseTemplate};
@@ -387,20 +420,41 @@ mod tests {
     }
 
     async fn seed_unstamped(pool: &PgPool, payload_hash: &str, deadline: &str) {
+        seed_unstamped_for_proposal(pool, payload_hash, deadline, 29).await;
+    }
+
+    async fn seed_unstamped_for_proposal(
+        pool: &PgPool,
+        payload_hash: &str,
+        deadline: &str,
+        proposal_id: i64,
+    ) {
         sqlx::query(
             r#"
             INSERT INTO confidential_intents (
                 dao_id, payload_hash, intent_payload, intent_type, status, proposal_id, submit_state
             )
-            VALUES ($1, $2, $3, 'shield', 'pending', 29, 'idle')
+            VALUES ($1, $2, $3, 'shield', 'pending', $4, 'idle')
             "#,
         )
         .bind(DAO)
         .bind(payload_hash)
         .bind(intent_payload(deadline))
+        .bind(proposal_id)
         .execute(pool)
         .await
         .expect("seed intent");
+    }
+
+    /// The proposal id a recorded `get_proposal` view call asked for.
+    fn proposal_id_asked(request: &Request) -> u64 {
+        let body: Value = serde_json::from_slice(&request.body).expect("json-rpc body");
+        let args = BASE64_STANDARD
+            .decode(body["params"]["args_base64"].as_str().expect("args_base64"))
+            .expect("base64 args");
+        serde_json::from_slice::<Value>(&args).expect("json args")["id"]
+            .as_u64()
+            .expect("proposal id")
     }
 
     async fn seed_stamped(
@@ -535,6 +589,55 @@ mod tests {
             rpc.received_requests().await.expect("recorded").is_empty(),
             "stamped rows never need chain"
         );
+    }
+
+    #[sqlx::test]
+    async fn chain_reads_are_budgeted_per_sweep_and_rotate(pool: PgPool) {
+        let rpc = rpc_saying("InProgress").await;
+        let state = state_with_rpc(pool.clone(), &rpc);
+        for proposal_id in [31, 32, 33] {
+            seed_unstamped_for_proposal(
+                &pool,
+                &format!("open-{proposal_id}"),
+                "2099-01-01T00:00:00Z",
+                proposal_id,
+            )
+            .await;
+        }
+        let memory = Mutex::new(WatchMemory::default());
+        let watch = immediate(&state, &memory).with_chain_read_budget(2);
+
+        watch.sweep().await.expect("sweep");
+        assert_eq!(rpc.received_requests().await.expect("recorded").len(), 2);
+
+        watch.sweep().await.expect("sweep");
+        let requests = rpc.received_requests().await.expect("recorded");
+        assert_eq!(requests.len(), 4, "two chain reads per sweep");
+        let asked: HashSet<u64> = requests.iter().map(proposal_id_asked).collect();
+        assert_eq!(
+            asked,
+            HashSet::from([31, 32, 33]),
+            "the row skipped by the first sweep is read first by the second"
+        );
+    }
+
+    #[sqlx::test]
+    async fn bulk_auth_rows_are_watched_too(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let state = state_with_rpc(pool.clone(), &rpc);
+        seed_stamped(&pool, "activation", "2099-01-01T00:00:00Z", 3600).await;
+        sqlx::query("UPDATE confidential_intents SET intent_type = 'bulk_auth'")
+            .execute(&pool)
+            .await
+            .expect("retype");
+        let memory = Mutex::new(WatchMemory::default());
+
+        let report = StuckIntentWatch::with_memory(&state, &memory)
+            .sweep()
+            .await
+            .expect("sweep");
+        assert_eq!(report.stalled, 1);
+        assert_eq!(report.alerted, 1);
     }
 
     #[sqlx::test]
