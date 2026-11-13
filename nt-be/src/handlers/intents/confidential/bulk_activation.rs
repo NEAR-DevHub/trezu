@@ -16,7 +16,9 @@
 //!    approvals. The final approving vote executes the `v1.signer.sign`
 //!    call, and the vote relay (`try_auto_submit_intent`) extracts the MPC
 //!    signature, authenticates the subaccount with 1Click, and stores the
-//!    JWT in `monitored_accounts.bulk_payment_*`.
+//!    JWT in `monitored_accounts.bulk_payment_*`. When the vote lands before
+//!    the MPC callback, the relay stamps the execution and the per-DAO 1Click
+//!    poll finishes the activation from the on-chain signature.
 //! 3. `GET /activation` — status polling for the UI.
 
 use axum::{

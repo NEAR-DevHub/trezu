@@ -112,10 +112,61 @@ fn quote_recipient(quote_metadata: Option<&Value>) -> Option<String> {
     Some(bare_account(recipient))
 }
 
-/// Stamp the on-chain execution facts. The status is promoted to `submitted`
-/// only when 1Click already accepted the intent (`submit_result` present); an
-/// executed-but-unsubmitted row stays `pending` and its submission state
-/// becomes `due`, which queues it for the per-DAO 1Click poll.
+/// Record the on-chain execution facts on the intent row. Idempotent across
+/// its two writers: the Goldsky detector stamps the block time and height,
+/// the vote relay stamps its own wall clock a few seconds later with no
+/// height. `LEAST` keeps the earlier (block) time whichever lands first and
+/// `COALESCE` lets the later writer fill what the first one lacked. The
+/// status is promoted to `submitted` only when 1Click already accepted the
+/// intent (`submit_result` present); an executed-but-unsubmitted `pending`
+/// row is queued for the per-DAO 1Click poll (`due`). Returns whether a row
+/// matched.
+pub async fn record_confidential_intent_execution(
+    app_pool: &PgPool,
+    dao_id: &str,
+    payload_hash: &str,
+    proposal_executed_at: chrono::DateTime<chrono::Utc>,
+    proposal_execution_block_height: Option<i64>,
+    proposal_execution_transaction_hash: Option<&str>,
+) -> Result<bool, sqlx::Error> {
+    let updated = sqlx::query(
+        r#"
+        UPDATE confidential_intents
+        SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
+            submit_state = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND status = 'pending' AND intent_type = ANY($6)
+                    THEN 'due'
+                ELSE submit_state
+            END,
+            submit_next_attempt_at = CASE
+                WHEN submit_state = 'idle' AND submit_result IS NULL AND status = 'pending' AND intent_type = ANY($6)
+                    THEN NOW()
+                ELSE submit_next_attempt_at
+            END,
+            proposal_executed_at = LEAST(proposal_executed_at, $3),
+            proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
+            proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
+            updated_at = NOW()
+        WHERE dao_id = $1
+          AND payload_hash = $2
+        "#,
+    )
+    .bind(dao_id)
+    .bind(payload_hash)
+    .bind(proposal_executed_at)
+    .bind(proposal_execution_block_height)
+    .bind(proposal_execution_transaction_hash)
+    .bind(POLL_SUBMITTED_INTENT_TYPES)
+    .execute(app_pool)
+    .await?;
+    Ok(updated.rows_affected() == 1)
+}
+
+/// The detector's stamp: records the execution facts, then links the intent
+/// to its 1Click history row and refreshes the gold metadata so the ledger
+/// shows the execution time. The relay records the facts only
+/// (`record_confidential_intent_execution`); its submit path does the
+/// metadata work itself.
 pub async fn stamp_confidential_intent_execution(
     app_pool: &PgPool,
     dao_id: &str,
@@ -142,35 +193,14 @@ pub async fn stamp_confidential_intent_execution(
     };
     let recipient = quote_recipient(quote_metadata.as_ref());
 
-    sqlx::query(
-        r#"
-        UPDATE confidential_intents
-        SET status = CASE WHEN submit_result IS NOT NULL THEN 'submitted' ELSE status END,
-            submit_state = CASE
-                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
-                    THEN 'due'
-                ELSE submit_state
-            END,
-            submit_next_attempt_at = CASE
-                WHEN submit_state = 'idle' AND submit_result IS NULL AND intent_type = ANY($6)
-                    THEN NOW()
-                ELSE submit_next_attempt_at
-            END,
-            proposal_executed_at = COALESCE(proposal_executed_at, $3),
-            proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
-            proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
-            updated_at = NOW()
-        WHERE dao_id = $1
-          AND payload_hash = $2
-        "#,
+    record_confidential_intent_execution(
+        app_pool,
+        dao_id,
+        payload_hash,
+        proposal_executed_at,
+        proposal_execution_block_height,
+        proposal_execution_transaction_hash,
     )
-    .bind(dao_id)
-    .bind(payload_hash)
-    .bind(proposal_executed_at)
-    .bind(proposal_execution_block_height)
-    .bind(proposal_execution_transaction_hash)
-    .bind(POLL_SUBMITTED_INTENT_TYPES)
-    .execute(app_pool)
     .await?;
 
     if let Some(history_event_id) =
@@ -384,6 +414,109 @@ mod tests {
             ],
             "execution facts are stamped on both, only the 1Click-accepted row becomes submitted"
         );
+    }
+
+    /// The relay stamps its wall clock seconds after the block; the detector
+    /// later stamps the block time. The earlier time wins and the height is
+    /// filled in, whichever order they arrive.
+    #[sqlx::test]
+    async fn execution_record_keeps_the_block_time_over_the_relay_clock(pool: PgPool) {
+        let dao = "stamp.sputnik-dao.near";
+        sqlx::query(
+            "INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type, status) \
+             VALUES ($1, 'timed', '{}'::jsonb, 'shield', 'pending')",
+        )
+        .bind(dao)
+        .execute(&pool)
+        .await
+        .expect("seed intent");
+        let block_time = chrono::DateTime::parse_from_rfc3339("2026-11-12T13:49:40Z")
+            .expect("rfc3339")
+            .with_timezone(&chrono::Utc);
+        let relay_clock = block_time + chrono::Duration::seconds(40);
+        let tx_hash = Some("7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s");
+
+        assert!(
+            record_confidential_intent_execution(&pool, dao, "timed", relay_clock, None, tx_hash)
+                .await
+                .expect("relay record")
+        );
+        assert!(
+            record_confidential_intent_execution(
+                &pool,
+                dao,
+                "timed",
+                block_time,
+                Some(219269410),
+                tx_hash
+            )
+            .await
+            .expect("detector record")
+        );
+        assert!(
+            !record_confidential_intent_execution(&pool, dao, "absent", block_time, None, tx_hash)
+                .await
+                .expect("record on a missing row"),
+            "a missing row is reported, not an error"
+        );
+
+        let (executed_at, height, submit_state) =
+            sqlx::query_as::<_, (chrono::DateTime<chrono::Utc>, Option<i64>, String)>(
+                "SELECT proposal_executed_at, proposal_execution_block_height, submit_state \
+             FROM confidential_intents WHERE dao_id = $1 AND payload_hash = 'timed'",
+            )
+            .bind(dao)
+            .fetch_one(&pool)
+            .await
+            .expect("load row");
+        assert_eq!(
+            executed_at, block_time,
+            "the block time replaces the relay clock"
+        );
+        assert_eq!(height, Some(219269410), "the detector fills the height");
+        assert_eq!(submit_state, "due");
+    }
+
+    /// A superseded bulk-activation attempt whose proposal executes later
+    /// gets its facts recorded but is never queued for submission.
+    #[sqlx::test]
+    async fn execution_stamp_never_queues_a_superseded_row(pool: PgPool) {
+        let dao = "stamp.sputnik-dao.near";
+        sqlx::query(
+            "INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type, status) \
+             VALUES ($1, 'stale', '{}'::jsonb, 'bulk_auth', 'superseded')",
+        )
+        .bind(dao)
+        .execute(&pool)
+        .await
+        .expect("seed intent");
+
+        stamp_confidential_intent_execution(
+            &pool,
+            dao,
+            "stale",
+            chrono::Utc::now(),
+            Some(219269410),
+            Some("7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s"),
+        )
+        .await
+        .expect("stamp succeeds")
+        .expect("intent row exists");
+
+        let (status, submit_state, tx_hash) =
+            sqlx::query_as::<_, (String, String, Option<String>)>(
+                "SELECT status, submit_state, proposal_execution_transaction_hash \
+                 FROM confidential_intents WHERE dao_id = $1 AND payload_hash = 'stale'",
+            )
+            .bind(dao)
+            .fetch_one(&pool)
+            .await
+            .expect("load row");
+        assert_eq!(
+            (status.as_str(), submit_state.as_str()),
+            ("superseded", "idle")
+        );
+        assert!(tx_hash.is_some(), "the execution facts are still recorded");
     }
 
     #[test]

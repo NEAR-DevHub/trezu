@@ -706,6 +706,16 @@ fn configure_cron_runtime(
         queues,
         state,
         wake_hub,
+        "confidential-intent-watch",
+        schedule_every_secs(120),
+        handlers::confidential_intent_watch
+    );
+
+    monitor = register_cron_worker!(
+        monitor,
+        queues,
+        state,
+        wake_hub,
         "relay-submissions",
         schedule_every_secs(2),
         handlers::relay_submissions
