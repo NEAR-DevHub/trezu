@@ -13,6 +13,9 @@
 //!   no execution transaction hash, so nothing will ever submit it.
 //! - `CONF_INTENT_SUBMIT_STALLED`: execution stamped, still unsubmitted past
 //!   the grace period, so the poll is not getting to it.
+//! - `BULK_CONF_STALLED`: a bulk payment whose header reached 1Click but whose
+//!   `confidential_bulk_payments` row is still not `completed` past the grace
+//!   period, so the recipients are not being paid (rri #56–#64, 2026-11-12).
 //!
 //! The `confidential-intent-watch` cron runs the sweep every two minutes.
 //! Chain reads are budgeted per sweep and rotate least-recently-read first,
@@ -39,6 +42,10 @@ const UNSTAMPED_GRACE: Duration = Duration::from_secs(300);
 /// How long a stamped intent may stay unsubmitted: the poll visits each DAO
 /// every ~2 min and backs failed attempts off to at most 5 min.
 const STALLED_GRACE: Duration = Duration::from_secs(600);
+/// How long a bulk payment may stay non-terminal after its header reached
+/// 1Click: the worker arms it within seconds, activation plus signing with
+/// one retry takes ~6 min, the full retry budget ~15 min.
+const BULK_GRACE: Duration = Duration::from_secs(1200);
 const ALERT_REPEAT: Duration = Duration::from_secs(3600);
 /// Upper bound on `get_proposal` reads in one sweep; rows beyond it wait
 /// their turn.
@@ -65,6 +72,36 @@ impl CandidateRow {
 
     fn deadline(&self) -> Option<DateTime<Utc>> {
         intent_deadline(&self.intent_payload)
+    }
+
+    fn deadline_passed(&self, now: DateTime<Utc>) -> bool {
+        self.deadline().is_some_and(|deadline| deadline < now)
+    }
+}
+
+/// A bulk payment whose header is `submitted` but whose row has not reached
+/// a terminal state.
+#[derive(sqlx::FromRow)]
+struct BulkCandidateRow {
+    id: i32,
+    dao_id: String,
+    header_payload_hash: String,
+    header_payload: Value,
+    header_submitted_at: DateTime<Utc>,
+    status: String,
+    proposal_id: Option<i64>,
+    sign_retry_count: i32,
+    last_error: Option<String>,
+    recipient_count: i32,
+}
+
+impl BulkCandidateRow {
+    fn key(&self) -> String {
+        format!("bulk:{}/{}", self.dao_id, self.header_payload_hash)
+    }
+
+    fn deadline(&self) -> Option<DateTime<Utc>> {
+        intent_deadline(&self.header_payload)
     }
 
     fn deadline_passed(&self, now: DateTime<Utc>) -> bool {
@@ -116,6 +153,7 @@ pub struct StuckIntentReport {
     pub checked: usize,
     pub unstamped: usize,
     pub stalled: usize,
+    pub bulk_stalled: usize,
     pub alerted: usize,
 }
 
@@ -124,6 +162,7 @@ pub struct StuckIntentWatch<'a> {
     memory: &'a Mutex<WatchMemory>,
     unstamped_grace: Duration,
     stalled_grace: Duration,
+    bulk_grace: Duration,
     alert_repeat: Duration,
     chain_reads_per_sweep: usize,
 }
@@ -139,6 +178,7 @@ impl<'a> StuckIntentWatch<'a> {
             memory,
             unstamped_grace: UNSTAMPED_GRACE,
             stalled_grace: STALLED_GRACE,
+            bulk_grace: BULK_GRACE,
             alert_repeat: ALERT_REPEAT,
             chain_reads_per_sweep: CHAIN_READS_PER_SWEEP,
         }
@@ -162,7 +202,9 @@ impl<'a> StuckIntentWatch<'a> {
     /// execution hash are checked against chain; stamped rows older than the
     /// grace period are stuck by definition. Rows past their deadline are
     /// left to the poll's expiry path once stamped, and never asked of chain
-    /// again once chain reports the proposal finished.
+    /// again once chain reports the proposal finished. Bulk payments whose
+    /// header reached 1Click are stuck once their row stays non-terminal
+    /// past the bulk grace.
     pub async fn sweep(&self) -> Result<StuckIntentReport, sqlx::Error> {
         let now = Utc::now();
         let rows = self.load_candidates().await?;
@@ -170,7 +212,7 @@ impl<'a> StuckIntentWatch<'a> {
             checked: rows.len(),
             ..StuckIntentReport::default()
         };
-        let seen: HashSet<String> = rows.iter().map(CandidateRow::key).collect();
+        let mut seen: HashSet<String> = rows.iter().map(CandidateRow::key).collect();
         let (unstamped, stamped): (Vec<CandidateRow>, Vec<CandidateRow>) = rows
             .into_iter()
             .partition(|row| row.proposal_execution_transaction_hash.is_none());
@@ -206,6 +248,18 @@ impl<'a> StuckIntentWatch<'a> {
                 ChainVerdict::Unknown => {}
             }
         }
+        for row in self.load_bulk_candidates().await? {
+            let key = row.key();
+            seen.insert(key.clone());
+            if row.deadline_passed(now) {
+                continue;
+            }
+            report.bulk_stalled += 1;
+            if self.alert_due(&key) {
+                report.alerted += 1;
+                self.alert_bulk_stalled(&row, now);
+            }
+        }
         self.forget_rows_not_in(&seen);
         Ok(report)
     }
@@ -230,6 +284,28 @@ impl<'a> StuckIntentWatch<'a> {
         )
         .bind(POLL_SUBMITTED_INTENT_TYPES)
         .bind(self.stalled_grace.as_secs_f64())
+        .fetch_all(&self.state.db_pool)
+        .await
+    }
+
+    async fn load_bulk_candidates(&self) -> Result<Vec<BulkCandidateRow>, sqlx::Error> {
+        sqlx::query_as::<_, BulkCandidateRow>(
+            r#"
+            SELECT b.id, b.dao_id, b.header_payload_hash, b.status, b.proposal_id,
+                   b.sign_retry_count, b.last_error,
+                   cardinality(b.recipient_payload_hashes) AS recipient_count,
+                   ci.intent_payload AS header_payload,
+                   ci.updated_at AS header_submitted_at
+            FROM confidential_bulk_payments b
+            JOIN confidential_intents ci
+              ON ci.dao_id = b.dao_id AND ci.payload_hash = b.header_payload_hash
+            WHERE b.status NOT IN ('completed', 'failed')
+              AND ci.status = 'submitted'
+              AND ci.updated_at <= NOW() - make_interval(secs => $1)
+            ORDER BY b.id
+            "#,
+        )
+        .bind(self.bulk_grace.as_secs_f64())
         .fetch_all(&self.state.db_pool)
         .await
     }
@@ -346,6 +422,23 @@ impl<'a> StuckIntentWatch<'a> {
             submit_last_error = row.submit_last_error.as_deref().unwrap_or(""),
             submit_next_attempt_at = ?row.submit_next_attempt_at,
             executed_seconds_ago,
+            deadline = ?row.deadline()
+        );
+    }
+
+    fn alert_bulk_stalled(&self, row: &BulkCandidateRow, now: DateTime<Utc>) {
+        let header_submitted_seconds_ago = (now - row.header_submitted_at).num_seconds();
+        error_event!(
+            ErrorCode::BulkConfStalled,
+            dao_id = %row.dao_id,
+            header_payload_hash = %row.header_payload_hash,
+            bulk_id = row.id,
+            proposal_id = ?row.proposal_id,
+            bulk_status = %row.status,
+            sign_retry_count = row.sign_retry_count,
+            last_error = row.last_error.as_deref().unwrap_or(""),
+            recipient_count = row.recipient_count,
+            header_submitted_seconds_ago,
             deadline = ?row.deadline()
         );
     }
@@ -506,6 +599,7 @@ mod tests {
                 checked: 1,
                 unstamped: 1,
                 stalled: 0,
+                bulk_stalled: 0,
                 alerted: 1
             }
         );
@@ -581,6 +675,7 @@ mod tests {
                 checked: 2,
                 unstamped: 0,
                 stalled: 1,
+                bulk_stalled: 0,
                 alerted: 1
             },
             "the recent row is inside the grace, the expired one belongs to the poll"
@@ -658,5 +753,150 @@ mod tests {
             .await
             .expect("sweep");
         assert_eq!(report, StuckIntentReport::default());
+    }
+
+    struct BulkSeed<'a> {
+        header_hash: &'a str,
+        bulk_status: &'a str,
+        header_status: &'a str,
+        header_updated_secs_ago: i64,
+        deadline: &'a str,
+    }
+
+    /// A bulk row with its header intent. A `submitted` header carries the
+    /// proposal id; a bulk row past `pending` has it linked.
+    async fn seed_bulk(pool: &PgPool, seed: BulkSeed<'_>) {
+        let header_proposal_id = (seed.header_status == "submitted").then_some(56_i64);
+        let bulk_proposal_id = (seed.bulk_status != "pending").then_some(56_i64);
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents (
+                dao_id, payload_hash, intent_payload, intent_type, status, proposal_id,
+                submit_state, updated_at
+            )
+            VALUES ($1, $2, $3, 'shield', $4, $5, 'done', NOW() - make_interval(secs => $6))
+            "#,
+        )
+        .bind(DAO)
+        .bind(seed.header_hash)
+        .bind(intent_payload(seed.deadline))
+        .bind(seed.header_status)
+        .bind(header_proposal_id)
+        .bind(seed.header_updated_secs_ago as f64)
+        .execute(pool)
+        .await
+        .expect("seed header");
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_bulk_payments (
+                dao_id, bulk_account_id, header_payload_hash, recipient_payload_hashes,
+                status, proposal_id
+            )
+            VALUES ($1, 'watch.bulkpayment.near', $2, ARRAY['r1', 'r2', 'r3'], $3, $4)
+            "#,
+        )
+        .bind(DAO)
+        .bind(seed.header_hash)
+        .bind(seed.bulk_status)
+        .bind(bulk_proposal_id)
+        .execute(pool)
+        .await
+        .expect("seed bulk");
+    }
+
+    #[sqlx::test]
+    async fn bulk_payment_idle_after_header_submitted_is_stalled(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let state = state_with_rpc(pool.clone(), &rpc);
+        let future = "2099-01-01T00:00:00Z";
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "never-armed",
+                bulk_status: "pending",
+                header_status: "submitted",
+                header_updated_secs_ago: 3600,
+                deadline: future,
+            },
+        )
+        .await;
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "stuck-signing",
+                bulk_status: "signing",
+                header_status: "submitted",
+                header_updated_secs_ago: 3600,
+                deadline: future,
+            },
+        )
+        .await;
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "just-submitted",
+                bulk_status: "pending",
+                header_status: "submitted",
+                header_updated_secs_ago: 30,
+                deadline: future,
+            },
+        )
+        .await;
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "paid-out",
+                bulk_status: "completed",
+                header_status: "submitted",
+                header_updated_secs_ago: 3600,
+                deadline: future,
+            },
+        )
+        .await;
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "header-unvoted",
+                bulk_status: "pending",
+                header_status: "pending",
+                header_updated_secs_ago: 3600,
+                deadline: future,
+            },
+        )
+        .await;
+        seed_bulk(
+            &pool,
+            BulkSeed {
+                header_hash: "expired",
+                bulk_status: "pending",
+                header_status: "submitted",
+                header_updated_secs_ago: 3600,
+                deadline: "2020-01-01T00:00:00Z",
+            },
+        )
+        .await;
+        let memory = Mutex::new(WatchMemory::default());
+        let watch = StuckIntentWatch::with_memory(&state, &memory);
+
+        let report = watch.sweep().await.expect("sweep");
+        assert_eq!(
+            report,
+            StuckIntentReport {
+                checked: 0,
+                unstamped: 0,
+                stalled: 0,
+                bulk_stalled: 2,
+                alerted: 2
+            },
+            "never armed and stuck signing are stalled; recent, completed, unvoted and expired are not"
+        );
+        assert!(
+            rpc.received_requests().await.expect("recorded").is_empty(),
+            "bulk rows never need chain"
+        );
+
+        let report = watch.sweep().await.expect("sweep");
+        assert_eq!(report.bulk_stalled, 2, "still stuck");
+        assert_eq!(report.alerted, 0, "alert repeats only after the interval");
     }
 }

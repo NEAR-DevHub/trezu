@@ -4,6 +4,10 @@
 //! Walks `confidential_bulk_payments` rows and pushes each through the
 //! state machine:
 //!
+//! 0. `pending` → once the header intent is `submitted` to 1Click, link the
+//!    on-chain `proposal_id` and move to `activating`. The vote relay does
+//!    the same when the MPC signature is in its own outcome; this step
+//!    covers headers the per-DAO poll submitted from chain instead.
 //! 1. `activating` → call sub `activate(proposal_id)` (0.5 NEAR deposit).
 //!    Move to `signing`.
 //! 2. `signing` → view sub `get_activation`. If the activation is `Ready`
@@ -24,6 +28,7 @@ use std::sync::Arc;
 use near_api::{AccountId, Contract, NearGas, NearToken, types::json::Base64VecU8};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sqlx::PgPool;
 
 use crate::AppState;
 
@@ -115,9 +120,56 @@ async fn fetch_activation(
         .map_err(|e| format!("get_activation: {}", e))
 }
 
+/// A bulk row the worker armed itself: its header reached 1Click without
+/// the vote relay linking the proposal.
+#[derive(sqlx::FromRow)]
+struct ArmedBulkPayment {
+    id: i32,
+    dao_id: String,
+    proposal_id: i64,
+}
+
+/// Link `pending` bulk rows whose header intent is `submitted` and carries
+/// the on-chain proposal id, and hand them to the state machine.
+async fn arm_from_submitted_headers(pool: &PgPool) -> Result<Vec<ArmedBulkPayment>, sqlx::Error> {
+    sqlx::query_as::<_, ArmedBulkPayment>(
+        r#"
+        UPDATE confidential_bulk_payments b
+        SET proposal_id = ci.proposal_id,
+            status = 'activating',
+            updated_at = NOW()
+        FROM confidential_intents ci
+        WHERE b.status = 'pending'
+          AND ci.dao_id = b.dao_id
+          AND ci.payload_hash = b.header_payload_hash
+          AND ci.status = 'submitted'
+          AND ci.proposal_id IS NOT NULL
+        RETURNING b.id, b.dao_id, b.proposal_id
+        "#,
+    )
+    .fetch_all(pool)
+    .await
+}
+
 /// Drive every confidential bulk-payment row currently in `activating` or
 /// `signing`. Called once per worker tick.
 pub async fn process_confidential_bulk_payments(state: &Arc<AppState>) {
+    match arm_from_submitted_headers(&state.db_pool).await {
+        Ok(armed) => {
+            for row in &armed {
+                tracing::info!(
+                    "Armed bulk-payment #{} for {} from its submitted header (bulk id {})",
+                    row.proposal_id,
+                    row.dao_id,
+                    row.id
+                );
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to arm bulk-payments from submitted headers: {}", e);
+        }
+    }
+
     let rows = match sqlx::query!(
         r#"
         SELECT id, dao_id, bulk_account_id, header_payload_hash,
@@ -512,4 +564,91 @@ async fn submit_done_activation(
 
     tracing::info!("Bulk-payment {} for {} fully submitted", bulk_id, dao_id);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DAO: &str = "bulk.sputnik-dao.near";
+    const SUB: &str = "bulk.bulkpayment.near";
+
+    async fn seed_header(pool: &PgPool, hash: &str, status: &str, proposal_id: Option<i64>) {
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents (
+                dao_id, payload_hash, intent_payload, intent_type, status, proposal_id
+            )
+            VALUES ($1, $2, '{}'::jsonb, 'shield', $3, $4)
+            "#,
+        )
+        .bind(DAO)
+        .bind(hash)
+        .bind(status)
+        .bind(proposal_id)
+        .execute(pool)
+        .await
+        .expect("seed header");
+    }
+
+    async fn seed_bulk(pool: &PgPool, header_hash: &str) -> i32 {
+        sqlx::query_scalar::<_, i32>(
+            r#"
+            INSERT INTO confidential_bulk_payments (
+                dao_id, bulk_account_id, header_payload_hash, recipient_payload_hashes, status
+            )
+            VALUES ($1, $2, $3, ARRAY['r1', 'r2'], 'pending')
+            RETURNING id
+            "#,
+        )
+        .bind(DAO)
+        .bind(SUB)
+        .bind(header_hash)
+        .fetch_one(pool)
+        .await
+        .expect("seed bulk")
+    }
+
+    async fn bulk_state(pool: &PgPool, id: i32) -> (String, Option<i64>) {
+        sqlx::query_as::<_, (String, Option<i64>)>(
+            "SELECT status, proposal_id FROM confidential_bulk_payments WHERE id = $1",
+        )
+        .bind(id)
+        .fetch_one(pool)
+        .await
+        .expect("bulk row")
+    }
+
+    #[sqlx::test]
+    async fn arms_pending_rows_whose_header_reached_oneclick(pool: PgPool) {
+        seed_header(&pool, "submitted-header", "submitted", Some(56)).await;
+        seed_header(&pool, "unvoted-header", "pending", None).await;
+        seed_header(&pool, "executed-unsubmitted-header", "pending", Some(57)).await;
+        let armed_id = seed_bulk(&pool, "submitted-header").await;
+        let unvoted_id = seed_bulk(&pool, "unvoted-header").await;
+        let unsubmitted_id = seed_bulk(&pool, "executed-unsubmitted-header").await;
+
+        let armed = arm_from_submitted_headers(&pool).await.expect("arm");
+        assert_eq!(armed.len(), 1);
+        assert_eq!(
+            (armed[0].id, armed[0].dao_id.as_str(), armed[0].proposal_id),
+            (armed_id, DAO, 56)
+        );
+        assert_eq!(
+            bulk_state(&pool, armed_id).await,
+            ("activating".to_string(), Some(56))
+        );
+        assert_eq!(
+            bulk_state(&pool, unvoted_id).await,
+            ("pending".to_string(), None)
+        );
+        assert_eq!(
+            bulk_state(&pool, unsubmitted_id).await,
+            ("pending".to_string(), None),
+            "the header must reach 1Click before the sub is activated"
+        );
+
+        let again = arm_from_submitted_headers(&pool).await.expect("arm again");
+        assert!(again.is_empty(), "arming is one-shot per row");
+    }
 }

@@ -153,8 +153,8 @@ pub async fn confidential_intent_watch(
         .sweep()
         .await?;
     Ok(format!(
-        "checked={} unstamped={} stalled={} alerted={}",
-        report.checked, report.unstamped, report.stalled, report.alerted
+        "checked={} unstamped={} stalled={} bulk_stalled={} alerted={}",
+        report.checked, report.unstamped, report.stalled, report.bulk_stalled, report.alerted
     ))
 }
 
