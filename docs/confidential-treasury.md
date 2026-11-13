@@ -151,12 +151,16 @@ Note: `authenticate` and `submit-intent` are not exposed as frontend-facing endp
 
 ### Auto-Submit Flow (relay integration)
 
-The relay handler (`handlers/relay/confidential.rs`) automatically handles post-approval:
+The relay handler (`handlers/relay/confidential.rs`) handles post-approval:
 
-1. After any vote relay succeeds, checks for MPC signature marker (`eyJzY2hlbWUi`) in execution result
-2. If found, looks up pending intent/auth in `confidential_intents` table
-3. For **auth**: calls 1Click `/v0/auth/authenticate`, stores JWT in `monitored_accounts`
-4. For **shield**: calls 1Click `/v0/submit-intent` with the stored intent payload + signature
+1. After a vote relay lands, `try_auto_submit_intent` matches each `v1.signer` payload hash in the voted proposal to its `confidential_intents` row and looks for that payload's MPC signature in the landed transaction (`signature_for_payload`).
+2. **Signature present**: for **auth** it calls 1Click `/v0/auth/authenticate` and stores the JWT in `monitored_accounts`; for **shield** it calls `/v0/submit-intent` with the stored intent payload + signature. The execution facts (`proposal_executed_at`, `proposal_execution_transaction_hash`) are stamped on the row too.
+3. **Sign call present, MPC callback not in the transaction yet**: the relay stamps the execution facts, sets `submit_state = 'due'` and pulls the DAO's 1Click history poll forward. The per-DAO poll (`resubmit_awaiting_intents`) then reads the signature from the execution transaction and submits. This hand-off does not depend on the Goldsky detector; the detector's stamp (`proposal_signals.rs`) only matters for votes cast outside Trezu's relay.
+4. **No sign call for the payload**: the vote did not approve the proposal yet; nothing happens.
+
+### Stuck-intent watch
+
+`stuck_watch.rs` (cron `confidential-intent-watch`, every 2 min) checks the invariant the flow above is meant to keep: a `pending` intent whose proposal is approved must reach 1Click. Rows without an execution hash are read from chain (`get_proposal`); an approved one unstamped for 5 min pages `CONF_INTENT_EXECUTION_UNSTAMPED`. Stamped rows still unsubmitted 10 min after execution page `CONF_INTENT_SUBMIT_STALLED`. Rows past their deadline are left to the poll's expiry path; proposals chain reports finished are not re-read. Both alerts repeat hourly per intent until the row moves (see `docs/RUNBOOKS.md`).
 
 ### Database Tables
 

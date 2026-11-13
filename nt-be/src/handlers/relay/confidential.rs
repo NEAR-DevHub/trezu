@@ -6,7 +6,9 @@
 //! whichever path sees it first: the vote relay, when the signature is already
 //! in the relay's execution outcome, or the per-DAO 1Click history poll, which
 //! reads it from the execution transaction (the MPC callback can land well after
-//! the relay's RPC wait). [`ConfidentialIntentSubmitter`] serialises the two with
+//! the relay's RPC wait). The relay stamps the execution facts on the intent as
+//! soon as its outcome carries the sign call, so the poll never waits on the
+//! Goldsky detector. [`ConfidentialIntentSubmitter`] serialises the two with
 //! a claim stamp so an intent is never submitted twice.
 
 use crate::{
@@ -19,7 +21,7 @@ use crate::{
         },
         gold::history_events::refresh_gold_metadata_for_intent,
         link_intent_to_history_event,
-        proposal_signals::extract_sign_call_from_logs,
+        proposal_signals::{extract_sign_call_from_logs, stamp_confidential_intent_execution},
         recover_unsubmitted_intent_from_history,
         types::normalize_quote_metadata_accounts,
     },
@@ -431,18 +433,25 @@ pub async fn try_auto_submit_intent(
 
     // The signature for THIS payload. Its presence is the signal that the vote
     // actually approved the proposal — only then do we link bulk rows or
-    // auto-submit the intent. Anything short of that is left to the per-DAO
-    // poll, which submits from chain once the detector stamps the execution.
+    // auto-submit the intent. A sign call whose MPC callback has not landed
+    // yet is still proof of execution: the facts are stamped here so the
+    // per-DAO poll submits from chain without waiting on the Goldsky detector.
     let submitter = ConfidentialIntentSubmitter::new(state);
-    let lookup = match source {
-        RelaySignatureSource::TxStatus(tx_status) => {
-            Ok(signature_for_payload(tx_status, payload_hash))
-        }
-        RelaySignatureSource::ExecutionTx(tx_hash) => {
+    let (lookup, execution_tx_hash) = match source {
+        RelaySignatureSource::TxStatus(tx_status) => (
+            Ok(signature_for_payload(tx_status, payload_hash)),
+            tx_status
+                .get("transaction")
+                .and_then(|tx| tx.get("hash"))
+                .and_then(Value::as_str)
+                .map(str::to_owned),
+        ),
+        RelaySignatureSource::ExecutionTx(tx_hash) => (
             submitter
                 .signature_from_chain(treasury_id, payload_hash, tx_hash, treasury_id)
-                .await
-        }
+                .await,
+            Some(tx_hash.clone()),
+        ),
     };
     let sig_bytes = match lookup {
         Ok(SignatureLookup::Found(bytes)) => bytes,
@@ -458,8 +467,25 @@ pub async fn try_auto_submit_intent(
             tracing::info!(
                 treasury_id,
                 payload_hash,
-                "MPC callback not in the relay outcome yet; the poll submits from chain"
+                "MPC callback not in the relay outcome yet; stamping the execution so the poll submits from chain"
             );
+            stamp_execution_from_relay(
+                state,
+                treasury_id,
+                payload_hash,
+                execution_tx_hash.as_deref(),
+            )
+            .await;
+            if let Err(e) =
+                mark_confidential_history_activity_due(&state.db_pool, treasury_id).await
+            {
+                tracing::warn!(
+                    "failed to pull the 1Click poll forward for {} (hash={}): {}",
+                    treasury_id,
+                    payload_hash,
+                    e
+                );
+            }
             return;
         }
         Ok(SignatureLookup::Failed(error)) => {
@@ -526,6 +552,13 @@ pub async fn try_auto_submit_intent(
     let outcome = submitter
         .submit_signed(treasury_id, payload_hash, &sig_bytes)
         .await;
+    stamp_execution_from_relay(
+        state,
+        treasury_id,
+        payload_hash,
+        execution_tx_hash.as_deref(),
+    )
+    .await;
     if outcome.needs_poll()
         && let Err(e) = mark_confidential_history_activity_due(&state.db_pool, treasury_id).await
     {
@@ -534,6 +567,42 @@ pub async fn try_auto_submit_intent(
             treasury_id,
             payload_hash,
             e
+        );
+    }
+}
+
+/// Record on the intent that its proposal executed, from the relay's own view
+/// of the landed transaction. Idempotent with the Goldsky detector's stamp
+/// (`COALESCE` on every fact); the block time is unknown here, so the relay's
+/// wall clock stands in.
+async fn stamp_execution_from_relay(
+    state: &AppState,
+    treasury_id: &str,
+    payload_hash: &str,
+    execution_tx_hash: Option<&str>,
+) {
+    if execution_tx_hash.is_none() {
+        tracing::warn!(
+            treasury_id,
+            payload_hash,
+            "relay outcome carries no transaction hash; the poll cannot submit this intent from chain"
+        );
+    }
+    if let Err(error) = stamp_confidential_intent_execution(
+        &state.db_pool,
+        treasury_id,
+        payload_hash,
+        Utc::now(),
+        None,
+        execution_tx_hash,
+    )
+    .await
+    {
+        tracing::warn!(
+            treasury_id,
+            payload_hash,
+            %error,
+            "could not stamp the execution from the relay; the detector stamps it"
         );
     }
 }
@@ -668,7 +737,7 @@ impl AwaitingSubmitIntent {
     }
 }
 
-fn intent_deadline(intent_payload: &Value) -> Option<DateTime<Utc>> {
+pub(crate) fn intent_deadline(intent_payload: &Value) -> Option<DateTime<Utc>> {
     let message = intent_payload.get("message")?.as_str()?;
     let message: Value = serde_json::from_str(message).ok()?;
     let deadline = message.get("deadline")?.as_str()?;
@@ -1733,6 +1802,25 @@ mod tests {
         .expect("seed intent");
     }
 
+    /// A pending single intent nothing has stamped yet: what the relay finds
+    /// when the vote lands before the Goldsky detector reads the sign receipt.
+    async fn seed_unstamped_intent(pool: &PgPool, payload_hash: &str, deadline: &str) {
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents (
+                dao_id, payload_hash, intent_payload, intent_type, status, proposal_id, submit_state
+            )
+            VALUES ($1, $2, $3, 'shield', 'pending', 29, 'idle')
+            "#,
+        )
+        .bind(DAO)
+        .bind(payload_hash)
+        .bind(intent_payload(deadline))
+        .execute(pool)
+        .await
+        .expect("seed intent");
+    }
+
     const DEPOSIT_ADDRESS: &str =
         "4c0dbb3b7dc3508a899be836568b564ceefa414d1b135e93e3933d1ea19bcba1";
 
@@ -1810,6 +1898,8 @@ mod tests {
         submit_next_attempt_at: Option<DateTime<Utc>>,
         submit_lease_token: Option<String>,
         history_event_id: Option<i64>,
+        proposal_executed_at: Option<DateTime<Utc>>,
+        proposal_execution_transaction_hash: Option<String>,
     }
 
     impl IntentRow {
@@ -1823,7 +1913,8 @@ mod tests {
         sqlx::query_as::<_, IntentRow>(
             r#"
             SELECT status, submit_result, submit_state, submit_attempts, submit_last_error,
-                   submit_next_attempt_at, submit_lease_token, history_event_id
+                   submit_next_attempt_at, submit_lease_token, history_event_id,
+                   proposal_executed_at, proposal_execution_transaction_hash
             FROM confidential_intents
             WHERE dao_id = $1 AND payload_hash = $2
             "#,
@@ -2556,6 +2647,100 @@ mod tests {
             "done"
         );
         assert_eq!(load_intent(&pool, &unsigned).await.submit_attempts, 0);
+    }
+
+    /// The vote lands before the MPC callback (honolulu #9, 2026-11-12). The
+    /// relay has no signature yet but does know the proposal executed, so it
+    /// stamps the execution itself and pulls the poll forward; the poll then
+    /// submits from chain without the Goldsky detector ever reading the sign
+    /// receipt.
+    #[sqlx::test]
+    async fn relay_stamps_execution_when_the_callback_is_pending(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        mount_rpc_stub(&rpc).await;
+        let oneclick = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v0/submit-intent"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "intentHash": "mock-intent-hash",
+                "correlationId": "mock-correlation"
+            })))
+            .expect(1)
+            .mount(&oneclick)
+            .await;
+        let state = Arc::new(state_with_mocks(pool.clone(), &rpc, &oneclick));
+        seed_unstamped_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
+
+        let (_, callback) = fixture_receipt_indexes();
+        let mut without_callback = tx_status_fixture();
+        without_callback["receipts_outcome"]
+            .as_array_mut()
+            .expect("receipts")
+            .remove(callback);
+        let source = RelaySignatureSource::TxStatus(without_callback);
+        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &source).await;
+
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "pending");
+        assert_eq!(row.submit_state, "due");
+        assert_eq!(row.submit_attempts, 0);
+        assert!(row.proposal_executed_at.is_some());
+        assert_eq!(
+            row.proposal_execution_transaction_hash.as_deref(),
+            Some(RRI_29_TX_HASH)
+        );
+        let next_poll: Option<DateTime<Utc>> = sqlx::query_scalar(
+            "SELECT next_poll_at FROM bronze_confidential_history_cursors WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .fetch_optional(&pool)
+        .await
+        .expect("cursor row");
+        assert!(
+            next_poll.is_some_and(|at| at <= Utc::now()),
+            "the 1Click poll is pulled forward"
+        );
+
+        // The poll owns it now: the callback is on chain (full fixture from
+        // the RPC stub), so it submits with no detector involvement.
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 1);
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.submit_state, "done");
+    }
+
+    /// With the callback already in the outcome the relay submits directly and
+    /// still records the execution facts, so the row is complete even if the
+    /// detector never sees the sign receipt.
+    #[sqlx::test]
+    async fn relay_stamps_execution_when_it_submits(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        mount_rpc_stub(&rpc).await;
+        let oneclick = MockServer::start().await;
+        Mock::given(method("POST"))
+            .and(path("/v0/submit-intent"))
+            .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
+                "intentHash": "mock-intent-hash",
+                "correlationId": "mock-correlation"
+            })))
+            .expect(1)
+            .mount(&oneclick)
+            .await;
+        let state = Arc::new(state_with_mocks(pool.clone(), &rpc, &oneclick));
+        seed_unstamped_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
+
+        let source = RelaySignatureSource::TxStatus(tx_status_fixture());
+        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &source).await;
+
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.submit_state, "done");
+        assert!(row.proposal_executed_at.is_some());
+        assert_eq!(
+            row.proposal_execution_transaction_hash.as_deref(),
+            Some(RRI_29_TX_HASH)
+        );
     }
 
     /// Signing failed on chain: no retry can help, so the poll fails the
