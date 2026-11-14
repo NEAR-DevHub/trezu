@@ -39,6 +39,7 @@ jobs:
     name: Publish report to Pages
     if: github.event.workflow_run.event == 'pull_request'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
