@@ -85,11 +85,19 @@ impl CallSite {
         Self(Arc::new(Mutex::new(backtrace::Backtrace::new_unresolved())))
     }
 
-    /// Our own frames, innermost first, as `function (src/file.rs:line)`.
-    /// Framework/runtime frames, this module and closure suffixes are dropped,
-    /// and repeated frames are collapsed. Release builds can inline small
-    /// functions away, so the path may skip a step.
+    /// Our own frames, innermost first, as `src/file.rs:line` plus the
+    /// function name when the debug info has a qualified one (debug builds do;
+    /// release builds with `line-tables-only` often name inlined async frames
+    /// only `{async_fn#0}`, so the location is the reliable part).
+    ///
+    /// Frames are ours when their source file is under this crate's `src/`.
+    /// The walk skips the capturing middleware, and stops at the next frame in
+    /// this module: that is [`track_upstream_failures`] wrapping the request,
+    /// so everything beyond it is server middleware, not the caller.
     pub fn call_path(&self) -> Vec<String> {
+        const OWN_FILE: &str = "observability/outbound.rs";
+        let src_dir = concat!(env!("CARGO_MANIFEST_DIR"), "/src/");
+
         let mut backtrace = match self.0.lock() {
             Ok(guard) => guard,
             Err(poisoned) => poisoned.into_inner(),
@@ -97,26 +105,34 @@ impl CallSite {
         backtrace.resolve();
 
         let mut path: Vec<String> = Vec::new();
-        let mut last_function = String::new();
         for symbol in backtrace.frames().iter().flat_map(|frame| frame.symbols()) {
-            let Some(name) = symbol.name().map(|name| format!("{name:#}")) else {
+            let Some(file) = symbol.filename() else {
                 continue;
             };
-            let function = strip_closure_suffixes(&name);
-            if !function.starts_with("nt_be::") || is_instrumentation_frame(function) {
+            let file = file.to_string_lossy();
+            let Some(relative) = file.strip_prefix(src_dir) else {
                 continue;
-            }
-            let location = match (symbol.filename(), symbol.lineno()) {
-                (Some(file), Some(line)) => {
-                    let file = file.to_string_lossy();
-                    let file = file.find("/src/").map_or(&*file, |at| &file[at + 1..]);
-                    format!(" ({file}:{line})")
+            };
+            if relative == OWN_FILE {
+                if path.is_empty() {
+                    continue;
                 }
-                _ => String::new(),
+                break;
+            }
+            let location = match symbol.lineno() {
+                Some(line) => format!("src/{relative}:{line}"),
+                None => format!("src/{relative}"),
             };
-            if function != last_function {
-                path.push(format!("{function}{location}"));
-                last_function = function.to_owned();
+            let name = symbol
+                .name()
+                .map(|name| strip_closure_suffixes(&format!("{name:#}")).to_owned())
+                .filter(|name| name.starts_with("nt_be::"));
+            let entry = match name {
+                Some(name) => format!("{name} ({location})"),
+                None => location,
+            };
+            if path.last() != Some(&entry) {
+                path.push(entry);
             }
         }
         path
@@ -133,11 +149,6 @@ fn strip_closure_suffixes(mut name: &str) -> &str {
         name = &name[..at];
     }
     name
-}
-
-fn is_instrumentation_frame(function: &str) -> bool {
-    function.starts_with("nt_be::observability::outbound::")
-        || function.starts_with("nt_be::observability::server_errors::report_server_errors")
 }
 
 impl fmt::Debug for CallSite {

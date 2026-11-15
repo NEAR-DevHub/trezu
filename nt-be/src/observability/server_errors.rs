@@ -331,31 +331,32 @@ mod tests {
         assert!(event.field("elapsed_ms").is_some());
 
         // Innermost first: the helper that sent the request, then the handler
-        // that called it. Middleware frames are not listed.
+        // that called it, and nothing from the middleware or test harness.
+        // Locations are asserted because release builds may not name frames.
         let call_path: Vec<_> = event
             .field("upstream.call_path")
             .expect("upstream.call_path")
             .lines()
             .map(str::to_owned)
             .collect();
+        assert_eq!(call_path.len(), 2, "{call_path:#?}");
         assert!(
-            call_path[0].starts_with(
-                "nt_be::observability::server_errors::tests::fetch_bridge_status (src/observability/server_errors.rs:"
-            ),
+            call_path[0].ends_with(&format!(
+                "src/observability/server_errors.rs:{}",
+                SEND_LINE.load(std::sync::atomic::Ordering::Relaxed)
+            )) || call_path[0].contains(&format!(
+                "src/observability/server_errors.rs:{})",
+                SEND_LINE.load(std::sync::atomic::Ordering::Relaxed)
+            )),
             "{call_path:#?}"
         );
         assert!(
-            call_path[1..]
-                .iter()
-                .any(|frame| frame.contains("server_errors_carry_the_failed_upstream_call")),
-            "{call_path:#?}"
-        );
-        assert!(
-            !call_path.iter().any(|frame| frame.contains("outbound::")
-                || frame.contains("report_server_errors")),
+            call_path[1].contains("src/observability/server_errors.rs:"),
             "{call_path:#?}"
         );
     }
+
+    static SEND_LINE: std::sync::atomic::AtomicU32 = std::sync::atomic::AtomicU32::new(0);
 
     /// Stands in for e.g. `fetch_supported_tokens_data`: the place in our code
     /// that calls the upstream, which the call path must name.
@@ -363,6 +364,9 @@ mod tests {
         client: &crate::observability::HttpClient,
         url: &str,
     ) -> StatusCode {
-        client.post(url).send().await.unwrap().status()
+        #[rustfmt::skip]
+        let (response, line) = (client.post(url).send().await, line!());
+        SEND_LINE.store(line, std::sync::atomic::Ordering::Relaxed);
+        response.unwrap().status()
     }
 }
