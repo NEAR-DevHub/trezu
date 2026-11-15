@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { isBrowserNetworkFailure } from "./lib/sentry-noise";
 import { scrubSentryEvent } from "./lib/sentry-scrub";
 
 Sentry.init({
@@ -30,7 +31,10 @@ Sentry.init({
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
     sendDefaultPii: false,
 
-    beforeSend: scrubSentryEvent,
+    // Dropped connections ("Load failed", "Failed to fetch") are not
+    // actionable; see lib/sentry-noise.ts.
+    beforeSend: (event) =>
+        isBrowserNetworkFailure(event) ? null : scrubSentryEvent(event),
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
