@@ -37,37 +37,57 @@ export function isBrowserNetworkFailure(event: Event): boolean {
 const EXTENSION_SCHEME_RE =
     /^(chrome-extension|moz-extension|safari-extension|safari-web-extension|ms-browser-extension):$/;
 
-/** First URL in one stack line: `at fn (url:1:2)` (V8) or `fn@url:1:2`. */
-const FRAME_URL_RE = /([a-z][a-z0-9+.-]*:)\/\/[^\s)]+/i;
+/**
+ * Location of the innermost frame of one stack line: `at fn (loc:1:2)` (V8)
+ * or `fn@loc:1:2` (Firefox, Safari). `about:srcdoc` has no `//`.
+ */
+const FRAME_LOCATION_RE = /(about:srcdoc|[a-z][a-z0-9+.-]*:\/\/[^\s)]+)/i;
+
+/** Who wrote the code that threw, when it is not ours. */
+export type ForeignOrigin = "browser-extension" | "wallet-executor";
 
 /**
- * True when the error was thrown inside a browser extension's script, e.g.
- * an extension that patches `XMLHttpRequest` and throws in its own
- * `onreadystatechange` after each of our API calls. Not ours to fix.
+ * Tell from the raw `error.stack` whether the error was thrown by code we
+ * do not own:
  *
- * This must read the raw `error.stack`: by the time `beforeSend` runs, the
- * Next.js SDK has rewritten every frame origin to `app://`, so
- * `chrome-extension://<id>/executors/200.js` looks like our own
- * `app:///executors/200.js` (and in-app) in the event.
+ * - **browser-extension**: a script from an extension URL, e.g. one that
+ *   patches `XMLHttpRequest` and throws in its own `onreadystatechange`
+ *   after each of our API calls.
+ * - **wallet-executor**: a NEAR Connect wallet executor. Executors run in a
+ *   sandboxed `srcdoc` iframe, and near-connect rejects our wallet call with
+ *   the executor's error, cloned over `postMessage` with its stack. That
+ *   is the only `srcdoc` document we run, so its frames read `about:srcdoc`.
  *
- * Only the innermost frame counts: if an extension merely wraps a callback
- * and our code throws, the error is still reported.
+ * This must read the raw stack: by the time `beforeSend` runs, the Next.js
+ * SDK has rewritten every frame origin to `app://`, so
+ * `chrome-extension://<id>/executors/200.js` looks like our own in-app
+ * `app:///executors/200.js` in the event.
+ *
+ * Only the innermost frame counts: if foreign code merely wraps a callback
+ * and our code throws, the error is still ours.
  */
-export function isBrowserExtensionError(originalException: unknown): boolean {
+export function foreignOrigin(
+    originalException: unknown,
+): ForeignOrigin | null {
     if (!(originalException instanceof Error) || !originalException.stack) {
-        return false;
+        return null;
     }
     for (const line of originalException.stack.split("\n")) {
         // V8 puts "TypeError: message" first; frames start with "at ".
-        // Firefox and Safari list only frames, as "fn@url:line:col".
+        // Firefox and Safari list only frames, as "fn@location:line:col".
         const isFrame = /^\s*at\s/.test(line) || line.includes("@");
         if (!isFrame) {
             continue;
         }
-        const url = FRAME_URL_RE.exec(line);
-        if (url) {
-            return EXTENSION_SCHEME_RE.test(url[1].toLowerCase());
+        const location = FRAME_LOCATION_RE.exec(line)?.[1];
+        if (!location) {
+            continue;
         }
+        if (location.toLowerCase() === "about:srcdoc") {
+            return "wallet-executor";
+        }
+        const scheme = `${location.slice(0, location.indexOf(":")).toLowerCase()}:`;
+        return EXTENSION_SCHEME_RE.test(scheme) ? "browser-extension" : null;
     }
-    return false;
+    return null;
 }

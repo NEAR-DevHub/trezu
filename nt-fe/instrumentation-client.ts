@@ -3,10 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
-import {
-    isBrowserExtensionError,
-    isBrowserNetworkFailure,
-} from "./lib/sentry-noise";
+import { foreignOrigin, isBrowserNetworkFailure } from "./lib/sentry-noise";
 import { scrubSentryEvent } from "./lib/sentry-scrub";
 
 Sentry.init({
@@ -35,10 +32,10 @@ Sentry.init({
     sendDefaultPii: false,
 
     // Not actionable, see lib/sentry-noise.ts: dropped connections ("Load
-    // failed", "Failed to fetch") and errors thrown by browser extensions.
+    // failed", "Failed to fetch") and errors thrown by browser extensions or
+    // NEAR Connect wallet executors.
     beforeSend: (event, hint) =>
-        isBrowserNetworkFailure(event) ||
-        isBrowserExtensionError(hint.originalException)
+        isBrowserNetworkFailure(event) || foreignOrigin(hint.originalException)
             ? null
             : scrubSentryEvent(event),
 });

@@ -1,9 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import type { Event } from "@sentry/nextjs";
-import {
-    isBrowserExtensionError,
-    isBrowserNetworkFailure,
-} from "./sentry-noise";
+import { foreignOrigin, isBrowserNetworkFailure } from "./sentry-noise";
 
 function exception(type: string, value: string): Event {
     return { exception: { values: [{ type, value }] } };
@@ -54,8 +51,8 @@ function errorWithStack(stack: string): Error {
     return error;
 }
 
-describe("isBrowserExtensionError", () => {
-    it("matches errors thrown inside an extension script", () => {
+describe("foreignOrigin", () => {
+    it("recognises errors thrown inside an extension script", () => {
         for (const stack of [
             // Chrome (Sentry issue 7664264669)
             "TypeError: Cannot read properties of undefined (reading 'M_ID')\n" +
@@ -69,30 +66,47 @@ describe("isBrowserExtensionError", () => {
             "Y@safari-web-extension://ABCDEF/script.js:3:14\n" +
                 "global code@https://trezu.app/",
         ]) {
-            expect(isBrowserExtensionError(errorWithStack(stack))).toBe(true);
+            expect(foreignOrigin(errorWithStack(stack))).toBe(
+                "browser-extension",
+            );
         }
     });
 
-    it("keeps errors thrown in our code, even when an extension is on the stack", () => {
+    it("recognises errors thrown inside a NEAR Connect wallet executor", () => {
+        for (const stack of [
+            "Error: Action was cancelled\n" +
+                "    at Object.signAndSendTransaction (about:srcdoc:412:17)\n" +
+                "    at async HTMLDocument.<anonymous> (about:srcdoc:361:26)",
+            "signAndSendTransaction@about:srcdoc:412:17\n" +
+                "async*@about:srcdoc:361:26",
+        ]) {
+            expect(foreignOrigin(errorWithStack(stack))).toBe(
+                "wallet-executor",
+            );
+        }
+    });
+
+    it("keeps errors thrown in our code, even with foreign code on the stack", () => {
         for (const stack of [
             "TypeError: Cannot read properties of undefined\n" +
                 "    at handle (https://trezu.app/_next/static/chunks/0a1b2c.js:1:42)\n" +
                 "    at XMLHttpRequest.onreadystatechange (chrome-extension://abcdefghijklmnop/executors/200.js:1:2598)",
             "handle@https://trezu.app/_next/static/chunks/0a1b2c.js:1:42\n" +
                 "Y@moz-extension://0f1e2d3c/content.js:1:761",
-            // A URL in the message line must not count as a frame.
+            "Error: bad result\n" +
+                "    at onResult (https://trezu.app/_next/static/chunks/0a1b2c.js:1:42)\n" +
+                "    at about:srcdoc:12:3",
+            // A location in the message line must not count as a frame.
             "TypeError: bad response from chrome-extension://abc/x.js\n" +
                 "    at handle (https://trezu.app/_next/static/chunks/0a1b2c.js:1:42)",
         ]) {
-            expect(isBrowserExtensionError(errorWithStack(stack))).toBe(false);
+            expect(foreignOrigin(errorWithStack(stack))).toBeNull();
         }
     });
 
     it("keeps values without a usable stack", () => {
-        expect(isBrowserExtensionError("chrome-extension://abc/x.js")).toBe(
-            false,
-        );
-        expect(isBrowserExtensionError(errorWithStack(""))).toBe(false);
-        expect(isBrowserExtensionError(undefined)).toBe(false);
+        expect(foreignOrigin("chrome-extension://abc/x.js")).toBeNull();
+        expect(foreignOrigin(errorWithStack(""))).toBeNull();
+        expect(foreignOrigin(undefined)).toBeNull();
     });
 });
