@@ -83,7 +83,7 @@ pub async fn snapshot_intents_tokens(
 /// # Returns
 /// List of FT contract IDs (e.g. "usdc.near", "wrap.near") that have positive balances.
 pub async fn fetch_fastnear_ft_tokens(
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
 ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {

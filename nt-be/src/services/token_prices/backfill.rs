@@ -183,7 +183,7 @@ struct BatchOutcome {
 
 impl HistoricalPriceBackfill {
     pub fn new(
-        http: reqwest::Client,
+        http: crate::observability::HttpClient,
         base_url: String,
         pool: PgPool,
         service: Arc<TokenPriceService>,

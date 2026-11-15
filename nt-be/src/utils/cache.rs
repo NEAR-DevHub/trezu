@@ -309,7 +309,7 @@ where
 
     // Serialize to JSON
     let result_value = serde_json::to_value(&result).map_err(|e| {
-        eprintln!("Error serializing result: {}", e);
+        tracing::warn!("Error serializing result: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to serialize result".to_string(),

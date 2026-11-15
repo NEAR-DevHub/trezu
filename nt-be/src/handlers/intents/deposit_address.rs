@@ -217,16 +217,19 @@ async fn fetch_deposit_address(
         .send()
         .await
         .map_err(|e| {
-            eprintln!("Error fetching deposit address from bridge: {}", e);
-            format!("Failed to fetch deposit address: {}", e)
+            tracing::warn!(error = %e, "POA bridge deposit_address request failed");
+            format!("Failed to fetch deposit address: {e}")
         })?;
 
     if !response.status().is_success() {
-        return Err(format!("HTTP error! status: {}", response.status()));
+        return Err(format!(
+            "POA bridge deposit_address returned HTTP {}",
+            response.status()
+        ));
     }
 
     let raw = response.json::<serde_json::Value>().await.map_err(|e| {
-        eprintln!("Error parsing bridge response: {}", e);
+        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
         "Failed to parse bridge response".to_string()
     })?;
 
@@ -243,7 +246,7 @@ async fn fetch_deposit_address(
     }
 
     let data: JsonRpcResponse<DepositAddressResult> = serde_json::from_value(raw).map_err(|e| {
-        eprintln!("Error parsing bridge response: {}", e);
+        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
         "Failed to parse bridge response".to_string()
     })?;
 

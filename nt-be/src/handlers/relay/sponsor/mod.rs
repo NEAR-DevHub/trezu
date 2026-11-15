@@ -105,7 +105,7 @@ impl Sponsor {
     /// Safe to retry — the delegate nonce rejects a double-land.
     pub async fn relay_post_quantum_meta_tx(
         &self,
-        http: &reqwest::Client,
+        http: &crate::observability::HttpClient,
         signer_key: &near_api::SecretKey,
         sender_id: &AccountId,
         treasury_id: &AccountId,
@@ -281,7 +281,7 @@ impl Sponsor {
     /// broadcast. A JSON-RPC error is returned with its body so the caller can
     /// tell a refusal from a timeout.
     async fn send_once(
-        http: &reqwest::Client,
+        http: &crate::observability::HttpClient,
         endpoint: &near_api::RPCEndpoint,
         signed_tx_base64: &str,
     ) -> Result<serde_json::Value, TxSendError> {

@@ -125,7 +125,7 @@ async fn fetch_profile(state: &Arc<AppState>, account_id: &str) -> Result<Profil
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
-            eprintln!("Error fetching profile for {}: {}", account_id, e);
+            tracing::warn!("Error fetching profile for {}: {}", account_id, e);
             format!("Failed to fetch profile: {}", e)
         })?
         .data;

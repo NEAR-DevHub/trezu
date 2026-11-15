@@ -1,9 +1,9 @@
+use crate::observability::HttpClient as Client;
 use axum::{
     Json,
     extract::{Query, State},
     http::StatusCode,
 };
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::Duration;

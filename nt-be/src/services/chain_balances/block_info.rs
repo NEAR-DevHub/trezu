@@ -119,7 +119,7 @@ pub async fn get_block_data(
         {
             Ok(chunk) => chunk,
             Err(e) => {
-                eprintln!("Warning: Failed to fetch chunk {}: {}", chunk_hash_str, e);
+                tracing::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
                 continue;
             }
         };
@@ -186,7 +186,7 @@ pub async fn get_all_account_receipts(
         {
             Ok(chunk) => chunk,
             Err(e) => {
-                eprintln!("Warning: Failed to fetch chunk {}: {}", chunk_hash_str, e);
+                tracing::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
                 continue;
             }
         };

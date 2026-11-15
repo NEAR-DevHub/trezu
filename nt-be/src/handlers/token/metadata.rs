@@ -184,7 +184,7 @@ async fn fetch_chaindefuser_tokens(
 /// * `Err((StatusCode, String))` - Error with status code and message
 async fn fetch_nearblocks_ft_metadata(
     cache: &Cache,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     nearblocks_api_key: &str,
     token_id: &str,
 ) -> Result<TokenMetadata, (StatusCode, String)> {

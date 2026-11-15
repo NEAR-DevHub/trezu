@@ -78,12 +78,12 @@ pub async fn create_user_account(
                 .send_to(&state.network)
                 .await
                 .map_err(|e| {
-                    eprintln!("Error creating user account {}: {}", account_id, e);
+                    tracing::warn!("Error creating user account {}: {}", account_id, e);
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?
                 .into_result()
                 .map_err(|e| {
-                    eprintln!("Error creating user account {}: {}", account_id, e);
+                    tracing::warn!("Error creating user account {}: {}", account_id, e);
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?;
         }
@@ -96,17 +96,19 @@ pub async fn create_user_account(
                 .send_to(&state.network)
                 .await
                 .map_err(|e| {
-                    eprintln!(
+                    tracing::warn!(
                         "Error sending near to implicit account {}: {}",
-                        account_id, e
+                        account_id,
+                        e
                     );
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?
                 .into_result()
                 .map_err(|e| {
-                    eprintln!(
+                    tracing::warn!(
                         "Error sending near to implicit account {}: {}",
-                        account_id, e
+                        account_id,
+                        e
                     );
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?;
@@ -130,12 +132,12 @@ pub async fn create_user_account(
                 .send_to(&state.network)
                 .await
                 .map_err(|e| {
-                    eprintln!("Error creating deterministic account {}: {}", account_id, e);
+                    tracing::warn!("Error creating deterministic account {}: {}", account_id, e);
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?
                 .into_result()
                 .map_err(|e| {
-                    eprintln!("Error creating deterministic account {}: {}", account_id, e);
+                    tracing::warn!("Error creating deterministic account {}: {}", account_id, e);
                     (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
                 })?;
         }

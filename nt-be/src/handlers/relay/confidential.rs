@@ -323,7 +323,7 @@ impl OneclickSubmitError {
         }
     }
 
-    fn from_request_error(path: &str, error: reqwest::Error) -> Self {
+    fn from_request_error(path: &str, error: reqwest_middleware::Error) -> Self {
         let message = format!("1click {}: {}", path, error);
         if error.is_connect() {
             Self::Transient(message)

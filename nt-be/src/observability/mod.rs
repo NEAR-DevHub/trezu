@@ -6,6 +6,12 @@ use std::sync::{Arc, Mutex};
 use tracing::Level;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
+pub mod outbound;
+pub mod server_errors;
+
+pub use outbound::{HttpClient, traced_http_client};
+pub use server_errors::report_server_errors;
+
 /// Shared log broadcaster feeding the apalis-board dashboard's live-log SSE
 /// pane. Created once: the tracing layer below writes every event to it, and
 /// `jobs::board_router` serves it as the `/api/v1/events` extension. Cheap
@@ -229,7 +235,8 @@ fn scrub_sentry_event(event: &mut sentry::protocol::Event<'static>) {
 /// Stable issue grouping: events carrying an `error_code` tag (our coded
 /// business failures, emitted as `tags.error_code` tracing fields) group by
 /// that code alone; apalis task failures (tagged `queue` by its SentryLayer)
-/// group per queue. Without this, stringified errors carrying dynamic values
+/// group per queue; 5xx responses (tagged `http_route`) group per endpoint
+/// and status. Without this, stringified errors carrying dynamic values
 /// (DAO ids, counts) explode into one Sentry issue per unique message.
 fn apply_stable_fingerprint(event: &mut sentry::protocol::Event<'static>) {
     if let Some(code) = event.tags.get("error_code") {
@@ -237,6 +244,16 @@ fn apply_stable_fingerprint(event: &mut sentry::protocol::Event<'static>) {
     } else if let Some(queue) = event.tags.get("queue") {
         event.fingerprint =
             std::borrow::Cow::Owned(vec!["job-failure".into(), queue.clone().into()]);
+    } else if let Some(route) = event.tags.get("http_route") {
+        // 5xx reports from `server_errors`: the title carries the dynamic
+        // error body, so group by endpoint + status instead.
+        let tag = |key: &str| event.tags.get(key).cloned().unwrap_or_default();
+        event.fingerprint = std::borrow::Cow::Owned(vec![
+            "http-5xx".into(),
+            tag("http_method").into(),
+            route.clone().into(),
+            tag("http_status").into(),
+        ]);
     }
 }
 
@@ -346,71 +363,6 @@ fn truncate_sanitized_text(mut text: String) -> String {
 mod tests {
     use super::*;
 
-    /// The tower-http `TraceLayer` wired in `main` must log **5xx** responses at
-    /// ERROR (which the sentry-tracing layer turns into a Sentry event) via the
-    /// default `ServerErrorsAsFailures` classifier, and leave 2xx/4xx alone — so
-    /// client errors don't alarm. Mirrors the layer's failure config.
-    #[tokio::test]
-    async fn trace_layer_logs_only_5xx_at_error() {
-        use axum::{Router, body::Body, http::Request, http::StatusCode, routing::get};
-        use std::sync::{Arc, Mutex};
-        use tower::ServiceExt as _;
-        use tower_http::trace::{DefaultOnFailure, TraceLayer};
-
-        // Records the level of every event so we can count ERROR events (the
-        // ones the sentry-tracing bridge would capture).
-        #[derive(Clone, Default)]
-        struct Capture(Arc<Mutex<Vec<tracing::Level>>>);
-        impl<S: tracing::Subscriber> tracing_subscriber::Layer<S> for Capture {
-            fn on_event(
-                &self,
-                event: &tracing::Event<'_>,
-                _ctx: tracing_subscriber::layer::Context<'_, S>,
-            ) {
-                self.0.lock().unwrap().push(*event.metadata().level());
-            }
-        }
-
-        let events = Capture::default();
-        let subscriber = tracing_subscriber::registry().with(events.clone());
-        let _guard = tracing::subscriber::set_default(subscriber);
-
-        async fn ok() -> &'static str {
-            "ok"
-        }
-        async fn bad() -> StatusCode {
-            StatusCode::BAD_REQUEST
-        }
-        async fn err() -> StatusCode {
-            StatusCode::INTERNAL_SERVER_ERROR
-        }
-        let app = Router::new()
-            .route("/ok", get(ok))
-            .route("/bad", get(bad))
-            .route("/err", get(err))
-            .layer(
-                TraceLayer::new_for_http()
-                    .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
-            );
-
-        for path in ["/ok", "/bad", "/err"] {
-            let _ = app
-                .clone()
-                .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
-                .await
-                .unwrap();
-        }
-
-        let error_events = events
-            .0
-            .lock()
-            .unwrap()
-            .iter()
-            .filter(|level| **level == tracing::Level::ERROR)
-            .count();
-        assert_eq!(error_events, 1, "only the 5xx response logs at ERROR");
-    }
-
     /// The apalis-board layer must forward events emitted inside an apalis
     /// `task` span to the broadcaster — that's what the dashboard's `/events`
     /// SSE endpoint streams. It filters to `span.is_some()`, so only
@@ -519,7 +471,7 @@ mod tests {
     }
 
     #[test]
-    fn fingerprint_groups_by_error_code_then_queue() {
+    fn fingerprint_groups_by_error_code_then_queue_then_route() {
         let mut event = sentry::protocol::Event {
             tags: [(
                 "error_code".to_string(),
@@ -542,6 +494,23 @@ mod tests {
         assert_eq!(
             event.fingerprint.as_ref(),
             ["job-failure", "token-price-ingest"]
+        );
+
+        let mut event = sentry::protocol::Event {
+            tags: [
+                ("http_method", "GET"),
+                ("http_route", "/api/intents/swap-tokens"),
+                ("http_status", "500"),
+            ]
+            .into_iter()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect(),
+            ..Default::default()
+        };
+        apply_stable_fingerprint(&mut event);
+        assert_eq!(
+            event.fingerprint.as_ref(),
+            ["http-5xx", "GET", "/api/intents/swap-tokens", "500"]
         );
 
         // Untagged events keep Sentry's default grouping.

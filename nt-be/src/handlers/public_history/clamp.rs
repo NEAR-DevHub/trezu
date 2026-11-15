@@ -180,7 +180,7 @@ async fn resolve_and_push(
 async fn discover_held_assets(
     pool: &PgPool,
     network: &NetworkConfig,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
     block_height: u64,
@@ -334,7 +334,7 @@ async fn discover_held_assets(
 pub async fn clamp_account_to_head(
     pool: &PgPool,
     network: &NetworkConfig,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
 ) -> Result<ClampSummary, ClampError> {
@@ -482,7 +482,7 @@ mod tests {
     -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let pool = PgPool::connect("postgres://unused").await?;
         let network = NetworkConfig::mainnet();
-        let http_client = reqwest::Client::new();
+        let http_client = crate::observability::traced_http_client(reqwest::Client::new());
 
         stop_history_ingestion(&pool, "dao.sputnik-dao.near").await?;
         clamp_account_to_head(

@@ -116,7 +116,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     AppState {
         cache: Cache::new(),
         telegram_client: crate::utils::telegram::TelegramClient::default(),
-        http_client,
+        http_client: crate::observability::traced_http_client(http_client),
         nearblocks_gate,
         defillama_limiter: crate::utils::rate_limiter::RateLimiter::per_minute(
             "defillama-test",
