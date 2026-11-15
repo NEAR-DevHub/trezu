@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { isClientDisconnect } from "./lib/sentry-noise";
 import { scrubSentryEvent } from "./lib/sentry-scrub";
 
 Sentry.init({
@@ -22,5 +23,8 @@ Sentry.init({
     // redaction stance.
     sendDefaultPii: false,
 
-    beforeSend: scrubSentryEvent,
+    // A client disconnecting mid-render is not actionable; see
+    // lib/sentry-noise.ts.
+    beforeSend: (event) =>
+        isClientDisconnect(event) ? null : scrubSentryEvent(event),
 });
