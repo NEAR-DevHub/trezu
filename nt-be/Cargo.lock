@@ -3055,6 +3055,7 @@ dependencies = [
  "async-trait",
  "axum",
  "axum-extra",
+ "backtrace",
  "base64 0.22.1",
  "bigdecimal",
  "borsh",

@@ -6,8 +6,9 @@
 //! about the route or the cause. This middleware reads the error body that is
 //! already on its way to the client (e.g. `HTTP error! status: 403 Forbidden`)
 //! and logs it at ERROR with the matched route. The sentry-tracing layer then
-//! captures that as the event. The breadcrumbs recorded during the request
-//! (see [`super::outbound`]) say which upstream call caused it.
+//! captures that as the event. The last outbound call that failed during the
+//! request (see [`super::outbound`]) is attached as `upstream_*` tags and
+//! fields, and every outbound call is a breadcrumb.
 
 use axum::{
     body::{Body, HttpBody},
@@ -16,7 +17,9 @@ use axum::{
     response::Response,
 };
 
-use super::sanitize_sensitive_text;
+use std::time::Instant;
+
+use super::{sanitize_sensitive_text, track_upstream_failures};
 
 /// Error bodies are short strings or the small `ApiError` JSON envelope. Bigger
 /// or streaming bodies are left untouched rather than buffered.
@@ -39,7 +42,9 @@ pub async fn report_server_errors(request: Request, next: Next) -> Response {
         .map(|path| path.as_str().to_owned());
     let path = request.uri().path().to_owned();
 
-    let response = next.run(request).await;
+    let started = Instant::now();
+    let (response, upstream) = track_upstream_failures(next.run(request)).await;
+    let elapsed_ms = started.elapsed().as_millis() as u64;
     let status = response.status();
     if !status.is_server_error() {
         return response;
@@ -48,16 +53,39 @@ pub async fn report_server_errors(request: Request, next: Next) -> Response {
     let (parts, body) = response.into_parts();
     let (error_body, body) = capture_body(body).await;
     let route = route.as_deref().unwrap_or(UNMATCHED_ROUTE);
+    let upstream = upstream.as_ref();
+    let upstream_headers = upstream
+        .filter(|failure| !failure.response_headers.is_empty())
+        .map(|failure| format!("{:?}", failure.response_headers));
+    let upstream_call_path = upstream
+        .map(|failure| failure.call_site.call_path())
+        .filter(|path| !path.is_empty())
+        .map(|path| path.join("\n"));
 
     // The message carries the cause so the Sentry issue title is useful on its
     // own. `apply_stable_fingerprint` groups by method/route/status (the tags),
     // so a dynamic body does not split one failure into many issues.
+    //
+    // `upstream_*` describe the last outbound call that failed while serving
+    // this request. That is usually, but not provably, the cause. As tags they
+    // allow searches like "500s where upstream_host is the bridge". `None`
+    // fields are omitted from the event.
     tracing::error!(
         tags.http_method = %method,
         tags.http_route = route,
         tags.http_status = status.as_u16(),
+        tags.upstream_host = upstream.map(|failure| failure.host.as_str()),
+        tags.upstream_status = upstream.and_then(|failure| failure.status),
+        tags.upstream_error_kind = upstream.and_then(|failure| failure.error_kind),
         http.path = %path,
+        elapsed_ms,
         error_body = %error_body,
+        upstream.request = upstream.map(|failure| format!("{} {}", failure.method, failure.url)),
+        upstream.elapsed_ms = upstream.map(|failure| failure.elapsed_ms),
+        upstream.error = upstream.and_then(|failure| failure.error.as_deref()),
+        upstream.response_body = upstream.and_then(|failure| failure.response_body.as_deref()),
+        upstream.response_headers = upstream_headers.as_deref(),
+        upstream.call_path = upstream_call_path.as_deref(),
         "{method} {route} -> {status}: {error_body}"
     );
 
@@ -222,5 +250,119 @@ mod tests {
         assert_eq!(event.field("tags.http_route"), Some("/tokens/{id}"));
         assert_eq!(event.field("tags.http_status"), Some("500"));
         assert_eq!(event.field("http.path"), Some("/tokens/abc"));
+    }
+
+    /// The 5xx event must name the upstream call that failed during the
+    /// request: host and status as tags, plus its body and diagnostic
+    /// headers. Cookies and other non-diagnostic headers must not leak.
+    #[tokio::test]
+    async fn server_errors_carry_the_failed_upstream_call() {
+        use wiremock::matchers::method;
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let upstream = MockServer::start().await;
+        Mock::given(method("POST"))
+            .respond_with(
+                ResponseTemplate::new(403)
+                    .insert_header("server", "cloudflare")
+                    .insert_header("cf-ray", "8c1f2a3b4c5d6e7f-FRA")
+                    .insert_header("set-cookie", "session=secret")
+                    .set_body_string("error code: 1020"),
+            )
+            .mount(&upstream)
+            .await;
+
+        let events = Capture::default();
+        let _guard =
+            tracing::subscriber::set_default(tracing_subscriber::registry().with(events.clone()));
+
+        let client = super::super::traced_http_client(reqwest::Client::new());
+        let url = format!("{}/rpc?apiKey=secret", upstream.uri());
+        let app = Router::new()
+            .route(
+                "/swap-tokens",
+                get(move || {
+                    let client = client.clone();
+                    let url = url.clone();
+                    async move {
+                        let status = fetch_bridge_status(&client, &url).await;
+                        (
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("HTTP error! status: {status}"),
+                        )
+                    }
+                }),
+            )
+            .layer(axum::middleware::from_fn(report_server_errors));
+
+        let (status, _) = call(&app, "/swap-tokens").await;
+        assert_eq!(status, StatusCode::INTERNAL_SERVER_ERROR);
+
+        let errors: Vec<_> = events
+            .0
+            .lock()
+            .unwrap()
+            .iter()
+            .filter(|event| event.level == tracing::Level::ERROR)
+            .cloned()
+            .collect();
+        assert_eq!(errors.len(), 1, "{errors:?}");
+        let event = &errors[0];
+        assert_eq!(event.field("tags.upstream_host"), Some("127.0.0.1"));
+        assert_eq!(event.field("tags.upstream_status"), Some("403"));
+        assert_eq!(event.field("tags.upstream_error_kind"), None);
+        let request = event.field("upstream.request").expect("upstream.request");
+        assert!(
+            request.starts_with("POST http://127.0.0.1:") && request.ends_with("/rpc"),
+            "query string must be dropped: {request}"
+        );
+        assert_eq!(
+            event.field("upstream.response_body"),
+            Some("error code: 1020")
+        );
+        let headers = event
+            .field("upstream.response_headers")
+            .expect("upstream.response_headers");
+        assert!(headers.contains("cloudflare") && headers.contains("8c1f2a3b4c5d6e7f-FRA"));
+        assert!(
+            !headers.contains("session"),
+            "cookies must not be recorded: {headers}"
+        );
+        assert!(event.field("elapsed_ms").is_some());
+
+        // Innermost first: the helper that sent the request, then the handler
+        // that called it. Middleware frames are not listed.
+        let call_path: Vec<_> = event
+            .field("upstream.call_path")
+            .expect("upstream.call_path")
+            .lines()
+            .map(str::to_owned)
+            .collect();
+        assert!(
+            call_path[0].starts_with(
+                "nt_be::observability::server_errors::tests::fetch_bridge_status (src/observability/server_errors.rs:"
+            ),
+            "{call_path:#?}"
+        );
+        assert!(
+            call_path[1..]
+                .iter()
+                .any(|frame| frame.contains("server_errors_carry_the_failed_upstream_call")),
+            "{call_path:#?}"
+        );
+        assert!(
+            !call_path.iter().any(|frame| frame.contains("outbound::")
+                || frame.contains("report_server_errors")),
+            "{call_path:#?}"
+        );
+    }
+
+    /// Stands in for e.g. `fetch_supported_tokens_data`: the place in our code
+    /// that calls the upstream, which the call path must name.
+    async fn fetch_bridge_status(
+        client: &crate::observability::HttpClient,
+        url: &str,
+    ) -> StatusCode {
+        client.post(url).send().await.unwrap().status()
     }
 }

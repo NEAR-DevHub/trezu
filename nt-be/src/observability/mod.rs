@@ -9,7 +9,7 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 pub mod outbound;
 pub mod server_errors;
 
-pub use outbound::{HttpClient, traced_http_client};
+pub use outbound::{HttpClient, UpstreamFailure, traced_http_client, track_upstream_failures};
 pub use server_errors::report_server_errors;
 
 /// Shared log broadcaster feeding the apalis-board dashboard's live-log SSE
@@ -116,6 +116,11 @@ fn init_tracing_subscriber(enable_sentry: bool) {
 fn sentry_event_filter(
     metadata: &tracing::Metadata<'_>,
 ) -> sentry::integrations::tracing::EventFilter {
+    // Outbound-call logs already reach Sentry as structured `http`
+    // breadcrumbs, added directly so `RUST_LOG` cannot filter them out.
+    if metadata.target() == outbound::LOG_TARGET {
+        return sentry::integrations::tracing::EventFilter::Ignore;
+    }
     match *metadata.level() {
         Level::ERROR => sentry::integrations::tracing::EventFilter::Event,
         Level::WARN | Level::INFO | Level::DEBUG => {
