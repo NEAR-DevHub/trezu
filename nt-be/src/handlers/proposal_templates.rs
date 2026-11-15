@@ -239,6 +239,7 @@ async fn fetch_template_by_id(
     .await
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn list_proposal_templates(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -273,6 +274,7 @@ pub async fn list_proposal_templates(
     Ok(Json(templates))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn create_proposal_template(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -365,6 +367,7 @@ pub async fn create_proposal_template(
     Ok((StatusCode::CREATED, Json(template)))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, template_id = %id, user = %auth_user.account_id))]
 pub async fn update_proposal_template(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -441,6 +444,7 @@ pub async fn update_proposal_template(
     Ok(Json(template))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, template_id = %id, user = %auth_user.account_id))]
 pub async fn delete_proposal_template(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

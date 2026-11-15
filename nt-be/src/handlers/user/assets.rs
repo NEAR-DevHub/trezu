@@ -326,6 +326,7 @@ async fn fetch_intents_owned_tokens(
 }
 
 /// Fetches balances for multiple tokens from intents.near
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, tokens = token_ids.len()))]
 async fn fetch_intents_balances(
     state: &Arc<AppState>,
     account_id: &AccountId,
@@ -1055,6 +1056,7 @@ async fn load_live_public_balances(
     })
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account))]
 pub async fn compute_user_assets(
     state: &Arc<AppState>,
     account: &AccountId,
@@ -1347,6 +1349,7 @@ pub async fn compute_user_assets(
         .collect())
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_user_assets(
     State(state): State<Arc<AppState>>,
     auth: crate::auth::OptionalAuthUser,
@@ -1380,6 +1383,7 @@ pub async fn get_user_assets(
 /// the DAO account (NEAR / NEP-141) or its public intents balance instead of
 /// the confidential balance. Sponsor-fronted NEAR is excluded and the request
 /// fails when that accounting cannot be loaded (never falls back to gross).
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_confidential_public_assets(
     State(state): State<Arc<AppState>>,
     auth: crate::auth::OptionalAuthUser,

@@ -18,6 +18,7 @@ pub struct AppEventsQuery {
     pub account_id: AccountId,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %query.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn app_events(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,

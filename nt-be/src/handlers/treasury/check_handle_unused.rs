@@ -20,6 +20,7 @@ pub struct CheckHandleUnusedResponse {
     pub unused: bool,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %params.treasury_id))]
 pub async fn check_handle_unused(
     State(state): State<Arc<AppState>>,
     Query(params): Query<CheckHandleUnusedQuery>,

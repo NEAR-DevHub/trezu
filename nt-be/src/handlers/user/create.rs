@@ -36,6 +36,7 @@ pub struct CreateUserResponse {
     pub created: bool,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %payload.account_id))]
 pub async fn create_user_account(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<CreateUserRequest>,

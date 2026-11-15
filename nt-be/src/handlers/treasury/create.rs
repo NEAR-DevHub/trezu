@@ -11,6 +11,7 @@ use near_api::{Account, AccountId, Contract, NearToken, Tokens};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use tokio::sync::mpsc;
+use tracing::Instrument;
 
 use crate::{
     AppState,
@@ -260,6 +261,7 @@ pub async fn send_progress(
         .await;
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %payload.account_id, user = %auth_user.account_id))]
 pub async fn create_treasury_stream(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -285,17 +287,20 @@ pub async fn create_treasury_stream(
 
     let (tx, mut rx) = mpsc::channel::<ProgressEvent>(32);
 
-    tokio::spawn(async move {
-        if let Err(evt) = run_creation(state, payload, tx.clone()).await {
-            tracing::error!(
-                "Treasury creation failed: step={}, status={}, message={}",
-                evt.step,
-                evt.status,
-                evt.message.as_deref().unwrap_or("unknown error")
-            );
-            let _ = tx.send(evt).await;
+    tokio::spawn(
+        async move {
+            if let Err(evt) = run_creation(state, payload, tx.clone()).await {
+                tracing::error!(
+                    "Treasury creation failed: step={}, status={}, message={}",
+                    evt.step,
+                    evt.status,
+                    evt.message.as_deref().unwrap_or("unknown error")
+                );
+                let _ = tx.send(evt).await;
+            }
         }
-    });
+        .in_current_span(),
+    );
 
     let stream = async_stream::stream! {
         while let Some(evt) = rx.recv().await {

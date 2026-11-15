@@ -325,6 +325,7 @@ fn apply_treasury_settings_to_profile(
 }
 
 /// Main handler for single profile endpoint
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_profile(
     State(state): State<Arc<AppState>>,
     auth: OptionalAuthUser,
@@ -382,6 +383,7 @@ pub async fn get_profile(
 }
 
 /// `PUT /api/user/profile` — update the authenticated user's local profile.
+#[tracing::instrument(level = "info", skip_all, fields(user = %auth_user.account_id))]
 pub async fn update_profile(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

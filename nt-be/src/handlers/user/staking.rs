@@ -169,6 +169,7 @@ async fn fetch_staking_validator_details(
         .await
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(pool_id = %params.pool_id))]
 pub async fn get_staking_validator_details(
     State(state): State<Arc<AppState>>,
     Query(params): Query<StakingValidatorQuery>,
@@ -303,6 +304,7 @@ async fn fetch_staking_pools(
 }
 
 /// Fetch balance from a single staking pool
+#[tracing::instrument(level = "debug", skip_all, fields(pool_id = %pool_id))]
 async fn fetch_staking_pool_balance(
     network: &NetworkConfig,
     account_id: &AccountId,
@@ -378,6 +380,7 @@ pub async fn fetch_staking_balances(
 
 /// Read current staking state for known pools without a history API dependency.
 /// A failed pool read must fail the ledger response instead of understating funds.
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, pools = pool_ids.len()))]
 pub(crate) async fn fetch_staking_balances_for_pools(
     network: &NetworkConfig,
     account_id: &AccountId,

@@ -164,6 +164,7 @@ pub async fn get_chat_info(
 // POST /api/telegram/connect
 // ---------------------------------------------------------------------------
 
+#[tracing::instrument(level = "info", skip_all, fields(treasuries = body.treasury_ids.len(), user = %auth_user.account_id))]
 pub async fn connect_treasuries(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -351,6 +352,7 @@ pub async fn connect_treasuries(
 // GET /api/telegram/status?dao_id=xxx
 // ---------------------------------------------------------------------------
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %params.dao_id))]
 pub async fn get_status(
     State(state): State<Arc<AppState>>,
     _auth_user: AuthUser,
@@ -389,6 +391,7 @@ pub async fn get_status(
 // DELETE /api/telegram/connect
 // ---------------------------------------------------------------------------
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %body.dao_id, user = %auth_user.account_id))]
 pub async fn disconnect_treasury(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

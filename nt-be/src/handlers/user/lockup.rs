@@ -290,6 +290,7 @@ pub struct LockupContractResponse {
     pub staking_pool_account_id: Option<String>,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id))]
 pub async fn get_user_lockup(
     State(state): State<Arc<AppState>>,
     Query(params): Query<LockupQuery>,
