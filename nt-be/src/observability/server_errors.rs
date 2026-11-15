@@ -8,7 +8,8 @@
 //! and logs it at ERROR with the matched route. The sentry-tracing layer then
 //! captures that as the event. The last outbound call that failed during the
 //! request (see [`super::outbound`]) is attached as `upstream_*` tags and
-//! fields, and every outbound call is a breadcrumb.
+//! fields, and every outbound call is a breadcrumb. The event is tagged
+//! `alert_priority=p0` so Sentry alert rules page on it.
 
 use axum::{
     body::{Body, HttpBody},
@@ -20,6 +21,11 @@ use axum::{
 use std::time::Instant;
 
 use super::{sanitize_sensitive_text, track_upstream_failures};
+use crate::error_event::Priority;
+
+/// Every 5xx pages: the user saw a failure we did not handle gracefully.
+/// Sentry alert rules route on the `alert_priority` tag (docs/RUNBOOKS.md).
+const SERVER_ERROR_PRIORITY: Priority = Priority::P0;
 
 /// Error bodies are short strings or the small `ApiError` JSON envelope. Bigger
 /// or streaming bodies are left untouched rather than buffered.
@@ -71,6 +77,7 @@ pub async fn report_server_errors(request: Request, next: Next) -> Response {
     // allow searches like "500s where upstream_host is the bridge". `None`
     // fields are omitted from the event.
     tracing::error!(
+        tags.alert_priority = SERVER_ERROR_PRIORITY.as_str(),
         tags.http_method = %method,
         tags.http_route = route,
         tags.http_status = status.as_u16(),
@@ -249,6 +256,7 @@ mod tests {
         );
         assert_eq!(event.field("tags.http_route"), Some("/tokens/{id}"));
         assert_eq!(event.field("tags.http_status"), Some("500"));
+        assert_eq!(event.field("tags.alert_priority"), Some("p0"));
         assert_eq!(event.field("http.path"), Some("/tokens/abc"));
     }
 
