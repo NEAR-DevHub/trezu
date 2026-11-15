@@ -131,6 +131,11 @@ async fn load_refresh_status(
     ))
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str()))
+)]
 pub async fn get_confidential_history_refresh_status(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -144,6 +149,11 @@ pub async fn get_confidential_history_refresh_status(
     Ok(Json(status))
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %request.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str()))
+)]
 pub async fn refresh_confidential_history(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,

@@ -162,6 +162,7 @@ pub struct QuoteEnvelope {
 
 /// Fetch swap status for a public (non-confidential) treasury from the 1Click
 /// `/v0/status` endpoint.
+#[tracing::instrument(level = "debug", skip_all, fields(deposit_address = deposit_address))]
 pub async fn fetch_public_swap_status(
     http_client: &Client,
     oneclick_api_url: &str,
@@ -294,6 +295,11 @@ pub async fn fetch_confidential_swap_status(
     )
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(deposit_address = %query.deposit_address, dao_id = query.dao_id.as_deref())
+)]
 pub async fn get_swap_status(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SwapStatusQuery>,
@@ -385,6 +391,7 @@ pub async fn get_swap_status(
     Ok(Json(result))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(deposit_address = %query.deposit_address))]
 pub async fn get_quote_by_deposit_address(
     State(state): State<Arc<AppState>>,
     Query(query): Query<QuoteByDepositAddressQuery>,

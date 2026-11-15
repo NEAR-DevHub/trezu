@@ -116,6 +116,7 @@ fn quote_recipient(quote_metadata: Option<&Value>) -> Option<String> {
 /// only when 1Click already accepted the intent (`submit_result` present); an
 /// executed-but-unsubmitted row stays `pending` and its submission state
 /// becomes `due`, which queues it for the per-DAO 1Click poll.
+#[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id, hash = %payload_hash))]
 pub async fn stamp_confidential_intent_execution(
     app_pool: &PgPool,
     dao_id: &str,
@@ -265,6 +266,11 @@ async fn update_confidential_intent_proposal(
     Ok(false)
 }
 
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(dao_id = %dao_id, proposal_id = proposal_id)
+)]
 pub(crate) async fn handle_confidential_add_proposal(
     app_pool: &PgPool,
     network: &NetworkConfig,

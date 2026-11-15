@@ -57,6 +57,11 @@ impl Sponsor {
 
     /// Send an idempotent function call (e.g. `storage_deposit` with
     /// `registration_only`), retrying transient send failures.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(receiver = %receiver, method = method_name)
+    )]
     pub async fn call_idempotent(
         &self,
         receiver: &AccountId,
@@ -87,6 +92,14 @@ impl Sponsor {
 
     /// Relay a NEP-366 meta-transaction: wrap the signed delegate action and send it
     /// to its `sender_id`. Safe to retry — the delegate nonce rejects a double-land.
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(
+            sender_id = %signed.delegate_action.sender_id,
+            receiver_id = %signed.delegate_action.receiver_id
+        )
+    )]
     pub async fn relay_meta_tx(
         &self,
         signed: SignedDelegateAction,
@@ -103,6 +116,11 @@ impl Sponsor {
     /// Relay an ML-DSA-65 meta-transaction. The user's signed bytes are embedded
     /// as-is; this signs only the outer transaction with the sponsor key.
     /// Safe to retry — the delegate nonce rejects a double-land.
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(sender_id = %sender_id, treasury_id = %treasury_id)
+    )]
     pub async fn relay_post_quantum_meta_tx(
         &self,
         http: &crate::observability::HttpClient,
@@ -228,6 +246,11 @@ impl Sponsor {
 
     /// Replay the sponsor's prepared actions directly to the user's wallet contract.
     /// Safe to retry — the wallet request nonce rejects a double-land.
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(receiver = %receiver, actions = actions.len())
+    )]
     pub async fn replay_actions(
         &self,
         receiver: &AccountId,

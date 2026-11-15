@@ -18,6 +18,7 @@ pub struct BatchPaymentQuery {
     pub batch_id: String,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(batch_id = %params.batch_id))]
 pub async fn get_batch_payment(
     State(state): State<Arc<AppState>>,
     Query(params): Query<BatchPaymentQuery>,

@@ -36,6 +36,15 @@ pub struct BulkPaymentConfirmResponse {
     pub success: bool,
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        dao_id = %request.dao_id,
+        hash = %request.header_payload_hash,
+        user = %auth_user.account_id
+    )
+)]
 pub async fn bulk_payment_confirm(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

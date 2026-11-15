@@ -87,6 +87,15 @@ async fn fetch_bridge_deposit_address(
 /// Guests and non-members may generate addresses — depositing funds into a
 /// treasury is not a member-only action. Confidential quotes use the app API
 /// key (no DAO JWT).
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        account_id = %request.account_id,
+        chain = %request.chain,
+        token_id = request.token_id.as_deref()
+    )
+)]
 pub async fn get_deposit_address(
     State(state): State<Arc<AppState>>,
     Json(request): Json<DepositAddressRequest>,
@@ -193,6 +202,7 @@ async fn activate_deposit_watch(
     }
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(deposit_mode = deposit_mode))]
 async fn fetch_deposit_address(
     state: &AppState,
     account_id: &str,

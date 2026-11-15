@@ -150,6 +150,16 @@ async fn is_treasury_quote(
     }
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        account_id = %query.account_id,
+        chain = query.chain.as_deref(),
+        quote_deposit_address = query.quote_deposit_address.as_deref(),
+        user = user.0.as_ref().map(|u| u.account_id.as_str())
+    )
+)]
 pub async fn get_deposit_tracker(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
