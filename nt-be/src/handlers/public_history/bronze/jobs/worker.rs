@@ -264,6 +264,7 @@ async fn consume_backfill_budget(
     Ok(row.is_some())
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(source = %source, event_count = page_events.len()))]
 async fn ingest_page(
     state: &AppState,
     source: PublicHistorySource,
@@ -313,6 +314,11 @@ async fn trigger_transaction_is_ingested(
     .await
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, source = %source, trigger_block_height)
+)]
 async fn run_latest_refresh(
     state: &AppState,
     account_id: &str,
@@ -450,6 +456,7 @@ async fn run_latest_refresh(
 /// (or seeds a first page when no watermark exists). Advances `last_seen`
 /// on success but never writes coverage stamps — that is the caller's
 /// all-sources-succeeded decision.
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id, source = %source))]
 async fn drain_source_to_watermark(
     state: &AppState,
     account_id: &str,
@@ -511,6 +518,7 @@ async fn drain_source_to_watermark(
 /// covers all three sources; each drains to its watermark, and the coverage
 /// stamps the verifier trusts publish only after every drain succeeded, so a
 /// partial refresh can never certify coverage the account does not have.
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id))]
 pub(super) async fn run_readiness_refresh(
     state: &AppState,
     account_id: &str,
@@ -540,6 +548,11 @@ pub(super) async fn run_readiness_refresh(
     Ok(totals)
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, source = %source, cursor = job_cursor.as_deref())
+)]
 async fn run_backfill_page(
     state: &AppState,
     account_id: &str,

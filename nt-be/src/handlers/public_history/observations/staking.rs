@@ -266,6 +266,11 @@ async fn validate_pending_pools(
 }
 
 #[allow(clippy::too_many_arguments)]
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %cursor.account_id, pool = %cursor.pool_account_id, pass = ?pass)
+)]
 async fn observe_pool(
     state: &Arc<AppState>,
     cursor: &PoolCursor,

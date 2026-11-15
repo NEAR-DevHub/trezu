@@ -54,6 +54,11 @@ fn check_cooldown(key: String) -> bool {
     }
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %request.account_id, proposal_id = request.proposal_id)
+)]
 pub async fn refresh_public_proposal(
     State(state): State<Arc<AppState>>,
     Json(request): Json<RefreshProposalRequest>,

@@ -172,6 +172,11 @@ fn carry_forward_balances(
 
 /// Gold-only public chart builder. Callers choose this entry point only
 /// after the rollout flag is enabled; it deliberately has no fallback path.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, start_time = %start_time, end_time = %end_time, interval = ?interval)
+)]
 pub async fn build_public_chart_response(
     state: &Arc<AppState>,
     account_id: &str,
@@ -311,6 +316,11 @@ async fn priced_chart_series(
 /// rows exist — there is no verification gate (balances are checked against
 /// the 1Click balances API at projection time); a running backfill or
 /// recompute degrades the status to Stale, never to empty.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, start_time = %start_time, end_time = %end_time, interval = ?interval)
+)]
 pub async fn build_confidential_chart_response(
     state: &Arc<AppState>,
     account_id: &str,

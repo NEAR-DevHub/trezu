@@ -331,6 +331,11 @@ async fn discover_held_assets(
 /// pre-clamp realtime demand. Used both to cap a DAO's ongoing deep backfill
 /// and to restart a previously-stopped one — restart never resumes old
 /// cursor state, it always re-anchors fresh at the current head.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, block_height = tracing::field::Empty)
+)]
 pub async fn clamp_account_to_head(
     pool: &PgPool,
     network: &NetworkConfig,
@@ -339,6 +344,7 @@ pub async fn clamp_account_to_head(
     account_id: &str,
 ) -> Result<ClampSummary, ClampError> {
     let (block_height, block_time) = resolve_head_block(network).await?;
+    tracing::Span::current().record("block_height", block_height);
     let held_assets = discover_held_assets(
         pool,
         network,

@@ -267,6 +267,11 @@ async fn probe_lockup_exists(
     }
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %cursor.account_id, lockup = %cursor.lockup_account_id, pass = ?pass)
+)]
 async fn observe_lockup(
     state: &Arc<AppState>,
     cursor: &LockupCursor,
