@@ -167,6 +167,7 @@ async fn refresh_jwt_inner(
 /// Load-refresh-persist cycle for one credential scope, entirely through the
 /// credential store. The refresh token is never rotated by 1Click's refresh
 /// endpoint, so the re-encrypted bundle keeps the stored one.
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id, scope = ?scope))]
 async fn refresh_scoped_jwt(
     state: &AppState,
     account_id: &str,

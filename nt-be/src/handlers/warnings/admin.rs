@@ -611,6 +611,7 @@ pub async fn create_warning(
     Ok(Json(warning))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(warning_id = id))]
 pub async fn update_warning(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -903,6 +904,7 @@ pub async fn update_warning(
     Ok(Json(updated).into_response())
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(warning_id = id))]
 pub async fn delete_warning(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,

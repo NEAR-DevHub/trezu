@@ -99,6 +99,11 @@ struct PublicProposalMetadataRow {
     transaction_type: String,
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %dao_id, user = auth_user.0.as_ref().map(|u| u.account_id.as_str()))
+)]
 pub async fn get_proposals(
     State(state): State<Arc<AppState>>,
     auth_user: OptionalAuthUser,
@@ -240,6 +245,15 @@ pub async fn get_proposals(
     Ok((StatusCode::OK, Json(response)))
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        dao_id = %dao_id,
+        proposal_id = proposal_id,
+        user = auth_user.0.as_ref().map(|u| u.account_id.as_str())
+    )
+)]
 pub async fn get_proposal(
     State(state): State<Arc<AppState>>,
     auth_user: OptionalAuthUser,
@@ -311,6 +325,7 @@ pub struct ProposersResponse {
     pub total: usize,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id))]
 pub async fn get_dao_proposers(
     State(state): State<Arc<AppState>>,
     Path(dao_id): Path<AccountId>,
@@ -355,6 +370,7 @@ pub struct ApproversResponse {
     pub total: usize,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id))]
 pub async fn get_dao_approvers(
     State(state): State<Arc<AppState>>,
     Path(dao_id): Path<AccountId>,

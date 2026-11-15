@@ -163,6 +163,11 @@ async fn activation_proposal_pending(
 }
 
 /// GET /api/confidential-intents/bulk-payment/activation?daoId=…
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %query.dao_id, user = %auth_user.account_id)
+)]
 pub async fn get_bulk_activation_status(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -253,6 +258,11 @@ pub struct PrepareActivationResponse {
 ///
 /// Idempotent: re-preparing supersedes any previous pending attempt (its
 /// proposal would authenticate a stale payload and is ignored on approval).
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %request.dao_id, user = %auth_user.account_id)
+)]
 pub async fn prepare_bulk_activation(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

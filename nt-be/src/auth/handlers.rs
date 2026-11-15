@@ -95,6 +95,7 @@ pub async fn create_challenge(
 /// Resolves the authorization on-chain (recursively, via `w_resolve_auth`, with
 /// NEP-413 fallback for regular accounts), then confirms the resolved payload
 /// matches a challenge this backend issued and consumes it.
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %request.account_id))]
 pub async fn login(
     State(state): State<Arc<AppState>>,
     jar: CookieJar,

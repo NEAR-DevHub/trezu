@@ -820,6 +820,11 @@ async fn persist_completed_exchange(
     Ok(())
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, recompute_from = tracing::field::Empty)
+)]
 pub async fn project_public_gold_for_account(
     pool: &PgPool,
     token_prices: &TokenPriceService,
@@ -933,6 +938,7 @@ pub async fn project_public_gold_for_account(
         );
     }
     let recompute_from = widened_recompute_from;
+    tracing::Span::current().record("recompute_from", tracing::field::display(recompute_from));
 
     let stamps = load_balance_stamps(&mut tx, account_id, recompute_from).await?;
     let rows = load_silver_suffix(&mut tx, account_id, recompute_from).await?;

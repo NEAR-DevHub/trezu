@@ -17,6 +17,11 @@ pub(crate) fn latest_seen(page: &NearblocksPage) -> Option<i64> {
     page.events.iter().map(|event| event.block_height).max()
 }
 
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(source = %source, cursor = cursor.map(NearblocksCursor::as_str))
+)]
 pub(crate) async fn fetch_source_page(
     state: &AppState,
     account_id: &str,

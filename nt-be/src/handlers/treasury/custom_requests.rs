@@ -36,6 +36,7 @@ fn internal_error(context: &str, e: impl std::fmt::Display) -> (StatusCode, Stri
 
 /// `GET /api/treasury/{dao_id}/custom-requests` — whether the feature is enabled for this treasury.
 /// Membership-gated; a treasury with no `monitored_accounts` row yet reads as disabled.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn get_custom_requests_setting(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -61,6 +62,7 @@ pub async fn get_custom_requests_setting(
 /// Gated on `ChangePolicy` (admin), matching template deletion. The treasury row is ensured through the
 /// canonical `register_or_refresh_monitored_account` registrar (not a bare upsert) so it goes
 /// through the same `.sputnik-dao.near` suffix gate as every other treasury, then the flag is set.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn set_custom_requests_setting(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

@@ -1,6 +1,6 @@
 name: Publish E2E Report
 
-# After "Frontend E2E Tests" completes, publish that run's Playwright report
+# After "E2E Tests" completes, publish that run's Playwright report
 # (with inline videos, traces and screenshots) to GitHub Pages under a per-PR
 # path, and post/update a sticky comment linking it.
 #
@@ -19,7 +19,7 @@ name: Publish E2E Report
 
 on:
   workflow_run:
-    workflows: ["Frontend E2E Tests"]
+    workflows: ["E2E Tests"]
     types: [completed]
 
 permissions:

@@ -5,7 +5,8 @@
 
 use std::sync::Arc;
 
-use reqwest::{RequestBuilder, StatusCode, Url};
+use reqwest::{StatusCode, Url};
+use reqwest_middleware::RequestBuilder;
 use serde_json::Value;
 
 use crate::AppState;

@@ -69,6 +69,8 @@ apalis-sql = "1.0.0-rc.8"
 apalis-postgres = { version = "1.0.0-rc.8", features = ["migrate", "tokio-comp"] }
 apalis-board = { version = "1.0.0-rc.8", features = ["axum", "ui"] }
 cron = "0.16"
+reqwest-middleware = { version = "0.4", features = ["json"] }
+backtrace = "0.3"
 
 [[bin]]
 name = "rpc_cache_proxy"
@@ -83,3 +85,19 @@ regex = "1.11"
 
 [patch.crates-io]
 near-api = { git = "https://github.com/near/near-api-rs", rev = "e95fdc294ea1fb6a46f9c21bb2a6a7f74e6cd5f9" }
+
+# Lean build profile for the E2E sandbox image (sandbox/Dockerfile builds with
+# `--profile ci`). E2E tests don't need fully optimized code, and the default
+# release profile makes the image build the slowest step in CI. Production
+# builds keep using `--release`.
+[profile.ci]
+inherits = "release"
+opt-level = 1
+debug = false
+codegen-units = 256
+incremental = false
+
+[profile.release]
+# File/line info for the outbound-failure call path in Sentry events
+# (`observability::outbound`). No runtime cost; only a larger binary.
+debug = "line-tables-only"

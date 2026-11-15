@@ -126,6 +126,16 @@ fn should_inject_app_fee(request: &QuoteRequest) -> bool {
 /// confidential API with DAO JWT and API key.
 /// Otherwise proxies to the regular 1click API.
 /// Server-side appFees and referral are injected in both paths.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        dao_id = request.dao_id.as_ref().map(|d| d.as_str()),
+        user = auth.0.as_ref().map(|u| u.account_id.as_str()),
+        origin_asset = %request.origin_asset,
+        destination_asset = %request.destination_asset
+    )
+)]
 pub async fn get_quote(
     State(state): State<Arc<AppState>>,
     auth: OptionalAuthUser,

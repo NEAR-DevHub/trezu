@@ -1,14 +1,26 @@
+# syntax=docker/dockerfile:1
 # Multi-stage Dockerfile for NEAR Treasury Sandbox Test Environment
 # Builds and runs:
 # - NEAR Sandbox (via near-sandbox binary)
 # - Bulk Payment Contract
 # - Treasury Backend (nt-be)
 # - Sputnik DAO Indexer (proposal caching)
+#
+# Build-speed notes (CI builds this image on every E2E run):
+# - The Rust toolchain image is pinned: a moving `rust:latest` digest
+#   invalidates every cached layer below it.
+# - Every `cargo build` keeps its `target/` and cargo registry in BuildKit cache
+#   mounts and copies only the final artifact out, so image layers (and the
+#   GitHub Actions layer cache) hold binaries, not multi-GB target dirs. CI
+#   persists the nt-be mounts between runs with buildkit-cache-dance, so a
+#   change to nt-be/src only recompiles nt-be itself, not its dependencies.
+
+ARG RUST_IMAGE=rust:1.100.0-trixie
 
 # ============================================================================
 # Stage 1: Build the Bulk Payment Contract
 # ============================================================================
-FROM rust AS contract-builder
+FROM ${RUST_IMAGE} AS contract-builder
 
 WORKDIR /build
 
@@ -21,12 +33,16 @@ RUN rustup target add wasm32-unknown-unknown
 COPY contracts/bulk-payment/Cargo.toml contracts/bulk-payment/Cargo.lock* ./
 COPY contracts/bulk-payment/src ./src
 
-RUN cargo near build non-reproducible-wasm
+RUN --mount=type=cache,id=contract-cargo-registry,target=/usr/local/cargo/registry \
+    --mount=type=cache,id=contract-target,target=/build/target \
+    cargo near build non-reproducible-wasm \
+    && mkdir -p /out \
+    && cp target/near/bulk_payment_contract.wasm /out/
 
 # ============================================================================
 # Stage 2: Build the Sandbox Initializer
 # ============================================================================
-FROM rust AS sandbox-builder
+FROM ${RUST_IMAGE} AS sandbox-builder
 
 WORKDIR /build
 
@@ -39,12 +55,17 @@ COPY sandbox/sandbox-init/Cargo.toml sandbox-init/
 COPY sandbox/sandbox-init/src sandbox-init/src
 COPY sandbox/contracts/ contracts/
 
-RUN cd sandbox-init && cargo build --release
+RUN --mount=type=cache,id=sandbox-init-cargo-registry,target=/usr/local/cargo/registry \
+    --mount=type=cache,id=sandbox-init-cargo-git,target=/usr/local/cargo/git \
+    --mount=type=cache,id=sandbox-init-target,target=/build/sandbox-init/target \
+    cd sandbox-init && cargo build --release \
+    && mkdir -p /out \
+    && cp target/release/sandbox-init /out/
 
 # ============================================================================
 # Stage 3: Build the Treasury Backend (nt-be)
 # ============================================================================
-FROM rust AS api-builder
+FROM ${RUST_IMAGE} AS api-builder
 
 WORKDIR /build
 
@@ -62,18 +83,43 @@ COPY nt-be/.sqlx nt-be/.sqlx
 COPY nt-be/data nt-be/data
 COPY shared/ shared/
 
+# `release` by default (matches production); CI passes NT_BE_PROFILE=ci for
+# a much faster, less optimized build (see [profile.ci] in nt-be/Cargo.toml).
+ARG NT_BE_PROFILE=release
 ENV SQLX_OFFLINE=true
-RUN cd nt-be && cargo build --release
+# Mount ids must stay in sync with the cache-map in .github/workflows/e2e.yml.
+# Only the registry index and downloaded .crate files are mounted (not the
+# unpacked registry/src, which cargo recreates quickly and which would double
+# the size of the CI cache); registry crates are fingerprinted by version, so
+# re-unpacking them doesn't trigger recompiles.
+RUN --mount=type=cache,id=nt-be-cargo-registry-index,target=/usr/local/cargo/registry/index \
+    --mount=type=cache,id=nt-be-cargo-registry-cache,target=/usr/local/cargo/registry/cache \
+    --mount=type=cache,id=nt-be-cargo-git,target=/usr/local/cargo/git \
+    --mount=type=cache,id=nt-be-target,target=/build/nt-be/target \
+    cd nt-be && cargo build --profile "${NT_BE_PROFILE}" --bin nt-be \
+    && mkdir -p /out \
+    && cp "target/${NT_BE_PROFILE}/nt-be" /out/
 
 # ============================================================================
 # Stage 4: Build the Sputnik Indexer
 # ============================================================================
-FROM rust AS indexer-builder
+FROM ${RUST_IMAGE} AS indexer-builder
 
 WORKDIR /app
 
-RUN git clone --depth 1 https://github.com/near-daos/sputnik-dao-caching-api-server.git .
-RUN cargo build --release --bin sputnik-indexer
+# Pinned so the layer cache stays valid (and builds are reproducible). Bump
+# deliberately to pick up upstream changes.
+ARG SPUTNIK_INDEXER_REV=de138e4f528bb0393270237f21eace7170b7b321
+RUN git init -q . \
+    && git remote add origin https://github.com/near-daos/sputnik-dao-caching-api-server.git \
+    && git fetch -q --depth 1 origin "${SPUTNIK_INDEXER_REV}" \
+    && git checkout -q FETCH_HEAD
+RUN --mount=type=cache,id=indexer-cargo-registry,target=/usr/local/cargo/registry \
+    --mount=type=cache,id=indexer-cargo-git,target=/usr/local/cargo/git \
+    --mount=type=cache,id=indexer-target,target=/app/target \
+    cargo build --release --bin sputnik-indexer \
+    && mkdir -p /out \
+    && cp target/release/sputnik-indexer /out/
 
 # ============================================================================
 # Stage 5: Runtime environment
@@ -91,12 +137,12 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy built binaries
-COPY --from=sandbox-builder /build/sandbox-init/target/release/sandbox-init /usr/local/bin/
-COPY --from=api-builder /build/nt-be/target/release/nt-be /usr/local/bin/
-COPY --from=indexer-builder /app/target/release/sputnik-indexer /usr/local/bin/
+COPY --from=sandbox-builder /out/sandbox-init /usr/local/bin/
+COPY --from=api-builder /out/nt-be /usr/local/bin/
+COPY --from=indexer-builder /out/sputnik-indexer /usr/local/bin/
 
 # Copy contract WASM
-COPY --from=contract-builder /build/target/near/bulk_payment_contract.wasm /app/contracts/bulk_payment.wasm
+COPY --from=contract-builder /out/bulk_payment_contract.wasm /app/contracts/bulk_payment.wasm
 
 # Copy configuration files
 COPY sandbox/supervisord.conf /etc/supervisor/conf.d/

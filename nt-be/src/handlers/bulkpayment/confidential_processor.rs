@@ -254,6 +254,11 @@ pub async fn process_confidential_bulk_payments(state: &Arc<AppState>) {
     }
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(sub_id = %sub_id, proposal_id = proposal_id)
+)]
 async fn activate_subaccount(
     state: &Arc<AppState>,
     sub_id: &AccountId,
@@ -277,6 +282,17 @@ async fn activate_subaccount(
     Ok(())
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        bulk_id = bulk_id,
+        dao_id = %dao_id,
+        sub_id = %sub_id,
+        proposal_id = proposal_id,
+        recipients = recipient_hashes.len()
+    )
+)]
 async fn drive_signing(
     state: &Arc<AppState>,
     bulk_id: i32,

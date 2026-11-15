@@ -955,6 +955,11 @@ fn db_error(error: sqlx::Error) -> (StatusCode, String) {
     )
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %group.dao_id, proposal_id = group.proposal_id)
+)]
 async fn link_proposal_group(
     state: &AppState,
     group: &ProposalGroup<'_>,
@@ -1103,6 +1108,7 @@ pub(crate) async fn refresh_proposal_from_chain(
     Ok(details.status)
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(event_count = events.len()))]
 pub async fn link_public_proposal_receipts(
     state: &AppState,
     events: &[BronzePublicHistoryEvent],

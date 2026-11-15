@@ -7,8 +7,8 @@
 //! - `coingecko:{id}` - For major coins using CoinGecko IDs
 //! - `near:{contract}` - For NEAR native tokens using contract addresses
 
+use crate::observability::HttpClient as Client;
 use crate::utils::url::api_url;
-use reqwest::Client;
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -175,7 +175,7 @@ pub enum BatchHistoricalError {
     RateLimited {
         retry_after: Option<Duration>,
     },
-    Transport(reqwest::Error),
+    Transport(reqwest_middleware::Error),
     Status(reqwest::StatusCode),
     Decode(String),
 }
@@ -496,7 +496,7 @@ mod tests {
 
     #[test]
     fn test_translate_asset_id_symbol_fallback() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         // Zcash's tokens.json unifiedAssetId ("zcash") differs from its
         // symbol ("ZEC"); the map is symbol-keyed, so this only resolves
@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn test_translate_asset_id_major_coins() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         assert_eq!(
             client.translate_asset_id("btc"),
@@ -532,7 +532,7 @@ mod tests {
 
     #[test]
     fn test_translate_asset_id_stablecoins() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         assert_eq!(
             client.translate_asset_id("usdc"),
@@ -550,7 +550,7 @@ mod tests {
 
     #[test]
     fn test_translate_asset_id_case_insensitive() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         assert_eq!(
             client.translate_asset_id("BTC"),
@@ -568,7 +568,7 @@ mod tests {
 
     #[test]
     fn test_translate_asset_id_unknown() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         assert_eq!(client.translate_asset_id("unknown-token"), None);
         assert_eq!(client.translate_asset_id("random"), None);
@@ -600,7 +600,7 @@ mod tests {
     #[tokio::test]
     #[ignore = "hits the real DeFiLlama API"]
     async fn batch_historical_live_smoke() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
         let requests = HashMap::from([
             (
                 "coingecko:ethereum".to_string(),
@@ -625,7 +625,7 @@ mod tests {
 
     #[test]
     fn test_wrapped_variants_map_to_same() {
-        let client = DeFiLlamaClient::new(Client::new());
+        let client = DeFiLlamaClient::new(Client::default());
 
         // BTC variants
         assert_eq!(

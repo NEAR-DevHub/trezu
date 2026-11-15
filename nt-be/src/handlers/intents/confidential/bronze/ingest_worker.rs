@@ -439,6 +439,7 @@ pub async fn trigger_confidential_history_refresh(state: &AppState, account_id: 
     }
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id))]
 async fn process_confidential_history_account(
     state: &AppState,
     account_id: String,

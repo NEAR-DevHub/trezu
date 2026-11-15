@@ -15,6 +15,11 @@ use super::repository::{
 use crate::handlers::public_history::bronze::store::is_public_history_backfill_complete;
 const PUBLIC_SILVER_WORKERS: usize = 2;
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, recompute_from = tracing::field::Empty)
+)]
 pub async fn project_public_silver_for_account(
     pool: &PgPool,
     account_id: &str,
@@ -88,6 +93,7 @@ pub async fn project_public_silver_for_account(
         recompute_from = earliest;
     }
 
+    tracing::Span::current().record("recompute_from", tracing::field::display(recompute_from));
     let rows = load_bronze_suffix(&mut tx, account_id, recompute_from).await?;
     let mut stats = SilverProjectionResult::default();
     let mut legs = Vec::new();

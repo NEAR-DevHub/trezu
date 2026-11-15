@@ -170,6 +170,7 @@ pub async fn record_confidential_intent_execution<'e>(
 /// shows the execution time. The relay records the facts only
 /// (`record_confidential_intent_execution`); its submit path does the
 /// metadata work itself.
+#[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id, hash = %payload_hash))]
 pub async fn stamp_confidential_intent_execution(
     app_pool: &PgPool,
     dao_id: &str,
@@ -299,6 +300,11 @@ async fn update_confidential_intent_proposal(
     Ok(false)
 }
 
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(dao_id = %dao_id, proposal_id = proposal_id)
+)]
 pub(crate) async fn handle_confidential_add_proposal(
     app_pool: &PgPool,
     network: &NetworkConfig,

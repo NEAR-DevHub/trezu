@@ -74,7 +74,7 @@ const MAX_RECEIPT_PAGES: u32 = 10;
     fields(dao_id = %dao_id, method = method, after_date = %after_date, before_date = %before_date)
 )]
 async fn fetch_nearblocks_transactions(
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     api_key: &str,
     dao_id: &AccountId,
     method: &str,
@@ -133,7 +133,7 @@ async fn fetch_nearblocks_transactions(
 /// is found, the last page is reached, or the page cap is hit.
 #[allow(clippy::too_many_arguments)]
 async fn find_matching_transaction_paged(
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     api_key: &str,
     dao_id: &AccountId,
     method: &str,

@@ -435,6 +435,7 @@ static LAST_ALERTED: LazyLock<Mutex<HashMap<String, Instant>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// The `job-watchdog` cron task: evaluates all queues, alerts on stale ones.
+#[tracing::instrument(level = "info", skip_all, fields(job = "job_watchdog"))]
 pub async fn job_watchdog(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let report = evaluate(&state.db_pool).await?;
     let total = report.len();

@@ -285,7 +285,7 @@ impl OneclickSubmitError {
         }
     }
 
-    fn from_request_error(path: &str, error: reqwest::Error) -> Self {
+    fn from_request_error(path: &str, error: reqwest_middleware::Error) -> Self {
         let message = format!("1click {}: {}", path, error);
         if error.is_connect() {
             Self::Transient(message)
@@ -307,6 +307,7 @@ impl fmt::Display for OneclickSubmitError {
 
 /// POST a signed intent to 1Click. Returns the parsed JSON body on success.
 /// `signature_bytes` is the raw 64-byte Ed25519 signature.
+#[tracing::instrument(level = "info", skip_all, fields(kind = ?kind))]
 pub async fn submit_intent_to_oneclick(
     state: &AppState,
     kind: IntentSubmitKind,
@@ -538,6 +539,11 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         Self { state }
     }
 
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(dao_id = %dao_id, hash = %payload_hash)
+    )]
     async fn submit_leased(
         &self,
         dao_id: &str,
@@ -767,6 +773,11 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
 
     /// Read the MPC signature from the execution transaction, then submit.
     /// `sender_hint` only routes the RPC lookup; the DAO id is accepted.
+    #[tracing::instrument(
+        level = "debug",
+        skip_all,
+        fields(hash = %payload_hash, tx_hash = %execution_tx_hash)
+    )]
     async fn submit_from_chain(
         &self,
         dao_id: &str,
@@ -1357,6 +1368,7 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
 
     /// Promote the row when the DAO's 1Click history already carries it (the
     /// submit answer was lost after 1Click accepted it).
+    #[tracing::instrument(level = "debug", skip_all, fields(hash = %payload_hash))]
     async fn recover_from_history(
         &self,
         dao_id: &str,
@@ -1470,6 +1482,7 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
 
     /// Ask 1Click for the history row of one deposit address and ingest it,
     /// so the standard linker can attach it.
+    #[tracing::instrument(level = "debug", skip_all, fields(deposit_address = deposit_address))]
     async fn lookup_in_1click(
         &self,
         dao_id: &str,

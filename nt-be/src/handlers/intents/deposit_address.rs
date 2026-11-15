@@ -87,6 +87,15 @@ async fn fetch_bridge_deposit_address(
 /// Guests and non-members may generate addresses — depositing funds into a
 /// treasury is not a member-only action. Confidential quotes use the app API
 /// key (no DAO JWT).
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        account_id = %request.account_id,
+        chain = %request.chain,
+        token_id = request.token_id.as_deref()
+    )
+)]
 pub async fn get_deposit_address(
     State(state): State<Arc<AppState>>,
     Json(request): Json<DepositAddressRequest>,
@@ -193,6 +202,7 @@ async fn activate_deposit_watch(
     }
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(deposit_mode = deposit_mode))]
 async fn fetch_deposit_address(
     state: &AppState,
     account_id: &str,
@@ -217,16 +227,19 @@ async fn fetch_deposit_address(
         .send()
         .await
         .map_err(|e| {
-            eprintln!("Error fetching deposit address from bridge: {}", e);
-            format!("Failed to fetch deposit address: {}", e)
+            tracing::warn!(error = %e, "POA bridge deposit_address request failed");
+            format!("Failed to fetch deposit address: {e}")
         })?;
 
     if !response.status().is_success() {
-        return Err(format!("HTTP error! status: {}", response.status()));
+        return Err(format!(
+            "POA bridge deposit_address returned HTTP {}",
+            response.status()
+        ));
     }
 
     let raw = response.json::<serde_json::Value>().await.map_err(|e| {
-        eprintln!("Error parsing bridge response: {}", e);
+        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
         "Failed to parse bridge response".to_string()
     })?;
 
@@ -243,7 +256,7 @@ async fn fetch_deposit_address(
     }
 
     let data: JsonRpcResponse<DepositAddressResult> = serde_json::from_value(raw).map_err(|e| {
-        eprintln!("Error parsing bridge response: {}", e);
+        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
         "Failed to parse bridge response".to_string()
     })?;
 

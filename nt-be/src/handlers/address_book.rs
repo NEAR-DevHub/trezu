@@ -88,6 +88,7 @@ struct InsertedAddressBookRow {
     created_at: DateTime<Utc>,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %params.dao_id, user = %auth_user.account_id))]
 pub async fn list_address_book(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -132,6 +133,7 @@ pub async fn list_address_book(
     Ok(Json(entries))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %req.dao_id, entries = req.entries.len(), user = %auth_user.account_id))]
 pub async fn create_address_book_entries(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -240,6 +242,7 @@ pub struct ExportAddressBookQuery {
     pub ids: Option<String>,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %params.dao_id, user = %auth_user.account_id))]
 pub async fn export_address_book(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -349,6 +352,7 @@ pub struct DeleteAddressBookRequest {
     pub ids: Vec<Uuid>,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(entries = req.ids.len(), user = %auth_user.account_id))]
 pub async fn delete_address_book_entries(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

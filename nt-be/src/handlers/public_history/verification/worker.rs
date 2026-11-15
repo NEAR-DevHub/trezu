@@ -242,6 +242,7 @@ impl<'a> BalanceVerifier<'a> {
     /// during initial builds: silver only projects after backfill completes,
     /// and unverified accounts are skipped so the full-history gate measures
     /// unanchored drift.
+    #[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id))]
     pub async fn anchor_native_head(&self, account_id: &str) -> Result<bool, VerificationError> {
         let verified: bool = sqlx::query_scalar(
             r#"
@@ -343,6 +344,11 @@ impl<'a> BalanceVerifier<'a> {
     /// Full-history gate: every asset's ledger head must match chain at the
     /// coverage watermark, and no asset's running balance may ever have been
     /// negative. Only a passing account becomes chart-ready.
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(account_id = %account_id, cutoff_block_height = tracing::field::Empty)
+    )]
     async fn verify_account_gate(
         &self,
         account_id: &str,
@@ -351,6 +357,7 @@ impl<'a> BalanceVerifier<'a> {
         let Some(watermark) = self.fresh_watermark(account_id).await? else {
             return Ok(AccountGateOutcome::SkippedStaleWatermark);
         };
+        tracing::Span::current().record("cutoff_block_height", watermark.cutoff_block_height);
 
         let heads = load_asset_ledger_heads(self.pool, account_id).await?;
         let mut outcomes = self.check_assets(account_id, &heads, &watermark).await?;
@@ -478,6 +485,11 @@ impl<'a> BalanceVerifier<'a> {
     /// Head check after new events: drift is recorded and surfaces as a
     /// Stale chart, but never revokes a passed gate — RPC hiccups must not
     /// flap public charts.
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(account_id = %account_id, cutoff_block_height = tracing::field::Empty)
+    )]
     async fn check_account_head(
         &self,
         account_id: &str,
@@ -486,6 +498,7 @@ impl<'a> BalanceVerifier<'a> {
         let Some(watermark) = self.fresh_watermark(account_id).await? else {
             return Ok(true);
         };
+        tracing::Span::current().record("cutoff_block_height", watermark.cutoff_block_height);
 
         let heads = load_asset_ledger_heads(self.pool, account_id).await?;
         let outcomes = self.check_assets(account_id, &heads, &watermark).await?;

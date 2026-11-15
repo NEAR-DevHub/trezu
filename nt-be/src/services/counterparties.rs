@@ -104,6 +104,7 @@ fn extract_ft_contract(token_id: &str) -> &str {
 /// Handles both regular FT tokens and intents tokens (e.g., "intents.near:nep141:wrap.near").
 /// For intents tokens, uses the token registry from `nearcom-tokens.json` instead of RPC queries.
 /// For regular FT tokens, extracts the actual contract ID and queries it.
+#[tracing::instrument(level = "debug", skip_all, fields(token_contract = %token_contract))]
 pub async fn ensure_ft_metadata(
     pool: &PgPool,
     network: &NetworkConfig,

@@ -96,4 +96,4 @@ Tests run automatically on:
 - Push to `main` branch
 - Pull requests targeting `main`
 
-See `.github/workflows/frontend-e2e.yml` for the workflow configuration.
+See `.github/workflows/e2e.yml` for the workflow configuration.

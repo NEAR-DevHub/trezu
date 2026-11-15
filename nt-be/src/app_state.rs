@@ -83,7 +83,8 @@ fn default_mainnet_archival_endpoints(fastnear_api_key: &str) -> Vec<RPCEndpoint
 }
 
 pub struct AppState {
-    pub http_client: reqwest::Client,
+    /// Shared outbound client; every call is traced (see `observability::outbound`).
+    pub http_client: crate::observability::HttpClient,
     /// Priority admission gate over the shared NearBlocks budget. Every NearBlocks
     /// caller draws on one per-minute ceiling; latest (user-facing) requests
     /// preempt backfill (bulk) requests for the next permit. Replaces the raw
@@ -415,7 +416,9 @@ impl AppStateBuilder {
         };
 
         Ok(AppState {
-            http_client: self.http_client.unwrap_or_default(),
+            http_client: crate::observability::traced_http_client(
+                self.http_client.unwrap_or_default(),
+            ),
             nearblocks_gate,
             defillama_limiter,
             cache: self.cache.unwrap_or_default(),
@@ -686,6 +689,7 @@ impl AppState {
     /// # Returns
     /// * `Ok(u64)` - The block height at or near the given timestamp
     /// * `Err` - If the block cannot be found
+    #[tracing::instrument(level = "debug", skip_all, fields(date = %date))]
     pub async fn find_block_height(
         &self,
         date: DateTime<Utc>,

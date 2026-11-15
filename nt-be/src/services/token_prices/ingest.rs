@@ -67,7 +67,7 @@ impl TokenApiItem {
 }
 
 pub struct TokenPriceIngestor {
-    http: reqwest::Client,
+    http: crate::observability::HttpClient,
     pool: PgPool,
     service: Arc<TokenPriceService>,
     etag: Option<String>,
@@ -87,7 +87,11 @@ pub struct TokenPriceIngestSummary {
 }
 
 impl TokenPriceIngestor {
-    pub fn new(http: reqwest::Client, pool: PgPool, service: Arc<TokenPriceService>) -> Self {
+    pub fn new(
+        http: crate::observability::HttpClient,
+        pool: PgPool,
+        service: Arc<TokenPriceService>,
+    ) -> Self {
         Self {
             http,
             pool,

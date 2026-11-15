@@ -21,6 +21,7 @@ use crate::services::chain_balances::block_info::get_transaction;
 /// Final execution outcome of a transaction, in the same shape as the NEAR
 /// `tx` RPC method's result, so the connector can hand it to wallet-selector
 /// consumers unchanged.
+#[tracing::instrument(level = "info", skip_all, fields(tx_hash = %tx_hash, sender_id = %sender_id))]
 pub async fn get_tx_status(
     State(state): State<Arc<AppState>>,
     Path((tx_hash, sender_id)): Path<(String, String)>,

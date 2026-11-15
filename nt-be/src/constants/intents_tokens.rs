@@ -87,7 +87,7 @@ static DEFUSE_TOKENS_MULTI_MAP_CELL: OnceLock<HashMap<String, Vec<BaseTokenInfo>
 pub fn get_tokens_map() -> &'static HashMap<String, UnifiedTokenInfo> {
     TOKENS_MAP_CELL.get_or_init(|| {
         let tokens = load_tokens_from_json().unwrap_or_else(|e| {
-            eprintln!("Failed to load tokens from JSON: {}", e);
+            tracing::error!("Failed to load tokens from JSON: {}", e);
             vec![]
         });
         tokens
@@ -101,7 +101,7 @@ pub fn get_tokens_map() -> &'static HashMap<String, UnifiedTokenInfo> {
 pub fn get_defuse_tokens_map() -> &'static HashMap<String, BaseTokenInfo> {
     DEFUSE_TOKENS_MAP_CELL.get_or_init(|| {
         let tokens = load_tokens_from_json().unwrap_or_else(|e| {
-            eprintln!("Failed to load tokens from JSON: {}", e);
+            tracing::error!("Failed to load tokens from JSON: {}", e);
             vec![]
         });
 
@@ -123,7 +123,7 @@ pub fn get_defuse_tokens_map() -> &'static HashMap<String, BaseTokenInfo> {
 pub fn get_symbol_tokens_map() -> &'static HashMap<String, UnifiedTokenInfo> {
     SYMBOL_TOKENS_MAP_CELL.get_or_init(|| {
         let tokens = load_tokens_from_json().unwrap_or_else(|e| {
-            eprintln!("Failed to load tokens from JSON: {}", e);
+            tracing::error!("Failed to load tokens from JSON: {}", e);
             vec![]
         });
         tokens
@@ -186,7 +186,7 @@ pub fn find_token_by_defuse_asset_id_and_address(
 pub fn get_defuse_to_unified_map() -> &'static HashMap<String, String> {
     DEFUSE_TO_UNIFIED_MAP_CELL.get_or_init(|| {
         let tokens = load_tokens_from_json().unwrap_or_else(|e| {
-            eprintln!("Failed to load tokens from JSON: {}", e);
+            tracing::error!("Failed to load tokens from JSON: {}", e);
             vec![]
         });
 
@@ -207,7 +207,7 @@ pub fn get_defuse_to_unified_map() -> &'static HashMap<String, String> {
 pub fn get_defuse_tokens_multi_map() -> &'static HashMap<String, Vec<BaseTokenInfo>> {
     DEFUSE_TOKENS_MULTI_MAP_CELL.get_or_init(|| {
         let tokens = load_tokens_from_json().unwrap_or_else(|e| {
-            eprintln!("Failed to load tokens from JSON: {}", e);
+            tracing::error!("Failed to load tokens from JSON: {}", e);
             vec![]
         });
 

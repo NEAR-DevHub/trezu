@@ -11,7 +11,7 @@ use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tower_http::request_id::{
     MakeRequestId, PropagateRequestIdLayer, RequestId, SetRequestIdLayer,
 };
-use tower_http::trace::{DefaultOnFailure, TraceLayer};
+use tower_http::trace::TraceLayer;
 
 const REQUEST_ID_HEADER: header::HeaderName = header::HeaderName::from_static("x-request-id");
 
@@ -144,17 +144,22 @@ async fn async_main() {
         // Auth. It answers only paths no other route matched; its API guard
         // keeps unknown public `/api/*` a plain 404.
         .fallback_service(board)
-        // tower-http's standard request tracing. Its default
-        // `ServerErrorsAsFailures` classifier logs 5xx responses via
-        // `on_failure` at ERROR — which the sentry-tracing layer turns into a
-        // Sentry event — while 4xx are not failures, so client errors don't
-        // alarm. The span (INFO) also gives every handler log line request
-        // context (method/path/request_id). This replaces a hand-rolled
-        // middleware with the ecosystem-standard layer.
-        //
-        // Innermost of these three so it runs inside the per-request Sentry hub
-        // bound by `NewSentryLayer`: the 5xx event is then captured with the
-        // request's scope/context.
+        // Logs every 5xx at ERROR with the matched route and the error body
+        // the handler returned. The sentry-tracing layer turns that into a
+        // Sentry event titled e.g. "GET /api/intents/swap-tokens -> 500 ...:
+        // HTTP error! status: 403 Forbidden". 4xx are client errors and do not
+        // alarm. Innermost of the observability layers: `MatchedPath` is set,
+        // and the event lands inside the `http_request` span (request_id) and
+        // the per-request Sentry hub bound by `NewSentryLayer`. That hub also
+        // holds the breadcrumbs from outbound calls made during the request.
+        .layer(axum::middleware::from_fn(
+            nt_be::observability::report_server_errors,
+        ))
+        // tower-http's standard request tracing. The span (INFO) gives every
+        // handler log line request context (method/path/request_id).
+        // `on_failure` is off because `report_server_errors` above already
+        // reports 5xx, with the cause. The default would only add a second,
+        // contextless "response failed" event.
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<Body>| {
@@ -171,7 +176,7 @@ async fn async_main() {
                         request_id = %request_id,
                     )
                 })
-                .on_failure(DefaultOnFailure::new().level(tracing::Level::ERROR)),
+                .on_failure(()),
         )
         // The id is returned as `x-request-id` so the frontend can show it as the
         // Error ID. Both wrap `TraceLayer` so the span reads the same id.

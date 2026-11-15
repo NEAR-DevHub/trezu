@@ -16,7 +16,7 @@ const STATUS_ROUND: Duration = Duration::from_secs(8);
 /// SDK retries: the engine owns every broadcast so it always knows what may
 /// have reached the network.
 pub struct RelayRpc {
-    http: reqwest::Client,
+    http: crate::observability::HttpClient,
     network: NetworkConfig,
 }
 
