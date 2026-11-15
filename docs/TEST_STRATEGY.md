@@ -44,7 +44,7 @@ Test depth and CI gating strictness scale with tier: P0 areas get the densest au
 | `bulk-payment` contract | 21 unit + 11 sandbox integration tests | ✅ `bulk-payment-test.yml` |
 | `confidential-bulk-payment` contract | 9 unit + 6 integration tests (mock MPC) | ❌ **no workflow** |
 | Frontend unit (Bun test) | 29 files / ~274 cases (proposal-template DSL, bulk-payment CSV parsing, config gating, amount-format/intents-routing helpers) | ✅ `frontend-build.yml` (`bun run test`) |
-| Playwright E2E | 12 specs / ~67 cases (onboarding tour, wallet flows incl. Passkey, custom templates, requests page, charts, confidential deposit, exchange amount formatting) — Chromium only, 1 worker in CI | ✅ `frontend-e2e.yml` |
+| Playwright E2E | 12 specs / ~67 cases (onboarding tour, wallet flows incl. Passkey, custom templates, requests page, charts, confidential deposit, exchange amount formatting) — Chromium only, 1 worker per shard (3 shards) in CI | ✅ `e2e.yml` |
 | Bulk-payment JS E2E | 4 flow scripts in `e2e-tests/bulk-payment/` | ⚠️ only 1 of 4 in CI |
 | `nt-cli` | 12 tests | ❌ not in CI |
 | Coverage tooling | None | — |
@@ -138,11 +138,11 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 | Backend unit + integration tests | `backend-tests.yml` | ✅ |
 | Frontend build, Biome format, i18n check | `frontend-build.yml` | ✅ |
 | Frontend unit tests (`bun test`) | `frontend-build.yml` | ✅ |
-| Playwright E2E (sandbox) | `frontend-e2e.yml` | ✅ |
+| Playwright E2E (sandbox) | `e2e.yml` | ✅ |
 | `bulk-payment` contract tests | `bulk-payment-test.yml` | ✅ |
 | **`confidential-bulk-payment` contract tests** | new workflow | △ |
 | **`nt-cli` tests** | new or extended workflow | △ |
-| **All 4 bulk-payment E2E flows** | `bulk-payment-e2e.yml` | △ switch `npm test` → `test:all` |
+| **All 4 bulk-payment E2E flows** | `e2e.yml` (`bulk-payment` job) | △ switch `npm test` → `test:all` |
 | **Coverage reporting** (`cargo llvm-cov` + `bun test --coverage`) | both test workflows | △ report-only first; thresholds on P0 modules later |
 
 **Cross-component blind spot to fix:** path filters mean backend changes don't trigger frontend E2E and vice versa. Add a nightly full-suite run (all workflows, `test:all`, both contracts) so integration regressions surface within 24h even when path filters skip them on PRs.
@@ -188,7 +188,7 @@ Current gates stay blocking; the table below is the target state (△ = to add).
 ### Quick wins (1–2 weeks)
 1. ~~Add `"test": "bun test"` to `nt-fe/package.json` and a step in `frontend-build.yml`~~ ✅ **Done** (see [Changelog](#changelog)) — frontend unit tests now gate every PR.
 2. New workflow for `confidential-bulk-payment` contract tests (copy `bulk-payment-test.yml`).
-3. Switch `bulk-payment-e2e.yml` to `npm run test:all`.
+3. Switch the `bulk-payment` job in `e2e.yml` to `npm run test:all`.
 4. Add `nt-cli` tests to CI.
 
 ### Medium term (1–2 months)

@@ -5,3 +5,6 @@ nt-fe
 e2e-tests
 docs
 .github
+# CI-only: buildkit-cache-dance working dirs (see .github/workflows/e2e.yml)
+cargo-cache-mounts
+scratch
