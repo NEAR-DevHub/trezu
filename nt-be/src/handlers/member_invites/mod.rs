@@ -496,7 +496,7 @@ pub async fn list_member_join_requests(
 }
 
 /// `DELETE /api/treasury/{dao_id}/member-join-requests/{id}` — cancel a pending join request.
-#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, request_id = %id, user = %auth_user.account_id))]
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, join_request_id = %id, user = %auth_user.account_id))]
 pub async fn cancel_member_join_request(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

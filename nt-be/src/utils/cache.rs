@@ -285,7 +285,6 @@ impl CacheKey {
 /// # Returns
 /// * `Ok((StatusCode::OK, Json(Value)))` on success
 /// * `Err((StatusCode, String))` on error
-#[tracing::instrument(level = "debug", skip_all, fields(cache_key = %cache_key))]
 pub async fn cached_json<F, T, E>(
     cache: &MokaCache<String, Value>,
     cache_key: String,
@@ -336,7 +335,6 @@ where
 /// # Returns
 /// * `Ok(T)` with the deserialized data on success
 /// * `Err((StatusCode, String))` on error
-#[tracing::instrument(level = "debug", skip_all, fields(cache_key = %cache_key))]
 pub async fn cached<F, T, E>(
     cache: &MokaCache<String, Value>,
     cache_key: String,
