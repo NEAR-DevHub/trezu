@@ -140,6 +140,7 @@ impl ContractPaymentStatus {
 }
 
 /// Get the status of a payment list
+#[tracing::instrument(level = "info", skip_all, fields(list_id = %list_id))]
 pub async fn get_list_status(
     State(state): State<Arc<AppState>>,
     Path(list_id): Path<String>,
@@ -194,6 +195,7 @@ pub async fn get_list_status(
 }
 
 /// Get all payment transactions for a list
+#[tracing::instrument(level = "info", skip_all, fields(list_id = %list_id))]
 pub async fn get_transactions(
     State(state): State<Arc<AppState>>,
     Path(list_id): Path<String>,
@@ -238,6 +240,7 @@ pub async fn get_transactions(
 }
 
 /// Look up the transaction hash for a specific payment recipient
+#[tracing::instrument(level = "info", skip_all, fields(list_id = %list_id, recipient = %recipient))]
 pub async fn get_transaction_hash(
     State(state): State<Arc<AppState>>,
     Path((list_id, recipient)): Path<(String, String)>,
@@ -351,6 +354,11 @@ pub async fn get_transaction_hash(
 ///
 /// The block_height from the contract is where the receipt executed, which may
 /// differ from the block where the transaction was included.
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(block_height = block_height, contract_id = contract_id)
+)]
 async fn lookup_transaction_hash(
     network: &NetworkConfig,
     block_height: u64,

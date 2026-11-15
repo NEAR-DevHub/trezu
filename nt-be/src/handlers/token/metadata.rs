@@ -182,9 +182,10 @@ async fn fetch_chaindefuser_tokens(
 /// # Returns
 /// * `Ok(TokenMetadata)` - Token metadata with price information
 /// * `Err((StatusCode, String))` - Error with status code and message
+#[tracing::instrument(level = "debug", skip_all, fields(token_id = %token_id))]
 async fn fetch_nearblocks_ft_metadata(
     cache: &Cache,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     nearblocks_api_key: &str,
     token_id: &str,
 ) -> Result<TokenMetadata, (StatusCode, String)> {
@@ -654,6 +655,7 @@ pub async fn fetch_tokens_metadata(
 /// `allow_nearblocks` explicitly enables the NearBlocks fallback regardless of
 /// `include_chain_metadata`. Use this when the caller knows the token is a
 /// native NEAR FT (e.g. via the `nearFt` query param).
+#[tracing::instrument(level = "debug", skip_all, fields(tokens = token_ids.len()))]
 pub async fn fetch_tokens_with_fallback(
     state: &Arc<AppState>,
     token_ids: &[String],
@@ -878,6 +880,7 @@ pub async fn fetch_tokens_metadata_enriched(
     result
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(token_id = %params.token_id))]
 pub async fn get_token_metadata(
     State(state): State<Arc<AppState>>,
     Query(mut params): Query<TokenMetadataQuery>,

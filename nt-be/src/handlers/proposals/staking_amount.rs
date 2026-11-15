@@ -49,6 +49,11 @@ struct StakingPoolAccountView {
 /// For executed staking proposals that used `unstake_all`, `withdraw_all`, or
 /// `withdraw_all_from_staking_pool`, return the actual NEAR amount moved by
 /// querying the pool's `get_account` at the block just before execution.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(dao_id = %dao_id, proposal_id = proposal_id)
+)]
 pub async fn get_proposal_staking_amount(
     State(state): State<Arc<AppState>>,
     Path((dao_id, proposal_id)): Path<(AccountId, u64)>,

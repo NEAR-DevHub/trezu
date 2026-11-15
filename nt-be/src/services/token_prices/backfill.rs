@@ -183,7 +183,7 @@ struct BatchOutcome {
 
 impl HistoricalPriceBackfill {
     pub fn new(
-        http: reqwest::Client,
+        http: crate::observability::HttpClient,
         base_url: String,
         pool: PgPool,
         service: Arc<TokenPriceService>,
@@ -502,6 +502,7 @@ impl HistoricalPriceBackfill {
     /// transient transport errors, then persist its prices and misses. A
     /// batch that exhausts its attempts is dropped for this run — the next
     /// run's anti-join re-surfaces it.
+    #[tracing::instrument(level = "debug", skip_all, fields(coins = batch.coins.len(), points = batch.points))]
     async fn process_batch(&self, batch: BatchRequest, work: &CoinWork) -> BatchOutcome {
         let mut outcome = BatchOutcome::default();
 

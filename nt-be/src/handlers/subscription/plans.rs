@@ -207,6 +207,7 @@ pub async fn calculate_monthly_outbound_volume(
 
 /// GET /api/subscription/{account_id}
 /// Returns the subscription status for a specific treasury account
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id))]
 pub async fn get_subscription_status(
     State(state): State<Arc<AppState>>,
     Path(account_id): Path<String>,

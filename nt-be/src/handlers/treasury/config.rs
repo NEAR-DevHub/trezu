@@ -180,6 +180,7 @@ pub fn treasury_config_cache_key(treasury_id: &AccountId, at_before: u64) -> Str
 /// On-chain `get_config` only (cached). Does not touch `treasury_settings` /
 /// `monitored_accounts` — callers that already know local branding state use this
 /// to avoid redundant round-trips.
+#[tracing::instrument(level = "debug", skip_all, fields(treasury_id = %treasury_id, at_before))]
 pub async fn fetch_contract_treasury_config(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
@@ -278,6 +279,7 @@ pub async fn fetch_treasury_config(
     Ok(config)
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %params.treasury_id, at_before = params.at_before.as_ref().map(|v| v.0)))]
 pub async fn get_treasury_config(
     State(state): State<Arc<AppState>>,
     Query(params): Query<GetTreasuryConfigQuery>,
@@ -288,6 +290,7 @@ pub async fn get_treasury_config(
 }
 
 /// `PUT /api/treasury/config` — upsert local treasury branding settings (no on-chain proposal).
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %body.treasury_id, user = %auth_user.account_id))]
 pub async fn update_treasury_settings(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

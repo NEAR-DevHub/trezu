@@ -127,6 +127,7 @@ async fn ensure_managed_treasury(
     }
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id))]
 pub async fn get_user_treasuries(
     State(state): State<Arc<AppState>>,
     Query(params): Query<UserTreasuriesQuery>,
@@ -221,6 +222,7 @@ pub async fn get_user_treasuries(
     Ok(Json(treasuries))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %payload.dao_id, user = %user.account_id))]
 pub async fn save_user_treasury(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -257,6 +259,7 @@ pub async fn save_user_treasury(
     Ok(StatusCode::OK)
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %payload.dao_id, user = %user.account_id))]
 pub async fn hide_user_treasury(
     State(state): State<Arc<AppState>>,
     user: AuthUser,
@@ -296,6 +299,7 @@ pub async fn hide_user_treasury(
     Ok(StatusCode::OK)
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %payload.dao_id, user = %user.account_id))]
 pub async fn remove_user_treasury(
     State(state): State<Arc<AppState>>,
     user: AuthUser,

@@ -189,6 +189,7 @@ pub async fn fetch_proposals(
 /// (plus one `get_last_proposal_id`). Cheap alternative to [`fetch_proposals`]
 /// when only the tail of the list matters — e.g. checking whether a
 /// just-created proposal is still on-chain and pending.
+#[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id, limit = limit))]
 pub async fn fetch_recent_proposals(
     client: &NetworkConfig,
     dao_id: &AccountId,

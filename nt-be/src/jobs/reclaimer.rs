@@ -304,6 +304,7 @@ pub async fn reclaim_stale_jobs(
     Ok(stats)
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(job = "apalis_reclaimer"))]
 pub async fn apalis_reclaimer(
     _tick: Tick,
     state: Data<std::sync::Arc<AppState>>,

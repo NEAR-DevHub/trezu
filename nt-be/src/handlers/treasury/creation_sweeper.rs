@@ -58,6 +58,7 @@ pub async fn run_sweep_cycle(state: &Arc<AppState>) -> Result<(), sqlx::Error> {
     Ok(())
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %candidate.request.account_id, attempts = candidate.attempts))]
 async fn resume_one(state: &Arc<AppState>, candidate: SweepCandidate) {
     let SweepCandidate { request, attempts } = candidate;
     let account = request.account_id.to_string();

@@ -24,6 +24,7 @@ pub struct StorageCreditsResponse {
 }
 
 /// View storage credits for a DAO account in the bulk payment contract
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id))]
 pub async fn get_storage_credits(
     State(state): State<Arc<AppState>>,
     Query(params): Query<StorageCreditsQuery>,

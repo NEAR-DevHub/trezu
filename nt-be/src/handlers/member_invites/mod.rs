@@ -33,6 +33,7 @@ pub struct CreateInviteResponse {
 }
 
 /// `POST /api/treasury/{dao_id}/member-invites` — create a one-time invite link.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn create_member_invite(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -173,6 +174,7 @@ fn resolve_invite_status(row: &InviteLinkRow) -> InviteLinkStatus {
 }
 
 /// `GET /api/member-invites/{token}` — public invite link metadata.
+#[tracing::instrument(level = "info", skip_all, fields(user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_member_invite(
     State(state): State<Arc<AppState>>,
     auth: OptionalAuthUser,
@@ -223,6 +225,7 @@ pub async fn get_member_invite(
 }
 
 /// `GET /api/treasury/{dao_id}/member-join-requests/me` — requester's own join status.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn get_my_member_join_status(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -276,6 +279,7 @@ async fn upsert_display_name(
 }
 
 /// `POST /api/member-invites/{token}/join` — consume an invite and create a pending join request.
+#[tracing::instrument(level = "info", skip_all, fields(user = %auth_user.account_id))]
 pub async fn join_via_invite(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -451,6 +455,7 @@ pub struct MemberJoinRequestItem {
 }
 
 /// `GET /api/treasury/{dao_id}/member-join-requests` — list pending join requests.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, user = %auth_user.account_id))]
 pub async fn list_member_join_requests(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -491,6 +496,7 @@ pub async fn list_member_join_requests(
 }
 
 /// `DELETE /api/treasury/{dao_id}/member-join-requests/{id}` — cancel a pending join request.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, join_request_id = %id, user = %auth_user.account_id))]
 pub async fn cancel_member_join_request(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,
@@ -536,6 +542,7 @@ pub struct ApproveMemberJoinRequestsResponse {
 }
 
 /// `POST /api/treasury/{dao_id}/member-join-requests/approve` — mark join requests approved.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id, requests = body.request_ids.len(), user = %auth_user.account_id))]
 pub async fn approve_member_join_requests(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

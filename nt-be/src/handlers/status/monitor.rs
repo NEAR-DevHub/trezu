@@ -456,6 +456,7 @@ pub async fn check_linked_posts_resolved(state: &Arc<AppState>) {
     }
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(service = %service))]
 async fn process_service(state: &Arc<AppState>, service: &str) {
     if service == "near-intents" {
         process_near_intents(state).await;
@@ -545,6 +546,7 @@ async fn apply_check(state: &Arc<AppState>, service: &str, check: &OhDearCheckRe
     apply_healthy(state, service, incident).await;
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(service = %service, check_name = %check_name, status = %status))]
 async fn apply_unhealthy(
     state: &Arc<AppState>,
     service: &str,
@@ -642,6 +644,7 @@ async fn apply_unhealthy(
     }
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(service = %service, incident_id = incident.id))]
 async fn apply_healthy(state: &Arc<AppState>, service: &str, incident: StatusIncident) {
     let check_name = incident.check_name.clone();
     let incident = match touch_incident_success(&state.db_pool, incident.id).await {

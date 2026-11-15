@@ -37,6 +37,7 @@ use crate::utils::url::api_url_or_500;
 /// idempotency probes and execute each step directly. When true (sweeper /
 /// in-session recovery), check whether each step already completed before
 /// submitting transactions.
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %treasury_id, resume))]
 pub async fn setup_confidential_treasury(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
@@ -311,6 +312,7 @@ pub fn derive_bulk_subaccount_id(
 /// Idempotent: skips the factory call when the subaccount already reports a
 /// bootstrap status, and (re)uses `bootstrap`'s Ready state otherwise.
 /// Returns the subaccount id and the DAO's derived MPC public key.
+#[tracing::instrument(level = "debug", skip_all, fields(treasury_id = %treasury_id))]
 pub(crate) async fn ensure_bulk_subaccount(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
@@ -415,6 +417,7 @@ async fn setup_bulk_payment_subaccount(
 
 /// Poll `<sub>::get_bootstrap_status` until `Ready` or timeout (~30s).
 /// Returns the DAO MPC pubkey from the Ready state.
+#[tracing::instrument(level = "info", skip_all, fields(sub_account_id = %sub_id))]
 async fn poll_bootstrap_ready(
     state: &Arc<AppState>,
     sub_id: &AccountId,
@@ -477,6 +480,7 @@ async fn poll_bootstrap_ready(
 
 /// Authenticate the bulk-payment subaccount with the 1Click API and persist
 /// the JWT in the `bulk_payment_*` columns of `monitored_accounts`.
+#[tracing::instrument(level = "debug", skip_all, fields(treasury_id = %treasury_id))]
 pub(crate) async fn authenticate_bulk_payment_with_1click(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
@@ -708,6 +712,7 @@ async fn submit_and_approve_proposal(
 }
 
 /// Vote to approve an existing proposal and wait for execution to finish.
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %treasury_id, proposal_id))]
 async fn approve_existing_proposal(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
@@ -819,6 +824,7 @@ async fn user_policy_applied(
 }
 
 /// Authenticate the DAO with the 1Click API using an MPC signature.
+#[tracing::instrument(level = "debug", skip_all, fields(treasury_id = %treasury_id))]
 async fn authenticate_with_1click(
     state: &Arc<AppState>,
     treasury_id: &AccountId,

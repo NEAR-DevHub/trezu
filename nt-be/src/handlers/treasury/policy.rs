@@ -29,6 +29,7 @@ pub(crate) fn treasury_policy_cache_key(treasury_id: &AccountIdRef, at_before: u
         .build()
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(treasury_id = %treasury_id, at_before))]
 pub async fn fetch_treasury_policy_cached(
     state: &Arc<AppState>,
     treasury_id: &AccountIdRef,
@@ -69,6 +70,7 @@ pub async fn fetch_treasury_policy_cached(
         .await
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %params.treasury_id, at_before = params.at_before.as_ref().map(|v| v.0)))]
 pub async fn get_treasury_policy(
     State(state): State<Arc<AppState>>,
     Query(params): Query<GetTreasuryPolicyQuery>,

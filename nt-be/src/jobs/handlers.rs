@@ -28,6 +28,7 @@ fn erase(e: impl std::fmt::Display) -> BoxDynError {
 /// Each fill is attempted even if an earlier stage fails, so already-cached
 /// prices still make progress. Any stage failures are returned together and
 /// retried by the next cron tick.
+#[tracing::instrument(level = "info", skip_all, fields(job = "gold_usd_enrichment"))]
 pub async fn gold_usd_enrichment(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -107,6 +108,7 @@ pub async fn token_price_ingest(
 /// Deposit tracker tick: polls active deposit watches (bridge for public
 /// treasuries, 1Click history for confidential quotes) and hands settled
 /// deposits to history ingestion.
+#[tracing::instrument(level = "info", skip_all, fields(job = "deposit_tracker"))]
 pub async fn deposit_tracker(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let summary =
         crate::handlers::intents::deposit_tracker::worker::DepositTrackerWorker::new(&state)
@@ -117,6 +119,7 @@ pub async fn deposit_tracker(_t: Tick, state: Data<Arc<AppState>>) -> Result<Str
 }
 
 /// Confidential history (bronze) ingest scheduler tick.
+#[tracing::instrument(level = "info", skip_all, fields(job = "confidential_history_ingest"))]
 pub async fn confidential_history_ingest(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -139,6 +142,7 @@ fn public_history_tick_age_ms(tick: &Tick, now: DateTime<Utc>) -> i64 {
 
 /// Latency-sensitive Goldsky detector. Old ticks carry no unique payload:
 /// one current scan resumes from the durable cursor and covers all of them.
+#[tracing::instrument(level = "info", skip_all, fields(job = "public_history_scheduler"))]
 pub async fn public_history_scheduler(
     tick: Tick,
     state: Data<Arc<AppState>>,
@@ -163,6 +167,11 @@ pub async fn public_history_scheduler(
 /// Durable realtime-demand dispatcher. This is deliberately a separate cron
 /// worker from Goldsky detection so sink outages cannot strand demands that
 /// are already persisted in the application database.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(job = "public_history_latest_dispatcher")
+)]
 pub async fn public_history_latest_dispatcher(
     tick: Tick,
     state: Data<Arc<AppState>>,
@@ -183,6 +192,11 @@ pub async fn public_history_latest_dispatcher(
 /// Snapshot source-readiness scheduler. It deliberately runs outside the
 /// Goldsky detector so finalized-block RPC and provider coverage work cannot
 /// delay recent activity detection.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(job = "public_history_readiness_scheduler")
+)]
 pub async fn public_history_readiness_scheduler(
     _tick: Tick,
     state: Data<Arc<AppState>>,
@@ -197,6 +211,11 @@ pub async fn public_history_readiness_scheduler(
 
 /// Historical Bronze page scheduler. Backfill cursor scans are independent
 /// from both the Goldsky cursor and the recent-activity detector.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(job = "public_history_backfill_scheduler")
+)]
 pub async fn public_history_backfill_scheduler(
     _tick: Tick,
     state: Data<Arc<AppState>>,
@@ -210,6 +229,7 @@ pub async fn public_history_backfill_scheduler(
 }
 
 /// Public history silver projection for dirty accounts.
+#[tracing::instrument(level = "info", skip_all, fields(job = "public_silver_projection"))]
 pub async fn public_silver_projection(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -250,6 +270,7 @@ pub async fn public_silver_projection(
 /// Staking pool observations: 90-day archival backfill plus daily capture.
 /// Rewards accrue without transactions, so this is the only periodic
 /// balance source; everything else stays transaction-triggered.
+#[tracing::instrument(level = "info", skip_all, fields(job = "staking_observation"))]
 pub async fn staking_observation(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -278,6 +299,7 @@ pub async fn staking_observation(
 
 /// Lockup observations: discovery plus archival backfill and daily capture
 /// of each treasury's lockup contract, valued like the dashboard card.
+#[tracing::instrument(level = "info", skip_all, fields(job = "lockup_observation"))]
 pub async fn lockup_observation(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -303,6 +325,7 @@ pub async fn lockup_observation(
 
 /// Historical chart prices. Deliberately readiness-neutral: missing prices
 /// never make an otherwise authoritative balance dataset unready.
+#[tracing::instrument(level = "info", skip_all, fields(job = "price_history_backfill"))]
 pub async fn price_history_backfill(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -322,6 +345,7 @@ pub async fn price_history_backfill(
 }
 
 /// Public history gold projection for dirty accounts.
+#[tracing::instrument(level = "info", skip_all, fields(job = "public_gold_projection"))]
 pub async fn public_gold_projection(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -377,6 +401,11 @@ pub async fn public_gold_projection(
 }
 
 /// Reconciles stale public DAO proposal statuses.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(job = "public_proposal_reconciliation")
+)]
 pub async fn public_proposal_reconciliation(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -391,6 +420,7 @@ pub async fn public_proposal_reconciliation(
 }
 
 /// Refreshes 1Click status for public quote proposals.
+#[tracing::instrument(level = "info", skip_all, fields(job = "public_quote_status_refresh"))]
 pub async fn public_quote_status_refresh(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -408,6 +438,7 @@ pub async fn public_quote_status_refresh(
 
 /// Hourly confidential balance snapshots (gold).
 /// Queries the bulk payment contract and processes pending lists.
+#[tracing::instrument(level = "info", skip_all, fields(job = "bulk_payment_payout"))]
 pub async fn bulk_payment_payout(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -421,6 +452,7 @@ pub async fn bulk_payment_payout(
 /// preserving the old adaptive behavior (no idle wait while backlogged).
 /// Resumes half-created treasuries (poll fallback; failures also push a
 /// task immediately via the creation Notify).
+#[tracing::instrument(level = "info", skip_all, fields(job = "treasury_creation_sweeper"))]
 pub async fn treasury_creation_sweeper(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -430,6 +462,7 @@ pub async fn treasury_creation_sweeper(
 }
 
 /// Oh Dear health checks + fallback warnings.
+#[tracing::instrument(level = "info", skip_all, fields(job = "status_monitor"))]
 pub async fn status_monitor(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     crate::handlers::status::monitor::run_monitor_cycle(&state)
         .await
@@ -440,6 +473,7 @@ pub async fn status_monitor(_t: Tick, state: Data<Arc<AppState>>) -> Result<Stri
 /// Event detection + Telegram dispatch, concurrently like the old loop.
 /// Each half runs regardless of the other failing; failures are aggregated
 /// so a bad Telegram token can't stall detection (or vice versa).
+#[tracing::instrument(level = "info", skip_all, fields(job = "notifications"))]
 pub async fn notifications(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let (detected, dispatched) = tokio::join!(
         crate::handlers::notifications::detector::run_detection_cycle(&state.db_pool),
@@ -473,6 +507,7 @@ pub async fn notifications(_t: Tick, state: Data<Arc<AppState>>) -> Result<Strin
 }
 
 /// Low-balance Telegram alerts for operational NEAR accounts.
+#[tracing::instrument(level = "info", skip_all, fields(job = "sponsor_balance_monitor"))]
 pub async fn sponsor_balance_monitor(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -482,18 +517,21 @@ pub async fn sponsor_balance_monitor(
 }
 
 /// Fetches the DAO list from the sputnik factory.
+#[tracing::instrument(level = "info", skip_all, fields(job = "dao_list_sync"))]
 pub async fn dao_list_sync(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let synced = crate::services::sync_dao_list(&state.db_pool, &state.network).await?;
     Ok(format!("synced {synced} DAOs"))
 }
 
 /// Processes dirty DAOs (member/policy extraction).
+#[tracing::instrument(level = "info", skip_all, fields(job = "dao_policy_dirty"))]
 pub async fn dao_policy_dirty(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let processed = crate::services::process_dirty_daos(&state.db_pool, &state.network).await?;
     Ok(format!("processed {processed} dirty DAOs"))
 }
 
 /// Re-checks stale DAOs.
+#[tracing::instrument(level = "info", skip_all, fields(job = "dao_policy_stale"))]
 pub async fn dao_policy_stale(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     let processed = crate::services::process_stale_daos(&state.db_pool, &state.network).await?;
     Ok(format!("processed {processed} stale DAOs"))
@@ -502,6 +540,7 @@ pub async fn dao_policy_stale(_t: Tick, state: Data<Arc<AppState>>) -> Result<St
 /// Monthly plan credit reset + export expiry (daily at UTC midnight, plus
 /// a startup task). The steps are independent — both always run, failures
 /// are aggregated.
+#[tracing::instrument(level = "info", skip_all, fields(job = "subscription_monthly_reset"))]
 pub async fn subscription_monthly_reset(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -550,6 +589,7 @@ pub async fn public_dashboard_refresh(
 /// FT lockup DAO schedule refresh + due claims. Claims run even when the
 /// refresh fails (due claims from previously-synced schedules are still
 /// valid); failures are aggregated.
+#[tracing::instrument(level = "info", skip_all, fields(job = "ft_lockup_refresh"))]
 pub async fn ft_lockup_refresh(
     _t: Tick,
     state: Data<Arc<AppState>>,
@@ -584,6 +624,7 @@ pub async fn ft_lockup_refresh(
 /// (`attempts >= max_attempts`) rows — the latter are terminal too and were
 /// never cleaned before, so they accumulated. Retryable `Failed` rows
 /// (`attempts < max_attempts`) and every Pending task are left untouched.
+#[tracing::instrument(level = "info", skip_all, fields(job = "apalis_prune"))]
 pub async fn apalis_prune(_t: Tick, state: Data<Arc<AppState>>) -> Result<String, BoxDynError> {
     // Clamp so a misconfigured (negative) value can't flip the cutoff into the
     // future and delete *every* terminal task; cap at ~10y for sanity.
@@ -652,6 +693,7 @@ pub async fn apalis_prune(_t: Tick, state: Data<Arc<AppState>>) -> Result<String
 }
 
 /// Diff near.com private production.json vs vendored catalog; Telegram notify-only.
+#[tracing::instrument(level = "info", skip_all, fields(job = "nearcom_catalog_watch"))]
 pub async fn nearcom_catalog_watch(
     _t: Tick,
     state: Data<Arc<AppState>>,

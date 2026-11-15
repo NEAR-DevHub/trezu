@@ -68,6 +68,7 @@ pub fn extract_ft_tokens_from_receipt(receipt: &ReceiptView, account_id: &str) -
 ///
 /// The full format is preserved to allow extracting the FT contract address
 /// when querying ft_metadata for decimals and other token information.
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id))]
 pub async fn snapshot_intents_tokens(
     network: &NetworkConfig,
     account_id: &str,
@@ -83,7 +84,7 @@ pub async fn snapshot_intents_tokens(
 /// # Returns
 /// List of FT contract IDs (e.g. "usdc.near", "wrap.near") that have positive balances.
 pub async fn fetch_fastnear_ft_tokens(
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
 ) -> Result<Vec<String>, Box<dyn std::error::Error + Send + Sync>> {

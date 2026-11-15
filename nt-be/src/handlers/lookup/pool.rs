@@ -16,6 +16,7 @@ pub struct PoolLookupQuery {
     pub account_id: AccountId,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id))]
 pub async fn get_lockup_pool(
     State(state): State<Arc<AppState>>,
     Query(params): Query<PoolLookupQuery>,

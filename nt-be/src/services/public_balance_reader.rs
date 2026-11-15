@@ -70,6 +70,7 @@ pub async fn get_public_gross_native_balance_at_block(
 /// reserve included, exactly the field the dashboard's lockup builder adds
 /// to the pool position — or `None` when the account provably did not exist
 /// at that block (as opposed to a transport failure, which is `Err`).
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, block_height))]
 pub async fn get_gross_native_balance_if_exists_at_block(
     network: &NetworkConfig,
     account_id: &str,
@@ -120,6 +121,7 @@ impl LockupReadingAtBlock {
     }
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(lockup_account_id = %lockup_account_id, block_height))]
 pub async fn get_lockup_reading_at_block(
     network: &NetworkConfig,
     lockup_account_id: &str,
@@ -192,6 +194,7 @@ async fn get_lockup_staking_pool_at_block(
     }
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, asset = %asset, block_height))]
 pub async fn get_public_balance_at_block(
     pool: &PgPool,
     network: &NetworkConfig,

@@ -152,7 +152,7 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
     AppState {
         cache: nt_be::utils::cache::Cache::new(),
         telegram_client: nt_be::utils::telegram::TelegramClient::default(),
-        http_client,
+        http_client: nt_be::observability::traced_http_client(http_client),
         nearblocks_gate,
         defillama_limiter: nt_be::utils::rate_limiter::RateLimiter::per_minute(
             "defillama-test",

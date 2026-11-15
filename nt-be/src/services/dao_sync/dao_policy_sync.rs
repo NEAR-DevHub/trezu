@@ -135,6 +135,7 @@ async fn mark_dao_sync_failed(pool: &PgPool, dao_id: &str) {
 /// Sync members for a single DAO
 ///
 /// Fetches the DAO policy, extracts members from roles, and updates the database.
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %dao_id))]
 async fn sync_dao_members(
     pool: &PgPool,
     network: &NetworkConfig,

@@ -24,6 +24,7 @@ use sqlx::PgPool;
 
 use super::payload_decoder::classify_proposal_kind;
 
+#[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id, event_type = %event_type, source_table = %source_table, source_id = source_id))]
 async fn insert_notification(
     pool: &PgPool,
     dao_id: &str,

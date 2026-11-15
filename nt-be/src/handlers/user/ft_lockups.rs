@@ -110,6 +110,7 @@ pub(crate) async fn fetch_ft_lockup_instance_ids(
         .await
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(instance_id = %instance_id))]
 pub(crate) async fn fetch_ft_lockup_instance_accounts(
     state: &Arc<AppState>,
     instance_id: &str,
@@ -206,6 +207,7 @@ async fn fetch_ft_lockup_dao_instance_index(
         .await
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(instance_id = %instance_id))]
 pub(crate) async fn fetch_ft_lockup_contract_metadata(
     state: &Arc<AppState>,
     instance_id: &str,
@@ -239,6 +241,7 @@ pub(crate) async fn fetch_ft_lockup_contract_metadata(
         .await
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(instance_id = %instance_id, account_id = %account_id))]
 pub(crate) async fn fetch_ft_lockup_account_data(
     state: &Arc<AppState>,
     instance_id: &str,

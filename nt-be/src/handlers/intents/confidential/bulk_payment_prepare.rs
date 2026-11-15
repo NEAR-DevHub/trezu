@@ -209,6 +209,7 @@ fn build_header_quote_body(
 
 /// Call 1Click `/v0/quote` then `/v0/generate-intent` for one leg.
 /// Returns (`payload_hash`, full quote response, intent payload).
+#[tracing::instrument(level = "debug", skip_all, fields(signer_id = %signer_id))]
 async fn quote_and_generate(
     state: &Arc<AppState>,
     access_token: &str,
@@ -328,6 +329,18 @@ impl LegBatch {
     }
 }
 
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        dao_id = %request.dao_id,
+        origin_asset = %request.origin_asset,
+        destination_asset = request.destination_asset.as_deref(),
+        to_near_com = request.to_near_com,
+        payments = request.payments.len(),
+        user = %auth_user.account_id
+    )
+)]
 pub async fn bulk_payment_prepare(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

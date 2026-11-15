@@ -4,7 +4,7 @@ use axum::{
     http::StatusCode,
 };
 use chrono::{DateTime, Utc};
-use reqwest::RequestBuilder;
+use reqwest_middleware::RequestBuilder;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use serde_json::{Map, Value, json};
 use std::{

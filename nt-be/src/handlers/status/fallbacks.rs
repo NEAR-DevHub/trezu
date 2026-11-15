@@ -441,6 +441,7 @@ async fn activate_existing_slot_in_tx(
 }
 
 /// Activate the fallback warning slot(s) for a service.
+#[tracing::instrument(level = "info", skip_all, fields(service = %service))]
 pub async fn activate_fallback(
     state: &AppState,
     service: &str,

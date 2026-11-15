@@ -115,6 +115,7 @@ impl TelegramClient {
     }
 
     /// Send a plain-text message to an arbitrary Telegram chat.
+    #[tracing::instrument(level = "info", skip_all, fields(chat_id))]
     pub async fn send_message_to_chat(
         &self,
         chat_id: i64,
@@ -136,6 +137,7 @@ impl TelegramClient {
     }
 
     /// Send a message with a single inline URL button to an arbitrary Telegram chat.
+    #[tracing::instrument(level = "info", skip_all, fields(chat_id))]
     pub async fn send_message_with_button(
         &self,
         chat_id: i64,
@@ -229,6 +231,7 @@ impl TelegramClient {
     }
 
     /// Edit an existing message in an arbitrary Telegram chat.
+    #[tracing::instrument(level = "info", skip_all, fields(chat_id, message_id))]
     pub async fn edit_message_text(
         &self,
         chat_id: i64,
@@ -273,6 +276,7 @@ impl TelegramClient {
     /// Ask the bot to leave a group/supergroup/channel chat.
     ///
     /// For private chats, Telegram does not allow bots to "leave" in the same way.
+    #[tracing::instrument(level = "info", skip_all, fields(chat_id))]
     pub async fn leave_chat(
         &self,
         chat_id: i64,

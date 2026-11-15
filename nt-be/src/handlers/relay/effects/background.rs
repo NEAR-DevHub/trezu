@@ -7,14 +7,19 @@
 
 use std::future::Future;
 
+use tracing::Instrument;
+
 /// Spawn `fut` detached, tagged with `label` for tracing.
 pub fn spawn<F>(label: &'static str, fut: F)
 where
     F: Future<Output = ()> + Send + 'static,
 {
-    tokio::spawn(async move {
-        tracing::debug!("relay background task '{label}' started");
-        fut.await;
-        tracing::debug!("relay background task '{label}' finished");
-    });
+    tokio::spawn(
+        async move {
+            tracing::debug!("relay background task '{label}' started");
+            fut.await;
+            tracing::debug!("relay background task '{label}' finished");
+        }
+        .in_current_span(),
+    );
 }
