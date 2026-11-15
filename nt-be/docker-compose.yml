@@ -21,6 +21,12 @@ services:
       POSTGRES_USER: treasury_test
       POSTGRES_PASSWORD: test_password
       POSTGRES_DB: treasury_test_db
+    # Throwaway test database: skip durability. Every `#[sqlx::test]` runs
+    # CREATE DATABASE, which waits on WAL fsync. On slow Docker storage that
+    # stalls each test for seconds or hangs the suite. Data lives in tmpfs.
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
+    tmpfs:
+      - /var/lib/postgresql/data
     ports:
       - "5433:5432"
     healthcheck:
