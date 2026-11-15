@@ -14,7 +14,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use axum::http::StatusCode;
 use base64::Engine as _;
 use near_api::{AccountId, NearGas, NearToken};
 use serde::Deserialize;
@@ -24,11 +23,7 @@ use crate::{
     AppState,
     handlers::{
         proposals::scraper::{fetch_batch_payment_list, fetch_proposal},
-        relay::{
-            parse::{ProposalKind, RelayError, error_response},
-            sponsor::Sponsor,
-        },
-        token::storage_deposit::is_registered::check_storage_deposit,
+        relay::parse::ProposalKind,
     },
     utils::contract_read_error::ContractReadError,
 };
@@ -108,68 +103,6 @@ struct BulkList {
 struct ClassifiedTargets {
     direct: HashSet<Registration>,
     bulk_lists: Vec<BulkList>,
-}
-
-/// Perform every NEP-141 registration implied by the approving votes in this relay
-/// and return the total NEAR spent on them.
-///
-/// Targets are derived from the authoritative on-chain proposal kind, deduplicated,
-/// and registered (sponsor-paid) before the vote executes the transfer.
-#[tracing::instrument(
-    level = "info",
-    skip_all,
-    fields(treasury_id = %treasury_id, proposal_count = approve_proposal_ids.len())
-)]
-pub async fn register_vote_approvals(
-    state: &Arc<AppState>,
-    treasury_id: &AccountId,
-    approve_proposal_ids: &[u64],
-) -> RegistrationOutcome {
-    let mut registration_targets = HashSet::new();
-    for &proposal_id in approve_proposal_ids {
-        // The inline path proceeds with whatever could be read.
-        registration_targets.extend(
-            derive_targets_for_proposal(state, treasury_id, proposal_id)
-                .await
-                .unwrap_or_default(),
-        );
-    }
-
-    let allowed = super::allowlist::allowed_storage_contracts(state).await;
-    let before = registration_targets.len();
-    registration_targets = sponsor_registrations(registration_targets, &allowed);
-    let skipped = before - registration_targets.len();
-    if skipped > 0 {
-        tracing::info!(
-            skipped,
-            "skipping sponsor storage_deposit for token contracts outside the allowlist"
-        );
-    }
-
-    let (sent_count, registration_error) =
-        execute_storage_deposits(state, registration_targets).await;
-    RegistrationOutcome {
-        spent: STORAGE_DEPOSIT_AMOUNT.saturating_mul(u128::from(sent_count)),
-        error: registration_error.map(|msg| error_response(StatusCode::BAD_REQUEST, msg)),
-    }
-}
-
-/// Drop registrations whose token contract is not on the sponsor allowlist.
-/// The sponsor never calls `storage_deposit` on a contract that is filtered out.
-fn sponsor_registrations(
-    mut targets: HashSet<Registration>,
-    allowed: &HashSet<String>,
-) -> HashSet<Registration> {
-    targets.retain(|registration| allowed.contains(registration.token_id.as_str()));
-    targets
-}
-
-/// Outcome of registering vote approvals: the NEAR actually spent on
-/// `storage_deposit`s (always charged to `paid_near`), plus the error to fail the
-/// relay with, if a required registration could not be completed.
-pub struct RegistrationOutcome {
-    pub spent: NearToken,
-    pub error: Option<RelayError>,
 }
 
 /// A proposal or bulk-list read that failed for a reason worth retrying. The
@@ -346,111 +279,6 @@ impl ClassifiedTargets {
             self.bulk_lists.push(BulkList { token, list_id });
         }
     }
-}
-
-/// Perform the required registrations concurrently and return `(sent, error)`:
-/// the number of `storage_deposit`s actually sent (for `paid_near` accounting) and
-/// the first failure, if any. All registrations run to completion even when one
-/// fails, so `sent` reflects every NEAR actually spent.
-#[tracing::instrument(
-    level = "info",
-    skip_all,
-    fields(registration_count = registration_targets.len())
-)]
-async fn execute_storage_deposits(
-    state: &Arc<AppState>,
-    registration_targets: HashSet<Registration>,
-) -> (u32, Option<String>) {
-    if registration_targets.is_empty() {
-        return (0, None);
-    }
-    if registration_targets.len() > MAX_STORAGE_DEPOSITS {
-        return (
-            0,
-            Some(format!(
-                "Too many storage_deposit registrations required ({} > {})",
-                registration_targets.len(),
-                MAX_STORAGE_DEPOSITS
-            )),
-        );
-    }
-
-    let registrations = registration_targets.into_iter().map(|registration| {
-        let state = state.clone();
-        async move { register_one(&state, &registration).await }
-    });
-    let registration_results = futures::future::join_all(registrations).await;
-
-    let mut sent_count: u32 = 0;
-    let mut first_error = None;
-    for registration_result in registration_results {
-        match registration_result {
-            Ok(true) => sent_count += 1,
-            Ok(false) => {}
-            Err(error_message) => {
-                if first_error.is_none() {
-                    first_error = Some(error_message);
-                }
-            }
-        }
-    }
-    (sent_count, first_error)
-}
-
-/// Register a single account on a token contract. Returns `Ok(true)` when a
-/// `storage_deposit` was actually sent, `Ok(false)` when already registered.
-///
-/// `storage_deposit` with `registration_only` refunds and is a no-op when already
-/// registered, so [`Sponsor::call_idempotent`] retries transient send failures.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(account_id = %registration.account_id, asset_contract = tracing::field::Empty)
-)]
-async fn register_one(state: &Arc<AppState>, registration: &Registration) -> Result<bool, String> {
-    let Registration {
-        account_id,
-        token_id,
-    } = registration;
-    tracing::Span::current().record("asset_contract", tracing::field::display(token_id));
-
-    match check_storage_deposit(state, account_id.clone(), token_id.clone()).await {
-        Ok(true) => return Ok(false),
-        Ok(false) => {}
-        Err((_, message)) => {
-            // Couldn't verify — attempt anyway; storage_deposit refunds if
-            // the account turns out to be already registered.
-            tracing::warn!(
-                "registration check failed for {} on {}: {}",
-                account_id,
-                token_id,
-                message
-            );
-        }
-    }
-
-    let args = serde_json::to_vec(&serde_json::json!({
-        "account_id": account_id,
-        "registration_only": true,
-    }))
-    .map_err(|e| e.to_string())?;
-
-    Sponsor::from_state(state)
-        .call_idempotent(
-            token_id,
-            "storage_deposit",
-            args,
-            STORAGE_DEPOSIT_GAS,
-            STORAGE_DEPOSIT_AMOUNT,
-        )
-        .await
-        .map_err(|e| {
-            format!(
-                "storage_deposit failed for {} on {}: {}",
-                account_id, token_id, e
-            )
-        })?;
-    Ok(true)
 }
 
 #[cfg(test)]
@@ -669,9 +497,9 @@ mod tests {
     }
 
     #[test]
-    fn unlisted_contract_is_not_sponsored() {
-        // The proposal still classifies a registration. The allowlist is what
-        // stops the sponsor from paying `storage_deposit` on that contract.
+    fn unlisted_contract_still_classifies_a_registration() {
+        // Classification does not filter. The storage allowlist is what stops
+        // the sponsor from paying `storage_deposit` on that contract.
         let kind = function_call_kind(
             "evil.near",
             vec![fc_action(
@@ -681,27 +509,5 @@ mod tests {
         );
         let classified = classify_kind(&kind, &bulk(), &treasury());
         assert_eq!(classified.direct, regs(&[("alice.near", "evil.near")]));
-
-        let allowed = HashSet::from(["usdc.near".to_string(), "wrap.near".to_string()]);
-        let targets = regs(&[
-            ("alice.near", "evil.near"),
-            ("bob.near", "usdc.near"),
-            ("mydao.sputnik-dao.near", "wrap.near"),
-        ]);
-        let sponsored = sponsor_registrations(targets, &allowed);
-
-        assert!(
-            sponsored
-                .iter()
-                .all(|registration| registration.token_id != acc("evil.near"))
-        );
-        assert_eq!(
-            sponsored,
-            regs(&[
-                ("bob.near", "usdc.near"),
-                ("mydao.sputnik-dao.near", "wrap.near"),
-            ])
-        );
-        assert!(sponsor_registrations(classified.direct, &allowed).is_empty());
     }
 }

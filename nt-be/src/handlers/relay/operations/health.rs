@@ -176,7 +176,7 @@ impl RelayHealth {
     }
 
     async fn orphan_outcome(&self, tx: &RelayTransaction) -> Option<TransactionOutcome> {
-        let landed = |result: &Value| match read_send_tx_result(result, "", &tx.tx_hash) {
+        let landed = |result: &Value| match read_send_tx_result(result, "") {
             Ok(_) => TransactionOutcome::Succeeded,
             Err(failure) => TransactionOutcome::Failed {
                 reason: failure.message,
@@ -218,22 +218,13 @@ impl RelayHealth {
         outcome: &TransactionOutcome,
     ) -> Result<bool, RelayStoreError> {
         let mut db = self.state.db_pool.begin().await?;
-        let moved = sqlx::query(
-            r#"
-            UPDATE relay_transactions t
-            SET state = $2, updated_at = NOW()
-            FROM relay_operations o
-            WHERE t.id = $1 AND o.id = t.operation_id AND o.state <> 'pending' AND t.state = 'pending'
-            "#,
-        )
-        .bind(tx.id)
-        .bind(outcome.state())
-        .execute(&mut *db)
-        .await?
-        .rows_affected();
-        if moved == 0 {
-            db.rollback().await?;
-            return Ok(false);
+        match RelayStore::settle_orphan_transaction(&mut db, tx.id, outcome).await {
+            Ok(()) => {}
+            Err(RelayStoreError::LeaseLost) => {
+                db.rollback().await?;
+                return Ok(false);
+            }
+            Err(error) => return Err(error),
         }
         if matches!(outcome, TransactionOutcome::Succeeded) && !tx.spend_yocto.is_zero() {
             sqlx::query(

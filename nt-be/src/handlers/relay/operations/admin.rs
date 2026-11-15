@@ -287,12 +287,10 @@ mod tests {
                 operation_kind: OperationKind::AddProposal,
                 submission_payload: payload.to_vec(),
                 proposal_type: None,
-                address_book_payment: false,
             },
         )
         .await
         .unwrap()
-        .operation
         .id;
         let lease = RelayStore::new(pool)
             .claim_operation(id, LEASE)

@@ -50,6 +50,27 @@ pg_enum!(OperationState, "relay_operation_state", {
     ManualReview => "manual_review",
 });
 
+pg_enum!(RelayProposalType, "relay_proposal_type", {
+    Swap => "swap",
+    Payment => "payment",
+    AddressBookPayment => "address_book_payment",
+    Vote => "vote",
+    Other => "other",
+});
+
+impl RelayProposalType {
+    /// From the request's `proposalType` / `addressBookPayment` hints.
+    pub fn from_hint(proposal_type: Option<&str>, address_book_payment: bool) -> Option<Self> {
+        Some(match proposal_type? {
+            "swap" => Self::Swap,
+            "payment" if address_book_payment => Self::AddressBookPayment,
+            "payment" => Self::Payment,
+            "vote" => Self::Vote,
+            _ => Self::Other,
+        })
+    }
+}
+
 impl OperationState {
     pub const fn is_terminal(self) -> bool {
         !matches!(self, Self::Pending)
@@ -180,7 +201,7 @@ impl IdempotencyKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FailureCode {
     /// Refused at authorization (not allowed, no credits, deposit over the
-    /// limit) with the HTTP status the inline path answers.
+    /// limit) with the HTTP status to answer.
     Rejected(StatusCode),
     /// The user's delegate action expired before the relay could land.
     DelegateExpired,
@@ -225,7 +246,7 @@ impl FailureCode {
         }
     }
 
-    /// The same error envelope the inline relay path returns for this failure.
+    /// The error envelope the request answers for this failure.
     pub fn api_error(&self, tx_hash: Option<String>) -> ApiError {
         match self {
             Self::Rejected(status) => ApiError::rejected_before_send(*status),
@@ -263,8 +284,7 @@ pub struct NewRelayOperation {
     pub actor_account_id: AccountId,
     pub operation_kind: OperationKind,
     pub submission_payload: Vec<u8>,
-    pub proposal_type: Option<String>,
-    pub address_book_payment: bool,
+    pub proposal_type: Option<RelayProposalType>,
 }
 
 #[derive(Debug, Clone, sqlx::FromRow)]
@@ -281,8 +301,7 @@ pub struct RelayOperation {
     pub stage: OperationStage,
     pub stage_entered_at: DateTime<Utc>,
     pub credit_reserved: bool,
-    pub proposal_type: Option<String>,
-    pub address_book_payment: bool,
+    pub proposal_type: Option<RelayProposalType>,
     pub proposal_ids: Option<Vec<i64>>,
     pub failure_code: Option<String>,
     pub last_error: Option<String>,

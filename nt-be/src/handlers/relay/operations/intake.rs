@@ -26,7 +26,7 @@ use crate::{
 use super::{
     models::{
         IdempotencyKey, NewRelayOperation, OperationKind, OperationState, RelayOperation,
-        RelaySubmissionStatus,
+        RelayProposalType, RelaySubmissionStatus,
     },
     store::RelayStore,
 };
@@ -50,8 +50,7 @@ pub async fn submit(
     auth_user: &AuthUser,
     raw_payload: Vec<u8>,
     parsed: ParsedRelay,
-    proposal_type: Option<String>,
-    address_book_payment: bool,
+    proposal_type: Option<RelayProposalType>,
 ) -> Result<Response, RelayError> {
     access::bind_signer(auth_user, &parsed.submission)?;
 
@@ -71,7 +70,6 @@ pub async fn submit(
         operation_kind,
         submission_payload: raw_payload,
         proposal_type,
-        address_book_payment,
     };
 
     let store = RelayStore::new(&state.db_pool);
@@ -99,38 +97,17 @@ pub async fn submit(
                     format!("{waiting} submissions are already waiting for this account"),
                 ));
             }
-            let inserted = RelayStore::insert_or_load_operation(&mut tx, new)
+            let operation = RelayStore::insert_or_load_operation(&mut tx, new)
                 .await
                 .map_err(db_error)?;
             tx.commit().await.map_err(db_error)?;
             state.relay_wake.notify_one();
-            inserted.operation
+            operation
         }
     };
 
     let latest = await_terminal(state, operation).await?;
     respond(state, latest).await
-}
-
-/// Answer a request from the operation its signed bytes already have, if any.
-/// Used by the inline path so a retry after the flag is turned off stays
-/// attached to the operation the worker is finishing.
-pub async fn answer_existing(
-    state: &Arc<AppState>,
-    auth_user: &AuthUser,
-    parsed: &ParsedRelay,
-    raw_payload: &[u8],
-) -> Result<Option<Response>, RelayError> {
-    let key = IdempotencyKey::derive(&parsed.treasury_id, &auth_user.account_id, raw_payload);
-    let Some(operation) = RelayStore::new(&state.db_pool)
-        .operation_by_key(key.as_str())
-        .await
-        .map_err(db_error)?
-    else {
-        return Ok(None);
-    };
-    let latest = await_terminal(state, operation).await?;
-    respond(state, latest).await.map(Some)
 }
 
 /// Watch the row until the worker ends it or the response budget runs out.

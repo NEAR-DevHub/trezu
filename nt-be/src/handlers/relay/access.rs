@@ -25,21 +25,15 @@ pub struct TreasuryRecord {
     pub created_at: DateTime<Utc>,
 }
 
-/// A relay that passed [`authorize`]: the same payload as [`ParsedRelay`] plus the
-/// resolved sponsorship tier. Holding one is proof the treasury is tracked (a
+/// A relay that passed [`authorize`], with the resolved sponsorship tier. Holding one is proof the treasury is tracked (a
 /// sanctioned Sputnik DAO), so downstream code needs no further "is this a Sputnik
 /// DAO?" check.
 pub struct AuthorizedRelay {
     pub treasury_id: AccountId,
-    pub submission: RelaySubmission,
-    pub operation: RelayOperation,
     pub attached_deposit: NearToken,
     pub tier: SponsorshipTier,
     /// The treasury's plan — used to atomically reserve a gas credit before spending.
     pub plan_type: PlanType,
-    /// Server-derived DAO storage (bytes) for this relay's `add_proposal` calls; sizes
-    /// the sponsor top-up. Zero for vote-only relays. See [`ParsedRelay`].
-    pub proposal_storage_bytes: u128,
 }
 
 /// Fetch the treasury's `monitored_accounts` row, if it is tracked. Presence here is
@@ -143,7 +137,7 @@ pub async fn authorize(
         submission,
         operation,
         attached_deposit,
-        proposal_storage_bytes,
+        ..
     } = parsed;
     tracing::Span::current().record("treasury_id", tracing::field::display(&treasury_id));
 
@@ -181,10 +175,7 @@ pub async fn authorize(
         tier: SponsorshipTier::for_treasury(treasury_record.created_at),
         plan_type: treasury_record.plan_type,
         treasury_id,
-        submission,
-        operation,
         attached_deposit,
-        proposal_storage_bytes,
     })
 }
 

@@ -122,7 +122,7 @@ impl Stage for Settle {
         };
         verify_hash(relay, &result)?;
         Ok(
-            match read_send_tx_result(&result, ctx.plan.treasury_id.as_str(), &relay.tx_hash) {
+            match read_send_tx_result(&result, ctx.plan.treasury_id.as_str()) {
                 Ok(outcome) => StageResult::Done(Completion {
                     outcome: OperationOutcome::Succeeded {
                         proposal_ids: outcome.proposal_ids.iter().map(|id| *id as i64).collect(),

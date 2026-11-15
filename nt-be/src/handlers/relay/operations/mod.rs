@@ -5,8 +5,8 @@
 //!   `relay_transactions`, lane locks.
 //! - [`lanes`] — the sponsor access keys, one in-flight transaction each.
 //! - [`rpc`] — provider-by-provider `send_tx` / `tx` / access-key calls.
-//! - [`intake`] — the request path behind `DURABLE_RELAY_SUBMISSIONS`: insert
-//!   the row, wake the worker, watch the row.
+//! - [`intake`] — the request path: insert the row, wake the worker, watch
+//!   the row.
 //! - [`engine`] — the worker loop: claim, run the stage, defer, finish with
 //!   the accounting.
 //! - [`stages`] — one file per stage of an operation.
@@ -28,4 +28,4 @@ pub mod status;
 pub mod store;
 
 pub use models::*;
-pub use store::{InsertedOperation, RelayStore, RelayStoreError};
+pub use store::{RelayStore, RelayStoreError};

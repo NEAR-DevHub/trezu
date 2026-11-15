@@ -27,8 +27,7 @@ const DELEGATE_EXPIRY_MARGIN_BLOCKS: u64 = 20;
 pub struct Authorize;
 
 impl Authorize {
-    /// The checks the inline path runs in the request: DAO permissions, the
-    /// treasury's plan and credits, the deposit limit.
+    /// DAO permissions, the treasury's plan and credits, the deposit limit.
     async fn check(ctx: &StageContext<'_>) -> Result<AuthorizedRelay, RelayError> {
         let operation = ctx.operation;
         let parsed = parse_relay(operation.treasury_id.clone(), &operation.submission_payload)

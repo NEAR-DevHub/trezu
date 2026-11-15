@@ -29,7 +29,9 @@ use crate::{
 
 use super::{
     health::RelayHealth,
-    models::{OperationLease, OperationOutcome, RelayOperation, RelaySubmissionStatus},
+    models::{
+        OperationLease, OperationOutcome, RelayOperation, RelayProposalType, RelaySubmissionStatus,
+    },
     plan::RelayPlan,
     rpc::RelayRpc,
     stages::{
@@ -63,14 +65,6 @@ pub struct RelayEngine {
 pub enum RunOutcome {
     Terminal(RelayOperation),
     Pending(RelayOperation),
-}
-
-impl RunOutcome {
-    pub fn into_operation(self) -> RelayOperation {
-        match self {
-            Self::Terminal(op) | Self::Pending(op) => op,
-        }
-    }
 }
 
 impl RelayEngine {
@@ -444,10 +438,7 @@ impl RelayEngine {
             .await?;
         }
         if succeeded {
-            let metrics = relay_metrics(
-                operation.proposal_type.as_deref(),
-                operation.address_book_payment,
-            );
+            let metrics = relay_metrics(operation.proposal_type);
             platform_metrics::record_events_on(&mut *conn, treasury_id, &metrics).await?;
         }
         Ok(())
@@ -506,21 +497,19 @@ impl RelayEngine {
     }
 }
 
-/// The same counters the inline path records on success.
-pub fn relay_metrics(
-    proposal_type: Option<&str>,
-    address_book_payment: bool,
-) -> Vec<PlatformMetric> {
+/// The usage counters a successful relay records.
+pub fn relay_metrics(proposal_type: Option<RelayProposalType>) -> Vec<PlatformMetric> {
     let mut metrics = vec![PlatformMetric::GasCoveredTransactions];
     match proposal_type {
-        Some("swap") => metrics.push(PlatformMetric::SwapProposals),
-        Some("payment") => metrics.push(PlatformMetric::PaymentProposals),
-        Some("vote") => metrics.push(PlatformMetric::VotesCasted),
-        Some(_) => metrics.push(PlatformMetric::OtherProposalsSubmitted),
+        Some(RelayProposalType::Swap) => metrics.push(PlatformMetric::SwapProposals),
+        Some(RelayProposalType::Payment) => metrics.push(PlatformMetric::PaymentProposals),
+        Some(RelayProposalType::AddressBookPayment) => metrics.extend([
+            PlatformMetric::PaymentProposals,
+            PlatformMetric::AddressBookPaymentProposals,
+        ]),
+        Some(RelayProposalType::Vote) => metrics.push(PlatformMetric::VotesCasted),
+        Some(RelayProposalType::Other) => metrics.push(PlatformMetric::OtherProposalsSubmitted),
         None => {}
-    }
-    if address_book_payment && proposal_type == Some("payment") {
-        metrics.push(PlatformMetric::AddressBookPaymentProposals);
     }
     metrics
 }
@@ -576,14 +565,13 @@ mod tests {
                 actor_account_id: actor,
                 operation_kind: OperationKind::ActProposal,
                 submission_payload: payload.to_vec(),
-                proposal_type: Some("vote".to_owned()),
-                address_book_payment: false,
+                proposal_type: Some(RelayProposalType::Vote),
             },
         )
         .await
         .unwrap();
         let claimed = RelayStore::new(pool)
-            .claim_operation(inserted.operation.id, OPERATION_LEASE)
+            .claim_operation(inserted.id, OPERATION_LEASE)
             .await
             .unwrap()
             .unwrap();
@@ -716,14 +704,13 @@ mod tests {
                 operation_kind: OperationKind::AddProposal,
                 submission_payload: b"not-allowed".to_vec(),
                 proposal_type: None,
-                address_book_payment: false,
             },
         )
         .await
         .unwrap();
         let claimed = engine
             .store()
-            .claim_operation(inserted.operation.id, OPERATION_LEASE)
+            .claim_operation(inserted.id, OPERATION_LEASE)
             .await
             .unwrap()
             .unwrap();
@@ -802,9 +789,9 @@ mod tests {
     }
 
     #[test]
-    fn metrics_match_the_inline_path() {
+    fn metrics_follow_the_proposal_type() {
         assert_eq!(
-            relay_metrics(Some("payment"), true),
+            relay_metrics(RelayProposalType::from_hint(Some("payment"), true)),
             vec![
                 PlatformMetric::GasCoveredTransactions,
                 PlatformMetric::PaymentProposals,
@@ -812,7 +799,24 @@ mod tests {
             ]
         );
         assert_eq!(
-            relay_metrics(None, true),
+            relay_metrics(RelayProposalType::from_hint(Some("payment"), false)),
+            vec![
+                PlatformMetric::GasCoveredTransactions,
+                PlatformMetric::PaymentProposals
+            ]
+        );
+        assert_eq!(
+            relay_metrics(RelayProposalType::from_hint(
+                Some("confidential_transfer"),
+                true
+            )),
+            vec![
+                PlatformMetric::GasCoveredTransactions,
+                PlatformMetric::OtherProposalsSubmitted
+            ]
+        );
+        assert_eq!(
+            relay_metrics(RelayProposalType::from_hint(None, true)),
             vec![PlatformMetric::GasCoveredTransactions]
         );
     }

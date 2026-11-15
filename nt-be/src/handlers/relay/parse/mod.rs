@@ -205,10 +205,7 @@ pub enum RelaySubmission {
 #[derive(Debug)]
 pub enum MetaRelay {
     Supported(SignedDelegateAction),
-    PostQuantum {
-        sender_id: AccountId,
-        bytes: Vec<u8>,
-    },
+    PostQuantum { sender_id: AccountId },
 }
 
 /// The sponsor-prepared replay of a `w_execute_signed` relay.
@@ -268,11 +265,6 @@ pub struct ActProposal {
 }
 
 impl RelayOperation {
-    /// Whether this relay adds proposals.
-    pub fn is_add_proposals(&self) -> bool {
-        matches!(self, RelayOperation::AddProposals(_))
-    }
-
     /// Proposal ids being approved (`VoteApprove`), in order. Empty for add relays.
     pub fn vote_approve_ids(&self) -> Vec<u64> {
         match self {
@@ -280,23 +272,6 @@ impl RelayOperation {
                 .iter()
                 .filter(|vote| vote.action == "VoteApprove")
                 .map(|vote| vote.id)
-                .collect(),
-            RelayOperation::AddProposals(_) => Vec::new(),
-        }
-    }
-
-    /// Confidential `v1.signer` payload hashes referenced by the votes, in order. A
-    /// single relay can carry several (e.g. multiple confidential votes). Empty for
-    /// add relays.
-    pub fn confidential_payload_hashes(&self) -> Vec<String> {
-        match self {
-            RelayOperation::Votes(votes) => votes
-                .iter()
-                .filter_map(|vote| {
-                    vote.kind
-                        .as_ref()
-                        .and_then(extract_v1_signer_hash_from_kind)
-                })
                 .collect(),
             RelayOperation::AddProposals(_) => Vec::new(),
         }
@@ -314,10 +289,9 @@ impl RelayOperation {
         }
     }
 
-    /// Like [`confidential_payload_hashes`](Self::confidential_payload_hashes) but
-    /// pairs each hash with the on-chain proposal id being voted on. The proposal
-    /// id lets the auto-submit path link and arm bulk-payment headers once the
-    /// vote lands. Empty for add relays.
+    /// Confidential `v1.signer` payload hashes referenced by the votes, in order,
+    /// each with the on-chain proposal id being voted on. A single relay can carry
+    /// several (e.g. multiple confidential votes). Empty for add relays.
     pub fn confidential_payloads_with_ids(&self) -> Vec<(String, u64)> {
         match self {
             RelayOperation::Votes(votes) => votes
@@ -384,7 +358,6 @@ fn parse_post_quantum(treasury_id: AccountId, raw: &[u8]) -> Result<ParsedRelay,
         (
             RelaySubmission::MetaTransaction(MetaRelay::PostQuantum {
                 sender_id: api_account(&signed.delegate_action.sender_id)?,
-                bytes: raw.to_vec(),
             }),
             calls,
         )
@@ -725,8 +698,8 @@ mod tests {
         ];
         let (operation, _, _) = validate_calls(&acc(TREASURY), calls).unwrap();
         assert_eq!(
-            operation.confidential_payload_hashes(),
-            vec!["aaaa".to_owned(), "bbbb".to_owned()]
+            operation.confidential_payloads_with_ids(),
+            vec![("aaaa".to_owned(), 1), ("bbbb".to_owned(), 2)]
         );
     }
 
@@ -810,13 +783,12 @@ mod tests {
 
         let parsed = parse_relay(acc(TREASURY), &raw).expect("ml-dsa relay parses");
         match parsed.submission {
-            RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id, bytes }) => {
+            RelaySubmission::MetaTransaction(MetaRelay::PostQuantum { sender_id }) => {
                 assert_eq!(sender_id.as_str(), "user.near");
-                assert_eq!(bytes, raw);
             }
-            other => panic!("expected the original bytes, got {other:?}"),
+            other => panic!("expected a post-quantum relay, got {other:?}"),
         }
-        assert!(parsed.operation.is_add_proposals());
+        assert!(matches!(parsed.operation, RelayOperation::AddProposals(_)));
     }
 
     #[test]

@@ -17,8 +17,8 @@ use crate::{
         engine::{RelayEngine, RunOutcome},
         models::{
             FailureCode, IdempotencyKey, NewRelayOperation, OperationKind, OperationLease,
-            OperationOutcome, OperationStage, OperationState, RelayOperation, RelayTransaction,
-            TransactionState,
+            OperationOutcome, OperationStage, OperationState, RelayOperation, RelayProposalType,
+            RelayTransaction, TransactionState,
         },
         plan::RelayPlan,
         rpc::RelayRpc,
@@ -399,13 +399,11 @@ impl World {
                 actor_account_id: actor,
                 operation_kind: kind,
                 submission_payload: payload,
-                proposal_type: Some("payment".to_owned()),
-                address_book_payment: false,
+                proposal_type: Some(RelayProposalType::Payment),
             },
         )
         .await
         .expect("insert")
-        .operation
         .id
     }
 
@@ -904,7 +902,8 @@ async fn a_result_is_committed_once_when_the_process_dies_after_the_relay_lands(
         .engine()
         .finish(&claim.operation, &claim.lease, unwritten)
         .await;
-    assert_eq!(late.into_operation().state, OperationState::Succeeded);
+    let (RunOutcome::Terminal(late) | RunOutcome::Pending(late)) = late;
+    assert_eq!(late.state, OperationState::Succeeded);
     let counted: i64 = sqlx::query_scalar(
         "SELECT COUNT(*) FROM relay_operations WHERE id = $1 AND state = 'succeeded'",
     )

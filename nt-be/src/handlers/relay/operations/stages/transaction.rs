@@ -24,7 +24,6 @@ use crate::{
     error_event,
     error_event::ErrorCode,
     handlers::relay::post_quantum::{protocol_account, read_send_tx_result},
-    utils::api_error::TxFailureReason,
 };
 
 use super::{
@@ -59,10 +58,7 @@ pub struct NewTransaction {
 /// The chain's final word on a transaction.
 pub enum Finality {
     Succeeded(Value),
-    Failed {
-        reason: TxFailureReason,
-        message: String,
-    },
+    Failed { message: String },
 }
 
 /// Where a transaction is after one look at it.
@@ -334,7 +330,7 @@ async fn landed(
 ) -> Result<TxProgress, StageError> {
     verify_hash(tx, &result)?;
     let store = ctx.store();
-    match read_send_tx_result(&result, ctx.plan.treasury_id.as_str(), &tx.tx_hash) {
+    match read_send_tx_result(&result, ctx.plan.treasury_id.as_str()) {
         Ok(_) => {
             store
                 .settle_transaction(ctx.lease, tx.id, &TransactionOutcome::Succeeded)
@@ -352,7 +348,6 @@ async fn landed(
                 )
                 .await?;
             Ok(TxProgress::Final(Finality::Failed {
-                reason: failure.reason,
                 message: failure.message,
             }))
         }

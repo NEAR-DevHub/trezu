@@ -49,13 +49,6 @@ impl RelayStoreError {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct InsertedOperation {
-    pub operation: RelayOperation,
-    /// `false` when the idempotency key already existed and that row is returned.
-    pub inserted: bool,
-}
-
 fn fenced(result: PgQueryResult) -> Result<(), RelayStoreError> {
     if result.rows_affected() == 0 {
         Err(RelayStoreError::LeaseLost)
@@ -69,7 +62,6 @@ fn fenced(result: PgQueryResult) -> Result<(), RelayStoreError> {
 /// claim without committing releases the lane unchanged.
 pub struct LaneClaim<'c> {
     tx: Transaction<'c, Postgres>,
-    pub public_key: String,
     /// Highest nonce ever committed on this lane, so a fresh signature never
     /// goes below one that may still be in the network.
     pub nonce_floor: Option<i64>,
@@ -104,14 +96,14 @@ impl<'a> RelayStore<'a> {
     pub async fn insert_or_load_operation(
         conn: &mut PgConnection,
         new: NewRelayOperation,
-    ) -> Result<InsertedOperation, RelayStoreError> {
+    ) -> Result<RelayOperation, RelayStoreError> {
         let inserted = sqlx::query_as::<_, RelayOperation>(
             r#"
             INSERT INTO relay_operations (
                 id, idempotency_key, treasury_id, actor_account_id, operation_kind,
-                submission_payload, proposal_type, address_book_payment
+                submission_payload, proposal_type
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             ON CONFLICT (idempotency_key) DO NOTHING
             RETURNING *
             "#,
@@ -122,27 +114,19 @@ impl<'a> RelayStore<'a> {
         .bind(new.actor_account_id.as_str())
         .bind(new.operation_kind)
         .bind(&new.submission_payload)
-        .bind(&new.proposal_type)
-        .bind(new.address_book_payment)
+        .bind(new.proposal_type)
         .fetch_optional(&mut *conn)
         .await?;
 
         if let Some(operation) = inserted {
-            return Ok(InsertedOperation {
-                operation,
-                inserted: true,
-            });
+            return Ok(operation);
         }
-        let operation = sqlx::query_as::<_, RelayOperation>(
+        Ok(sqlx::query_as::<_, RelayOperation>(
             "SELECT * FROM relay_operations WHERE idempotency_key = $1",
         )
         .bind(new.idempotency_key.as_str())
         .fetch_one(&mut *conn)
-        .await?;
-        Ok(InsertedOperation {
-            operation,
-            inserted: false,
-        })
+        .await?)
     }
 
     /// Operations of `actor` the worker has not authorized yet.
@@ -214,31 +198,6 @@ impl<'a> RelayStore<'a> {
         .bind(limit)
         .bind(lease.as_secs_f64())
         .fetch_all(self.pool)
-        .await?)
-    }
-
-    /// Take one specific pending operation now, regardless of its schedule,
-    /// when nobody else holds it. `None` when it is terminal or leased.
-    pub async fn claim_operation(
-        &self,
-        id: Uuid,
-        lease: Duration,
-    ) -> Result<Option<RelayOperation>, RelayStoreError> {
-        Ok(sqlx::query_as::<_, RelayOperation>(
-            r#"
-            UPDATE relay_operations
-            SET lease_token = gen_random_uuid(),
-                lease_until = NOW() + make_interval(secs => $2),
-                updated_at = NOW()
-            WHERE id = $1
-              AND state = 'pending'
-              AND (lease_until IS NULL OR lease_until < NOW())
-            RETURNING *
-            "#,
-        )
-        .bind(id)
-        .bind(lease.as_secs_f64())
-        .fetch_optional(self.pool)
         .await?)
     }
 
@@ -520,23 +479,7 @@ impl<'a> RelayStore<'a> {
                 .bind(public_key)
                 .fetch_one(&mut *tx)
                 .await?;
-        Ok(Some(LaneClaim {
-            tx,
-            public_key: public_key.to_owned(),
-            nonce_floor,
-        }))
-    }
-
-    /// Commit a signed transaction before it is broadcast. Refused without the
-    /// operation lease; the unique step index refuses a second live
-    /// transaction for the same step.
-    pub async fn insert_prepared_transaction(
-        &self,
-        lease: &OperationLease,
-        prepared: PreparedTransaction,
-    ) -> Result<RelayTransaction, RelayStoreError> {
-        let mut conn = self.pool.acquire().await?;
-        Self::insert_prepared_on(&mut conn, lease, prepared).await
+        Ok(Some(LaneClaim { tx, nonce_floor }))
     }
 
     async fn insert_prepared_on(
@@ -719,7 +662,7 @@ impl<'a> RelayStore<'a> {
     /// No lease exists for such a row; the terminal parent guarantees no live
     /// worker competes for it.
     pub async fn settle_orphan_transaction(
-        &self,
+        conn: &mut PgConnection,
         transaction_id: Uuid,
         outcome: &TransactionOutcome,
     ) -> Result<(), RelayStoreError> {
@@ -740,7 +683,7 @@ impl<'a> RelayStore<'a> {
             .bind(transaction_id)
             .bind(outcome.state())
             .bind(settle_error(outcome))
-            .execute(self.pool)
+            .execute(&mut *conn)
             .await?,
         )
     }
@@ -823,12 +766,53 @@ fn settle_error(outcome: &TransactionOutcome) -> Option<&str> {
     }
 }
 
+/// Direct entry points the tests use to set a row up.
+#[cfg(test)]
+impl RelayStore<'_> {
+    /// Take one specific pending operation now, regardless of its schedule,
+    /// when nobody else holds it. `None` when it is terminal or leased.
+    pub async fn claim_operation(
+        &self,
+        id: Uuid,
+        lease: Duration,
+    ) -> Result<Option<RelayOperation>, RelayStoreError> {
+        Ok(sqlx::query_as::<_, RelayOperation>(
+            r#"
+            UPDATE relay_operations
+            SET lease_token = gen_random_uuid(),
+                lease_until = NOW() + make_interval(secs => $2),
+                updated_at = NOW()
+            WHERE id = $1
+              AND state = 'pending'
+              AND (lease_until IS NULL OR lease_until < NOW())
+            RETURNING *
+            "#,
+        )
+        .bind(id)
+        .bind(lease.as_secs_f64())
+        .fetch_optional(self.pool)
+        .await?)
+    }
+
+    /// Commit a signed transaction before it is broadcast. Refused without the
+    /// operation lease; the unique step index refuses a second live
+    /// transaction for the same step.
+    pub async fn insert_prepared_transaction(
+        &self,
+        lease: &OperationLease,
+        prepared: PreparedTransaction,
+    ) -> Result<RelayTransaction, RelayStoreError> {
+        let mut conn = self.pool.acquire().await?;
+        Self::insert_prepared_on(&mut conn, lease, prepared).await
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::handlers::relay::operations::models::{
-        FailureCode, IdempotencyKey, OperationKind, OperationStage, OperationState, StepKey,
-        TransactionState,
+        FailureCode, IdempotencyKey, OperationKind, OperationStage, OperationState,
+        RelayProposalType, StepKey, TransactionState,
     };
     use near_api::AccountId;
 
@@ -847,8 +831,7 @@ mod tests {
             actor_account_id,
             operation_kind: OperationKind::AddProposal,
             submission_payload: payload.to_vec(),
-            proposal_type: Some("payment".to_owned()),
-            address_book_payment: false,
+            proposal_type: Some(RelayProposalType::Payment),
         }
     }
 
@@ -909,17 +892,14 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(first.inserted);
-        assert!(!again.inserted);
-        assert_eq!(first.operation.id, again.operation.id);
-        assert_eq!(first.operation.state, OperationState::Pending);
-        assert_eq!(first.operation.operation_kind, OperationKind::AddProposal);
-        assert!(!first.operation.credit_reserved);
-        assert_eq!(first.operation.stage, OperationStage::Authorize);
-        assert_eq!(first.operation.proposal_type.as_deref(), Some("payment"));
-        assert_eq!(first.operation.submission_payload, b"signed-a");
-        assert!(other.inserted);
-        assert_ne!(other.operation.id, first.operation.id);
+        assert_eq!(first.id, again.id);
+        assert_eq!(first.state, OperationState::Pending);
+        assert_eq!(first.operation_kind, OperationKind::AddProposal);
+        assert!(!first.credit_reserved);
+        assert_eq!(first.stage, OperationStage::Authorize);
+        assert_eq!(first.proposal_type, Some(RelayProposalType::Payment));
+        assert_eq!(first.submission_payload, b"signed-a");
+        assert_ne!(other.id, first.id);
     }
 
     #[sqlx::test]
@@ -1131,7 +1111,6 @@ mod tests {
 
         assert_eq!(store.free_lane_candidates(&lanes).await.unwrap(), lanes);
         let claim = store.claim_lane(&lanes[0]).await.unwrap().unwrap();
-        assert_eq!(claim.public_key, "ed25519:laneA");
         assert_eq!(claim.nonce_floor, None);
 
         let other_store = RelayStore::new(&pool);
@@ -1140,7 +1119,6 @@ mod tests {
             "a lane under advisory lock cannot be claimed twice"
         );
         let second = other_store.claim_lane(&lanes[1]).await.unwrap().unwrap();
-        assert_eq!(second.public_key, "ed25519:laneB");
         drop(second);
 
         let tx = claim
@@ -1188,8 +1166,7 @@ mod tests {
         let mut conn = pool.acquire().await.unwrap();
         let new = RelayStore::insert_or_load_operation(&mut conn, new_operation(b"new"))
             .await
-            .unwrap()
-            .operation;
+            .unwrap();
         sqlx::query(
             "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 hour' WHERE id = $1",
         )
@@ -1378,9 +1355,9 @@ mod tests {
             .await
             .unwrap();
         store.mark_broadcast(&lease, tx.id).await.unwrap();
+        let mut conn = pool.acquire().await.unwrap();
         assert!(
-            store
-                .settle_orphan_transaction(tx.id, &TransactionOutcome::Succeeded)
+            RelayStore::settle_orphan_transaction(&mut conn, tx.id, &TransactionOutcome::Succeeded)
                 .await
                 .is_err(),
             "a live operation's transaction is not an orphan"
@@ -1408,8 +1385,7 @@ mod tests {
         assert_eq!(orphans.len(), 1);
         assert_eq!(orphans[0].id, tx.id);
         store.touch_orphan_transaction(tx.id).await.unwrap();
-        store
-            .settle_orphan_transaction(tx.id, &TransactionOutcome::Succeeded)
+        RelayStore::settle_orphan_transaction(&mut conn, tx.id, &TransactionOutcome::Succeeded)
             .await
             .unwrap();
         assert!(

@@ -17,6 +17,8 @@ CREATE TYPE relay_operation_kind AS ENUM ('add_proposal', 'act_proposal', 'walle
 CREATE TYPE relay_operation_state AS ENUM ('pending', 'succeeded', 'failed', 'manual_review');
 CREATE TYPE relay_operation_stage AS ENUM ('authorize', 'storage_top_up', 'registrations', 'relay', 'settle');
 CREATE TYPE relay_transaction_state AS ENUM ('prepared', 'pending', 'succeeded', 'failed', 'superseded');
+-- What the client said it was relaying; picks the usage counters recorded on success.
+CREATE TYPE relay_proposal_type AS ENUM ('swap', 'payment', 'address_book_payment', 'vote', 'other');
 
 CREATE TABLE relay_operations (
     id UUID PRIMARY KEY,
@@ -29,8 +31,7 @@ CREATE TABLE relay_operations (
     stage relay_operation_stage NOT NULL DEFAULT 'authorize',
     stage_entered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     credit_reserved BOOLEAN NOT NULL DEFAULT FALSE,
-    proposal_type TEXT,
-    address_book_payment BOOLEAN NOT NULL DEFAULT FALSE,
+    proposal_type relay_proposal_type,
     proposal_ids BIGINT[],
     failure_code TEXT,
     last_error TEXT,

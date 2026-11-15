@@ -1,8 +1,6 @@
-//! Side effects the relayer performs around the core submission: NEP-141
-//! registrations for approving votes (before submit), and usage accounting +
-//! metrics (after success). [`background`] is the shared fire-and-forget helper.
+//! What a relay costs the sponsor beyond the relayed transaction: the gas
+//! credit, and the NEP-141 registrations an approving vote needs.
 
 pub mod accounting;
 pub mod allowlist;
-pub mod background;
 pub mod registrations;

@@ -5,9 +5,7 @@
 //! state machine:
 //!
 //! 0. `pending` → once the header intent is `submitted` to 1Click, link the
-//!    on-chain `proposal_id` and move to `activating`. The vote relay does
-//!    the same when the MPC signature is in its own outcome; this step
-//!    covers headers the per-DAO poll submitted from chain instead.
+//!    on-chain `proposal_id` and move to `activating`.
 //! 1. `activating` → call sub `activate(proposal_id)` (0.5 NEAR deposit).
 //!    Move to `signing`.
 //! 2. `signing` → view sub `get_activation`. If the activation is `Ready`
@@ -120,8 +118,7 @@ async fn fetch_activation(
         .map_err(|e| format!("get_activation: {}", e))
 }
 
-/// A bulk row the worker armed itself: its header reached 1Click without
-/// the vote relay linking the proposal.
+/// A bulk row armed from its header, once that reached 1Click.
 #[derive(sqlx::FromRow)]
 struct ArmedBulkPayment {
     id: i32,

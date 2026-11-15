@@ -14,11 +14,10 @@
 //!    wallet.
 //! 2. The DAO members approve the proposal — the one round of multisig
 //!    approvals. The final approving vote executes the `v1.signer.sign`
-//!    call, and the vote relay (`try_auto_submit_intent`) extracts the MPC
-//!    signature, authenticates the subaccount with 1Click, and stores the
-//!    JWT in `monitored_accounts.bulk_payment_*`. When the vote lands before
-//!    the MPC callback, the relay stamps the execution and the per-DAO 1Click
-//!    poll finishes the activation from the on-chain signature.
+//!    call. The relay worker stamps the execution on the intent, and the
+//!    submit queue reads the MPC signature from chain, authenticates the
+//!    subaccount with 1Click, and stores the JWT in
+//!    `monitored_accounts.bulk_payment_*`.
 //! 3. `GET /activation` — status polling for the UI.
 
 use axum::{
@@ -283,7 +282,7 @@ pub async fn prepare_bulk_activation(
     })?;
 
     // 3. Supersede any previous pending attempt, then store this one for the
-    //    vote relay to complete after the multisig approves.
+    //    submit queue to complete after the multisig approves.
     let mut tx = state.db_pool.begin().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
