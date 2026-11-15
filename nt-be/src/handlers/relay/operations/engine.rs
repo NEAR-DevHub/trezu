@@ -114,13 +114,19 @@ impl RelayEngine {
     }
 
     async fn claim_and_start(self: &Arc<Self>, runs: &Arc<Semaphore>) -> usize {
-        let free = runs.available_permits().min(CLAIM_BATCH);
-        if free == 0 {
+        // Take the run slots first, so every claimed operation has one.
+        let mut permits = Vec::with_capacity(CLAIM_BATCH);
+        while permits.len() < CLAIM_BATCH
+            && let Ok(permit) = runs.clone().try_acquire_owned()
+        {
+            permits.push(permit);
+        }
+        if permits.is_empty() {
             return 0;
         }
         let claimed = match self
             .store()
-            .claim_due_operations(free as i64, OPERATION_LEASE)
+            .claim_due_operations(permits.len() as i64, OPERATION_LEASE)
             .await
         {
             Ok(claimed) => claimed,
@@ -130,10 +136,7 @@ impl RelayEngine {
             }
         };
         let count = claimed.len();
-        for operation in claimed {
-            let Ok(permit) = runs.clone().try_acquire_owned() else {
-                break;
-            };
+        for (operation, permit) in claimed.into_iter().zip(permits) {
             let engine = self.clone();
             tokio::spawn(async move {
                 engine.run_operation(operation, RUN_BUDGET).await;
@@ -282,7 +285,9 @@ impl RelayEngine {
     }
 
     /// Commit the terminal state with its accounting and the execution stamp
-    /// of every confidential intent the relay approved, then publish it.
+    /// of every confidential intent the relay approved, then publish it. The
+    /// 1Click submit is not awaited here: the stamp makes the intent due, and
+    /// the submit queue owns it from then on.
     pub(super) async fn finish(
         &self,
         operation: &RelayOperation,
