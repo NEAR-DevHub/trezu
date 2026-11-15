@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
 import type { Event } from "@sentry/nextjs";
-import { foreignOrigin, isBrowserNetworkFailure } from "./sentry-noise";
+import {
+    foreignOrigin,
+    isBrowserNetworkFailure,
+    isClientDisconnect,
+} from "./sentry-noise";
 
 function exception(type: string, value: string): Event {
     return { exception: { values: [{ type, value }] } };
@@ -108,5 +112,34 @@ describe("foreignOrigin", () => {
         expect(foreignOrigin("chrome-extension://abc/x.js")).toBeNull();
         expect(foreignOrigin(errorWithStack(""))).toBeNull();
         expect(foreignOrigin(undefined)).toBeNull();
+    });
+});
+
+describe("isClientDisconnect", () => {
+    it("matches React's aborted-stream errors", () => {
+        // Sentry issue 7709265260
+        expect(
+            isClientDisconnect(
+                exception("Error", "The destination stream closed early."),
+            ),
+        ).toBe(true);
+        expect(
+            isClientDisconnect(
+                exception(
+                    "Error",
+                    "The destination stream errored while writing data.",
+                ),
+            ),
+        ).toBe(true);
+    });
+
+    it("keeps other server errors", () => {
+        for (const event of [
+            exception("Error", "Failed to load treasury config"),
+            exception("Error", "The destination stream closed early"),
+            { message: "The destination stream closed early." },
+        ] as Event[]) {
+            expect(isClientDisconnect(event)).toBe(false);
+        }
     });
 });

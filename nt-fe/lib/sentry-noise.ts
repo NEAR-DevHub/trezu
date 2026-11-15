@@ -91,3 +91,29 @@ export function foreignOrigin(
     }
     return null;
 }
+
+/**
+ * Messages React's server renderer (`renderToPipeableStream`, bundled in
+ * Next.js) aborts a render with when the HTTP response it streams into
+ * closes or errors first. The client went away mid-response: navigated on,
+ * cancelled an RSC prefetch, or lost the connection.
+ */
+const CLIENT_DISCONNECT_MESSAGES: ReadonlySet<string> = new Set([
+    "The destination stream closed early.",
+    "The destination stream errored while writing data.",
+]);
+
+/**
+ * True for server-side events that only say the client disconnected while
+ * a page or RSC payload was still streaming. They reach Sentry through
+ * Next's `onRequestError` with no app frames and nothing to act on.
+ */
+export function isClientDisconnect(event: Event): boolean {
+    const exceptions = event.exception?.values ?? [];
+    return (
+        exceptions.length > 0 &&
+        exceptions.every((exception) =>
+            CLIENT_DISCONNECT_MESSAGES.has(exception.value ?? ""),
+        )
+    );
+}
