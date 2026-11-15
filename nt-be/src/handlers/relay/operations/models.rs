@@ -382,6 +382,8 @@ pub struct RelayTransaction {
     pub tx_hash: String,
     pub signed_tx: Vec<u8>,
     pub spend_yocto: BigDecimal,
+    /// When the first send was attempted, set before the send. It is not proof
+    /// a provider took the bytes; `state` says how the transaction ended.
     pub broadcast_at: Option<DateTime<Utc>>,
     pub last_error: Option<String>,
     pub created_at: DateTime<Utc>,
