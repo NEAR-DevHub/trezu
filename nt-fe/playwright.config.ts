@@ -36,9 +36,14 @@ export default defineConfig({
         },
     ],
 
-    /* Run local dev server before starting the tests */
+    /*
+     * Run the app before starting the tests. CI (E2E_NEXT_START=1) serves a
+     * production build made beforehand with `bun run build`: the dev server
+     * compiles every route on first visit, which dominated CI test time.
+     * Locally the dev server is used, so no build step is needed.
+     */
     webServer: {
-        command: "npm run dev",
+        command: process.env.E2E_NEXT_START ? "npm run start" : "npm run dev",
         url: "http://localhost:3000",
         reuseExistingServer: !process.env.CI,
         timeout: 120 * 1000,

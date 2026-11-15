@@ -19,23 +19,26 @@ on:
       - '.env.example'
   workflow_dispatch:
 
+# A new push to a PR supersedes the in-flight run.
+concurrency:
+  group: backend-tests-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 env:
   CARGO_TERM_COLOR: always
+  # Full debuginfo roughly doubles target/ (and so the rust-cache upload,
+  # download and unpack) and slows linking. Line tables keep file:line in
+  # panics and backtraces.
+  CARGO_PROFILE_DEV_DEBUG: line-tables-only
+  CARGO_PROFILE_TEST_DEBUG: line-tables-only
 
 jobs:
-  test:
+  # fmt + clippy run in parallel with the tests. Clippy's check build can't
+  # reuse the test job's codegen artifacts anyway.
+  lint:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Free Disk Space
-      run: |
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /opt/ghc
-        sudo rm -rf /usr/local/share/boost
-        sudo rm -rf /usr/local/lib/android
-        sudo rm -rf /opt/hostedtoolcache/CodeQL
-        df -h
-
     - uses: actions/checkout@v4
 
     - name: Set up Rust
@@ -43,15 +46,55 @@ jobs:
       with:
         components: rustfmt, clippy
 
+    # Cache is saved only from main: PR caches can't be shared with other PRs,
+    # and letting every PR write one evicted main's (10 GB repo limit).
     - name: Cache Rust build artifacts
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: nt-be
+        save-if: ${{ github.ref == 'refs/heads/main' }}
         cache-on-failure: true
 
     - name: Check formatting
       working-directory: nt-be
       run: cargo fmt -- --check
+
+    # Uses the checked-in .sqlx query metadata (no database in this job), which
+    # also catches a stale .sqlx — the sandbox Docker build relies on it too.
+    - name: Run clippy
+      working-directory: nt-be
+      env:
+        SQLX_OFFLINE: "true"
+      run: cargo clippy -- -D warnings
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    # Runs in the background: deleting these takes over a minute, and nothing
+    # needs the space until the build is well under way.
+    - name: Free Disk Space
+      run: |
+        nohup sudo rm -rf \
+          /usr/share/dotnet \
+          /opt/ghc \
+          /usr/local/share/boost \
+          /usr/local/lib/android \
+          /opt/hostedtoolcache/CodeQL \
+          > /dev/null 2>&1 &
+
+    - uses: actions/checkout@v4
+
+    - name: Set up Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    # Cache is saved only from main (see the lint job).
+    - name: Cache Rust build artifacts
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: nt-be
+        save-if: ${{ github.ref == 'refs/heads/main' }}
+        cache-on-failure: true
 
     - name: Start PostgreSQL with Docker Compose
       working-directory: nt-be
@@ -97,10 +140,6 @@ jobs:
     - name: Run migrations
       working-directory: nt-be
       run: sqlx migrate run
-
-    - name: Run clippy
-      working-directory: nt-be
-      run: cargo clippy -- -D warnings
 
     - name: Extract RPC cache fixtures
       working-directory: nt-be
@@ -150,7 +189,9 @@ jobs:
         # PRs / main). On fork PRs the secret is empty -> `disabled`, so the
         # live-endpoint parity canary skips instead of failing on a dummy key.
         FASTNEAR_LIVE_TESTS: ${{ secrets.FASTNEAR_API_KEY != '' && 'enabled' || 'disabled' }}
-      run: cargo test --tests
+      # Only the tests/ targets: `--tests` would also re-run the lib and bin
+      # unit tests, which the previous step already ran.
+      run: cargo test --test '*'
 
     - name: Show RPC proxy logs
       if: always()

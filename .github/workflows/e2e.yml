@@ -1,0 +1,461 @@
+name: E2E Tests
+
+# Both E2E suites (Playwright frontend tests and the bulk-payment contract
+# tests) run against the same sandbox Docker image. It is built ONCE per run
+# (`build-sandbox`) and handed to every test job as an artifact, instead of each
+# suite rebuilding it. Path filters (`changes`) keep the original per-suite
+# triggers: frontend tests run on nt-fe changes, bulk-payment tests on
+# sandbox/contract/backend changes.
+#
+# Caching (see also sandbox/Dockerfile):
+#  - Docker layer cache (gha, scope near-treasury-sandbox) is WRITTEN only from
+#    main; PRs read it. PR caches can't be shared across PRs anyway, and letting
+#    every PR write multi-GB entries evicted main's cache (10 GB repo limit), so
+#    every PR built cold.
+#  - nt-be's cargo registry + target dir live in BuildKit cache mounts, persisted
+#    with buildkit-cache-dance (also saved only from main), so an nt-be change
+#    recompiles only nt-be, not its ~700 dependencies.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "nt-fe/**"
+      - "sandbox/**"
+      - "contracts/bulk-payment/**"
+      - "e2e-tests/bulk-payment/**"
+      - "nt-be/**"
+      - ".github/workflows/e2e.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "nt-fe/**"
+      - "sandbox/**"
+      - "contracts/bulk-payment/**"
+      - "e2e-tests/bulk-payment/**"
+      - "nt-be/**"
+      - ".github/workflows/e2e.yml"
+  workflow_dispatch:
+
+# A new push to a PR supersedes the in-flight run.
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  PLAYWRIGHT_SHARDS: 3
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      frontend: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.frontend == 'true' }}
+      bulk: ${{ github.event_name == 'workflow_dispatch' || steps.filter.outputs.bulk == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: github.event_name == 'push'
+      - uses: dorny/paths-filter@v3
+        id: filter
+        if: github.event_name != 'workflow_dispatch'
+        with:
+          filters: |
+            frontend:
+              - "nt-fe/**"
+              - ".github/workflows/e2e.yml"
+            bulk:
+              - "sandbox/**"
+              - "contracts/bulk-payment/**"
+              - "e2e-tests/bulk-payment/**"
+              - "nt-be/**"
+              - ".github/workflows/e2e.yml"
+
+  build-sandbox:
+    name: Build sandbox image
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true' || needs.changes.outputs.bulk == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      # Four parallel cargo builds plus (on main) the extracted cache copy need
+      # more disk than the runner has free by default. Runs in the background:
+      # deleting these takes over a minute and nothing needs the space yet.
+      - name: Free Disk Space
+        run: |
+          nohup sudo rm -rf \
+            /usr/share/dotnet \
+            /opt/ghc \
+            /usr/local/share/boost \
+            /usr/local/lib/android \
+            /opt/hostedtoolcache/CodeQL \
+            > /dev/null 2>&1 &
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # BuildKit's default GC caps cache mounts at ~512 MB and would prune the
+      # injected nt-be target dir (~2 GB) before the real build uses it. The
+      # runner is ephemeral, so GC isn't needed at all.
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          buildkitd-config-inline: |
+            [worker.oci]
+              gc = false
+
+      # nt-be cargo cache mounts. Same key/path in both steps; only main saves.
+      - name: Restore nt-be cargo cache (saved on main)
+        id: cargo-cache
+        if: github.ref == 'refs/heads/main'
+        uses: actions/cache@v4
+        with:
+          path: cargo-cache-mounts
+          key: sandbox-nt-be-cargo-${{ hashFiles('sandbox/Dockerfile', 'nt-be/Cargo.lock') }}
+          restore-keys: sandbox-nt-be-cargo-
+
+      - name: Restore nt-be cargo cache (read-only)
+        if: github.ref != 'refs/heads/main'
+        uses: actions/cache/restore@v4
+        with:
+          path: cargo-cache-mounts
+          key: sandbox-nt-be-cargo-${{ hashFiles('sandbox/Dockerfile', 'nt-be/Cargo.lock') }}
+          restore-keys: sandbox-nt-be-cargo-
+
+      # The dance renames extracted mounts into this dir and fails if it is
+      # missing (cache miss).
+      - name: Prepare cargo cache dir
+        run: mkdir -p cargo-cache-mounts
+
+      # Ids/targets must match the `RUN --mount=type=cache` lines of the
+      # api-builder stage in sandbox/Dockerfile. The post step extracts the
+      # mounts back out for saving — only needed on main without an exact hit.
+      - name: Inject cargo cache into BuildKit
+        uses: reproducible-containers/buildkit-cache-dance@v3.3.2
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-map: |
+            {
+              "cargo-cache-mounts/registry-index": { "target": "/usr/local/cargo/registry/index", "id": "nt-be-cargo-registry-index" },
+              "cargo-cache-mounts/registry-cache": { "target": "/usr/local/cargo/registry/cache", "id": "nt-be-cargo-registry-cache" },
+              "cargo-cache-mounts/git": { "target": "/usr/local/cargo/git", "id": "nt-be-cargo-git" },
+              "cargo-cache-mounts/target": { "target": "/build/nt-be/target", "id": "nt-be-target" }
+            }
+          skip-extraction: ${{ github.ref != 'refs/heads/main' || steps.cargo-cache.outputs.cache-hit == 'true' }}
+
+      - name: Build sandbox image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./sandbox/Dockerfile
+          platforms: linux/amd64
+          # Fast, lightly optimized nt-be build — see [profile.ci] in nt-be/Cargo.toml.
+          build-args: NT_BE_PROFILE=ci
+          tags: near-treasury-sandbox
+          # Built in-runner and never pushed, so this works for fork PRs too and
+          # always tests the PR's own sandbox.
+          outputs: type=docker,dest=${{ runner.temp }}/sandbox.tar
+          cache-from: type=gha,scope=near-treasury-sandbox
+          cache-to: ${{ github.ref == 'refs/heads/main' && 'type=gha,scope=near-treasury-sandbox,mode=max' || '' }}
+
+      - name: Compress image
+        run: zstd -T0 -3 --rm "$RUNNER_TEMP/sandbox.tar" -o "$RUNNER_TEMP/sandbox.tar.zst"
+
+      - name: Upload image
+        uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-image
+          path: ${{ runner.temp }}/sandbox.tar.zst
+          retention-days: 1
+          compression-level: 0
+
+  build-frontend:
+    name: Build frontend
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: nt-fe
+        run: bun install
+
+      # Production build instead of `next dev`: the dev server compiles each
+      # route on first visit, which dominated Playwright time. NEXT_PUBLIC_*
+      # values are inlined at build time. NEXT_PUBLIC_STAGING keeps the
+      # staging-only features on, as `next dev` (NODE_ENV=development) did.
+      - name: Build Next.js
+        working-directory: nt-fe
+        env:
+          NEXT_PUBLIC_BACKEND_API_BASE: http://localhost:8080
+          NEXT_PUBLIC_STAGING: "true"
+        run: bun run build
+
+      # `next start` needs neither the build cache nor the standalone bundle
+      # (~800 MB together); without them this is ~40 MB.
+      - name: Pack build output
+        run: tar -C nt-fe --exclude=.next/cache --exclude=.next/standalone -I 'zstd -T0' -cf "$RUNNER_TEMP/next-build.tar.zst" .next
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build
+          path: ${{ runner.temp }}/next-build.tar.zst
+          retention-days: 1
+          compression-level: 0
+
+  playwright:
+    name: Playwright (shard ${{ matrix.shard }})
+    needs: [changes, build-sandbox, build-frontend]
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # Keep in sync with env.PLAYWRIGHT_SHARDS.
+        shard: [1, 2, 3]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download sandbox image
+        uses: actions/download-artifact@v4
+        with:
+          name: sandbox-image
+          path: ${{ runner.temp }}
+
+      # Each shard gets its own sandbox, so tests stay serial within a shard
+      # (workers: 1) but shards don't share chain/DB state.
+      - name: Start sandbox container
+        run: |
+          zstd -dc "$RUNNER_TEMP/sandbox.tar.zst" | docker load
+          docker run -d --name sandbox \
+            -p 3030:3030 -p 4000:4000 -p 8080:8080 -p 5001:5001 \
+            --health-cmd "curl -f http://localhost:8080/api/health || exit 1" \
+            --health-interval 10s \
+            --health-timeout 5s \
+            --health-retries 30 \
+            --health-start-period 120s \
+            near-treasury-sandbox
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: nt-fe
+        run: bun install
+
+      - name: Install Playwright Browsers
+        working-directory: nt-fe
+        run: npx playwright install --with-deps chromium
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: next-build
+          path: ${{ runner.temp }}
+
+      - name: Unpack frontend build
+        run: tar -C nt-fe -I zstd -xf "$RUNNER_TEMP/next-build.tar.zst"
+
+      - name: Wait for sandbox to be ready
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:8080/api/health > /dev/null; then
+              echo "Sandbox is ready!"
+              exit 0
+            fi
+            echo "Attempt $i: Sandbox not ready yet..."
+            sleep 5
+          done
+          docker logs sandbox
+          exit 1
+
+      - name: Run Playwright tests
+        working-directory: nt-fe
+        run: bun run test:e2e --shard=${{ matrix.shard }}/${{ env.PLAYWRIGHT_SHARDS }} --reporter=blob
+        env:
+          BACKEND_URL: http://localhost:8080
+          NEXT_PUBLIC_BACKEND_API_BASE: http://localhost:8080
+          # Serve the prebuilt production app (`next start`) instead of `next dev`.
+          E2E_NEXT_START: "1"
+
+      - name: Show sandbox logs on failure
+        if: failure()
+        run: docker logs sandbox 2>&1 | tail -500
+
+      - name: Stop sandbox container
+        if: always()
+        run: docker stop sandbox || true
+
+      - name: Upload blob report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: blob-report-${{ matrix.shard }}
+          path: nt-fe/blob-report/
+          retention-days: 1
+
+      - name: Upload Test Videos
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: test-videos-${{ matrix.shard }}
+          path: nt-fe/test-results/
+          retention-days: 30
+          if-no-files-found: ignore
+
+  # Merges the shard reports into the single `playwright-report` artifact that
+  # e2e-report.yml publishes, and gives one aggregate pass/fail check.
+  playwright-report:
+    name: Playwright E2E Tests
+    needs: [changes, playwright]
+    if: ${{ !cancelled() && needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        working-directory: nt-fe
+        run: bun install
+
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: blob-report-*
+          path: nt-fe/all-blob-reports
+          merge-multiple: true
+
+      - name: Merge reports
+        working-directory: nt-fe
+        run: |
+          if [ -z "$(ls -A all-blob-reports 2>/dev/null)" ]; then
+            echo "No shard reports to merge."
+            exit 0
+          fi
+          npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload Playwright Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: nt-fe/playwright-report/
+          retention-days: 30
+          if-no-files-found: ignore
+
+      # Record which PR this run belongs to so the fork-safe `e2e-report`
+      # workflow (triggered on workflow_run) can publish the report to that
+      # PR. `pull_request` runs from forks have a read-only token and cannot
+      # comment or push to gh-pages themselves.
+      - name: Save PR metadata
+        if: github.event_name == 'pull_request'
+        run: |
+          mkdir -p pr-meta
+          echo "${{ github.event.pull_request.number }}" > pr-meta/pr-number.txt
+
+      - name: Upload PR metadata
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-meta
+          path: pr-meta/
+          retention-days: 1
+
+      - name: Fail if any shard failed
+        if: needs.playwright.result != 'success'
+        run: |
+          echo "Playwright shards result: ${{ needs.playwright.result }}"
+          exit 1
+
+  bulk-payment:
+    name: Bulk payment E2E
+    needs: [changes, build-sandbox]
+    if: needs.changes.outputs.bulk == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install test dependencies
+        working-directory: ./e2e-tests/bulk-payment
+        run: npm install
+
+      - name: Download sandbox image
+        uses: actions/download-artifact@v4
+        with:
+          name: sandbox-image
+          path: ${{ runner.temp }}
+
+      - name: Start sandbox container
+        run: |
+          zstd -dc "$RUNNER_TEMP/sandbox.tar.zst" | docker load
+          docker run -d \
+            --name sandbox \
+            -p 3030:3030 \
+            -p 8080:8080 \
+            -p 5001:5001 \
+            -p 5432:5432 \
+            near-treasury-sandbox
+
+      # The API can report healthy while sandbox-init is still deploying
+      # contracts (supervisord starts them in parallel), hence the head start.
+      - name: Wait for sandbox to be ready
+        run: |
+          sleep 30
+          for i in {1..60}; do
+            if curl -sf http://localhost:8080/api/health > /dev/null 2>&1; then
+              echo "API is ready!"
+              exit 0
+            fi
+            echo "Waiting for API... ($i/60)"
+            sleep 5
+          done
+          docker logs sandbox
+          exit 1
+
+      - name: Run E2E tests
+        working-directory: ./e2e-tests/bulk-payment
+        env:
+          SANDBOX_RPC_URL: http://localhost:3030
+          API_URL: http://localhost:8080
+          NUM_RECIPIENTS: "25"
+        run: npm test
+
+      - name: Show Docker logs on failure
+        if: failure()
+        run: docker logs sandbox
+
+      - name: Stop Docker container
+        if: always()
+        run: |
+          docker stop sandbox || true
+          docker rm sandbox || true
