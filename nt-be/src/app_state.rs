@@ -656,6 +656,7 @@ impl AppState {
     /// # Returns
     /// * `Ok(u64)` - The block height at or near the given timestamp
     /// * `Err` - If the block cannot be found
+    #[tracing::instrument(level = "debug", skip_all, fields(date = %date))]
     pub async fn find_block_height(
         &self,
         date: DateTime<Utc>,

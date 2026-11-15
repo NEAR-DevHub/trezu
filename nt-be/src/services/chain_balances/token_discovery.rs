@@ -68,6 +68,7 @@ pub fn extract_ft_tokens_from_receipt(receipt: &ReceiptView, account_id: &str) -
 ///
 /// The full format is preserved to allow extracting the FT contract address
 /// when querying ft_metadata for decimals and other token information.
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id))]
 pub async fn snapshot_intents_tokens(
     network: &NetworkConfig,
     account_id: &str,

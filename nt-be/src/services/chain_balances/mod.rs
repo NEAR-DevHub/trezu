@@ -52,6 +52,7 @@ pub async fn get_balance_at_block(
 /// When `max_block_retries > 0`, retries with previous blocks if the archival RPC
 /// returns 422 (block unavailable). This is useful for non-binary-search callers
 /// where an approximate block is acceptable.
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, token_id = %token_id, block_height, max_block_retries))]
 pub async fn get_balance_at_block_with_fallback(
     pool: &PgPool,
     network: &NetworkConfig,

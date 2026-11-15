@@ -6,6 +6,7 @@ pub struct GoldskyCursor {
     pub last_processed_block: i64,
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(consumer_name = %consumer_name))]
 pub async fn load_goldsky_cursor(
     app_pool: &PgPool,
     goldsky_pool: &PgPool,

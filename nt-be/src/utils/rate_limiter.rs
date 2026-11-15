@@ -60,6 +60,7 @@ impl RateLimiter {
     }
 
     /// Wait asynchronously until one permit is available, then consume it.
+    #[tracing::instrument(level = "debug", skip_all, fields(limiter = self.name))]
     pub async fn acquire(&self) {
         self.inner.until_ready().await;
     }

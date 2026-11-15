@@ -25,6 +25,7 @@ fn parse_nep245_asset_id(token_id: &str) -> Result<(&str, &str), String> {
 /// Resolve decimals for a NEAR Intents multi-token.
 /// - intents.near tokens: use the token registry via ensure_ft_metadata (full token_id as key)
 /// - Other NEP-245 contracts (e.g. v2_1.omni.hot.tg): query mt_metadata_base_by_token_id
+#[tracing::instrument(level = "debug", skip_all, fields(token_id = %token_id))]
 pub async fn resolve_decimals(
     pool: &PgPool,
     network: &NetworkConfig,

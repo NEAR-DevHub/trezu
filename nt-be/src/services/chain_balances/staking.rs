@@ -76,6 +76,7 @@ pub fn is_staking_pool(account_id: &str) -> bool {
 ///
 /// # Returns
 /// The staking balance as a BigDecimal (e.g., "11.1002" for 11.1002 NEAR staked)
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, staking_pool = %staking_pool, block_height))]
 pub async fn get_staking_balance_at_exact_block(
     network: &NetworkConfig,
     account_id: &str,
@@ -104,6 +105,7 @@ pub async fn get_staking_balance_at_exact_block(
 /// by walking backwards. New snapshot code must use
 /// [`get_staking_balance_at_exact_block`] so the stored block identity always
 /// matches the queried state.
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, staking_pool = %staking_pool, block_height))]
 pub async fn get_staking_balance_at_block(
     network: &NetworkConfig,
     account_id: &str,

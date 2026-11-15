@@ -121,6 +121,7 @@ pub async fn is_managed_treasury(pool: &PgPool, dao_id: &str) -> sqlx::Result<bo
 ///   `RefreshOnly`, in which case `NotManaged` is returned and nothing is written.
 /// - Non-sputnik accounts are mirrored into the Goldsky `tracked_accounts`
 ///   lookup table so the pipeline indexes their outcomes.
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account_id, is_confidential))]
 pub async fn register_or_refresh_monitored_account(
     pool: &PgPool,
     goldsky_pool: Option<&PgPool>,
