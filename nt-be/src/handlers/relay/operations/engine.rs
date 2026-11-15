@@ -76,6 +76,11 @@ impl RelayEngine {
     /// Start the worker loop and its health loop. Both run in every process;
     /// the lease on each row keeps two processes off the same operation.
     pub fn spawn(state: Arc<AppState>, shutdown: CancellationToken) -> tokio::task::JoinHandle<()> {
+        if state.env_vars.sponsor_lane_keys.is_empty() {
+            tracing::warn!(
+                "SPONSOR_LANE_KEYS is not set: relays sign with the shared SIGNER_KEY, and any other sender on that key can invalidate a relay in flight"
+            );
+        }
         tokio::spawn(RelayHealth::new(state.clone()).run_forever(shutdown.clone()));
         tokio::spawn(ConfidentialIntentSubmitter::run_queue_forever(
             state.clone(),
