@@ -41,8 +41,8 @@ pg_enum!(OperationKind, "relay_operation_kind", {
     WalletReplay => "wallet_replay",
 });
 
-// `pending` covers the whole life of an operation until it is terminal; what
-// to do next is derived from its transactions, not from a sub-state.
+// `pending` covers the whole life of an operation until it is terminal;
+// `stage` says where in that life it is.
 pg_enum!(OperationState, "relay_operation_state", {
     Pending => "pending",
     Succeeded => "succeeded",
@@ -55,6 +55,16 @@ impl OperationState {
         !matches!(self, Self::Pending)
     }
 }
+
+// What a pending operation is doing. A terminal row keeps the stage it
+// stopped in.
+pg_enum!(OperationStage, "relay_operation_stage", {
+    Authorize => "authorize",
+    StorageTopUp => "storage_top_up",
+    Registrations => "registrations",
+    Relay => "relay",
+    Settle => "settle",
+});
 
 // `prepared` is signed and committed but never sent; `pending` has been
 // handed to the network at least once and is reconciled by hash.
@@ -169,6 +179,9 @@ impl IdempotencyKey {
 /// Why an operation ended in `failed`, as stored in `failure_code`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FailureCode {
+    /// Refused at authorization (not allowed, no credits, deposit over the
+    /// limit) with the HTTP status the inline path answers.
+    Rejected(StatusCode),
     /// The user's delegate action expired before the relay could land.
     DelegateExpired,
     /// Every RPC provider refused the signed bytes before broadcast.
@@ -181,9 +194,11 @@ pub enum FailureCode {
 
 impl FailureCode {
     const ON_CHAIN_PREFIX: &'static str = "TX_FAILED:";
+    const REJECTED_PREFIX: &'static str = "REJECTED:";
 
     pub fn as_text(&self) -> String {
         match self {
+            Self::Rejected(status) => format!("{}{}", Self::REJECTED_PREFIX, status.as_u16()),
             Self::DelegateExpired => "DELEGATE_EXPIRED".to_owned(),
             Self::NotSent => "NOT_SENT".to_owned(),
             Self::SponsorStepFailed => "SPONSOR_STEP_FAILED".to_owned(),
@@ -196,16 +211,24 @@ impl FailureCode {
             "DELEGATE_EXPIRED" => Some(Self::DelegateExpired),
             "NOT_SENT" => Some(Self::NotSent),
             "SPONSOR_STEP_FAILED" => Some(Self::SponsorStepFailed),
-            other => other
-                .strip_prefix(Self::ON_CHAIN_PREFIX)
-                .and_then(parse_reason)
-                .map(Self::OnChain),
+            other => match other.strip_prefix(Self::REJECTED_PREFIX) {
+                Some(status) => status
+                    .parse::<u16>()
+                    .ok()
+                    .and_then(|status| StatusCode::from_u16(status).ok())
+                    .map(Self::Rejected),
+                None => other
+                    .strip_prefix(Self::ON_CHAIN_PREFIX)
+                    .and_then(parse_reason)
+                    .map(Self::OnChain),
+            },
         }
     }
 
     /// The same error envelope the inline relay path returns for this failure.
     pub fn api_error(&self, tx_hash: Option<String>) -> ApiError {
         match self {
+            Self::Rejected(status) => ApiError::rejected_before_send(*status),
             Self::DelegateExpired => {
                 let mut error = ApiError::rejected_before_send(StatusCode::BAD_REQUEST);
                 error.retryable = true;
@@ -240,7 +263,6 @@ pub struct NewRelayOperation {
     pub actor_account_id: AccountId,
     pub operation_kind: OperationKind,
     pub submission_payload: Vec<u8>,
-    pub credit_reserved: bool,
     pub proposal_type: Option<String>,
     pub address_book_payment: bool,
 }
@@ -256,6 +278,8 @@ pub struct RelayOperation {
     pub operation_kind: OperationKind,
     pub submission_payload: Vec<u8>,
     pub state: OperationState,
+    pub stage: OperationStage,
+    pub stage_entered_at: DateTime<Utc>,
     pub credit_reserved: bool,
     pub proposal_type: Option<String>,
     pub address_book_payment: bool,
@@ -375,6 +399,10 @@ pub struct RelayQueueHealth {
     pub pending_transactions: i64,
     pub oldest_pending_seconds: Option<i64>,
     pub manual_review_operations: i64,
+    /// Longest time a pending operation with nothing in flight has gone
+    /// without progress, and the stage it is waiting in.
+    pub oldest_idle_seconds: Option<i64>,
+    pub oldest_idle_stage: Option<OperationStage>,
 }
 
 /// What a client may learn about a submission: the same payload on the status
@@ -448,6 +476,7 @@ mod tests {
     #[test]
     fn failure_codes_round_trip_and_map_to_api_errors() {
         let codes = [
+            FailureCode::Rejected(StatusCode::PAYMENT_REQUIRED),
             FailureCode::DelegateExpired,
             FailureCode::NotSent,
             FailureCode::SponsorStepFailed,
@@ -456,6 +485,9 @@ mod tests {
         for code in codes {
             assert_eq!(FailureCode::parse(&code.as_text()).unwrap(), code);
         }
+        let rejected = FailureCode::Rejected(StatusCode::FORBIDDEN).api_error(None);
+        assert_eq!(rejected.status, StatusCode::FORBIDDEN);
+        assert!(!rejected.is_alertable());
         let expired = FailureCode::DelegateExpired.api_error(None);
         assert_eq!(expired.status, StatusCode::BAD_REQUEST);
         assert!(expired.retryable);

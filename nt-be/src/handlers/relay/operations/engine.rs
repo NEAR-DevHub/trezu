@@ -1,63 +1,40 @@
-//! Drives one `relay_operations` row to a terminal state: sign each step on a
-//! free sponsor lane, commit the bytes, broadcast, reconcile by hash, and
-//! finish with the credit, spend and metrics in one database transaction.
-//!
-//! The HTTP handler runs the engine first (it is the first worker of its own
-//! operation); the `relay-submissions` job runs it for anything deferred,
-//! crashed or left behind by a lost lease.
+//! The relay worker. A loop in every backend process claims due operations
+//! and runs each one, on a task of its own, through its stages (see
+//! [`super::stages`]) until it is terminal or has to wait. The request path
+//! only inserts the row and wakes this loop.
 
 use std::{
-    collections::{BTreeMap, HashSet},
-    sync::{
-        Arc, LazyLock, Mutex,
-        atomic::{AtomicU64, Ordering},
-    },
+    sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
-use base64::Engine as _;
-use bigdecimal::{BigDecimal, Zero};
-use borsh::BorshDeserialize;
+use bigdecimal::Zero;
 use chrono::Utc;
-use near_api::{AccountId, NearToken};
-use near_primitives::{
-    action::{
-        Action as ProtocolAction, FunctionCallAction as ProtocolFunctionCall, TransferAction,
-        delegate::SignedDelegateAction as ProtocolSignedDelegate,
-    },
-    hash::CryptoHash as ProtocolHash,
-    transaction::{Transaction as ProtocolTransaction, TransactionV0},
-    types::AccountId as ProtocolAccountId,
-};
-use rand::Rng;
-use serde_json::Value;
 use sqlx::PgConnection;
+use tokio::sync::Semaphore;
+use tokio_util::sync::CancellationToken;
 
 use crate::{
     AppState, error_event,
     error_event::ErrorCode,
-    handlers::relay::{
-        confidential,
-        effects::{
-            allowlist,
-            registrations::{
-                self, MAX_STORAGE_DEPOSITS, STORAGE_DEPOSIT_AMOUNT, STORAGE_DEPOSIT_GAS,
-            },
+    handlers::{
+        intents::confidential::{
+            bronze::mark_confidential_history_activity_due,
+            proposal_signals::record_confidential_intent_execution,
         },
-        parse::{RelayOperation as DaoOperation, RelaySubmission, parse_relay},
-        post_quantum::{protocol_account, read_send_tx_result},
-        sponsor::policy,
+        relay::confidential::ConfidentialIntentSubmitter,
     },
-    handlers::token::storage_deposit::is_registered::check_storage_deposit,
     services::platform_metrics::{self, PlatformMetric},
 };
 
 use super::{
-    models::{
-        FailureCode, OperationLease, OperationOutcome, PreparedTransaction, RelayOperation,
-        RelaySubmissionStatus, RelayTransaction, StepKey, TransactionOutcome, TransactionState,
+    health::RelayHealth,
+    models::{OperationLease, OperationOutcome, RelayOperation, RelaySubmissionStatus},
+    plan::RelayPlan,
+    rpc::RelayRpc,
+    stages::{
+        self, Completion, ExecutedIntent, ProposedIntent, StageContext, StageError, StageResult,
     },
-    rpc::{RelayRpc, SendOutcome, StatusOutcome, is_expired_rejection},
     store::{RelayStore, RelayStoreError},
 };
 
@@ -65,27 +42,16 @@ use super::{
 /// a running holder renews it every [`LEASE_RENEWAL`].
 pub const OPERATION_LEASE: Duration = Duration::from_secs(60);
 const LEASE_RENEWAL: Duration = Duration::from_secs(20);
-/// How long the request path waits for its own operation before answering
-/// `202`; the driver it started keeps going up to [`HANDLER_DRIVE_BUDGET`].
-pub const HANDLER_RESPONSE_BUDGET: Duration = Duration::from_secs(12);
-pub const HANDLER_DRIVE_BUDGET: Duration = Duration::from_secs(60);
-const WORKER_BUDGET: Duration = Duration::from_secs(10);
-/// An operation still unresolved this long after creation (only possible
-/// when the user's action has no expiry of its own, or every provider is
-/// down) is parked for an operator instead of spinning for the validity
-/// window.
-const OPERATION_MAX_AGE: chrono::Duration = chrono::Duration::minutes(30);
-const ORPHAN_RECHECK: Duration = Duration::from_secs(30);
-const CLAIM_BATCH: i64 = 32;
-const ORPHAN_BATCH: i64 = 20;
-/// Mainnet `transaction_validity_period`: a block hash older than this can no
-/// longer anchor a transaction.
-const TRANSACTION_VALIDITY_BLOCKS: u64 = 86_400;
-const LANE_WAIT: Duration = Duration::from_millis(300);
-const REGISTRATION_BATCH: usize = 50;
-const STALL_ALERT_COOLDOWN: Duration = Duration::from_secs(600);
-const RECONCILIATION_STALL: i64 = 600;
-const QUEUE_STALL: Duration = Duration::from_secs(120);
+/// How long one run may hold an operation before handing it back to the queue.
+const RUN_BUDGET: Duration = Duration::from_secs(60);
+/// A stage that is not ready for at most this long is waited for inside the
+/// run; anything longer releases the operation until it is due again.
+const INLINE_WAIT: Duration = Duration::from_secs(2);
+/// The loop wakes on an insert; this is how often it looks without one.
+const TICK: Duration = Duration::from_secs(2);
+const CLAIM_BATCH: usize = 32;
+const MAX_CONCURRENT_RUNS: usize = 64;
+const SHUTDOWN_GRACE: Duration = Duration::from_secs(10);
 
 pub struct RelayEngine {
     state: Arc<AppState>,
@@ -107,199 +73,106 @@ impl RunOutcome {
     }
 }
 
-#[derive(Debug, Default)]
-pub struct CycleSummary {
-    pub claimed: usize,
-    pub terminal: usize,
-    pub pending: usize,
-    pub orphans_settled: usize,
-    pub health: String,
-}
-
-impl std::fmt::Display for CycleSummary {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "claimed={} terminal={} pending={} orphans_settled={} {}",
-            self.claimed, self.terminal, self.pending, self.orphans_settled, self.health
-        )
-    }
-}
-
-enum Step {
-    Continue,
-    Wait(Duration, Option<String>),
-    Done(OperationOutcome),
-}
-
-enum EngineError {
-    Store(RelayStoreError),
-    Transient(String),
-    Invariant(String),
-}
-
-impl From<RelayStoreError> for EngineError {
-    fn from(error: RelayStoreError) -> Self {
-        Self::Store(error)
-    }
-}
-
-/// The parsed payload: everything the steps need, derived again from the
-/// stored bytes on every run so nothing but the row has to survive a crash.
-struct RelayPlan {
-    treasury_id: AccountId,
-    submission: RelaySubmission,
-    dao_operation: DaoOperation,
-    attached_deposit: NearToken,
-    storage_cost: NearToken,
-    delegate_max_block_height: Option<u64>,
-}
-
-impl RelayPlan {
-    fn from_operation(operation: &RelayOperation) -> Result<Self, String> {
-        let parsed = parse_relay(operation.treasury_id.clone(), &operation.submission_payload)?;
-        let storage_cost = if parsed.proposal_storage_bytes > 0 {
-            policy::proposal_storage_cost(parsed.proposal_storage_bytes)
-        } else {
-            NearToken::from_near(0)
-        };
-        let delegate_max_block_height = match &parsed.submission {
-            RelaySubmission::MetaTransaction(_) => {
-                delegate_max_block_height(&operation.submission_payload)
-            }
-            RelaySubmission::WalletContract(_) => None,
-        };
-        Ok(Self {
-            treasury_id: parsed.treasury_id,
-            submission: parsed.submission,
-            dao_operation: parsed.operation,
-            attached_deposit: parsed.attached_deposit,
-            storage_cost,
-            delegate_max_block_height,
-        })
-    }
-
-    /// Receiver and actions of the final sponsor transaction.
-    fn relay_transaction(
-        &self,
-        payload: &[u8],
-    ) -> Result<(AccountId, Vec<ProtocolAction>), String> {
-        match &self.submission {
-            RelaySubmission::WalletContract(replay) => Ok((
-                replay.wallet_account.clone(),
-                protocol_actions(&replay.actions)?,
-            )),
-            RelaySubmission::MetaTransaction(_) => {
-                let delegate = ProtocolSignedDelegate::try_from_slice(payload)
-                    .map_err(|error| format!("stored delegate action: {error}"))?;
-                let receiver = api_account(&delegate.delegate_action.sender_id)?;
-                Ok((receiver, vec![ProtocolAction::Delegate(Box::new(delegate))]))
-            }
-        }
-    }
-}
-
-/// `max_block_height` of a stored delegate action, whichever key type signed it.
-pub fn delegate_max_block_height(payload: &[u8]) -> Option<u64> {
-    ProtocolSignedDelegate::try_from_slice(payload)
-        .ok()
-        .map(|signed| signed.delegate_action.max_block_height)
-}
-
-fn api_account(id: &ProtocolAccountId) -> Result<AccountId, String> {
-    id.as_str()
-        .parse()
-        .map_err(|error| format!("invalid account id '{id}': {error}"))
-}
-
-fn protocol_actions(actions: &[near_api::types::Action]) -> Result<Vec<ProtocolAction>, String> {
-    actions
-        .iter()
-        .map(|action| match action {
-            near_api::types::Action::FunctionCall(call) => Ok(ProtocolAction::FunctionCall(
-                Box::new(ProtocolFunctionCall {
-                    method_name: call.method_name.clone(),
-                    args: call.args.clone(),
-                    gas: near_primitives::gas::Gas::from_gas(call.gas.as_gas()),
-                    deposit: call.deposit,
-                }),
-            )),
-            near_api::types::Action::Transfer(transfer) => {
-                Ok(ProtocolAction::Transfer(TransferAction {
-                    deposit: transfer.deposit,
-                }))
-            }
-            other => Err(format!("unsupported sponsored action: {other:?}")),
-        })
-        .collect()
-}
-
-/// Delay before looking at a pending transaction again: half its age, within
-/// one second and thirty, with a little jitter so holders do not align.
-fn reconcile_backoff(age: Duration) -> Duration {
-    let base = (age.as_secs_f64() / 2.0).clamp(1.0, 30.0);
-    let jitter = rand::rng().random_range(0.0..0.2);
-    Duration::from_secs_f64(base * (1.0 + jitter))
-}
-
-static PROGRESS: AtomicU64 = AtomicU64::new(0);
-
-struct StallState {
-    last_progress_seen: u64,
-    last_progress_at: Instant,
-    last_reconciliation_alert: Option<Instant>,
-    last_queue_alert: Option<Instant>,
-}
-
-static STALLS: LazyLock<Mutex<StallState>> = LazyLock::new(|| {
-    Mutex::new(StallState {
-        last_progress_seen: 0,
-        last_progress_at: Instant::now(),
-        last_reconciliation_alert: None,
-        last_queue_alert: None,
-    })
-});
-
-fn note_progress() {
-    PROGRESS.fetch_add(1, Ordering::Relaxed);
-}
-
 impl RelayEngine {
     pub fn new(state: Arc<AppState>) -> Self {
         let rpc = RelayRpc::from_state(&state);
         Self { state, rpc }
     }
 
+    /// Start the worker loop and its health loop. Both run in every process;
+    /// the lease on each row keeps two processes off the same operation.
+    pub fn spawn(state: Arc<AppState>, shutdown: CancellationToken) -> tokio::task::JoinHandle<()> {
+        tokio::spawn(RelayHealth::new(state.clone()).run_forever(shutdown.clone()));
+        tokio::spawn(ConfidentialIntentSubmitter::run_queue_forever(
+            state.clone(),
+            shutdown.clone(),
+        ));
+        tokio::spawn(Arc::new(Self::new(state)).run_forever(shutdown))
+    }
+
     fn store(&self) -> RelayStore<'_> {
         RelayStore::new(&self.state.db_pool)
     }
 
-    /// Drive a claimed operation until it is terminal, has to wait on the
-    /// network, or `budget` is spent.
-    pub async fn run_operation(&self, operation: RelayOperation, budget: Duration) -> RunOutcome {
+    /// Claim what is due and run each operation on its own task, so a slow
+    /// one never holds back a new one. Sleeps until an insert wakes it or the
+    /// tick passes.
+    pub async fn run_forever(self: Arc<Self>, shutdown: CancellationToken) {
+        let runs = Arc::new(Semaphore::new(MAX_CONCURRENT_RUNS));
+        while !shutdown.is_cancelled() {
+            let claimed = self.claim_and_start(&runs).await;
+            if claimed == CLAIM_BATCH {
+                continue;
+            }
+            tokio::select! {
+                _ = self.state.relay_wake.notified() => {}
+                _ = tokio::time::sleep(TICK) => {}
+                _ = shutdown.cancelled() => {}
+            }
+        }
+        // Runs that outlive the grace period are picked up by another
+        // process once their lease expires.
+        let _ = tokio::time::timeout(
+            SHUTDOWN_GRACE,
+            runs.acquire_many(MAX_CONCURRENT_RUNS as u32),
+        )
+        .await;
+    }
+
+    async fn claim_and_start(self: &Arc<Self>, runs: &Arc<Semaphore>) -> usize {
+        let free = runs.available_permits().min(CLAIM_BATCH);
+        if free == 0 {
+            return 0;
+        }
+        let claimed = match self
+            .store()
+            .claim_due_operations(free as i64, OPERATION_LEASE)
+            .await
+        {
+            Ok(claimed) => claimed,
+            Err(error) => {
+                tracing::warn!(error = %error, "relay worker could not claim operations");
+                return 0;
+            }
+        };
+        let count = claimed.len();
+        for operation in claimed {
+            let Ok(permit) = runs.clone().try_acquire_owned() else {
+                break;
+            };
+            let engine = self.clone();
+            tokio::spawn(async move {
+                engine.run_operation(operation, RUN_BUDGET).await;
+                drop(permit);
+            });
+        }
+        count
+    }
+
+    /// Run a claimed operation through its stages until it is terminal, a
+    /// stage is not ready, or `budget` is spent.
+    pub async fn run_operation(
+        &self,
+        mut operation: RelayOperation,
+        budget: Duration,
+    ) -> RunOutcome {
         let Some(lease) = operation.lease() else {
             return RunOutcome::Pending(operation);
         };
         let plan = match RelayPlan::from_operation(&operation) {
             Ok(plan) => plan,
             Err(error) => {
-                error_event!(
-                    ErrorCode::RelaySubmissionInvariantBroken,
-                    submission_id = %operation.id,
-                    treasury_id = %operation.treasury_id,
-                    error = %error
-                );
                 return self
-                    .finish(
+                    .park(
                         &operation,
                         &lease,
-                        OperationOutcome::ManualReview {
-                            reason: format!("stored payload no longer parses: {error}"),
-                        },
+                        format!("stored payload no longer parses: {error}"),
                     )
                     .await;
             }
         };
+        let landed_relay = Mutex::new(None);
+        let lane_turn = Mutex::new(None);
         let started = Instant::now();
         let mut lease_renewed_at = started;
         loop {
@@ -313,88 +186,78 @@ impl RelayEngine {
                     return RunOutcome::Pending(self.reload(&operation).await);
                 }
             }
-            match self.step(&lease, &operation, &plan).await {
-                Ok(Step::Continue) => note_progress(),
-                Ok(Step::Wait(after, note)) => {
-                    if started.elapsed() + after < budget {
-                        tokio::time::sleep(after).await;
-                    } else {
+            let result = stages::run(&StageContext {
+                state: &self.state,
+                rpc: &self.rpc,
+                lease: &lease,
+                operation: &operation,
+                plan: &plan,
+                landed_relay: &landed_relay,
+                lane_turn: &lane_turn,
+            })
+            .await;
+            let result = match result {
+                Ok(StageResult::Advance(to)) => self
+                    .store()
+                    .advance_stage(&lease, operation.stage, to)
+                    .await
+                    .map(|row| StageResult::Advanced(Box::new(row)))
+                    .map_err(StageError::Store),
+                other => other,
+            };
+            match result {
+                Ok(StageResult::Advanced(row)) => operation = *row,
+                Ok(StageResult::Advance(_)) => unreachable!("advances are applied above"),
+                Ok(StageResult::NotReady(after, note)) => {
+                    if after > INLINE_WAIT || started.elapsed() + after >= budget {
                         return self.release(&operation, &lease, after, note).await;
                     }
+                    tokio::time::sleep(after).await;
                 }
-                Ok(Step::Done(outcome)) => {
-                    return self.finish(&operation, &lease, outcome).await;
+                Ok(StageResult::Done(completion)) => {
+                    return self.finish(&operation, &lease, completion).await;
                 }
-                Err(EngineError::Store(RelayStoreError::LeaseLost)) => {
+                Err(StageError::Store(RelayStoreError::LeaseLost)) => {
                     return RunOutcome::Pending(self.reload(&operation).await);
                 }
-                Err(EngineError::Store(error)) => {
-                    tracing::warn!(submission_id = %operation.id, error = %error, "relay store error; deferring");
+                Err(StageError::Store(error)) => {
+                    tracing::warn!(submission_id = %operation.id, stage = %operation.stage, error = %error, "relay store error; deferring");
                     return self
-                        .release(
-                            &operation,
-                            &lease,
-                            Duration::from_secs(2),
-                            Some(error.to_string()),
-                        )
+                        .release(&operation, &lease, INLINE_WAIT, Some(error.to_string()))
                         .await;
                 }
-                Err(EngineError::Transient(error)) => {
-                    tracing::warn!(submission_id = %operation.id, error = %error, "relay step hit a transient error; deferring");
+                Err(StageError::Transient(error)) => {
+                    tracing::warn!(submission_id = %operation.id, stage = %operation.stage, error = %error, "relay stage not ready; deferring");
                     return self
-                        .release(&operation, &lease, Duration::from_secs(2), Some(error))
+                        .release(&operation, &lease, INLINE_WAIT, Some(error))
                         .await;
                 }
-                Err(EngineError::Invariant(error)) => {
-                    error_event!(
-                        ErrorCode::RelaySubmissionInvariantBroken,
-                        submission_id = %operation.id,
-                        treasury_id = %operation.treasury_id,
-                        error = %error
-                    );
-                    return self
-                        .finish(
-                            &operation,
-                            &lease,
-                            OperationOutcome::ManualReview { reason: error },
-                        )
-                        .await;
+                Err(StageError::Invariant(error)) => {
+                    return self.park(&operation, &lease, error).await;
                 }
             }
         }
     }
 
-    /// One worker cycle: everything due, then the orphan sweep and the stall
-    /// checks.
-    pub async fn run_due(&self) -> Result<CycleSummary, RelayStoreError> {
-        let store = self.store();
-        let claimed = store
-            .claim_due_operations(CLAIM_BATCH, OPERATION_LEASE)
-            .await?;
-        let mut summary = CycleSummary {
-            claimed: claimed.len(),
-            ..CycleSummary::default()
-        };
-        let runs = claimed
-            .into_iter()
-            .map(|operation| self.run_operation(operation, WORKER_BUDGET));
-        for outcome in futures::future::join_all(runs).await {
-            match outcome {
-                RunOutcome::Terminal(_) => summary.terminal += 1,
-                RunOutcome::Pending(_) => summary.pending += 1,
-            }
-        }
-        summary.orphans_settled = self.sweep_orphans().await;
-        let health = store.queue_health().await?;
-        self.check_stalls(&health);
-        summary.health = format!(
-            "pending_operations={} pending_transactions={} oldest_pending_seconds={} manual_review={}",
-            health.pending_operations,
-            health.pending_transactions,
-            health.oldest_pending_seconds.unwrap_or(0),
-            health.manual_review_operations
+    async fn park(
+        &self,
+        operation: &RelayOperation,
+        lease: &OperationLease,
+        reason: String,
+    ) -> RunOutcome {
+        error_event!(
+            ErrorCode::RelaySubmissionInvariantBroken,
+            submission_id = %operation.id,
+            treasury_id = %operation.treasury_id,
+            stage = %operation.stage,
+            error = %reason
         );
-        Ok(summary)
+        self.finish(
+            operation,
+            lease,
+            OperationOutcome::ManualReview { reason }.into(),
+        )
+        .await
     }
 
     async fn reload(&self, operation: &RelayOperation) -> RelayOperation {
@@ -404,6 +267,8 @@ impl RelayEngine {
         }
     }
 
+    /// Hand the operation back to the queue, due again after `after`, with
+    /// what it is waiting for on the row.
     async fn release(
         &self,
         operation: &RelayOperation,
@@ -422,469 +287,25 @@ impl RelayEngine {
         RunOutcome::Pending(self.reload(operation).await)
     }
 
-    async fn step(
-        &self,
-        lease: &OperationLease,
-        operation: &RelayOperation,
-        plan: &RelayPlan,
-    ) -> Result<Step, EngineError> {
-        let transactions = self.store().transactions_of(operation.id).await?;
-        if let Some(tx) = transactions
-            .iter()
-            .find(|tx| tx.state == TransactionState::Prepared)
-        {
-            return self.broadcast(lease, plan, tx).await;
-        }
-        if let Some(tx) = transactions
-            .iter()
-            .find(|tx| tx.state == TransactionState::Pending)
-        {
-            return self.reconcile(lease, operation, plan, tx).await;
-        }
-        if let Some(relay) = transactions
-            .iter()
-            .find(|tx| tx.step_key.is_relay() && tx.state == TransactionState::Succeeded)
-        {
-            // The relay landed but the completion did not commit; read the
-            // outcome back by hash.
-            return match self.rpc.status(&self.state.signer_id, &relay.tx_hash).await {
-                StatusOutcome::Landed(result) => {
-                    self.settle_landed(lease, plan, relay, &result).await
-                }
-                StatusOutcome::Known(stage) => Ok(Step::Wait(
-                    Duration::from_secs(1),
-                    Some(format!("landed relay not final yet: {stage}")),
-                )),
-                StatusOutcome::Unknown { detail, .. } => Err(EngineError::Transient(format!(
-                    "landed relay {} not readable: {detail}",
-                    relay.tx_hash
-                ))),
-            };
-        }
-
-        // Nothing in flight: before signing anything new, make sure the
-        // user's action can still succeed at all.
-        if let Some(outcome) = self.expired_outcome(operation, plan, None).await? {
-            return Ok(Step::Done(outcome));
-        }
-        let done: HashSet<StepKey> = transactions
-            .iter()
-            .filter(|tx| tx.state == TransactionState::Succeeded)
-            .map(|tx| tx.step_key.clone())
-            .collect();
-        if plan.storage_cost.as_yoctonear() > 0 && !done.contains(&StepKey::StorageTopUp) {
-            return self
-                .sign_step(
-                    lease,
-                    StepKey::StorageTopUp,
-                    plan.treasury_id.clone(),
-                    vec![ProtocolAction::Transfer(TransferAction {
-                        deposit: plan.storage_cost,
-                    })],
-                    plan.storage_cost,
-                )
-                .await;
-        }
-        match self.next_registration(plan, &done).await? {
-            RegistrationPlan::Sign {
-                step,
-                token,
-                accounts,
-            } => {
-                let actions = accounts
-                    .iter()
-                    .map(storage_deposit_action)
-                    .collect::<Result<Vec<_>, _>>()
-                    .map_err(EngineError::Transient)?;
-                let spend = STORAGE_DEPOSIT_AMOUNT.saturating_mul(accounts.len() as u128);
-                return self.sign_step(lease, step, token, actions, spend).await;
-            }
-            RegistrationPlan::TooMany(count) => {
-                return Ok(Step::Done(OperationOutcome::Failed {
-                    failure_code: FailureCode::SponsorStepFailed,
-                    reason: format!(
-                        "too many storage_deposit registrations required ({count} > {MAX_STORAGE_DEPOSITS})"
-                    ),
-                }));
-            }
-            RegistrationPlan::None => {}
-        }
-        let (receiver, actions) = plan
-            .relay_transaction(&operation.submission_payload)
-            .map_err(EngineError::Invariant)?;
-        self.sign_step(
-            lease,
-            StepKey::Relay,
-            receiver,
-            actions,
-            plan.attached_deposit,
-        )
-        .await
-    }
-
-    async fn next_registration(
-        &self,
-        plan: &RelayPlan,
-        done: &HashSet<StepKey>,
-    ) -> Result<RegistrationPlan, EngineError> {
-        let approve_ids = plan.dao_operation.vote_approve_ids();
-        if approve_ids.is_empty() {
-            return Ok(RegistrationPlan::None);
-        }
-        let mut targets = HashSet::new();
-        for proposal_id in approve_ids {
-            targets.extend(
-                registrations::derive_targets_for_proposal(
-                    &self.state,
-                    &plan.treasury_id,
-                    proposal_id,
-                )
-                .await,
-            );
-        }
-        let allowed = allowlist::allowed_storage_contracts(&self.state).await;
-        let mut by_token: BTreeMap<AccountId, Vec<AccountId>> = BTreeMap::new();
-        for target in targets {
-            if allowed.contains(target.token_id.as_str()) {
-                by_token
-                    .entry(target.token_id)
-                    .or_default()
-                    .push(target.account_id);
-            }
-        }
-        let total: usize = by_token.values().map(Vec::len).sum();
-        if total > MAX_STORAGE_DEPOSITS {
-            return Ok(RegistrationPlan::TooMany(total));
-        }
-        for (token, mut accounts) in by_token {
-            accounts.sort();
-            for (index, chunk) in accounts.chunks(REGISTRATION_BATCH).enumerate() {
-                let step = StepKey::Registration {
-                    token: token.clone(),
-                    chunk: index as u32,
-                };
-                if done.contains(&step) {
-                    continue;
-                }
-                let mut unregistered = Vec::new();
-                for account in chunk {
-                    match check_storage_deposit(&self.state, account.clone(), token.clone()).await {
-                        Ok(true) => {}
-                        Ok(false) => unregistered.push(account.clone()),
-                        Err((_, message)) => {
-                            // Unverifiable: register anyway, `registration_only`
-                            // refunds when it was already there.
-                            tracing::warn!(account = %account, token = %token, error = %message, "registration check failed");
-                            unregistered.push(account.clone());
-                        }
-                    }
-                }
-                if unregistered.is_empty() {
-                    continue;
-                }
-                return Ok(RegistrationPlan::Sign {
-                    step,
-                    token,
-                    accounts: unregistered,
-                });
-            }
-        }
-        Ok(RegistrationPlan::None)
-    }
-
-    /// Lock a free lane, sign with it, and commit the bytes as `prepared`.
-    async fn sign_step(
-        &self,
-        lease: &OperationLease,
-        step: StepKey,
-        receiver: AccountId,
-        actions: Vec<ProtocolAction>,
-        spend: NearToken,
-    ) -> Result<Step, EngineError> {
-        let rotation = self.state.relay_lanes.rotation();
-        let Some(claim) = self.store().claim_free_lane(&rotation).await? else {
-            return Ok(Step::Wait(
-                LANE_WAIT,
-                Some("all sponsor lanes busy".to_owned()),
-            ));
-        };
-        let lane = self
-            .state
-            .relay_lanes
-            .get(&claim.public_key)
-            .ok_or_else(|| EngineError::Invariant(format!("unknown lane {}", claim.public_key)))?;
-        let snapshot = self
-            .rpc
-            .access_key(&self.state.signer_id, &lane.api_public_key)
-            .await
-            .map_err(EngineError::Transient)?;
-        let floor = claim.nonce_floor.unwrap_or(0).max(0) as u64;
-        let nonce = snapshot.nonce.max(floor) + 1;
-        let transaction = ProtocolTransaction::V0(TransactionV0 {
-            signer_id: protocol_account(&self.state.signer_id).map_err(EngineError::Invariant)?,
-            public_key: lane.protocol_public_key(),
-            nonce,
-            receiver_id: protocol_account(&receiver).map_err(EngineError::Invariant)?,
-            block_hash: ProtocolHash(snapshot.block_hash),
-            actions,
-        });
-        let signed = lane.sign(transaction);
-        let prepared = PreparedTransaction {
-            step_key: step,
-            public_key: claim.public_key.clone(),
-            nonce: nonce as i64,
-            valid_until_height: (snapshot.block_height + TRANSACTION_VALIDITY_BLOCKS) as i64,
-            tx_hash: signed.get_hash().to_string(),
-            signed_tx: borsh::to_vec(&signed)
-                .map_err(|error| EngineError::Invariant(format!("serialize signed tx: {error}")))?,
-            spend_yocto: BigDecimal::from(spend.as_yoctonear()),
-        };
-        match claim.commit_prepared(lease, prepared).await {
-            Ok(_) => Ok(Step::Continue),
-            Err(error) if error.is_unique_violation() => Err(EngineError::Invariant(format!(
-                "nonce, hash or step already committed: {error}"
-            ))),
-            Err(error) => Err(error.into()),
-        }
-    }
-
-    async fn broadcast(
-        &self,
-        lease: &OperationLease,
-        plan: &RelayPlan,
-        tx: &RelayTransaction,
-    ) -> Result<Step, EngineError> {
-        let store = self.store();
-        store.mark_broadcast(lease, tx.id).await?;
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&tx.signed_tx);
-        match self.rpc.send(&encoded).await {
-            SendOutcome::Landed(result) => self.settle_landed(lease, plan, tx, &result).await,
-            SendOutcome::Rejected(message) => {
-                store
-                    .settle_transaction(
-                        lease,
-                        tx.id,
-                        &TransactionOutcome::Failed {
-                            reason: message.clone(),
-                        },
-                    )
-                    .await?;
-                Ok(Step::Done(OperationOutcome::Failed {
-                    failure_code: FailureCode::NotSent,
-                    reason: message,
-                }))
-            }
-            SendOutcome::Unknown(message) | SendOutcome::Unreachable(message) => {
-                store
-                    .record_transaction_error(lease, tx.id, &message)
-                    .await?;
-                Ok(Step::Wait(Duration::from_secs(1), Some(message)))
-            }
-        }
-    }
-
-    /// A pending transaction: look its hash up, resend the same bytes while
-    /// nobody has them, and give up only on proof.
-    async fn reconcile(
-        &self,
-        lease: &OperationLease,
-        operation: &RelayOperation,
-        plan: &RelayPlan,
-        tx: &RelayTransaction,
-    ) -> Result<Step, EngineError> {
-        let store = self.store();
-        let absent_votes = match self.rpc.status(&self.state.signer_id, &tx.tx_hash).await {
-            StatusOutcome::Landed(result) => {
-                return self.settle_landed(lease, plan, tx, &result).await;
-            }
-            StatusOutcome::Known(stage) => {
-                return Ok(Step::Wait(Duration::from_secs(1), Some(stage)));
-            }
-            StatusOutcome::Unknown { absent_votes, .. } => absent_votes,
-        };
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&tx.signed_tx);
-        match self.rpc.send(&encoded).await {
-            SendOutcome::Landed(result) => {
-                return self.settle_landed(lease, plan, tx, &result).await;
-            }
-            SendOutcome::Rejected(message)
-                if absent_votes > 0 && is_expired_rejection(&message) =>
-            {
-                store
-                    .settle_transaction(
-                        lease,
-                        tx.id,
-                        &TransactionOutcome::Superseded { reason: message },
-                    )
-                    .await?;
-                return Ok(Step::Continue);
-            }
-            SendOutcome::Rejected(message)
-            | SendOutcome::Unknown(message)
-            | SendOutcome::Unreachable(message) => {
-                store
-                    .record_transaction_error(lease, tx.id, &message)
-                    .await?;
-            }
-        }
-        let height = self
-            .rpc
-            .block_height()
-            .await
-            .map_err(EngineError::Transient)?;
-        if let Some(outcome) = self.expired_outcome(operation, plan, Some(height)).await? {
-            return Ok(Step::Done(outcome));
-        }
-        if height as i64 > tx.valid_until_height && absent_votes >= self.rpc.absence_quorum() {
-            store
-                .settle_transaction(
-                    lease,
-                    tx.id,
-                    &TransactionOutcome::Superseded {
-                        reason: format!(
-                            "validity window closed at block {} (head {height}); absent on {absent_votes} providers",
-                            tx.valid_until_height
-                        ),
-                    },
-                )
-                .await?;
-            return Ok(Step::Continue);
-        }
-        let age = tx
-            .broadcast_at
-            .map(|at| (Utc::now() - at).to_std().unwrap_or_default())
-            .unwrap_or_default();
-        Ok(Step::Wait(reconcile_backoff(age), None))
-    }
-
-    /// Terminal outcome when the operation can no longer succeed: the user's
-    /// delegate action expired (any step; the relay would fail on chain), or
-    /// the operation has been unresolved for longer than any step may take.
-    async fn expired_outcome(
-        &self,
-        operation: &RelayOperation,
-        plan: &RelayPlan,
-        known_height: Option<u64>,
-    ) -> Result<Option<OperationOutcome>, EngineError> {
-        if let Some(max_block_height) = plan.delegate_max_block_height {
-            let height = match known_height {
-                Some(height) => height,
-                None => self
-                    .rpc
-                    .block_height()
-                    .await
-                    .map_err(EngineError::Transient)?,
-            };
-            if height > max_block_height {
-                return Ok(Some(OperationOutcome::Failed {
-                    failure_code: FailureCode::DelegateExpired,
-                    reason: format!(
-                        "delegate action expired at block {max_block_height} (head {height}) before the relay was confirmed"
-                    ),
-                }));
-            }
-        }
-        if Utc::now() - operation.created_at > OPERATION_MAX_AGE {
-            return Ok(Some(OperationOutcome::ManualReview {
-                reason: format!(
-                    "unresolved {} minutes after submission",
-                    OPERATION_MAX_AGE.num_minutes()
-                ),
-            }));
-        }
-        Ok(None)
-    }
-
-    async fn settle_landed(
-        &self,
-        lease: &OperationLease,
-        plan: &RelayPlan,
-        tx: &RelayTransaction,
-        result: &Value,
-    ) -> Result<Step, EngineError> {
-        if let Some(landed_hash) = result.pointer("/transaction/hash").and_then(Value::as_str)
-            && landed_hash != tx.tx_hash
-        {
-            return Err(EngineError::Invariant(format!(
-                "outcome for {landed_hash} returned while reconciling {}",
-                tx.tx_hash
-            )));
-        }
-        let store = self.store();
-        match read_send_tx_result(result, plan.treasury_id.as_str(), &tx.tx_hash) {
-            Ok(outcome) => {
-                if tx.state != TransactionState::Succeeded {
-                    store
-                        .settle_transaction(lease, tx.id, &TransactionOutcome::Succeeded)
-                        .await?;
-                }
-                if tx.step_key.is_relay() {
-                    // Awaited before the operation turns terminal: a crash here
-                    // re-enters through the landed-relay branch of `step`, and
-                    // each submit is idempotent on the intent's lease.
-                    self.auto_submit_confidential(plan, outcome.result).await;
-                    Ok(Step::Done(OperationOutcome::Succeeded {
-                        proposal_ids: outcome.proposal_ids.iter().map(|id| *id as i64).collect(),
-                    }))
-                } else {
-                    Ok(Step::Continue)
-                }
-            }
-            Err(failure) => {
-                store
-                    .settle_transaction(
-                        lease,
-                        tx.id,
-                        &TransactionOutcome::Failed {
-                            reason: failure.message.clone(),
-                        },
-                    )
-                    .await?;
-                let failure_code = if tx.step_key.is_relay() {
-                    FailureCode::OnChain(failure.reason)
-                } else {
-                    FailureCode::SponsorStepFailed
-                };
-                Ok(Step::Done(OperationOutcome::Failed {
-                    failure_code,
-                    reason: failure.message,
-                }))
-            }
-        }
-    }
-
-    /// Hand each confidential intent this relay voted on to 1Click, matched to
-    /// its MPC signature in the landed outcome.
-    async fn auto_submit_confidential(&self, plan: &RelayPlan, tx_status: Value) {
-        let payloads = plan.dao_operation.confidential_payloads_with_ids();
-        if payloads.is_empty() {
-            return;
-        }
-        let source = confidential::RelaySignatureSource::TxStatus(tx_status);
-        let treasury_id = plan.treasury_id.as_str();
-        let submits = payloads.iter().map(|(payload_hash, proposal_id)| {
-            confidential::try_auto_submit_intent(
-                &self.state,
-                treasury_id,
-                payload_hash,
-                *proposal_id,
-                &source,
-            )
-        });
-        futures::future::join_all(submits).await;
-    }
-
-    /// Commit the terminal state with its accounting, then publish it.
-    async fn finish(
+    /// Commit the terminal state with its accounting and the execution stamp
+    /// of every confidential intent the relay approved, then publish it.
+    pub(super) async fn finish(
         &self,
         operation: &RelayOperation,
         lease: &OperationLease,
-        outcome: OperationOutcome,
+        completion: Completion,
     ) -> RunOutcome {
+        let Completion {
+            outcome,
+            executed_intents,
+            proposed_intents,
+        } = completion;
         let committed: Result<(), RelayStoreError> = async {
             let mut tx = self.state.db_pool.begin().await?;
             RelayStore::complete_operation(&mut tx, lease, &outcome).await?;
             self.account(&mut tx, operation, &outcome).await?;
+            Self::record_proposals(&mut tx, operation, &proposed_intents).await?;
+            Self::record_executions(&mut tx, operation, &executed_intents).await?;
             tx.commit().await?;
             Ok(())
         }
@@ -906,13 +327,15 @@ impl RelayEngine {
                     .release(
                         operation,
                         lease,
-                        Duration::from_secs(2),
+                        INLINE_WAIT,
                         Some(format!("completion not committed: {error}")),
                     )
                     .await;
             }
         }
-        note_progress();
+        if !executed_intents.is_empty() {
+            self.wake_intent_submit(operation).await;
+        }
         let updated = self.reload(operation).await;
         let transactions = self
             .store()
@@ -923,6 +346,65 @@ impl RelayEngine {
         self.log_outcome(&updated, &outcome, &status);
         self.state.publish_relay_submission_updated(status);
         RunOutcome::Terminal(updated)
+    }
+
+    /// The relay created the proposal, so it links the intent to it; the
+    /// stuck-intent watch can then follow the proposal whoever votes on it.
+    async fn record_proposals(
+        conn: &mut PgConnection,
+        operation: &RelayOperation,
+        proposed_intents: &[ProposedIntent],
+    ) -> Result<(), RelayStoreError> {
+        for intent in proposed_intents {
+            sqlx::query(
+                r#"
+                UPDATE confidential_intents
+                SET proposal_id = COALESCE(proposal_id, $3), updated_at = NOW()
+                WHERE dao_id = $1 AND payload_hash = $2
+                "#,
+            )
+            .bind(operation.treasury_id.as_str())
+            .bind(&intent.payload_hash)
+            .bind(intent.proposal_id as i64)
+            .execute(&mut *conn)
+            .await?;
+        }
+        Ok(())
+    }
+
+    /// The relay saw the `v1.signer` call execute, so it records the
+    /// execution itself; the submit queue then needs no detector to find the
+    /// intent.
+    async fn record_executions(
+        conn: &mut PgConnection,
+        operation: &RelayOperation,
+        executed_intents: &[ExecutedIntent],
+    ) -> Result<(), RelayStoreError> {
+        for intent in executed_intents {
+            record_confidential_intent_execution(
+                &mut *conn,
+                operation.treasury_id.as_str(),
+                &intent.payload_hash,
+                Some(intent.proposal_id as i64),
+                Utc::now(),
+                None,
+                Some(&intent.tx_hash),
+            )
+            .await?;
+        }
+        Ok(())
+    }
+
+    async fn wake_intent_submit(&self, operation: &RelayOperation) {
+        self.state.intent_submit_wake.notify_one();
+        if let Err(error) = mark_confidential_history_activity_due(
+            &self.state.db_pool,
+            operation.treasury_id.as_str(),
+        )
+        .await
+        {
+            tracing::warn!(treasury_id = %operation.treasury_id, error = %error, "failed to pull the 1Click poll forward");
+        }
     }
 
     /// Credit, sponsor spend and platform metrics, on the completion
@@ -995,6 +477,7 @@ impl RelayEngine {
                         ErrorCode::RelayConfirmedUnexpectedFailure,
                         submission_id = %operation.id,
                         treasury_id = %operation.treasury_id,
+                        stage = %operation.stage,
                         failure_code = %failure_code.as_text(),
                         tx_hash = ?status.tx_hash,
                         error = %reason
@@ -1003,6 +486,7 @@ impl RelayEngine {
                     tracing::warn!(
                         submission_id = %operation.id,
                         treasury_id = %operation.treasury_id,
+                        stage = %operation.stage,
                         failure_code = %failure_code.as_text(),
                         tx_hash = ?status.tx_hash,
                         error = %reason,
@@ -1014,193 +498,12 @@ impl RelayEngine {
                 ErrorCode::RelaySubmissionManualReview,
                 submission_id = %operation.id,
                 treasury_id = %operation.treasury_id,
+                stage = %operation.stage,
                 tx_hash = ?status.tx_hash,
                 error = %reason
             ),
         }
     }
-
-    /// Pending transactions whose operation already ended: settle them once
-    /// the chain says, book a late landing's spend, and look at each one no
-    /// more than every [`ORPHAN_RECHECK`].
-    async fn sweep_orphans(&self) -> usize {
-        let store = self.store();
-        let orphans = match store
-            .orphan_pending_transactions(ORPHAN_BATCH, ORPHAN_RECHECK)
-            .await
-        {
-            Ok(rows) => rows,
-            Err(error) => {
-                tracing::warn!(error = %error, "relay orphan sweep could not read");
-                return 0;
-            }
-        };
-        let checks = orphans.iter().map(|tx| self.sweep_orphan(tx));
-        futures::future::join_all(checks)
-            .await
-            .into_iter()
-            .filter(|settled| *settled)
-            .count()
-    }
-
-    async fn sweep_orphan(&self, tx: &RelayTransaction) -> bool {
-        let outcome = match self.orphan_outcome(tx).await {
-            Some(outcome) => outcome,
-            None => {
-                if let Err(error) = self.store().touch_orphan_transaction(tx.id).await {
-                    tracing::warn!(tx_hash = %tx.tx_hash, error = %error, "relay orphan touch failed");
-                }
-                return false;
-            }
-        };
-        match self.settle_orphan(tx, &outcome).await {
-            Ok(settled) => settled,
-            Err(error) => {
-                tracing::warn!(tx_hash = %tx.tx_hash, error = %error, "relay orphan settle failed");
-                false
-            }
-        }
-    }
-
-    async fn orphan_outcome(&self, tx: &RelayTransaction) -> Option<TransactionOutcome> {
-        let landed = |result: &Value| match read_send_tx_result(result, "", &tx.tx_hash) {
-            Ok(_) => TransactionOutcome::Succeeded,
-            Err(failure) => TransactionOutcome::Failed {
-                reason: failure.message,
-            },
-        };
-        let absent_votes = match self.rpc.status(&self.state.signer_id, &tx.tx_hash).await {
-            StatusOutcome::Landed(result) => return Some(landed(&result)),
-            StatusOutcome::Known(_) => return None,
-            StatusOutcome::Unknown { absent_votes, .. } => absent_votes,
-        };
-        let encoded = base64::engine::general_purpose::STANDARD.encode(&tx.signed_tx);
-        match self.rpc.send(&encoded).await {
-            SendOutcome::Landed(result) => Some(landed(&result)),
-            SendOutcome::Rejected(message)
-                if absent_votes > 0 && is_expired_rejection(&message) =>
-            {
-                Some(TransactionOutcome::Superseded { reason: message })
-            }
-            _ => {
-                let past_validity = self
-                    .rpc
-                    .block_height()
-                    .await
-                    .is_ok_and(|height| height as i64 > tx.valid_until_height);
-                (past_validity && absent_votes >= self.rpc.absence_quorum()).then(|| {
-                    TransactionOutcome::Superseded {
-                        reason: "validity window closed, absent everywhere".to_owned(),
-                    }
-                })
-            }
-        }
-    }
-
-    /// Returns `false` when another settlement already moved the row, in which
-    /// case nothing is credited.
-    async fn settle_orphan(
-        &self,
-        tx: &RelayTransaction,
-        outcome: &TransactionOutcome,
-    ) -> Result<bool, RelayStoreError> {
-        let mut db = self.state.db_pool.begin().await?;
-        let moved = sqlx::query(
-            r#"
-            UPDATE relay_transactions t
-            SET state = $2, updated_at = NOW()
-            FROM relay_operations o
-            WHERE t.id = $1 AND o.id = t.operation_id AND o.state <> 'pending' AND t.state = 'pending'
-            "#,
-        )
-        .bind(tx.id)
-        .bind(outcome.state())
-        .execute(&mut *db)
-        .await?
-        .rows_affected();
-        if moved == 0 {
-            db.rollback().await?;
-            return Ok(false);
-        }
-        if matches!(outcome, TransactionOutcome::Succeeded) && !tx.spend_yocto.is_zero() {
-            sqlx::query(
-                r#"
-                UPDATE monitored_accounts m
-                SET paid_near = m.paid_near + $2, updated_at = NOW()
-                FROM relay_operations o
-                WHERE o.id = $1 AND m.account_id = o.treasury_id
-                "#,
-            )
-            .bind(tx.operation_id)
-            .bind(&tx.spend_yocto)
-            .execute(&mut *db)
-            .await?;
-        }
-        db.commit().await?;
-        Ok(true)
-    }
-
-    fn check_stalls(&self, health: &super::models::RelayQueueHealth) {
-        let now = Instant::now();
-        let mut stalls = STALLS
-            .lock()
-            .unwrap_or_else(|poisoned| poisoned.into_inner());
-        let progress = PROGRESS.load(Ordering::Relaxed);
-        if progress != stalls.last_progress_seen {
-            stalls.last_progress_seen = progress;
-            stalls.last_progress_at = now;
-        }
-        let cooled = |last: Option<Instant>| {
-            last.is_none_or(|at| now.duration_since(at) >= STALL_ALERT_COOLDOWN)
-        };
-        if health.oldest_pending_seconds.unwrap_or(0) > RECONCILIATION_STALL
-            && cooled(stalls.last_reconciliation_alert)
-        {
-            stalls.last_reconciliation_alert = Some(now);
-            error_event!(
-                ErrorCode::RelayReconciliationStalled,
-                oldest_pending_seconds = health.oldest_pending_seconds.unwrap_or(0),
-                pending_transactions = health.pending_transactions
-            );
-        }
-        if health.pending_operations > 0
-            && now.duration_since(stalls.last_progress_at) >= QUEUE_STALL
-            && cooled(stalls.last_queue_alert)
-        {
-            stalls.last_queue_alert = Some(now);
-            error_event!(
-                ErrorCode::RelayQueueStalled,
-                pending_operations = health.pending_operations,
-                stalled_seconds = now.duration_since(stalls.last_progress_at).as_secs()
-            );
-        }
-    }
-}
-
-enum RegistrationPlan {
-    None,
-    TooMany(usize),
-    Sign {
-        step: StepKey,
-        token: AccountId,
-        accounts: Vec<AccountId>,
-    },
-}
-
-fn storage_deposit_action(account_id: &AccountId) -> Result<ProtocolAction, String> {
-    let args = serde_json::to_vec(&serde_json::json!({
-        "account_id": account_id,
-        "registration_only": true,
-    }))
-    .map_err(|error| error.to_string())?;
-    Ok(ProtocolAction::FunctionCall(Box::new(
-        ProtocolFunctionCall {
-            method_name: "storage_deposit".to_owned(),
-            args,
-            gas: near_primitives::gas::Gas::from_gas(STORAGE_DEPOSIT_GAS.as_gas()),
-            deposit: STORAGE_DEPOSIT_AMOUNT,
-        },
-    )))
 }
 
 /// The same counters the inline path records on success.
@@ -1224,14 +527,278 @@ pub fn relay_metrics(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use near_api::AccountId;
+    use sqlx::PgPool;
 
-    #[test]
-    fn backoff_grows_with_age_and_stays_bounded() {
-        let young = reconcile_backoff(Duration::from_secs(1));
-        assert!(young >= Duration::from_secs(1) && young < Duration::from_millis(1300));
-        let old = reconcile_backoff(Duration::from_secs(600));
-        assert!(old >= Duration::from_secs(30) && old < Duration::from_secs(37));
+    use super::*;
+    use crate::{
+        handlers::relay::operations::models::{
+            FailureCode, IdempotencyKey, NewRelayOperation, OperationKind, OperationStage,
+            OperationState,
+        },
+        utils::test_utils::build_test_state,
+    };
+
+    const DAO: &str = "engine.sputnik-dao.near";
+    const PAYLOAD_HASH: &str = "bfbc53c1a2fcef411a4e331d56839c7ea53c500aec82f054e51cecdd5ac76026";
+
+    async fn seed_treasury(pool: &PgPool, credits: i32) {
+        sqlx::query(
+            "INSERT INTO monitored_accounts (account_id, enabled, gas_covered_transactions) VALUES ($1, true, $2)",
+        )
+        .bind(DAO)
+        .bind(credits)
+        .execute(pool)
+        .await
+        .expect("seed treasury");
+    }
+
+    async fn credits(pool: &PgPool) -> i32 {
+        sqlx::query_scalar(
+            "SELECT gas_covered_transactions FROM monitored_accounts WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .fetch_one(pool)
+        .await
+        .expect("credits")
+    }
+
+    /// An operation past authorization, holding one of the treasury's credits.
+    async fn authorized(pool: &PgPool, payload: &[u8]) -> (RelayOperation, OperationLease) {
+        let treasury_id: AccountId = DAO.parse().unwrap();
+        let actor: AccountId = "alice.near".parse().unwrap();
+        let mut conn = pool.acquire().await.unwrap();
+        let inserted = RelayStore::insert_or_load_operation(
+            &mut conn,
+            NewRelayOperation {
+                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, payload),
+                treasury_id,
+                actor_account_id: actor,
+                operation_kind: OperationKind::ActProposal,
+                submission_payload: payload.to_vec(),
+                proposal_type: Some("vote".to_owned()),
+                address_book_payment: false,
+            },
+        )
+        .await
+        .unwrap();
+        let claimed = RelayStore::new(pool)
+            .claim_operation(inserted.operation.id, OPERATION_LEASE)
+            .await
+            .unwrap()
+            .unwrap();
+        let lease = claimed.lease().unwrap();
+        sqlx::query(
+            "UPDATE monitored_accounts SET gas_covered_transactions = gas_covered_transactions - 1 WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .execute(pool)
+        .await
+        .unwrap();
+        let operation = RelayStore::advance_stage_on(
+            &mut conn,
+            &lease,
+            OperationStage::Authorize,
+            OperationStage::Settle,
+            Some(true),
+        )
+        .await
+        .unwrap();
+        (operation, lease)
+    }
+
+    #[sqlx::test]
+    async fn success_commits_the_result_and_the_execution_stamp_together(pool: PgPool) {
+        seed_treasury(&pool, 5).await;
+        sqlx::query(
+            "INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, intent_type, status) \
+             VALUES ($1, $2, '{}'::jsonb, 'shield', 'pending'), ($1, 'proposed-only', '{}'::jsonb, 'shield', 'pending')",
+        )
+        .bind(DAO)
+        .bind(PAYLOAD_HASH)
+        .execute(&pool)
+        .await
+        .expect("seed intents");
+        let engine = RelayEngine::new(Arc::new(build_test_state(pool.clone())));
+        let (operation, lease) = authorized(&pool, b"approve").await;
+
+        let outcome = engine
+            .finish(
+                &operation,
+                &lease,
+                Completion {
+                    outcome: OperationOutcome::Succeeded {
+                        proposal_ids: vec![],
+                    },
+                    executed_intents: vec![ExecutedIntent {
+                        payload_hash: PAYLOAD_HASH.to_owned(),
+                        proposal_id: 29,
+                        tx_hash: "7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s".to_owned(),
+                    }],
+                    proposed_intents: vec![ProposedIntent {
+                        payload_hash: "proposed-only".to_owned(),
+                        proposal_id: 30,
+                    }],
+                },
+            )
+            .await;
+
+        let RunOutcome::Terminal(done) = outcome else {
+            panic!("the operation ends");
+        };
+        assert_eq!(done.state, OperationState::Succeeded);
+        assert_eq!(done.stage, OperationStage::Settle);
+        assert_eq!(credits(&pool).await, 4, "a relayed action keeps its credit");
+
+        let (proposal_id, submit_state, tx_hash): (Option<i64>, String, Option<String>) =
+            sqlx::query_as(
+                "SELECT proposal_id, submit_state, proposal_execution_transaction_hash \
+                 FROM confidential_intents WHERE dao_id = $1 AND payload_hash = $2",
+            )
+            .bind(DAO)
+            .bind(PAYLOAD_HASH)
+            .fetch_one(&pool)
+            .await
+            .unwrap();
+        assert_eq!(proposal_id, Some(29));
+        assert_eq!(submit_state, "due", "the submit queue can pick it up");
+        assert_eq!(
+            tx_hash.as_deref(),
+            Some("7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s")
+        );
+
+        let (proposal_id, submit_state): (Option<i64>, String) = sqlx::query_as(
+            "SELECT proposal_id, submit_state FROM confidential_intents \
+             WHERE dao_id = $1 AND payload_hash = 'proposed-only'",
+        )
+        .bind(DAO)
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(proposal_id, Some(30), "a created proposal is linked");
+        assert_eq!(submit_state, "idle", "and is not submitted before approval");
+    }
+
+    #[sqlx::test]
+    async fn failure_refunds_only_a_credit_that_was_taken(pool: PgPool) {
+        seed_treasury(&pool, 5).await;
+        let engine = RelayEngine::new(Arc::new(build_test_state(pool.clone())));
+
+        let (operation, lease) = authorized(&pool, b"fails-on-chain").await;
+        assert_eq!(credits(&pool).await, 4);
+        engine
+            .finish(
+                &operation,
+                &lease,
+                OperationOutcome::Failed {
+                    failure_code: FailureCode::NotSent,
+                    reason: "refused".to_owned(),
+                }
+                .into(),
+            )
+            .await;
+        assert_eq!(
+            credits(&pool).await,
+            5,
+            "a failed relay gives the credit back"
+        );
+
+        // Refused at authorization: no credit was taken, none is returned.
+        let treasury_id: AccountId = DAO.parse().unwrap();
+        let actor: AccountId = "mallory.near".parse().unwrap();
+        let mut conn = pool.acquire().await.unwrap();
+        let inserted = RelayStore::insert_or_load_operation(
+            &mut conn,
+            NewRelayOperation {
+                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, b"not-allowed"),
+                treasury_id,
+                actor_account_id: actor,
+                operation_kind: OperationKind::AddProposal,
+                submission_payload: b"not-allowed".to_vec(),
+                proposal_type: None,
+                address_book_payment: false,
+            },
+        )
+        .await
+        .unwrap();
+        let claimed = engine
+            .store()
+            .claim_operation(inserted.operation.id, OPERATION_LEASE)
+            .await
+            .unwrap()
+            .unwrap();
+        let RunOutcome::Terminal(rejected) = engine
+            .finish(
+                &claimed,
+                &claimed.lease().unwrap(),
+                OperationOutcome::Failed {
+                    failure_code: FailureCode::Rejected(axum::http::StatusCode::FORBIDDEN),
+                    reason: "refused at authorization with 403 Forbidden".to_owned(),
+                }
+                .into(),
+            )
+            .await
+        else {
+            panic!("the operation ends");
+        };
+        assert_eq!(rejected.state, OperationState::Failed);
+        assert_eq!(rejected.stage, OperationStage::Authorize);
+        assert_eq!(
+            rejected.failure(),
+            Some(FailureCode::Rejected(axum::http::StatusCode::FORBIDDEN))
+        );
+        assert_eq!(credits(&pool).await, 5);
+    }
+
+    #[sqlx::test]
+    async fn a_parked_operation_resumes_only_with_a_credit_to_take(pool: PgPool) {
+        seed_treasury(&pool, 1).await;
+        let engine = RelayEngine::new(Arc::new(build_test_state(pool.clone())));
+        let (operation, lease) = authorized(&pool, b"parked").await;
+        assert_eq!(credits(&pool).await, 0);
+        engine
+            .park(&operation, &lease, "rows contradict".to_owned())
+            .await;
+        assert_eq!(credits(&pool).await, 1, "parking returns the credit");
+
+        let store = engine.store();
+        assert!(store.resume_from_review(operation.id).await.unwrap());
+        assert_eq!(credits(&pool).await, 0, "resuming takes it again");
+        let resumed = store.operation(operation.id).await.unwrap().unwrap();
+        assert_eq!(resumed.state, OperationState::Pending);
+        assert_eq!(
+            resumed.stage,
+            OperationStage::Settle,
+            "it resumes where it stopped"
+        );
+        assert!(
+            !store.resume_from_review(operation.id).await.unwrap(),
+            "a row that is not parked is left alone"
+        );
+
+        let claimed = store
+            .claim_operation(operation.id, OPERATION_LEASE)
+            .await
+            .unwrap()
+            .unwrap();
+        engine
+            .park(&claimed, &claimed.lease().unwrap(), "again".to_owned())
+            .await;
+        sqlx::query(
+            "UPDATE monitored_accounts SET gas_covered_transactions = 0 WHERE account_id = $1",
+        )
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .unwrap();
+        assert!(
+            !store.resume_from_review(operation.id).await.unwrap(),
+            "no credit, no resume"
+        );
+        assert_eq!(
+            store.operation(operation.id).await.unwrap().unwrap().state,
+            OperationState::ManualReview
+        );
     }
 
     #[test]
@@ -1247,32 +814,6 @@ mod tests {
         assert_eq!(
             relay_metrics(None, true),
             vec![PlatformMetric::GasCoveredTransactions]
-        );
-    }
-
-    #[test]
-    fn sponsored_actions_convert_to_protocol_actions() {
-        let actions = vec![
-            near_api::types::Action::FunctionCall(Box::new(
-                near_api::types::transaction::actions::FunctionCallAction {
-                    method_name: "w_execute_signed".to_owned(),
-                    args: vec![1],
-                    gas: near_api::NearGas::from_tgas(10),
-                    deposit: NearToken::from_yoctonear(1),
-                },
-            )),
-            near_api::types::Action::Transfer(
-                near_api::types::transaction::actions::TransferAction {
-                    deposit: NearToken::from_yoctonear(5),
-                },
-            ),
-        ];
-        let converted = protocol_actions(&actions).unwrap();
-        assert!(
-            matches!(&converted[0], ProtocolAction::FunctionCall(call) if call.method_name == "w_execute_signed")
-        );
-        assert!(
-            matches!(&converted[1], ProtocolAction::Transfer(transfer) if transfer.deposit.as_yoctonear() == 5)
         );
     }
 }

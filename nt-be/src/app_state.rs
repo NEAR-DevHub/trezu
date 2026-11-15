@@ -125,6 +125,10 @@ pub struct AppState {
     /// Sponsor access keys the relay engine signs with, one in-flight
     /// transaction per key.
     pub relay_lanes: Arc<SponsorLanes>,
+    /// Wakes the relay worker loop when a request inserts an operation.
+    pub relay_wake: Arc<tokio::sync::Notify>,
+    /// Wakes the confidential submit queue when a relay marks an intent due.
+    pub intent_submit_wake: Arc<tokio::sync::Notify>,
 }
 
 /// Builder for constructing AppState instances
@@ -431,6 +435,8 @@ impl AppStateBuilder {
             background_jobs_status: Arc::new(BackgroundJobsStatus::new()),
             creation_sweep_notify: Arc::new(tokio::sync::Notify::new()),
             relay_lanes,
+            relay_wake: Arc::new(tokio::sync::Notify::new()),
+            intent_submit_wake: Arc::new(tokio::sync::Notify::new()),
         })
     }
 }

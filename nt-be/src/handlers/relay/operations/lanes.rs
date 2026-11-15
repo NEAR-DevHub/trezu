@@ -1,3 +1,7 @@
+use std::{sync::Arc, time::Duration};
+
+use tokio::sync::{OwnedSemaphorePermit, Semaphore};
+
 use near_api::{PublicKey as ApiPublicKey, SecretKey as ApiSecretKey};
 use near_crypto::{PublicKey, SecretKey};
 use near_primitives::transaction::{SignedTransaction, Transaction};
@@ -46,6 +50,11 @@ impl SponsorLane {
 /// in flight.
 pub struct SponsorLanes {
     lanes: Vec<SponsorLane>,
+    /// One turn per lane, handed out first come, first served. Signers in
+    /// this process line up here before they look for a free lane, so an
+    /// operation that has waited longest signs next instead of whichever
+    /// asked last.
+    turns: Arc<Semaphore>,
 }
 
 impl SponsorLanes {
@@ -65,7 +74,16 @@ impl SponsorLanes {
                 lanes.push(lane);
             }
         }
-        Ok(Self { lanes })
+        let turns = Arc::new(Semaphore::new(lanes.len()));
+        Ok(Self { lanes, turns })
+    }
+
+    /// Wait in line for a signing turn; `None` when the wait ran out.
+    pub async fn turn(&self, wait: Duration) -> Option<OwnedSemaphorePermit> {
+        tokio::time::timeout(wait, self.turns.clone().acquire_owned())
+            .await
+            .ok()?
+            .ok()
     }
 
     pub fn len(&self) -> usize {
@@ -103,6 +121,33 @@ mod tests {
             .to_string()
             .parse()
             .unwrap()
+    }
+
+    #[tokio::test]
+    async fn signing_turns_are_one_per_lane_and_first_come_first_served() {
+        let lanes = Arc::new(SponsorLanes::from_keys(&key("a"), &[key("b")]).unwrap());
+        let first = lanes.turn(Duration::from_millis(50)).await.expect("free");
+        assert!(
+            lanes.turn(Duration::from_millis(50)).await.is_none(),
+            "one lane, one turn"
+        );
+
+        let order = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let mut waiters = Vec::new();
+        for name in ["second", "third"] {
+            let (lanes, order) = (lanes.clone(), order.clone());
+            waiters.push(tokio::spawn(async move {
+                let turn = lanes.turn(Duration::from_secs(5)).await.expect("in line");
+                order.lock().unwrap().push(name);
+                drop(turn);
+            }));
+            tokio::time::sleep(Duration::from_millis(20)).await;
+        }
+        drop(first);
+        for waiter in waiters {
+            waiter.await.unwrap();
+        }
+        assert_eq!(*order.lock().unwrap(), ["second", "third"]);
     }
 
     #[test]

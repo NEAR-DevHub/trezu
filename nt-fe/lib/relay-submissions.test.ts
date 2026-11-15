@@ -151,6 +151,45 @@ describe("relay submissions", () => {
         expect(fetched.length).toBe(2);
     });
 
+    test("a refused status read keeps the submission remembered", async () => {
+        const waiting = awaitRelaySubmission(TREASURY, "signed-out");
+        let settledEarly = false;
+        void waiting.then(
+            () => {
+                settledEarly = true;
+            },
+            () => {
+                settledEarly = true;
+            },
+        );
+        await recoverPendingSubmissions(TREASURY, async () => {
+            const response = {
+                status: 401,
+                data: {},
+            } as unknown as AxiosResponse;
+            throw new AxiosError(
+                "Unauthorized",
+                "ERR",
+                undefined,
+                null,
+                response,
+            );
+        });
+        expect(settledEarly).toBe(false);
+        expect(pendingSubmissionIds(TREASURY)).toEqual(["signed-out"]);
+
+        settleRelaySubmission(status("signed-out", "succeeded"));
+        expect((await waiting).state).toBe("succeeded");
+        expect(hasPendingWaiters()).toBe(false);
+    });
+
+    test("a large bulk approve stays remembered across a refresh", () => {
+        for (let i = 0; i < 150; i += 1) {
+            rememberPendingSubmission(TREASURY, `bulk-${i}`);
+        }
+        expect(pendingSubmissionIds(TREASURY).length).toBe(150);
+    });
+
     test("recovery survives a failing status fetch", async () => {
         rememberPendingSubmission(TREASURY, "flaky");
         await recoverPendingSubmissions(TREASURY, async () => {

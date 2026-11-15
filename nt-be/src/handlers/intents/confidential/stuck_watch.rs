@@ -39,9 +39,9 @@ use crate::handlers::relay::confidential::{POLL_SUBMITTED_INTENT_TYPES, intent_d
 /// How long an approved intent may stay unstamped before paging: covers the
 /// relay's own stamp landing and the detector's normal lag.
 const UNSTAMPED_GRACE: Duration = Duration::from_secs(300);
-/// How long a stamped intent may stay unsubmitted: the poll visits each DAO
-/// every ~2 min and backs failed attempts off to at most 5 min.
-const STALLED_GRACE: Duration = Duration::from_secs(600);
+/// How long a stamped intent may stay unsubmitted: the submit queue looks
+/// every two seconds and backs failed attempts off to at most 5 min.
+const STALLED_GRACE: Duration = Duration::from_secs(300);
 /// How long a bulk payment may stay non-terminal after its header reached
 /// 1Click: the worker arms it within seconds, activation plus signing with
 /// one retry takes ~6 min, the full retry budget ~15 min.
@@ -217,7 +217,10 @@ impl<'a> StuckIntentWatch<'a> {
             .into_iter()
             .partition(|row| row.proposal_execution_transaction_hash.is_none());
         for row in stamped {
-            if row.deadline_passed(now) {
+            // Past the deadline the queue retires the row itself, except one
+            // whose last attempt may have reached 1Click: that one stays
+            // `unknown` until someone resolves it.
+            if row.deadline_passed(now) && row.submit_state != "unknown" {
                 continue;
             }
             report.stalled += 1;

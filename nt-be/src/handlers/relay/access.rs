@@ -76,6 +76,41 @@ pub async fn fetch_treasury_record(
     })
 }
 
+/// The signed action must come from the authenticated user: a
+/// `w_execute_signed` call targets the user's wallet account, a
+/// meta-transaction is sent by it. Computed from the request alone.
+pub fn bind_signer(auth_user: &AuthUser, submission: &RelaySubmission) -> Result<(), RelayError> {
+    match submission {
+        RelaySubmission::WalletContract(replay) => {
+            if replay.wallet_account != auth_user.account_id {
+                return Err(error_response(
+                    StatusCode::FORBIDDEN,
+                    format!(
+                        "w_execute_signed receiver '{}' does not match authenticated user '{}'",
+                        replay.wallet_account, auth_user.account_id
+                    ),
+                ));
+            }
+        }
+        RelaySubmission::MetaTransaction(meta) => {
+            let sender_id = match meta {
+                MetaRelay::Supported(signed) => &signed.delegate_action.sender_id,
+                MetaRelay::PostQuantum { sender_id, .. } => sender_id,
+            };
+            if sender_id != &auth_user.account_id {
+                return Err(error_response(
+                    StatusCode::FORBIDDEN,
+                    format!(
+                        "Delegate action sender '{}' does not match authenticated user '{}'",
+                        sender_id, auth_user.account_id
+                    ),
+                ));
+            }
+        }
+    }
+    Ok(())
+}
+
 /// Authorize the parsed relay, consuming it and returning the [`AuthorizedRelay`].
 ///
 /// Three checks, in order:
@@ -113,34 +148,7 @@ pub async fn authorize(
     tracing::Span::current().record("treasury_id", tracing::field::display(&treasury_id));
 
     // 1. Identity binding (shape-specific).
-    match &submission {
-        RelaySubmission::WalletContract(replay) => {
-            if replay.wallet_account != auth_user.account_id {
-                return Err(error_response(
-                    StatusCode::FORBIDDEN,
-                    format!(
-                        "w_execute_signed receiver '{}' does not match authenticated user '{}'",
-                        replay.wallet_account, auth_user.account_id
-                    ),
-                ));
-            }
-        }
-        RelaySubmission::MetaTransaction(meta) => {
-            let sender_id = match meta {
-                MetaRelay::Supported(signed) => &signed.delegate_action.sender_id,
-                MetaRelay::PostQuantum { sender_id, .. } => sender_id,
-            };
-            if sender_id != &auth_user.account_id {
-                return Err(error_response(
-                    StatusCode::FORBIDDEN,
-                    format!(
-                        "Delegate action sender '{}' does not match authenticated user '{}'",
-                        sender_id, auth_user.account_id
-                    ),
-                ));
-            }
-        }
-    }
+    bind_signer(auth_user, &submission)?;
 
     // 2. DAO proposal/vote permissions — equal for both shapes.
     verify_proposal_access(state, auth_user, &treasury_id, &operation).await?;

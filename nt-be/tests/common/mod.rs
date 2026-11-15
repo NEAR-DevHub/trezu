@@ -183,6 +183,8 @@ pub fn build_test_state(db_pool: sqlx::PgPool) -> AppState {
         background_jobs_status: Arc::new(nt_be::jobs::leadership::BackgroundJobsStatus::new()),
         creation_sweep_notify: Arc::new(tokio::sync::Notify::new()),
         relay_lanes,
+        relay_wake: std::sync::Arc::new(tokio::sync::Notify::new()),
+        intent_submit_wake: std::sync::Arc::new(tokio::sync::Notify::new()),
     }
 }
 

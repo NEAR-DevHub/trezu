@@ -95,11 +95,13 @@ impl RelayRpc {
         account_id: &AccountId,
         public_key: &PublicKey,
     ) -> Result<AccessKeySnapshot, String> {
-        let data = Account(account_id.clone())
+        let read = Account(account_id.clone())
             .access_key(*public_key)
             .at(Reference::Final)
-            .fetch_from(&self.network)
+            .fetch_from(&self.network);
+        let data = tokio::time::timeout(STATUS_TIMEOUT, read)
             .await
+            .map_err(|_| format!("access key {public_key}: timed out"))?
             .map_err(|error| format!("access key {public_key}: {error}"))?;
         Ok(AccessKeySnapshot {
             nonce: data.data.nonce.0,
@@ -109,10 +111,13 @@ impl RelayRpc {
     }
 
     pub async fn block_height(&self) -> Result<u64, String> {
-        Chain::block_number()
-            .fetch_from(&self.network)
-            .await
-            .map_err(|error| format!("block height: {error}"))
+        tokio::time::timeout(
+            STATUS_TIMEOUT,
+            Chain::block_number().fetch_from(&self.network),
+        )
+        .await
+        .map_err(|_| "block height: timed out".to_owned())?
+        .map_err(|error| format!("block height: {error}"))
     }
 
     /// Hand the exact signed bytes to the providers in order until one

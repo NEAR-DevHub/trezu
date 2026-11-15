@@ -4,12 +4,18 @@
 -- Signed bytes and the hash are committed before the first broadcast, so an
 -- unknown outcome is always reconciled by hash instead of re-signed.
 --
+-- The request only inserts the operation; the worker moves it through
+-- `stage` (authorize, storage_top_up, registrations, relay, settle). The
+-- stage says what the operation is doing; relay_transactions says what was
+-- signed and sent for it.
+--
 -- The operation lease (lease_token / lease_until) fences every write to the
 -- operation and to its transactions; a worker that lost its lease matches
 -- zero rows. Credit, spend and metrics are written in the same database
 -- transaction that makes the operation terminal, so they need no markers.
 CREATE TYPE relay_operation_kind AS ENUM ('add_proposal', 'act_proposal', 'wallet_replay');
 CREATE TYPE relay_operation_state AS ENUM ('pending', 'succeeded', 'failed', 'manual_review');
+CREATE TYPE relay_operation_stage AS ENUM ('authorize', 'storage_top_up', 'registrations', 'relay', 'settle');
 CREATE TYPE relay_transaction_state AS ENUM ('prepared', 'pending', 'succeeded', 'failed', 'superseded');
 
 CREATE TABLE relay_operations (
@@ -20,7 +26,9 @@ CREATE TABLE relay_operations (
     operation_kind relay_operation_kind NOT NULL,
     submission_payload BYTEA NOT NULL,
     state relay_operation_state NOT NULL DEFAULT 'pending',
-    credit_reserved BOOLEAN NOT NULL,
+    stage relay_operation_stage NOT NULL DEFAULT 'authorize',
+    stage_entered_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    credit_reserved BOOLEAN NOT NULL DEFAULT FALSE,
     proposal_type TEXT,
     address_book_payment BOOLEAN NOT NULL DEFAULT FALSE,
     proposal_ids BIGINT[],
@@ -37,6 +45,10 @@ CREATE TABLE relay_operations (
 CREATE INDEX idx_relay_operations_due
     ON relay_operations (next_attempt_at)
     WHERE state = 'pending';
+
+CREATE INDEX idx_relay_operations_unauthorized_actor
+    ON relay_operations (actor_account_id)
+    WHERE state = 'pending' AND stage = 'authorize';
 
 CREATE INDEX idx_relay_operations_treasury
     ON relay_operations (treasury_id, created_at DESC);

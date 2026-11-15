@@ -516,7 +516,7 @@ fn landed_result(
     outcome: ExecutionFinalResult,
     maybe_broadcast: Option<CryptoHash>,
 ) -> Result<ExecutionFinalResult, RelayFailure> {
-    let landed_hash = outcome.transaction().get_hash();
+    let landed_hash = outcome.outcome().transaction_hash;
     if let Some(earlier_tx_hash) = maybe_broadcast.filter(|earlier| *earlier != landed_hash) {
         return Err(RelayFailure::StatusUnknown {
             tx_hash: Some(earlier_tx_hash),

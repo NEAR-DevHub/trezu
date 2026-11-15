@@ -67,6 +67,13 @@ async fn async_main() {
         nt_be::jobs::spawn_all(state.clone(), shutdown.clone()).await;
     let board = nt_be::jobs::board_router(&job_queues, state.clone());
 
+    // The relay worker runs in every instance, outside the leader-only jobs:
+    // each operation row carries its own lease.
+    let relay_worker = nt_be::handlers::relay::operations::engine::RelayEngine::spawn(
+        state.clone(),
+        shutdown.clone(),
+    );
+
     // Configure CORS - must specify exact origins, methods, and headers when using credentials
     let origins: Vec<HeaderValue> = state
         .env_vars
@@ -205,6 +212,10 @@ async fn async_main() {
         })
         .await
         .unwrap();
+
+    // In-flight relay runs get their own short grace; whatever is left is
+    // picked up by another instance when its lease expires.
+    let _ = relay_worker.await;
 
     // Server is down; give leadership enough time to drain all workers and
     // release its session lock before Render's 90-second hard limit.

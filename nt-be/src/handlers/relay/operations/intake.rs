@@ -1,5 +1,6 @@
-//! The durable request path: persist the operation with its credit, drive it
-//! for a bounded time, and answer `200`, the confirmed error, or `202`.
+//! The durable request path: record the signed action, wake the worker, and
+//! watch the row. The request makes no chain or provider call; it answers
+//! `200`, the confirmed error, or `202` with the submission id.
 
 use std::{sync::Arc, time::Duration};
 
@@ -12,35 +13,30 @@ use axum::{
 use crate::{
     AppState,
     auth::AuthUser,
-    config::plans::PlanType,
     handlers::relay::{
-        access::AuthorizedRelay,
-        effects::accounting,
+        access,
         parse::{
-            RelayError, RelayOperation as DaoOperation, RelaySubmission, error_response,
-            success_response,
+            ParsedRelay, RelayError, RelayOperation as DaoOperation, RelaySubmission,
+            error_response, success_response,
         },
     },
     utils::api_error::ApiError,
 };
 
 use super::{
-    engine::{
-        HANDLER_DRIVE_BUDGET, HANDLER_RESPONSE_BUDGET, OPERATION_LEASE, RelayEngine,
-        delegate_max_block_height,
-    },
     models::{
         IdempotencyKey, NewRelayOperation, OperationKind, OperationState, RelayOperation,
         RelaySubmissionStatus,
     },
-    rpc::RelayRpc,
     store::RelayStore,
 };
 
-/// A delegate action closer than this to its `max_block_height` is sent back
-/// for a fresh signature: the worker cannot rescue an expired signature.
-const DELEGATE_EXPIRY_MARGIN_BLOCKS: u64 = 20;
-const STATUS_POLL: Duration = Duration::from_millis(300);
+/// How long the request watches its operation before answering `202`.
+const RESPONSE_BUDGET: Duration = Duration::from_secs(12);
+const STATUS_POLL: Duration = Duration::from_millis(200);
+/// Operations one account may have waiting for authorization. Bounds what a
+/// single session can store before anything has been checked.
+const MAX_UNAUTHORIZED_PER_ACTOR: i64 = 100;
 
 fn db_error(error: impl std::fmt::Display) -> RelayError {
     error_response(
@@ -53,122 +49,98 @@ pub async fn submit(
     state: &Arc<AppState>,
     auth_user: &AuthUser,
     raw_payload: Vec<u8>,
-    authorized: AuthorizedRelay,
+    parsed: ParsedRelay,
     proposal_type: Option<String>,
     address_book_payment: bool,
 ) -> Result<Response, RelayError> {
-    let AuthorizedRelay {
-        treasury_id,
-        submission,
-        operation,
-        plan_type,
-        ..
-    } = authorized;
+    access::bind_signer(auth_user, &parsed.submission)?;
 
-    if matches!(submission, RelaySubmission::MetaTransaction(_))
-        && let Some(max_block_height) = delegate_max_block_height(&raw_payload)
-    {
-        let height = RelayRpc::from_state(state)
-            .block_height()
-            .await
-            .map_err(|error| {
-                error_response(StatusCode::BAD_GATEWAY, format!("block height: {error}"))
-            })?;
-        if max_block_height < height + DELEGATE_EXPIRY_MARGIN_BLOCKS {
-            return Err(error_response(
-                StatusCode::BAD_REQUEST,
-                format!(
-                    "delegate action expires at block {max_block_height}, head is {height}: sign again"
-                ),
-            ));
-        }
-    }
-
-    let operation_kind = match (&submission, &operation) {
+    let operation_kind = match (&parsed.submission, &parsed.operation) {
         (RelaySubmission::WalletContract(_), _) => OperationKind::WalletReplay,
         (_, DaoOperation::AddProposals(_)) => OperationKind::AddProposal,
         (_, DaoOperation::Votes(_)) => OperationKind::ActProposal,
     };
     let new = NewRelayOperation {
-        idempotency_key: IdempotencyKey::derive(&treasury_id, &auth_user.account_id, &raw_payload),
-        treasury_id: treasury_id.clone(),
+        idempotency_key: IdempotencyKey::derive(
+            &parsed.treasury_id,
+            &auth_user.account_id,
+            &raw_payload,
+        ),
+        treasury_id: parsed.treasury_id,
         actor_account_id: auth_user.account_id.clone(),
         operation_kind,
         submission_payload: raw_payload,
-        credit_reserved: plan_type != PlanType::Enterprise,
         proposal_type,
         address_book_payment,
     };
 
-    let mut tx = state.db_pool.begin().await.map_err(db_error)?;
-    let inserted = RelayStore::insert_or_load_operation(&mut tx, new)
+    let store = RelayStore::new(&state.db_pool);
+    let existing = store
+        .operation_by_key(new.idempotency_key.as_str())
         .await
         .map_err(db_error)?;
-    if inserted.inserted {
-        accounting::reserve_gas_credit(&mut *tx, &treasury_id, plan_type).await?;
-    }
-    tx.commit().await.map_err(db_error)?;
-
-    let operation = inserted.operation;
-    if !inserted.inserted {
-        tracing::info!(
-            submission_id = %operation.id,
-            state = %operation.state,
-            "relay request matched an existing operation"
-        );
-    }
-    let latest = if operation.state.is_terminal() {
-        operation
-    } else {
-        drive_until_terminal(state, operation).await?
+    let operation = match existing {
+        Some(operation) => {
+            tracing::info!(
+                submission_id = %operation.id,
+                state = %operation.state,
+                "relay request matched an existing operation"
+            );
+            operation
+        }
+        None => {
+            let mut tx = state.db_pool.begin().await.map_err(db_error)?;
+            let waiting = RelayStore::unauthorized_count(&mut tx, auth_user.account_id.as_str())
+                .await
+                .map_err(db_error)?;
+            if waiting >= MAX_UNAUTHORIZED_PER_ACTOR {
+                return Err(error_response(
+                    StatusCode::TOO_MANY_REQUESTS,
+                    format!("{waiting} submissions are already waiting for this account"),
+                ));
+            }
+            let inserted = RelayStore::insert_or_load_operation(&mut tx, new)
+                .await
+                .map_err(db_error)?;
+            tx.commit().await.map_err(db_error)?;
+            state.relay_wake.notify_one();
+            inserted.operation
+        }
     };
+
+    let latest = await_terminal(state, operation).await?;
     respond(state, latest).await
 }
 
-/// Run the operation on a task of its own that keeps going up to
-/// [`HANDLER_DRIVE_BUDGET`], but answer once [`HANDLER_RESPONSE_BUDGET`] has
-/// passed; whatever the task has not finished by then continues under its
-/// lease and, after that, in the worker.
-async fn drive_until_terminal(
+/// Answer a request from the operation its signed bytes already have, if any.
+/// Used by the inline path so a retry after the flag is turned off stays
+/// attached to the operation the worker is finishing.
+pub async fn answer_existing(
     state: &Arc<AppState>,
-    operation: RelayOperation,
-) -> Result<RelayOperation, RelayError> {
-    let store = RelayStore::new(&state.db_pool);
-    let Some(claimed) = store
-        .claim_operation(operation.id, OPERATION_LEASE)
+    auth_user: &AuthUser,
+    parsed: &ParsedRelay,
+    raw_payload: &[u8],
+) -> Result<Option<Response>, RelayError> {
+    let key = IdempotencyKey::derive(&parsed.treasury_id, &auth_user.account_id, raw_payload);
+    let Some(operation) = RelayStore::new(&state.db_pool)
+        .operation_by_key(key.as_str())
         .await
         .map_err(db_error)?
     else {
-        return await_terminal(state, operation, HANDLER_RESPONSE_BUDGET).await;
+        return Ok(None);
     };
-    let engine = RelayEngine::new(state.clone());
-    let mut driver = tokio::spawn(async move {
-        engine
-            .run_operation(claimed, HANDLER_DRIVE_BUDGET)
-            .await
-            .into_operation()
-    });
-    match tokio::time::timeout(HANDLER_RESPONSE_BUDGET, &mut driver).await {
-        Ok(Ok(latest)) => Ok(latest),
-        Ok(Err(join_error)) => Err(db_error(format!("relay driver failed: {join_error}"))),
-        Err(_elapsed) => Ok(store
-            .operation(operation.id)
-            .await
-            .map_err(db_error)?
-            .unwrap_or(operation)),
-    }
+    let latest = await_terminal(state, operation).await?;
+    respond(state, latest).await.map(Some)
 }
 
-/// Another holder owns the operation: watch it until it ends or the budget
-/// does.
+/// Watch the row until the worker ends it or the response budget runs out.
 async fn await_terminal(
     state: &Arc<AppState>,
     mut operation: RelayOperation,
-    budget: Duration,
 ) -> Result<RelayOperation, RelayError> {
     let started = std::time::Instant::now();
     let store = RelayStore::new(&state.db_pool);
-    while !operation.state.is_terminal() && started.elapsed() < budget {
+    while !operation.state.is_terminal() && started.elapsed() < RESPONSE_BUDGET {
         tokio::time::sleep(STATUS_POLL).await;
         operation = store
             .operation(operation.id)

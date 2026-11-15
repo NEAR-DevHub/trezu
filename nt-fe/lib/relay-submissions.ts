@@ -6,15 +6,18 @@ import { RelaySubmissionFailedError } from "@/lib/app-error";
  * Relays the backend accepted with `202`: their outcome arrives over the
  * treasury's SSE stream as `relay_submission_updated`. Pending ids are kept
  * in localStorage per treasury so a refresh, a reconnect or a tab coming
- * back to the foreground can fetch each one once; nothing polls on a timer.
+ * back to the foreground can fetch each one. While this tab is waiting on a
+ * result it also re-reads the pending set on a short backoff, so a missed
+ * event delays the result by seconds.
  */
 
 const STORAGE_PREFIX = "relay:pending:";
-const MAX_REMEMBERED = 20;
+const MAX_REMEMBERED = 200;
 const MAX_SETTLED = 50;
-/// A lagging stream can skip events; while anyone is waiting, re-read the
-/// pending set this often so a lost event delays a result instead of losing it.
-const SAFETY_CHECK_MS = 60_000;
+/// The stream can skip an event, or it can come from another backend
+/// instance; while anyone is waiting, re-read the pending set after each of
+/// these delays, then keep to the last one.
+const POLL_DELAYS_MS = [1_000, 2_000, 5_000];
 
 type Waiter = {
     treasuryId: string;
@@ -26,7 +29,12 @@ const waiters = new Map<string, Waiter[]>();
 // One recovery per treasury at a time; concurrent triggers (stream open, tab
 // visible, safety tick) share the run already in flight.
 const recoveries = new Map<string, Promise<void>>();
-let safetyTimer: ReturnType<typeof setInterval> | null = null;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
+let pollAttempt = 0;
+// Treasuries whose status reads were refused (signed out, membership lost):
+// the timer leaves them alone until a stream reconnect, tab focus or mount
+// asks again. Their ids stay remembered.
+const refused = new Set<string>();
 // Terminal results seen before anyone waited on them (the event can beat the
 // `202` response back to the caller).
 const settled = new Map<string, RelaySubmissionStatus>();
@@ -75,22 +83,35 @@ function awaitedIds(treasuryId: string): string[] {
     return ids;
 }
 
-function runSafetyChecks() {
+function pollWaitedTreasuries() {
     const treasuries = new Set<string>();
     for (const list of waiters.values()) {
         for (const waiter of list) treasuries.add(waiter.treasuryId);
     }
     for (const treasuryId of treasuries) {
-        void recoverPendingSubmissions(treasuryId);
+        if (!refused.has(treasuryId)) void recoverOnceShared(treasuryId);
     }
 }
 
-function syncSafetyTimer() {
-    if (waiters.size > 0 && safetyTimer === null) {
-        safetyTimer = setInterval(runSafetyChecks, SAFETY_CHECK_MS);
-    } else if (waiters.size === 0 && safetyTimer !== null) {
-        clearInterval(safetyTimer);
-        safetyTimer = null;
+function scheduleNextPoll() {
+    const delay =
+        POLL_DELAYS_MS[Math.min(pollAttempt, POLL_DELAYS_MS.length - 1)];
+    pollAttempt += 1;
+    pollTimer = setTimeout(() => {
+        pollTimer = null;
+        if (waiters.size === 0) return;
+        pollWaitedTreasuries();
+        scheduleNextPoll();
+    }, delay);
+}
+
+function syncPollTimer() {
+    if (waiters.size > 0 && pollTimer === null) {
+        pollAttempt = 0;
+        scheduleNextPoll();
+    } else if (waiters.size === 0 && pollTimer !== null) {
+        clearTimeout(pollTimer);
+        pollTimer = null;
     }
 }
 
@@ -98,11 +119,11 @@ function syncSafetyTimer() {
 function takeWaiters(submissionId: string): Waiter[] {
     const list = waiters.get(submissionId) ?? [];
     waiters.delete(submissionId);
-    syncSafetyTimer();
+    syncPollTimer();
     return list;
 }
 
-/** Visible for tests: whether a safety check is scheduled. */
+/** Visible for tests: whether anyone is still waited on. */
 export function hasPendingWaiters(): boolean {
     return waiters.size > 0;
 }
@@ -183,7 +204,7 @@ export function awaitRelaySubmission(
         const list = waiters.get(submissionId) ?? [];
         list.push({ treasuryId, resolve, reject });
         waiters.set(submissionId, list);
-        syncSafetyTimer();
+        syncPollTimer();
     });
 }
 
@@ -191,9 +212,20 @@ export function awaitRelaySubmission(
  * Fetch every remembered submission once, plus any this tab still waits on
  * (another tab may have cleared the shared storage). Called on stream
  * (re)connect, on the tab becoming visible, and on mount, because events
- * emitted while the stream was down are never replayed.
+ * emitted while the stream was down are never replayed. Only a `404` gives a
+ * submission up; a refused read keeps it remembered.
  */
 export function recoverPendingSubmissions(
+    treasuryId: string,
+    fetchStatus: (
+        submissionId: string,
+    ) => Promise<RelaySubmissionStatus> = getRelaySubmission,
+): Promise<void> {
+    refused.delete(treasuryId);
+    return recoverOnceShared(treasuryId, fetchStatus);
+}
+
+function recoverOnceShared(
     treasuryId: string,
     fetchStatus: (
         submissionId: string,
@@ -222,8 +254,12 @@ async function recoverOnce(
                 const status = await fetchStatus(submissionId);
                 if (isTerminalSubmission(status)) settleRelaySubmission(status);
             } catch (error) {
-                if (isAxiosError(error) && error.response?.status === 404) {
+                if (!isAxiosError(error)) return;
+                const status = error.response?.status;
+                if (status === 404) {
                     abandonRelaySubmission(treasuryId, submissionId);
+                } else if (status === 401 || status === 403) {
+                    refused.add(treasuryId);
                 }
             }
         }),

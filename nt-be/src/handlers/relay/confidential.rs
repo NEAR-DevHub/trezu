@@ -604,6 +604,7 @@ async fn record_execution_from_relay(
         &state.db_pool,
         treasury_id,
         payload_hash,
+        None,
         Utc::now(),
         None,
         execution_tx_hash,
@@ -689,6 +690,18 @@ impl SubmitLease {
     fn backoff(&self) -> chrono::Duration {
         submit_backoff(self.submit_attempts)
     }
+
+    /// Delay while the MPC callback is not on chain yet: it normally lands
+    /// within seconds, so for the first minute the row is due again a second
+    /// after each check, which the queue's one-second look turns into a
+    /// check about every two seconds.
+    fn signature_wait(&self) -> chrono::Duration {
+        if self.submit_attempts <= SIGNATURE_QUICK_CHECKS {
+            chrono::Duration::seconds(SIGNATURE_CHECK_SECS)
+        } else {
+            self.backoff()
+        }
+    }
 }
 
 fn submit_backoff(attempts: i32) -> chrono::Duration {
@@ -769,6 +782,12 @@ const AWAITING_SUBMIT_BATCH: i64 = 20;
 /// the RPC lookups. A holder that outlives it is treated as crashed.
 const SUBMIT_LEASE_SECS: i64 = 120;
 const SUBMIT_BACKOFF_BASE_SECS: i64 = 30;
+const SIGNATURE_CHECK_SECS: i64 = 1;
+const SIGNATURE_QUICK_CHECKS: i32 = 30;
+/// How often the submit queue is looked at without a wake.
+const SUBMIT_QUEUE_TICK: std::time::Duration = std::time::Duration::from_secs(1);
+/// DAOs the submit queue works at the same time in one process.
+const SUBMIT_QUEUE_CONCURRENCY: usize = 8;
 const SUBMIT_BACKOFF_CAP_SECS: i64 = 300;
 const CONFIDENTIAL_TX_STATUS_LABEL: &str = "confidential_intent_tx_status";
 
@@ -1060,12 +1079,13 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         {
             Ok(SignatureLookup::Found(signature)) => signature,
             Ok(SignatureLookup::CallbackPending) => {
-                self.release(
+                self.release_after(
                     dao_id,
                     payload_hash,
                     lease,
                     SubmitState::Due,
                     "MPC callback not on chain yet",
+                    lease.signature_wait(),
                 )
                 .await;
                 return IntentSubmitOutcome::NotSignedYet;
@@ -1144,6 +1164,109 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         })?;
         let raw_response = serde_json::to_value(&response).map_err(|e| e.to_string())?;
         Ok(signature_for_payload(&raw_response, payload_hash))
+    }
+
+    /// The submit queue, in every backend process. Each pass starts the DAOs
+    /// that have an intent waiting, longest-waiting first, each on its own
+    /// task, at most [`SUBMIT_QUEUE_CONCURRENCY`] at once: a DAO whose 1Click
+    /// calls are slow holds one slot and delays nobody else. A relay wakes it
+    /// when it marks an intent due; otherwise it looks every
+    /// [`SUBMIT_QUEUE_TICK`]. The per-row lease keeps two processes from
+    /// posting the same intent.
+    pub async fn run_queue_forever(
+        state: Arc<AppState>,
+        shutdown: tokio_util::sync::CancellationToken,
+    ) {
+        let slots = Arc::new(tokio::sync::Semaphore::new(SUBMIT_QUEUE_CONCURRENCY));
+        let in_progress: Arc<std::sync::Mutex<Vec<String>>> = Arc::default();
+        while !shutdown.is_cancelled() {
+            Self::start_waiting_daos(&state, &slots, &in_progress).await;
+            tokio::select! {
+                _ = state.intent_submit_wake.notified() => {}
+                _ = tokio::time::sleep(SUBMIT_QUEUE_TICK) => {}
+                _ = shutdown.cancelled() => {}
+            }
+        }
+    }
+
+    async fn start_waiting_daos(
+        state: &Arc<AppState>,
+        slots: &Arc<tokio::sync::Semaphore>,
+        in_progress: &Arc<std::sync::Mutex<Vec<String>>>,
+    ) {
+        let free = slots.available_permits();
+        if free == 0 {
+            return;
+        }
+        let skip = in_progress
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let daos = match ConfidentialIntentSubmitter::new(state)
+            .daos_with_waiting_intents(&skip, free as i64)
+            .await
+        {
+            Ok(daos) => daos,
+            Err(e) => {
+                tracing::warn!("submit queue lookup failed: {}", e);
+                return;
+            }
+        };
+        for dao_id in daos {
+            let Ok(slot) = slots.clone().try_acquire_owned() else {
+                break;
+            };
+            in_progress
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .push(dao_id.clone());
+            let state = state.clone();
+            let in_progress = in_progress.clone();
+            tokio::spawn(async move {
+                ConfidentialIntentSubmitter::new(&state)
+                    .resubmit_awaiting_intents(&dao_id)
+                    .await;
+                in_progress
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .retain(|working| working != &dao_id);
+                drop(slot);
+            });
+        }
+    }
+
+    /// Up to `limit` DAOs with an intent the queue can work now, the one
+    /// whose intent has waited longest first, leaving out those in `skip`.
+    async fn daos_with_waiting_intents(
+        &self,
+        skip: &[String],
+        limit: i64,
+    ) -> Result<Vec<String>, sqlx::Error> {
+        sqlx::query_scalar(
+            r#"
+            SELECT dao_id
+            FROM confidential_intents
+            WHERE intent_type = ANY($1)
+              AND status IN ('pending', 'submitted')
+              AND proposal_execution_transaction_hash IS NOT NULL
+              AND dao_id <> ALL($2)
+              AND (
+                  (submit_state IN ('due', 'unknown') AND submit_next_attempt_at <= NOW())
+                  OR (submit_state = 'in_flight' AND submit_lease_until < NOW())
+              )
+            GROUP BY dao_id
+            ORDER BY MIN(CASE
+                WHEN submit_state = 'in_flight' THEN submit_lease_until
+                ELSE submit_next_attempt_at
+            END), dao_id
+            LIMIT $3
+            "#,
+        )
+        .bind(POLL_SUBMITTED_INTENT_TYPES)
+        .bind(skip)
+        .bind(limit)
+        .fetch_all(&self.state.db_pool)
+        .await
     }
 
     /// Work this DAO's submission queue: rows that are `due`, `unknown`, or
@@ -1379,8 +1502,28 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         state: SubmitState,
         last_error: &str,
     ) {
+        self.release_after(
+            dao_id,
+            payload_hash,
+            lease,
+            state,
+            last_error,
+            lease.backoff(),
+        )
+        .await;
+    }
+
+    async fn release_after(
+        &self,
+        dao_id: &str,
+        payload_hash: &str,
+        lease: &SubmitLease,
+        state: SubmitState,
+        last_error: &str,
+        after: chrono::Duration,
+    ) {
         debug_assert!(matches!(state, SubmitState::Due | SubmitState::Unknown));
-        let next_attempt_at = Utc::now() + lease.backoff();
+        let next_attempt_at = Utc::now() + after;
         if let Err(e) = sqlx::query(
             r#"
             UPDATE confidential_intents
@@ -1730,6 +1873,16 @@ fn signature_for_payload(tx_status: &Value, payload_hash: &str) -> SignatureLook
     }
 }
 
+/// Whether a landed transaction made the `v1.signer` sign call for the
+/// payload, which is what approving its proposal does. The MPC callback may
+/// still be missing, or may have failed; the submit queue deals with both.
+pub fn sign_call_in_transaction(tx_status: &Value, payload_hash: &str) -> bool {
+    !matches!(
+        signature_for_payload(tx_status, payload_hash),
+        SignatureLookup::NotInTransaction
+    )
+}
+
 fn outcome_signs_payload(entry: &Value, payload_hash: &str) -> bool {
     let Some(outcome) = entry.get("outcome") else {
         return false;
@@ -1829,6 +1982,70 @@ mod tests {
         .execute(pool)
         .await
         .expect("seed intent");
+    }
+
+    #[sqlx::test]
+    async fn the_queue_takes_the_longest_waiting_dao_first_and_skips_those_in_progress(
+        pool: PgPool,
+    ) {
+        for (dao, waited_minutes, submit_state) in [
+            ("fresh.sputnik-dao.near", 1, "due"),
+            ("oldest.sputnik-dao.near", 30, "unknown"),
+            ("middle.sputnik-dao.near", 10, "due"),
+            ("not-due.sputnik-dao.near", -5, "due"),
+        ] {
+            sqlx::query(
+                r#"
+                INSERT INTO confidential_intents (
+                    dao_id, payload_hash, intent_payload, intent_type, status,
+                    proposal_execution_transaction_hash, submit_state, submit_next_attempt_at
+                )
+                VALUES ($1, $1, '{}'::jsonb, 'shield', 'pending', 'tx', $3,
+                        NOW() - make_interval(mins => $2))
+                "#,
+            )
+            .bind(dao)
+            .bind(waited_minutes)
+            .bind(submit_state)
+            .execute(&pool)
+            .await
+            .expect("seed intent");
+        }
+        // A holder that stopped: its lease ran out 20 minutes ago.
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents (
+                dao_id, payload_hash, intent_payload, intent_type, status,
+                proposal_execution_transaction_hash, submit_state, submit_lease_token,
+                submit_lease_until
+            )
+            VALUES ('crashed.sputnik-dao.near', 'crashed', '{}'::jsonb, 'bulk_auth', 'pending',
+                    'tx', 'in_flight', 'gone', NOW() - INTERVAL '20 minutes')
+            "#,
+        )
+        .execute(&pool)
+        .await
+        .expect("seed leased intent");
+
+        let state = build_test_state(pool.clone());
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(
+            submitter.daos_with_waiting_intents(&[], 10).await.unwrap(),
+            [
+                "oldest.sputnik-dao.near",
+                "crashed.sputnik-dao.near",
+                "middle.sputnik-dao.near",
+                "fresh.sputnik-dao.near",
+            ]
+        );
+        assert_eq!(
+            submitter
+                .daos_with_waiting_intents(&["oldest.sputnik-dao.near".to_owned()], 2)
+                .await
+                .unwrap(),
+            ["crashed.sputnik-dao.near", "middle.sputnik-dao.near"],
+            "a DAO already being worked does not use up a slot"
+        );
     }
 
     /// A pending single intent nothing has stamped yet: what the relay finds

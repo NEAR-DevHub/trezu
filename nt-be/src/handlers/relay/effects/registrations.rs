@@ -30,6 +30,7 @@ use crate::{
         },
         token::storage_deposit::is_registered::check_storage_deposit,
     },
+    utils::contract_read_error::ContractReadError,
 };
 
 /// Standard NEP-141 registration cost (0.00125 NEAR). The contract refunds any
@@ -126,8 +127,12 @@ pub async fn register_vote_approvals(
 ) -> RegistrationOutcome {
     let mut registration_targets = HashSet::new();
     for &proposal_id in approve_proposal_ids {
-        registration_targets
-            .extend(derive_targets_for_proposal(state, treasury_id, proposal_id).await);
+        // The inline path proceeds with whatever could be read.
+        registration_targets.extend(
+            derive_targets_for_proposal(state, treasury_id, proposal_id)
+                .await
+                .unwrap_or_default(),
+        );
     }
 
     let allowed = super::allowlist::allowed_storage_contracts(state).await;
@@ -167,8 +172,14 @@ pub struct RegistrationOutcome {
     pub error: Option<RelayError>,
 }
 
-/// Fetch a proposal by id and derive its storage-deposit targets. Failures to
-/// read the proposal are logged and yield no targets (the vote still proceeds).
+/// A proposal or bulk-list read that failed for a reason worth retrying. The
+/// targets are unknown, so an approving vote must not be relayed on it.
+#[derive(Debug)]
+pub(crate) struct TargetLookupFailed(pub String);
+
+/// Fetch a proposal by id and derive its storage-deposit targets. A contract
+/// answer that the proposal or list does not exist yields no targets (the
+/// chain rejects the vote itself); a provider failure is an error.
 #[tracing::instrument(
     level = "debug",
     skip_all,
@@ -178,17 +189,16 @@ pub(crate) async fn derive_targets_for_proposal(
     state: &Arc<AppState>,
     treasury_id: &AccountId,
     proposal_id: u64,
-) -> HashSet<Registration> {
+) -> Result<HashSet<Registration>, TargetLookupFailed> {
     let proposal = match fetch_proposal(&state.network, treasury_id, proposal_id).await {
         Ok(proposal) => proposal,
         Err(e) => {
-            tracing::warn!(
-                "failed to fetch proposal {} for {}: {}",
-                proposal_id,
-                treasury_id,
-                e
-            );
-            return HashSet::new();
+            let message = format!("failed to fetch proposal {proposal_id} for {treasury_id}: {e}");
+            tracing::warn!("{message}");
+            if ContractReadError::from(e).is_client_error() {
+                return Ok(HashSet::new());
+            }
+            return Err(TargetLookupFailed(message));
         }
     };
 
@@ -214,12 +224,16 @@ pub(crate) async fn derive_targets_for_proposal(
                 }
             }
             Err(e) => {
-                tracing::warn!("failed to fetch bulk list {}: {}", list_id, e);
+                let message = format!("failed to fetch bulk list {list_id}: {e}");
+                tracing::warn!("{message}");
+                if !ContractReadError::from(e).is_client_error() {
+                    return Err(TargetLookupFailed(message));
+                }
             }
         }
     }
 
-    direct
+    Ok(direct)
 }
 
 /// Classify a proposal's on-chain `kind` into storage-deposit targets, without

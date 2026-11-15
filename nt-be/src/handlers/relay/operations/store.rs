@@ -6,8 +6,8 @@ use sqlx::{PgConnection, PgPool, Postgres, Transaction, postgres::PgQueryResult}
 use uuid::Uuid;
 
 use super::models::{
-    NewRelayOperation, OperationLease, OperationOutcome, PreparedTransaction, RelayOperation,
-    RelayQueueHealth, RelayTransaction, TransactionOutcome,
+    NewRelayOperation, OperationLease, OperationOutcome, OperationStage, PreparedTransaction,
+    RelayOperation, RelayQueueHealth, RelayTransaction, TransactionOutcome,
 };
 
 /// Advisory-lock namespace for sponsor access-key lanes.
@@ -109,9 +109,9 @@ impl<'a> RelayStore<'a> {
             r#"
             INSERT INTO relay_operations (
                 id, idempotency_key, treasury_id, actor_account_id, operation_kind,
-                submission_payload, credit_reserved, proposal_type, address_book_payment
+                submission_payload, proposal_type, address_book_payment
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             ON CONFLICT (idempotency_key) DO NOTHING
             RETURNING *
             "#,
@@ -122,7 +122,6 @@ impl<'a> RelayStore<'a> {
         .bind(new.actor_account_id.as_str())
         .bind(new.operation_kind)
         .bind(&new.submission_payload)
-        .bind(new.credit_reserved)
         .bind(&new.proposal_type)
         .bind(new.address_book_payment)
         .fetch_optional(&mut *conn)
@@ -144,6 +143,35 @@ impl<'a> RelayStore<'a> {
             operation,
             inserted: false,
         })
+    }
+
+    /// Operations of `actor` the worker has not authorized yet.
+    pub async fn unauthorized_count(
+        conn: &mut PgConnection,
+        actor_account_id: &str,
+    ) -> Result<i64, RelayStoreError> {
+        Ok(sqlx::query_scalar(
+            r#"
+            SELECT COUNT(*)
+            FROM relay_operations
+            WHERE actor_account_id = $1 AND state = 'pending' AND stage = 'authorize'
+            "#,
+        )
+        .bind(actor_account_id)
+        .fetch_one(conn)
+        .await?)
+    }
+
+    pub async fn operation_by_key(
+        &self,
+        idempotency_key: &str,
+    ) -> Result<Option<RelayOperation>, RelayStoreError> {
+        Ok(sqlx::query_as::<_, RelayOperation>(
+            "SELECT * FROM relay_operations WHERE idempotency_key = $1",
+        )
+        .bind(idempotency_key)
+        .fetch_optional(self.pool)
+        .await?)
     }
 
     pub async fn operation(&self, id: Uuid) -> Result<Option<RelayOperation>, RelayStoreError> {
@@ -170,7 +198,7 @@ impl<'a> RelayStore<'a> {
                 WHERE state = 'pending'
                   AND next_attempt_at <= NOW()
                   AND (lease_until IS NULL OR lease_until < NOW())
-                ORDER BY next_attempt_at
+                ORDER BY (stage = 'authorize'), next_attempt_at
                 LIMIT $1
                 FOR UPDATE SKIP LOCKED
             )
@@ -233,6 +261,134 @@ impl<'a> RelayStore<'a> {
             .execute(self.pool)
             .await?,
         )
+    }
+
+    /// Move the operation from `from` to `to`. Matches only while it is still
+    /// in `from`, so two holders cannot both advance it.
+    pub async fn advance_stage(
+        &self,
+        lease: &OperationLease,
+        from: OperationStage,
+        to: OperationStage,
+    ) -> Result<RelayOperation, RelayStoreError> {
+        let mut conn = self.pool.acquire().await?;
+        Self::advance_stage_on(&mut conn, lease, from, to, None).await
+    }
+
+    /// [`Self::advance_stage`] on the caller's connection; `credit_reserved`
+    /// is written with it when authorization took the credit in the same
+    /// transaction.
+    pub async fn advance_stage_on(
+        conn: &mut PgConnection,
+        lease: &OperationLease,
+        from: OperationStage,
+        to: OperationStage,
+        credit_reserved: Option<bool>,
+    ) -> Result<RelayOperation, RelayStoreError> {
+        sqlx::query_as::<_, RelayOperation>(
+            r#"
+            UPDATE relay_operations
+            SET stage = $4,
+                stage_entered_at = NOW(),
+                credit_reserved = COALESCE($5, credit_reserved),
+                last_error = NULL,
+                updated_at = NOW()
+            WHERE id = $1 AND lease_token = $2 AND state = 'pending' AND stage = $3
+            RETURNING *
+            "#,
+        )
+        .bind(lease.operation_id)
+        .bind(lease.token)
+        .bind(from)
+        .bind(to)
+        .bind(credit_reserved)
+        .fetch_optional(conn)
+        .await?
+        .ok_or(RelayStoreError::LeaseLost)
+    }
+
+    /// Operations that are not finished, pending or parked, oldest first.
+    pub async fn unfinished(&self, limit: i64) -> Result<Vec<RelayOperation>, RelayStoreError> {
+        Ok(sqlx::query_as::<_, RelayOperation>(
+            r#"
+            SELECT *
+            FROM relay_operations
+            WHERE state IN ('pending', 'manual_review')
+            ORDER BY created_at
+            LIMIT $1
+            "#,
+        )
+        .bind(limit)
+        .fetch_all(self.pool)
+        .await?)
+    }
+
+    /// Make a pending operation due now, so the loop runs its current stage
+    /// on the next cycle. `false` when it is terminal or unknown.
+    pub async fn retrigger(&self, id: Uuid) -> Result<bool, RelayStoreError> {
+        let result = sqlx::query(
+            r#"
+            UPDATE relay_operations
+            SET next_attempt_at = NOW(), updated_at = NOW()
+            WHERE id = $1 AND state = 'pending'
+            "#,
+        )
+        .bind(id)
+        .execute(self.pool)
+        .await?;
+        Ok(result.rows_affected() == 1)
+    }
+
+    /// Put a parked operation back to work in the stage it stopped in. Parking
+    /// refunded its credit, so the credit is taken again here; `false` when
+    /// the row is not parked or the treasury has no credit left.
+    pub async fn resume_from_review(&self, id: Uuid) -> Result<bool, RelayStoreError> {
+        let mut tx = self.pool.begin().await?;
+        let parked: Option<(String, bool)> = sqlx::query_as(
+            r#"
+            SELECT treasury_id, credit_reserved
+            FROM relay_operations
+            WHERE id = $1 AND state = 'manual_review'
+            FOR UPDATE
+            "#,
+        )
+        .bind(id)
+        .fetch_optional(&mut *tx)
+        .await?;
+        let Some((treasury_id, credit_reserved)) = parked else {
+            return Ok(false);
+        };
+        if credit_reserved {
+            let taken = sqlx::query(
+                r#"
+                UPDATE monitored_accounts
+                SET gas_covered_transactions = gas_covered_transactions - 1, updated_at = NOW()
+                WHERE account_id = $1 AND gas_covered_transactions > 0
+                "#,
+            )
+            .bind(&treasury_id)
+            .execute(&mut *tx)
+            .await?
+            .rows_affected();
+            if taken == 0 {
+                return Ok(false);
+            }
+        }
+        sqlx::query(
+            r#"
+            UPDATE relay_operations
+            SET state = 'pending',
+                next_attempt_at = NOW(),
+                stage_entered_at = NOW(),
+                updated_at = NOW()
+            WHERE id = $1
+            "#,
+        )
+        .bind(id)
+        .execute(&mut *tx)
+        .await?;
+        tx.commit().await?;
+        Ok(true)
     }
 
     /// Release the lease and pick the operation up again at `next_attempt_at`.
@@ -305,51 +461,70 @@ impl<'a> RelayStore<'a> {
         )
     }
 
-    /// Lock the first free lane among `public_keys` for one signing. A lane
-    /// is busy while any of its transactions is `prepared` or `pending`.
-    pub async fn claim_free_lane(
+    /// The lanes among `public_keys` with no `prepared` or `pending`
+    /// transaction, in the given order. A plain read: the caller does its
+    /// chain reads on a candidate before locking it with [`Self::claim_lane`].
+    pub async fn free_lane_candidates(
         &self,
         public_keys: &[String],
+    ) -> Result<Vec<String>, RelayStoreError> {
+        let busy: Vec<String> = sqlx::query_scalar(
+            r#"
+            SELECT DISTINCT public_key
+            FROM relay_transactions
+            WHERE public_key = ANY($1) AND state IN ('prepared', 'pending')
+            "#,
+        )
+        .bind(public_keys)
+        .fetch_all(self.pool)
+        .await?;
+        Ok(public_keys
+            .iter()
+            .filter(|key| !busy.contains(key))
+            .cloned()
+            .collect())
+    }
+
+    /// Lock one lane for the time it takes to commit a signed transaction.
+    /// `None` when another signer holds it or took it since the candidate
+    /// read. No network call may happen while the claim is held.
+    pub async fn claim_lane(
+        &self,
+        public_key: &str,
     ) -> Result<Option<LaneClaim<'a>>, RelayStoreError> {
         let mut tx = self.pool.begin().await?;
-        for public_key in public_keys {
-            let locked: bool =
-                sqlx::query_scalar("SELECT pg_try_advisory_xact_lock($1, hashtext($2))")
-                    .bind(LANE_LOCK_NAMESPACE)
-                    .bind(public_key)
-                    .fetch_one(&mut *tx)
-                    .await?;
-            if !locked {
-                continue;
-            }
-            let busy: bool = sqlx::query_scalar(
-                r#"
-                SELECT EXISTS (
-                    SELECT 1 FROM relay_transactions
-                    WHERE public_key = $1 AND state IN ('prepared', 'pending')
-                )
-                "#,
-            )
+        let locked: bool = sqlx::query_scalar("SELECT pg_try_advisory_xact_lock($1, hashtext($2))")
+            .bind(LANE_LOCK_NAMESPACE)
             .bind(public_key)
             .fetch_one(&mut *tx)
             .await?;
-            if busy {
-                continue;
-            }
-            let nonce_floor: Option<i64> = sqlx::query_scalar(
-                "SELECT MAX(nonce) FROM relay_transactions WHERE public_key = $1",
-            )
-            .bind(public_key)
-            .fetch_one(&mut *tx)
-            .await?;
-            return Ok(Some(LaneClaim {
-                tx,
-                public_key: public_key.clone(),
-                nonce_floor,
-            }));
+        if !locked {
+            return Ok(None);
         }
-        tx.rollback().await?;
-        Ok(None)
+        let busy: bool = sqlx::query_scalar(
+            r#"
+            SELECT EXISTS (
+                SELECT 1 FROM relay_transactions
+                WHERE public_key = $1 AND state IN ('prepared', 'pending')
+            )
+            "#,
+        )
+        .bind(public_key)
+        .fetch_one(&mut *tx)
+        .await?;
+        if busy {
+            return Ok(None);
+        }
+        let nonce_floor: Option<i64> =
+            sqlx::query_scalar("SELECT MAX(nonce) FROM relay_transactions WHERE public_key = $1")
+                .bind(public_key)
+                .fetch_one(&mut *tx)
+                .await?;
+        Ok(Some(LaneClaim {
+            tx,
+            public_key: public_key.to_owned(),
+            nonce_floor,
+        }))
     }
 
     /// Commit a signed transaction before it is broadcast. Refused without the
@@ -590,15 +765,51 @@ impl<'a> RelayStore<'a> {
     pub async fn queue_health(&self) -> Result<RelayQueueHealth, RelayStoreError> {
         Ok(sqlx::query_as::<_, RelayQueueHealth>(
             r#"
+            WITH idle AS (
+                SELECT o.stage,
+                       GREATEST(
+                           o.stage_entered_at,
+                           COALESCE(
+                               (SELECT MAX(t.updated_at) FROM relay_transactions t
+                                 WHERE t.operation_id = o.id),
+                               o.created_at
+                           )
+                       ) AS since
+                FROM relay_operations o
+                WHERE o.state = 'pending'
+                  AND NOT EXISTS (
+                      SELECT 1 FROM relay_transactions t
+                      WHERE t.operation_id = o.id AND t.state IN ('prepared', 'pending')
+                  )
+                ORDER BY since
+                LIMIT 1
+            )
             SELECT
                 (SELECT COUNT(*) FROM relay_operations WHERE state = 'pending') AS pending_operations,
                 (SELECT COUNT(*) FROM relay_transactions WHERE state = 'pending') AS pending_transactions,
                 (SELECT EXTRACT(EPOCH FROM NOW() - MIN(broadcast_at))::BIGINT
                    FROM relay_transactions WHERE state = 'pending') AS oldest_pending_seconds,
-                (SELECT COUNT(*) FROM relay_operations WHERE state = 'manual_review') AS manual_review_operations
+                (SELECT COUNT(*) FROM relay_operations WHERE state = 'manual_review') AS manual_review_operations,
+                (SELECT EXTRACT(EPOCH FROM NOW() - since)::BIGINT FROM idle) AS oldest_idle_seconds,
+                (SELECT stage FROM idle) AS oldest_idle_stage
             "#,
         )
         .fetch_one(self.pool)
+        .await?)
+    }
+
+    /// Pending operations per stage, for the worker's cycle log.
+    pub async fn stage_counts(&self) -> Result<Vec<(OperationStage, i64)>, RelayStoreError> {
+        Ok(sqlx::query_as(
+            r#"
+            SELECT stage, COUNT(*)
+            FROM relay_operations
+            WHERE state = 'pending'
+            GROUP BY stage
+            ORDER BY stage
+            "#,
+        )
+        .fetch_all(self.pool)
         .await?)
     }
 }
@@ -616,7 +827,8 @@ fn settle_error(outcome: &TransactionOutcome) -> Option<&str> {
 mod tests {
     use super::*;
     use crate::handlers::relay::operations::models::{
-        FailureCode, IdempotencyKey, OperationKind, OperationState, StepKey, TransactionState,
+        FailureCode, IdempotencyKey, OperationKind, OperationStage, OperationState, StepKey,
+        TransactionState,
     };
     use near_api::AccountId;
 
@@ -635,7 +847,6 @@ mod tests {
             actor_account_id,
             operation_kind: OperationKind::AddProposal,
             submission_payload: payload.to_vec(),
-            credit_reserved: true,
             proposal_type: Some("payment".to_owned()),
             address_book_payment: false,
         }
@@ -703,7 +914,8 @@ mod tests {
         assert_eq!(first.operation.id, again.operation.id);
         assert_eq!(first.operation.state, OperationState::Pending);
         assert_eq!(first.operation.operation_kind, OperationKind::AddProposal);
-        assert!(first.operation.credit_reserved);
+        assert!(!first.operation.credit_reserved);
+        assert_eq!(first.operation.stage, OperationStage::Authorize);
         assert_eq!(first.operation.proposal_type.as_deref(), Some("payment"));
         assert_eq!(first.operation.submission_payload, b"signed-a");
         assert!(other.inserted);
@@ -917,16 +1129,18 @@ mod tests {
         let (_op, lease) = claimed(&pool, b"lanes").await;
         let lanes = vec!["ed25519:laneA".to_owned(), "ed25519:laneB".to_owned()];
 
-        let claim = store.claim_free_lane(&lanes).await.unwrap().unwrap();
+        assert_eq!(store.free_lane_candidates(&lanes).await.unwrap(), lanes);
+        let claim = store.claim_lane(&lanes[0]).await.unwrap().unwrap();
         assert_eq!(claim.public_key, "ed25519:laneA");
         assert_eq!(claim.nonce_floor, None);
 
         let other_store = RelayStore::new(&pool);
-        let second = other_store.claim_free_lane(&lanes).await.unwrap().unwrap();
-        assert_eq!(
-            second.public_key, "ed25519:laneB",
-            "a lane under advisory lock is skipped"
+        assert!(
+            other_store.claim_lane(&lanes[0]).await.unwrap().is_none(),
+            "a lane under advisory lock cannot be claimed twice"
         );
+        let second = other_store.claim_lane(&lanes[1]).await.unwrap().unwrap();
+        assert_eq!(second.public_key, "ed25519:laneB");
         drop(second);
 
         let tx = claim
@@ -941,21 +1155,218 @@ mod tests {
             .unwrap();
         assert_eq!(tx.nonce, 41);
 
-        let next = store.claim_free_lane(&lanes).await.unwrap().unwrap();
         assert_eq!(
-            next.public_key, "ed25519:laneB",
+            store.free_lane_candidates(&lanes).await.unwrap(),
+            lanes[1..],
             "a lane with a prepared transaction is busy"
         );
-        drop(next);
-        assert!(store.claim_free_lane(&lanes[..1]).await.unwrap().is_none());
+        assert!(store.claim_lane(&lanes[0]).await.unwrap().is_none());
 
         store.mark_broadcast(&lease, tx.id).await.unwrap();
         store
             .settle_transaction(&lease, tx.id, &TransactionOutcome::Succeeded)
             .await
             .unwrap();
-        let freed = store.claim_free_lane(&lanes[..1]).await.unwrap().unwrap();
+        assert_eq!(store.free_lane_candidates(&lanes).await.unwrap(), lanes);
+        let freed = store.claim_lane(&lanes[0]).await.unwrap().unwrap();
         assert_eq!(freed.nonce_floor, Some(41), "the lane remembers its nonces");
+    }
+
+    #[sqlx::test]
+    async fn a_started_operation_is_claimed_before_an_older_new_one(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let (started, lease) = claimed(&pool, b"started").await;
+        store
+            .advance_stage(&lease, OperationStage::Authorize, OperationStage::Relay)
+            .await
+            .unwrap();
+        store
+            .defer_operation(&lease, Utc::now(), None)
+            .await
+            .unwrap();
+
+        let mut conn = pool.acquire().await.unwrap();
+        let new = RelayStore::insert_or_load_operation(&mut conn, new_operation(b"new"))
+            .await
+            .unwrap()
+            .operation;
+        sqlx::query(
+            "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 hour' WHERE id = $1",
+        )
+        .bind(new.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+
+        let first = store.claim_due_operations(1, LEASE).await.unwrap();
+        assert_eq!(first[0].id, started.id, "work already begun goes first");
+        let second = store.claim_due_operations(1, LEASE).await.unwrap();
+        assert_eq!(second[0].id, new.id);
+    }
+
+    #[sqlx::test]
+    async fn a_stage_advances_once_and_only_from_where_it_is(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let (op, lease) = claimed(&pool, b"stages").await;
+        assert_eq!(op.stage, OperationStage::Authorize);
+
+        let mut conn = pool.acquire().await.unwrap();
+        let authorized = RelayStore::advance_stage_on(
+            &mut conn,
+            &lease,
+            OperationStage::Authorize,
+            OperationStage::Relay,
+            Some(true),
+        )
+        .await
+        .unwrap();
+        assert_eq!(authorized.stage, OperationStage::Relay);
+        assert!(authorized.credit_reserved);
+        assert!(authorized.stage_entered_at >= op.stage_entered_at);
+
+        assert!(
+            matches!(
+                store
+                    .advance_stage(&lease, OperationStage::Authorize, OperationStage::Relay)
+                    .await,
+                Err(RelayStoreError::LeaseLost)
+            ),
+            "the row is no longer in the stage being left"
+        );
+        let settled = store
+            .advance_stage(&lease, OperationStage::Relay, OperationStage::Settle)
+            .await
+            .unwrap();
+        assert_eq!(settled.stage, OperationStage::Settle);
+        assert!(settled.credit_reserved, "an advance keeps the credit flag");
+
+        let stale = OperationLease {
+            operation_id: op.id,
+            token: Uuid::new_v4(),
+        };
+        assert!(matches!(
+            store
+                .advance_stage(&stale, OperationStage::Settle, OperationStage::Settle)
+                .await,
+            Err(RelayStoreError::LeaseLost)
+        ));
+        assert_eq!(
+            store.stage_counts().await.unwrap(),
+            vec![(OperationStage::Settle, 1)]
+        );
+    }
+
+    #[sqlx::test]
+    async fn unauthorized_operations_are_counted_per_actor(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let (_first, lease) = claimed(&pool, b"waiting-1").await;
+        claimed(&pool, b"waiting-2").await;
+        let mut conn = pool.acquire().await.unwrap();
+        assert_eq!(
+            RelayStore::unauthorized_count(&mut conn, "alice.near")
+                .await
+                .unwrap(),
+            2
+        );
+        assert_eq!(
+            RelayStore::unauthorized_count(&mut conn, "bob.near")
+                .await
+                .unwrap(),
+            0
+        );
+        store
+            .advance_stage(&lease, OperationStage::Authorize, OperationStage::Relay)
+            .await
+            .unwrap();
+        assert_eq!(
+            RelayStore::unauthorized_count(&mut conn, "alice.near")
+                .await
+                .unwrap(),
+            1,
+            "an authorized operation no longer counts"
+        );
+    }
+
+    #[sqlx::test]
+    async fn retrigger_makes_a_deferred_operation_due_now(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let (op, lease) = claimed(&pool, b"retrigger").await;
+        store
+            .defer_operation(
+                &lease,
+                Utc::now() + chrono::Duration::minutes(5),
+                Some("all sponsor lanes busy"),
+            )
+            .await
+            .unwrap();
+        assert!(
+            store
+                .claim_due_operations(10, LEASE)
+                .await
+                .unwrap()
+                .is_empty()
+        );
+
+        assert!(store.retrigger(op.id).await.unwrap());
+        let due = store.claim_due_operations(10, LEASE).await.unwrap();
+        assert_eq!(due.len(), 1);
+        assert_eq!(due[0].last_error.as_deref(), Some("all sponsor lanes busy"));
+
+        complete(&pool, &due[0].lease().unwrap(), succeeded(vec![]))
+            .await
+            .unwrap();
+        assert!(!store.retrigger(op.id).await.unwrap());
+    }
+
+    #[sqlx::test]
+    async fn queue_health_reports_the_stage_that_stopped_moving(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let health = store.queue_health().await.unwrap();
+        assert_eq!(health.oldest_idle_seconds, None);
+        assert_eq!(health.oldest_idle_stage, None);
+
+        let (op, lease) = claimed(&pool, b"idle").await;
+        store
+            .advance_stage(
+                &lease,
+                OperationStage::Authorize,
+                OperationStage::Registrations,
+            )
+            .await
+            .unwrap();
+        sqlx::query(
+            "UPDATE relay_operations SET stage_entered_at = NOW() - INTERVAL '5 minutes', created_at = NOW() - INTERVAL '6 minutes' WHERE id = $1",
+        )
+        .bind(op.id)
+        .execute(&pool)
+        .await
+        .unwrap();
+        let health = store.queue_health().await.unwrap();
+        assert!(health.oldest_idle_seconds.unwrap() >= 299);
+        assert_eq!(
+            health.oldest_idle_stage,
+            Some(OperationStage::Registrations)
+        );
+
+        // A transaction in flight is reconciliation's business, not idleness.
+        let tx = store
+            .insert_prepared_transaction(&lease, prepared(StepKey::Relay, 7, "h7"))
+            .await
+            .unwrap();
+        assert_eq!(
+            store.queue_health().await.unwrap().oldest_idle_seconds,
+            None
+        );
+        store.mark_broadcast(&lease, tx.id).await.unwrap();
+        store
+            .settle_transaction(&lease, tx.id, &TransactionOutcome::Succeeded)
+            .await
+            .unwrap();
+        let health = store.queue_health().await.unwrap();
+        assert!(
+            health.oldest_idle_seconds.unwrap() < 60,
+            "a settled transaction counts as progress"
+        );
     }
 
     #[sqlx::test]

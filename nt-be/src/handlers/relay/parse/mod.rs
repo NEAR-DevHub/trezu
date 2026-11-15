@@ -302,6 +302,18 @@ impl RelayOperation {
         }
     }
 
+    /// The confidential `v1.signer` payload hash of each proposal being added,
+    /// in order; `None` for a proposal that signs nothing. Empty for votes.
+    pub fn new_proposal_payload_hashes(&self) -> Vec<Option<String>> {
+        match self {
+            RelayOperation::AddProposals(proposals) => proposals
+                .iter()
+                .map(|proposal| extract_v1_signer_hash_from_kind(&proposal.kind))
+                .collect(),
+            RelayOperation::Votes(_) => Vec::new(),
+        }
+    }
+
     /// Like [`confidential_payload_hashes`](Self::confidential_payload_hashes) but
     /// pairs each hash with the on-chain proposal id being voted on. The proposal
     /// id lets the auto-submit path link and arm bulk-payment headers once the

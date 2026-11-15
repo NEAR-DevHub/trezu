@@ -74,6 +74,34 @@ pub async fn relay_delegate_action(
     let parsed = parse::parse_relay(treasury_id, &raw_signed_delegate_action.0)
         .map_err(|msg| error_response(StatusCode::BAD_REQUEST, msg))?;
 
+    // Durable path: the request only records the signed action. Authorization,
+    // the deposit limit, the credit and every chain call happen in the relay
+    // worker; the request watches the row for the result.
+    if state.env_vars.durable_relay_submissions {
+        return operations::intake::submit(
+            &state,
+            &auth_user,
+            raw_signed_delegate_action.0,
+            parsed,
+            proposal_type,
+            address_book_payment,
+        )
+        .await;
+    }
+
+    // The flag is off, but these signed bytes may already have a durable
+    // operation from when it was on: answer from it and spend nothing twice.
+    if let Some(response) = operations::intake::answer_existing(
+        &state,
+        &auth_user,
+        &parsed,
+        &raw_signed_delegate_action.0,
+    )
+    .await?
+    {
+        return Ok(response);
+    }
+
     // 3. Load the treasury record and authorize, consuming the parsed relay. The
     //    returned AuthorizedRelay proves the treasury is a tracked Sputnik DAO.
     let treasury_record = access::fetch_treasury_record(&state, &parsed.treasury_id).await?;
@@ -101,19 +129,6 @@ pub async fn relay_delegate_action(
     )
     .await?;
 
-    // Durable path: persist the operation with its credit, then drive it with
-    // a bounded budget; anything unfinished continues in the worker.
-    if state.env_vars.durable_relay_submissions {
-        return operations::intake::submit(
-            &state,
-            &auth_user,
-            raw_signed_delegate_action.0,
-            authorized,
-            proposal_type,
-            address_book_payment,
-        )
-        .await;
-    }
     let AuthorizedRelay {
         treasury_id,
         submission,
@@ -199,7 +214,10 @@ pub async fn relay_delegate_action(
     );
     let (tx_hash, signature_source, receipt_proposal_ids) = match outcome {
         RelaySend::Classic(outcome) => {
-            let tx_hash = outcome.transaction().get_hash().to_string();
+            // The outcome's own id: `transaction().get_hash()` hashes a
+            // transaction rebuilt from the RPC view, which does not carry
+            // the block hash, so it never equals the hash on chain.
+            let tx_hash = outcome.outcome().transaction_hash.to_string();
             let proposal_ids = created_proposal_ids(&outcome, &treasury_id);
             (
                 tx_hash.clone(),

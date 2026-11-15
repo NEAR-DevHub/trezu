@@ -121,10 +121,11 @@ fn quote_recipient(quote_metadata: Option<&Value>) -> Option<String> {
 /// intent (`submit_result` present); an executed-but-unsubmitted `pending`
 /// row is queued for the per-DAO 1Click poll (`due`). Returns whether a row
 /// matched.
-pub async fn record_confidential_intent_execution(
-    app_pool: &PgPool,
+pub async fn record_confidential_intent_execution<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
     dao_id: &str,
     payload_hash: &str,
+    proposal_id: Option<i64>,
     proposal_executed_at: chrono::DateTime<chrono::Utc>,
     proposal_execution_block_height: Option<i64>,
     proposal_execution_transaction_hash: Option<&str>,
@@ -143,6 +144,7 @@ pub async fn record_confidential_intent_execution(
                     THEN NOW()
                 ELSE submit_next_attempt_at
             END,
+            proposal_id = COALESCE(proposal_id, $7),
             proposal_executed_at = LEAST(proposal_executed_at, $3),
             proposal_execution_block_height = COALESCE(proposal_execution_block_height, $4),
             proposal_execution_transaction_hash = COALESCE(proposal_execution_transaction_hash, $5),
@@ -157,7 +159,8 @@ pub async fn record_confidential_intent_execution(
     .bind(proposal_execution_block_height)
     .bind(proposal_execution_transaction_hash)
     .bind(POLL_SUBMITTED_INTENT_TYPES)
-    .execute(app_pool)
+    .bind(proposal_id)
+    .execute(executor)
     .await?;
     Ok(updated.rows_affected() == 1)
 }
@@ -197,6 +200,7 @@ pub async fn stamp_confidential_intent_execution(
         app_pool,
         dao_id,
         payload_hash,
+        None,
         proposal_executed_at,
         proposal_execution_block_height,
         proposal_execution_transaction_hash,
@@ -437,15 +441,24 @@ mod tests {
         let tx_hash = Some("7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s");
 
         assert!(
-            record_confidential_intent_execution(&pool, dao, "timed", relay_clock, None, tx_hash)
-                .await
-                .expect("relay record")
+            record_confidential_intent_execution(
+                &pool,
+                dao,
+                "timed",
+                Some(29),
+                relay_clock,
+                None,
+                tx_hash
+            )
+            .await
+            .expect("relay record")
         );
         assert!(
             record_confidential_intent_execution(
                 &pool,
                 dao,
                 "timed",
+                None,
                 block_time,
                 Some(219269410),
                 tx_hash
@@ -454,9 +467,11 @@ mod tests {
             .expect("detector record")
         );
         assert!(
-            !record_confidential_intent_execution(&pool, dao, "absent", block_time, None, tx_hash)
-                .await
-                .expect("record on a missing row"),
+            !record_confidential_intent_execution(
+                &pool, dao, "absent", None, block_time, None, tx_hash
+            )
+            .await
+            .expect("record on a missing row"),
             "a missing row is reported, not an error"
         );
 
