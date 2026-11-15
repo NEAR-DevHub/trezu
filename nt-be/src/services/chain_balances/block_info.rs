@@ -40,6 +40,7 @@ pub struct BlockReceiptData {
 ///
 /// # Returns
 /// The block timestamp in nanoseconds since Unix epoch
+#[tracing::instrument(level = "debug", skip_all, fields(block_height))]
 pub async fn get_block_timestamp(
     network: &NetworkConfig,
     block_height: u64,
@@ -84,6 +85,7 @@ pub async fn get_block_timestamp(
 ///
 /// # Returns
 /// BlockReceiptData containing all relevant receipts, or an error
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, block_height))]
 pub async fn get_block_data(
     network: &NetworkConfig,
     account_id: &str,
@@ -119,7 +121,7 @@ pub async fn get_block_data(
         {
             Ok(chunk) => chunk,
             Err(e) => {
-                eprintln!("Warning: Failed to fetch chunk {}: {}", chunk_hash_str, e);
+                tracing::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
                 continue;
             }
         };
@@ -153,6 +155,7 @@ pub async fn get_block_data(
 ///
 /// # Returns
 /// Vector of all receipts involving the account
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, block_height))]
 pub async fn get_all_account_receipts(
     network: &NetworkConfig,
     account_id: &str,
@@ -186,7 +189,7 @@ pub async fn get_all_account_receipts(
         {
             Ok(chunk) => chunk,
             Err(e) => {
-                eprintln!("Warning: Failed to fetch chunk {}: {}", chunk_hash_str, e);
+                tracing::warn!("Failed to fetch chunk {}: {}", chunk_hash_str, e);
                 continue;
             }
         };
@@ -216,6 +219,7 @@ pub async fn get_all_account_receipts(
 ///
 /// # Returns
 /// Vector of state changes for the account, or an error
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, block_height))]
 pub async fn get_account_changes(
     network: &NetworkConfig,
     account_id: &str,
@@ -250,6 +254,7 @@ pub async fn get_account_changes(
 ///
 /// # Returns
 /// Transaction response with full details, or an error
+#[tracing::instrument(level = "debug", skip_all, fields(tx_hash = %tx_hash, account_id = %account_id))]
 pub async fn get_transaction(
     network: &NetworkConfig,
     tx_hash: &str,

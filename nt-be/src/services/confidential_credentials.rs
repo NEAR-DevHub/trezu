@@ -650,6 +650,7 @@ impl ConfidentialCredentialStore {
     }
 
     /// `None` means the account has no `monitored_accounts` row at all.
+    #[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, scope = scope.as_str()))]
     pub async fn load(
         &self,
         account_id: &str,
@@ -843,6 +844,7 @@ impl ConfidentialCredentialStore {
     /// Persist a freshly issued credential pair (initial auth / re-auth).
     /// Errors when the account has no `monitored_accounts` row — a write
     /// that updates nothing must not report success.
+    #[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, scope = scope.as_str()))]
     pub async fn store_new(
         &self,
         account_id: &str,
@@ -873,6 +875,7 @@ impl ConfidentialCredentialStore {
     /// with no envelope yet is encrypted by the next boot's reconcile
     /// instead). Interactive flows must NOT use this — they surface a
     /// retryable 503 instead. Dies with the plaintext columns.
+    #[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, scope = scope.as_str()))]
     pub async fn store_new_plaintext_fallback(
         &self,
         account_id: &str,
@@ -902,6 +905,7 @@ impl ConfidentialCredentialStore {
     /// stored bundle). Same sync-to-plaintext behavior as [`store_new`]; the
     /// legacy-mode variant preserves the historical "update access + expiry
     /// only" shape.
+    #[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, scope = scope.as_str()))]
     pub async fn store_refreshed(
         &self,
         account_id: &str,

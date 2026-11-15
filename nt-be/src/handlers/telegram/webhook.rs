@@ -70,6 +70,7 @@ pub async fn handle_telegram_webhook(
     StatusCode::OK
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(chat_id = chat_id))]
 async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&str>) {
     // Upsert the chat record
     let upsert_result = sqlx::query!(
@@ -169,6 +170,7 @@ async fn handle_bot_added(state: &AppState, chat_id: i64, chat_title: Option<&st
     }
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(chat_id = chat_id))]
 async fn handle_bot_removed(state: &AppState, chat_id: i64) {
     // Cascade deletes tokens and connections automatically
     if let Err(e) = sqlx::query!("DELETE FROM telegram_chats WHERE chat_id = $1", chat_id)

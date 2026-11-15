@@ -243,6 +243,11 @@ pub(super) struct ObservationReading {
 /// reading series and mirror them into the unified table. Ordered replay
 /// matters because backfill discovers OLD boundaries after newer ones may
 /// already exist: deltas are recomputed from the whole series, never appended.
+#[tracing::instrument(
+    level = "debug",
+    skip_all,
+    fields(account_id = %account_id, asset = %asset, reading_count = readings.len())
+)]
 pub(super) async fn rebuild_observation_series(
     tx: &mut Transaction<'_, Postgres>,
     account_id: &str,

@@ -27,6 +27,7 @@ pub struct ReceiptMetricRequest {
 /// Request body: { "daoId": "treasury.sputnik-dao.near" }
 ///
 /// Returns 200 OK (idempotent - no error if DAO not found)
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %payload.dao_id))]
 pub async fn mark_dirty(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<MarkDirtyRequest>,
@@ -52,6 +53,7 @@ pub async fn mark_dirty(
 ///
 /// POST /api/dao/receipt-metric
 /// Request body: { "daoId": "...", "metric": "generated" | "print" }
+#[tracing::instrument(level = "info", skip_all, fields(dao_id = %payload.dao_id))]
 pub async fn record_receipt_metric(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<ReceiptMetricRequest>,

@@ -437,11 +437,13 @@ fn log_detection_latency(outcome: &IndexedDaoOutcome, now: DateTime<Utc>) {
     );
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(last_processed_block = tracing::field::Empty))]
 async fn tick_goldsky_scheduler(
     state: &AppState,
     goldsky_pool: &PgPool,
 ) -> Result<PublicHistoryDetectorStats, Box<dyn std::error::Error + Send + Sync>> {
     let mut cursor = load_goldsky_cursor(&state.db_pool, goldsky_pool, CONSUMER_NAME).await?;
+    tracing::Span::current().record("last_processed_block", cursor.last_processed_block);
     let monitored = load_monitored_accounts(&state.db_pool).await?;
     let confidential = load_confidential_accounts(&state.db_pool).await?;
     let mut stats = PublicHistoryDetectorStats::default();
@@ -512,6 +514,7 @@ async fn tick_goldsky_scheduler(
         .await?;
         cursor.last_processed_id.clone_from(&latest.id);
         cursor.last_processed_block = latest.trigger_block_height;
+        tracing::Span::current().record("last_processed_block", cursor.last_processed_block);
 
         stats.outcomes_seen += batch_size;
         stats.batches_processed += 1;

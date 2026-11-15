@@ -492,7 +492,14 @@ pub async fn get_swap_tokens(
     // Deposit catalog stays cached. Intersect 1Click tokens on each request
     // so this list does not keep a second snapshot after that cache refreshes.
     let deposit = load_deposit_catalog(state.clone()).await?;
-    let oneclick_tokens = fetch_oneclick_tokens(&state).await.unwrap_or_default();
+    // Fail soft (an empty list hides every swap row) but leave a trace: this
+    // used to swallow the error and the swap list just came back empty.
+    let oneclick_tokens = fetch_oneclick_tokens(&state)
+        .await
+        .unwrap_or_else(|(status, error)| {
+            tracing::warn!(%status, %error, "1Click token list unavailable; swap catalog will be empty");
+            Vec::new()
+        });
     let oneclick_ids: HashSet<String> = oneclick_tokens.into_iter().map(|t| t.asset_id).collect();
     Ok(Json(filter_catalog_for_swap(deposit, &oneclick_ids)))
 }

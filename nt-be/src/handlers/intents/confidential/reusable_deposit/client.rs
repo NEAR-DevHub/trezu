@@ -267,6 +267,7 @@ impl ReusableDepositResolver<'_> {
 
     /// One page of the DAO's payouts, newest first, `WITHDRAWALS_PAGE_LIMIT`
     /// per page.
+    #[tracing::instrument(level = "debug", skip_all, fields(page = page))]
     pub async fn withdrawals_page(
         &self,
         dao_id: &AccountIdRef,

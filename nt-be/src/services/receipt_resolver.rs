@@ -39,6 +39,7 @@ pub struct ReceiptTransaction {
 ///
 /// # Returns
 /// `ReceiptTransaction` containing the originating transaction hash
+#[tracing::instrument(level = "debug", skip_all, fields(receipt_id = %receipt_id, block_height))]
 pub async fn resolve_receipt_to_transaction(
     network: &NetworkConfig,
     receipt_id: &str,

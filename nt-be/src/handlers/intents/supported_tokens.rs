@@ -31,17 +31,23 @@ pub async fn fetch_supported_tokens_data(
                 .send()
                 .await
                 .map_err(|e| {
-                    eprintln!("Error fetching supported tokens from bridge: {}", e);
+                    tracing::warn!(error = %e, "POA bridge supportedTokensFetchAll request failed");
                     (
                         StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to fetch supported tokens: {}", e),
+                        format!("POA bridge supportedTokensFetchAll request failed: {e}"),
                     )
                 })?;
 
+            // Name the upstream: a bare "HTTP error! status: 403" reached
+            // Sentry and nobody could tell which dependency refused. The
+            // response body is logged by the outbound HTTP middleware.
             if !response.status().is_success() {
                 return Err((
                     StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("HTTP error! status: {}", response.status()),
+                    format!(
+                        "POA bridge supportedTokensFetchAll returned HTTP {}",
+                        response.status()
+                    ),
                 ));
             }
 
@@ -49,7 +55,7 @@ pub async fn fetch_supported_tokens_data(
                 .json::<JsonRpcResponse<Value>>()
                 .await
                 .map_err(|e| {
-                    eprintln!("Error parsing bridge response: {}", e);
+                    tracing::warn!(error = %e, "failed to parse POA bridge supportedTokensFetchAll response");
                     (
                         StatusCode::INTERNAL_SERVER_ERROR,
                         "Failed to parse bridge response".to_string(),

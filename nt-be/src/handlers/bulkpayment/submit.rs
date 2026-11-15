@@ -108,6 +108,17 @@ fn serialize_args(
 /// 2. The authenticated user is a policy member of the DAO
 ///
 /// Then submits the list to the contract.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(
+        list_id = %request.list_id,
+        dao_id = %request.dao_contract_id,
+        token_id = %request.token_id,
+        payments = request.payments.len(),
+        user = %auth_user.account_id
+    )
+)]
 pub async fn submit_list(
     State(state): State<Arc<AppState>>,
     auth_user: AuthUser,

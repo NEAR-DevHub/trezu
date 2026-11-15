@@ -180,7 +180,7 @@ async fn resolve_and_push(
 async fn discover_held_assets(
     pool: &PgPool,
     network: &NetworkConfig,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
     block_height: u64,
@@ -331,14 +331,20 @@ async fn discover_held_assets(
 /// pre-clamp realtime demand. Used both to cap a DAO's ongoing deep backfill
 /// and to restart a previously-stopped one — restart never resumes old
 /// cursor state, it always re-anchors fresh at the current head.
+#[tracing::instrument(
+    level = "info",
+    skip_all,
+    fields(account_id = %account_id, block_height = tracing::field::Empty)
+)]
 pub async fn clamp_account_to_head(
     pool: &PgPool,
     network: &NetworkConfig,
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
 ) -> Result<ClampSummary, ClampError> {
     let (block_height, block_time) = resolve_head_block(network).await?;
+    tracing::Span::current().record("block_height", block_height);
     let held_assets = discover_held_assets(
         pool,
         network,
@@ -482,7 +488,7 @@ mod tests {
     -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let pool = PgPool::connect("postgres://unused").await?;
         let network = NetworkConfig::mainnet();
-        let http_client = reqwest::Client::new();
+        let http_client = crate::observability::traced_http_client(reqwest::Client::new());
 
         stop_history_ingestion(&pool, "dao.sputnik-dao.near").await?;
         clamp_account_to_head(

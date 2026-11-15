@@ -20,6 +20,7 @@ pub struct CheckAccountExistsResponse {
     pub exists: bool,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id))]
 pub async fn check_account_exists(
     State(state): State<Arc<AppState>>,
     Query(params): Query<CheckAccountExistsQuery>,

@@ -211,7 +211,7 @@ fn resolve_token_meta_and_unified_id<'a>(
 /// the parsed response. Shared by the assets endpoint and the monitor cycle's
 /// FT token discovery.
 pub async fn fetch_fastnear_account_full(
-    http_client: &reqwest::Client,
+    http_client: &crate::observability::HttpClient,
     fastnear_api_key: &str,
     account_id: &str,
 ) -> Result<FastNearResponse, Box<dyn std::error::Error + Send + Sync>> {
@@ -238,7 +238,7 @@ async fn fetch_whitelisted_tokens_from_rpc(
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
-            eprintln!("Error fetching whitelisted tokens from RPC: {}", e);
+            tracing::warn!("Error fetching whitelisted tokens from RPC: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to fetch whitelisted tokens".to_string(),
@@ -275,7 +275,7 @@ async fn fetch_user_balances(
     )
     .await
     .map_err(|e| {
-        eprintln!("Error fetching user balances: {}", e);
+        tracing::warn!("Error fetching user balances: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
             "Failed to fetch user balances".to_string(),
@@ -315,7 +315,7 @@ async fn fetch_intents_owned_tokens(
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
-            eprintln!("Error fetching owned tokens from intents.near: {}", e);
+            tracing::warn!("Error fetching owned tokens from intents.near: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to fetch owned tokens from intents.near".to_string(),
@@ -326,6 +326,7 @@ async fn fetch_intents_owned_tokens(
 }
 
 /// Fetches balances for multiple tokens from intents.near
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, tokens = token_ids.len()))]
 async fn fetch_intents_balances(
     state: &Arc<AppState>,
     account_id: &AccountId,
@@ -347,7 +348,7 @@ async fn fetch_intents_balances(
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
-            eprintln!("Error fetching balances from intents.near: {}", e);
+            tracing::warn!("Error fetching balances from intents.near: {}", e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "Failed to fetch balances from intents.near".to_string(),
@@ -716,7 +717,7 @@ async fn fetch_chain_near_balance(
         .fetch_from(&state.network)
         .await
         .map_err(|e| {
-            eprintln!("Error fetching NEAR balance for {}: {}", account_id, e);
+            tracing::warn!("Error fetching NEAR balance for {}: {}", account_id, e);
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Failed to fetch NEAR balance: {}", e),
@@ -1011,7 +1012,7 @@ async fn load_live_public_balances(
         ref_data_result?;
 
     let intents_balances = intents_data_result.unwrap_or_else(|e| {
-        eprintln!("Warning: Failed to fetch intents tokens: {:?}", e);
+        tracing::warn!("Failed to fetch intents tokens: {:?}", e);
         Vec::new()
     });
 
@@ -1055,6 +1056,7 @@ async fn load_live_public_balances(
     })
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %account))]
 pub async fn compute_user_assets(
     state: &Arc<AppState>,
     account: &AccountId,
@@ -1110,7 +1112,7 @@ pub async fn compute_user_assets(
     // ── Build SimplifiedToken list ──────────────────────────────────────
 
     let near_token_meta = metadata_map.get("near").cloned().unwrap_or_else(|| {
-        eprintln!("[User Assets] Warning: wrap.near metadata not found, using fallback");
+        tracing::warn!("user assets: wrap.near metadata not found, using fallback");
         TokenMetadataResponse::create_near_metadata(None, None)
     });
 
@@ -1347,6 +1349,7 @@ pub async fn compute_user_assets(
         .collect())
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_user_assets(
     State(state): State<Arc<AppState>>,
     auth: crate::auth::OptionalAuthUser,
@@ -1380,6 +1383,7 @@ pub async fn get_user_assets(
 /// the DAO account (NEAR / NEP-141) or its public intents balance instead of
 /// the confidential balance. Sponsor-fronted NEAR is excluded and the request
 /// fails when that accounting cannot be loaded (never falls back to gross).
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = auth.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_confidential_public_assets(
     State(state): State<Arc<AppState>>,
     auth: crate::auth::OptionalAuthUser,

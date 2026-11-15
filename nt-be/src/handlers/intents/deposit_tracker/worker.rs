@@ -157,6 +157,11 @@ impl<'a> DepositTrackerWorker<'a> {
         Ok(summary)
     }
 
+    #[tracing::instrument(
+        level = "info",
+        skip_all,
+        fields(watch_id = watch.id, dao_id = %watch.dao_id, kind = watch.kind.as_str())
+    )]
     async fn process_watch(&self, watch: &DepositWatch) -> WatchOutcome {
         let mut outcome = WatchOutcome::default();
 

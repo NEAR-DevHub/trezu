@@ -31,6 +31,7 @@ pub struct StorageDepositResponse {
 }
 
 /// Check storage deposit for a single token
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id, token_id = %token_id))]
 pub(crate) async fn check_storage_deposit(
     state: &Arc<AppState>,
     account_id: AccountId,
@@ -61,6 +62,7 @@ pub(crate) async fn check_storage_deposit(
         .await
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, token_id = %params.token_id))]
 pub async fn is_storage_deposit_registered(
     State(state): State<Arc<AppState>>,
     Query(params): Query<GetStorageDepositQuery>,
@@ -87,6 +89,7 @@ pub struct BatchStorageDepositRequest {
     pub requests: Vec<StorageDepositRequest>,
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(requests = payload.requests.len()))]
 pub async fn get_batch_storage_deposit_is_registered(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<BatchStorageDepositRequest>,
@@ -142,6 +145,7 @@ pub struct SponsorStorageAllowedResponse {
 
 /// Whether the relayer will pay `storage_deposit` on this token contract.
 /// False means the proposal must attach that call itself.
+#[tracing::instrument(level = "info", skip_all, fields(token_id = %params.token_id))]
 pub async fn get_sponsor_storage_allowed(
     State(state): State<Arc<AppState>>,
     Query(params): Query<SponsorStorageAllowedQuery>,

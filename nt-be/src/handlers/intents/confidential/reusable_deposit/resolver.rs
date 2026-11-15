@@ -37,6 +37,7 @@ impl<'a> ReusableDepositResolver<'a> {
     /// A cached set 1Click has not confirmed within `REVERIFY_AFTER` is
     /// re-listed first; if that fails the cached set is served as long as
     /// 1Click still answers for its address.
+    #[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id))]
     pub async fn resolve(
         &self,
         dao_id: &AccountIdRef,
@@ -127,6 +128,7 @@ impl<'a> ReusableDepositResolver<'a> {
     /// Re-read the set from 1Click regardless of its age (a chain missing
     /// from the cached set may have been added since), debounced to one
     /// 1Click read per `REFRESH_DEBOUNCE`.
+    #[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id))]
     pub async fn refresh(
         &self,
         dao_id: &AccountIdRef,

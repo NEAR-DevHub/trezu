@@ -225,6 +225,12 @@ impl AuthUser {
 impl FromRequestParts<Arc<AppState>> for AuthUser {
     type Rejection = AuthError;
 
+    #[tracing::instrument(
+        name = "resolve_auth_user",
+        level = "info",
+        skip_all,
+        fields(account_id = tracing::field::Empty)
+    )]
     async fn from_request_parts(
         parts: &mut Parts,
         state: &Arc<AppState>,
@@ -242,6 +248,7 @@ impl FromRequestParts<Arc<AppState>> for AuthUser {
 
         // Verify the JWT signature and expiry
         let claims = verify_jwt(&token, state.env_vars.jwt_secret.as_bytes())?;
+        tracing::Span::current().record("account_id", tracing::field::display(&claims.sub));
 
         // Check if the session is still valid (not revoked)
         let token_hash = hash_token(&token);

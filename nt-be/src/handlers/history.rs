@@ -46,6 +46,7 @@ pub use crate::handlers::public_history::charts::models::{
 /// Chart API - returns balance snapshots at intervals
 ///
 /// Response format: { "token_id": [...], "lastSyncedAt": "..." }
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_balance_chart(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -105,6 +106,7 @@ pub struct ExportRequest {
 /// Excludes SNAPSHOT and NOT_REGISTERED records
 /// Validates date range based on user's plan limits
 /// Creates export history record and decrements credits
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, format = %params.format, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn export_balance(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -959,6 +961,7 @@ pub struct ExportHistoryResponse {
 }
 
 /// Get export history for an account
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_export_history(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -1252,6 +1255,7 @@ fn narrower_start_bound(
     }
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_recent_activity(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -1631,6 +1635,7 @@ async fn fetch_activity_account_options(
     builder.build_query_scalar::<String>().fetch_all(pool).await
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_recent_activity_senders(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,
@@ -1661,6 +1666,7 @@ pub async fn get_recent_activity_senders(
     Ok(Json(RecentActivitySendersResponse { options }))
 }
 
+#[tracing::instrument(level = "info", skip_all, fields(account_id = %params.account_id, user = user.0.as_ref().map(|u| u.account_id.as_str())))]
 pub async fn get_recent_activity_recipients(
     State(state): State<Arc<AppState>>,
     user: OptionalAuthUser,

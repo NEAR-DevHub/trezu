@@ -1,9 +1,9 @@
+use crate::observability::HttpClient as Client;
 use axum::{
     Json,
     extract::{Path, Query, State},
     http::StatusCode,
 };
-use reqwest::Client;
 use serde_json::Value;
 use std::{collections::HashMap, sync::Arc};
 
@@ -33,8 +33,6 @@ pub async fn fetch_proxy_api(
     sorted_params.sort_by_key(|(k, _)| *k);
     url.query_pairs_mut().extend_pairs(sorted_params);
 
-    println!("Proxying request to: {}", url);
-
     // Proxy the request to the external API
     let response = client
         .get(url.clone())
@@ -42,18 +40,18 @@ pub async fn fetch_proxy_api(
         .send()
         .await
         .map_err(|e| {
-            eprintln!("Failed to fetch from {}: {}", url, e);
+            tracing::warn!("Failed to fetch from {}: {}", url, e);
             "Failed to fetch from external API".to_string()
         })?;
 
     let status = response.status();
     if status.is_success() {
         response.json::<Value>().await.map_err(|e| {
-            eprintln!("Failed to parse response from {}: {}", url, e);
+            tracing::warn!("Failed to parse response from {}: {}", url, e);
             "Failed to parse response".to_string()
         })
     } else {
-        eprintln!("External API returned error {}: {}", status, url);
+        tracing::warn!("External API returned error {}: {}", status, url);
         Err(format!("External API error: {}", status))
     }
 }

@@ -103,6 +103,7 @@ impl<P: GatePriority> PriorityRateGate<P> {
     ///
     /// Fails open: if the driver isn't running (e.g. a test that never spawned
     /// it, or shutdown), this returns immediately rather than hanging.
+    #[tracing::instrument(level = "debug", skip_all, fields(lane = priority.lane()))]
     pub async fn acquire(&self, priority: P) {
         let (resp_tx, resp_rx) = oneshot::channel();
         let ticket = Ticket {

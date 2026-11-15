@@ -107,6 +107,7 @@ pub(crate) fn format_low_balance_message(
     )
 }
 
+#[tracing::instrument(level = "debug", skip_all, fields(account_id = %account_id))]
 pub async fn fetch_liquid_balance(
     state: &AppState,
     account_id: &AccountId,
