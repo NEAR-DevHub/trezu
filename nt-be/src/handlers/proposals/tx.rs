@@ -93,9 +93,7 @@ pub struct TransactionQueryParams {
 }
 
 /// Upper bound on NearBlocks receipt pages walked per method. Every receipt
-/// costs one extra call for its args, so the walk spends at most 53 calls per
-/// method (2 list, 50 receipt-tree, 1 transaction); a `VoteApprove` lookup can
-/// walk two methods. These calls do not go through `nearblocks_gate`.
+/// costs one extra call for its args (up to 53 calls per method).
 const MAX_RECEIPT_PAGES: u32 = 2;
 
 /// GET a NearBlocks v3 URL. `None` means NearBlocks answered with a non-2xx
@@ -291,15 +289,17 @@ async fn find_recorded_execution(
     .bind(dao_id.as_str())
     .bind(i64::try_from(proposal_id).unwrap_or(i64::MAX))
     .fetch_optional(pool)
-    .await;
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to read recorded proposal execution: {}", e);
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to read proposal execution".to_string(),
+        )
+    })?;
 
-    let (transaction_hash, executed_at) = match recorded {
-        Ok(Some(row)) => row,
-        Ok(None) => return Ok(None),
-        Err(e) => {
-            tracing::warn!("Failed to read recorded proposal execution: {}", e);
-            return Ok(None);
-        }
+    let Some((transaction_hash, executed_at)) = recorded else {
+        return Ok(None);
     };
     let Some(timestamp) = executed_at
         .timestamp_nanos_opt()
