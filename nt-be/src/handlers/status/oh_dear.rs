@@ -901,7 +901,7 @@ async fn check_nearblocks(state: &AppState) -> OhDearCheckResult {
 
     let request = state
         .http_client
-        .get(format!("{NEARBLOCKS_API_BASE}/v1/fts/?search=wrap.near"))
+        .get(format!("{NEARBLOCKS_API_BASE}/v3/fts/?search=wrap.near"))
         .header("accept", "application/json")
         .header("Authorization", format!("Bearer {api_key}"));
 

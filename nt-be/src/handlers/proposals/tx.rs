@@ -3,10 +3,11 @@ use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
 };
-use chrono::{DateTime, NaiveDate, Utc};
+use chrono::{DateTime, NaiveDate, NaiveTime, Utc};
 use near_api::AccountId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_with::{DisplayFromStr, serde_as};
 use std::sync::Arc;
 
 use crate::AppState;
@@ -15,35 +16,63 @@ use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::url::api_url_or_500;
 
 #[derive(Deserialize, Debug)]
-struct NearBlocksTransaction {
-    actions: Vec<NearBlocksAction>,
-    block: NearBlocksBlock,
-    receipt_block: NearBlocksReceiptBlock,
+struct NearBlocksPage<T> {
+    data: Vec<T>,
+    #[serde(default)]
+    meta: Option<NearBlocksMeta>,
+}
+
+#[derive(Deserialize, Debug)]
+struct NearBlocksItem<T> {
+    data: T,
+}
+
+#[derive(Deserialize, Debug)]
+struct NearBlocksMeta {
+    /// Opaque continuation for the next (older) page; absent on the last one.
+    #[serde(default)]
+    next_page: Option<String>,
+}
+
+/// One row of `v3/accounts/{account}/receipts`. The list carries the method
+/// name only; call args live on the transaction's receipt tree.
+#[derive(Deserialize, Debug)]
+struct NearBlocksReceipt {
+    receipt_id: String,
     transaction_hash: String,
+    block: NearBlocksBlock,
+}
+
+#[serde_as]
+#[derive(Deserialize, Debug)]
+struct NearBlocksBlock {
+    #[serde_as(as = "DisplayFromStr")]
+    block_height: u64,
+    #[serde_as(as = "DisplayFromStr")]
+    block_timestamp: u64,
+}
+
+/// Node of `v3/txns/{hash}/receipts`, a recursive receipt tree.
+#[derive(Deserialize, Debug)]
+struct NearBlocksReceiptNode {
+    receipt_id: String,
+    #[serde(default)]
+    actions: Vec<NearBlocksAction>,
+    #[serde(default)]
+    receipts: Vec<NearBlocksReceiptNode>,
 }
 
 #[derive(Deserialize, Debug)]
 struct NearBlocksAction {
-    args: String,
-    method: String,
-}
-
-#[derive(Deserialize, Debug)]
-struct NearBlocksBlock {
-    block_height: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct NearBlocksReceiptBlock {
-    block_timestamp: u64,
-}
-
-#[derive(Deserialize, Debug)]
-struct NearBlocksResponse {
-    txns: Vec<NearBlocksTransaction>,
-    /// Opaque continuation for the next (older) page; absent on the last one.
     #[serde(default)]
-    cursor: Option<String>,
+    method: Option<String>,
+    #[serde(default)]
+    args: Value,
+}
+
+#[derive(Deserialize, Debug)]
+struct NearBlocksTxn {
+    block: NearBlocksBlock,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -62,38 +91,18 @@ pub struct TransactionQueryParams {
     pub action: String,
 }
 
-/// Upper bound on NearBlocks v1 pages walked per method (250 receipts at the
-/// default 25/page) so a pathological date window cannot turn one lookup into
-/// unbounded API spend. The v1 receipts endpoint paginates via the response's
-/// `cursor` — `page=`/`per_page=` are silently ignored (verified live).
+/// Upper bound on NearBlocks receipt pages walked per method (250 receipts at
+/// 25/page) so a pathological date window cannot turn one lookup into
+/// unbounded API spend.
 const MAX_RECEIPT_PAGES: u32 = 10;
 
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(dao_id = %dao_id, method = method, after_date = %after_date, before_date = %before_date)
-)]
-async fn fetch_nearblocks_transactions(
+/// GET a NearBlocks v3 URL. `None` means NearBlocks answered with a non-2xx
+/// status.
+async fn fetch_nearblocks<T: serde::de::DeserializeOwned>(
     http_client: &crate::observability::HttpClient,
     api_key: &str,
-    dao_id: &AccountId,
-    method: &str,
-    after_date: NaiveDate,
-    before_date: NaiveDate,
-    cursor: Option<&str>,
-) -> Result<NearBlocksResponse, (StatusCode, String)> {
-    let mut url = api_url_or_500(
-        NEARBLOCKS_API_BASE,
-        &format!("v1/account/{dao_id}/receipts"),
-    )?;
-    url.query_pairs_mut()
-        .append_pair("method", method)
-        .append_pair("after_date", &after_date.to_string())
-        .append_pair("before_date", &before_date.to_string());
-    if let Some(cursor) = cursor {
-        url.query_pairs_mut().append_pair("cursor", cursor);
-    }
-
+    url: url::Url,
+) -> Result<Option<T>, (StatusCode, String)> {
     let response = http_client
         .get(url)
         .header("accept", "application/json")
@@ -109,18 +118,11 @@ async fn fetch_nearblocks_transactions(
         })?;
 
     if !response.status().is_success() {
-        tracing::info!(
-            "No transactions found or API error for method {}: {}",
-            method,
-            response.status()
-        );
-        return Ok(NearBlocksResponse {
-            txns: vec![],
-            cursor: None,
-        });
+        tracing::info!("NearBlocks API returned {}", response.status());
+        return Ok(None);
     }
 
-    response.json().await.map_err(|e| {
+    response.json().await.map(Some).map_err(|e| {
         tracing::error!("Failed to parse NearBlocks response: {}", e);
         (
             StatusCode::INTERNAL_SERVER_ERROR,
@@ -129,8 +131,46 @@ async fn fetch_nearblocks_transactions(
     })
 }
 
-/// Walk the v1 receipt pages for one method until the proposal's transaction
-/// is found, the last page is reached, or the page cap is hit.
+/// Midnight UTC of `date` in nanoseconds.
+fn date_to_nanos(date: NaiveDate) -> u64 {
+    date.and_time(NaiveTime::MIN)
+        .and_utc()
+        .timestamp_nanos_opt()
+        .and_then(|nanos| u64::try_from(nanos).ok())
+        .unwrap_or(u64::MAX)
+}
+
+#[tracing::instrument(level = "debug", skip_all, fields(dao_id = %dao_id, method = method))]
+async fn fetch_nearblocks_receipts(
+    http_client: &crate::observability::HttpClient,
+    api_key: &str,
+    dao_id: &AccountId,
+    method: &str,
+    before_ts: u64,
+    cursor: Option<&str>,
+) -> Result<NearBlocksPage<NearBlocksReceipt>, (StatusCode, String)> {
+    let mut url = api_url_or_500(
+        NEARBLOCKS_API_BASE,
+        &format!("v3/accounts/{dao_id}/receipts"),
+    )?;
+    url.query_pairs_mut()
+        .append_pair("method", method)
+        .append_pair("before_ts", &before_ts.to_string());
+    if let Some(cursor) = cursor {
+        url.query_pairs_mut().append_pair("next", cursor);
+    }
+
+    Ok(fetch_nearblocks(http_client, api_key, url)
+        .await?
+        .unwrap_or(NearBlocksPage {
+            data: vec![],
+            meta: None,
+        }))
+}
+
+/// Walk the receipt pages for one method, newest first, until the proposal's
+/// transaction is found, the window's lower bound is passed, the last page is
+/// reached, or the page cap is hit.
 #[allow(clippy::too_many_arguments)]
 async fn find_matching_transaction_paged(
     http_client: &crate::observability::HttpClient,
@@ -142,62 +182,107 @@ async fn find_matching_transaction_paged(
     proposal_id: u64,
     action_str: &str,
 ) -> Result<Option<ProposalTransactionResponse>, (StatusCode, String)> {
+    let after_ts = date_to_nanos(after_date);
+    // `before_ts` is exclusive; keep the whole `before_date` day in range.
+    let before_ts = date_to_nanos(before_date.succ_opt().unwrap_or(before_date));
+
     let mut cursor: Option<String> = None;
     for page in 1..=MAX_RECEIPT_PAGES {
-        let response = fetch_nearblocks_transactions(
+        let response = fetch_nearblocks_receipts(
             http_client,
             api_key,
             dao_id,
             method,
-            after_date,
-            before_date,
+            before_ts,
             cursor.as_deref(),
         )
         .await?;
         tracing::info!(
-            "Found {} {} transactions on page {}",
-            response.txns.len(),
+            "Found {} {} receipts on page {}",
+            response.data.len(),
             method,
             page
         );
-        if let Some(txn) = find_matching_transaction(&response.txns, proposal_id, action_str) {
+
+        for receipt in &response.data {
+            if receipt.block.block_timestamp < after_ts {
+                return Ok(None);
+            }
+
+            let tree_url = api_url_or_500(
+                NEARBLOCKS_API_BASE,
+                &format!("v3/txns/{}/receipts", receipt.transaction_hash),
+            )?;
+            let Some(tree) = fetch_nearblocks::<NearBlocksItem<NearBlocksReceiptNode>>(
+                http_client,
+                api_key,
+                tree_url,
+            )
+            .await?
+            else {
+                continue;
+            };
+            if !receipt_matches(&tree.data, &receipt.receipt_id, proposal_id, action_str) {
+                continue;
+            }
+
+            let txn_url = api_url_or_500(
+                NEARBLOCKS_API_BASE,
+                &format!("v3/txns/{}", receipt.transaction_hash),
+            )?;
+            let Some(txn) =
+                fetch_nearblocks::<NearBlocksItem<NearBlocksTxn>>(http_client, api_key, txn_url)
+                    .await?
+            else {
+                continue;
+            };
+
             return Ok(Some(ProposalTransactionResponse {
-                transaction_hash: txn.transaction_hash.clone(),
-                nearblocks_url: format!("https://nearblocks.io/txns/{}", txn.transaction_hash),
-                block_height: txn.block.block_height,
-                timestamp: txn.receipt_block.block_timestamp,
+                transaction_hash: receipt.transaction_hash.clone(),
+                nearblocks_url: format!("https://nearblocks.io/txns/{}", receipt.transaction_hash),
+                block_height: txn.data.block.block_height,
+                timestamp: receipt.block.block_timestamp,
             }));
         }
-        cursor = response.cursor.filter(|c| !c.is_empty());
-        if response.txns.is_empty() || cursor.is_none() {
+
+        cursor = response
+            .meta
+            .and_then(|meta| meta.next_page)
+            .filter(|c| !c.is_empty());
+        if response.data.is_empty() || cursor.is_none() {
             break;
         }
     }
     Ok(None)
 }
 
-fn find_matching_transaction<'a>(
-    txns: &'a [NearBlocksTransaction],
+/// Find `receipt_id` in the tree and check that it votes on / calls back for
+/// this proposal.
+fn receipt_matches(
+    node: &NearBlocksReceiptNode,
+    receipt_id: &str,
     proposal_id: u64,
     action_str: &str,
-) -> Option<&'a NearBlocksTransaction> {
-    txns.iter().find(|txn| {
-        txn.actions.iter().any(|action| {
-            let Ok(args) = serde_json::from_str::<serde_json::Value>(&action.args) else {
-                return false;
-            };
+) -> bool {
+    if node.receipt_id != receipt_id {
+        return node
+            .receipts
+            .iter()
+            .any(|child| receipt_matches(child, receipt_id, proposal_id, action_str));
+    }
 
-            match action.method.as_str() {
-                "on_proposal_callback" => {
-                    args.get("proposal_id").and_then(|v| v.as_u64()) == Some(proposal_id)
-                }
-                "act_proposal" => {
-                    args.get("id").and_then(|v| v.as_u64()) == Some(proposal_id)
-                        && args.get("action").and_then(|v| v.as_str()) == Some(action_str)
-                }
-                _ => false,
+    node.actions.iter().any(|action| {
+        let args = &action.args["args_json"];
+        match action.method.as_deref() {
+            Some("on_proposal_callback") => {
+                args.get("proposal_id").and_then(|v| v.as_u64()) == Some(proposal_id)
             }
-        })
+            Some("act_proposal") => {
+                args.get("id").and_then(|v| v.as_u64()) == Some(proposal_id)
+                    && args.get("action").and_then(|v| v.as_str()) == Some(action_str)
+            }
+            _ => false,
+        }
     })
 }
 
@@ -314,13 +399,13 @@ pub async fn find_proposal_execution_transaction_inner(
 
 #[derive(Deserialize, Debug)]
 struct NearBlocksReceiptSearchResponse {
-    receipts: Vec<NearBlocksReceiptInfo>,
+    data: Vec<NearBlocksReceiptInfo>,
 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct NearBlocksReceiptInfo {
     pub receipt_id: String,
-    pub originated_from_transaction_hash: String,
+    pub transaction_hash: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -373,7 +458,7 @@ pub async fn search_receipt(
     state
         .cache
         .cached_json(CacheTier::LongTerm, cache_key, async move {
-            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/search/receipts")?;
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v3/search/receipts")?;
             url.query_pairs_mut().append_pair("keyword", &keyword);
 
             let response = http_client
@@ -409,11 +494,11 @@ pub async fn search_receipt(
             })?;
 
             Ok::<_, (StatusCode, String)>(
-                data.receipts
+                data.data
                     .into_iter()
                     .map(|r| ReceiptSearchResult {
                         receipt_id: r.receipt_id,
-                        originated_from_transaction_hash: r.originated_from_transaction_hash,
+                        originated_from_transaction_hash: r.transaction_hash,
                     })
                     .collect::<Vec<ReceiptSearchResult>>(),
             )
@@ -479,4 +564,75 @@ pub async fn get_token_price_at_timestamp(
             }
         })
         .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn parses_v3_receipts_page() {
+        let page: NearBlocksPage<NearBlocksReceipt> = serde_json::from_value(json!({
+            "data": [{
+                "actions": [{ "action": "FUNCTION_CALL", "method": "act_proposal" }],
+                "block": {
+                    "block_hash": "HMj3hWgPx3eyG8XNmwTY46BtYy7SzDAXSzKhzinKtfeM",
+                    "block_height": "223958752",
+                    "block_timestamp": "1794338199755854976"
+                },
+                "receipt_id": "7f7k2NtR72toTRJM2UkgGkXYppWoxXgjCFuD5z87FM8m",
+                "transaction_hash": "6FGgz5FHn3jokoUuKFUXJPoa6uYWYHZMqpekydDvoN2k"
+            }],
+            "meta": { "next_page": "eyJpbmRleCI6Mn0=" }
+        }))
+        .unwrap();
+
+        assert_eq!(page.data[0].block.block_height, 223958752);
+        assert_eq!(page.data[0].block.block_timestamp, 1794338199755854976);
+        assert_eq!(page.meta.unwrap().next_page.unwrap(), "eyJpbmRleCI6Mn0=");
+
+        let last: NearBlocksPage<NearBlocksReceipt> =
+            serde_json::from_value(json!({ "data": [] })).unwrap();
+        assert!(last.meta.is_none());
+    }
+
+    #[test]
+    fn matches_proposal_receipt_in_v3_tree() {
+        let tree: NearBlocksItem<NearBlocksReceiptNode> = serde_json::from_value(json!({
+            "data": {
+                "receipt_id": "root",
+                "actions": [{ "action": "DELEGATE_ACTION", "method": null, "args": { "nonce": 1 } }],
+                "receipts": [{
+                    "receipt_id": "vote",
+                    "actions": [{
+                        "action": "FUNCTION_CALL",
+                        "method": "act_proposal",
+                        "args": {
+                            "args_json": { "id": 750, "action": "VoteApprove" },
+                            "args_base64": null,
+                            "method_name": "act_proposal"
+                        }
+                    }],
+                    "receipts": [{
+                        "receipt_id": "callback",
+                        "actions": [{
+                            "action": "FUNCTION_CALL",
+                            "method": "on_proposal_callback",
+                            "args": { "args_json": { "proposal_id": 750 } }
+                        }],
+                        "receipts": []
+                    }]
+                }]
+            }
+        }))
+        .unwrap();
+
+        assert!(receipt_matches(&tree.data, "vote", 750, "VoteApprove"));
+        assert!(receipt_matches(&tree.data, "callback", 750, "VoteApprove"));
+        assert!(!receipt_matches(&tree.data, "vote", 750, "VoteReject"));
+        assert!(!receipt_matches(&tree.data, "vote", 751, "VoteApprove"));
+        assert!(!receipt_matches(&tree.data, "root", 750, "VoteApprove"));
+        assert!(!receipt_matches(&tree.data, "missing", 750, "VoteApprove"));
+    }
 }
