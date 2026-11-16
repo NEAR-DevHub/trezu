@@ -9,10 +9,15 @@
 -- stage says what the operation is doing; relay_transactions says what was
 -- signed and sent for it.
 --
--- The operation lease (lease_token / lease_until) fences every write to the
--- operation and to its transactions; a worker that lost its lease matches
--- zero rows. Credit, spend and metrics are written in the same database
--- transaction that makes the operation terminal, so they need no markers.
+-- `id` is derived from the treasury, the actor and the signed bytes, so a
+-- retry of one signed action lands on the same row.
+--
+-- The operation lease (lease_token) fences every write to the operation and
+-- to its transactions; a worker that lost its lease matches zero rows. While
+-- a worker holds the row, next_attempt_at is when its lease runs out, so a
+-- holder that died is taken over by the ordinary claim. Credit, spend and
+-- metrics are written in the same database transaction that makes the
+-- operation terminal, so they need no markers.
 CREATE TYPE relay_operation_kind AS ENUM ('add_proposal', 'act_proposal', 'wallet_replay');
 CREATE TYPE relay_operation_state AS ENUM ('pending', 'succeeded', 'failed', 'manual_review');
 CREATE TYPE relay_operation_stage AS ENUM ('authorize', 'storage_top_up', 'registrations', 'relay', 'settle');
@@ -22,7 +27,6 @@ CREATE TYPE relay_proposal_type AS ENUM ('swap', 'payment', 'address_book_paymen
 
 CREATE TABLE relay_operations (
     id UUID PRIMARY KEY,
-    idempotency_key TEXT NOT NULL UNIQUE,
     treasury_id TEXT NOT NULL,
     actor_account_id TEXT NOT NULL,
     operation_kind relay_operation_kind NOT NULL,
@@ -36,11 +40,8 @@ CREATE TABLE relay_operations (
     failure_code TEXT,
     last_error TEXT,
     lease_token UUID,
-    lease_until TIMESTAMPTZ,
     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK ((lease_token IS NULL) = (lease_until IS NULL))
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_relay_operations_due

@@ -16,9 +16,9 @@ use crate::{
     handlers::relay::operations::{
         engine::{RelayEngine, RunOutcome},
         models::{
-            FailureCode, IdempotencyKey, NewRelayOperation, OperationKind, OperationLease,
-            OperationOutcome, OperationStage, OperationState, RelayOperation, RelayProposalType,
-            RelayTransaction, TransactionState,
+            FailureCode, NewRelayOperation, OperationKind, OperationLease, OperationOutcome,
+            OperationStage, OperationState, RelayOperation, RelayProposalType, RelayTransaction,
+            TransactionState,
         },
         plan::RelayPlan,
         rpc::RelayRpc,
@@ -394,7 +394,6 @@ impl World {
         RelayStore::insert_or_load_operation(
             &mut conn,
             NewRelayOperation {
-                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, &payload),
                 treasury_id,
                 actor_account_id: actor,
                 operation_kind: kind,
@@ -422,7 +421,7 @@ impl World {
     /// kept in memory is gone.
     async fn crash(&self, claim: Claim) -> uuid::Uuid {
         sqlx::query(
-            "UPDATE relay_operations SET lease_until = NOW() - INTERVAL '1 second' WHERE id = $1",
+            "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 second' WHERE id = $1",
         )
         .bind(claim.operation.id)
         .execute(&self.pool)
@@ -502,7 +501,7 @@ async fn authorize_takes_one_credit_even_when_two_processes_hold_the_row(pool: P
     // The first holder stalls past its lease; the second takes the row over.
     let stalled = world.claim(&first, id).await;
     sqlx::query(
-        "UPDATE relay_operations SET lease_until = NOW() - INTERVAL '1 second' WHERE id = $1",
+        "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 second' WHERE id = $1",
     )
     .bind(id)
     .execute(&world.pool)
@@ -875,7 +874,7 @@ async fn a_result_is_committed_once_when_the_process_dies_after_the_relay_lands(
         panic!("the first process had the result in hand");
     };
     sqlx::query(
-        "UPDATE relay_operations SET lease_until = NOW() - INTERVAL '1 second' WHERE id = $1",
+        "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 second' WHERE id = $1",
     )
     .bind(id)
     .execute(&world.pool)

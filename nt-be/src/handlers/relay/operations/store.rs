@@ -91,25 +91,25 @@ impl<'a> RelayStore<'a> {
         Self { pool }
     }
 
-    /// Insert a pending operation, or return the existing row when the
-    /// idempotency key is already taken.
+    /// Insert a pending operation, or return the existing row when the same
+    /// signed action was already recorded.
     pub async fn insert_or_load_operation(
         conn: &mut PgConnection,
         new: NewRelayOperation,
     ) -> Result<RelayOperation, RelayStoreError> {
+        let id = new.id();
         let inserted = sqlx::query_as::<_, RelayOperation>(
             r#"
             INSERT INTO relay_operations (
-                id, idempotency_key, treasury_id, actor_account_id, operation_kind,
+                id, treasury_id, actor_account_id, operation_kind,
                 submission_payload, proposal_type
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            ON CONFLICT (idempotency_key) DO NOTHING
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (id) DO NOTHING
             RETURNING *
             "#,
         )
-        .bind(Uuid::new_v4())
-        .bind(new.idempotency_key.as_str())
+        .bind(id)
         .bind(new.treasury_id.as_str())
         .bind(new.actor_account_id.as_str())
         .bind(new.operation_kind)
@@ -121,12 +121,12 @@ impl<'a> RelayStore<'a> {
         if let Some(operation) = inserted {
             return Ok(operation);
         }
-        Ok(sqlx::query_as::<_, RelayOperation>(
-            "SELECT * FROM relay_operations WHERE idempotency_key = $1",
+        Ok(
+            sqlx::query_as::<_, RelayOperation>("SELECT * FROM relay_operations WHERE id = $1")
+                .bind(id)
+                .fetch_one(&mut *conn)
+                .await?,
         )
-        .bind(new.idempotency_key.as_str())
-        .fetch_one(&mut *conn)
-        .await?)
     }
 
     /// Operations of `actor` the worker has not authorized yet.
@@ -146,18 +146,6 @@ impl<'a> RelayStore<'a> {
         .await?)
     }
 
-    pub async fn operation_by_key(
-        &self,
-        idempotency_key: &str,
-    ) -> Result<Option<RelayOperation>, RelayStoreError> {
-        Ok(sqlx::query_as::<_, RelayOperation>(
-            "SELECT * FROM relay_operations WHERE idempotency_key = $1",
-        )
-        .bind(idempotency_key)
-        .fetch_optional(self.pool)
-        .await?)
-    }
-
     pub async fn operation(&self, id: Uuid) -> Result<Option<RelayOperation>, RelayStoreError> {
         Ok(
             sqlx::query_as::<_, RelayOperation>("SELECT * FROM relay_operations WHERE id = $1")
@@ -167,8 +155,9 @@ impl<'a> RelayStore<'a> {
         )
     }
 
-    /// Take up to `limit` due pending operations whose lease is free or
-    /// expired, each with a fresh token.
+    /// Take up to `limit` due pending operations, each with a fresh token.
+    /// A held row is not due until its lease runs out: the claim moves
+    /// `next_attempt_at` to the end of the lease.
     pub async fn claim_due_operations(
         &self,
         limit: i64,
@@ -181,15 +170,13 @@ impl<'a> RelayStore<'a> {
                 FROM relay_operations
                 WHERE state = 'pending'
                   AND next_attempt_at <= NOW()
-                  AND (lease_until IS NULL OR lease_until < NOW())
                 ORDER BY (stage = 'authorize'), next_attempt_at
                 LIMIT $1
                 FOR UPDATE SKIP LOCKED
             )
             UPDATE relay_operations o
             SET lease_token = gen_random_uuid(),
-                lease_until = NOW() + make_interval(secs => $2),
-                updated_at = NOW()
+                next_attempt_at = NOW() + make_interval(secs => $2)
             FROM due
             WHERE o.id = due.id
             RETURNING o.*
@@ -210,7 +197,7 @@ impl<'a> RelayStore<'a> {
             sqlx::query(
                 r#"
                 UPDATE relay_operations
-                SET lease_until = NOW() + make_interval(secs => $3), updated_at = NOW()
+                SET next_attempt_at = NOW() + make_interval(secs => $3)
                 WHERE id = $1 AND lease_token = $2 AND state = 'pending'
                 "#,
             )
@@ -250,8 +237,7 @@ impl<'a> RelayStore<'a> {
             SET stage = $4,
                 stage_entered_at = NOW(),
                 credit_reserved = COALESCE($5, credit_reserved),
-                last_error = NULL,
-                updated_at = NOW()
+                last_error = NULL
             WHERE id = $1 AND lease_token = $2 AND state = 'pending' AND stage = $3
             RETURNING *
             "#,
@@ -283,12 +269,16 @@ impl<'a> RelayStore<'a> {
     }
 
     /// Make a pending operation due now, so the loop runs its current stage
-    /// on the next cycle. `false` when it is terminal or unknown.
+    /// on the next cycle. One a worker holds is left alone: it is running
+    /// already. `false` when it is terminal or unknown.
     pub async fn retrigger(&self, id: Uuid) -> Result<bool, RelayStoreError> {
         let result = sqlx::query(
             r#"
             UPDATE relay_operations
-            SET next_attempt_at = NOW(), updated_at = NOW()
+            SET next_attempt_at = CASE
+                    WHEN lease_token IS NULL THEN NOW()
+                    ELSE next_attempt_at
+                END
             WHERE id = $1 AND state = 'pending'
             "#,
         )
@@ -338,8 +328,7 @@ impl<'a> RelayStore<'a> {
             UPDATE relay_operations
             SET state = 'pending',
                 next_attempt_at = NOW(),
-                stage_entered_at = NOW(),
-                updated_at = NOW()
+                stage_entered_at = NOW()
             WHERE id = $1
             "#,
         )
@@ -362,10 +351,8 @@ impl<'a> RelayStore<'a> {
                 r#"
                 UPDATE relay_operations
                 SET lease_token = NULL,
-                    lease_until = NULL,
                     next_attempt_at = $3,
-                    last_error = COALESCE($4, last_error),
-                    updated_at = NOW()
+                    last_error = COALESCE($4, last_error)
                 WHERE id = $1 AND lease_token = $2 AND state = 'pending'
                 "#,
             )
@@ -403,9 +390,7 @@ impl<'a> RelayStore<'a> {
                     proposal_ids = $4,
                     failure_code = $5,
                     last_error = COALESCE($6, last_error),
-                    lease_token = NULL,
-                    lease_until = NULL,
-                    updated_at = NOW()
+                    lease_token = NULL
                 WHERE id = $1 AND lease_token = $2 AND state = 'pending'
                 "#,
             )
@@ -780,11 +765,10 @@ impl RelayStore<'_> {
             r#"
             UPDATE relay_operations
             SET lease_token = gen_random_uuid(),
-                lease_until = NOW() + make_interval(secs => $2),
-                updated_at = NOW()
+                next_attempt_at = NOW() + make_interval(secs => $2)
             WHERE id = $1
               AND state = 'pending'
-              AND (lease_until IS NULL OR lease_until < NOW())
+              AND (lease_token IS NULL OR next_attempt_at < NOW())
             RETURNING *
             "#,
         )
@@ -811,8 +795,8 @@ impl RelayStore<'_> {
 mod tests {
     use super::*;
     use crate::handlers::relay::operations::models::{
-        FailureCode, IdempotencyKey, OperationKind, OperationStage, OperationState,
-        RelayProposalType, StepKey, TransactionState,
+        FailureCode, OperationKind, OperationStage, OperationState, RelayProposalType, StepKey,
+        TransactionState,
     };
     use near_api::AccountId;
 
@@ -826,7 +810,6 @@ mod tests {
         let treasury_id = account("durable.sputnik-dao.near");
         let actor_account_id = account("alice.near");
         NewRelayOperation {
-            idempotency_key: IdempotencyKey::derive(&treasury_id, &actor_account_id, payload),
             treasury_id,
             actor_account_id,
             operation_kind: OperationKind::AddProposal,
@@ -903,6 +886,31 @@ mod tests {
     }
 
     #[sqlx::test]
+    async fn retrigger_leaves_a_held_operation_with_its_holder(pool: PgPool) {
+        let store = RelayStore::new(&pool);
+        let (op, lease) = claimed(&pool, b"held").await;
+
+        assert!(store.retrigger(op.id).await.unwrap());
+        assert!(
+            store
+                .claim_due_operations(10, LEASE)
+                .await
+                .unwrap()
+                .is_empty(),
+            "the holder keeps the row"
+        );
+        store.extend_lease(&lease, LEASE).await.unwrap();
+
+        store
+            .defer_operation(&lease, Utc::now() + chrono::Duration::hours(1), None)
+            .await
+            .unwrap();
+        assert!(store.retrigger(op.id).await.unwrap());
+        let due = store.claim_due_operations(10, LEASE).await.unwrap();
+        assert_eq!(due.len(), 1, "a released row is made due now");
+    }
+
+    #[sqlx::test]
     async fn claim_is_exclusive_until_the_lease_expires(pool: PgPool) {
         let store = RelayStore::new(&pool);
         let (op, lease) = claimed(&pool, b"claim").await;
@@ -918,7 +926,7 @@ mod tests {
         assert!(store.claim_operation(op.id, LEASE).await.unwrap().is_none());
 
         sqlx::query(
-            "UPDATE relay_operations SET lease_until = NOW() - INTERVAL '1 second' WHERE id = $1",
+            "UPDATE relay_operations SET next_attempt_at = NOW() - INTERVAL '1 second' WHERE id = $1",
         )
         .bind(op.id)
         .execute(&pool)

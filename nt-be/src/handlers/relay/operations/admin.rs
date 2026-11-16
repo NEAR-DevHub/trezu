@@ -71,9 +71,7 @@ impl OperatorSubmission {
             stage_entered_at: operation.stage_entered_at,
             created_at: operation.created_at,
             next_attempt_at: operation.next_attempt_at,
-            being_worked: operation
-                .lease_until
-                .is_some_and(|until| until > Utc::now()),
+            being_worked: operation.is_being_worked(),
             failure_code: operation.failure_code,
             last_error: operation.last_error,
             transactions: transactions
@@ -228,7 +226,7 @@ mod tests {
     use super::*;
     use crate::{
         handlers::relay::operations::models::{
-            IdempotencyKey, NewRelayOperation, OperationLease, OperationOutcome,
+            NewRelayOperation, OperationLease, OperationOutcome,
         },
         utils::{admin_auth::AdminCredential, test_utils::build_test_state},
     };
@@ -281,7 +279,6 @@ mod tests {
         let id = RelayStore::insert_or_load_operation(
             &mut conn,
             NewRelayOperation {
-                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, payload),
                 treasury_id,
                 actor_account_id: actor,
                 operation_kind: OperationKind::AddProposal,

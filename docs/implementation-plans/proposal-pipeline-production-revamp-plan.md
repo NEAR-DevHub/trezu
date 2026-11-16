@@ -39,10 +39,10 @@ A separate queue, table, or worker pool per stage is deferred. The section "Defe
 
 ## Design that stays as is
 
-- **Content-derived idempotency.** The key is derived from treasury, actor, and the signed bytes. No client header is needed.
+- **Content-derived idempotency.** The operation's `id` is derived from treasury, actor, and the signed bytes, so a retry lands on the same row. No client header and no separate key column are needed.
 - **One response on the normal path.** After the insert the handler watches the row for up to 12 s and answers `200` or the confirmed error; anything slower returns `202`. The handler does no work on the operation.
 - **One loop, one operation table.** Stages share the `relay_operations` queue, the lease, and the claim. They are not separate queues or worker pools.
-- **Lease fencing, `SKIP LOCKED` claims, unique hash, unique `(public_key, nonce)`, one live transaction per step.**
+- **Lease fencing, `SKIP LOCKED` claims, unique hash, unique `(public_key, nonce)`, one live transaction per step.** The lease is `lease_token` alone: while a worker holds an operation, `next_attempt_at` is when the lease runs out.
 - **Dedicated sponsor lanes** through `SPONSOR_LANE_KEYS`.
 
 ## Changes
@@ -79,7 +79,7 @@ The chain nonce may be a few hundred milliseconds old when the lock is taken. Th
 
 1. Decodes the signed bytes with `parse_relay` and checks that the signer is the session user. Both are computation on the request body. The signer check moves out of `access::authorize` into `access::bind_signer`. Malformed bytes keep their `400` and a signer mismatch keeps its `403`.
 2. Refuses with `429` when the session user already has more than 100 operations that are not yet authorized. This is a count in the insert transaction and bounds what one account can store.
-3. Inserts the operation (or loads the existing one by idempotency key) in stage `authorize` with no credit reserved, then wakes the engine loop.
+3. Inserts the operation (or loads the existing one, which has the same derived `id`) in stage `authorize` with no credit reserved, then wakes the engine loop.
 4. Watches the row with the existing `await_terminal` for up to `HANDLER_RESPONSE_BUDGET` and answers through the existing `respond`.
 
 `drive_until_terminal`, the block-height check, the credit reservation in `intake::submit`, and `HANDLER_DRIVE_BUDGET` are removed.

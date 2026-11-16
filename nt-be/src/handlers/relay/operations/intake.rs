@@ -25,8 +25,8 @@ use crate::{
 
 use super::{
     models::{
-        IdempotencyKey, NewRelayOperation, OperationKind, OperationState, RelayOperation,
-        RelayProposalType, RelaySubmissionStatus,
+        NewRelayOperation, OperationKind, OperationState, RelayOperation, RelayProposalType,
+        RelaySubmissionStatus,
     },
     store::RelayStore,
 };
@@ -60,11 +60,6 @@ pub async fn submit(
         (_, DaoOperation::Votes(_)) => OperationKind::ActProposal,
     };
     let new = NewRelayOperation {
-        idempotency_key: IdempotencyKey::derive(
-            &parsed.treasury_id,
-            &auth_user.account_id,
-            &raw_payload,
-        ),
         treasury_id: parsed.treasury_id,
         actor_account_id: auth_user.account_id.clone(),
         operation_kind,
@@ -73,10 +68,7 @@ pub async fn submit(
     };
 
     let store = RelayStore::new(&state.db_pool);
-    let existing = store
-        .operation_by_key(new.idempotency_key.as_str())
-        .await
-        .map_err(db_error)?;
+    let existing = store.operation(new.id()).await.map_err(db_error)?;
     let operation = match existing {
         Some(operation) => {
             tracing::info!(

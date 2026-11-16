@@ -525,8 +525,7 @@ mod tests {
     use super::*;
     use crate::{
         handlers::relay::operations::models::{
-            FailureCode, IdempotencyKey, NewRelayOperation, OperationKind, OperationStage,
-            OperationState,
+            FailureCode, NewRelayOperation, OperationKind, OperationStage, OperationState,
         },
         utils::test_utils::build_test_state,
     };
@@ -563,7 +562,6 @@ mod tests {
         let inserted = RelayStore::insert_or_load_operation(
             &mut conn,
             NewRelayOperation {
-                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, payload),
                 treasury_id,
                 actor_account_id: actor,
                 operation_kind: OperationKind::ActProposal,
@@ -701,7 +699,6 @@ mod tests {
         let inserted = RelayStore::insert_or_load_operation(
             &mut conn,
             NewRelayOperation {
-                idempotency_key: IdempotencyKey::derive(&treasury_id, &actor, b"not-allowed"),
                 treasury_id,
                 actor_account_id: actor,
                 operation_kind: OperationKind::AddProposal,

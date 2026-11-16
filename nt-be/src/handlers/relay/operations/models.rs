@@ -169,34 +169,6 @@ impl TryFrom<String> for StepKey {
     }
 }
 
-/// Server-derived key that makes retries of one signed action converge on one
-/// operation. Each component is length-prefixed so no two inputs share a hash.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct IdempotencyKey(String);
-
-impl IdempotencyKey {
-    pub fn derive(
-        treasury_id: &AccountId,
-        actor_account_id: &AccountId,
-        signed_request: &[u8],
-    ) -> Self {
-        let mut hasher = Sha256::new();
-        for part in [
-            treasury_id.as_bytes(),
-            actor_account_id.as_bytes(),
-            signed_request,
-        ] {
-            hasher.update((part.len() as u64).to_be_bytes());
-            hasher.update(part);
-        }
-        Self(hex::encode(hasher.finalize()))
-    }
-
-    pub fn as_str(&self) -> &str {
-        &self.0
-    }
-}
-
 /// Why an operation ended in `failed`, as stored in `failure_code`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FailureCode {
@@ -279,7 +251,6 @@ fn parse_reason(text: &str) -> Option<TxFailureReason> {
 /// signed request, byte for byte.
 #[derive(Debug, Clone)]
 pub struct NewRelayOperation {
-    pub idempotency_key: IdempotencyKey,
     pub treasury_id: AccountId,
     pub actor_account_id: AccountId,
     pub operation_kind: OperationKind,
@@ -287,10 +258,30 @@ pub struct NewRelayOperation {
     pub proposal_type: Option<RelayProposalType>,
 }
 
+impl NewRelayOperation {
+    /// The row id, derived from what was signed, so retries of one signed
+    /// action converge on one operation. Each component is length-prefixed
+    /// so no two inputs share a hash.
+    pub fn id(&self) -> Uuid {
+        let mut hasher = Sha256::new();
+        for part in [
+            self.treasury_id.as_bytes(),
+            self.actor_account_id.as_bytes(),
+            self.submission_payload.as_slice(),
+        ] {
+            hasher.update((part.len() as u64).to_be_bytes());
+            hasher.update(part);
+        }
+        let digest = hasher.finalize();
+        let mut bytes = [0u8; 16];
+        bytes.copy_from_slice(&digest[..16]);
+        uuid::Builder::from_custom_bytes(bytes).into_uuid()
+    }
+}
+
 #[derive(Debug, Clone, sqlx::FromRow)]
 pub struct RelayOperation {
     pub id: Uuid,
-    pub idempotency_key: String,
     #[sqlx(try_from = "String")]
     pub treasury_id: AccountId,
     #[sqlx(try_from = "String")]
@@ -306,10 +297,10 @@ pub struct RelayOperation {
     pub failure_code: Option<String>,
     pub last_error: Option<String>,
     pub lease_token: Option<Uuid>,
-    pub lease_until: Option<DateTime<Utc>>,
+    /// When to look at the row next; while a worker holds it, when its lease
+    /// runs out.
     pub next_attempt_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
 }
 
 impl RelayOperation {
@@ -323,6 +314,11 @@ impl RelayOperation {
 
     pub fn failure(&self) -> Option<FailureCode> {
         self.failure_code.as_deref().and_then(FailureCode::parse)
+    }
+
+    /// A worker holds the row and its lease has not run out.
+    pub fn is_being_worked(&self) -> bool {
+        self.lease_token.is_some() && self.next_attempt_at > Utc::now()
     }
 }
 
@@ -492,6 +488,27 @@ mod tests {
             assert_eq!(key.to_string().parse::<StepKey>().unwrap(), key);
         }
         assert!("registration:usdc.near".parse::<StepKey>().is_err());
+    }
+
+    #[test]
+    fn the_operation_id_follows_what_was_signed() {
+        let operation = |treasury: &str, actor: &str, payload: &[u8]| NewRelayOperation {
+            treasury_id: treasury.parse().unwrap(),
+            actor_account_id: actor.parse().unwrap(),
+            operation_kind: OperationKind::AddProposal,
+            submission_payload: payload.to_vec(),
+            proposal_type: None,
+        };
+        let id = operation("dao.near", "alice.near", b"signed").id();
+        assert_eq!(id, operation("dao.near", "alice.near", b"signed").id());
+        assert_ne!(id, operation("dao.near", "alice.near", b"other").id());
+        assert_ne!(id, operation("dao.near", "bob.near", b"signed").id());
+        assert_ne!(id, operation("other.near", "alice.near", b"signed").id());
+        // The boundary between the parts is hashed too.
+        assert_ne!(
+            operation("dao.near", "alice.near", b"xsigned").id(),
+            operation("dao.near", "alice.nearx", b"signed").id()
+        );
     }
 
     #[test]
