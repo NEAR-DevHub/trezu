@@ -8,6 +8,7 @@ use near_api::AccountId;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use serde_with::{DisplayFromStr, serde_as};
+use sqlx::PgPool;
 use std::sync::Arc;
 
 use crate::AppState;
@@ -91,10 +92,11 @@ pub struct TransactionQueryParams {
     pub action: String,
 }
 
-/// Upper bound on NearBlocks receipt pages walked per method (250 receipts at
-/// 25/page) so a pathological date window cannot turn one lookup into
-/// unbounded API spend.
-const MAX_RECEIPT_PAGES: u32 = 10;
+/// Upper bound on NearBlocks receipt pages walked per method. Every receipt
+/// costs one extra call for its args, so a lookup spends at most 53 calls per
+/// method (2 list, 50 receipt-tree, 1 transaction), well under the plan's
+/// per-minute limit.
+const MAX_RECEIPT_PAGES: u32 = 2;
 
 /// GET a NearBlocks v3 URL. `None` means NearBlocks answered with a non-2xx
 /// status.
@@ -226,12 +228,8 @@ async fn find_matching_transaction_paged(
                 continue;
             }
 
-            let txn_url = api_url_or_500(
-                NEARBLOCKS_API_BASE,
-                &format!("v3/txns/{}", receipt.transaction_hash),
-            )?;
-            let Some(txn) =
-                fetch_nearblocks::<NearBlocksItem<NearBlocksTxn>>(http_client, api_key, txn_url)
+            let Some(block_height) =
+                fetch_transaction_block_height(http_client, api_key, &receipt.transaction_hash)
                     .await?
             else {
                 continue;
@@ -240,7 +238,7 @@ async fn find_matching_transaction_paged(
             return Ok(Some(ProposalTransactionResponse {
                 transaction_hash: receipt.transaction_hash.clone(),
                 nearblocks_url: format!("https://nearblocks.io/txns/{}", receipt.transaction_hash),
-                block_height: txn.data.block.block_height,
+                block_height,
                 timestamp: receipt.block.block_timestamp,
             }));
         }
@@ -254,6 +252,73 @@ async fn find_matching_transaction_paged(
         }
     }
     Ok(None)
+}
+
+/// Height of the block that included the transaction itself (not any of its
+/// receipts).
+async fn fetch_transaction_block_height(
+    http_client: &crate::observability::HttpClient,
+    api_key: &str,
+    transaction_hash: &str,
+) -> Result<Option<u64>, (StatusCode, String)> {
+    let url = api_url_or_500(NEARBLOCKS_API_BASE, &format!("v3/txns/{transaction_hash}"))?;
+    Ok(
+        fetch_nearblocks::<NearBlocksItem<NearBlocksTxn>>(http_client, api_key, url)
+            .await?
+            .map(|txn| txn.data.block.block_height),
+    )
+}
+
+/// Execution already recorded in `dao_proposals` by the public-history
+/// linker (from the proposal's `on_proposal_callback` receipt).
+async fn find_recorded_execution(
+    pool: &PgPool,
+    http_client: &crate::observability::HttpClient,
+    api_key: &str,
+    dao_id: &AccountId,
+    proposal_id: u64,
+) -> Result<Option<ProposalTransactionResponse>, (StatusCode, String)> {
+    let recorded = sqlx::query_as::<_, (String, DateTime<Utc>)>(
+        r#"
+        SELECT proposal_execution_transaction_hash, proposal_executed_at
+        FROM dao_proposals
+        WHERE dao_id = $1
+          AND proposal_id = $2
+          AND proposal_execution_transaction_hash IS NOT NULL
+          AND proposal_executed_at IS NOT NULL
+        "#,
+    )
+    .bind(dao_id.as_str())
+    .bind(i64::try_from(proposal_id).unwrap_or(i64::MAX))
+    .fetch_optional(pool)
+    .await;
+
+    let (transaction_hash, executed_at) = match recorded {
+        Ok(Some(row)) => row,
+        Ok(None) => return Ok(None),
+        Err(e) => {
+            tracing::warn!("Failed to read recorded proposal execution: {}", e);
+            return Ok(None);
+        }
+    };
+    let Some(timestamp) = executed_at
+        .timestamp_nanos_opt()
+        .and_then(|nanos| u64::try_from(nanos).ok())
+    else {
+        return Ok(None);
+    };
+    let Some(block_height) =
+        fetch_transaction_block_height(http_client, api_key, &transaction_hash).await?
+    else {
+        return Ok(None);
+    };
+
+    Ok(Some(ProposalTransactionResponse {
+        nearblocks_url: format!("https://nearblocks.io/txns/{transaction_hash}"),
+        transaction_hash,
+        block_height,
+        timestamp,
+    }))
 }
 
 /// Find `receipt_id` in the tree and check that it votes on / calls back for
@@ -334,6 +399,7 @@ pub async fn find_proposal_execution_transaction_inner(
         .with(&params.action)
         .build();
 
+    let db_pool = state.db_pool.clone();
     let http_client = state.http_client.clone();
     let api_key = nearblocks_api_key.clone();
     let dao_id_clone = dao_id.clone();
@@ -345,6 +411,22 @@ pub async fn find_proposal_execution_transaction_inner(
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
             if action == "VoteApprove" {
+                if let Some(response) = find_recorded_execution(
+                    &db_pool,
+                    &http_client,
+                    &api_key,
+                    &dao_id_clone,
+                    proposal_id,
+                )
+                .await?
+                {
+                    tracing::info!(
+                        "Found recorded execution transaction: {}",
+                        response.transaction_hash
+                    );
+                    return Ok(response);
+                }
+
                 // Try on_proposal_callback first
                 if let Some(response) = find_matching_transaction_paged(
                     &http_client,
