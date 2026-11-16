@@ -93,9 +93,9 @@ pub struct TransactionQueryParams {
 }
 
 /// Upper bound on NearBlocks receipt pages walked per method. Every receipt
-/// costs one extra call for its args, so a lookup spends at most 53 calls per
-/// method (2 list, 50 receipt-tree, 1 transaction), well under the plan's
-/// per-minute limit.
+/// costs one extra call for its args, so the walk spends at most 53 calls per
+/// method (2 list, 50 receipt-tree, 1 transaction); a `VoteApprove` lookup can
+/// walk two methods. These calls do not go through `nearblocks_gate`.
 const MAX_RECEIPT_PAGES: u32 = 2;
 
 /// GET a NearBlocks v3 URL. `None` means NearBlocks answered with a non-2xx
