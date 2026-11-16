@@ -131,7 +131,7 @@ struct ChaindefuserToken {
 
 #[derive(Debug, Deserialize)]
 struct NearBlocksTokenResponse {
-    tokens: Vec<NearBlocksToken>,
+    data: Vec<NearBlocksToken>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -146,7 +146,7 @@ struct NearBlocksToken {
     price: Option<String>,
     total_supply: Option<String>,
     onchain_market_cap: Option<String>,
-    change_24: Option<String>,
+    change_24h: Option<String>,
     market_cap: Option<String>,
     volume_24h: Option<String>,
 }
@@ -207,7 +207,7 @@ async fn fetch_nearblocks_ft_metadata(
                 &token_id_str
             };
 
-            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v3/fts/")?;
             url.query_pairs_mut().append_pair("search", search_query);
 
             let response = http_client
@@ -238,7 +238,7 @@ async fn fetch_nearblocks_ft_metadata(
                 )
             })?;
 
-            let token = data.tokens.into_iter().next().ok_or((
+            let token = data.data.into_iter().next().ok_or((
                 StatusCode::NOT_FOUND,
                 "No token found in NearBlocks response".to_string(),
             ))?;
@@ -932,7 +932,7 @@ pub async fn get_token_metadata(
 /// NearBlocks FT search response
 #[derive(Deserialize, Debug)]
 struct NearBlocksSearchResponse {
-    tokens: Vec<NearBlocksToken>,
+    data: Vec<NearBlocksToken>,
 }
 
 /// Search for FT token contract addresses by symbol using NearBlocks API
@@ -1012,8 +1012,10 @@ pub async fn search_token_by_symbol(
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
-            url.query_pairs_mut().append_pair("search", symbol);
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v3/fts/")?;
+            url.query_pairs_mut()
+                .append_pair("search", symbol)
+                .append_pair("limit", "100");
 
             let response = state
                 .http_client
@@ -1042,7 +1044,7 @@ pub async fn search_token_by_symbol(
             })?;
 
             // Sort tokens: exact match first, then by market cap
-            let mut tokens = search_response.tokens;
+            let mut tokens = search_response.data;
             let symbol_upper = symbol.to_uppercase();
 
             // Filter to only exact symbol matches (case-insensitive)
