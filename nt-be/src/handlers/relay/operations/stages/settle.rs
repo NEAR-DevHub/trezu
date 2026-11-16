@@ -4,7 +4,7 @@
 
 use serde_json::Value;
 
-use crate::handlers::relay::{confidential, post_quantum::read_send_tx_result};
+use crate::handlers::{intents::confidential::submitter, relay::post_quantum::read_send_tx_result};
 
 use super::{
     super::{
@@ -68,9 +68,7 @@ impl Settle {
             .dao_operation
             .confidential_payloads_with_ids()
             .into_iter()
-            .filter(|(payload_hash, _)| {
-                confidential::sign_call_in_transaction(result, payload_hash)
-            })
+            .filter(|(payload_hash, _)| submitter::sign_call_in_transaction(result, payload_hash))
             .map(|(payload_hash, proposal_id)| ExecutedIntent {
                 payload_hash,
                 proposal_id,

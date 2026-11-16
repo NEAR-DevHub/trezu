@@ -22,7 +22,9 @@ use crate::constants::INTENTS_CONTRACT_ID;
 use crate::handlers::intents::confidential::prepare_auth::{
     build_auth_proposal, build_bulk_payment_auth_proposal,
 };
-use crate::handlers::relay::confidential::{extract_mpc_signature, fetch_mpc_public_key};
+use crate::handlers::intents::confidential::submitter::{
+    extract_mpc_signature, fetch_mpc_public_key,
+};
 use crate::observability::sanitize_sensitive_json_value;
 use crate::services::{CredentialScope, TokenBundle};
 use crate::utils::url::api_url_or_500;

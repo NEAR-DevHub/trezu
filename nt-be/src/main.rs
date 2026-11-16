@@ -73,6 +73,13 @@ async fn async_main() {
         state.clone(),
         shutdown.clone(),
     );
+    // The 1Click submit queue, likewise in every instance with a lease per row.
+    tokio::spawn(
+        nt_be::handlers::intents::confidential::submitter::ConfidentialIntentSubmitter::run_queue_forever(
+            state.clone(),
+            shutdown.clone(),
+        ),
+    );
 
     // Configure CORS - must specify exact origins, methods, and headers when using credentials
     let origins: Vec<HeaderValue> = state

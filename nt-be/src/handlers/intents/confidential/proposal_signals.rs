@@ -20,9 +20,9 @@ use sqlx::PgPool;
 
 use crate::handlers::intents::confidential::bronze::store::link_intent_to_history_event;
 use crate::handlers::intents::confidential::gold::history_events::refresh_gold_metadata_for_intent;
+use crate::handlers::intents::confidential::submitter::POLL_SUBMITTED_INTENT_TYPES;
 use crate::handlers::intents::confidential::types::bare_account;
 use crate::handlers::proposals::scraper::{extract_payload_hash_from_kind, fetch_proposal};
-use crate::handlers::relay::confidential::POLL_SUBMITTED_INTENT_TYPES;
 
 /// Legacy payload form: `predecessor=AccountId("…") … payload_v2: Some(Eddsa(Bytes("<hex>")))`.
 static V1_SIGNER_HEX: Lazy<Regex> = Lazy::new(|| {

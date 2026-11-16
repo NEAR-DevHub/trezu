@@ -707,7 +707,7 @@ fn configure_cron_runtime(
         state,
         wake_hub,
         "confidential-intent-watch",
-        schedule_every_secs(120),
+        schedule_every_secs(600),
         handlers::confidential_intent_watch
     );
 

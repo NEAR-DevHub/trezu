@@ -349,10 +349,13 @@ async fn drive_signing(
     }
 
     // Done — only now do we submit recipient intents to 1Click.
-    let public_key =
-        crate::handlers::relay::confidential::fetch_mpc_public_key(state, sub_id.as_ref(), "")
-            .await
-            .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
+    let public_key = crate::handlers::intents::confidential::submitter::fetch_mpc_public_key(
+        state,
+        sub_id.as_ref(),
+        "",
+    )
+    .await
+    .map_err(|(c, m)| format!("sub pubkey ({}): {}", c, m))?;
 
     submit_done_activation(
         state,
@@ -511,9 +514,9 @@ async fn submit_done_activation(
         let public_key = public_key.to_string();
         let sub_id = sub_id.to_string();
         futures.push(async move {
-            let res = crate::handlers::relay::confidential::submit_intent_to_oneclick(
+            let res = crate::handlers::intents::confidential::submitter::submit_intent_to_oneclick(
                 &state,
-                crate::handlers::relay::confidential::IntentSubmitKind::Shield,
+                crate::handlers::intents::confidential::submitter::IntentSubmitKind::Shield,
                 &intent_payload,
                 &public_key,
                 &sig.0,
@@ -554,7 +557,7 @@ async fn submit_done_activation(
     }
 
     // Pull the next 1Click history poll forward so the submitted intents enter
-    // the await-settlement fast tier (mirrors relay/confidential.rs submits).
+    // the await-settlement fast tier (mirrors intents/confidential/submitter.rs submits).
     // Before the completed update: if that update fails, the retry cycle finds
     // no pending recipients and never reaches this point again.
     if let Err(e) =

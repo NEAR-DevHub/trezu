@@ -31,7 +31,7 @@ use serde_json::Value;
 use std::sync::Arc;
 
 use crate::handlers::intents::confidential::prepare_auth::build_bulk_payment_auth_proposal;
-use crate::handlers::relay::confidential::compute_nep413_hash;
+use crate::handlers::intents::confidential::submitter::compute_nep413_hash;
 use crate::handlers::treasury::confidential_setup::{
     derive_bulk_subaccount_id, ensure_bulk_subaccount,
 };

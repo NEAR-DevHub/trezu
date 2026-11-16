@@ -36,7 +36,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use crate::{
-    handlers::relay::confidential::extract_v1_signer_hash_from_kind, utils::api_error::ApiError,
+    handlers::intents::confidential::submitter::extract_v1_signer_hash_from_kind,
+    utils::api_error::ApiError,
 };
 
 // ─── Request / response DTOs ─────────────────────────────────────────────────────

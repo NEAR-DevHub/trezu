@@ -17,12 +17,9 @@ use tokio_util::sync::CancellationToken;
 use crate::{
     AppState, error_event,
     error_event::ErrorCode,
-    handlers::{
-        intents::confidential::{
-            bronze::mark_confidential_history_activity_due,
-            proposal_signals::record_confidential_intent_execution,
-        },
-        relay::confidential::ConfidentialIntentSubmitter,
+    handlers::intents::confidential::{
+        bronze::mark_confidential_history_activity_due,
+        proposal_signals::record_confidential_intent_execution,
     },
     services::platform_metrics::{self, PlatformMetric},
 };
@@ -82,10 +79,6 @@ impl RelayEngine {
             );
         }
         tokio::spawn(RelayHealth::new(state.clone()).run_forever(shutdown.clone()));
-        tokio::spawn(ConfidentialIntentSubmitter::run_queue_forever(
-            state.clone(),
-            shutdown.clone(),
-        ));
         tokio::spawn(Arc::new(Self::new(state)).run_forever(shutdown))
     }
 

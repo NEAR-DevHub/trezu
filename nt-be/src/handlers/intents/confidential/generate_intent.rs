@@ -145,17 +145,18 @@ pub async fn generate_intent(
 
         // Compute the NEP-413 hash — this is the same value used in payload_v2.Eddsa
         // on-chain, serving as the unique key to match intents to proposals.
-        let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(payload)
-            .ok_or_else(|| {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "Failed to compute NEP-413 payload hash".to_string(),
-                )
-            })?;
+        let payload_hash =
+            crate::handlers::intents::confidential::submitter::compute_nep413_hash(payload)
+                .ok_or_else(|| {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        "Failed to compute NEP-413 payload hash".to_string(),
+                    )
+                })?;
 
-        if let Err(e) = crate::handlers::relay::confidential::store_pending_intent(
+        if let Err(e) = crate::handlers::intents::confidential::submitter::store_pending_intent(
             &state.db_pool,
-            crate::handlers::relay::confidential::PendingIntentInput {
+            crate::handlers::intents::confidential::submitter::PendingIntentInput {
                 dao_id,
                 payload_hash: &payload_hash,
                 intent_payload: payload,

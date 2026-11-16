@@ -151,7 +151,7 @@ Note: `authenticate` and `submit-intent` are not exposed as frontend-facing endp
 
 ### Auto-Submit Flow (relay integration)
 
-The relay handler (`handlers/relay/confidential.rs`) handles post-approval:
+The submit queue (`handlers/intents/confidential/submitter.rs`) handles post-approval:
 
 1. After a vote relay lands, `try_auto_submit_intent` matches each `v1.signer` payload hash in the voted proposal to its `confidential_intents` row and looks for that payload's MPC signature in the landed transaction (`signature_for_payload`).
 2. **Signature present**: for **auth** it calls 1Click `/v0/auth/authenticate` and stores the JWT in `monitored_accounts`; for **shield** it calls `/v0/submit-intent` with the stored intent payload + signature. The execution facts (`proposal_executed_at`, `proposal_execution_transaction_hash`) are stamped on the row too.
@@ -160,7 +160,7 @@ The relay handler (`handlers/relay/confidential.rs`) handles post-approval:
 
 ### Stuck-intent watch
 
-`stuck_watch.rs` (cron `confidential-intent-watch`, every 2 min) checks the invariant the flow above is meant to keep: a `pending` intent whose proposal is approved must reach 1Click. Rows without an execution hash are read from chain (`get_proposal`); an approved one unstamped for 5 min pages `CONF_INTENT_EXECUTION_UNSTAMPED`. Stamped rows still unsubmitted 10 min after execution page `CONF_INTENT_SUBMIT_STALLED`. Rows past their deadline are left to the poll's expiry path; proposals chain reports finished are not re-read. A bulk payment whose header reached 1Click but whose `confidential_bulk_payments` row is still not `completed` 20 min later pages `BULK_CONF_STALLED`. All three alerts repeat hourly per row until it moves (see `docs/RUNBOOKS.md`).
+`stuck_watch.rs` (cron `confidential-intent-watch`, every 10 min) runs two queries for rows that should have finished 20 minutes ago. A `pending` intent with execution recorded but not submitted raises `CONF_INTENT_SUBMIT_STALLED`; one whose proposal is `approved` in `dao_proposals` with no execution recorded raises `CONF_INTENT_EXECUTION_UNSTAMPED`. Stamped rows past their deadline are left to the queue's expiry path. A bulk payment whose header reached 1Click but whose `confidential_bulk_payments` row is not finished raises `BULK_CONF_STALLED`. Each event is raised on every sweep until the row moves (see `docs/RUNBOOKS.md`).
 
 ### Database Tables
 

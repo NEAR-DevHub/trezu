@@ -11,10 +11,8 @@
 //!   cost) and the RPC retry helper.
 //! - [`effects`] — the gas credit and the NEP-141 registration targets.
 //! - [`operations`] — the durable store, the worker and its stages.
-//! - [`confidential`] — submit confidential intents after an approving vote.
 
 pub mod access;
-pub mod confidential;
 pub mod effects;
 pub mod operations;
 pub mod parse;
