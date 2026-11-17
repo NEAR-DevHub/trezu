@@ -138,6 +138,11 @@ fn build_intents_withdraw_args(
     }
 }
 
+/// PoA-bridge tokens (`<chain>-<address>.omft.near`) withdraw to external chains.
+fn is_poa_token(token_contract: &str) -> bool {
+    token_contract.ends_with(".omft.near")
+}
+
 /// Build NEP-141 `ft_transfer` call args; `recipient` is untrusted → serialized.
 fn build_ft_transfer_args(recipient: &str, amount: U128) -> String {
     json!({
@@ -417,6 +422,10 @@ impl BulkPaymentContract {
     ///
     /// Worker should call with 300 TGas for maximum throughput.
     ///
+    /// PoA bridge lists (`nep141:<chain>-<address>.omft.near`) are paid one row per
+    /// call whatever the gas: the bridge only records the first withdrawal of a
+    /// NEAR transaction, so a transaction must carry exactly one.
+    ///
     /// # Gas Optimization TODO
     /// Currently, reading the payment list from storage clones the entire Vec<PaymentRecord>,
     /// which costs ~156 TGas for 500 payments (~0.6 TGas per record for deserialization).
@@ -459,6 +468,17 @@ impl BulkPaymentContract {
         // Reserve gas for final operations (storing list, logging)
         let gas_reserve = Gas::from_tgas(15);
 
+        // The PoA bridge records only the first withdrawal of a NEAR transaction:
+        // with several `ft_withdraw` to a PoA token in one transaction every one
+        // burns the sender's tokens but only the first reaches the destination
+        // chain. A transaction must therefore carry exactly one PoA withdrawal, so
+        // a PoA list is paid one row per `payout_batch` call (the worker calls
+        // again for the rest). This must not depend on the gas the caller attaches.
+        let one_withdrawal_per_call = list
+            .token_id
+            .strip_prefix("nep141:")
+            .is_some_and(is_poa_token);
+
         let mut processed: u64 = 0;
         let mut first_pending_found = false;
 
@@ -490,13 +510,11 @@ impl BulkPaymentContract {
                     let token_contract = list.token_id.strip_prefix("nep141:").unwrap();
 
                     // PoA tokens require WITHDRAW_TO memo for external chain withdrawals
-                    let is_poa_token = token_contract.ends_with(".omft.near");
-
                     let args_json = build_intents_withdraw_args(
                         token_contract,
                         &payment.recipient,
                         payment.amount,
-                        is_poa_token,
+                        is_poa_token(token_contract),
                     );
 
                     Promise::new("intents.near".parse().unwrap())
@@ -542,6 +560,10 @@ impl BulkPaymentContract {
                     block_height: env::block_height(),
                 };
                 processed += 1;
+
+                if one_withdrawal_per_call {
+                    break;
+                }
             }
         }
 
@@ -1480,5 +1502,100 @@ mod tests {
         assert_eq!(poa["amount"], "1000");
         assert_eq!(poa["memo"], "WITHDRAW_TO:0xD7A7...");
         assert_eq!(poa.as_object().unwrap().len(), 4);
+    }
+
+    const POA_TOKEN: &str = "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near";
+    const INTENTS_NEAR_TOKEN: &str = "nep141:usdt.tether-token.near";
+
+    /// Contract holding one Approved list with `n` pending rows of 10_000 each.
+    fn contract_with_approved_list(token_id: &str, n: usize) -> (BulkPaymentContract, ListId) {
+        let mut contract = BulkPaymentContract::default();
+        let list_id = test_list_id("payout");
+        let external = token_id == POA_TOKEN;
+        contract.payment_lists.insert(
+            list_id.clone(),
+            PaymentList {
+                token_id: token_id.to_string(),
+                submitter: accounts(0),
+                status: ListStatus::Approved,
+                payments: (0..n)
+                    .map(|i| PaymentRecord {
+                        recipient: if external {
+                            format!("0x{i:040x}")
+                        } else {
+                            format!("user{i}.near")
+                        },
+                        amount: U128(10_000),
+                        status: PaymentStatus::Pending,
+                    })
+                    .collect(),
+                created_at: 0,
+            },
+        );
+        (contract, list_id)
+    }
+
+    /// Number of created receipts that call `method`.
+    fn count_calls(method: &[u8]) -> usize {
+        near_sdk::test_utils::get_created_receipts()
+            .iter()
+            .filter(|r| {
+                r.actions.iter().any(|a| {
+                    matches!(a, near_sdk::mock::MockAction::FunctionCallWeight { method_name, .. }
+                        if method_name == method)
+                })
+            })
+            .count()
+    }
+
+    fn pending_rows(contract: &BulkPaymentContract, list_id: &ListId) -> usize {
+        contract
+            .view_list(list_id.clone())
+            .payments
+            .iter()
+            .filter(|p| matches!(p.status, PaymentStatus::Pending))
+            .count()
+    }
+
+    #[test]
+    fn poa_list_sends_one_withdrawal_per_call_whatever_the_gas() {
+        // Plenty of gas for all 3 rows: it must still stop after the first one.
+        let mut context = get_context(accounts(0));
+        context.prepaid_gas(Gas::from_tgas(1000));
+        testing_env!(context.build());
+        let (mut contract, list_id) = contract_with_approved_list(POA_TOKEN, 3);
+
+        for (call, expected_remaining) in [(1, 2), (2, 1), (3, 0)] {
+            testing_env!(context.build());
+            assert_eq!(contract.payout_batch(list_id.clone()), expected_remaining);
+            assert_eq!(
+                count_calls(b"ft_withdraw"),
+                1,
+                "call {call}: one PoA withdrawal per transaction"
+            );
+            assert_eq!(
+                pending_rows(&contract, &list_id),
+                expected_remaining as usize
+            );
+        }
+    }
+
+    #[test]
+    fn other_lists_still_send_a_whole_batch_per_call() {
+        for (token, method) in [
+            (INTENTS_NEAR_TOKEN, Some(&b"ft_withdraw"[..])),
+            ("usdt.tether-token.near", Some(&b"ft_transfer"[..])),
+            ("native", None),
+        ] {
+            let mut context = get_context(accounts(0));
+            context.prepaid_gas(Gas::from_tgas(1000));
+            testing_env!(context.build());
+            let (mut contract, list_id) = contract_with_approved_list(token, 3);
+
+            assert_eq!(contract.payout_batch(list_id.clone()), 0, "{token}");
+            if let Some(method) = method {
+                assert_eq!(count_calls(method), 3, "{token}");
+            }
+        }
     }
 }
