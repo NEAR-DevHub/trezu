@@ -39,7 +39,7 @@ impl PaymentItemStatus {
         self.is("Pending")
     }
 
-    /// Cross-chain withdrawal sent, `intents.near` result not yet resolved.
+    /// Payment sent, its result is not yet resolved by the contract callback.
     fn is_processing(&self) -> bool {
         self.is("Processing")
     }
@@ -60,7 +60,10 @@ impl PaymentListView {
     }
 
     fn failed_payments_count(&self) -> usize {
-        self.payments.iter().filter(|p| p.status.is_failed()).count()
+        self.payments
+            .iter()
+            .filter(|p| p.status.is_failed())
+            .count()
     }
 }
 
@@ -203,22 +206,27 @@ pub async fn query_and_process_pending_lists(
                 }
                 if !list.has_pending_payments() {
                     if list.has_processing_payments() {
-                        // Cross-chain withdrawals are resolved by a callback on
+                        // Payments are resolved by a callback on
                         // the contract; keep the list queued until they settle.
                         tracing::debug!(
-                            "List {} has withdrawals awaiting resolution, keeping in queue",
+                            "List {} has payments awaiting resolution, keeping in queue",
                             list_id
                         );
                         continue;
                     }
                     let failed = list.failed_payments_count();
                     if failed > 0 {
-                        // `intents.near` refunded these rows: nothing was delivered.
-                        // They stay `Failed` on-chain until `retry_failed_payments`.
+                        // These payments failed or were refunded: nothing was delivered.
+                        // They stay `Failed` on-chain until an operator runs
+                        // `retry_failed_payments` and re-queues the list (see
+                        // docs/RUNBOOKS.md). Not retried automatically: a permanent
+                        // cause (bad address, unregistered receiver) would loop.
+                        // Separate from `BulkPayoutFailed` (the call itself failing)
+                        // so the paging rule for that one is not tripped by refunds.
                         crate::error_event!(
-                            crate::error_event::ErrorCode::BulkPayoutFailed,
+                            crate::error_event::ErrorCode::BulkPayoutRowsFailed,
                             list_id,
-                            error = %format!("{failed} cross-chain withdrawal(s) failed and were refunded")
+                            error = %format!("{failed} payment(s) failed and were not delivered")
                         );
                     }
                     tracing::info!(

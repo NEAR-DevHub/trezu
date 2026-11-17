@@ -55,17 +55,18 @@ pub enum PaymentStatus {
     Paid {
         block_height: u64,
     },
-    /// Cross-chain (PoA bridge) withdrawal was sent to `intents.near` and its
-    /// result has not been resolved yet. Set by `payout_batch`; moved to `Paid`
-    /// or `Failed` by `on_withdraw_resolved`. Never picked up by `payout_batch`.
+    /// The payment was sent and its result has not been resolved yet. Set by
+    /// `payout_batch`; moved to `Paid` or `Failed` by `on_payments_resolved`.
+    /// Never picked up by `payout_batch`.
     ///
     /// NOTE: new variants must stay appended (borsh enum tags are positional)
     /// and must stay unit variants so they serialize as plain JSON strings,
     /// which older readers (nt-be, nt-fe) tolerate.
     Processing,
-    /// `intents.near` reported that the withdrawal did not (fully) go through.
-    /// The funds stay in this contract's intents balance. Use
-    /// `retry_failed_payments` to make the rows eligible for payout again.
+    /// The payment did not go through (the promise failed, or `intents.near`
+    /// withdrew less than the full amount) and the funds stayed with this
+    /// contract. Use `retry_failed_payments` to make the rows eligible for
+    /// payout again.
     Failed,
 }
 
@@ -162,28 +163,50 @@ fn build_ft_transfer_args(recipient: &str, amount: U128) -> String {
 /// Gas attached to each `intents.near::ft_withdraw` call.
 const FT_WITHDRAW_GAS: Gas = Gas::from_tgas(50);
 
-/// Fixed part of the gas reserved for `on_withdraw_resolved`.
-const WITHDRAW_CALLBACK_BASE_GAS: Gas = Gas::from_tgas(15);
+// Callback gas, measured on testnet (native lists, `on_payments_resolved` gas
+// burnt): 2 rows 1.68 TGas, 20 rows 2.12 TGas, 60 rows 3.10 TGas, i.e. about
+// 1.6 TGas + 0.025 TGas per row. The constants below keep a margin of 6-8x
+// (longer external addresses, intents results to parse). The callback also
+// receives any gas left over by `payout_batch`, so this is a floor.
 
-/// Per-record part of the gas reserved for `on_withdraw_resolved`: the callback
-/// loads the whole payment list from storage (~0.6 TGas per record, see the
-/// "Gas Optimization TODO" on `payout_batch`), so it is rounded up to 1 TGas.
-const WITHDRAW_CALLBACK_GAS_PER_RECORD: Gas = Gas::from_tgas(1);
+/// Fixed part of the gas reserved for `on_payments_resolved`.
+const RESOLVE_CALLBACK_BASE_GAS: Gas = Gas::from_tgas(10);
+
+/// Per-record part of the gas reserved for `on_payments_resolved`: the callback
+/// loads the whole payment list from storage.
+const RESOLVE_CALLBACK_GAS_PER_RECORD: Gas = Gas::from_gas(100_000_000_000); // 0.1 TGas
+
+/// Per-payment part of the gas reserved for `on_payments_resolved`: reading the
+/// promise result, parsing it and updating the row.
+const RESOLVE_CALLBACK_GAS_PER_PAYMENT: Gas = Gas::from_gas(100_000_000_000); // 0.1 TGas
+
+/// Upper bound on a payment promise's return value that the callback will read.
+/// `ft_withdraw` returns a JSON-quoted `U128` (at most ~42 bytes); `ft_transfer`
+/// and native transfers return nothing.
+const MAX_PAYMENT_RESULT_LEN: usize = 128;
+
+/// Gas to reserve for `on_payments_resolved` on a list with `num_records` rows
+/// when it resolves a batch of `batch_len` payments.
+const fn resolve_callback_gas(num_records: usize, batch_len: u64) -> Gas {
+    Gas::from_gas(
+        RESOLVE_CALLBACK_BASE_GAS
+            .as_gas()
+            .saturating_add(
+                RESOLVE_CALLBACK_GAS_PER_RECORD
+                    .as_gas()
+                    .saturating_mul(num_records as u64),
+            )
+            .saturating_add(
+                RESOLVE_CALLBACK_GAS_PER_PAYMENT
+                    .as_gas()
+                    .saturating_mul(batch_len),
+            ),
+    )
+}
 
 /// PoA-bridge tokens (`<chain>-<address>.omft.near`) withdraw to external chains.
 fn is_poa_token(token_contract: &str) -> bool {
     token_contract.ends_with(".omft.near")
-}
-
-/// Gas to reserve for `on_withdraw_resolved` on a list with `num_records` rows.
-const fn withdraw_callback_gas(num_records: usize) -> Gas {
-    Gas::from_gas(
-        WITHDRAW_CALLBACK_BASE_GAS.as_gas().saturating_add(
-            WITHDRAW_CALLBACK_GAS_PER_RECORD
-                .as_gas()
-                .saturating_mul(num_records as u64),
-        ),
-    )
 }
 
 #[near]
@@ -456,12 +479,12 @@ impl BulkPaymentContract {
     ///
     /// Worker should call with 300 TGas for maximum throughput.
     ///
-    /// # Cross-chain (PoA bridge) tokens
-    /// For `nep141:*.omft.near` lists a row is not marked `Paid` when the
-    /// withdrawal is sent: it becomes `Processing` and is resolved to
-    /// `Paid`/`Failed` by `on_withdraw_resolved`, once `intents.near` reports
-    /// how much was actually withdrawn. Each callback reserves gas, which is
-    /// part of the per-payment gas check.
+    /// # Payment confirmation
+    /// A row is not marked `Paid` when its payment is sent: it becomes
+    /// `Processing`, and one `on_payments_resolved` callback per call resolves
+    /// every row of the batch to `Paid` or `Failed` from the result of its
+    /// promise (a failed or refunded payment must not show as paid). The
+    /// callback's gas is reserved in the per-payment gas check.
     ///
     /// # Gas Optimization TODO
     /// Currently, reading the payment list from storage clones the entire Vec<PaymentRecord>,
@@ -490,21 +513,14 @@ impl BulkPaymentContract {
             "List must be Approved to process payments"
         );
 
-        // Cross-chain (PoA bridge) withdrawals are tracked with a callback;
-        // see the docs on `payout_batch`.
         let is_poa_list = list
             .token_id
             .strip_prefix("nep141:")
             .is_some_and(is_poa_token);
 
         // Determine gas needed per payment based on token type
-        let gas_per_payment: Gas = if is_poa_list {
-            // ft_withdraw + the callback that resolves the withdrawal result
-            Gas::from_gas(
-                FT_WITHDRAW_GAS.as_gas() + withdraw_callback_gas(list.payments.len()).as_gas(),
-            )
-        } else if list.token_id.starts_with("nep141:") {
-            // NEAR Intents (withdraw to a NEAR account): ft_withdraw cross-contract call
+        let gas_per_payment: Gas = if list.token_id.starts_with("nep141:") {
+            // NEAR Intents: ft_withdraw cross-contract call
             FT_WITHDRAW_GAS
         } else if list.token_id == "native" || list.token_id == "near" || list.token_id == "NEAR" {
             // Native NEAR: minimal gas per transfer
@@ -521,21 +537,32 @@ impl BulkPaymentContract {
         let mut first_pending_found = false;
         // `list.payments` is mutably borrowed by the loop below.
         let list_payments_len = list.payments.len();
+        let block_height = env::block_height();
+
+        // Promises of this batch (joined and resolved by one callback), with the
+        // row index and amount each one belongs to.
+        let mut batch: Vec<Promise> = Vec::new();
+        let mut batch_indices: Vec<u64> = Vec::new();
+        let mut batch_amounts: Vec<U128> = Vec::new();
 
         for (index, payment) in list.payments.iter_mut().enumerate() {
             if matches!(payment.status, PaymentStatus::Pending) {
-                // Check if we have enough gas for this payment
+                // Check if we have enough gas for this payment, plus the callback
+                // that will resolve it together with the rest of the batch
                 let gas_remaining = env::prepaid_gas()
                     .as_gas()
                     .saturating_sub(env::used_gas().as_gas());
+                let gas_needed = gas_per_payment.as_gas()
+                    + resolve_callback_gas(list_payments_len, processed + 1).as_gas()
+                    + gas_reserve.as_gas();
 
-                if gas_remaining < gas_per_payment.as_gas() + gas_reserve.as_gas() {
+                if gas_remaining < gas_needed {
                     // Not enough gas for another payment
                     if !first_pending_found {
                         // Haven't processed any payments yet - panic
                         env::panic_str(&format!(
                             "Insufficient gas to process payments. Need at least {} TGas, have {} TGas remaining",
-                            (gas_per_payment.as_gas() + gas_reserve.as_gas()) / 1_000_000_000_000,
+                            gas_needed / 1_000_000_000_000,
                             gas_remaining / 1_000_000_000_000
                         ));
                     }
@@ -557,35 +584,12 @@ impl BulkPaymentContract {
                         is_poa_list,
                     );
 
-                    let withdraw = Promise::new("intents.near".parse().unwrap()).function_call(
+                    batch.push(Promise::new("intents.near".parse().unwrap()).function_call(
                         "ft_withdraw".to_string(),
                         args_json.into_bytes(),
                         NearToken::from_yoctonear(1),
                         FT_WITHDRAW_GAS,
-                    );
-
-                    if is_poa_list {
-                        // Don't mark the row Paid until `intents.near` confirms
-                        // the withdrawal; `on_withdraw_resolved` does that.
-                        let block_height = env::block_height();
-                        withdraw
-                            .then(
-                                Self::ext(env::current_account_id())
-                                    .with_static_gas(withdraw_callback_gas(list_payments_len))
-                                    .on_withdraw_resolved(
-                                        list_id.clone(),
-                                        index as u64,
-                                        payment.amount,
-                                        block_height,
-                                    ),
-                            )
-                            .detach();
-                        payment.status = PaymentStatus::Processing;
-                        processed += 1;
-                        continue;
-                    }
-
-                    withdraw.detach();
+                    ));
                 } else if list.token_id == "native"
                     || list.token_id == "near"
                     || list.token_id == "NEAR"
@@ -594,9 +598,10 @@ impl BulkPaymentContract {
                     let recipient: AccountId = payment.recipient.parse().unwrap_or_else(|_| {
                         env::panic_str("Invalid NEAR account ID for native transfer")
                     });
-                    Promise::new(recipient)
-                        .transfer(NearToken::from_yoctonear(payment.amount.0))
-                        .detach();
+                    batch.push(
+                        Promise::new(recipient)
+                            .transfer(NearToken::from_yoctonear(payment.amount.0)),
+                    );
                 } else {
                     // NEP-141 fungible token transfer
                     let token_account: AccountId = list
@@ -606,22 +611,37 @@ impl BulkPaymentContract {
 
                     let args = build_ft_transfer_args(&payment.recipient, payment.amount);
 
-                    Promise::new(token_account)
-                        .function_call(
-                            "ft_transfer".to_string(),
-                            args.into_bytes(),
-                            NearToken::from_yoctonear(1),
-                            Gas::from_tgas(50),
-                        )
-                        .detach();
+                    batch.push(Promise::new(token_account).function_call(
+                        "ft_transfer".to_string(),
+                        args.into_bytes(),
+                        NearToken::from_yoctonear(1),
+                        Gas::from_tgas(50),
+                    ));
                 }
 
-                // Mark as Paid with current block height
-                payment.status = PaymentStatus::Paid {
-                    block_height: env::block_height(),
-                };
+                // Not `Paid` yet: `on_payments_resolved` decides from the
+                // promise result, so a failed payment never shows as paid.
+                payment.status = PaymentStatus::Processing;
+                batch_indices.push(index as u64);
+                batch_amounts.push(payment.amount);
                 processed += 1;
             }
+        }
+
+        // One callback resolves the whole batch (it loads the list only once).
+        if let Some(joined) = batch.into_iter().reduce(Promise::and) {
+            joined
+                .then(
+                    Self::ext(env::current_account_id())
+                        .with_static_gas(resolve_callback_gas(list_payments_len, processed))
+                        .on_payments_resolved(
+                            list_id.clone(),
+                            batch_indices,
+                            batch_amounts,
+                            block_height,
+                        ),
+                )
+                .detach();
         }
 
         // Update the list
@@ -644,53 +664,73 @@ impl BulkPaymentContract {
         remaining_pending
     }
 
-    /// Resolve a cross-chain withdrawal started by `payout_batch`.
+    /// Resolve the payments sent by one `payout_batch` call.
     ///
-    /// `intents.near::ft_withdraw` returns the amount that was actually
-    /// withdrawn: the full amount on success, less (possibly 0) when the token
-    /// transfer failed and the balance was refunded. Only a full withdrawal marks
-    /// the row `Paid` (keeping the block height of the `payout_batch` receipt, so
-    /// the transaction lookup keeps working); anything else marks it `Failed`.
+    /// The promise results arrive in the same order as `indices`/`amounts`:
+    /// - NEAR Intents (`nep141:` lists): `intents.near::ft_withdraw` returns the
+    ///   amount actually withdrawn, the full amount on success and less
+    ///   (possibly 0) when the token transfer failed and was refunded.
+    /// - Native NEAR and NEP-141 `ft_transfer`: success is a successful promise.
+    ///
+    /// A row becomes `Paid` (keeping the block height of the `payout_batch`
+    /// receipt, so the transaction lookup keeps working) only on success;
+    /// anything else makes it `Failed`.
     ///
     /// Idempotent: rows that are not `Processing` are left untouched.
     #[private]
-    pub fn on_withdraw_resolved(
+    pub fn on_payments_resolved(
         &mut self,
         list_id: ListId,
-        index: u64,
-        amount: U128,
+        indices: Vec<u64>,
+        amounts: Vec<U128>,
         block_height: u64,
-        #[callback_result] result: Result<U128, PromiseError>,
     ) {
-        let withdrawn_in_full = matches!(&result, Ok(withdrawn) if withdrawn.0 == amount.0);
-
         let Some(list) = self.payment_lists.get_mut(&list_id) else {
-            log!("Withdrawal result for unknown list {}", list_id);
+            log!("Payment results for unknown list {}", list_id);
             return;
         };
-        let Some(payment) = list.payments.get_mut(index as usize) else {
-            log!(
-                "Withdrawal result for unknown row {} of list {}",
-                index,
-                list_id
-            );
-            return;
-        };
-        if !matches!(payment.status, PaymentStatus::Processing) || payment.amount.0 != amount.0 {
-            return;
-        }
+        let is_intents_list = list.token_id.starts_with("nep141:");
+        let results_count = env::promise_results_count();
 
-        if withdrawn_in_full {
-            payment.status = PaymentStatus::Paid { block_height };
-        } else {
-            payment.status = PaymentStatus::Failed;
-            log!(
-                "Withdrawal {} of list {} failed: expected {}, result {:?}",
-                index,
-                list_id,
-                amount.0,
-                result
-            );
+        for (position, (index, amount)) in indices.iter().zip(amounts.iter()).enumerate() {
+            // A missing result must never count as success.
+            let result = if (position as u64) < results_count {
+                env::promise_result_checked(position as u64, MAX_PAYMENT_RESULT_LEN)
+            } else {
+                Err(PromiseError::Failed)
+            };
+            let succeeded = match &result {
+                Ok(bytes) if is_intents_list => near_sdk::serde_json::from_slice::<U128>(bytes)
+                    .is_ok_and(|withdrawn| withdrawn.0 == amount.0),
+                Ok(_) => true,
+                Err(_) => false,
+            };
+
+            let Some(payment) = list.payments.get_mut(*index as usize) else {
+                log!(
+                    "Payment result for unknown row {} of list {}",
+                    index,
+                    list_id
+                );
+                continue;
+            };
+            if !matches!(payment.status, PaymentStatus::Processing) || payment.amount.0 != amount.0
+            {
+                continue;
+            }
+
+            if succeeded {
+                payment.status = PaymentStatus::Paid { block_height };
+            } else {
+                payment.status = PaymentStatus::Failed;
+                log!(
+                    "Payment {} of list {} failed: expected {}, result {:?}",
+                    index,
+                    list_id,
+                    amount.0,
+                    result
+                );
+            }
         }
     }
 
@@ -698,8 +738,10 @@ impl BulkPaymentContract {
     /// `payout_batch` sends it again. Returns the number of rows reset.
     ///
     /// Public like `payout_batch`: it can only re-send a row to its original
-    /// recipient, and a failed withdrawal's funds are back in this contract's
-    /// intents balance. The caller must still re-queue the list for the worker.
+    /// recipient, and a failed payment's funds stayed with this contract. A row
+    /// that fails for a permanent reason (e.g. a NEAR account that does not
+    /// exist) will fail again. The caller must still re-queue the list for the
+    /// worker.
     pub fn retry_failed_payments(&mut self, list_id: ListId) -> u64 {
         let list = self
             .payment_lists
@@ -1084,7 +1126,7 @@ impl MultiTokenReceiver for BulkPaymentContract {
 mod tests {
     use super::*;
     use near_sdk::test_utils::{VMContextBuilder, accounts};
-    use near_sdk::testing_env;
+    use near_sdk::{PromiseResult, testing_env};
 
     fn get_context(predecessor: AccountId) -> VMContextBuilder {
         let mut builder = VMContextBuilder::new();
@@ -1638,14 +1680,19 @@ mod tests {
         assert_eq!(poa.as_object().unwrap().len(), 4);
     }
 
-    // ---- Issue #1924: cross-chain withdrawals ----
+    // ---- Issue #1924: rows are Paid only after the payment succeeded ----
 
     const POA_TOKEN: &str = "nep141:base-0x833589fcd6edb6e08f4c7c32d4f71b54bda02913.omft.near";
+    const INTENTS_NEAR_TOKEN: &str = "nep141:usdt.tether-token.near";
+    const FT_TOKEN: &str = "usdt.tether-token.near";
 
     /// Contract holding one Approved list with `n` pending rows of 10_000 each.
     fn contract_with_approved_list(token_id: &str, n: usize) -> (BulkPaymentContract, ListId) {
         let mut contract = BulkPaymentContract::default();
         let list_id = test_list_id("payout");
+        // Native / NEP-141 recipients must be NEAR accounts; PoA recipients are
+        // external-chain addresses.
+        let external = token_id == POA_TOKEN;
         contract.payment_lists.insert(
             list_id.clone(),
             PaymentList {
@@ -1654,7 +1701,11 @@ mod tests {
                 status: ListStatus::Approved,
                 payments: (0..n)
                     .map(|i| PaymentRecord {
-                        recipient: format!("0x{i:040x}"),
+                        recipient: if external {
+                            format!("0x{i:040x}")
+                        } else {
+                            format!("user{i}.near")
+                        },
                         amount: U128(10_000),
                         status: PaymentStatus::Pending,
                     })
@@ -1680,89 +1731,98 @@ mod tests {
             .collect()
     }
 
-    #[test]
-    fn poa_payout_leaves_rows_processing_until_resolved() {
-        testing_env!(payout_context().build());
-        let (mut contract, list_id) = contract_with_approved_list(POA_TOKEN, 3);
-
-        // Nothing is `Paid` just because the withdrawal was sent.
-        assert_eq!(contract.payout_batch(list_id.clone()), 0);
-        assert!(
-            statuses(&contract, &list_id)
-                .iter()
-                .all(|s| matches!(s, PaymentStatus::Processing))
-        );
-
-        // One ft_withdraw per row, each followed by its own resolve callback.
-        let receipts = near_sdk::test_utils::get_created_receipts();
-        let count_calls = |method: &[u8]| {
-            receipts
-                .iter()
-                .filter(|r| {
-                    r.actions.iter().any(|a| {
-                        matches!(a, near_sdk::mock::MockAction::FunctionCallWeight { method_name, .. }
-                            if method_name == method)
-                    })
+    /// Number of created receipts that call `method`.
+    fn count_calls(method: &[u8]) -> usize {
+        near_sdk::test_utils::get_created_receipts()
+            .iter()
+            .filter(|r| {
+                r.actions.iter().any(|a| {
+                    matches!(a, near_sdk::mock::MockAction::FunctionCallWeight { method_name, .. }
+                        if method_name == method)
                 })
-                .count()
-        };
-        assert_eq!(count_calls(b"ft_withdraw"), 3);
-        assert_eq!(count_calls(b"on_withdraw_resolved"), 3);
-
-        // Processing rows are never sent again.
-        let before = near_sdk::test_utils::get_created_receipts().len();
-        assert_eq!(contract.payout_batch(list_id), 0);
-        assert_eq!(near_sdk::test_utils::get_created_receipts().len(), before);
+            })
+            .count()
     }
 
     #[test]
-    fn non_poa_intents_payout_still_batches() {
-        testing_env!(payout_context().build());
-        let (mut contract, list_id) =
-            contract_with_approved_list("nep141:usdt.tether-token.near", 3);
+    fn payout_leaves_every_row_processing_until_resolved() {
+        for (token, sent_method) in [
+            (POA_TOKEN, Some(&b"ft_withdraw"[..])),
+            (INTENTS_NEAR_TOKEN, Some(&b"ft_withdraw"[..])),
+            (FT_TOKEN, Some(&b"ft_transfer"[..])),
+            ("native", None),
+        ] {
+            testing_env!(payout_context().build());
+            let (mut contract, list_id) = contract_with_approved_list(token, 3);
 
-        assert_eq!(contract.payout_batch(list_id.clone()), 0);
-        assert!(
-            statuses(&contract, &list_id)
-                .iter()
-                .all(|s| matches!(s, PaymentStatus::Paid { .. }))
-        );
+            assert_eq!(contract.payout_batch(list_id.clone()), 0, "{token}");
+            assert!(
+                statuses(&contract, &list_id)
+                    .iter()
+                    .all(|s| matches!(s, PaymentStatus::Processing)),
+                "nothing is Paid just because the payment was sent: {token}"
+            );
+            if let Some(method) = sent_method {
+                assert_eq!(count_calls(method), 3, "{token}");
+            }
+            // One callback resolves the whole batch.
+            assert_eq!(count_calls(b"on_payments_resolved"), 1, "{token}");
+
+            // Processing rows are never sent again.
+            let before = near_sdk::test_utils::get_created_receipts().len();
+            assert_eq!(contract.payout_batch(list_id), 0);
+            assert_eq!(near_sdk::test_utils::get_created_receipts().len(), before);
+        }
     }
 
     #[test]
     #[should_panic(expected = "Insufficient gas")]
-    fn poa_payout_needs_gas_for_the_callback() {
+    fn payout_needs_gas_for_the_callback() {
         let mut context = get_context(accounts(0));
-        // Enough for ft_withdraw + reserve, not for the callback of a 100-row list.
+        // Enough for ft_withdraw + reserve, not for the callback of a 1000-row list.
         context.prepaid_gas(Gas::from_tgas(100));
         testing_env!(context.build());
-        let (mut contract, list_id) = contract_with_approved_list(POA_TOKEN, 100);
+        let (mut contract, list_id) = contract_with_approved_list(POA_TOKEN, 1000);
         contract.payout_batch(list_id);
     }
 
-    fn resolve(
-        contract: &mut BulkPaymentContract,
-        list_id: &ListId,
-        result: Result<U128, PromiseError>,
-    ) {
-        // The callback is #[private]: it must be called by the contract itself.
+    /// Runs the callback as the contract itself, with the given promise results
+    /// (one per row, in row order).
+    fn resolve(contract: &mut BulkPaymentContract, list_id: &ListId, results: Vec<PromiseResult>) {
+        let n = results.len() as u64;
         let mut context = get_context(accounts(0));
         context.current_account_id(accounts(0));
-        testing_env!(context.build());
-        contract.on_withdraw_resolved(list_id.clone(), 0, U128(10_000), 123, result);
+        testing_env!(
+            context.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            results
+        );
+        contract.on_payments_resolved(
+            list_id.clone(),
+            (0..n).collect(),
+            (0..n).map(|_| U128(10_000)).collect(),
+            123,
+        );
     }
 
-    fn processing_contract() -> (BulkPaymentContract, ListId) {
+    /// A list of `n` rows of `token` that `payout_batch` already sent.
+    fn processing_contract(token: &str, n: usize) -> (BulkPaymentContract, ListId) {
         testing_env!(payout_context().build());
-        let (mut contract, list_id) = contract_with_approved_list(POA_TOKEN, 1);
+        let (mut contract, list_id) = contract_with_approved_list(token, n);
         contract.payout_batch(list_id.clone());
         (contract, list_id)
     }
 
+    fn withdrawn(amount: u128) -> PromiseResult {
+        PromiseResult::Successful(format!("\"{amount}\"").into_bytes())
+    }
+
     #[test]
     fn full_withdrawal_marks_row_paid_with_original_block_height() {
-        let (mut contract, list_id) = processing_contract();
-        resolve(&mut contract, &list_id, Ok(U128(10_000)));
+        let (mut contract, list_id) = processing_contract(POA_TOKEN, 1);
+        resolve(&mut contract, &list_id, vec![withdrawn(10_000)]);
         assert!(matches!(
             statuses(&contract, &list_id)[0],
             PaymentStatus::Paid { block_height: 123 }
@@ -1770,10 +1830,16 @@ mod tests {
     }
 
     #[test]
-    fn refunded_or_partial_or_failed_withdrawal_marks_row_failed() {
-        for result in [Ok(U128(0)), Ok(U128(9_999)), Err(PromiseError::Failed)] {
-            let (mut contract, list_id) = processing_contract();
-            resolve(&mut contract, &list_id, result);
+    fn refunded_partial_or_failed_withdrawal_marks_row_failed() {
+        for result in [
+            withdrawn(0),
+            withdrawn(9_999),
+            PromiseResult::Successful(b"not json".to_vec()),
+            PromiseResult::Successful(Vec::new()),
+            PromiseResult::Failed,
+        ] {
+            let (mut contract, list_id) = processing_contract(INTENTS_NEAR_TOKEN, 1);
+            resolve(&mut contract, &list_id, vec![result]);
             assert!(matches!(
                 statuses(&contract, &list_id)[0],
                 PaymentStatus::Failed
@@ -1782,10 +1848,66 @@ mod tests {
     }
 
     #[test]
+    fn rows_of_one_batch_are_resolved_independently() {
+        let (mut contract, list_id) = processing_contract(POA_TOKEN, 3);
+        resolve(
+            &mut contract,
+            &list_id,
+            vec![withdrawn(10_000), PromiseResult::Failed, withdrawn(10_000)],
+        );
+        let s = statuses(&contract, &list_id);
+        assert!(matches!(s[0], PaymentStatus::Paid { .. }));
+        assert!(matches!(s[1], PaymentStatus::Failed));
+        assert!(matches!(s[2], PaymentStatus::Paid { .. }));
+    }
+
+    #[test]
+    fn native_and_ft_transfers_are_paid_only_when_the_promise_succeeded() {
+        for token in ["native", FT_TOKEN] {
+            let (mut contract, list_id) = processing_contract(token, 2);
+            resolve(
+                &mut contract,
+                &list_id,
+                vec![PromiseResult::Successful(Vec::new()), PromiseResult::Failed],
+            );
+            let s = statuses(&contract, &list_id);
+            assert!(
+                matches!(s[0], PaymentStatus::Paid { block_height: 123 }),
+                "{token}"
+            );
+            assert!(matches!(s[1], PaymentStatus::Failed), "{token}");
+        }
+    }
+
+    #[test]
+    fn a_missing_promise_result_is_never_a_success() {
+        let (mut contract, list_id) = processing_contract("native", 2);
+        // The callback is told about two rows but only one result arrives.
+        let mut context = get_context(accounts(0));
+        context.current_account_id(accounts(0));
+        testing_env!(
+            context.build(),
+            near_sdk::test_vm_config(),
+            near_sdk::RuntimeFeesConfig::test(),
+            Default::default(),
+            vec![PromiseResult::Successful(Vec::new())]
+        );
+        contract.on_payments_resolved(
+            list_id.clone(),
+            vec![0, 1],
+            vec![U128(10_000), U128(10_000)],
+            1,
+        );
+        let s = statuses(&contract, &list_id);
+        assert!(matches!(s[0], PaymentStatus::Paid { .. }));
+        assert!(matches!(s[1], PaymentStatus::Failed));
+    }
+
+    #[test]
     fn resolving_twice_does_not_change_a_resolved_row() {
-        let (mut contract, list_id) = processing_contract();
-        resolve(&mut contract, &list_id, Ok(U128(10_000)));
-        resolve(&mut contract, &list_id, Err(PromiseError::Failed));
+        let (mut contract, list_id) = processing_contract(POA_TOKEN, 1);
+        resolve(&mut contract, &list_id, vec![withdrawn(10_000)]);
+        resolve(&mut contract, &list_id, vec![PromiseResult::Failed]);
         assert!(matches!(
             statuses(&contract, &list_id)[0],
             PaymentStatus::Paid { .. }
@@ -1794,8 +1916,8 @@ mod tests {
 
     #[test]
     fn retry_failed_payments_makes_failed_rows_pending_again() {
-        let (mut contract, list_id) = processing_contract();
-        resolve(&mut contract, &list_id, Err(PromiseError::Failed));
+        let (mut contract, list_id) = processing_contract(POA_TOKEN, 1);
+        resolve(&mut contract, &list_id, vec![PromiseResult::Failed]);
 
         testing_env!(payout_context().build());
         assert_eq!(contract.retry_failed_payments(list_id.clone()), 1);

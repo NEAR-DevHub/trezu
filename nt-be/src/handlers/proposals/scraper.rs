@@ -633,9 +633,9 @@ pub enum BatchPaymentStatus {
     Paid {
         block_height: u64,
     },
-    /// Cross-chain withdrawal sent, `intents.near` result not resolved yet.
+    /// Payment sent, its result is not resolved yet.
     Processing,
-    /// `intents.near` refunded the withdrawal: nothing was delivered.
+    /// The payment failed or was refunded: nothing was delivered.
     Failed,
 }
 

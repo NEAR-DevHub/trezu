@@ -905,8 +905,8 @@ export async function updateProfile(
 }
 
 /**
- * `Processing` / `Failed` only occur for cross-chain (PoA bridge) rows:
- * the withdrawal was sent and its result is not resolved yet / was refunded.
+ * `Processing`: the payment was sent and its result is not resolved yet.
+ * `Failed`: it failed or was refunded, nothing was delivered.
  */
 export type PaymentStatus =
     | "Pending"

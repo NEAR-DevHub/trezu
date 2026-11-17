@@ -58,7 +58,10 @@ const paymentStatusToText = (
     if (typeof status === "string") {
         return status;
     }
-    return Object.keys(status)[0] as "Paid";
+    // `Paid` is the only object variant of `PaymentStatus` today; the type of
+    // `status` fails to compile here if another one is added.
+    status satisfies { Paid: { block_height: number } };
+    return "Paid";
 };
 
 function PaymentDisplay({
