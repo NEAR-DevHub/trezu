@@ -13,6 +13,8 @@ use std::sync::Arc;
 
 use crate::AppState;
 use crate::constants::external_apis::NEARBLOCKS_API_BASE;
+use crate::handlers::proposals::scraper::{Proposal, fetch_proposal};
+use crate::services::chain_balances::block_info::get_block_timestamp;
 use crate::utils::cache::{CacheKey, CacheTier};
 use crate::utils::url::api_url_or_500;
 
@@ -96,8 +98,9 @@ pub struct TransactionQueryParams {
 /// costs one extra call for its args (up to 53 calls per method).
 const MAX_RECEIPT_PAGES: u32 = 2;
 
-/// GET a NearBlocks v3 URL. `None` means NearBlocks answered with a non-2xx
-/// status.
+/// GET a NearBlocks v3 URL. `None` means NearBlocks has no such resource.
+/// A rate limit (429) or server error is returned as `503` so the lookup is
+/// reported as retryable instead of as "not found".
 async fn fetch_nearblocks<T: serde::de::DeserializeOwned>(
     http_client: &crate::observability::HttpClient,
     api_key: &str,
@@ -117,8 +120,16 @@ async fn fetch_nearblocks<T: serde::de::DeserializeOwned>(
             )
         })?;
 
-    if !response.status().is_success() {
-        tracing::info!("NearBlocks API returned {}", response.status());
+    let status = response.status();
+    if status == StatusCode::TOO_MANY_REQUESTS || status.is_server_error() {
+        tracing::warn!("NearBlocks API returned {}", status);
+        return Err((
+            StatusCode::SERVICE_UNAVAILABLE,
+            "NearBlocks is temporarily unavailable".to_string(),
+        ));
+    }
+    if !status.is_success() {
+        tracing::info!("NearBlocks API returned {}", status);
         return Ok(None);
     }
 
@@ -208,37 +219,11 @@ async fn find_matching_transaction_paged(
             if receipt.block.block_timestamp < after_ts {
                 return Ok(None);
             }
-
-            let tree_url = api_url_or_500(
-                NEARBLOCKS_API_BASE,
-                &format!("v3/txns/{}/receipts", receipt.transaction_hash),
-            )?;
-            let Some(tree) = fetch_nearblocks::<NearBlocksItem<NearBlocksReceiptNode>>(
-                http_client,
-                api_key,
-                tree_url,
-            )
-            .await?
-            else {
-                continue;
-            };
-            if !receipt_matches(&tree.data, &receipt.receipt_id, proposal_id, action_str) {
-                continue;
+            if let Some(found) =
+                resolve_receipt(http_client, api_key, receipt, proposal_id, action_str).await?
+            {
+                return Ok(Some(found));
             }
-
-            let Some(block_height) =
-                fetch_transaction_block_height(http_client, api_key, &receipt.transaction_hash)
-                    .await?
-            else {
-                continue;
-            };
-
-            return Ok(Some(ProposalTransactionResponse {
-                transaction_hash: receipt.transaction_hash.clone(),
-                nearblocks_url: format!("https://nearblocks.io/txns/{}", receipt.transaction_hash),
-                block_height,
-                timestamp: receipt.block.block_timestamp,
-            }));
         }
 
         cursor = response
@@ -250,6 +235,132 @@ async fn find_matching_transaction_paged(
         }
     }
     Ok(None)
+}
+
+/// Check one listed receipt against the proposal (its args are only in the
+/// transaction's receipt tree) and build the response when it matches.
+async fn resolve_receipt(
+    http_client: &crate::observability::HttpClient,
+    api_key: &str,
+    receipt: &NearBlocksReceipt,
+    proposal_id: u64,
+    action_str: &str,
+) -> Result<Option<ProposalTransactionResponse>, (StatusCode, String)> {
+    let tree_url = api_url_or_500(
+        NEARBLOCKS_API_BASE,
+        &format!("v3/txns/{}/receipts", receipt.transaction_hash),
+    )?;
+    let Some(tree) =
+        fetch_nearblocks::<NearBlocksItem<NearBlocksReceiptNode>>(http_client, api_key, tree_url)
+            .await?
+    else {
+        return Ok(None);
+    };
+    if !receipt_matches(&tree.data, &receipt.receipt_id, proposal_id, action_str) {
+        return Ok(None);
+    }
+
+    let Some(block_height) =
+        fetch_transaction_block_height(http_client, api_key, &receipt.transaction_hash).await?
+    else {
+        return Ok(None);
+    };
+
+    Ok(Some(ProposalTransactionResponse {
+        transaction_hash: receipt.transaction_hash.clone(),
+        nearblocks_url: format!("https://nearblocks.io/txns/{}", receipt.transaction_hash),
+        block_height,
+        timestamp: receipt.block.block_timestamp,
+    }))
+}
+
+/// Block of the last action recorded on the proposal by the DAO contract
+/// (`last_actions_log`): for a decided proposal, the block where the deciding
+/// `act_proposal` receipt ran. `None` when the proposal is gone (removed) or
+/// the contract version keeps no log.
+async fn fetch_last_action_block(
+    state: &AppState,
+    dao_id: &AccountId,
+    proposal_id: u64,
+) -> Option<u64> {
+    match fetch_proposal(&state.network, dao_id, proposal_id).await {
+        Ok(proposal) => last_action_block(&proposal),
+        Err(e) => {
+            tracing::info!("Could not read proposal for its last action block: {}", e);
+            None
+        }
+    }
+}
+
+fn last_action_block(proposal: &Proposal) -> Option<u64> {
+    proposal
+        .last_actions_log
+        .as_ref()
+        .and_then(|log| log.last())
+        .map(|entry| entry.block_height.0)
+}
+
+/// Go straight to the deciding `act_proposal` receipt instead of walking the
+/// DAO's receipt history: list the receipts ending at the proposal's last
+/// action block and check only the ones in that block. A handful of NearBlocks
+/// calls regardless of how busy the DAO has been since.
+async fn find_transaction_at_last_action(
+    state: &AppState,
+    api_key: &str,
+    dao_id: &AccountId,
+    proposal_id: u64,
+    action_str: &str,
+) -> Result<Option<ProposalTransactionResponse>, (StatusCode, String)> {
+    let Some(block_height) = fetch_last_action_block(state, dao_id, proposal_id).await else {
+        return Ok(None);
+    };
+    let block_timestamp = match get_block_timestamp(&state.archival_network, block_height, None)
+        .await
+        .map(u64::try_from)
+    {
+        Ok(Ok(timestamp)) => timestamp,
+        Ok(Err(_)) => return Ok(None),
+        Err(e) => {
+            tracing::warn!("Failed to read block {} timestamp: {}", block_height, e);
+            return Ok(None);
+        }
+    };
+
+    // `before_ts` is exclusive, so step one nanosecond past the block.
+    let page = fetch_nearblocks_receipts(
+        &state.http_client,
+        api_key,
+        dao_id,
+        "act_proposal",
+        block_timestamp.saturating_add(1),
+        None,
+    )
+    .await?;
+
+    for receipt in receipts_in_block(&page.data, block_height) {
+        if let Some(found) = resolve_receipt(
+            &state.http_client,
+            api_key,
+            receipt,
+            proposal_id,
+            action_str,
+        )
+        .await?
+        {
+            return Ok(Some(found));
+        }
+    }
+    Ok(None)
+}
+
+/// The page is newest-first, so the receipts of `block_height` lead it.
+fn receipts_in_block(
+    receipts: &[NearBlocksReceipt],
+    block_height: u64,
+) -> impl Iterator<Item = &NearBlocksReceipt> {
+    receipts
+        .iter()
+        .filter(move |receipt| receipt.block.block_height == block_height)
 }
 
 /// Height of the block that included the transaction itself (not any of its
@@ -401,6 +512,7 @@ pub async fn find_proposal_execution_transaction_inner(
 
     let db_pool = state.db_pool.clone();
     let http_client = state.http_client.clone();
+    let state_for_lookup = state.clone();
     let api_key = nearblocks_api_key.clone();
     let dao_id_clone = dao_id.clone();
     let action = params.action.clone();
@@ -410,8 +522,8 @@ pub async fn find_proposal_execution_transaction_inner(
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            if action == "VoteApprove" {
-                if let Some(response) = find_recorded_execution(
+            if action == "VoteApprove"
+                && let Some(response) = find_recorded_execution(
                     &db_pool,
                     &http_client,
                     &api_key,
@@ -419,14 +531,33 @@ pub async fn find_proposal_execution_transaction_inner(
                     proposal_id,
                 )
                 .await?
-                {
-                    tracing::info!(
-                        "Found recorded execution transaction: {}",
-                        response.transaction_hash
-                    );
-                    return Ok(response);
-                }
+            {
+                tracing::info!(
+                    "Found recorded execution transaction: {}",
+                    response.transaction_hash
+                );
+                return Ok(response);
+            }
 
+            if let Some(response) = find_transaction_at_last_action(
+                &state_for_lookup,
+                &api_key,
+                &dao_id_clone,
+                proposal_id,
+                &action,
+            )
+            .await?
+            {
+                tracing::info!(
+                    "Found transaction at the proposal's last action: {}",
+                    response.transaction_hash
+                );
+                return Ok(response);
+            }
+
+            // No usable last-action block (removed proposal, old contract) or
+            // nothing matched there: walk the receipt history.
+            if action == "VoteApprove" {
                 // Try on_proposal_callback first
                 if let Some(response) = find_matching_transaction_paged(
                     &http_client,
@@ -716,5 +847,60 @@ mod tests {
         assert!(!receipt_matches(&tree.data, "vote", 751, "VoteApprove"));
         assert!(!receipt_matches(&tree.data, "root", 750, "VoteApprove"));
         assert!(!receipt_matches(&tree.data, "missing", 750, "VoteApprove"));
+    }
+
+    fn listed_receipt(receipt_id: &str, block_height: u64) -> NearBlocksReceipt {
+        serde_json::from_value(json!({
+            "receipt_id": receipt_id,
+            "transaction_hash": format!("tx-{receipt_id}"),
+            "block": {
+                "block_height": block_height.to_string(),
+                "block_timestamp": "1788865563232079335"
+            }
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn keeps_only_receipts_of_the_last_action_block() {
+        let page = vec![
+            listed_receipt("a", 214793849),
+            listed_receipt("b", 214793849),
+            listed_receipt("older", 214793800),
+        ];
+
+        let ids: Vec<&str> = receipts_in_block(&page, 214793849)
+            .map(|receipt| receipt.receipt_id.as_str())
+            .collect();
+        assert_eq!(ids, ["a", "b"]);
+        assert_eq!(receipts_in_block(&page, 214793850).count(), 0);
+    }
+
+    fn proposal_with_log(last_actions_log: Value) -> Proposal {
+        serde_json::from_value(json!({
+            "id": 10,
+            "proposer": "alice.near",
+            "description": "",
+            "kind": "Vote",
+            "status": "Rejected",
+            "vote_counts": {},
+            "votes": {},
+            "submission_time": "1788708925367117832",
+            "last_actions_log": last_actions_log
+        }))
+        .unwrap()
+    }
+
+    #[test]
+    fn last_action_block_is_the_newest_log_entry() {
+        let decided = proposal_with_log(json!([
+            { "block_height": "214541082" },
+            { "block_height": "214793849" }
+        ]));
+        assert_eq!(last_action_block(&decided), Some(214793849));
+
+        assert_eq!(last_action_block(&proposal_with_log(json!([]))), None);
+        // Older DAO contract versions keep no log.
+        assert_eq!(last_action_block(&proposal_with_log(Value::Null)), None);
     }
 }
