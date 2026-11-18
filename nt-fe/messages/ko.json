@@ -2447,7 +2447,9 @@
         "viewRequest": "요청 보기",
         "proposalRemoved": "제안이 제거되었습니다",
         "voteSubmitted": "투표가 제출되었습니다",
-        "votesSubmitted": "투표가 제출되었습니다"
+        "votesSubmitted": "투표가 제출되었습니다",
+        "confirmingTransaction": "트랜잭션을 확인하는 중…",
+        "confirmingTransactionBody": "현재 네트워크가 느립니다. 계속 작업하셔도 됩니다. 확인되는 즉시 업데이트하겠습니다."
     },
     "tokenInput": {
         "max": "MAX",

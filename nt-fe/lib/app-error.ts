@@ -44,6 +44,21 @@ export interface AppError {
 
 const REQUEST_ID_HEADER = "x-request-id";
 
+/**
+ * A relay the backend accepted (`202`) and later reported as failed, over
+ * the SSE stream or the status endpoint. Carries the same error body an
+ * HTTP failure would have.
+ */
+export class RelaySubmissionFailedError extends Error {
+    constructor(
+        public readonly envelope: object,
+        public readonly submissionId: string,
+    ) {
+        super(`Relay submission ${submissionId} failed`);
+        this.name = "RelaySubmissionFailedError";
+    }
+}
+
 const SHOWN = Symbol.for("trezu.errorShownToUser");
 
 /** Flag an error the user has already been told about, so callers further up
@@ -82,6 +97,12 @@ export function toAppError(error: unknown): AppError {
             retryable: true,
         };
     }
+    if (error instanceof RelaySubmissionFailedError) {
+        return fromEnvelope(
+            error.envelope as Record<string, unknown>,
+            undefined,
+        );
+    }
     if (!isAxiosError(error)) {
         return {
             code: "WALLET_FAILED",
@@ -104,20 +125,7 @@ export function toAppError(error: unknown): AppError {
     const envelope = (response.data as { error?: unknown } | undefined)?.error;
 
     if (typeof envelope === "object" && envelope !== null) {
-        const body = envelope as Record<string, unknown>;
-        const details = (body.details ?? {}) as Record<string, unknown>;
-        const code = oneOf(APP_ERROR_CODES, body.code);
-        return {
-            code: code ?? "UNEXPECTED",
-            fundsState: oneOf(FUNDS_STATES, body.funds_state) ?? "unknown",
-            retryable: body.retryable === true,
-            requestId,
-            txHash:
-                typeof details.tx_hash === "string"
-                    ? details.tx_hash
-                    : undefined,
-            reason: oneOf(TX_FAILURE_REASONS, details.reason),
-        };
+        return fromEnvelope(envelope as Record<string, unknown>, requestId);
     }
 
     // A body without the envelope proves nothing about a server-side failure,
@@ -128,6 +136,23 @@ export function toAppError(error: unknown): AppError {
         fundsState: serverFailed ? "unknown" : "none",
         retryable: serverFailed,
         requestId,
+    };
+}
+
+function fromEnvelope(
+    body: Record<string, unknown>,
+    requestId: string | undefined,
+): AppError {
+    const details = (body.details ?? {}) as Record<string, unknown>;
+    const code = oneOf(APP_ERROR_CODES, body.code);
+    return {
+        code: code ?? "UNEXPECTED",
+        fundsState: oneOf(FUNDS_STATES, body.funds_state) ?? "unknown",
+        retryable: body.retryable === true,
+        requestId,
+        txHash:
+            typeof details.tx_hash === "string" ? details.tx_hash : undefined,
+        reason: oneOf(TX_FAILURE_REASONS, details.reason),
     };
 }
 

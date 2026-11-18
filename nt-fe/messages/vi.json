@@ -2430,7 +2430,9 @@
         "viewRequest": "Xem yêu cầu",
         "proposalRemoved": "Đề xuất của bạn đã được xóa",
         "voteSubmitted": "Phiếu của bạn đã được gửi",
-        "votesSubmitted": "Các phiếu của bạn đã được gửi"
+        "votesSubmitted": "Các phiếu của bạn đã được gửi",
+        "confirmingTransaction": "Đang xác nhận giao dịch của bạn…",
+        "confirmingTransactionBody": "Mạng đang chậm. Bạn có thể tiếp tục làm việc; chúng tôi sẽ cập nhật ngay khi giao dịch được xác nhận."
     },
     "tokenInput": {
         "max": "MAX",

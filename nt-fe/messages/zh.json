@@ -2430,7 +2430,9 @@
         "viewRequest": "查看请求",
         "proposalRemoved": "您的提案已被移除",
         "voteSubmitted": "您的投票已提交",
-        "votesSubmitted": "您的投票已提交"
+        "votesSubmitted": "您的投票已提交",
+        "confirmingTransaction": "正在确认您的交易…",
+        "confirmingTransactionBody": "网络目前较慢。您可以继续操作；交易一经确认，我们会立即更新。"
     },
     "tokenInput": {
         "max": "MAX",

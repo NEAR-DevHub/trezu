@@ -40,7 +40,7 @@ Backend (`nt-be`):
   routes (`GET/POST /api/confidential-intents/bulk-payment/activation[…/prepare]`)
 - `handlers/treasury/confidential_setup.rs::ensure_bulk_subaccount` —
   extracted from the creation path; idempotent factory call + bootstrap poll
-- `handlers/relay/confidential.rs` — new `bulk_auth` intent type: MPC key
+- `handlers/intents/confidential/submitter.rs` — new `bulk_auth` intent type: MPC key
   fetched with empty signing path, JWT stored in the `bulk_payment_*`
   columns (the `auth` type keeps writing the `confidential_*` columns)
 

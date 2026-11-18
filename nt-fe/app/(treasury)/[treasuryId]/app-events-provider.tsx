@@ -9,6 +9,7 @@ import {
     invalidateTreasuryScopedQueries,
     parseAppEvent,
 } from "@/lib/app-events";
+import { recoverPendingSubmissions } from "@/lib/relay-submissions";
 
 function buildAppEventsUrl(scope: AppEventScope) {
     const backendBaseUrl = process.env.NEXT_PUBLIC_BACKEND_API_BASE;
@@ -48,9 +49,14 @@ export function AppEventsProvider({ scope }: { scope: AppEventScope }) {
         // Events emitted while the stream was down (server restart, network
         // blip) are never replayed, so every reconnect catches up with one
         // blanket invalidation. The first open is skipped: initial page
-        // queries are fetching fresh data already.
+        // queries are fetching fresh data already. Pending relay submissions
+        // are fetched on every open, the first one included: that is the
+        // page-mount recovery after a refresh.
         let hasConnected = false;
         const handleOpen = () => {
+            if (treasuryId) {
+                void recoverPendingSubmissions(treasuryId);
+            }
             if (!hasConnected) {
                 hasConnected = true;
                 return;
@@ -61,11 +67,22 @@ export function AppEventsProvider({ scope }: { scope: AppEventScope }) {
         };
         eventSource.addEventListener("open", handleOpen);
 
+        // A background tab may have had its stream throttled or dropped
+        // without a reconnect; coming back to the foreground re-reads what
+        // is still pending.
+        const handleVisibility = () => {
+            if (document.visibilityState === "visible" && treasuryId) {
+                void recoverPendingSubmissions(treasuryId);
+            }
+        };
+        document.addEventListener("visibilitychange", handleVisibility);
+
         for (const eventName of APP_EVENT_NAMES) {
             eventSource.addEventListener(eventName, handleMessage);
         }
 
         return () => {
+            document.removeEventListener("visibilitychange", handleVisibility);
             eventSource.removeEventListener("open", handleOpen);
             for (const eventName of APP_EVENT_NAMES) {
                 eventSource.removeEventListener(eventName, handleMessage);

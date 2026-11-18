@@ -8,7 +8,10 @@ use tokio::sync::broadcast;
 use crate::{
     error_event::ErrorCode,
     events::{AppEvent, EVENT_BUS_CAPACITY},
-    handlers::public_history::bronze::NearblocksPriority,
+    handlers::{
+        public_history::bronze::NearblocksPriority,
+        relay::operations::{RelaySubmissionStatus, lanes::SponsorLanes},
+    },
     jobs::leadership::BackgroundJobsStatus,
     services::{ConfidentialCredentialStore, TokenKeyring, TokenPriceService},
     utils::{
@@ -120,6 +123,13 @@ pub struct AppState {
     /// its next poll tick) when an attempt fails, so a half-created treasury is
     /// retried within moments rather than seconds.
     pub creation_sweep_notify: Arc<tokio::sync::Notify>,
+    /// Sponsor access keys the relay engine signs with, one in-flight
+    /// transaction per key.
+    pub relay_lanes: Arc<SponsorLanes>,
+    /// Wakes the relay worker loop when a request inserts an operation.
+    pub relay_wake: Arc<tokio::sync::Notify>,
+    /// Wakes the confidential submit queue when a relay marks an intent due.
+    pub intent_submit_wake: Arc<tokio::sync::Notify>,
 }
 
 /// Builder for constructing AppState instances
@@ -288,6 +298,10 @@ impl AppStateBuilder {
         };
 
         let signer_id = self.signer_id.unwrap_or_else(|| env_vars.signer_id.clone());
+        let relay_lanes = Arc::new(
+            SponsorLanes::from_keys(&env_vars.signer_key, &env_vars.sponsor_lane_keys)
+                .map_err(std::io::Error::other)?,
+        );
 
         // Create default networks if not provided
         let fastnear_api_key = env_vars.fastnear_api_key.clone();
@@ -423,6 +437,9 @@ impl AppStateBuilder {
             event_tx,
             background_jobs_status: Arc::new(BackgroundJobsStatus::new()),
             creation_sweep_notify: Arc::new(tokio::sync::Notify::new()),
+            relay_lanes,
+            relay_wake: Arc::new(tokio::sync::Notify::new()),
+            intent_submit_wake: Arc::new(tokio::sync::Notify::new()),
         })
     }
 }
@@ -438,6 +455,22 @@ impl AppState {
     /// not query the token columns directly.
     pub fn confidential_credentials(&self) -> ConfidentialCredentialStore {
         ConfidentialCredentialStore::new(self.db_pool.clone(), self.confidential_keyring.clone())
+    }
+
+    /// Broadcast a relay submission's new state to that treasury's SSE
+    /// subscribers.
+    pub fn publish_relay_submission_updated(&self, status: RelaySubmissionStatus) {
+        let account_id = status.treasury_id.clone();
+        let data = serde_json::to_value(&status).unwrap_or_default();
+        if let Err(e) = self
+            .event_tx
+            .send(AppEvent::relay_submission_updated(account_id, data))
+        {
+            tracing::debug!(
+                account_id = %e.0.account_id,
+                "no active SSE subscribers for relay submission update"
+            );
+        }
     }
 
     pub async fn publish_treasury_projection_updated(&self, account_id: String) {

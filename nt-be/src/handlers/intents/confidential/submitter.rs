@@ -3,27 +3,26 @@
 //! When a confidential_transfer proposal is created, the intent payload is stored
 //! in `confidential_intents` keyed by its NEP-413 payload hash. Once the MPC
 //! signature exists on chain the signed intent is submitted to the 1Click API by
-//! whichever path sees it first: the vote relay, when the signature is already
-//! in the relay's execution outcome, or the per-DAO 1Click history poll, which
-//! reads it from the execution transaction (the MPC callback can land well after
-//! the relay's RPC wait). [`ConfidentialIntentSubmitter`] serialises the two with
-//! a claim stamp so an intent is never submitted twice.
+//! the submit queue, which reads it from the execution transaction (the MPC
+//! callback can land well after the vote). The relay worker stamps the
+//! execution facts on the intent when the vote's transaction carries the sign
+//! call, so the queue never waits on the Goldsky detector.
+//! [`ConfidentialIntentSubmitter`] leases the row so an intent is never
+//! submitted twice.
 
 use crate::{
     AppState,
     constants::V1_SIGNER_CONTRACT_ID,
     handlers::intents::confidential::{
         bronze::ingest_worker::trigger_confidential_history_refresh,
-        bronze::{
-            fetch_history, mark_confidential_history_activity_due, store::upsert_history_events,
-        },
+        bronze::{fetch_history, store::upsert_history_events},
         gold::history_events::refresh_gold_metadata_for_intent,
         link_intent_to_history_event,
         proposal_signals::extract_sign_call_from_logs,
         recover_unsubmitted_intent_from_history,
         types::normalize_quote_metadata_accounts,
     },
-    handlers::relay::{effects::background, parse::ProposalKind},
+    handlers::relay::parse::ProposalKind,
     observability::sanitize_sensitive_json_value,
     services::{CredentialScope, TokenBundle},
     utils::{cache::CacheKey, jsonrpc::create_rpc_client, transport::with_transport_retry},
@@ -242,58 +241,21 @@ pub fn extract_v1_signer_hash_from_kind(kind: &Value) -> Option<String> {
         .map(str::to_owned)
 }
 
-/// Where the vote relay reads each intent's MPC signature. One relay can
-/// approve several proposals, so the signature is always matched to the
-/// payload hash (`signature_for_payload`) rather than taken as the first one
-/// in the outcome.
-#[derive(Debug, Clone)]
-pub enum RelaySignatureSource {
-    /// Classic relay: near-api's outcome drops receipt ids, so the landed
-    /// execution transaction is re-read from the RPC by hash.
-    ExecutionTx(String),
-    /// Post-quantum relay: the raw `send_tx` result, the same shape as an
-    /// `EXPERIMENTAL_tx_status` response.
-    TxStatus(Value),
-}
-
-/// Spawn a background auto-submit for each confidential intent referenced by an
-/// approving vote relay. Each task matches its payload hash to a pending intent
-/// and, if the execution carries that payload's MPC signature, submits it to
-/// 1Click.
-///
-/// Each entry pairs the `v1.signer` payload hash with the on-chain proposal id
-/// being voted on; the proposal id is forwarded so bulk-payment headers can be
-/// linked and armed once the vote lands.
-#[tracing::instrument(
-    level = "debug",
-    skip_all,
-    fields(treasury_id = treasury_id, intent_count = tracing::field::Empty)
-)]
-pub fn spawn_auto_submit_intents(
-    state: &Arc<AppState>,
-    treasury_id: &str,
-    payloads: Vec<(String, u64)>,
-    source: RelaySignatureSource,
-) {
-    tracing::Span::current().record("intent_count", payloads.len());
-
-    let source = Arc::new(source);
-    for (payload_hash, proposal_id) in payloads {
-        let state = state.clone();
-        let treasury_id = treasury_id.to_owned();
-        let source = source.clone();
-        background::spawn("auto-submit confidential intent", async move {
-            try_auto_submit_intent(&state, &treasury_id, &payload_hash, proposal_id, &source).await;
-        });
-    }
-}
-
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum IntentSubmitKind {
     /// `/v0/submit-intent` — bulk recipients + single-shield path.
     Shield,
     /// `/v0/auth/authenticate` — JWT-issuing auth call.
     Auth,
+}
+
+impl IntentSubmitKind {
+    pub fn for_intent_type(intent_type: &str) -> Self {
+        match intent_type {
+            "auth" | "bulk_auth" => Self::Auth,
+            _ => Self::Shield,
+        }
+    }
 }
 
 /// Why 1Click did not accept a signed intent.
@@ -406,139 +368,6 @@ pub async fn submit_intent_to_oneclick(
     Ok(resp_body)
 }
 
-/// Try to auto-submit a confidential intent after a vote relay succeeds.
-///
-/// This is called in a background task after a successful vote relay.
-/// It uses the payload hash extracted from the delegate action to find the
-/// matching pending intent.
-///
-/// Also attaches the on-chain `proposal_id` to a matching
-/// `confidential_bulk_payments` row when the hash is a bulk header — this
-/// is what tells the bulk processor a vote has happened, so it can pick up
-/// activation and per-recipient signing on its next cycle.
-#[tracing::instrument(
-    level = "info",
-    skip_all,
-    fields(treasury_id = treasury_id, hash = tracing::field::Empty)
-)]
-pub async fn try_auto_submit_intent(
-    state: &Arc<AppState>,
-    treasury_id: &str,
-    payload_hash: &str,
-    proposal_id: u64,
-    source: &RelaySignatureSource,
-) {
-    tracing::Span::current().record("hash", tracing::field::display(payload_hash));
-
-    // The signature for THIS payload. Its presence is the signal that the vote
-    // actually approved the proposal — only then do we link bulk rows or
-    // auto-submit the intent. Anything short of that is left to the per-DAO
-    // poll, which submits from chain once the detector stamps the execution.
-    let submitter = ConfidentialIntentSubmitter::new(state);
-    let lookup = match source {
-        RelaySignatureSource::TxStatus(tx_status) => {
-            Ok(signature_for_payload(tx_status, payload_hash))
-        }
-        RelaySignatureSource::ExecutionTx(tx_hash) => {
-            submitter
-                .signature_from_chain(treasury_id, payload_hash, tx_hash, treasury_id)
-                .await
-        }
-    };
-    let sig_bytes = match lookup {
-        Ok(SignatureLookup::Found(bytes)) => bytes,
-        Ok(SignatureLookup::NotInTransaction) => {
-            tracing::debug!(
-                treasury_id,
-                payload_hash,
-                "relay did not sign this payload (vote did not approve yet)"
-            );
-            return;
-        }
-        Ok(SignatureLookup::CallbackPending) => {
-            tracing::info!(
-                treasury_id,
-                payload_hash,
-                "MPC callback not in the relay outcome yet; the poll submits from chain"
-            );
-            return;
-        }
-        Ok(SignatureLookup::Failed(error)) => {
-            crate::error_event!(
-                crate::error_event::ErrorCode::ConfIntentSigParseFailed,
-                treasury_id,
-                payload_hash,
-                proposal_id,
-                error = %error
-            );
-            return;
-        }
-        Err(error) => {
-            tracing::warn!(
-                treasury_id,
-                payload_hash,
-                %error,
-                "could not read the relay outcome; the poll submits from chain"
-            );
-            return;
-        }
-    };
-
-    // If this hash is a bulk header, link the proposal id and arm the bulk
-    // processor. The header still travels through the regular shield-intent
-    // submit path below, which moves the funds DAO → sub on intents.near.
-    let bulk_link = sqlx::query!(
-        r#"
-        UPDATE confidential_bulk_payments
-        SET proposal_id = $3,
-            status = CASE WHEN status = 'pending' THEN 'activating' ELSE status END,
-            updated_at = NOW()
-        WHERE dao_id = $1 AND header_payload_hash = $2
-        RETURNING id
-        "#,
-        treasury_id,
-        payload_hash,
-        proposal_id as i64,
-    )
-    .fetch_optional(&state.db_pool)
-    .await;
-    match bulk_link {
-        Ok(Some(_)) => {
-            tracing::info!(
-                "Linked bulk-payment proposal #{} for {} (header={})",
-                proposal_id,
-                treasury_id,
-                payload_hash
-            );
-        }
-        Ok(None) => {
-            // Not a bulk header — fall through to normal single-intent path.
-        }
-        Err(e) => {
-            tracing::warn!(
-                "Failed to link bulk-payment proposal for {} (hash={}): {}",
-                treasury_id,
-                payload_hash,
-                e
-            );
-        }
-    }
-
-    let outcome = submitter
-        .submit_signed(treasury_id, payload_hash, &sig_bytes)
-        .await;
-    if outcome.needs_poll()
-        && let Err(e) = mark_confidential_history_activity_due(&state.db_pool, treasury_id).await
-    {
-        tracing::warn!(
-            "failed to pull the 1Click poll forward for {} (hash={}): {}",
-            treasury_id,
-            payload_hash,
-            e
-        );
-    }
-}
-
 /// How one attempt to hand a signed intent to 1Click ended.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum IntentSubmitOutcome {
@@ -555,18 +384,6 @@ pub enum IntentSubmitOutcome {
     Unknown(String),
     /// The execution transaction does not carry the MPC callback receipt yet.
     NotSignedYet,
-    /// Already submitted, failed, or leased by another path.
-    AlreadyHandled,
-}
-
-impl IntentSubmitOutcome {
-    /// The per-DAO poll still has to look at this intent.
-    pub fn needs_poll(&self) -> bool {
-        matches!(
-            self,
-            Self::Deferred(_) | Self::Unknown(_) | Self::NotSignedYet
-        )
-    }
 }
 
 /// `confidential_intents.submit_state`: where a row is in the submission
@@ -608,6 +425,18 @@ impl SubmitLease {
     /// Delay before the next attempt: 30 s, 1 m, 2 m, 4 m, then 5 m.
     fn backoff(&self) -> chrono::Duration {
         submit_backoff(self.submit_attempts)
+    }
+
+    /// Delay while the MPC callback is not on chain yet: it normally lands
+    /// within seconds, so for the first minute the row is due again a second
+    /// after each check, which the queue's one-second look turns into a
+    /// check about every two seconds.
+    fn signature_wait(&self) -> chrono::Duration {
+        if self.submit_attempts <= SIGNATURE_QUICK_CHECKS {
+            chrono::Duration::seconds(SIGNATURE_CHECK_SECS)
+        } else {
+            self.backoff()
+        }
     }
 }
 
@@ -669,7 +498,7 @@ impl AwaitingSubmitIntent {
     }
 }
 
-fn intent_deadline(intent_payload: &Value) -> Option<DateTime<Utc>> {
+pub(crate) fn intent_deadline(intent_payload: &Value) -> Option<DateTime<Utc>> {
     let message = intent_payload.get("message")?.as_str()?;
     let message: Value = serde_json::from_str(message).ok()?;
     let deadline = message.get("deadline")?.as_str()?;
@@ -678,23 +507,29 @@ fn intent_deadline(intent_payload: &Value) -> Option<DateTime<Utc>> {
         .map(|deadline| deadline.with_timezone(&Utc))
 }
 
-/// Intent types the per-DAO poll submits from chain. The bulk flavours have
-/// their own processor.
-pub const POLL_SUBMITTED_INTENT_TYPES: &[&str] = &["shield"];
+/// Intent types the per-DAO poll submits from chain: single shields and the
+/// bulk-payment activation auth, whose only other submitter is the vote relay.
+/// Bulk recipients have their own processor; `auth` rows are no longer
+/// created (DAO authentication runs inside treasury setup).
+pub const POLL_SUBMITTED_INTENT_TYPES: &[&str] = &["shield", "bulk_auth"];
 /// Rows worked per poll of one DAO.
 const AWAITING_SUBMIT_BATCH: i64 = 20;
 /// How long one attempt may own a row: one 1Click POST (30 s timeout) plus
 /// the RPC lookups. A holder that outlives it is treated as crashed.
 const SUBMIT_LEASE_SECS: i64 = 120;
 const SUBMIT_BACKOFF_BASE_SECS: i64 = 30;
+const SIGNATURE_CHECK_SECS: i64 = 1;
+const SIGNATURE_QUICK_CHECKS: i32 = 30;
+/// How often the submit queue is looked at without a wake.
+const SUBMIT_QUEUE_TICK: std::time::Duration = std::time::Duration::from_secs(1);
+/// DAOs the submit queue works at the same time in one process.
+const SUBMIT_QUEUE_CONCURRENCY: usize = 8;
 const SUBMIT_BACKOFF_CAP_SECS: i64 = 300;
 const CONFIDENTIAL_TX_STATUS_LABEL: &str = "confidential_intent_tx_status";
 
-/// Hands a signed confidential intent to 1Click exactly once, from whichever
-/// path sees the MPC signature first: the vote relay (signature in the relay
-/// outcome), or the per-DAO 1Click poll (signature read from the execution
-/// transaction). An expiring lease on the row serialises them; the poll owns
-/// every retry.
+/// Hands a signed confidential intent to 1Click exactly once, with the MPC
+/// signature read from the execution transaction. An expiring lease on the
+/// row serialises submitters; the queue owns every retry.
 pub struct ConfidentialIntentSubmitter<'a> {
     state: &'a AppState,
 }
@@ -702,37 +537,6 @@ pub struct ConfidentialIntentSubmitter<'a> {
 impl<'a> ConfidentialIntentSubmitter<'a> {
     pub fn new(state: &'a AppState) -> Self {
         Self { state }
-    }
-
-    /// Submit with a signature already in hand (vote relay).
-    pub async fn submit_signed(
-        &self,
-        dao_id: &str,
-        payload_hash: &str,
-        signature: &[u8],
-    ) -> IntentSubmitOutcome {
-        let lease = match self.lease(dao_id, payload_hash).await {
-            Ok(Some(lease)) => lease,
-            Ok(None) => {
-                tracing::info!(
-                    "MPC signature found but intent {}/{} is already handled or leased",
-                    dao_id,
-                    payload_hash
-                );
-                return IntentSubmitOutcome::AlreadyHandled;
-            }
-            Err(e) => {
-                tracing::error!(
-                    "DB error leasing intent for {} (hash={}): {}",
-                    dao_id,
-                    payload_hash,
-                    e
-                );
-                return IntentSubmitOutcome::Deferred(e.to_string());
-            }
-        };
-        self.submit_leased(dao_id, payload_hash, &lease, signature)
-            .await
     }
 
     #[tracing::instrument(
@@ -778,11 +582,7 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
             lease.submit_attempts
         );
 
-        let kind = if intent_type == "auth" || intent_type == "bulk_auth" {
-            IntentSubmitKind::Auth
-        } else {
-            IntentSubmitKind::Shield
-        };
+        let kind = IntentSubmitKind::for_intent_type(intent_type);
         let submitted = submit_intent_to_oneclick(
             self.state,
             kind,
@@ -847,7 +647,7 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         // An auth intent is only `submitted` once its credentials are
         // stored — a 200 without tokens or a failed save marks it
         // `failed` (the UI maps that to a restartable state).
-        if intent_type == "auth" || intent_type == "bulk_auth" {
+        if kind == IntentSubmitKind::Auth {
             let (Some(access_token), Some(refresh_token)) = (
                 resp_body.get("accessToken").and_then(|v| v.as_str()),
                 resp_body.get("refreshToken").and_then(|v| v.as_str()),
@@ -992,12 +792,13 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         {
             Ok(SignatureLookup::Found(signature)) => signature,
             Ok(SignatureLookup::CallbackPending) => {
-                self.release(
+                self.release_after(
                     dao_id,
                     payload_hash,
                     lease,
                     SubmitState::Due,
                     "MPC callback not on chain yet",
+                    lease.signature_wait(),
                 )
                 .await;
                 return IntentSubmitOutcome::NotSignedYet;
@@ -1078,6 +879,109 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         Ok(signature_for_payload(&raw_response, payload_hash))
     }
 
+    /// The submit queue, in every backend process. Each pass starts the DAOs
+    /// that have an intent waiting, longest-waiting first, each on its own
+    /// task, at most [`SUBMIT_QUEUE_CONCURRENCY`] at once: a DAO whose 1Click
+    /// calls are slow holds one slot and delays nobody else. A relay wakes it
+    /// when it marks an intent due; otherwise it looks every
+    /// [`SUBMIT_QUEUE_TICK`]. The per-row lease keeps two processes from
+    /// posting the same intent.
+    pub async fn run_queue_forever(
+        state: Arc<AppState>,
+        shutdown: tokio_util::sync::CancellationToken,
+    ) {
+        let slots = Arc::new(tokio::sync::Semaphore::new(SUBMIT_QUEUE_CONCURRENCY));
+        let in_progress: Arc<std::sync::Mutex<Vec<String>>> = Arc::default();
+        while !shutdown.is_cancelled() {
+            Self::start_waiting_daos(&state, &slots, &in_progress).await;
+            tokio::select! {
+                _ = state.intent_submit_wake.notified() => {}
+                _ = tokio::time::sleep(SUBMIT_QUEUE_TICK) => {}
+                _ = shutdown.cancelled() => {}
+            }
+        }
+    }
+
+    async fn start_waiting_daos(
+        state: &Arc<AppState>,
+        slots: &Arc<tokio::sync::Semaphore>,
+        in_progress: &Arc<std::sync::Mutex<Vec<String>>>,
+    ) {
+        let free = slots.available_permits();
+        if free == 0 {
+            return;
+        }
+        let skip = in_progress
+            .lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner())
+            .clone();
+        let daos = match ConfidentialIntentSubmitter::new(state)
+            .daos_with_waiting_intents(&skip, free as i64)
+            .await
+        {
+            Ok(daos) => daos,
+            Err(e) => {
+                tracing::warn!("submit queue lookup failed: {}", e);
+                return;
+            }
+        };
+        for dao_id in daos {
+            let Ok(slot) = slots.clone().try_acquire_owned() else {
+                break;
+            };
+            in_progress
+                .lock()
+                .unwrap_or_else(|poisoned| poisoned.into_inner())
+                .push(dao_id.clone());
+            let state = state.clone();
+            let in_progress = in_progress.clone();
+            tokio::spawn(async move {
+                ConfidentialIntentSubmitter::new(&state)
+                    .resubmit_awaiting_intents(&dao_id)
+                    .await;
+                in_progress
+                    .lock()
+                    .unwrap_or_else(|poisoned| poisoned.into_inner())
+                    .retain(|working| working != &dao_id);
+                drop(slot);
+            });
+        }
+    }
+
+    /// Up to `limit` DAOs with an intent the queue can work now, the one
+    /// whose intent has waited longest first, leaving out those in `skip`.
+    async fn daos_with_waiting_intents(
+        &self,
+        skip: &[String],
+        limit: i64,
+    ) -> Result<Vec<String>, sqlx::Error> {
+        sqlx::query_scalar(
+            r#"
+            SELECT dao_id
+            FROM confidential_intents
+            WHERE intent_type = ANY($1)
+              AND status IN ('pending', 'submitted')
+              AND proposal_execution_transaction_hash IS NOT NULL
+              AND dao_id <> ALL($2)
+              AND (
+                  (submit_state IN ('due', 'unknown') AND submit_next_attempt_at <= NOW())
+                  OR (submit_state = 'in_flight' AND submit_lease_until < NOW())
+              )
+            GROUP BY dao_id
+            ORDER BY MIN(CASE
+                WHEN submit_state = 'in_flight' THEN submit_lease_until
+                ELSE submit_next_attempt_at
+            END), dao_id
+            LIMIT $3
+            "#,
+        )
+        .bind(POLL_SUBMITTED_INTENT_TYPES)
+        .bind(skip)
+        .bind(limit)
+        .fetch_all(&self.state.db_pool)
+        .await
+    }
+
     /// Work this DAO's submission queue: rows that are `due`, `unknown`, or
     /// `in_flight` under an expired lease. Each row is leased and reconciled
     /// against the DAO's ingested 1Click history (the poll fetches the latest
@@ -1097,6 +1001,7 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
             FROM confidential_intents
             WHERE dao_id = $1
               AND intent_type = ANY($2)
+              AND status IN ('pending', 'submitted')
               AND proposal_execution_transaction_hash IS NOT NULL
               AND (
                   (submit_state IN ('due', 'unknown') AND submit_next_attempt_at <= NOW())
@@ -1134,31 +1039,38 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
                     continue;
                 }
             };
-            match self
-                .recover_from_history(dao_id, &row.payload_hash, &lease)
-                .await
-            {
-                HistoryReconciliation::Recovered => {
-                    submitted += 1;
-                    continue;
-                }
-                HistoryReconciliation::NotInHistory => {}
-                // Unknown whether 1Click has it: neither expire nor re-post
-                // this round; the next poll retries.
-                HistoryReconciliation::Unknown(error) => {
-                    self.release(
-                        dao_id,
-                        &row.payload_hash,
-                        &lease,
-                        SubmitState::Unknown,
-                        &error,
-                    )
-                    .await;
-                    continue;
+            let expired = row.intent_deadline().is_some_and(|deadline| deadline < now);
+            // Auth intents have no deposit address and no history row, so
+            // there is nothing to reconcile with 1Click: authenticating is
+            // safe to repeat, and past the deadline the row is retired.
+            let reconciles_with_history =
+                IntentSubmitKind::for_intent_type(&lease.intent_type) == IntentSubmitKind::Shield;
+            if reconciles_with_history {
+                match self
+                    .recover_from_history(dao_id, &row.payload_hash, &lease)
+                    .await
+                {
+                    HistoryReconciliation::Recovered => {
+                        submitted += 1;
+                        continue;
+                    }
+                    HistoryReconciliation::NotInHistory => {}
+                    // Unknown whether 1Click has it: neither expire nor re-post
+                    // this round; the next poll retries.
+                    HistoryReconciliation::Unknown(error) => {
+                        self.release(
+                            dao_id,
+                            &row.payload_hash,
+                            &lease,
+                            SubmitState::Unknown,
+                            &error,
+                        )
+                        .await;
+                        continue;
+                    }
                 }
             }
-            let expired = row.intent_deadline().is_some_and(|deadline| deadline < now);
-            if expired || row.outcome_uncertain() {
+            if reconciles_with_history && (expired || row.outcome_uncertain()) {
                 match self
                     .lookup_in_1click(dao_id, row.deposit_address.as_deref())
                     .await
@@ -1303,8 +1215,28 @@ impl<'a> ConfidentialIntentSubmitter<'a> {
         state: SubmitState,
         last_error: &str,
     ) {
+        self.release_after(
+            dao_id,
+            payload_hash,
+            lease,
+            state,
+            last_error,
+            lease.backoff(),
+        )
+        .await;
+    }
+
+    async fn release_after(
+        &self,
+        dao_id: &str,
+        payload_hash: &str,
+        lease: &SubmitLease,
+        state: SubmitState,
+        last_error: &str,
+        after: chrono::Duration,
+    ) {
         debug_assert!(matches!(state, SubmitState::Due | SubmitState::Unknown));
-        let next_attempt_at = Utc::now() + lease.backoff();
+        let next_attempt_at = Utc::now() + after;
         if let Err(e) = sqlx::query(
             r#"
             UPDATE confidential_intents
@@ -1656,6 +1588,16 @@ fn signature_for_payload(tx_status: &Value, payload_hash: &str) -> SignatureLook
     }
 }
 
+/// Whether a landed transaction made the `v1.signer` sign call for the
+/// payload, which is what approving its proposal does. The MPC callback may
+/// still be missing, or may have failed; the submit queue deals with both.
+pub fn sign_call_in_transaction(tx_status: &Value, payload_hash: &str) -> bool {
+    !matches!(
+        signature_for_payload(tx_status, payload_hash),
+        SignatureLookup::NotInTransaction
+    )
+}
+
 fn outcome_signs_payload(entry: &Value, payload_hash: &str) -> bool {
     let Some(outcome) = entry.get("outcome") else {
         return false;
@@ -1674,7 +1616,7 @@ fn outcome_signs_payload(entry: &Value, payload_hash: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use near_api::{NetworkConfig, RPCEndpoint};
-    use wiremock::matchers::{body_partial_json, method, path, query_param};
+    use wiremock::matchers::{method, path, query_param};
     use wiremock::{Mock, MockServer, Request, Respond, ResponseTemplate};
 
     use super::*;
@@ -1726,6 +1668,16 @@ mod tests {
         deadline: &str,
         submit_state: SubmitState,
     ) {
+        seed_executed_intent_row(pool, "shield", payload_hash, deadline, submit_state).await;
+    }
+
+    async fn seed_executed_intent_row(
+        pool: &PgPool,
+        intent_type: &str,
+        payload_hash: &str,
+        deadline: &str,
+        submit_state: SubmitState,
+    ) {
         sqlx::query(
             r#"
             INSERT INTO confidential_intents (
@@ -1733,7 +1685,7 @@ mod tests {
                 proposal_executed_at, proposal_execution_transaction_hash,
                 submit_state, submit_next_attempt_at
             )
-            VALUES ($1, $2, $3, 'shield', 'pending', 29, NOW() - INTERVAL '2 minutes', $4, $5, NOW())
+            VALUES ($1, $2, $3, $6, 'pending', 29, NOW() - INTERVAL '2 minutes', $4, $5, NOW())
             "#,
         )
         .bind(DAO)
@@ -1741,9 +1693,74 @@ mod tests {
         .bind(intent_payload(deadline))
         .bind(RRI_29_TX_HASH)
         .bind(submit_state.as_str())
+        .bind(intent_type)
         .execute(pool)
         .await
         .expect("seed intent");
+    }
+
+    #[sqlx::test]
+    async fn the_queue_takes_the_longest_waiting_dao_first_and_skips_those_in_progress(
+        pool: PgPool,
+    ) {
+        for (dao, waited_minutes, submit_state) in [
+            ("fresh.sputnik-dao.near", 1, "due"),
+            ("oldest.sputnik-dao.near", 30, "unknown"),
+            ("middle.sputnik-dao.near", 10, "due"),
+            ("not-due.sputnik-dao.near", -5, "due"),
+        ] {
+            sqlx::query(
+                r#"
+                INSERT INTO confidential_intents (
+                    dao_id, payload_hash, intent_payload, intent_type, status,
+                    proposal_execution_transaction_hash, submit_state, submit_next_attempt_at
+                )
+                VALUES ($1, $1, '{}'::jsonb, 'shield', 'pending', 'tx', $3,
+                        NOW() - make_interval(mins => $2))
+                "#,
+            )
+            .bind(dao)
+            .bind(waited_minutes)
+            .bind(submit_state)
+            .execute(&pool)
+            .await
+            .expect("seed intent");
+        }
+        // A holder that stopped: its lease ran out 20 minutes ago.
+        sqlx::query(
+            r#"
+            INSERT INTO confidential_intents (
+                dao_id, payload_hash, intent_payload, intent_type, status,
+                proposal_execution_transaction_hash, submit_state, submit_lease_token,
+                submit_lease_until
+            )
+            VALUES ('crashed.sputnik-dao.near', 'crashed', '{}'::jsonb, 'bulk_auth', 'pending',
+                    'tx', 'in_flight', 'gone', NOW() - INTERVAL '20 minutes')
+            "#,
+        )
+        .execute(&pool)
+        .await
+        .expect("seed leased intent");
+
+        let state = build_test_state(pool.clone());
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(
+            submitter.daos_with_waiting_intents(&[], 10).await.unwrap(),
+            [
+                "oldest.sputnik-dao.near",
+                "crashed.sputnik-dao.near",
+                "middle.sputnik-dao.near",
+                "fresh.sputnik-dao.near",
+            ]
+        );
+        assert_eq!(
+            submitter
+                .daos_with_waiting_intents(&["oldest.sputnik-dao.near".to_owned()], 2)
+                .await
+                .unwrap(),
+            ["crashed.sputnik-dao.near", "middle.sputnik-dao.near"],
+            "a DAO already being worked does not use up a slot"
+        );
     }
 
     const DEPOSIT_ADDRESS: &str =
@@ -1851,6 +1868,18 @@ mod tests {
     /// Any 64 bytes: the stub 1Click never checks the signature.
     fn fake_signature() -> Vec<u8> {
         vec![7u8; 64]
+    }
+
+    async fn submit_with_fake_signature(state: &AppState) -> IntentSubmitOutcome {
+        let submitter = ConfidentialIntentSubmitter::new(state);
+        let lease = submitter
+            .lease(DAO, RRI_29_PAYLOAD_HASH)
+            .await
+            .expect("lease query")
+            .expect("intent is free to lease");
+        submitter
+            .submit_leased(DAO, RRI_29_PAYLOAD_HASH, &lease, &fake_signature())
+            .await
     }
 
     /// A DAO JWT fresh enough that the history client never refreshes it.
@@ -2109,16 +2138,6 @@ mod tests {
                 "{status}"
             );
         }
-    }
-
-    #[test]
-    fn needs_poll_covers_every_non_final_outcome() {
-        assert!(IntentSubmitOutcome::Deferred(String::new()).needs_poll());
-        assert!(IntentSubmitOutcome::Unknown(String::new()).needs_poll());
-        assert!(IntentSubmitOutcome::NotSignedYet.needs_poll());
-        assert!(!IntentSubmitOutcome::Submitted.needs_poll());
-        assert!(!IntentSubmitOutcome::Rejected(String::new()).needs_poll());
-        assert!(!IntentSubmitOutcome::AlreadyHandled.needs_poll());
     }
 
     #[sqlx::test]
@@ -2506,69 +2525,130 @@ mod tests {
         assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
     }
 
-    /// One relay approving several proposals carries several MPC signatures.
-    /// Each intent is posted with the signature of its own payload, and a
-    /// payload the transaction never signed is left to the poll (rri #46-54,
-    /// 2026-11-03: every intent went out with the first signature in the
-    /// outcome, so only one settled).
+    /// Bulk-payment activation signs a `bulk_auth` payload. When the vote
+    /// relay saw the sign call without the MPC callback, the poll finishes
+    /// the activation from the on-chain signature: authenticate, store the
+    /// subaccount JWT, mark the row submitted.
     #[sqlx::test]
-    async fn relay_submits_each_intent_with_its_own_signature_only(pool: PgPool) {
+    async fn resubmit_authenticates_bulk_auth_from_chain(pool: PgPool) {
         let rpc = MockServer::start().await;
         mount_rpc_stub(&rpc).await;
         let oneclick = MockServer::start().await;
-        let SignatureLookup::Found(signature) =
-            signature_for_payload(&tx_status_fixture(), RRI_29_PAYLOAD_HASH)
-        else {
-            panic!("signature present in fixture");
-        };
         Mock::given(method("POST"))
-            .and(path("/v0/submit-intent"))
-            .and(body_partial_json(serde_json::json!({
-                "signedData": {
-                    "signature": format!("ed25519:{}", bs58::encode(&signature).into_string())
-                }
-            })))
+            .and(path("/v0/auth/authenticate"))
             .respond_with(ResponseTemplate::new(200).set_body_json(serde_json::json!({
-                "intentHash": "mock-intent-hash",
-                "correlationId": "mock-correlation"
+                "accessToken": "bulk-access",
+                "refreshToken": "bulk-refresh",
+                "expiresIn": 3600
             })))
-            .expect(2)
+            .expect(1)
             .mount(&oneclick)
             .await;
-        let state = Arc::new(state_with_mocks(pool.clone(), &rpc, &oneclick));
-        let unsigned = "0".repeat(64);
-        seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
-        seed_executed_intent(&pool, &unsigned, "2099-01-01T00:00:00Z").await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_dao_jwt(&pool, &state).await;
+        seed_executed_intent_row(
+            &pool,
+            "bulk_auth",
+            RRI_29_PAYLOAD_HASH,
+            "2099-01-01T00:00:00Z",
+            SubmitState::Due,
+        )
+        .await;
 
-        // Classic relay: the execution transaction is re-read by hash.
-        let from_chain = RelaySignatureSource::ExecutionTx(RRI_29_TX_HASH.to_string());
-        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &from_chain).await;
-        try_auto_submit_intent(&state, DAO, &unsigned, 30, &from_chain).await;
+        let submitter = ConfidentialIntentSubmitter::new(&state);
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 1);
 
-        let signed = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
-        assert_eq!(signed.status, "submitted");
-        assert_eq!(signed.submit_state, "done");
-        let untouched = load_intent(&pool, &unsigned).await;
-        assert_eq!(untouched.status, "pending");
-        assert_eq!(untouched.submit_attempts, 0);
-        assert!(untouched.submit_result.is_none());
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "submitted");
+        assert_eq!(row.submit_state, "done");
+        let creds = state
+            .confidential_credentials()
+            .load(DAO, CredentialScope::BulkPayment)
+            .await
+            .expect("load credentials")
+            .expect("bulk credentials stored");
+        assert_eq!(creds.access_token.as_deref(), Some("bulk-access"));
+        assert_eq!(creds.refresh_token.as_deref(), Some("bulk-refresh"));
+        assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
+    }
 
-        // Post-quantum relay: the raw tx status is handed over; same pairing.
+    /// Restarting activation supersedes the previous attempt. Its proposal
+    /// may still execute later; the stale payload is never authenticated.
+    #[sqlx::test]
+    async fn resubmit_leaves_superseded_bulk_auth_alone(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent_row(
+            &pool,
+            "bulk_auth",
+            RRI_29_PAYLOAD_HASH,
+            "2099-01-01T00:00:00Z",
+            SubmitState::Due,
+        )
+        .await;
         sqlx::query(
-            "UPDATE confidential_intents SET status = 'pending', submit_state = 'due', submit_result = NULL WHERE payload_hash = $1",
+            "UPDATE confidential_intents SET status = 'superseded' WHERE payload_hash = $1",
         )
         .bind(RRI_29_PAYLOAD_HASH)
         .execute(&pool)
         .await
-        .expect("reset row");
-        let from_json = RelaySignatureSource::TxStatus(tx_status_fixture());
-        try_auto_submit_intent(&state, DAO, RRI_29_PAYLOAD_HASH, 29, &from_json).await;
-        try_auto_submit_intent(&state, DAO, &unsigned, 30, &from_json).await;
+        .expect("supersede");
+
         assert_eq!(
-            load_intent(&pool, RRI_29_PAYLOAD_HASH).await.submit_state,
-            "done"
+            ConfidentialIntentSubmitter::new(&state)
+                .resubmit_awaiting_intents(DAO)
+                .await,
+            0
         );
-        assert_eq!(load_intent(&pool, &unsigned).await.submit_attempts, 0);
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "superseded");
+        assert_eq!(row.submit_state, "due");
+        assert!(rpc.received_requests().await.expect("rpc log").is_empty());
+        assert!(
+            oneclick
+                .received_requests()
+                .await
+                .expect("1click log")
+                .is_empty()
+        );
+    }
+
+    /// An auth payload past its deadline cannot be authenticated any more and
+    /// has no deposit for 1Click to vouch for: it is retired outright, so the
+    /// activation UI offers a restart instead of waiting on a lookup that can
+    /// never answer.
+    #[sqlx::test]
+    async fn resubmit_retires_expired_bulk_auth_without_asking_1click(pool: PgPool) {
+        let rpc = MockServer::start().await;
+        let oneclick = MockServer::start().await;
+        let state = state_with_mocks(pool.clone(), &rpc, &oneclick);
+        seed_executed_intent_row(
+            &pool,
+            "bulk_auth",
+            RRI_29_PAYLOAD_HASH,
+            "2020-01-01T00:00:00Z",
+            SubmitState::Due,
+        )
+        .await;
+
+        assert_eq!(
+            ConfidentialIntentSubmitter::new(&state)
+                .resubmit_awaiting_intents(DAO)
+                .await,
+            0
+        );
+        let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
+        assert_eq!(row.status, "failed");
+        assert_eq!(row.submit_state, "failed");
+        assert!(rpc.received_requests().await.expect("rpc log").is_empty());
+        assert!(
+            oneclick
+                .received_requests()
+                .await
+                .expect("1click log")
+                .is_empty()
+        );
     }
 
     /// Signing failed on chain: no retry can help, so the poll fails the
@@ -2630,9 +2710,7 @@ mod tests {
             .await;
         let state = state_with_mocks(pool.clone(), rpc, oneclick);
         seed_executed_intent(pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
-        let outcome = ConfidentialIntentSubmitter::new(&state)
-            .submit_signed(DAO, RRI_29_PAYLOAD_HASH, &fake_signature())
-            .await;
+        let outcome = submit_with_fake_signature(&state).await;
         (outcome, load_intent(pool, RRI_29_PAYLOAD_HASH).await)
     }
 
@@ -2648,7 +2726,6 @@ mod tests {
             matches!(outcome, IntentSubmitOutcome::Deferred(_)),
             "{outcome:?}"
         );
-        assert!(outcome.needs_poll());
         assert_eq!(row.status, "pending");
         assert_eq!(row.submit_state, "due");
         assert!(row.submit_result.is_none());
@@ -2695,7 +2772,6 @@ mod tests {
             matches!(outcome, IntentSubmitOutcome::Rejected(_)),
             "{outcome:?}"
         );
-        assert!(!outcome.needs_poll());
         assert_eq!(row.status, "failed");
         assert_eq!(row.submit_state, "failed");
         assert!(
@@ -2718,15 +2794,11 @@ mod tests {
         state.env_vars.confidential_api_url = "http://127.0.0.1:1".to_string();
         seed_executed_intent(&pool, RRI_29_PAYLOAD_HASH, "2099-01-01T00:00:00Z").await;
 
-        let submitter = ConfidentialIntentSubmitter::new(&state);
-        let outcome = submitter
-            .submit_signed(DAO, RRI_29_PAYLOAD_HASH, &fake_signature())
-            .await;
+        let outcome = submit_with_fake_signature(&state).await;
         assert!(
             matches!(outcome, IntentSubmitOutcome::Deferred(_)),
             "{outcome:?}"
         );
-        assert!(outcome.needs_poll());
         let row = load_intent(&pool, RRI_29_PAYLOAD_HASH).await;
         assert_eq!(row.status, "pending");
         assert_eq!(row.submit_state, "due");
@@ -2741,6 +2813,7 @@ mod tests {
         assert!((25..=35).contains(&row.seconds_until_next_attempt()));
 
         // Not due yet: the poll leaves it alone.
+        let submitter = ConfidentialIntentSubmitter::new(&state);
         assert_eq!(submitter.resubmit_awaiting_intents(DAO).await, 0);
         assert_eq!(
             load_intent(&pool, RRI_29_PAYLOAD_HASH)

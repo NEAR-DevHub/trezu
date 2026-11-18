@@ -2447,7 +2447,9 @@
         "viewRequest": "Ver solicitud",
         "proposalRemoved": "Tu propuesta ha sido eliminada",
         "voteSubmitted": "Tu voto ha sido enviado",
-        "votesSubmitted": "Tus votos han sido enviados"
+        "votesSubmitted": "Tus votos han sido enviados",
+        "confirmingTransaction": "Confirmando tu transacción…",
+        "confirmingTransactionBody": "La red está lenta en este momento. Puedes seguir trabajando; lo actualizaremos en cuanto se confirme."
     },
     "tokenInput": {
         "max": "MÁX",

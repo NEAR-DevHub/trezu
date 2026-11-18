@@ -16,7 +16,7 @@ use crate::handlers::intents::confidential::gold::history_events::{
     CONFIDENTIAL_GOLD_RECONCILIATION_WORKERS, project_confidential_gold_for_dao,
     project_confidential_gold_for_dirty_daos, verify_confidential_ledger_heads,
 };
-use crate::handlers::relay::confidential::ConfidentialIntentSubmitter;
+use crate::handlers::intents::confidential::submitter::ConfidentialIntentSubmitter;
 
 pub const CONFIDENTIAL_HISTORY_SCHEDULER_TICK: Duration = Duration::from_secs(10);
 pub const CONFIDENTIAL_HISTORY_TRIGGER_LIMIT: u32 = 50;

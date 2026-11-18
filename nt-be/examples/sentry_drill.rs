@@ -10,6 +10,7 @@
 //!   - every p0 and p1 event, immediately
 //!   - PROPOSAL_EXECUTION_FAILED (3 events -> frequency rule)
 //!   - BULK_PAYOUT_FAILED (5 events -> frequency rule)
+//!
 //! Expected in Sentry ONLY (never Discord):
 //!   - all other p2 events, the untagged error, and no event at all for warn!
 
@@ -51,6 +52,19 @@ fn main() {
         tags.error_code = "FLEET_STALLED",
         tags.alert_priority = "p0",
         "[DRILL] most job queues stale or DB unreachable; process would self-restart"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "RELAY_SUBMISSION_INVARIANT_BROKEN",
+        tags.alert_priority = "p0",
+        stage = "relay",
+        "[DRILL] relay rows contradict each other; operation parked"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "RELAY_SUBMISSION_STATE_WRITE_FAILED",
+        tags.alert_priority = "p0",
+        "[DRILL] relay result could not be committed; operation retried"
     );
     pace();
 
@@ -107,6 +121,47 @@ fn main() {
     );
     pace();
     tracing::error!(
+        tags.error_code = "RELAY_SUBMISSION_MANUAL_REVIEW",
+        tags.alert_priority = "p1",
+        stage = "settle",
+        "[DRILL] relay operation parked for an operator"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "RELAY_RECONCILIATION_STALLED",
+        tags.alert_priority = "p1",
+        "[DRILL] a broadcast relay transaction has no final outcome after 10 min"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "RELAY_QUEUE_STALLED",
+        tags.alert_priority = "p1",
+        stage = "registrations",
+        "[DRILL] a relay operation made no progress for 2 min"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "CONF_INTENT_EXECUTION_UNSTAMPED",
+        tags.alert_priority = "p1",
+        dao = "drill.sputnik-dao.near",
+        "[DRILL] proposal approved on chain but the intent row was never stamped"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "CONF_INTENT_SUBMIT_STALLED",
+        tags.alert_priority = "p1",
+        dao = "drill.sputnik-dao.near",
+        "[DRILL] approved intent still not handed to 1Click after 5 min"
+    );
+    pace();
+    tracing::error!(
+        tags.error_code = "BULK_CONF_STALLED",
+        tags.alert_priority = "p1",
+        dao = "drill.sputnik-dao.near",
+        "[DRILL] bulk payment header submitted but recipients not paid"
+    );
+    pace();
+    tracing::error!(
         tags.error_code = "CONFIG_INVALID_CORS_ORIGIN",
         tags.alert_priority = "p1",
         "[DRILL] allowed origin failed to parse at boot"
@@ -132,6 +187,12 @@ fn main() {
         );
         pace();
     }
+    tracing::error!(
+        tags.error_code = "RELAY_CONFIRMED_UNEXPECTED_FAILURE",
+        tags.alert_priority = "p2",
+        "[DRILL] relay landed and failed on chain for an unexplained reason"
+    );
+    pace();
     tracing::error!(
         tags.error_code = "JOB_STALE",
         tags.alert_priority = "p2",

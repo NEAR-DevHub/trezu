@@ -14,9 +14,10 @@
 //!    wallet.
 //! 2. The DAO members approve the proposal — the one round of multisig
 //!    approvals. The final approving vote executes the `v1.signer.sign`
-//!    call, and the vote relay (`try_auto_submit_intent`) extracts the MPC
-//!    signature, authenticates the subaccount with 1Click, and stores the
-//!    JWT in `monitored_accounts.bulk_payment_*`.
+//!    call. The relay worker stamps the execution on the intent, and the
+//!    submit queue reads the MPC signature from chain, authenticates the
+//!    subaccount with 1Click, and stores the JWT in
+//!    `monitored_accounts.bulk_payment_*`.
 //! 3. `GET /activation` — status polling for the UI.
 
 use axum::{
@@ -30,7 +31,7 @@ use serde_json::Value;
 use std::sync::Arc;
 
 use crate::handlers::intents::confidential::prepare_auth::build_bulk_payment_auth_proposal;
-use crate::handlers::relay::confidential::compute_nep413_hash;
+use crate::handlers::intents::confidential::submitter::compute_nep413_hash;
 use crate::handlers::treasury::confidential_setup::{
     derive_bulk_subaccount_id, ensure_bulk_subaccount,
 };
@@ -291,7 +292,7 @@ pub async fn prepare_bulk_activation(
     })?;
 
     // 3. Supersede any previous pending attempt, then store this one for the
-    //    vote relay to complete after the multisig approves.
+    //    submit queue to complete after the multisig approves.
     let mut tx = state.db_pool.begin().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,

@@ -136,6 +136,19 @@ pub async fn confidential_history_ingest(
     ))
 }
 
+pub async fn confidential_intent_watch(
+    _t: Tick,
+    state: Data<Arc<AppState>>,
+) -> Result<String, BoxDynError> {
+    let report = crate::handlers::intents::confidential::stuck_watch::StuckIntentWatch::new(&state)
+        .sweep()
+        .await?;
+    Ok(format!(
+        "stalled={} unstamped={} bulk_stalled={}",
+        report.stalled, report.unstamped, report.bulk_stalled
+    ))
+}
+
 fn public_history_tick_age_ms(tick: &Tick, now: DateTime<Utc>) -> i64 {
     (now - tick.get_timestamp()).num_milliseconds().max(0)
 }
