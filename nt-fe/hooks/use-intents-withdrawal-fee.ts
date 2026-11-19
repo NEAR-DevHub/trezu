@@ -40,7 +40,6 @@ export function useIntentsWithdrawalFee({
             token?.address,
             token?.network,
             token?.decimals,
-            token?.minWithdrawalAmount,
             normalizedDestinationAddress,
         ],
         queryFn: async (): Promise<IntentsWithdrawalFeeData> => {
@@ -53,7 +52,6 @@ export function useIntentsWithdrawalFee({
                     token: {
                         address: token.address,
                         decimals: token.decimals,
-                        minWithdrawalAmount: token.minWithdrawalAmount,
                     },
                     destinationAddress: normalizedDestinationAddress,
                     destinationBlockchain: getBlockchainType(token.network),

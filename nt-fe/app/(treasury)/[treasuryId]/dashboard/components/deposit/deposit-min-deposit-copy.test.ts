@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { resolveMinDepositCopy } from "./deposit-min-deposit-copy";
 
 describe("resolveMinDepositCopy", () => {
-    test("shows a priced minimum to the cent, rounded up", () => {
+    test("shows a priced minimum rounded up to a whole dollar", () => {
         expect(
             resolveMinDepositCopy({
                 minDepositRaw: "149500",
@@ -10,7 +10,7 @@ describe("resolveMinDepositCopy", () => {
                 priceUsd: 1,
                 minDepositDisplay: "0.1495",
             }),
-        ).toEqual({ kind: "usd", usd: 0.15 });
+        ).toEqual({ kind: "usd", usd: 1 });
         expect(
             resolveMinDepositCopy({
                 minDepositRaw: "3200000",
@@ -18,10 +18,10 @@ describe("resolveMinDepositCopy", () => {
                 priceUsd: 1,
                 minDepositDisplay: "3.2",
             }),
-        ).toEqual({ kind: "usd", usd: 3.2 });
+        ).toEqual({ kind: "usd", usd: 4 });
     });
 
-    test("a minimum under a cent still reads as a cent, never zero", () => {
+    test("a minimum under a cent reads as the $1 floor", () => {
         expect(
             resolveMinDepositCopy({
                 minDepositRaw: "4000",
@@ -29,7 +29,7 @@ describe("resolveMinDepositCopy", () => {
                 priceUsd: 1,
                 minDepositDisplay: "0.004",
             }),
-        ).toEqual({ kind: "usd", usd: 0.01 });
+        ).toEqual({ kind: "usd", usd: 1 });
     });
 
     test("falls back to the token amount without a price", () => {

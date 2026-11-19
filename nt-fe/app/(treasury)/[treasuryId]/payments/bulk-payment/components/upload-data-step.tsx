@@ -282,7 +282,11 @@ export function UploadDataStep({
                 const feeValidationResult = await validateIntentsFeeCoverage(
                     result.payments,
                     isConfidential && destinationAssetId
-                        ? { ...selectedToken, address: destinationAssetId }
+                        ? {
+                              ...selectedToken,
+                              address: destinationAssetId,
+                              quoteAssetId: destinationAssetId,
+                          }
                         : selectedToken,
                     parsingLabels,
                     // Confidential: quote against the receive network, not

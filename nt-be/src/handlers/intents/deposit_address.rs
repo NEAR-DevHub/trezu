@@ -7,10 +7,8 @@ use crate::AppState;
 use crate::handlers::intents::confidential::reusable_deposit::{
     ResolvedDepositAddress, ReusableDepositResolver,
 };
-use crate::handlers::intents::deposit_tracker::WatchActivation;
+use crate::handlers::intents::deposit_tracker::{WatchActivation, WatchKind};
 use crate::handlers::public_history::confidential_list::is_confidential_dao;
-use crate::utils::cache::{CacheKey, CacheTier};
-use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,11 +24,11 @@ pub struct DepositAddressRequest {
 pub struct DepositAddressResult {
     pub address: String,
     #[serde(skip_serializing_if = "Option::is_none")]
-    /// Confidential: 1Click `quote.minAmountIn` (bridge floor). Public: unused/None.
+    /// 1Click `quote.minAmountIn` (bridge floor) for the chosen token.
     pub min_amount: Option<String>,
     pub memo: Option<String>,
-    /// Confidential: the treasury's reusable 1Click quote address (the
-    /// deposit tracker scope). Differs from `address`, which is the funding
+    /// The treasury's reusable 1Click quote address (the deposit tracker
+    /// scope). Differs from `address`, which is the funding
     /// address on the chosen chain.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quote_deposit_address: Option<String>,
@@ -47,46 +45,17 @@ impl From<ResolvedDepositAddress> for DepositAddressResult {
     }
 }
 
-/// Fetch deposit address from the bridge RPC for a given account and chain.
-async fn fetch_bridge_deposit_address(
-    state: &Arc<AppState>,
-    account_id: &str,
-    chain: &str,
-) -> Result<DepositAddressResult, (StatusCode, String)> {
-    let cache_key = CacheKey::new("bridge:deposit-address")
-        .with(account_id)
-        .with(chain)
-        .build();
-
-    let account_id = account_id.to_string();
-    let chain = chain.to_string();
-    let state_clone = state.clone();
-
-    state
-        .cache
-        .cached(CacheTier::LongTerm, cache_key, async move {
-            // Try SIMPLE mode first, fall back to MEMO if it fails
-            match fetch_deposit_address(&state_clone, &account_id, &chain, "SIMPLE").await {
-                Ok(result) => Ok(result),
-                Err(_) => fetch_deposit_address(&state_clone, &account_id, &chain, "MEMO").await,
-            }
-        })
-        .await
-}
-
 /// Fetch deposit address for a specific account and chain.
 ///
-/// **Public** treasuries use Bridge/POA `depositAddressFetch(account, chain)` —
-/// the address is stable for that treasury+chain (same as near.com).
-/// **Confidential** treasuries mint a rotating 1Click wet quote (`tokenId`
-/// should be the 1Click `quoteAssetId`, which may be `1cs_v1:…`) and return
-/// that quote's Bridge origin-chain deposit address plus `minAmountIn`.
-/// The credit is that same id, except NEAR on Hyperliquid, which is credited
-/// as `nep141:wrap.near`.
+/// Every treasury is served from its reusable 1Click deposit set: one
+/// long-lived address per chain. A confidential set is owned by the DAO's
+/// 1Click session and credits its confidential balance; a public set is
+/// created with the partner credentials and credits its Intents balance.
+/// `tokenId` (the 1Click `quoteAssetId`, which may be `1cs_v1:…`) selects
+/// the bridge floor returned as `minAmount`.
 ///
 /// Guests and non-members may generate addresses — depositing funds into a
-/// treasury is not a member-only action. Confidential quotes use the app API
-/// key (no DAO JWT).
+/// treasury is not a member-only action.
 #[tracing::instrument(
     level = "info",
     skip_all,
@@ -112,62 +81,54 @@ pub async fn get_deposit_address(
             )
         })?;
 
-    if confidential {
-        let token_id = request.token_id.ok_or_else(|| {
-            (
-                StatusCode::BAD_REQUEST,
-                "tokenId is required for confidential treasuries".to_string(),
-            )
-        })?;
-        let amount: u128 = request
-            .amount
-            .as_deref()
-            .unwrap_or("0")
-            .parse()
-            .unwrap_or(0);
-        let result = DepositAddressResult::from(
-            ReusableDepositResolver::new(&state)
-                .deposit_address(&account_id, &chain, &token_id, amount)
-                .await?,
-        );
-        if let Some(quote_deposit_address) = result.quote_deposit_address.as_deref() {
-            activate_deposit_watch(
-                &state,
-                WatchActivation {
-                    dao_id: account_id.to_string(),
-                    chain: chain.clone(),
-                    token_id: Some(token_id.clone()),
-                },
-                Some(quote_deposit_address),
-            )
-            .await;
-        }
-        return Ok(Json(result));
+    let token_id = request
+        .token_id
+        .ok_or_else(|| (StatusCode::BAD_REQUEST, "tokenId is required".to_string()))?;
+    let amount: u128 = request
+        .amount
+        .as_deref()
+        .unwrap_or("0")
+        .parse()
+        .unwrap_or(0);
+    let resolver = if confidential {
+        ReusableDepositResolver::new(&state)
+    } else {
+        ReusableDepositResolver::public(&state)
+    };
+    let result = DepositAddressResult::from(
+        resolver
+            .deposit_address(&account_id, &chain, &token_id, amount)
+            .await
+            .inspect_err(|(status, msg)| {
+                if !confidential && status.is_server_error() {
+                    crate::error_event!(
+                        crate::error_event::ErrorCode::DepositAddressFailed,
+                        account_id = %account_id,
+                        chain,
+                        status = %status,
+                        error = %msg
+                    );
+                }
+            })?,
+    );
+    if let Some(quote_deposit_address) = result.quote_deposit_address.as_deref() {
+        let kind = if confidential {
+            WatchKind::Confidential
+        } else {
+            WatchKind::Public
+        };
+        activate_deposit_watch(
+            &state,
+            WatchActivation {
+                dao_id: account_id.to_string(),
+                chain,
+                token_id: Some(token_id),
+            },
+            kind,
+            quote_deposit_address,
+        )
+        .await;
     }
-
-    let result = fetch_bridge_deposit_address(&state, account_id.as_str(), &chain)
-        .await
-        .inspect_err(|(status, msg)| {
-            if status.is_server_error() {
-                crate::error_event!(
-                    crate::error_event::ErrorCode::DepositAddressFailed,
-                    account_id = %account_id,
-                    chain,
-                    status = %status,
-                    error = %msg
-                );
-            }
-        })?;
-    activate_deposit_watch(
-        &state,
-        WatchActivation {
-            dao_id: account_id.to_string(),
-            chain,
-            token_id: request.token_id,
-        },
-        None,
-    )
-    .await;
     Ok(Json(result))
 }
 
@@ -177,17 +138,13 @@ pub async fn get_deposit_address(
 async fn activate_deposit_watch(
     state: &AppState,
     activation: WatchActivation,
-    confidential_quote: Option<&str>,
+    kind: WatchKind,
+    quote_deposit_address: &str,
 ) {
-    let outcome = match confidential_quote {
-        Some(quote_deposit_address) => {
-            activation
-                .activate_confidential(&state.db_pool, quote_deposit_address)
-                .await
-        }
-        None => activation.activate_public(&state.db_pool).await,
-    };
-    match outcome {
+    match activation
+        .activate(&state.db_pool, kind, quote_deposit_address)
+        .await
+    {
         Ok(true) => {}
         Ok(false) => tracing::debug!(
             dao_id = %activation.dao_id,
@@ -200,66 +157,4 @@ async fn activate_deposit_watch(
             "deposit watch activation failed"
         ),
     }
-}
-
-#[tracing::instrument(level = "debug", skip_all, fields(deposit_mode = deposit_mode))]
-async fn fetch_deposit_address(
-    state: &AppState,
-    account_id: &str,
-    chain: &str,
-    deposit_mode: &str,
-) -> Result<DepositAddressResult, String> {
-    let rpc_request = JsonRpcRequest::new(
-        "depositAddressFetch",
-        "deposit_address",
-        vec![serde_json::json!({
-            "deposit_mode": deposit_mode,
-            "account_id": account_id,
-            "chain": chain,
-        })],
-    );
-
-    let response = state
-        .http_client
-        .post(&state.env_vars.bridge_rpc_url)
-        .header("content-type", "application/json")
-        .json(&rpc_request)
-        .send()
-        .await
-        .map_err(|e| {
-            tracing::warn!(error = %e, "POA bridge deposit_address request failed");
-            format!("Failed to fetch deposit address: {e}")
-        })?;
-
-    if !response.status().is_success() {
-        return Err(format!(
-            "POA bridge deposit_address returned HTTP {}",
-            response.status()
-        ));
-    }
-
-    let raw = response.json::<serde_json::Value>().await.map_err(|e| {
-        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
-        "Failed to parse bridge response".to_string()
-    })?;
-
-    // Bridge sometimes returns `"error": "Network not supported"` (string) instead
-    // of a JSON-RPC `{ code, message }` object.
-    if let Some(error) = raw.get("error") {
-        if let Some(message) = error.as_str() {
-            return Err(message.to_string());
-        }
-        if let Some(message) = error.get("message").and_then(|m| m.as_str()) {
-            return Err(message.to_string());
-        }
-        return Err(format!("Bridge error: {error}"));
-    }
-
-    let data: JsonRpcResponse<DepositAddressResult> = serde_json::from_value(raw).map_err(|e| {
-        tracing::warn!(error = %e, "failed to parse POA bridge deposit_address response");
-        "Failed to parse bridge response".to_string()
-    })?;
-
-    data.result
-        .ok_or_else(|| "No deposit address found".to_string())
 }

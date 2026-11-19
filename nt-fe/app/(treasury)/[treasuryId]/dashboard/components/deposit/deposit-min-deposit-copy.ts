@@ -1,7 +1,7 @@
 import { decimalFromBaseUnitsOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 
-/** Shown when no minimum is known at all, matching near.com. */
+/** Lowest minimum ever shown, matching near.com. */
 export const DISPLAY_MIN_USD = 1;
 
 export type MinDepositCopy =
@@ -11,9 +11,9 @@ export type MinDepositCopy =
 
 /**
  * Headline copy for a reusable deposit address.
- * With a price the minimum shows in dollars, rounded up to the cent so the
- * payer is never told less than the real floor; without one the formatted
- * token amount is used. With no minimum at all, bridge-routed addresses
+ * With a price the minimum shows in dollars as on near.com: rounded up to a
+ * whole dollar and never below $1, since the quoted minimum only echoes the
+ * probed amount. Without a price the formatted token amount is used. With no minimum at all, bridge-routed addresses
  * fall back to the $1 floor as on near.com, while direct treasury-account
  * deposits (`usdFloor: false`) have none.
  */
@@ -35,7 +35,10 @@ export function resolveMinDepositCopy(params: {
     if (amount?.gt(0) && priceUsd != null && priceUsd > 0) {
         return {
             kind: "usd",
-            usd: amount.mul(priceUsd).round(2, Big.roundUp).toNumber(),
+            usd: Math.max(
+                DISPLAY_MIN_USD,
+                amount.mul(priceUsd).round(2).round(0, Big.roundUp).toNumber(),
+            ),
         };
     }
     if (minDepositDisplay) {

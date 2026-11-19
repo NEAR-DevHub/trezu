@@ -27,7 +27,6 @@
         "test:e2e:docker": "docker compose -f docker-compose.e2e.yml up --build --abort-on-container-exit"
     },
     "dependencies": {
-        "@defuse-protocol/intents-sdk": "^0.58.2",
         "@hookform/resolvers": "^5.7.1",
         "@hot-labs/near-connect": "NEAR-DevHub/near-connect#passkeys-20261104",
         "@near-js/transactions": "^2.5.1",

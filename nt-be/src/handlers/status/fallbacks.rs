@@ -58,29 +58,6 @@ const EXCHANGE_FALLBACK: FallbackConfig = FallbackConfig {
     }],
 };
 
-const BRIDGE_RPC_FALLBACK: FallbackConfig = FallbackConfig {
-    targets: &[
-        FallbackTarget {
-            slot: "exchange",
-            response: "paused",
-            severity: "high",
-            situation: "features_paused",
-        },
-        FallbackTarget {
-            slot: "deposit",
-            response: "paused",
-            severity: "high",
-            situation: "features_paused",
-        },
-        FallbackTarget {
-            slot: "payments",
-            response: "paused",
-            severity: "high",
-            situation: "features_paused",
-        },
-    ],
-};
-
 const NEAR_RPC_FALLBACK: FallbackConfig = FallbackConfig {
     targets: &[FallbackTarget {
         slot: "app",
@@ -128,7 +105,6 @@ const WHOLE_APP_DOWN_FALLBACK: FallbackConfig = FallbackConfig {
 
 const FALLBACK_CONFIGS: &[(&str, FallbackConfig)] = &[
     ("backend", BACKEND_DOWN_FALLBACK),
-    ("bridge-rpc", BRIDGE_RPC_FALLBACK),
     ("exchange", EXCHANGE_FALLBACK),
     ("near-protocol", WHOLE_APP_DOWN_FALLBACK),
     ("near-rpc", NEAR_RPC_FALLBACK),

@@ -601,3 +601,63 @@ async fn withdrawals_are_read_for_the_quote_address_with_the_dao_jwt(pool: PgPoo
     assert_eq!(page.withdrawals.len(), 1);
     assert_eq!(page.withdrawals[0].hash, "payout-1");
 }
+
+/// A public treasury has no 1Click session: its set is created with the
+/// partner token, credits the public Intents balance, is never listed, and
+/// the stored copy serves every later request.
+#[sqlx::test]
+async fn public_set_is_created_with_partner_credentials_and_stored(pool: PgPool) {
+    let mock = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path(QUOTES_PATH))
+        .respond_with(ResponseTemplate::new(401))
+        .expect(0)
+        .mount(&mock)
+        .await;
+    Mock::given(method("POST"))
+        .and(path("/v0/quote"))
+        .and(header("Authorization", "Bearer partner-jwt"))
+        .and(wiremock::matchers::body_partial_json(serde_json::json!({
+            "swapType": "ANY_INPUT",
+            "recipient": DAO,
+            "recipientType": "INTENTS",
+            "refundType": "INTENTS",
+        })))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(serde_json::json!({ "quote": quote_json(DAO) })),
+        )
+        .expect(1)
+        .mount(&mock)
+        .await;
+    sqlx::query("INSERT INTO monitored_accounts (account_id) VALUES ($1)")
+        .bind(DAO)
+        .execute(&pool)
+        .await
+        .expect("seed account");
+    let mut state = build_test_state(pool.clone());
+    state.env_vars.confidential_api_url = mock.uri();
+    state.env_vars.oneclick_jwt_token = Some("partner-jwt".to_string());
+    let state = Arc::new(state);
+
+    let dao = AccountIdRef::new(DAO).unwrap();
+    let resolver = ReusableDepositResolver::public(&state);
+    let created = resolver.resolve(dao).await.expect("create");
+    let served = resolver.resolve(dao).await.expect("serve stored");
+    assert_eq!(created.quote_deposit_address, "rda-monitoring-account");
+    assert_eq!(served, created);
+
+    let mut racing = created.clone();
+    racing.quote_deposit_address = "second-create".to_string();
+    let kept = super::repository::store_first(&pool, DAO, &racing)
+        .await
+        .expect("store");
+    assert_eq!(
+        kept, created,
+        "a later create never replaces the stored set"
+    );
+
+    let unregistered = AccountIdRef::new("nobody.sputnik-dao.near").unwrap();
+    let (status, _) = resolver.resolve(unregistered).await.unwrap_err();
+    assert_eq!(status, StatusCode::NOT_FOUND);
+}

@@ -6,6 +6,5 @@ pub mod deposit_tracker;
 pub mod oneclick;
 pub mod quote;
 pub mod search_tokens;
-pub mod supported_tokens;
 pub mod swap_status;
 pub mod system_status;

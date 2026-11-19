@@ -1,9 +1,8 @@
 //! Deposit tracker: temporary "Processing" visibility for inbound deposits
 //! between address display and permanent ledger projection.
 //!
-//! Public treasuries are polled through the bridge `recent_deposits` method,
-//! coalesced per DAO. Confidential treasuries are polled through the payout
-//! list of the DAO's reusable 1Click deposit set. Both normalise into
+//! Every treasury is polled through the payout list of its reusable 1Click
+//! deposit set. Rows normalise into
 //! `in_process_deposits`, which the recent-activity read path unions ahead of
 //! ledger rows until an exact ledger match retires them.
 //!
@@ -11,7 +10,6 @@
 
 pub mod activity;
 pub mod api;
-pub mod bridge;
 pub mod store;
 pub mod worker;
 
@@ -113,35 +111,21 @@ pub struct WatchActivation {
 }
 
 impl WatchActivation {
-    /// Public treasuries: one watch per DAO, renewed on every address display.
-    /// Returns `Ok(false)` when the account is not monitored (nothing to track).
-    pub async fn activate_public(&self, pool: &PgPool) -> Result<bool, sqlx::Error> {
-        self.activate(pool, WatchKind::Public, None).await
-    }
-
-    /// Confidential treasuries: one watch per DAO on its reusable deposit
-    /// set, keyed by the set's quote address and renewed on every display.
-    pub async fn activate_confidential(
-        &self,
-        pool: &PgPool,
-        quote_deposit_address: &str,
-    ) -> Result<bool, sqlx::Error> {
-        self.activate(pool, WatchKind::Confidential, Some(quote_deposit_address))
-            .await
-    }
-
-    async fn activate(
+    /// One watch per DAO on its reusable deposit set, keyed by the set's
+    /// quote address and renewed on every address display. Returns
+    /// `Ok(false)` when the account is not monitored (nothing to track).
+    pub async fn activate(
         &self,
         pool: &PgPool,
         kind: WatchKind,
-        quote_deposit_address: Option<&str>,
+        quote_deposit_address: &str,
     ) -> Result<bool, sqlx::Error> {
         let now = Utc::now();
         store::upsert_watch(
             pool,
             &self.dao_id,
             kind,
-            quote_deposit_address,
+            Some(quote_deposit_address),
             &self.chain,
             self.token_id.as_deref(),
             now + FAST_WINDOW,

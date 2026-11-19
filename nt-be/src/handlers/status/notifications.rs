@@ -50,7 +50,6 @@ fn escape_html(value: &str) -> String {
 fn service_label(service: &str) -> &'static str {
     match service {
         "backend" => "Backend API",
-        "bridge-rpc" => "Bridge RPC",
         "exchange" => "Exchange quotes",
         "near-intents" => "NEAR Intents",
         "near-protocol" => "NEAR Protocol status",
@@ -68,7 +67,6 @@ fn service_label(service: &str) -> &'static str {
 fn health_check_name(service: &str) -> &'static str {
     match service {
         "backend" => "backend.database",
-        "bridge-rpc" => "bridge-rpc.supported-tokens",
         "exchange" => "exchange.quote",
         "near-protocol" => "near-protocol.status-page",
         "near-rpc" => "near-rpc.status",

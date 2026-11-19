@@ -207,7 +207,7 @@ pub async fn upsert_watch(
     }
 }
 
-/// The treasury a confidential quote address was handed out to, looked up
+/// The treasury a reusable quote address was handed out to, looked up
 /// by the address alone so the caller cannot steer the answer with a
 /// different `dao_id`. Retired watches count: the address stays public.
 pub async fn find_quote_owner(
@@ -217,7 +217,7 @@ pub async fn find_quote_owner(
     sqlx::query_scalar(
         r#"
         SELECT dao_id FROM deposit_watches
-        WHERE kind = 'confidential' AND quote_deposit_address = $1
+        WHERE quote_deposit_address = $1
         LIMIT 1
         "#,
     )
@@ -471,7 +471,7 @@ pub async fn load_recent_deposits_for_scope(
                 -- Reusable address: every payout of the DAO's quote.
                 OR watch_id IN (
                     SELECT id FROM deposit_watches
-                    WHERE dao_id = $1 AND kind = 'confidential' AND quote_deposit_address = $3
+                    WHERE dao_id = $1 AND quote_deposit_address = $3
                 )
               )
           AND ($4::text IS NULL OR chain = $4)
@@ -503,33 +503,29 @@ pub struct LedgerMatch {
     pub token_id: Option<String>,
 }
 
-/// Links a settled public deposit to its gold row: by NEAR mint hash when
-/// the bridge gave one, else by token + amount inside the lookback (Omni,
-/// see `activity::served_by_ledger`). The hashless path may pair two equal
-/// deposits with each other's rows or pick an unrelated equal transfer;
-/// the `NOT EXISTS` guard keeps each gold row linked at most once and the
-/// link is not user-visible, so the ledger stays correct either way.
+/// Links a settled public deposit to its gold row. 1Click pays each deposit
+/// out as a transfer from the set's quote address, so that sender plus the
+/// amount inside the lookback picks the row; the `NOT EXISTS` guard keeps
+/// each gold row linked at most once. The gold row names the credited token,
+/// which the payout feed does not.
 pub async fn find_public_ledger_match(
     pool: &PgPool,
     dao_id: &str,
-    near_tx_hash: Option<&str>,
-    token_id: &str,
+    quote_deposit_address: &str,
     amount: Option<&BigDecimal>,
     not_before: DateTime<Utc>,
 ) -> Result<Option<LedgerMatch>, sqlx::Error> {
     sqlx::query_as(
         r#"
-        SELECT g.id AS event_id, g.amount_in AS amount, NULL::text AS token_id
+        SELECT g.id AS event_id, g.amount_in AS amount, g.token_in AS token_id
         FROM gold_treasury_ledger_events g
         WHERE g.dao_id = $1
           AND g.source_kind = 'public_silver_leg'
           AND g.transaction_type = 'deposit'
           AND g.status = 'success'
-          AND g.token_in = $3
-          AND CASE
-                WHEN $2::text IS NOT NULL THEN g.transaction_hash = $2
-                ELSE $4::numeric IS NOT NULL AND g.amount_in = $4 AND g.event_time >= $5
-              END
+          AND g.counterparty = $2
+          AND g.amount_in = $3
+          AND g.event_time >= $4
           AND NOT EXISTS (
               SELECT 1 FROM in_process_deposits d WHERE d.ledger_event_id = g.id
           )
@@ -538,8 +534,7 @@ pub async fn find_public_ledger_match(
         "#,
     )
     .bind(dao_id)
-    .bind(near_tx_hash)
-    .bind(token_id)
+    .bind(quote_deposit_address)
     .bind(amount)
     .bind(not_before)
     .fetch_optional(pool)
@@ -686,7 +681,7 @@ mod tests {
             &pool,
             "dao.sputnik-dao.near",
             WatchKind::Public,
-            None,
+            Some("quote-account"),
             "eth:8453",
             None,
             now + Duration::minutes(10),
@@ -870,27 +865,34 @@ mod tests {
             .await
             .expect("schedule refresh");
 
+        let find = |quote: &'static str, amount: Option<BigDecimal>| {
+            let pool = pool.clone();
+            let dao_id = watch.dao_id.clone();
+            async move {
+                find_public_ledger_match(
+                    &pool,
+                    &dao_id,
+                    quote,
+                    amount.as_ref(),
+                    now - Duration::minutes(30),
+                )
+                .await
+                .expect("match query")
+            }
+        };
         assert!(
-            find_public_ledger_match(
-                &pool,
-                &watch.dao_id,
-                None,
-                &deposits[0].token_id,
-                Some(&BigDecimal::from(100)),
-                now - Duration::minutes(30),
-            )
-            .await
-            .expect("match query")
-            .is_none()
+            find("quote-account", Some(BigDecimal::from(100)))
+                .await
+                .is_none()
         );
         let ledger_id: i64 = sqlx::query_scalar(
             r#"
             INSERT INTO gold_treasury_ledger_events (
                 gold_event_key, dao_id, source_kind, history_visible, transaction_type,
-                status, event_time, token_in, amount_in, transaction_hash
+                status, event_time, token_in, amount_in, transaction_hash, counterparty
             )
             VALUES ('silver-leg:test', $1, 'public_silver_leg', true, 'deposit',
-                    'success', NOW(), $2, 100.000000, 'MintHash1')
+                    'success', NOW(), $2, 100.000000, 'PayoutHash1', 'quote-account')
             RETURNING id
             "#,
         )
@@ -899,67 +901,25 @@ mod tests {
         .fetch_one(&pool)
         .await
         .expect("seed gold row");
-        let matched = find_public_ledger_match(
-            &pool,
-            &watch.dao_id,
-            None,
-            &deposits[0].token_id,
-            Some(&BigDecimal::from(100)),
-            now - Duration::minutes(30),
-        )
-        .await
-        .expect("match query");
         let ledger = LedgerMatch {
             event_id: ledger_id,
             amount: Some(BigDecimal::from_str("100.000000").unwrap()),
-            token_id: None,
+            token_id: Some(deposits[0].token_id.clone()),
         };
         assert_eq!(
-            matched,
+            find("quote-account", Some(BigDecimal::from(100))).await,
             Some(ledger.clone()),
             "numeric equality ignores scale"
         );
         assert!(
-            find_public_ledger_match(
-                &pool,
-                &watch.dao_id,
-                None,
-                &deposits[0].token_id,
-                None,
-                now - Duration::minutes(30),
-            )
-            .await
-            .expect("match query")
-            .is_none(),
-            "no mint hash and no amount never matches blind"
-        );
-        assert_eq!(
-            find_public_ledger_match(
-                &pool,
-                &watch.dao_id,
-                Some("MintHash1"),
-                &deposits[0].token_id,
-                None,
-                now,
-            )
-            .await
-            .expect("match query"),
-            Some(ledger.clone()),
-            "a known mint hash matches without an amount or window"
+            find("quote-account", None).await.is_none(),
+            "no amount never matches blind"
         );
         assert!(
-            find_public_ledger_match(
-                &pool,
-                &watch.dao_id,
-                Some("OtherHash"),
-                &deposits[0].token_id,
-                Some(&BigDecimal::from(100)),
-                now - Duration::minutes(30),
-            )
-            .await
-            .expect("match query")
-            .is_none(),
-            "a known mint hash never falls back to amount matching"
+            find("other-account", Some(BigDecimal::from(100)))
+                .await
+                .is_none(),
+            "an equal transfer from another sender is not this deposit"
         );
 
         sqlx::query("UPDATE in_process_deposits SET amount = NULL WHERE id = $1")
@@ -983,17 +943,9 @@ mod tests {
             "confirm backfills a missing amount from the gold row"
         );
         assert!(
-            find_public_ledger_match(
-                &pool,
-                &watch.dao_id,
-                None,
-                &deposits[0].token_id,
-                Some(&BigDecimal::from(100)),
-                now - Duration::minutes(30),
-            )
-            .await
-            .expect("match query")
-            .is_none(),
+            find("quote-account", Some(BigDecimal::from(100)))
+                .await
+                .is_none(),
             "a claimed ledger row cannot match twice"
         );
 
