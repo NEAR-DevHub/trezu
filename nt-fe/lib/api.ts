@@ -1173,8 +1173,12 @@ export interface BulkPaymentListStatus {
     listId: string;
     status: string;
     totalPayments: number;
+    /** Delivered (`Paid`). */
     processedPayments: number;
+    /** Not settled yet (`Pending` or `Processing`). */
     pendingPayments: number;
+    /** Failed or refunded (`Failed`); nothing was delivered. */
+    failedPayments: number;
 }
 
 export interface BulkPaymentListStatusResponse {

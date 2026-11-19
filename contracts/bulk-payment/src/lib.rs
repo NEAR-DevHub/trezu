@@ -180,6 +180,17 @@ const RESOLVE_CALLBACK_GAS_PER_RECORD: Gas = Gas::from_gas(100_000_000_000); // 
 /// promise result, parsing it and updating the row.
 const RESOLVE_CALLBACK_GAS_PER_PAYMENT: Gas = Gas::from_gas(100_000_000_000); // 0.1 TGas
 
+/// Most payments one `payout_batch` call sends. One callback joins the promises
+/// of the whole batch, and the NEAR runtime allows a receipt at most 128 input
+/// data dependencies (`The number of input data dependencies N exceeds the
+/// limit 128`), so the batch must stay below that whatever gas is attached.
+const MAX_PAYMENTS_PER_BATCH: u64 = 100;
+
+/// Gas the runtime charges up front for each cross-contract call on top of the
+/// gas attached to it (receipt creation + function call base cost). Counted in
+/// `env::used_gas()` but not in the attached gas, so each call needs it spare.
+const CROSS_CONTRACT_CALL_FEE_GAS: Gas = Gas::from_tgas(5);
+
 /// Upper bound on a payment promise's return value that the callback will read.
 /// `ft_withdraw` returns a JSON-quoted `U128` (at most ~42 bytes); `ft_transfer`
 /// and native transfers return nothing.
@@ -521,13 +532,13 @@ impl BulkPaymentContract {
         // Determine gas needed per payment based on token type
         let gas_per_payment: Gas = if list.token_id.starts_with("nep141:") {
             // NEAR Intents: ft_withdraw cross-contract call
-            FT_WITHDRAW_GAS
+            FT_WITHDRAW_GAS.saturating_add(CROSS_CONTRACT_CALL_FEE_GAS)
         } else if list.token_id == "native" || list.token_id == "near" || list.token_id == "NEAR" {
             // Native NEAR: minimal gas per transfer
             Gas::from_tgas(3)
         } else {
             // NEP-141 FT: ft_transfer cross-contract call
-            Gas::from_tgas(50)
+            Gas::from_tgas(50).saturating_add(CROSS_CONTRACT_CALL_FEE_GAS)
         };
 
         // Reserve gas for final operations (storing list, logging)
@@ -547,11 +558,19 @@ impl BulkPaymentContract {
 
         for (index, payment) in list.payments.iter_mut().enumerate() {
             if matches!(payment.status, PaymentStatus::Pending) {
+                if processed >= MAX_PAYMENTS_PER_BATCH {
+                    // The callback can't join more promises than this.
+                    break;
+                }
+
                 // Check if we have enough gas for this payment, plus the callback
                 // that will resolve it together with the rest of the batch
+                // The promises of the batch are only created after the loop, so
+                // `used_gas()` does not include their gas yet: count it here.
                 let gas_remaining = env::prepaid_gas()
                     .as_gas()
-                    .saturating_sub(env::used_gas().as_gas());
+                    .saturating_sub(env::used_gas().as_gas())
+                    .saturating_sub(gas_per_payment.as_gas().saturating_mul(processed));
                 let gas_needed = gas_per_payment.as_gas()
                     + resolve_callback_gas(list_payments_len, processed + 1).as_gas()
                     + gas_reserve.as_gas();
@@ -1773,6 +1792,42 @@ mod tests {
             assert_eq!(contract.payout_batch(list_id), 0);
             assert_eq!(near_sdk::test_utils::get_created_receipts().len(), before);
         }
+    }
+
+    #[test]
+    fn payout_batch_never_joins_more_promises_than_the_runtime_allows() {
+        // The runtime rejects a receipt with more than 128 input data
+        // dependencies, so a batch is capped however much gas is attached.
+        // (Native only: FT rows each attach 50 TGas, so gas limits them first.)
+        // Free fees and raised limits: the mock's per-receipt fees and gas limits
+        // would otherwise reject 100 receipts before the cap is reached.
+        let mut vm_config = near_sdk::test_vm_config();
+        vm_config.limit_config.max_total_prepaid_gas = vm_config
+            .limit_config
+            .max_total_prepaid_gas
+            .checked_mul(1000)
+            .unwrap();
+        vm_config.limit_config.max_gas_burnt = vm_config
+            .limit_config
+            .max_gas_burnt
+            .checked_mul(1000)
+            .unwrap();
+        testing_env!(
+            payout_context().build(),
+            vm_config,
+            near_sdk::RuntimeFeesConfig::free(),
+            Default::default(),
+            Default::default()
+        );
+        let (mut contract, list_id) = contract_with_approved_list("native", 130);
+
+        assert_eq!(contract.payout_batch(list_id.clone()), 30);
+        let processing = statuses(&contract, &list_id)
+            .iter()
+            .filter(|s| matches!(s, PaymentStatus::Processing))
+            .count();
+        assert_eq!(processing as u64, MAX_PAYMENTS_PER_BATCH);
+        assert!(MAX_PAYMENTS_PER_BATCH < 128);
     }
 
     #[test]
