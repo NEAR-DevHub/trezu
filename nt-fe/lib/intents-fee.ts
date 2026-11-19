@@ -1,13 +1,9 @@
-import { IntentsSDK } from "@defuse-protocol/intents-sdk";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import { validateAddress } from "@/lib/address-validation";
 import { formatTokenQuantity } from "@/lib/amount-format";
+import { getIntentsQuote } from "@/lib/api";
 import Big from "@/lib/big";
 import type { BlockchainType } from "@/lib/blockchain-utils";
-
-const intentsSdk = new IntentsSDK({
-    referral: "",
-});
 
 export type PaymentBalanceWarningType =
     | "amount_exceeds_balance"
@@ -99,7 +95,8 @@ export async function estimateIntentsNetworkFee(args: {
     token: {
         address: string;
         decimals: number;
-        minWithdrawalAmount?: string;
+        /** 1Click routing id on the destination network, when it differs. */
+        quoteAssetId?: string;
     };
     destinationAddress: string;
     destinationBlockchain?: BlockchainType;
@@ -117,19 +114,41 @@ export async function estimateIntentsNetworkFee(args: {
         }
     }
 
-    const feeEstimation = await intentsSdk.estimateWithdrawalFee({
-        withdrawalParams: {
-            assetId: args.token.address,
-            amount:
-                args.token.minWithdrawalAmount &&
-                BigInt(args.token.minWithdrawalAmount) > 0n
-                    ? BigInt(args.token.minWithdrawalAmount)
-                    : 100000000n,
-            destinationAddress: args.destinationAddress,
-            feeInclusive: false,
-        },
-    });
-    const networkFeeRaw = sumNetworkFees(feeEstimation.underlyingFees);
+    // The bridge fee is flat per route, so any amount above the bridge floor
+    // prices it. Start at one whole token and step up while 1Click says the
+    // amount is below the floor.
+    let amount = 10n ** BigInt(args.token.decimals);
+    let networkFeeRaw: bigint | null = null;
+    for (let attempt = 0; networkFeeRaw === null; attempt++) {
+        try {
+            const response = await getIntentsQuote({
+                swapType: "EXACT_INPUT",
+                slippageTolerance: 0,
+                originAsset: args.token.address,
+                depositType: "INTENTS",
+                destinationAsset: args.token.quoteAssetId ?? args.token.address,
+                amount: amount.toString(),
+                refundTo: "intents.near",
+                refundType: "INTENTS",
+                recipient: args.destinationAddress,
+                recipientType: "DESTINATION_CHAIN",
+                deadline: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+                quoteWaitingTimeMs: 0,
+                isPayment: true,
+            });
+            if (!response?.quote) throw new Error("No quote returned");
+            networkFeeRaw =
+                BigInt(response.quote.amountIn) -
+                BigInt(response.quote.amountOut);
+        } catch (error) {
+            const floor = /at least (\d+)/.exec(
+                error instanceof Error ? error.message : "",
+            )?.[1];
+            if (!floor || attempt >= 2) throw error;
+            const doubledFloor = BigInt(floor) * 2n;
+            amount = doubledFloor > amount * 10n ? doubledFloor : amount * 10n;
+        }
+    }
 
     return {
         networkFeeRaw,
@@ -178,32 +197,4 @@ export function getPaymentBalanceWarning(args: {
     }
 
     return null;
-}
-
-export function sumNetworkFees(underlyingFees: unknown): bigint {
-    if (!underlyingFees || typeof underlyingFees !== "object") {
-        return 0n;
-    }
-
-    let networkFeeRaw = 0n;
-
-    const walk = (value: unknown) => {
-        if (!value || typeof value !== "object") return;
-
-        for (const [key, nestedValue] of Object.entries(
-            value as Record<string, unknown>,
-        )) {
-            if (typeof nestedValue === "bigint") {
-                if (key.endsWith("Fee")) {
-                    networkFeeRaw += nestedValue;
-                }
-                continue;
-            }
-
-            walk(nestedValue);
-        }
-    };
-
-    walk(underlyingFees);
-    return networkFeeRaw;
 }

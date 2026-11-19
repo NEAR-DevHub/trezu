@@ -7,7 +7,6 @@ use reqwest::{StatusCode, Url};
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::handlers::intents::confidential::refresh_dao_jwt;
 use crate::handlers::intents::confidential::types::accounts_equal;
 use crate::handlers::intents::oneclick::OneClickClient;
 use crate::utils::url::api_url_or_500;
@@ -136,6 +135,12 @@ impl ReusableDepositResolver<'_> {
             "refundType": "INTENTS",
             "deadline": REUSABLE_QUOTE_DEADLINE,
         });
+        if self.public {
+            body["recipientType"] = Value::String("INTENTS".to_string());
+            body.as_object_mut()
+                .expect("quote body is an object")
+                .remove("confidentiality");
+        }
         if let Some(referral) = &self.state.env_vars.oneclick_referral {
             body["referral"] = Value::String(referral.clone());
         }
@@ -274,7 +279,8 @@ impl ReusableDepositResolver<'_> {
         set: &ReusableDepositAddresses,
         page: u32,
     ) -> Result<ReusableWithdrawals, WithdrawalsError> {
-        let jwt = refresh_dao_jwt(self.state, dao_id)
+        let jwt = self
+            .jwt(dao_id)
             .await
             .map_err(|(status, message)| WithdrawalsError::Upstream(status, message))?;
         let mut url = Url::parse(&self.state.env_vars.confidential_api_url)

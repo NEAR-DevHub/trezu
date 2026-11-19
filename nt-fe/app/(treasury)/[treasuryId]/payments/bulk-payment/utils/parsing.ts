@@ -839,6 +839,7 @@ export async function validateIntentsFeeCoverage(
         decimals: number;
         symbol: string;
         minWithdrawalAmount?: string;
+        quoteAssetId?: string;
     },
     labels: Pick<
         BulkParsingLabels,
@@ -869,7 +870,7 @@ export async function validateIntentsFeeCoverage(
             token: {
                 address: selectedToken.address,
                 decimals: selectedToken.decimals,
-                minWithdrawalAmount: selectedToken.minWithdrawalAmount,
+                quoteAssetId: selectedToken.quoteAssetId,
             },
             destinationAddress: representativeAddress,
             destinationBlockchain: getBlockchainType(
