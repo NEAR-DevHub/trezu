@@ -177,7 +177,11 @@ pub async fn get_list_status(
         Ok(list) => {
             let total = list.payments.len() as u32;
             let processed = list.payments.iter().filter(|p| p.status.is_paid()).count() as u32;
-            let failed = list.payments.iter().filter(|p| p.status.is_failed()).count() as u32;
+            let failed = list
+                .payments
+                .iter()
+                .filter(|p| p.status.is_failed())
+                .count() as u32;
             let pending = total - processed - failed;
 
             Ok(Json(ListStatusResponse {
