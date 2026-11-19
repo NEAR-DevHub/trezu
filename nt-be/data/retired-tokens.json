@@ -1,0 +1,29 @@
+{
+  "$comment": "Asset ids dropped from nearcom-tokens.json that treasuries may still hold. Read only to show, send, and exchange an existing balance; never offered for deposit. When a catalog sync removes or replaces an id, add it here.",
+  "tokens": [
+    {
+      "defuseAssetId": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
+      "replacedBy": "nep141:bnb.omdep.near",
+      "symbol": "BNB(DEPRECATED)",
+      "name": "Binance Coin",
+      "decimals": 18,
+      "chainName": "bsc"
+    },
+    {
+      "defuseAssetId": "nep245:v2_1.omni.hot.tg:137_11111111111111111111",
+      "replacedBy": "nep141:pol.omdep.near",
+      "symbol": "POL(DEPRECATED)",
+      "name": "Polygon Ecosystem Token",
+      "decimals": 18,
+      "chainName": "polygon"
+    },
+    {
+      "defuseAssetId": "nep245:v2_1.omni.hot.tg:43114_11111111111111111111",
+      "replacedBy": "nep141:avax.omdep.near",
+      "symbol": "AVAX(DEPRECATED)",
+      "name": "Avalanche",
+      "decimals": 18,
+      "chainName": "avalanche"
+    }
+  ]
+}
