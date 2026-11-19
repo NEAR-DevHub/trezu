@@ -25,7 +25,7 @@ import { useVoteActionSlots } from "../../hooks/use-vote-action-slots";
 import { VoteModal } from "../vote-modal";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
-import { useNear } from "@/stores/near-store";
+import { useIsVoteInFlight, useNear } from "@/stores/near-store";
 import { EmptyState } from "@/components/empty-state";
 import { NotEnoughBalance } from "../not-enough-balance";
 import { FormattedDate } from "@/components/formatted-date";
@@ -142,6 +142,8 @@ export function PendingRequestItem({
     );
     const { accountId } = useNear();
     const isUserVoter = !!proposal.votes[accountId ?? ""];
+    const cannotVote =
+        useIsVoteInFlight(treasuryId, [proposal.id]) || isUserVoter;
     // Approving payment/exchange proposals is blocked while that feature has a
     // critical warning. Rejection is never blocked by feature pauses.
     const approveBlock = useProposalApproveBlock([proposal]);
@@ -215,7 +217,7 @@ export function PendingRequestItem({
                                         e.preventDefault();
                                         onVote("Reject");
                                     }}
-                                    disabled={isUserVoter || rejectSlot.blocked}
+                                    disabled={cannotVote || rejectSlot.blocked}
                                     tooltip={
                                         rejectSlot.inlineTooltip
                                             ? rejectSlot.inlineTooltip
@@ -257,7 +259,7 @@ export function PendingRequestItem({
                                             onVote("Approve");
                                         }}
                                         disabled={
-                                            isUserVoter ||
+                                            cannotVote ||
                                             approveBlocked ||
                                             approveSlot.blocked ||
                                             insufficientBalanceInfo.hasInsufficientBalance

@@ -33,6 +33,7 @@ import {
 import { ensurePasskeyWallet } from "@/lib/passkey-wallet";
 import {
     getLastProposalId,
+    getProposal,
     type Proposal,
     type Vote as ProposalVote,
 } from "@/lib/proposals-api";
@@ -231,6 +232,10 @@ interface NearStore {
     authError: string | null;
     user: AuthUserInfo | null;
 
+    // Votes submitted from this tab whose on-chain outcome the page has not
+    // re-read yet, keyed by `voteInFlightKey`.
+    votesInFlight: ReadonlySet<string>;
+
     // Wallet actions
     init: (options?: {
         targetWalletId?: string;
@@ -318,6 +323,75 @@ function showActionError(error: unknown, treasuryId: string): void {
     });
 }
 
+const voteInFlightKey = (treasuryId: string, proposalId: number) =>
+    `${treasuryId}/${proposalId}`;
+
+function setVotesInFlight(keys: string[], inFlight: boolean): void {
+    useNearStore.setState(({ votesInFlight }) => {
+        const next = new Set(votesInFlight);
+        for (const key of keys) {
+            if (inFlight) next.add(key);
+            else next.delete(key);
+        }
+        return { votesInFlight: next };
+    });
+}
+
+export const useIsVoteInFlight = (
+    treasuryId: string | null | undefined,
+    proposalIds: readonly number[],
+) =>
+    useNearStore(({ votesInFlight }) =>
+        proposalIds.some((id) =>
+            votesInFlight.has(voteInFlightKey(treasuryId ?? "", id)),
+        ),
+    );
+
+// The backend caches a proposal for 5 s and may still be waiting on the vote's
+// receipt when the page loses its response, so one read right away can miss a
+// vote that did land.
+const VOTE_LANDED_POLL_MS = 2000;
+const VOTE_LANDED_POLLS = 4;
+// A stalled read must not hold the vote lock or the error back for long.
+const VOTE_LANDED_READ_TIMEOUT_MS = 2000;
+
+async function votesLanded(
+    treasuryId: string,
+    accountId: string,
+    votes: Vote[],
+): Promise<boolean> {
+    for (let poll = 0; poll < VOTE_LANDED_POLLS; poll++) {
+        await new Promise((resolve) =>
+            setTimeout(resolve, VOTE_LANDED_POLL_MS),
+        );
+        const proposals = await Promise.all(
+            votes.map((vote) =>
+                getProposal(
+                    treasuryId,
+                    vote.proposalId.toString(),
+                    VOTE_LANDED_READ_TIMEOUT_MS,
+                ),
+            ),
+        );
+        // All votes ride in one receipt, so they land or fail together.
+        if (proposals.every((p, i) => p?.votes[accountId] === votes[i].vote)) {
+            return true;
+        }
+        // Closed without our vote: nothing more is coming.
+        if (
+            proposals.some(
+                (p, i) =>
+                    p &&
+                    p.status !== "InProgress" &&
+                    p.votes[accountId] !== votes[i].vote,
+            )
+        ) {
+            return false;
+        }
+    }
+    return false;
+}
+
 export const useNearStore = create<NearStore>((set, get) => ({
     // Wallet state
     connector: null,
@@ -331,6 +405,8 @@ export const useNearStore = create<NearStore>((set, get) => ({
     isAuthenticating: false,
     authError: null,
     user: null,
+
+    votesInFlight: new Set(),
 
     init: async (options) => {
         const { connector, connectorExcludeKey } = get();
@@ -849,23 +925,40 @@ export const useNearStore = create<NearStore>((set, get) => ({
                 voteStorageBytes,
                 "vote",
             );
-            trackEvent("proposal-voted", {
-                vote: votes[0]?.vote.toLowerCase(),
-                proposals_count: votes.length,
-                treasury_id: treasuryId,
-            });
         } catch (error) {
-            if (!isUserRejection(error)) {
-                reportError(error, "Failed to vote proposals", {
-                    code: "FE_WALLET_SIGN_FAILED",
-                    priority: "p1",
-                });
-            } else {
-                console.error("Failed to vote proposals:", error);
+            // A failed relay call does not mean a failed vote: the response
+            // can be lost (mobile network drop, timeout) after the backend
+            // already submitted it. Only the chain can tell.
+            const { fundsState } = toAppError(error);
+            const mayHaveLanded =
+                fundsState !== "not_sent" && fundsState !== "failed_onchain";
+            const landed =
+                mayHaveLanded &&
+                (await votesLanded(
+                    treasuryId,
+                    state.walletAccountId ?? "",
+                    votes,
+                ));
+            if (!landed) {
+                if (!isUserRejection(error)) {
+                    reportError(error, "Failed to vote proposals", {
+                        code: "FE_WALLET_SIGN_FAILED",
+                        priority: "p1",
+                    });
+                } else {
+                    console.error("Failed to vote proposals:", error);
+                }
+                showActionError(error, treasuryId);
+                throw error;
             }
-            showActionError(error, treasuryId);
-            throw error;
+            // The vote landed. The http interceptor already recorded the lost
+            // response.
         }
+        trackEvent("proposal-voted", {
+            vote: votes[0]?.vote.toLowerCase(),
+            proposals_count: votes.length,
+            treasury_id: treasuryId,
+        });
     },
 }));
 
@@ -961,76 +1054,88 @@ export const useNear = () => {
     };
 
     const voteProposals = async (treasuryId: string, votes: Vote[]) => {
-        await storeVoteProposals(treasuryId, votes);
-        // An approving vote may have just executed the proposal — nudge the
-        // backend (fire-and-forget) so the pending payment/exchange row
-        // appears in history before the indexer catches up.
-        for (const vote of votes) {
-            refreshProposal(treasuryId, vote.proposalId);
-        }
-        // Invalidate queries after delay and show toast simultaneously
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        // Voting stays locked until the page shows the vote's real outcome,
+        // so a slow or lost response cannot invite a second vote.
+        const inFlightKeys = votes.map((vote) =>
+            voteInFlightKey(treasuryId, vote.proposalId),
+        );
+        setVotesInFlight(inFlightKeys, true);
+        try {
+            await storeVoteProposals(treasuryId, votes);
+            // An approving vote may have just executed the proposal — nudge the
+            // backend (fire-and-forget) so the pending payment/exchange row
+            // appears in history before the indexer catches up.
+            for (const vote of votes) {
+                refreshProposal(treasuryId, vote.proposalId);
+            }
+            // Invalidate queries after delay and show toast simultaneously
+            await new Promise((resolve) => setTimeout(resolve, 2000));
 
-        // Show toast at the same time as UI updates
-        const toastAction =
-            votes.length === 1 && votes[0].vote !== "Remove"
-                ? {
-                      label: getNearStoreMessages().viewRequest,
-                      onClick: () =>
-                          window.open(
-                              `/${treasuryId}/requests/${votes[0].proposalId}`,
-                          ),
-                  }
-                : undefined;
-        const messages = getNearStoreMessages();
-        const text =
-            votes.length === 1 && votes[0].vote === "Remove"
-                ? messages.proposalRemoved
-                : votes.length > 1
-                  ? messages.votesSubmitted
-                  : messages.voteSubmitted;
-        toast.success(text, {
-            duration: 10000,
-            action: toastAction,
-            classNames: {
-                toast: "!p-2 !px-4",
-                actionButton: cn(
-                    !toastAction ? "!hidden" : "",
-                    "!bg-transparent !text-foreground hover:!bg-muted !border-0",
-                ),
-                title: cn(
-                    toastAction ? "!border-r !border-r-border !pr-4" : "!pr-0",
-                ),
-            },
-        });
-
-        // Trigger invalidations (UI updates happen as queries refetch)
-        const promises = [
-            queryClient.invalidateQueries({
-                queryKey: ["proposals", treasuryId],
-                refetchType: "all",
-            }),
-            ...votes.map((vote) =>
-                queryClient.invalidateQueries({
-                    queryKey: [
-                        "proposal",
-                        treasuryId,
-                        vote.proposalId.toString(),
-                    ],
-                }),
-            ),
-            ...votes.map((vote) =>
-                queryClient.invalidateQueries({
+            // Show toast at the same time as UI updates
+            const toastAction =
+                votes.length === 1 && votes[0].vote !== "Remove"
+                    ? {
+                          label: getNearStoreMessages().viewRequest,
+                          onClick: () =>
+                              window.open(
+                                  `/${treasuryId}/requests/${votes[0].proposalId}`,
+                              ),
+                      }
+                    : undefined;
+            const messages = getNearStoreMessages();
+            const text =
+                votes.length === 1 && votes[0].vote === "Remove"
+                    ? messages.proposalRemoved
+                    : votes.length > 1
+                      ? messages.votesSubmitted
+                      : messages.voteSubmitted;
+            toast.success(text, {
+                duration: 10000,
+                action: toastAction,
+                classNames: {
+                    toast: "!p-2 !px-4",
+                    actionButton: cn(
+                        !toastAction ? "!hidden" : "",
+                        "!bg-transparent !text-foreground hover:!bg-muted !border-0",
+                    ),
+                    title: cn(
+                        toastAction
+                            ? "!border-r !border-r-border !pr-4"
+                            : "!pr-0",
+                    ),
+                },
+            });
+        } finally {
+            // The vote buttons read no transaction, so a slow lookup must not
+            // hold the lock.
+            for (const vote of votes) {
+                void queryClient.invalidateQueries({
                     queryKey: [
                         "proposal-transaction",
                         treasuryId,
                         vote.proposalId,
                     ],
+                });
+            }
+            // Success or not, the page (by proposal) and the requests list
+            // show what is on-chain now. Lists off screen refetch when shown,
+            // so they don't hold the lock.
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: ["proposals", treasuryId],
                 }),
-            ),
-        ];
-
-        await Promise.all(promises);
+                ...votes.map((vote) =>
+                    queryClient.invalidateQueries({
+                        queryKey: [
+                            "proposal",
+                            treasuryId,
+                            vote.proposalId.toString(),
+                        ],
+                    }),
+                ),
+            ]);
+            setVotesInFlight(inFlightKeys, false);
+        }
 
         // Run policy-related invalidations in background
         (async () => {
