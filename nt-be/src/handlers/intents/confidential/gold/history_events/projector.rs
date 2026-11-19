@@ -17,7 +17,7 @@ use super::repository::{
     upsert_projection_error,
 };
 use crate::AppState;
-use crate::constants::intents_tokens::get_defuse_tokens_map;
+use crate::constants::intents_tokens::decimals_for_held_defuse_asset;
 use crate::handlers::intents::confidential::balances::fetch_confidential_balances;
 use crate::handlers::intents::confidential::gold::cursors::{
     BalanceCheckState, clear_gold_dirty_if_not_advanced, load_balance_check_state,
@@ -221,21 +221,24 @@ pub async fn verify_confidential_ledger_heads(state: &AppState, dao_id: &str) {
         }
     };
 
-    let defuse_map = get_defuse_tokens_map();
     // Assets the API reported but we cannot compare (unparseable amount or
     // unknown decimals) are excluded from the check rather than treated as
-    // zero/mismatched.
+    // zero/mismatched. Retired ids stay comparable so an old holding is
+    // still checked against 1Click.
     let mut unverifiable: HashSet<String> = fetch.unparseable_assets.iter().cloned().collect();
     let mut api_balances: HashMap<String, BigDecimal> = HashMap::new();
     for (asset, raw_available) in fetch.balances {
-        let (Ok(raw_balance), Some(token_info)) =
-            (BigDecimal::from_str(&raw_available), defuse_map.get(&asset))
-        else {
+        let Ok(raw_balance) = BigDecimal::from_str(&raw_available) else {
             tracing::warn!("{} {} not comparable, skipping in check", dao_id, asset);
             unverifiable.insert(asset);
             continue;
         };
-        let scale = (0..token_info.decimals).fold(BigDecimal::from(1u32), |acc, _| {
+        let Some(decimals) = decimals_for_held_defuse_asset(&asset) else {
+            tracing::warn!("{} {} not comparable, skipping in check", dao_id, asset);
+            unverifiable.insert(asset);
+            continue;
+        };
+        let scale = (0..decimals).fold(BigDecimal::from(1u32), |acc, _| {
             acc * BigDecimal::from(10u32)
         });
         api_balances.insert(asset, raw_balance / scale);

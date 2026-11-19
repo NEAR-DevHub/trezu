@@ -19,8 +19,8 @@ use crate::{
         NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
         intents_tokens::{
-            find_token_by_defuse_asset_id, find_token_by_defuse_asset_id_and_address,
-            find_unified_asset_id, get_tokens_map,
+            find_retired_token, find_token_by_defuse_asset_id,
+            find_token_by_defuse_asset_id_and_address, find_unified_asset_id, get_tokens_map,
         },
     },
     utils::cache::{Cache, CacheKey, CacheTier},
@@ -501,13 +501,41 @@ fn apply_unified_display_override(meta: &mut TokenMetadata) {
     }
 }
 
+/// Display data for a held id that left the catalog. The icon comes from the
+/// token that replaced it.
+fn retired_token_metadata(defuse_id: &str, output_token_id: &str) -> Option<TokenMetadata> {
+    let token = find_retired_token(defuse_id)?;
+    let icon = token
+        .replaced_by
+        .as_deref()
+        .and_then(find_token_by_defuse_asset_id)
+        .map(|replacement| replacement.icon.clone());
+    let chain_metadata = get_chain_metadata_by_name(&token.chain_name);
+    Some(TokenMetadata {
+        token_id: output_token_id.to_string(),
+        name: token.name.clone(),
+        symbol: token.symbol.clone(),
+        decimals: token.decimals,
+        icon,
+        price: None,
+        price_updated_at: None,
+        network: Some(token.chain_name.clone()),
+        chain_name: chain_metadata.as_ref().map(|chain| chain.name.clone()),
+        chain_icons: chain_metadata.map(|chain| chain.icon),
+    })
+}
+
 fn tokens_json_metadata_for_defuse(
     defuse_id: &str,
     address_candidates: &[String],
     output_token_id: &str,
 ) -> Option<TokenMetadata> {
-    let token = find_token_by_defuse_asset_id_and_address(defuse_id, address_candidates)
-        .or_else(|| find_token_by_defuse_asset_id(defuse_id))?;
+    let token = match find_token_by_defuse_asset_id_and_address(defuse_id, address_candidates)
+        .or_else(|| find_token_by_defuse_asset_id(defuse_id))
+    {
+        Some(token) => token,
+        None => return retired_token_metadata(defuse_id, output_token_id),
+    };
     let deployment_chain_name = {
         let mut matched: Option<String> = None;
         for deployment in &token.deployments {

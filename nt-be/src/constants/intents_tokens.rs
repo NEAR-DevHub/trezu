@@ -332,6 +332,58 @@ pub fn same_quote_asset(left: &str, right: &str) -> bool {
     canonical_quote_asset_id(left) == canonical_quote_asset_id(right)
 }
 
+/// An asset id that left `nearcom-tokens.json` but may still be held.
+/// Loaded from `retired-tokens.json`; never offered for deposit or swap.
+#[derive(Debug, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct RetiredToken {
+    pub defuse_asset_id: String,
+    pub replaced_by: Option<String>,
+    pub symbol: String,
+    pub name: String,
+    pub decimals: u8,
+    pub chain_name: String,
+}
+
+#[derive(Deserialize)]
+struct RetiredTokensJson {
+    tokens: Vec<RetiredToken>,
+}
+
+static RETIRED_TOKENS_MAP_CELL: OnceLock<HashMap<String, RetiredToken>> = OnceLock::new();
+
+fn get_retired_tokens_map() -> &'static HashMap<String, RetiredToken> {
+    RETIRED_TOKENS_MAP_CELL.get_or_init(|| {
+        let json_str = include_str!("../../data/retired-tokens.json");
+        match serde_json::from_str::<RetiredTokensJson>(json_str) {
+            Ok(file) => file
+                .tokens
+                .into_iter()
+                .map(|token| (token.defuse_asset_id.clone(), token))
+                .collect(),
+            Err(e) => {
+                eprintln!("Failed to load retired tokens from JSON: {}", e);
+                HashMap::new()
+            }
+        }
+    })
+}
+
+pub fn find_retired_token(asset_id: &str) -> Option<&'static RetiredToken> {
+    let normalized = asset_id.strip_prefix("intents.near:").unwrap_or(asset_id);
+    get_retired_tokens_map().get(normalized)
+}
+
+/// Decimals for a balance the treasury already holds. Catalog ids win, then
+/// retired ids, so a holding stays readable after its id leaves the catalog.
+pub fn decimals_for_held_defuse_asset(asset_id: &str) -> Option<u8> {
+    let normalized = asset_id.strip_prefix("intents.near:").unwrap_or(asset_id);
+    get_defuse_tokens_map()
+        .get(normalized)
+        .map(|token| token.decimals)
+        .or_else(|| find_retired_token(normalized).map(|token| token.decimals))
+}
+
 /// True when a 1Click / Intents / native-NEAR asset id is a catalog stablecoin.
 pub fn is_stablecoin_asset(asset_id: &str) -> bool {
     let keys = stablecoin_lookup_keys();
@@ -392,5 +444,48 @@ mod tests {
             "nep141:wrap.near",
             USDT_NEAR_NEP141,
         ));
+    }
+
+    #[test]
+    fn retired_tokens_are_out_of_the_catalog_and_point_at_a_catalog_id() {
+        let retired = get_retired_tokens_map();
+        assert!(!retired.is_empty(), "retired-tokens.json must parse");
+        for token in retired.values() {
+            assert!(
+                get_defuse_tokens_map()
+                    .get(&token.defuse_asset_id)
+                    .is_none(),
+                "{} is retired but still in nearcom-tokens.json",
+                token.defuse_asset_id
+            );
+            if let Some(replaced_by) = &token.replaced_by {
+                assert!(
+                    get_defuse_tokens_map().contains_key(replaced_by),
+                    "{} is replaced by {}, which is not in nearcom-tokens.json",
+                    token.defuse_asset_id,
+                    replaced_by
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn retired_holding_keeps_its_decimals_and_deprecated_symbol() {
+        let old_bnb = "nep245:v2_1.omni.hot.tg:56_11111111111111111111";
+        assert_eq!(decimals_for_held_defuse_asset(old_bnb), Some(18));
+        assert_eq!(
+            decimals_for_held_defuse_asset(&format!("intents.near:{old_bnb}")),
+            Some(18)
+        );
+        assert_eq!(
+            find_retired_token(old_bnb).map(|token| token.symbol.as_str()),
+            Some("BNB(DEPRECATED)")
+        );
+        assert_eq!(
+            decimals_for_held_defuse_asset("nep141:bnb.omdep.near"),
+            Some(18)
+        );
+        assert!(find_retired_token("nep141:bnb.omdep.near").is_none());
+        assert_eq!(decimals_for_held_defuse_asset("nep141:unknown.near"), None);
     }
 }
