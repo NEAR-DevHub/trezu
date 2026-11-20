@@ -54,7 +54,7 @@ import { getApproversAndThreshold } from "@/lib/config-utils";
 import { isNearComPaymentRoute } from "@/lib/intents-network";
 import type { Proposal, SwapStatus } from "@/lib/proposals-api";
 import { nanosToMs } from "@/lib/utils";
-import { useNear } from "@/stores/near-store";
+import { useIsVoteInFlight, useNear } from "@/stores/near-store";
 import type { Policy } from "@/types/policy";
 import { NotEnoughBalance } from "../../not-enough-balance";
 import { UserVote } from "../../user-vote";
@@ -283,6 +283,8 @@ export function ProposalSidebar({
     const status = useProposalStatus(proposal, policy);
     const proposalType = getProposalUIKind(proposal);
     const isUserVoter = !!proposal.votes[accountId ?? ""];
+    const cannotVote =
+        useIsVoteInFlight(treasuryId, [proposal.id]) || isUserVoter;
 
     // Approving payment/exchange proposals is blocked while that feature has a
     // critical warning. Rejection is never blocked.
@@ -703,7 +705,7 @@ export function ProposalSidebar({
                         variant="secondary"
                         className="flex gap-1 w-full"
                         onClick={() => onVote("Reject")}
-                        disabled={isUserVoter || rejectSlot.blocked}
+                        disabled={cannotVote || rejectSlot.blocked}
                         tooltip={
                             rejectSlot.inlineTooltip
                                 ? rejectSlot.inlineTooltip
@@ -740,7 +742,7 @@ export function ProposalSidebar({
                             className="flex gap-1 w-full"
                             onClick={handleApprove}
                             disabled={
-                                isUserVoter ||
+                                cannotVote ||
                                 isCheckingVotingDurationImpact ||
                                 approveBlocked ||
                                 approveSlot.blocked ||
