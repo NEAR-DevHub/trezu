@@ -1714,6 +1714,7 @@
         "dontHaveTreasuryLabel": "Ще не маєте скарбниці?",
         "createOneLabel": "Створити",
         "walletSelector": {
+            "connectFailed": "Не вдалося увійти",
             "title": "Оберіть спосіб входу",
             "subtitle": "Ваш вхід стане першим учасником вашої скарбниці.",
             "helpCta": "Не знаєте, що обрати?",
