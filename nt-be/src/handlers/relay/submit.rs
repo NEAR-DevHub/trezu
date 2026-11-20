@@ -20,7 +20,7 @@ use crate::{
             error_response, success_response,
         },
         sponsor::{
-            Sponsor,
+            self, Sponsor,
             policy::{self, SpentNear},
         },
     },
@@ -179,7 +179,7 @@ pub async fn relay_delegate_action(
     );
     let (tx_hash, signature_source, receipt_proposal_ids) = match outcome {
         RelaySend::Classic(outcome) => {
-            let tx_hash = outcome.transaction().get_hash().to_string();
+            let tx_hash = sponsor::landed_tx_hash(&outcome).to_string();
             let proposal_ids = created_proposal_ids(&outcome, &treasury_id);
             (
                 tx_hash.clone(),

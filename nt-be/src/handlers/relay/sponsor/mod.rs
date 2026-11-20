@@ -531,6 +531,14 @@ fn was_never_broadcast(error: &ExecuteTransactionError) -> bool {
     }
 }
 
+/// The hash of the transaction that landed, as the RPC reports it. Not
+/// `outcome.transaction().get_hash()`: near-api rebuilds that transaction with
+/// the transaction hash in place of its block hash, so re-hashing it yields a
+/// hash that is not on chain.
+pub(crate) fn landed_tx_hash(outcome: &ExecutionFinalResult) -> CryptoHash {
+    outcome.outcome().transaction_hash
+}
+
 /// Turn a landed outcome into the relay result. The outcome is only trusted
 /// as the user's when it belongs to the transaction that may already have been
 /// broadcast (or nothing was); a different transaction failing after that is a
@@ -539,7 +547,7 @@ fn landed_result(
     outcome: ExecutionFinalResult,
     maybe_broadcast: Option<CryptoHash>,
 ) -> Result<ExecutionFinalResult, RelayFailure> {
-    let landed_hash = outcome.transaction().get_hash();
+    let landed_hash = landed_tx_hash(&outcome);
     if let Some(earlier_tx_hash) = maybe_broadcast.filter(|earlier| *earlier != landed_hash) {
         return Err(RelayFailure::StatusUnknown {
             tx_hash: Some(earlier_tx_hash),
@@ -604,6 +612,23 @@ mod tests {
         ExecuteTransactionError::TransactionError(RetryError::RetriesExhausted(
             SendRequestError::ServerError(error),
         ))
+    }
+
+    /// near-api's rebuilt transaction re-hashes to a hash that is not on
+    /// chain (staging, 2026-11-10 onwards: every relayed confidential vote was
+    /// re-read by it and "doesn't exist").
+    #[test]
+    fn landed_hash_is_the_one_the_rpc_reports() {
+        const TX_HASH: &str = "7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s";
+        let view: near_openapi_types::FinalExecutionOutcomeView = serde_json::from_str(
+            include_str!("../testdata/tx_status_7UWLRNWxcnt49oa3zLCXEvxCQwMx7HWGWriB9fQo6h4s.json"),
+        )
+        .unwrap();
+        let outcome = ExecutionFinalResult::try_from(view).unwrap();
+
+        assert_eq!(landed_tx_hash(&outcome).to_string(), TX_HASH);
+        assert_ne!(outcome.transaction().get_hash().to_string(), TX_HASH);
+        assert!(landed_result(outcome, Some(TX_HASH.parse().unwrap())).is_ok());
     }
 
     #[test]
