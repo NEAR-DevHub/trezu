@@ -913,33 +913,45 @@ while (!allProcessed && attempts < maxAttempts) {
 
 assert.equal(allProcessed, true, 'All payments must complete within timeout');
 
-// Step 15: Verify all payments have block_height registered
-console.log('\n🔍 Verifying all payments have block_height...');
+// Step 15: Paid rows carry a block_height; rows whose transfer failed are `Failed`.
+// (A payment is only `Paid` once the transfer really happened.)
+console.log('\n🔍 Verifying payment statuses...');
 const finalStatus = await viewPaymentList(account, listId);
 
-// Check that every payment has a block_height (status is {Paid: {block_height: N}})
-const paymentsWithBlockHeight = finalStatus.payments.filter(p => 
+const paymentsWithBlockHeight = finalStatus.payments.filter(p =>
   p.status && p.status.Paid && typeof p.status.Paid.block_height === 'number'
 );
-const paymentsWithoutBlockHeight = finalStatus.payments.filter(p => 
-  !p.status || !p.status.Paid || typeof p.status.Paid.block_height !== 'number'
-);
+const failedPayments = finalStatus.payments.filter(p => p.status === 'Failed');
+const expectedPaid = CONFIG.NUM_RECIPIENTS - nonExistentNamedRecipients.length;
 
-console.log(`📊 Payments with block_height: ${paymentsWithBlockHeight.length}/${finalStatus.payments.length}`);
-
-if (paymentsWithoutBlockHeight.length > 0) {
-  console.log(`❌ Payments without block_height:`);
-  paymentsWithoutBlockHeight.slice(0, 5).forEach(p => {
-    console.log(`   - ${p.recipient}: status = ${JSON.stringify(p.status)}`);
-  });
-}
+console.log(`📊 Paid (with block_height): ${paymentsWithBlockHeight.length}/${finalStatus.payments.length}`);
+console.log(`📊 Failed: ${failedPayments.length}/${finalStatus.payments.length}`);
 
 assert.equal(
-  paymentsWithBlockHeight.length, 
-  CONFIG.NUM_RECIPIENTS, 
-  `All ${CONFIG.NUM_RECIPIENTS} payments must have block_height registered`
+  paymentsWithBlockHeight.length,
+  expectedPaid,
+  `The ${expectedPaid} payments to existing accounts must be Paid with a block_height`
 );
-console.log(`✅ All payments have block_height registered`);
+assert.equal(
+  failedPayments.length,
+  nonExistentNamedRecipients.length,
+  'Every payment to a non-existent account must be Failed (not Paid)'
+);
+for (const p of failedPayments) {
+  assert.ok(
+    nonExistentNamedRecipients.includes(p.recipient),
+    `Only payments to non-existent accounts may fail, got ${p.recipient}`
+  );
+  // Nothing was delivered: the account still does not exist.
+  let stillMissing = false;
+  try {
+    await (await near.account(p.recipient)).state();
+  } catch (e) {
+    stillMissing = true;
+  }
+  assert.ok(stillMissing, `Account ${p.recipient} must still not exist`);
+}
+console.log(`✅ Paid rows have a block_height, failed transfers are marked Failed`);
 
 // Step 16: Verify payment transactions using the API endpoint
 console.log('\n🔗 Verifying payment transactions via API...');
@@ -948,11 +960,11 @@ console.log('\n🔗 Verifying payment transactions via API...');
 const rpcClient = new NearRpcClient({ endpoint: CONFIG.SANDBOX_RPC_URL });
 let implicitSuccesses = 0;
 let namedSuccesses = 0;
-let namedFailures = 0;
+let namedFailures = failedPayments.length; // verified above: Failed rows are exactly the non-existent accounts
 let allTransactionResults = [];
 
-// Check all payments
-for (const payment of finalStatus.payments) {
+// Check the Paid payments (Failed ones have no transaction)
+for (const payment of paymentsWithBlockHeight) {
   const recipient = payment.recipient;
   const blockHeight = payment.status.Paid.block_height;
   
@@ -1108,8 +1120,8 @@ console.log(`Failed non-existent transfers: ${namedFailures}/${nonExistentNamedR
 console.log('=====================================\n');
 
 // Hard assertions
-assert.equal(paymentsWithBlockHeight.length, CONFIG.NUM_RECIPIENTS, 
-  `All ${CONFIG.NUM_RECIPIENTS} payments must have block_height`);
+assert.equal(paymentsWithBlockHeight.length, expectedPaid,
+  `All ${expectedPaid} payments to existing accounts must have block_height`);
 
 console.log('🎉 Test PASSED: All payments completed with correct behavior!');
 process.exit(0);

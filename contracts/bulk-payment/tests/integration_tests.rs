@@ -20,6 +20,163 @@ fn get_genesis_signer() -> std::sync::Arc<near_api::Signer> {
     .unwrap()
 }
 
+/// Wait until no row of the list is `Processing`, then return the list.
+///
+/// `payout_batch` only starts the transfers; each row is settled to `Paid` or
+/// `Failed` by the `on_payments_resolved` callback, which runs in a later
+/// block. Polling (instead of a fixed sleep) keeps the tests fast and not flaky.
+async fn wait_until_resolved(
+    network_config: &near_api::NetworkConfig,
+    contract_id: &AccountId,
+    list_id: &str,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let deadline = tokio::time::Instant::now() + tokio::time::Duration::from_secs(60);
+    loop {
+        let list: serde_json::Value = near_api::Contract(contract_id.clone())
+            .call_function("view_list", json!({ "list_id": list_id }))
+            .read_only()
+            .fetch_from(network_config)
+            .await?
+            .data;
+        let processing = list["payments"]
+            .as_array()
+            .map(|rows| rows.iter().filter(|p| p["status"] == "Processing").count())
+            .unwrap_or(0);
+        if processing == 0 {
+            return Ok(list);
+        }
+        if tokio::time::Instant::now() >= deadline {
+            return Err(format!(
+                "{processing} payment(s) of list {list_id} still Processing after 60s"
+            )
+            .into());
+        }
+        tokio::time::sleep(tokio::time::Duration::from_millis(250)).await;
+    }
+}
+
+/// The status of a payment row as a plain word: "Pending", "Processing",
+/// "Failed" or "Paid" (the `{"Paid": {"block_height": N}}` object).
+fn status_name(payment: &serde_json::Value) -> String {
+    match &payment["status"] {
+        serde_json::Value::String(name) => name.clone(),
+        serde_json::Value::Object(map) => map.keys().next().cloned().unwrap_or_default(),
+        other => other.to_string(),
+    }
+}
+
+fn status_names(list: &serde_json::Value) -> Vec<String> {
+    list["payments"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(status_name)
+        .collect()
+}
+
+/// Call `payout_batch` until no row is `Pending`. Returns after the last call
+/// only; use `wait_until_resolved` to wait for the callback.
+async fn payout_all(
+    network_config: &near_api::NetworkConfig,
+    contract_id: &AccountId,
+    caller_id: &AccountId,
+    caller_signer: &std::sync::Arc<near_api::Signer>,
+    list_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    loop {
+        let result = near_api::Contract(contract_id.clone())
+            .call_function("payout_batch", json!({ "list_id": list_id }))
+            .transaction()
+            .gas(near_sdk::Gas::from_tgas(300))
+            .with_signer(caller_id.clone(), caller_signer.clone())
+            .send_to(network_config)
+            .await?;
+        let remaining: u64 = result
+            .logs()
+            .iter()
+            .find(|l| l.contains("remaining"))
+            .and_then(|l| l.split_whitespace().rev().nth(1)?.parse().ok())
+            .unwrap_or(0);
+        result.assert_success();
+        if remaining == 0 {
+            return Ok(());
+        }
+    }
+}
+
+/// Buy storage credits for `num_records` rows.
+async fn buy_storage_credits(
+    network_config: &near_api::NetworkConfig,
+    contract_id: &AccountId,
+    user_id: &AccountId,
+    user_signer: &std::sync::Arc<near_api::Signer>,
+    num_records: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let storage_cost: NearToken = near_api::Contract(contract_id.clone())
+        .call_function(
+            "calculate_storage_cost",
+            json!({ "num_records": num_records }),
+        )
+        .read_only()
+        .fetch_from(network_config)
+        .await?
+        .data;
+    near_api::Contract(contract_id.clone())
+        .call_function("buy_storage", json!({ "num_records": num_records }))
+        .transaction()
+        .deposit(storage_cost)
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+    Ok(())
+}
+
+/// `retry_failed_payments` and return how many rows it reset.
+async fn retry_failed(
+    network_config: &near_api::NetworkConfig,
+    contract_id: &AccountId,
+    caller_id: &AccountId,
+    caller_signer: &std::sync::Arc<near_api::Signer>,
+    list_id: &str,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let result = near_api::Contract(contract_id.clone())
+        .call_function("retry_failed_payments", json!({ "list_id": list_id }))
+        .transaction()
+        .with_signer(caller_id.clone(), caller_signer.clone())
+        .send_to(network_config)
+        .await?;
+    let reset: u64 = result.assert_success().json()?;
+    Ok(reset)
+}
+
+async fn native_balance(
+    network_config: &near_api::NetworkConfig,
+    account_id: &AccountId,
+) -> Result<u128, Box<dyn std::error::Error>> {
+    Ok(near_api::Account(account_id.clone())
+        .view()
+        .fetch_from(network_config)
+        .await?
+        .data
+        .amount
+        .as_yoctonear())
+}
+
+async fn ft_balance(
+    network_config: &near_api::NetworkConfig,
+    token_id: &AccountId,
+    account_id: &AccountId,
+) -> Result<u128, Box<dyn std::error::Error>> {
+    let balance: String = near_api::Contract(token_id.clone())
+        .call_function("ft_balance_of", json!({ "account_id": account_id }))
+        .read_only()
+        .fetch_from(network_config)
+        .await?
+        .data;
+    Ok(balance.parse()?)
+}
+
 async fn create_account(
     new_account_id: &AccountId,
     balance: NearToken,
@@ -513,15 +670,13 @@ async fn test_batch_processing() -> Result<(), Box<dyn std::error::Error>> {
         contract_balance_after.as_yoctonear()
     );
 
-    // Verify all payments are marked as Paid
-    let list: serde_json::Value = near_api::Contract(contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))
-        .read_only()
-        .fetch_from(&network_config)
+    // Rows are marked Paid by the `on_payments_resolved` callback, which runs
+    // after the payout transfers; wait for it.
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id)
         .await
-        .unwrap()
-        .data;
+        .unwrap();
 
+    // Verify all payments are marked as Paid
     let payments_array = list["payments"].as_array().unwrap();
     assert_eq!(payments_array.len(), 250, "Should have 250 payments");
 
@@ -839,15 +994,13 @@ async fn test_fungible_token_payment() -> Result<(), Box<dyn std::error::Error>>
         );
     }
 
-    // Verify all payments are marked as Paid
-    let list: serde_json::Value = near_api::Contract(contract_id.clone())
-        .call_function("view_list", json!({ "list_id": list_id }))
-        .read_only()
-        .fetch_from(&network_config)
+    // Rows are marked Paid by the `on_payments_resolved` callback, which runs
+    // after the payout transfers; wait for it.
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id)
         .await
-        .unwrap()
-        .data;
+        .unwrap();
 
+    // Verify all payments are marked as Paid
     let payments_array = list["payments"].as_array().unwrap();
     assert_eq!(payments_array.len(), 100, "Should have 100 payments");
 
@@ -1852,6 +2005,9 @@ async fn test_bulk_btc_intents_payment() -> Result<(), Box<dyn std::error::Error
         total_mt_burn_events, total_ft_burn_events
     );
 
+    // Rows are marked Paid by the `on_payments_resolved` callback; wait for it.
+    wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+
     // Verify contract balance is 0 after all payouts
     let final_balance: String = near_api::Contract(intents_id.clone())
         .call_function(
@@ -2008,6 +2164,8 @@ async fn setup_omft_intents_env(
                 make_genesis_account("omft.near"),
                 make_genesis_account("intents.near"),
                 make_genesis_account("dao.near"),
+                // Only used by the non-PoA intents failure test
+                make_genesis_account("wrap.near"),
             ],
             ..Default::default()
         })
@@ -2191,6 +2349,9 @@ async fn approve_and_verify(
         tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
     }
     println!("✓ All payouts processed");
+
+    // Rows are marked Paid by the `on_payments_resolved` callback; wait for it.
+    wait_until_resolved(&env.network_config, &env.contract_id, list_id).await?;
 
     // Verify recipients are preserved exactly (key assertion for this fix)
     let list: serde_json::Value = near_api::Contract(env.contract_id.clone())
@@ -2484,4 +2645,521 @@ async fn test_bulk_sol_intents_payment() -> Result<(), Box<dyn std::error::Error
     println!("✓ view_list returned Solana addresses verbatim (no deserialization error)");
 
     approve_and_verify(&env, &list_id, token_id, total_amount, &sol_addresses).await
+}
+
+// ============================================================================
+// Failure and retry tests
+//
+// `payout_batch` leaves each row `Processing`; `on_payments_resolved` marks it
+// `Paid` only if the transfer really happened and `Failed` otherwise, and
+// `retry_failed_payments` makes failed rows payable again. These tests cover
+// that for every payment type (native, NEP-141, NEAR Intents).
+// ============================================================================
+
+#[tokio::test]
+async fn test_native_failed_payment_is_marked_failed_and_can_be_retried()
+-> Result<(), Box<dyn std::error::Error>> {
+    let (_sandbox, network_config, contract_id) = setup_contract().await?;
+
+    let genesis = near_sandbox::config::DEFAULT_GENESIS_ACCOUNT;
+    let user_id: AccountId = format!("user.{genesis}").parse().unwrap();
+    let user_signer = create_account(&user_id, NearToken::from_near(50), &network_config).await;
+    buy_storage_credits(&network_config, &contract_id, &user_id, &user_signer, 5).await?;
+
+    // Two recipients that exist, and one account that does not exist yet.
+    let good_a: AccountId = format!("good-a.{genesis}").parse().unwrap();
+    let good_b: AccountId = format!("good-b.{genesis}").parse().unwrap();
+    let missing: AccountId = format!("missing.{genesis}").parse().unwrap();
+    create_account(&good_a, NearToken::from_near(1), &network_config).await;
+    create_account(&good_b, NearToken::from_near(1), &network_config).await;
+    let one_near = NearToken::from_near(1).as_yoctonear();
+    let amounts = [one_near, 2 * one_near, 3 * one_near];
+    let total: u128 = amounts.iter().sum();
+
+    let list_id = test_list_id("native_failure_retry_test");
+    near_api::Contract(contract_id.clone())
+        .call_function(
+            "submit_list",
+            json!({
+                "list_id": list_id,
+                "token_id": "native",
+                "payments": [
+                    { "recipient": good_a.to_string(), "amount": amounts[0].to_string() },
+                    { "recipient": good_b.to_string(), "amount": amounts[1].to_string() },
+                    { "recipient": missing.to_string(), "amount": amounts[2].to_string() },
+                ]
+            }),
+        )
+        .transaction()
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+    near_api::Contract(contract_id.clone())
+        .call_function("approve_list", json!({ "list_id": list_id }))
+        .transaction()
+        .deposit(NearToken::from_yoctonear(total))
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    // First run: the transfer to the missing account fails.
+    payout_all(
+        &network_config,
+        &contract_id,
+        &user_id,
+        &user_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+    assert_eq!(
+        status_names(&list),
+        ["Paid", "Paid", "Failed"],
+        "only the transfer to the missing account may fail"
+    );
+    assert_eq!(
+        native_balance(&network_config, &good_a).await?,
+        one_near + amounts[0]
+    );
+    assert_eq!(
+        native_balance(&network_config, &good_b).await?,
+        one_near + amounts[1]
+    );
+    assert!(
+        near_api::Account(missing.clone())
+            .view()
+            .fetch_from(&network_config)
+            .await
+            .is_err(),
+        "the recipient account must still not exist"
+    );
+    println!("✓ failed native transfer is Failed, the other rows are Paid");
+
+    // Retrying while the account is still missing fails again (no false Paid).
+    assert_eq!(
+        retry_failed(
+            &network_config,
+            &contract_id,
+            &user_id,
+            &user_signer,
+            &list_id
+        )
+        .await?,
+        1
+    );
+    payout_all(
+        &network_config,
+        &contract_id,
+        &user_id,
+        &user_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+    assert_eq!(status_names(&list), ["Paid", "Paid", "Failed"]);
+    println!("✓ retry to a still-missing account fails again");
+
+    // Create the account, retry: now the row is Paid and funds arrive once.
+    create_account(&missing, NearToken::from_near(1), &network_config).await;
+    assert_eq!(
+        retry_failed(
+            &network_config,
+            &contract_id,
+            &user_id,
+            &user_signer,
+            &list_id
+        )
+        .await?,
+        1
+    );
+    payout_all(
+        &network_config,
+        &contract_id,
+        &user_id,
+        &user_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+    assert_eq!(status_names(&list), ["Paid", "Paid", "Paid"]);
+    assert_eq!(
+        native_balance(&network_config, &missing).await?,
+        one_near + amounts[2]
+    );
+    // Paid rows are never reset or paid again.
+    assert_eq!(
+        retry_failed(
+            &network_config,
+            &contract_id,
+            &user_id,
+            &user_signer,
+            &list_id
+        )
+        .await?,
+        0
+    );
+    assert_eq!(
+        native_balance(&network_config, &good_a).await?,
+        one_near + amounts[0],
+        "an already Paid row must not be paid twice"
+    );
+    println!("✓ after the account exists the retry pays the row exactly once");
+
+    Ok(())
+}
+
+#[tokio::test]
+async fn test_ft_failed_payment_is_marked_failed_and_can_be_retried()
+-> Result<(), Box<dyn std::error::Error>> {
+    let (sandbox, network_config, contract_id) = setup_contract().await?;
+
+    let wrap_near_id: AccountId = "wrap.near".parse().unwrap();
+    import_contract(&sandbox, &network_config, &wrap_near_id, "wrap.near").await?;
+
+    let genesis = near_sandbox::config::DEFAULT_GENESIS_ACCOUNT;
+    let user_id: AccountId = format!("user.{genesis}").parse().unwrap();
+    let user_signer = create_account(&user_id, NearToken::from_near(50), &network_config).await;
+    buy_storage_credits(&network_config, &contract_id, &user_id, &user_signer, 5).await?;
+
+    let storage_deposit = |account: AccountId| {
+        let network_config = network_config.clone();
+        let wrap_near_id = wrap_near_id.clone();
+        let user_id = user_id.clone();
+        let user_signer = user_signer.clone();
+        async move {
+            near_api::Contract(wrap_near_id)
+                .call_function(
+                    "storage_deposit",
+                    json!({ "account_id": account.to_string(), "registration_only": true }),
+                )
+                .transaction()
+                .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
+                .with_signer(user_id, user_signer)
+                .send_to(&network_config)
+                .await
+                .unwrap()
+                .assert_success();
+        }
+    };
+
+    // The sender, the contract and one recipient are registered with wNEAR; the
+    // other recipient is not, so wrap.near rejects the transfer to it.
+    let registered: AccountId = format!("registered.{genesis}").parse().unwrap();
+    let unregistered: AccountId = format!("unregistered.{genesis}").parse().unwrap();
+    create_account(&registered, NearToken::from_near(1), &network_config).await;
+    create_account(&unregistered, NearToken::from_near(1), &network_config).await;
+    storage_deposit(user_id.clone()).await;
+    storage_deposit(contract_id.clone()).await;
+    storage_deposit(registered.clone()).await;
+
+    near_api::Contract(wrap_near_id.clone())
+        .call_function("near_deposit", json!({}))
+        .transaction()
+        .deposit(NearToken::from_near(10))
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    let one = NearToken::from_near(1).as_yoctonear();
+    let amounts = [one, 2 * one];
+    let total: u128 = amounts.iter().sum();
+
+    let list_id = test_list_id("ft_failure_retry_test");
+    near_api::Contract(contract_id.clone())
+        .call_function(
+            "submit_list",
+            json!({
+                "list_id": list_id,
+                "token_id": wrap_near_id.to_string(),
+                "payments": [
+                    { "recipient": registered.to_string(), "amount": amounts[0].to_string() },
+                    { "recipient": unregistered.to_string(), "amount": amounts[1].to_string() },
+                ]
+            }),
+        )
+        .transaction()
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+    near_api::Contract(wrap_near_id.clone())
+        .call_function(
+            "ft_transfer_call",
+            json!({
+                "receiver_id": contract_id.to_string(),
+                "amount": total.to_string(),
+                "msg": list_id
+            }),
+        )
+        .transaction()
+        .deposit(NearToken::from_yoctonear(1))
+        .gas(near_sdk::Gas::from_tgas(100))
+        .with_signer(user_id.clone(), user_signer.clone())
+        .send_to(&network_config)
+        .await?
+        .assert_success();
+
+    let contract_signer = get_genesis_signer();
+    payout_all(
+        &network_config,
+        &contract_id,
+        &contract_id,
+        &contract_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+    assert_eq!(
+        status_names(&list),
+        ["Paid", "Failed"],
+        "the transfer to the unregistered account must fail"
+    );
+    assert_eq!(
+        ft_balance(&network_config, &wrap_near_id, &registered).await?,
+        amounts[0]
+    );
+    assert_eq!(
+        ft_balance(&network_config, &wrap_near_id, &unregistered).await?,
+        0
+    );
+    assert_eq!(
+        ft_balance(&network_config, &wrap_near_id, &contract_id).await?,
+        amounts[1],
+        "the failed row's tokens must still be with the contract"
+    );
+    println!("✓ failed FT transfer is Failed, the funds stay with the contract");
+
+    // Register the receiver, retry: the row is Paid and the tokens arrive.
+    storage_deposit(unregistered.clone()).await;
+    assert_eq!(
+        retry_failed(
+            &network_config,
+            &contract_id,
+            &contract_id,
+            &contract_signer,
+            &list_id
+        )
+        .await?,
+        1
+    );
+    payout_all(
+        &network_config,
+        &contract_id,
+        &contract_id,
+        &contract_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(&network_config, &contract_id, &list_id).await?;
+    assert_eq!(status_names(&list), ["Paid", "Paid"]);
+    assert_eq!(
+        ft_balance(&network_config, &wrap_near_id, &unregistered).await?,
+        amounts[1]
+    );
+    assert_eq!(
+        ft_balance(&network_config, &wrap_near_id, &contract_id).await?,
+        0
+    );
+    println!("✓ after registering the receiver the retry pays the row");
+
+    Ok(())
+}
+
+/// A non-PoA token paid out through NEAR Intents (`ft_withdraw` to the token
+/// contract): when the token transfer fails, intents refunds the contract and
+/// returns less than the amount, so the row must be `Failed`, not `Paid`.
+#[tokio::test]
+async fn test_intents_failed_withdrawal_is_marked_failed_and_can_be_retried()
+-> Result<(), Box<dyn std::error::Error>> {
+    let env = setup_omft_intents_env(2).await?;
+    let _ = &env.sandbox;
+    let network_config = &env.network_config;
+    let wrap_near_id: AccountId = "wrap.near".parse().unwrap();
+    import_contract(&env.sandbox, network_config, &wrap_near_id, "wrap.near").await?;
+
+    let genesis = near_sandbox::config::DEFAULT_GENESIS_ACCOUNT;
+    let registered: AccountId = format!("registered.{genesis}").parse().unwrap();
+    let unregistered: AccountId = format!("unregistered.{genesis}").parse().unwrap();
+    create_account(&registered, NearToken::from_near(1), network_config).await;
+    create_account(&unregistered, NearToken::from_near(1), network_config).await;
+
+    // Register dao, intents and one recipient with wNEAR (the other stays unregistered).
+    for account in [&env.dao_id, &env.intents_id, &registered] {
+        near_api::Contract(wrap_near_id.clone())
+            .call_function(
+                "storage_deposit",
+                json!({ "account_id": account.to_string(), "registration_only": true }),
+            )
+            .transaction()
+            .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
+            .with_signer(env.dao_id.clone(), get_genesis_signer())
+            .send_to(network_config)
+            .await?
+            .assert_success();
+    }
+
+    let one = NearToken::from_near(1).as_yoctonear();
+    let amounts = [one, 2 * one];
+    let total: u128 = amounts.iter().sum();
+
+    // The DAO holds wNEAR and deposits it into intents.near.
+    near_api::Contract(wrap_near_id.clone())
+        .call_function("near_deposit", json!({}))
+        .transaction()
+        .deposit(NearToken::from_near(10))
+        .with_signer(env.dao_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+    near_api::Contract(wrap_near_id.clone())
+        .call_function(
+            "ft_transfer_call",
+            json!({
+                "receiver_id": env.intents_id.to_string(),
+                "amount": total.to_string(),
+                "msg": serde_json::to_string(&json!({ "receiver_id": env.dao_id.to_string() }))?,
+            }),
+        )
+        .transaction()
+        .deposit(NearToken::from_yoctonear(1))
+        .gas(near_sdk::Gas::from_tgas(100))
+        .with_signer(env.dao_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+
+    let token_id = "nep141:wrap.near";
+    let dao_balance: String = near_api::Contract(env.intents_id.clone())
+        .call_function(
+            "mt_balance_of",
+            json!({ "account_id": env.dao_id.to_string(), "token_id": token_id }),
+        )
+        .read_only()
+        .fetch_from(network_config)
+        .await?
+        .data;
+    assert_eq!(dao_balance.parse::<u128>()?, total, "DAO funds in intents");
+
+    let list_id = test_list_id("intents_failure_retry_test");
+    near_api::Contract(env.contract_id.clone())
+        .call_function(
+            "submit_list",
+            json!({
+                "list_id": list_id,
+                "token_id": token_id,
+                "payments": [
+                    { "recipient": registered.to_string(), "amount": amounts[0].to_string() },
+                    { "recipient": unregistered.to_string(), "amount": amounts[1].to_string() },
+                ]
+            }),
+        )
+        .transaction()
+        .with_signer(env.submitter_id.clone(), env.submitter_signer.clone())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+    near_api::Contract(env.intents_id.clone())
+        .call_function(
+            "mt_transfer_call",
+            json!({
+                "receiver_id": env.contract_id.to_string(),
+                "token_id": token_id,
+                "amount": total.to_string(),
+                "msg": list_id
+            }),
+        )
+        .transaction()
+        .deposit(NearToken::from_yoctonear(1))
+        .gas(near_sdk::Gas::from_tgas(300))
+        .with_signer(env.dao_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+
+    let contract_intents_balance = || async {
+        let balance: String = near_api::Contract(env.intents_id.clone())
+            .call_function(
+                "mt_balance_of",
+                json!({ "account_id": env.contract_id.to_string(), "token_id": token_id }),
+            )
+            .read_only()
+            .fetch_from(network_config)
+            .await?
+            .data;
+        Ok::<u128, Box<dyn std::error::Error>>(balance.parse()?)
+    };
+
+    payout_all(
+        network_config,
+        &env.contract_id,
+        &env.contract_id,
+        &env.contract_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(network_config, &env.contract_id, &list_id).await?;
+    assert_eq!(
+        status_names(&list),
+        ["Paid", "Failed"],
+        "the withdrawal to the unregistered account must not be Paid"
+    );
+    assert_eq!(
+        ft_balance(network_config, &wrap_near_id, &registered).await?,
+        amounts[0]
+    );
+    assert_eq!(
+        ft_balance(network_config, &wrap_near_id, &unregistered).await?,
+        0
+    );
+    assert_eq!(
+        contract_intents_balance().await?,
+        amounts[1],
+        "intents must have refunded the failed withdrawal to the contract"
+    );
+    println!("✓ failed intents withdrawal is Failed and refunded");
+
+    // Register the receiver and retry.
+    near_api::Contract(wrap_near_id.clone())
+        .call_function(
+            "storage_deposit",
+            json!({ "account_id": unregistered.to_string(), "registration_only": true }),
+        )
+        .transaction()
+        .deposit(NearToken::from_yoctonear(1_250_000_000_000_000_000_000))
+        .with_signer(env.dao_id.clone(), get_genesis_signer())
+        .send_to(network_config)
+        .await?
+        .assert_success();
+    assert_eq!(
+        retry_failed(
+            network_config,
+            &env.contract_id,
+            &env.contract_id,
+            &env.contract_signer,
+            &list_id
+        )
+        .await?,
+        1
+    );
+    payout_all(
+        network_config,
+        &env.contract_id,
+        &env.contract_id,
+        &env.contract_signer,
+        &list_id,
+    )
+    .await?;
+    let list = wait_until_resolved(network_config, &env.contract_id, &list_id).await?;
+    assert_eq!(status_names(&list), ["Paid", "Paid"]);
+    assert_eq!(
+        ft_balance(network_config, &wrap_near_id, &unregistered).await?,
+        amounts[1]
+    );
+    assert_eq!(contract_intents_balance().await?, 0);
+    println!("✓ after registering the receiver the retry pays the row");
+
+    Ok(())
 }
