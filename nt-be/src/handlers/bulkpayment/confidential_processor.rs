@@ -117,7 +117,32 @@ async fn fetch_activation(
 
 /// Drive every confidential bulk-payment row currently in `activating` or
 /// `signing`. Called once per worker tick.
+/// The vote relay arms a bulk row when it sees the header's MPC signature.
+/// When it misses it, the per-DAO poll submits the header from chain without
+/// touching the bulk row, so arm any row whose header is already with 1Click.
+async fn arm_submitted_bulk_payments(pool: &sqlx::PgPool) -> Result<u64, sqlx::Error> {
+    sqlx::query(
+        r#"
+        UPDATE confidential_bulk_payments b
+        SET proposal_id = i.proposal_id, status = 'activating', updated_at = NOW()
+        FROM confidential_intents i
+        WHERE b.status = 'pending'
+          AND i.dao_id = b.dao_id
+          AND i.payload_hash = b.header_payload_hash
+          AND i.status = 'submitted'
+          AND i.proposal_id IS NOT NULL
+        "#,
+    )
+    .execute(pool)
+    .await
+    .map(|done| done.rows_affected())
+}
+
 pub async fn process_confidential_bulk_payments(state: &Arc<AppState>) {
+    if let Err(e) = arm_submitted_bulk_payments(&state.db_pool).await {
+        tracing::error!("Failed to arm submitted bulk-payments: {}", e);
+    }
+
     let rows = match sqlx::query!(
         r#"
         SELECT id, dao_id, bulk_account_id, header_payload_hash,
@@ -528,4 +553,56 @@ async fn submit_done_activation(
 
     tracing::info!("Bulk-payment {} for {} fully submitted", bulk_id, dao_id);
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use sqlx::PgPool;
+
+    async fn seed(pool: &PgPool, header: &str, header_status: &str, proposal_id: Option<i64>) {
+        sqlx::query(
+            "INSERT INTO confidential_intents (dao_id, payload_hash, intent_payload, status, proposal_id)
+             VALUES ('dao.sputnik-dao.near', $1, '{}', $2, $3)",
+        )
+        .bind(header)
+        .bind(header_status)
+        .bind(proposal_id)
+        .execute(pool)
+        .await
+        .unwrap();
+        sqlx::query(
+            "INSERT INTO confidential_bulk_payments (dao_id, bulk_account_id, header_payload_hash, recipient_payload_hashes)
+             VALUES ('dao.sputnik-dao.near', 'dao.bulkpayment.near', $1, '{}')",
+        )
+        .bind(header)
+        .execute(pool)
+        .await
+        .unwrap();
+    }
+
+    /// Staging 2026-11-10 onwards: the relay missed the signature, the poll
+    /// submitted the header, and the bulk row stayed `pending` forever.
+    #[sqlx::test]
+    async fn only_bulk_rows_with_a_submitted_header_are_armed(pool: PgPool) {
+        seed(&pool, "submitted", "submitted", Some(10)).await;
+        seed(&pool, "unapproved", "pending", None).await;
+
+        assert_eq!(arm_submitted_bulk_payments(&pool).await.unwrap(), 1);
+        assert_eq!(arm_submitted_bulk_payments(&pool).await.unwrap(), 0);
+
+        let rows: Vec<(String, String, Option<i64>)> = sqlx::query_as(
+            "SELECT header_payload_hash, status, proposal_id FROM confidential_bulk_payments ORDER BY id",
+        )
+        .fetch_all(&pool)
+        .await
+        .unwrap();
+        assert_eq!(
+            rows,
+            vec![
+                ("submitted".into(), "activating".into(), Some(10)),
+                ("unapproved".into(), "pending".into(), None),
+            ]
+        );
+    }
 }
