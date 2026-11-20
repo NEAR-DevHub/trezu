@@ -1046,6 +1046,10 @@ export const useNear = () => {
 
             const policyKinds: ProposalPermissionKind[] = [
                 "policy",
+                "policy_add_or_update_role",
+                "policy_remove_role",
+                "policy_update_default_vote_policy",
+                "policy_update_parameters",
                 "add_member_to_role",
                 "remove_member_from_role",
             ];
