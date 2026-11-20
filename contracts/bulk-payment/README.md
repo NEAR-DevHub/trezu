@@ -50,6 +50,8 @@ View payment list details.
 #### `payout_batch(list_id: ListId) -> u64`
 Process approved payments in batches. Returns remaining pending count.
 
+PoA bridge lists (`nep141:<chain>-<address>.omft.near`) are paid one row per call, regardless of the gas attached. The PoA bridge records only the first withdrawal of a NEAR transaction, so several withdrawals in one transaction burn the tokens but deliver only the first. Keep calling until it returns 0.
+
 #### `get_payment_transactions(list_id: ListId) -> Vec<PaymentTransaction>`
 Get completed payment transactions with block heights.
 
