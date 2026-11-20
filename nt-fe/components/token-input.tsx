@@ -283,7 +283,9 @@ export function TokenInput<
                     }
                     if (!isEntireInputSelected(e.currentTarget)) return;
 
-                    const nextValue = e.key.replace(/[^0-9.]/g, "");
+                    const nextValue = e.key
+                        .replace(/,/g, ".")
+                        .replace(/[^0-9.]/g, "");
                     if (nextValue === "" && e.key !== ".") return;
 
                     e.preventDefault();

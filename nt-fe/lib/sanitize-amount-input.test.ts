@@ -23,6 +23,13 @@ describe("sanitizeAmountInput", () => {
         expect(sanitizeAmountInput("1,234.56")).toBe("1234.56");
     });
 
+    it("treats a comma as a decimal separator", () => {
+        expect(sanitizeAmountInput("1,5")).toBe("1.5");
+        expect(sanitizeAmountInput("0,5.")).toBe("0.5");
+        expect(sanitizeAmountInput("1,2,3")).toBe("1.23");
+        expect(sanitizeAmountInput(",5")).toBe(".5");
+    });
+
     it("leaves a value Big can parse", () => {
         expect(Big(sanitizeAmountInput("0.5.")).toString()).toBe("0.5");
         expect(Big(sanitizeAmountInput("1.2.3")).toString()).toBe("1.23");
