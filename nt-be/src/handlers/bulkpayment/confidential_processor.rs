@@ -21,6 +21,7 @@
 //!
 use std::sync::Arc;
 
+use futures::StreamExt;
 use near_api::{AccountId, Contract, NearGas, NearToken, types::json::Base64VecU8};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -29,6 +30,10 @@ use crate::AppState;
 
 const ACTIVATE_DEPOSIT: NearToken = NearToken::from_millinear(500); // 0.5 NEAR
 const PING_GAS: NearGas = NearGas::from_tgas(1000);
+/// Max concurrent 1Click submit-intent calls when posting a bulk payment's
+/// signed recipient intents. A failed submit marks the recipient `failed`
+/// for good, so don't burst all (up to 200) at once and risk rate limits.
+const SUBMIT_CONCURRENCY: usize = 25;
 
 // Strongly-typed mirror of the on-chain contract types. Kept in lockstep
 // with `contracts/confidential-bulk-payment/src/lib.rs`. Duplicating them
@@ -458,8 +463,8 @@ async fn submit_done_activation(
         })
         .collect();
 
-    // Submit in parallel.
-    let mut futures = Vec::with_capacity(pending.len());
+    // Submit concurrently, bounded by SUBMIT_CONCURRENCY.
+    let mut submits = Vec::with_capacity(pending.len());
     for row in &pending {
         let hash = row.payload_hash.clone();
         let intent_payload = row.intent_payload.clone();
@@ -486,7 +491,7 @@ async fn submit_done_activation(
         let state = state.clone();
         let public_key = public_key.to_string();
         let sub_id = sub_id.to_string();
-        futures.push(async move {
+        submits.push(async move {
             let res = crate::handlers::relay::confidential::submit_intent_to_oneclick(
                 &state,
                 crate::handlers::relay::confidential::IntentSubmitKind::Shield,
@@ -499,7 +504,10 @@ async fn submit_done_activation(
         });
     }
 
-    let results = futures::future::join_all(futures).await;
+    let results: Vec<_> = futures::stream::iter(submits)
+        .buffer_unordered(SUBMIT_CONCURRENCY)
+        .collect()
+        .await;
     for (sub_id, hash, res) in results {
         match res {
             Ok(body) => {

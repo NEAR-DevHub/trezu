@@ -1,6 +1,10 @@
 import { describe, expect, it } from "bun:test";
-import { parseAmount, parseAndValidateCsv } from "./parsing";
+import {
+    MAX_RECIPIENTS_PER_BULK_PAYMENT,
+    MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT,
+} from "@/lib/bulk-payment-api";
 import type { BulkParsingLabels } from "./parsing";
+import { parseAmount, parseAndValidateCsv } from "./parsing";
 
 const labels = {
     pleaseRemoveChars: (chars: string) => `Please remove: ${chars}`,
@@ -145,5 +149,65 @@ describe("parseAndValidateCsv destination network", () => {
         );
         expect(result.errors).toEqual([]);
         expect(result.payments[0]?.recipient).toBe("nearcom:megha19.near");
+    });
+});
+
+describe("parseAndValidateCsv recipient limit", () => {
+    const token = { symbol: "USDC", network: "near", residency: "intents" };
+    const csvWithRecipients = (n: number) =>
+        [
+            "recipient,amount",
+            ...Array.from({ length: n }, (_, i) => `r${i}.near,1`),
+        ].join("\n");
+
+    it("keeps the public cap by default", () => {
+        const atCap = parseAndValidateCsv(
+            csvWithRecipients(MAX_RECIPIENTS_PER_BULK_PAYMENT),
+            parsingLabels,
+            token,
+        );
+        expect(atCap.errors).toEqual([]);
+        expect(atCap.payments).toHaveLength(MAX_RECIPIENTS_PER_BULK_PAYMENT);
+
+        const overCap = parseAndValidateCsv(
+            csvWithRecipients(MAX_RECIPIENTS_PER_BULK_PAYMENT + 1),
+            parsingLabels,
+            token,
+        );
+        expect(overCap.payments).toHaveLength(0);
+        expect(overCap.errors).toHaveLength(1);
+    });
+
+    it("accepts up to the confidential cap when passed", () => {
+        const result = parseAndValidateCsv(
+            csvWithRecipients(MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT),
+            parsingLabels,
+            token,
+            undefined,
+            undefined,
+            MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT,
+        );
+        expect(result.errors).toEqual([]);
+        expect(result.payments).toHaveLength(
+            MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT,
+        );
+    });
+
+    it("rejects one over the confidential cap", () => {
+        const result = parseAndValidateCsv(
+            csvWithRecipients(MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT + 1),
+            parsingLabels,
+            token,
+            undefined,
+            undefined,
+            MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT,
+        );
+        expect(result.payments).toHaveLength(0);
+        expect(result.errors).toEqual([
+            {
+                row: 0,
+                message: `exceeds limit ${MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT + 1}/${MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT}`,
+            },
+        ]);
     });
 });
