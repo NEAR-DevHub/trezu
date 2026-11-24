@@ -73,8 +73,12 @@ struct RewardFeeFraction {
 }
 
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct NearblocksValidatorsResponse {
+struct NearblocksValidatorsInfoResponse {
+    data: NearblocksValidatorsInfo,
+}
+
+#[derive(Deserialize, Debug)]
+struct NearblocksValidatorsInfo {
     last_epoch_apy: String,
 }
 
@@ -89,7 +93,7 @@ async fn fetch_nearblocks_last_epoch_apy(
         .cached(CacheTier::VeryLongTerm, cache_key, async move {
             let mut request = state_clone
                 .http_client
-                .get("https://api.nearblocks.io/v1/validators")
+                .get("https://api.nearblocks.io/v3/validators/info")
                 .header("accept", "application/json");
             if let Some(api_key) = state_clone.env_vars.nearblocks_api_key.as_ref() {
                 request = request.header("Authorization", format!("Bearer {}", api_key));
@@ -108,17 +112,17 @@ async fn fetch_nearblocks_last_epoch_apy(
                 )
             })?;
 
-            let payload: NearblocksValidatorsResponse = response.json().await.map_err(|e| {
+            let payload: NearblocksValidatorsInfoResponse = response.json().await.map_err(|e| {
                 (
                     StatusCode::BAD_GATEWAY,
                     format!("Failed to parse Nearblocks validators response: {}", e),
                 )
             })?;
 
-            let apy = payload.last_epoch_apy.parse::<f64>().map_err(|e| {
+            let apy = payload.data.last_epoch_apy.parse::<f64>().map_err(|e| {
                 (
                     StatusCode::BAD_GATEWAY,
-                    format!("Invalid lastEpochApy in Nearblocks response: {}", e),
+                    format!("Invalid last_epoch_apy in Nearblocks response: {}", e),
                 )
             })?;
             Ok::<_, (StatusCode, String)>(apy)

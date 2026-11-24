@@ -418,7 +418,7 @@ async fn load_confidential_ledger_balances(
 ) -> Result<Option<Vec<(String, String)>>, (StatusCode, String)> {
     use bigdecimal::Zero;
 
-    use crate::constants::intents_tokens::get_defuse_tokens_map;
+    use crate::constants::intents_tokens::decimals_for_held_defuse_asset;
     use crate::handlers::public_history::confidential_list;
     use crate::handlers::public_history::silver::models::decimal_denominator;
 
@@ -442,13 +442,14 @@ async fn load_confidential_ledger_balances(
         return Ok(None);
     }
 
-    let defuse_map = get_defuse_tokens_map();
     let mut balances = Vec::with_capacity(ledger.len());
     for (asset, balance) in ledger {
         if balance.sign() == bigdecimal::num_bigint::Sign::Minus || balance.is_zero() {
             continue;
         }
-        let Some(token_info) = defuse_map.get(&asset) else {
+        // Catalog ids, plus ids in `retired-tokens.json`. An id in neither
+        // has no decimals, so the decimal ledger amount cannot be shown raw.
+        let Some(decimals) = decimals_for_held_defuse_asset(&asset) else {
             tracing::warn!(
                 "{} unknown defuse asset {} in ledger, skipping",
                 account,
@@ -456,7 +457,7 @@ async fn load_confidential_ledger_balances(
             );
             continue;
         };
-        let scale = decimal_denominator(i32::from(token_info.decimals));
+        let scale = decimal_denominator(i32::from(decimals));
         let raw = (&balance * &scale).with_scale(0);
         balances.push((asset, raw.to_string()));
     }

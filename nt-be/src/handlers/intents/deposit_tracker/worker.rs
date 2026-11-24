@@ -2,7 +2,6 @@
 //! in-process rows, hand finalized deposits to history ingestion, and retire
 //! rows once the ledger carries them.
 
-use std::collections::HashSet;
 use std::sync::Arc;
 
 use chrono::{DateTime, Duration, Utc};
@@ -21,7 +20,6 @@ use crate::handlers::public_history::bronze::NearblocksPriority;
 use crate::handlers::public_history::bronze::api::fetch_latest_indexed_block_height;
 use crate::handlers::public_history::bronze::store::{PublicHistorySource, upsert_latest_demand};
 
-use super::bridge::{BridgeDeposit, BridgeDepositsClient};
 use super::store::{
     self, ACTIVE_DEPOSIT_MAX_AGE, DepositTransition, DepositWatch, InProcessDeposit,
     ObservedDeposit, WatchPollOutcome,
@@ -165,12 +163,9 @@ impl<'a> DepositTrackerWorker<'a> {
     async fn process_watch(&self, watch: &DepositWatch) -> WatchOutcome {
         let mut outcome = WatchOutcome::default();
 
-        let poll = match watch.kind {
-            WatchKind::Public => self.poll_public(watch).await,
-            WatchKind::Confidential => match self.reusable_set(watch).await {
-                Ok(set) => self.poll_reusable(watch, &set).await,
-                Err(error) => Err(error),
-            },
+        let poll = match self.reusable_set(watch).await {
+            Ok(set) => self.poll_reusable(watch, &set).await,
+            Err(error) => Err(error),
         };
         match poll {
             Ok(result) => {
@@ -238,11 +233,17 @@ impl<'a> DepositTrackerWorker<'a> {
         set: &ReusableDepositAddresses,
     ) -> Result<PollResult, String> {
         let dao = AccountIdRef::new(&watch.dao_id).map_err(|e| e.to_string())?;
-        let resolver = ReusableDepositResolver::new(self.state);
+        let public = watch.kind == WatchKind::Public;
+        let resolver = if public {
+            ReusableDepositResolver::public(self.state)
+        } else {
+            ReusableDepositResolver::new(self.state)
+        };
         let mut page = match resolver.withdrawals(dao, set).await {
             Ok(page) => page,
-            // Forget the set so the next deposit request re-resolves it.
-            Err(error @ WithdrawalsError::StaleSet(_)) => {
+            // Forget the set so the next deposit request re-resolves it. A
+            // public set cannot be listed again, so it is never forgotten.
+            Err(error @ WithdrawalsError::StaleSet(_)) if !public => {
                 clear_cached(self.pool(), &watch.dao_id)
                     .await
                     .map_err(|db| format!("clear reusable deposit set: {db}"))?;
@@ -310,7 +311,7 @@ impl<'a> DepositTrackerWorker<'a> {
                 chain: watch.chain.clone(),
                 origin_tx_hash: None,
                 near_tx_hash: withdrawal.payout_hash(),
-                token_id: watch.token_id.clone().unwrap_or_else(|| asset.clone()),
+                token_id: provisional_token_id(watch, &asset),
                 amount: withdrawal.amount(),
                 provider_status: withdrawal.status.clone(),
                 status: if withdrawal.is_success() {
@@ -323,61 +324,6 @@ impl<'a> DepositTrackerWorker<'a> {
             },
         )
         .await
-    }
-
-    async fn poll_public(&self, watch: &DepositWatch) -> Result<PollResult, String> {
-        let client = BridgeDepositsClient::new(self.state);
-        let page = client.recent_deposits(&watch.dao_id).await?;
-        let deposits = &page.deposits;
-        let known = store::load_watch_deposits(self.pool(), watch.id)
-            .await
-            .map_err(|error| format!("load deposits: {error}"))?;
-        // A settled deposit the bridge recorded before this watch existed is
-        // history; one in flight, or settled while the first poll was
-        // failing, is observed.
-        let mut result = self
-            .observe_page(
-                watch,
-                deposits,
-                &known,
-                |deposit| deposit.key.clone(),
-                |deposit| {
-                    deposit.status.tracker_status() != DepositStatus::Detected
-                        && deposit
-                            .created_at
-                            .is_none_or(|recorded_at| recorded_at < watch.created_at)
-                },
-                BridgeDeposit::observed,
-            )
-            .await?;
-
-        // A tracked deposit still in flight that newer deposits pushed off
-        // the first page keeps advancing from the pages behind it.
-        if page.has_more {
-            let seen: HashSet<&str> = deposits.iter().map(|d| d.key.as_str()).collect();
-            let outstanding: Vec<String> = known
-                .iter()
-                .filter(|deposit| deposit.status == DepositStatus::Detected)
-                .filter(|deposit| !seen.contains(deposit.provider_deposit_key.as_str()))
-                .map(|deposit| deposit.provider_deposit_key.clone())
-                .collect();
-            if !outstanding.is_empty() {
-                for deposit in client.lookup_deposits(&watch.dao_id, &outstanding).await? {
-                    let transition = self
-                        .record_observation(
-                            watch,
-                            &deposit.observed(),
-                            Some(DepositStatus::Detected),
-                        )
-                        .await
-                        .map_err(|error| format!("record deposit {}: {error}", deposit.key))?;
-                    if transition.changed() {
-                        result.changed += 1;
-                    }
-                }
-            }
-        }
-        Ok(result)
     }
 
     /// What every provider page goes through. On the watch's first poll the
@@ -508,10 +454,11 @@ impl<'a> DepositTrackerWorker<'a> {
                     store::find_public_ledger_match(
                         self.pool(),
                         &deposit.dao_id,
-                        deposit.near_tx_hash.as_deref(),
-                        &deposit.token_id,
+                        watch.quote_deposit_address.as_deref().unwrap_or_default(),
                         deposit.amount.as_ref(),
-                        deposit.detected_at - LEDGER_MATCH_LOOKBACK,
+                        // Payouts from before the watch are its baseline, so
+                        // their ledger rows are never this deposit's.
+                        (deposit.detected_at - LEDGER_MATCH_LOOKBACK).max(watch.created_at),
                     )
                     .await?
                 }
@@ -636,6 +583,22 @@ impl WatchSchedule<'_> {
         } else {
             None
         }
+    }
+}
+
+/// Label for a payout until the ledger row names the credited token: the
+/// token the modal was opened for. The public ledger prefixes Intents
+/// balances with `intents.near:`.
+fn provisional_token_id(watch: &DepositWatch, asset: &str) -> String {
+    match watch.token_id.as_deref() {
+        Some(token)
+            if watch.kind == WatchKind::Public
+                && (token.starts_with("nep141:") || token.starts_with("nep245:")) =>
+        {
+            format!("intents.near:{token}")
+        }
+        Some(token) => token.to_string(),
+        None => asset.to_string(),
     }
 }
 

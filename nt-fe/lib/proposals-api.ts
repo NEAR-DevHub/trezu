@@ -644,11 +644,14 @@ export async function getProposalTransaction(
         if (isAxiosErrorWithStatus(error, 404)) {
             return null;
         }
+        // Anything else — e.g. 503 when NearBlocks rate-limits the backend —
+        // must reach the query so it retries instead of caching "no
+        // transaction".
         console.error(
             `Error getting transaction for proposal ${daoId}/${proposal.id}`,
             error,
         );
-        return null;
+        throw error;
     }
 }
 

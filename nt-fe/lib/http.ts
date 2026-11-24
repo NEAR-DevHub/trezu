@@ -1,13 +1,15 @@
 import * as Sentry from "@sentry/nextjs";
-import axios, { type AxiosError } from "axios";
+import axios, { AxiosError } from "axios";
 
 /**
  * Shared axios instance for backend/API calls.
  *
- * Reports unexpected failures (5xx, network errors, timeouts) to Sentry
- * once, centrally, tagged `error_code=FE_API_FAILED` and fingerprinted by
- * method + path. Expected client outcomes (4xx: auth, validation,
- * not-found, rate limit) are not reported.
+ * Reports unexpected failures (5xx and other failures without a response) to
+ * Sentry once, centrally, tagged `error_code=FE_API_FAILED` and fingerprinted
+ * by method + path. Not reported:
+ * - expected client outcomes (4xx: auth, validation, not-found, rate limit);
+ * - client-side connectivity failures (see {@link isClientConnectivityFailure}),
+ *   which are recorded as a breadcrumb instead.
  *
  * Import as `import { http as axios } from "@/lib/http"` to keep call sites
  * unchanged.
@@ -40,6 +42,28 @@ function requestPath(error: AxiosError): string {
     }
 }
 
+/**
+ * Axios codes for requests that never got a response because of the user's
+ * side: offline or flaky network, the browser dropping requests when the
+ * page is hidden or left (common on iOS Safari), blockers, or our own
+ * cancellation. Nothing to act on per event. Backend outages are caught
+ * elsewhere: 5xx are reported by the backend itself, and uptime monitoring
+ * covers the API being unreachable.
+ */
+const CLIENT_CONNECTIVITY_CODES: ReadonlySet<string> = new Set([
+    AxiosError.ERR_NETWORK, // "Network Error": XHR onerror, no response
+    AxiosError.ERR_CANCELED, // aborted by our code (AbortController)
+    AxiosError.ECONNABORTED, // "Request aborted": browser aborted the XHR
+]);
+
+export function isClientConnectivityFailure(error: AxiosError): boolean {
+    return (
+        error.response === undefined &&
+        error.code !== undefined &&
+        CLIENT_CONNECTIVITY_CODES.has(error.code)
+    );
+}
+
 function reportHttpError(error: AxiosError): void {
     const status = error.response?.status;
     // 4xx are expected client outcomes (auth rejection, validation,
@@ -50,6 +74,19 @@ function reportHttpError(error: AxiosError): void {
 
     const method = (error.config?.method ?? "get").toUpperCase();
     const path = requestPath(error);
+
+    if (isClientConnectivityFailure(error)) {
+        // Keep it as context for any real error that follows, and mark it so
+        // reportError / the React Query fallback do not capture it either.
+        Sentry.addBreadcrumb({
+            category: "http.client",
+            level: "warning",
+            message: `${method} ${path} failed: ${error.code}`,
+            data: { method, path, code: error.code },
+        });
+        markReportedError(error);
+        return;
+    }
 
     Sentry.withScope((scope) => {
         scope.setTag("error_code", "FE_API_FAILED");

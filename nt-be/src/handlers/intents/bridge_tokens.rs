@@ -1,8 +1,9 @@
 //! Deposit / swap asset catalogs.
 //!
 //! - **Deposit** (`/deposit-tokens`, alias `/bridge-tokens`): vendored near.com
-//!   `production.json` only. Bridge RPC is fetched to fill mins / public-deposit
-//!   flags on those rows — never to add Bridge-only tokens. Cached as one catalog.
+//!   `production.json` only — no network call. The PoA Bridge RPC that used to
+//!   fill mins / public-deposit flags is deprecated, so the catalog carries no
+//!   minimums; the deposit flow reads them from its 1Click quote instead.
 //! - **Swap** (`/swap-tokens`): derived from the deposit catalog by filtering
 //!   to assets present in 1Click `/v0/tokens` (no `?ondoTokens`).
 //!
@@ -30,13 +31,11 @@ use std::sync::{Arc, LazyLock};
 use crate::{
     AppState,
     constants::intents_chains::{ChainIcons, get_chain_metadata_by_name},
-    handlers::intents::supported_tokens::fetch_supported_tokens_data,
     services::oneclick_asset_routing::{
         NBTC_BALANCE_ASSET_ID, is_one_click_routing_asset, price_lookup_asset_ids, quote_asset_id,
     },
     services::oneclick_tokens::{OneClickToken, fetch_oneclick_tokens},
 };
-use serde_json::Value;
 
 const NEAR_MAINNET_NETWORK_ID: &str = "near:mainnet";
 
@@ -130,7 +129,7 @@ pub(crate) fn fallback_chain_id_for_name(chain_name: &str) -> String {
         "cardano" => "cardano:mainnet".to_string(),
         "litecoin" | "ltc" => "ltc:mainnet".to_string(),
         "monad" => "eth:143".to_string(),
-        "layerx" => "eth:196".to_string(),
+        "layerx" | "xlayer" => "eth:196".to_string(),
         "plasma" => "eth:9745".to_string(),
         "scroll" => "eth:534352".to_string(),
         "aleo" => "aleo:mainnet".to_string(),
@@ -138,31 +137,11 @@ pub(crate) fn fallback_chain_id_for_name(chain_name: &str) -> String {
         "movement" => "movement:mainnet".to_string(),
         "fogo" => "fogo:mainnet".to_string(),
         "hood" => "eth:4663".to_string(),
-        // Live bridge `supported_tokens` uses `hypercore:mainnet` for both
-        // NEAR and USDC on Hyperliquid (not the UI name `hyperliquid:999`).
+        // `hypercore:mainnet` for both NEAR and USDC on Hyperliquid (not the
+        // UI name `hyperliquid:999`).
         "hyperliquid" | "hypercore" => "hypercore:mainnet".to_string(),
         other => format!("{other}:mainnet"),
     }
-}
-
-/// Extract an EVM/SPL-style contract address from a defuse / 1cs asset id.
-fn contract_address_from_asset_id(asset_id: &str) -> Option<String> {
-    let last = asset_id.split(':').next_back()?.to_lowercase();
-    if last.starts_with("0x") && last.len() >= 42 {
-        return Some(last);
-    }
-    // nep141:base-0xabc….omft.near
-    if let Some(idx) = last.find("0x") {
-        let rest = &last[idx..];
-        let addr: String = rest
-            .chars()
-            .take_while(|c| c.is_ascii_hexdigit() || *c == 'x')
-            .collect();
-        if addr.starts_with("0x") && addr.len() >= 42 {
-            return Some(addr);
-        }
-    }
-    None
 }
 
 fn deployment_chain_name(deployment: &TokenDeployment) -> &str {
@@ -383,13 +362,10 @@ pub struct NetworkOption {
     pub balance_asset_id: String,
     /// 1Click quote routing id (may be `1cs_v1:`).
     pub quote_asset_id: String,
-    /// Whether Bridge/POA can mint a stable public deposit address for `chain_id`.
-    #[serde(default = "default_true")]
+    /// Always `true`: the catalog no longer asks the deprecated PoA Bridge
+    /// which chains it serves, so the deposit-address request decides.
+    /// Confidential treasuries ignore it.
     pub public_deposit_supported: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
@@ -405,74 +381,6 @@ pub struct AssetOption {
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DepositAssetsResponse {
     pub assets: Vec<AssetOption>,
-}
-
-#[derive(Clone, Default)]
-struct BridgeTokenExtras {
-    chain_id: String,
-    min_deposit_amount: Option<String>,
-    min_withdrawal_amount: Option<String>,
-}
-
-/// Bridge RPC rows used only to enrich catalog networks. Never a token source.
-#[derive(Default)]
-struct BridgeLookup {
-    by_intents: HashMap<String, Vec<BridgeTokenExtras>>,
-    by_contract: HashMap<String, Vec<BridgeTokenExtras>>,
-    supported_chains: HashSet<String>,
-}
-
-impl BridgeLookup {
-    fn from_supported_tokens(supported: &Value) -> Self {
-        let mut lookup = Self::default();
-        let Some(tokens) = supported.get("tokens").and_then(|t| t.as_array()) else {
-            return lookup;
-        };
-        for token in tokens {
-            let Some(intents_id) = token.get("intents_token_id").and_then(|id| id.as_str()) else {
-                continue;
-            };
-            let standard = token.get("standard").and_then(|s| s.as_str()).unwrap_or("");
-            if standard != "nep141" && standard != "nep245" {
-                continue;
-            }
-            let defuse_id = token
-                .get("defuse_asset_identifier")
-                .and_then(|d| d.as_str())
-                .unwrap_or("");
-            let extras = BridgeTokenExtras {
-                chain_id: chain_id_from_defuse_id(defuse_id),
-                min_deposit_amount: token
-                    .get("min_deposit_amount")
-                    .and_then(|v| v.as_str())
-                    .map(String::from),
-                min_withdrawal_amount: token
-                    .get("min_withdrawal_amount")
-                    .and_then(|v| v.as_str())
-                    .map(String::from),
-            };
-            lookup.supported_chains.insert(extras.chain_id.clone());
-            lookup
-                .by_intents
-                .entry(intents_id.to_string())
-                .or_default()
-                .push(extras.clone());
-            if let Some(addr) = contract_address_from_asset_id(defuse_id) {
-                lookup.by_contract.entry(addr).or_default().push(extras);
-            }
-        }
-        lookup
-    }
-
-    fn resolve(&self, balance_id: &str, preferred_chain: &str) -> Option<&BridgeTokenExtras> {
-        if let Some(entries) = self.by_intents.get(balance_id) {
-            return entries.iter().find(|e| e.chain_id == preferred_chain);
-        }
-        let addr = contract_address_from_asset_id(balance_id)?;
-        self.by_contract
-            .get(&addr)
-            .and_then(|entries| entries.iter().find(|e| e.chain_id == preferred_chain))
-    }
 }
 
 /// Deposit catalog (near.com listing parity — no Bridge union, no 1Click ∩).
@@ -514,18 +422,12 @@ pub async fn get_bridge_tokens(
 async fn load_deposit_catalog(
     state: Arc<AppState>,
 ) -> Result<DepositAssetsResponse, (StatusCode, String)> {
-    let state_clone = state.clone();
     state
         .cache
         .cached::<_, DepositAssetsResponse, (StatusCode, String)>(
             CacheTier::LongTerm,
             "deposit-tokens".to_string(),
-            async move {
-                let supported = fetch_supported_tokens_data(&state_clone).await?;
-                Ok(build_deposit_catalog(&BridgeLookup::from_supported_tokens(
-                    &supported,
-                )))
-            },
+            async move { Ok(build_deposit_catalog()) },
         )
         .await
 }
@@ -569,7 +471,7 @@ fn filter_catalog_for_swap(
     filtered
 }
 
-fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
+fn build_deposit_catalog() -> DepositAssetsResponse {
     let mut asset_map: HashMap<String, AssetOption> = HashMap::new();
 
     for (unified_id, unified) in get_tokens_map().iter() {
@@ -631,23 +533,7 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
             } else {
                 fallback_chain_id_for_name(&base.origin_chain_name)
             };
-            // Off-origin rows must not inherit the sibling's chain (wrap.near
-            // resolves to near:mainnet). Mins and public deposit follow this
-            // asset on the deployment chain only.
-            let lookup_id = if delivery_chain.is_some() {
-                routing_id
-            } else {
-                balance_id
-            };
-            let extras = bridge.resolve(lookup_id, &preferred_chain);
-            let chain_id = extras
-                .map(|e| e.chain_id.clone())
-                .unwrap_or(preferred_chain);
-            let public_deposit_supported = if delivery_chain.is_some() {
-                extras.is_some()
-            } else {
-                bridge.supported_chains.contains(&chain_id)
-            };
+            let chain_id = preferred_chain;
 
             let asset = asset_map
                 .entry(group_key.clone())
@@ -670,11 +556,11 @@ fn build_deposit_catalog(bridge: &BridgeLookup) -> DepositAssetsResponse {
                 chain_icons: chain_meta.map(|m| m.icon),
                 chain_id,
                 decimals: deployment_decimals(base),
-                min_deposit_amount: extras.and_then(|e| e.min_deposit_amount.clone()),
-                min_withdrawal_amount: extras.and_then(|e| e.min_withdrawal_amount.clone()),
+                min_deposit_amount: None,
+                min_withdrawal_amount: None,
                 balance_asset_id: balance_id.to_string(),
                 quote_asset_id: quote_id,
-                public_deposit_supported,
+                public_deposit_supported: true,
             });
         }
     }
@@ -763,22 +649,6 @@ mod tests {
         assert_eq!(
             chain_id_from_defuse_id("eth:8453:0x0382e3fee4a420bd446367d468a6f00225853420"),
             "eth:8453"
-        );
-    }
-
-    #[test]
-    fn contract_address_extracted_from_1cs_and_bridge_ids() {
-        assert_eq!(
-            contract_address_from_asset_id(
-                "1cs_v1:base:erc20:0x0382e3fee4a420bd446367d468a6f00225853420"
-            )
-            .as_deref(),
-            Some("0x0382e3fee4a420bd446367d468a6f00225853420")
-        );
-        assert_eq!(
-            contract_address_from_asset_id("eth:8453:0x0382e3fee4a420bd446367d468a6f00225853420")
-                .as_deref(),
-            Some("0x0382e3fee4a420bd446367d468a6f00225853420")
         );
     }
 
@@ -895,7 +765,7 @@ mod tests {
 
     #[test]
     fn chain_delivery_routes_keep_holdable_balance_and_1cs_quote() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         // (symbol, quote marker, chain id, expected holdable balance)
         let routes = [
             (
@@ -1097,7 +967,7 @@ mod tests {
 
     #[test]
     fn vendored_catalog_sorts_like_nearcom_picker() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         let top: Vec<_> = catalog
             .assets
             .iter()
@@ -1119,31 +989,21 @@ mod tests {
     }
 
     #[test]
-    fn empty_bridge_lookup_marks_public_deposit_unsupported() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
-        let unsupported = catalog
-            .assets
-            .iter()
-            .flat_map(|asset| asset.networks.iter())
-            .filter(|network| !network.public_deposit_supported)
-            .count();
-        assert!(
-            unsupported > 0,
-            "a missing Bridge RPC must fail closed, not advertise public deposit on every chain"
-        );
+    fn every_network_stays_selectable_for_public_deposit() {
+        let catalog = build_deposit_catalog();
         assert!(
             catalog
                 .assets
                 .iter()
                 .flat_map(|asset| asset.networks.iter())
-                .all(|network| !network.public_deposit_supported),
-            "every network must be unsupported when the lookup has no supported_chains"
+                .all(|network| network.public_deposit_supported),
+            "the catalog must not hide networks from public treasuries"
         );
     }
 
     #[test]
     fn near_networks_collapse_to_one_mainnet_row() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         let near = catalog
             .assets
             .iter()
@@ -1171,7 +1031,7 @@ mod tests {
 
     #[test]
     fn near_on_bsc_is_its_own_network_spending_wrap_near() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         let near = catalog
             .assets
             .iter()
@@ -1187,7 +1047,7 @@ mod tests {
         assert_eq!(bsc.decimals, 18);
         assert_eq!(bsc.balance_asset_id, "nep141:wrap.near");
         assert_eq!(bsc.quote_asset_id, bsc.id);
-        assert!(!bsc.public_deposit_supported);
+        assert!(bsc.public_deposit_supported);
         assert!(
             near.networks
                 .iter()
@@ -1198,7 +1058,7 @@ mod tests {
 
     #[test]
     fn usdc_networks_put_near_first_then_volume() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         let usdc = catalog
             .assets
             .iter()
@@ -1238,7 +1098,7 @@ mod tests {
 
     #[test]
     fn deposit_catalog_excludes_bridge_only_and_hidden_tokens() {
-        let catalog = build_deposit_catalog(&BridgeLookup::default());
+        let catalog = build_deposit_catalog();
         let symbols: Vec<_> = catalog
             .assets
             .iter()
@@ -1278,54 +1138,6 @@ mod tests {
         assert!(
             symbols.iter().all(|symbol| !symbol.contains("(omni)")),
             "feature-gated omni tokens must stay hidden"
-        );
-    }
-
-    #[test]
-    fn bridge_lookup_fills_mins_without_adding_tokens() {
-        const USDC_ETH: &str = "nep141:eth-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48.omft.near";
-        let extras = BridgeTokenExtras {
-            chain_id: "eth:1".into(),
-            min_deposit_amount: Some("1000".into()),
-            min_withdrawal_amount: Some("2000".into()),
-        };
-        let mut bridge = BridgeLookup::default();
-        bridge.supported_chains.insert("eth:1".into());
-        bridge
-            .by_intents
-            .insert(USDC_ETH.into(), vec![extras.clone()]);
-        bridge.by_intents.insert(
-            "nep141:la-usdc-bridge-only.omft.near".into(),
-            vec![BridgeTokenExtras {
-                chain_id: "eth:1".into(),
-                min_deposit_amount: Some("1".into()),
-                min_withdrawal_amount: Some("1".into()),
-            }],
-        );
-
-        let catalog = build_deposit_catalog(&bridge);
-        let usdc = catalog
-            .assets
-            .iter()
-            .find(|asset| asset.asset_name == "USDC")
-            .expect("USDC stays in the catalog");
-        let eth = usdc
-            .networks
-            .iter()
-            .find(|network| network.balance_asset_id == USDC_ETH)
-            .expect("USDC Ethereum network");
-        assert_eq!(eth.min_deposit_amount.as_deref(), Some("1000"));
-        assert_eq!(eth.min_withdrawal_amount.as_deref(), Some("2000"));
-        assert!(eth.public_deposit_supported);
-
-        assert!(
-            catalog
-                .assets
-                .iter()
-                .all(|asset| !asset.asset_name.eq_ignore_ascii_case("laUSDC")
-                    && asset.networks.iter().all(|network| network.balance_asset_id
-                        != "nep141:la-usdc-bridge-only.omft.near")),
-            "Bridge-only tokens must not be added from the mins lookup"
         );
     }
 

@@ -32,9 +32,10 @@ pub(super) fn confidential_deposit_destination_asset(token_id: &str) -> &str {
 }
 
 /// One 1Click confidential deposit quote attempt loop: `FLEX_INPUT` with the
-/// `INTENTS` deposit type crediting the DAO's confidential balance. The
-/// FE-supplied `amount` is a probe; when 1Click rejects it as below the
-/// bridge floor, the quote is retried at the floor from the error (or 10x).
+/// `ORIGIN_CHAIN` deposit type (the only one 1Click applies the bridge floor
+/// to) crediting the DAO's confidential balance. The FE-supplied `amount` is
+/// a probe; when 1Click rejects it as below the bridge floor, the quote is
+/// retried 10% above the floor from the error, as near.com does (or at 10x).
 /// Returns the `quote` object. `dry` quotes carry no deposit address.
 async fn mint_confidential_deposit_quote(
     state: &Arc<AppState>,
@@ -43,7 +44,13 @@ async fn mint_confidential_deposit_quote(
     mut amount: u128,
     deadline: &str,
     dry: bool,
+    public: bool,
 ) -> Result<serde_json::Value, (StatusCode, String)> {
+    let account_type = if public {
+        "INTENTS"
+    } else {
+        "CONFIDENTIAL_INTENTS"
+    };
     let url = api_url_or_500(&state.env_vars.confidential_api_url, "v0/quote")?;
     if amount == 0 {
         amount = 1;
@@ -56,13 +63,13 @@ async fn mint_confidential_deposit_quote(
             "swapType": "FLEX_INPUT",
             "slippageTolerance": CONFIDENTIAL_DEPOSIT_SLIPPAGE_TOLERANCE,
             "originAsset": token_id,
-            "depositType": "INTENTS",
+            "depositType": "ORIGIN_CHAIN",
             "destinationAsset": confidential_deposit_destination_asset(token_id),
             "amount": amount.to_string(),
             "refundTo": account_id,
-            "refundType": "CONFIDENTIAL_INTENTS",
+            "refundType": account_type,
             "recipient": account_id,
-            "recipientType": "CONFIDENTIAL_INTENTS",
+            "recipientType": account_type,
             "deadline": deadline,
             "quoteWaitingTimeMs": 5000,
         });
@@ -90,6 +97,7 @@ async fn mint_confidential_deposit_quote(
                     return Err((status, msg));
                 }
                 let next_amount = parse_bridge_minimum_hint(&msg)
+                    .map(|floor| floor.saturating_add(floor / 10))
                     .filter(|n| *n > amount)
                     .unwrap_or_else(|| amount.saturating_mul(10).max(10));
                 tracing::info!(
@@ -144,12 +152,21 @@ pub(super) async fn bridge_minimum(
     dao_id: &str,
     token_id: &str,
     amount: u128,
+    public: bool,
 ) -> Option<String> {
     let probe_deadline = (Utc::now() + Duration::days(MIN_PROBE_QUOTE_VALIDITY_DAYS))
         .format("%Y-%m-%dT%H:%M:%S%.3fZ")
         .to_string();
-    match mint_confidential_deposit_quote(state, dao_id, token_id, amount, &probe_deadline, true)
-        .await
+    match mint_confidential_deposit_quote(
+        state,
+        dao_id,
+        token_id,
+        amount,
+        &probe_deadline,
+        true,
+        public,
+    )
+    .await
     {
         Ok(quote) => quote_min_amount_in(&quote).ok(),
         Err((status, message)) => {

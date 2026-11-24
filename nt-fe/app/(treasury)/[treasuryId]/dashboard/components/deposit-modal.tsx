@@ -36,7 +36,10 @@ import {
 import { useTokenCatalog } from "@/hooks/use-bridge-tokens";
 import { useDepositTracker } from "@/hooks/use-deposit-tracker";
 import { useTreasury } from "@/hooks/use-treasury";
-import { usePopularAssetsByActivity } from "@/hooks/use-treasury-queries";
+import {
+    usePopularAssetsByActivity,
+    useToken,
+} from "@/hooks/use-treasury-queries";
 import {
     isTokenOrNetworkScopedWarning,
     useScopedSlotWarning,
@@ -843,15 +846,12 @@ export function DepositModal({
     });
 
     const isInternalNetwork = isInternalNetworkId(selectedNetwork?.id);
-    const selectedAssetPriceUsd = useMemo(() => {
-        if (!selectedAsset) return null;
-        const id = selectedAsset.id.toLowerCase();
-        return (
-            aggregatedTreasuryTokens.find(
-                (asset) => asset.id.toLowerCase() === id,
-            )?.price ?? null
-        );
-    }, [aggregatedTreasuryTokens, selectedAsset]);
+    // Priced by token id so the minimum reads in dollars even for tokens the
+    // treasury does not hold yet.
+    const { data: selectedTokenData } = useToken(
+        selectedBridgeNetwork?.balanceAssetId,
+    );
+    const selectedAssetPriceUsd = selectedTokenData?.price ?? null;
 
     const receiveCard = useMemo(() => {
         if (isInternalNetwork) return buildInternalReceiveCopy(t);

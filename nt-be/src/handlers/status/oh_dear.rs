@@ -15,12 +15,10 @@ use std::{
 use super::config::OhDearHealthConfig;
 use crate::AppState;
 use crate::constants::external_apis::{FASTNEAR_ACCOUNT_API_BASE, NEARBLOCKS_API_BASE};
-use crate::utils::jsonrpc::{JsonRpcRequest, JsonRpcResponse};
 use crate::utils::url::api_url;
 
 pub const SUPPORTED_SERVICES: &[&str] = &[
     "backend",
-    "bridge-rpc",
     "defillama",
     "exchange",
     "fastnear",
@@ -41,12 +39,6 @@ const BACKEND_DATABASE_CHECK: CheckDefinition = CheckDefinition {
     label: "Backend database",
     notification_subject: "Database",
     short_subject: "Database",
-};
-const BRIDGE_RPC_CHECK: CheckDefinition = CheckDefinition {
-    name: "bridge-rpc.supported-tokens",
-    label: "Bridge RPC",
-    notification_subject: "Bridge RPC",
-    short_subject: "Bridge RPC",
 };
 const EXCHANGE_QUOTE_CHECK: CheckDefinition = CheckDefinition {
     name: "exchange.quote",
@@ -105,7 +97,6 @@ const INTENTS_EXPLORER_CHECK: CheckDefinition = CheckDefinition {
 #[derive(Debug, Clone, Copy)]
 enum StatusService {
     Backend,
-    BridgeRpc,
     DeFiLlama,
     Exchange,
     FastNear,
@@ -121,7 +112,6 @@ impl StatusService {
     fn parse(service: &str) -> Option<Self> {
         match service {
             "backend" => Some(Self::Backend),
-            "bridge-rpc" => Some(Self::BridgeRpc),
             "defillama" => Some(Self::DeFiLlama),
             "exchange" => Some(Self::Exchange),
             "fastnear" => Some(Self::FastNear),
@@ -373,7 +363,6 @@ pub async fn run_service_check(state: &AppState, service: &str) -> Option<OhDear
     let service = StatusService::parse(service)?;
     Some(match service {
         StatusService::Backend => check_backend(state).await,
-        StatusService::BridgeRpc => check_bridge_rpc(state).await,
         StatusService::DeFiLlama => check_defillama(state).await,
         StatusService::Exchange => check_exchange(state).await,
         StatusService::FastNear => check_fastnear(state).await,
@@ -415,7 +404,6 @@ pub async fn get_status(
 
     let result = match service {
         StatusService::Backend => check_backend(&state).await,
-        StatusService::BridgeRpc => check_bridge_rpc(&state).await,
         StatusService::DeFiLlama => check_defillama(&state).await,
         StatusService::Exchange => check_exchange(&state).await,
         StatusService::FastNear => check_fastnear(&state).await,
@@ -465,63 +453,6 @@ async fn check_backend(state: &AppState) -> OhDearCheckResult {
             }),
         )
     }
-}
-
-async fn check_bridge_rpc(state: &AppState) -> OhDearCheckResult {
-    let config = OhDearHealthConfig::default();
-    let rpc_request = JsonRpcRequest::new(
-        "supported_tokens",
-        "supportedTokensFetchAll",
-        vec![json!({})],
-    );
-    let request = state
-        .http_client
-        .post(&state.env_vars.bridge_rpc_url)
-        .header("content-type", "application/json")
-        .json(&rpc_request);
-
-    fetch_json_check::<JsonRpcResponse<Value>, _>(
-        request,
-        &config,
-        BRIDGE_RPC_CHECK,
-        json!({ "method": "supportedTokensFetchAll" }),
-        map_bridge_rpc_status,
-    )
-    .await
-}
-
-fn map_bridge_rpc_status(body: JsonRpcResponse<Value>, duration_ms: u128) -> OhDearCheckResult {
-    if let Some(error) = body.error {
-        return BRIDGE_RPC_CHECK.failed(
-            &format!("Bridge RPC returned an error: {}", error.message),
-            "Bridge RPC error",
-            json!({
-                "duration_ms": duration_ms,
-                "method": "supportedTokensFetchAll",
-                "error": error.message
-            }),
-        );
-    }
-
-    if body.result.is_some() {
-        return BRIDGE_RPC_CHECK.ok(
-            "Bridge RPC reachable",
-            json!({
-                "duration_ms": duration_ms,
-                "method": "supportedTokensFetchAll"
-            }),
-        );
-    }
-
-    BRIDGE_RPC_CHECK.failed(
-        "Bridge RPC response was missing result data",
-        "Invalid Bridge RPC response",
-        json!({
-            "duration_ms": duration_ms,
-            "method": "supportedTokensFetchAll",
-            "error": "missing_result"
-        }),
-    )
 }
 
 async fn check_exchange(state: &AppState) -> OhDearCheckResult {
@@ -901,7 +832,7 @@ async fn check_nearblocks(state: &AppState) -> OhDearCheckResult {
 
     let request = state
         .http_client
-        .get(format!("{NEARBLOCKS_API_BASE}/v1/fts/?search=wrap.near"))
+        .get(format!("{NEARBLOCKS_API_BASE}/v3/fts/?search=wrap.near"))
         .header("accept", "application/json")
         .header("Authorization", format!("Bearer {api_key}"));
 
@@ -1505,41 +1436,6 @@ mod tests {
 
         assert_check(&json, "exchange.quote", "failed");
         assert_eq!(json["checkResults"][0]["meta"]["http_status"], 500);
-    }
-
-    #[tokio::test]
-    async fn bridge_rpc_endpoint_maps_success_to_ok() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/"))
-            .respond_with(ResponseTemplate::new(200).set_body_json(json!({
-                "jsonrpc": "2.0",
-                "id": "dontcare",
-                "result": { "tokens": [] }
-            })))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| env.bridge_rpc_url = mock_server.uri()).await;
-        let json = get_status_json(state, "/api/oh-dear/status/bridge-rpc").await;
-
-        assert_check(&json, "bridge-rpc.supported-tokens", "ok");
-    }
-
-    #[tokio::test]
-    async fn bridge_rpc_endpoint_maps_http_error_to_failed() {
-        let mock_server = MockServer::start().await;
-        Mock::given(method("POST"))
-            .and(path("/"))
-            .respond_with(ResponseTemplate::new(503))
-            .mount(&mock_server)
-            .await;
-
-        let state = test_state(|env| env.bridge_rpc_url = mock_server.uri()).await;
-        let json = get_status_json(state, "/api/oh-dear/status/bridge-rpc").await;
-
-        assert_check(&json, "bridge-rpc.supported-tokens", "failed");
-        assert_eq!(json["checkResults"][0]["meta"]["http_status"], 503);
     }
 
     #[tokio::test]

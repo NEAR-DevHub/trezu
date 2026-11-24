@@ -6,7 +6,7 @@
 //! contract keeps the 0.00125 NEAR instead of refunding it).
 //!
 //! The sponsor now pays only for contracts on this list: Ref Finance's
-//! whitelist, NEP-141 contracts from the bridge supported-token list, plus a
+//! whitelist, NEP-141 contracts from the 1Click `/v0/tokens` list, plus a
 //! few contracts we always trust (`wrap.near` and [`NEAR_FT_WHITELIST`]).
 //! Anything else is left for the proposal itself to pay — see the frontend
 //! builders, which prepend a `storage_deposit` action on the same
@@ -16,16 +16,13 @@ use std::collections::HashSet;
 use std::sync::{Arc, LazyLock};
 use std::time::{Duration, Instant};
 
-use serde_json::Value;
 use tokio::sync::{Mutex, RwLock};
 
 use crate::{
     AppState,
     constants::near_ft_whitelist::NEAR_FT_WHITELIST,
-    handlers::{
-        intents::supported_tokens::fetch_supported_tokens_data,
-        user::assets::fetch_whitelisted_tokens,
-    },
+    handlers::user::assets::fetch_whitelisted_tokens,
+    services::oneclick_tokens::{OneClickToken, fetch_oneclick_tokens},
 };
 
 const REFRESH_INTERVAL: Duration = Duration::from_secs(60 * 60);
@@ -38,8 +35,8 @@ const WRAP_NEAR: &str = "wrap.near";
 
 #[derive(Default, Clone)]
 struct CacheState {
-    /// Last successful bridge supported-token extraction; `None` until the
-    /// first one.
+    /// Last successful 1Click token-list extraction; `None` until the first
+    /// one.
     bridge: Option<HashSet<String>>,
     /// Last successful Ref Finance whitelist; `None` until the first one.
     ref_tokens: Option<HashSet<String>>,
@@ -95,40 +92,15 @@ struct FetchOutcome {
     ref_tokens: Option<HashSet<String>>,
 }
 
-pub(crate) fn extract_intents_whitelist_contracts(supported_tokens: &Value) -> HashSet<String> {
-    let mut contracts = HashSet::new();
-    let Some(tokens) = supported_tokens.get("tokens").and_then(Value::as_array) else {
-        return contracts;
-    };
-
-    for token in tokens {
-        let standard = token.get("standard").and_then(Value::as_str).unwrap_or("");
-        // A nep245 intents row still names the underlying NEP-141 contract in
-        // defuse_asset_identifier. Only nep141: ids are contracts the sponsor
-        // may call storage_deposit on; nep245:intents.near:* is not one.
-        for field in ["intents_token_id", "defuse_asset_identifier"] {
-            let Some(asset_id) = token.get(field).and_then(Value::as_str) else {
-                continue;
-            };
-            let Some(contract_id) = asset_id.strip_prefix("nep141:") else {
-                continue;
-            };
-            if !contract_id.is_empty() && !contract_id.contains(':') {
-                contracts.insert(contract_id.to_string());
-            }
-        }
-        // Some nep141 rows omit the prefix and put the account in near_token_id.
-        // nep245 rows use that field for the multi-token contract (intents.near,
-        // v2_1.omni.hot.tg), which must not receive a sponsored storage_deposit.
-        if standard == "nep141"
-            && let Some(near_token_id) = token.get("near_token_id").and_then(Value::as_str)
-            && !near_token_id.is_empty()
-            && !near_token_id.contains(':')
-        {
-            contracts.insert(near_token_id.to_string());
-        }
-    }
-    contracts
+/// NEP-141 contracts among the 1Click tokens. `nep245:` and `1cs_v1:` ids
+/// are not contracts the sponsor may call `storage_deposit` on.
+pub(crate) fn extract_intents_whitelist_contracts(tokens: &[OneClickToken]) -> HashSet<String> {
+    tokens
+        .iter()
+        .filter_map(|token| token.asset_id.strip_prefix("nep141:"))
+        .filter(|contract_id| !contract_id.is_empty() && !contract_id.contains(':'))
+        .map(str::to_string)
+        .collect()
 }
 
 fn always_allowed() -> HashSet<String> {
@@ -142,15 +114,15 @@ fn always_allowed() -> HashSet<String> {
 
 async fn fetch_external(state: &Arc<AppState>) -> FetchOutcome {
     let (intents_result, ref_result) = tokio::join!(
-        fetch_supported_tokens_data(state),
+        fetch_oneclick_tokens(state),
         fetch_whitelisted_tokens(state)
     );
 
     let bridge = match intents_result {
-        Ok(supported_tokens) => Some(extract_intents_whitelist_contracts(&supported_tokens)),
+        Ok(tokens) => Some(extract_intents_whitelist_contracts(&tokens)),
         Err((_, message)) => {
             tracing::warn!(
-                "failed to fetch bridge token list for storage_deposit allowlist: {message}"
+                "failed to fetch 1Click token list for storage_deposit allowlist: {message}"
             );
             None
         }
@@ -256,52 +228,29 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    #[test]
-    fn extracts_nep141_contracts_from_either_field() {
-        let supported = json!({
-            "tokens": [
-                {
-                    "standard": "nep141",
-                    "intents_token_id": "nep141:usdc.near",
-                    "defuse_asset_identifier": "nep141:usdc.near"
-                },
-                {
-                    "standard": "nep245",
-                    "intents_token_id": "nep245:intents.near:usdt",
-                    "defuse_asset_identifier": "nep141:usdt.tether-token.near",
-                    "near_token_id": "intents.near"
-                },
-                {
-                    "standard": "nep141",
-                    "intents_token_id": "sol-0x4629.omdep.near",
-                    "near_token_id": "sol-0x4629.omdep.near"
-                },
-                { "standard": "nep141", "intents_token_id": "not-an-asset" }
-            ]
-        });
-        let contracts = extract_intents_whitelist_contracts(&supported);
-        assert!(contracts.contains("usdc.near"));
-        assert!(contracts.contains("usdt.tether-token.near"));
-        assert!(contracts.contains("sol-0x4629.omdep.near"));
-        assert!(!contracts.contains("intents.near"));
-        assert_eq!(contracts.len(), 3);
+    fn token(asset_id: &str) -> OneClickToken {
+        serde_json::from_value(json!({
+            "assetId": asset_id,
+            "decimals": 6,
+            "blockchain": "near",
+            "symbol": "T"
+        }))
+        .expect("valid 1Click token")
     }
 
     #[test]
-    fn nep245_multitoken_contract_is_not_allowlisted() {
-        let supported = json!({
-            "tokens": [
-                {
-                    "standard": "nep245",
-                    "intents_token_id": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
-                    "defuse_asset_identifier": "nep245:v2_1.omni.hot.tg:56_11111111111111111111",
-                    "near_token_id": "v2_1.omni.hot.tg"
-                }
-            ]
-        });
-        let contracts = extract_intents_whitelist_contracts(&supported);
+    fn extracts_only_nep141_contracts() {
+        let contracts = extract_intents_whitelist_contracts(&[
+            token("nep141:usdc.near"),
+            token("nep141:sol-0x4629.omft.near"),
+            token("nep245:v2_1.omni.hot.tg:56_11111111111111111111"),
+            token("1cs_v1:sol:spl:Abc"),
+            token("nep141:"),
+        ]);
+        assert!(contracts.contains("usdc.near"));
+        assert!(contracts.contains("sol-0x4629.omft.near"));
         assert!(!contracts.contains("v2_1.omni.hot.tg"));
-        assert!(contracts.is_empty());
+        assert_eq!(contracts.len(), 2);
     }
 
     #[test]

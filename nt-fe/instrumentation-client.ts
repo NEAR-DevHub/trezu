@@ -3,6 +3,7 @@
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
 import * as Sentry from "@sentry/nextjs";
+import { foreignOrigin, isBrowserNetworkFailure } from "./lib/sentry-noise";
 import { scrubSentryEvent } from "./lib/sentry-scrub";
 
 Sentry.init({
@@ -30,7 +31,13 @@ Sentry.init({
     // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
     sendDefaultPii: false,
 
-    beforeSend: scrubSentryEvent,
+    // Not actionable, see lib/sentry-noise.ts: dropped connections ("Load
+    // failed", "Failed to fetch") and errors thrown by browser extensions or
+    // NEAR Connect wallet executors.
+    beforeSend: (event, hint) =>
+        isBrowserNetworkFailure(event) || foreignOrigin(hint.originalException)
+            ? null
+            : scrubSentryEvent(event),
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

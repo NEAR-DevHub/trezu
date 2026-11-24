@@ -19,8 +19,8 @@ use crate::{
         NEAR_ICON, WRAP_NEAR_ICON,
         intents_chains::{ChainIcons, get_chain_metadata_by_name},
         intents_tokens::{
-            find_token_by_defuse_asset_id, find_token_by_defuse_asset_id_and_address,
-            find_unified_asset_id, get_tokens_map,
+            find_retired_token, find_token_by_defuse_asset_id,
+            find_token_by_defuse_asset_id_and_address, find_unified_asset_id, get_tokens_map,
         },
     },
     utils::cache::{Cache, CacheKey, CacheTier},
@@ -131,7 +131,7 @@ struct ChaindefuserToken {
 
 #[derive(Debug, Deserialize)]
 struct NearBlocksTokenResponse {
-    tokens: Vec<NearBlocksToken>,
+    data: Vec<NearBlocksToken>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -146,7 +146,7 @@ struct NearBlocksToken {
     price: Option<String>,
     total_supply: Option<String>,
     onchain_market_cap: Option<String>,
-    change_24: Option<String>,
+    change_24h: Option<String>,
     market_cap: Option<String>,
     volume_24h: Option<String>,
 }
@@ -207,7 +207,7 @@ async fn fetch_nearblocks_ft_metadata(
                 &token_id_str
             };
 
-            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v3/fts/")?;
             url.query_pairs_mut().append_pair("search", search_query);
 
             let response = http_client
@@ -238,7 +238,7 @@ async fn fetch_nearblocks_ft_metadata(
                 )
             })?;
 
-            let token = data.tokens.into_iter().next().ok_or((
+            let token = data.data.into_iter().next().ok_or((
                 StatusCode::NOT_FOUND,
                 "No token found in NearBlocks response".to_string(),
             ))?;
@@ -501,13 +501,41 @@ fn apply_unified_display_override(meta: &mut TokenMetadata) {
     }
 }
 
+/// Display data for a held id that left the catalog. The icon comes from the
+/// token that replaced it.
+fn retired_token_metadata(defuse_id: &str, output_token_id: &str) -> Option<TokenMetadata> {
+    let token = find_retired_token(defuse_id)?;
+    let icon = token
+        .replaced_by
+        .as_deref()
+        .and_then(find_token_by_defuse_asset_id)
+        .map(|replacement| replacement.icon.clone());
+    let chain_metadata = get_chain_metadata_by_name(&token.chain_name);
+    Some(TokenMetadata {
+        token_id: output_token_id.to_string(),
+        name: token.name.clone(),
+        symbol: token.symbol.clone(),
+        decimals: token.decimals,
+        icon,
+        price: None,
+        price_updated_at: None,
+        network: Some(token.chain_name.clone()),
+        chain_name: chain_metadata.as_ref().map(|chain| chain.name.clone()),
+        chain_icons: chain_metadata.map(|chain| chain.icon),
+    })
+}
+
 fn tokens_json_metadata_for_defuse(
     defuse_id: &str,
     address_candidates: &[String],
     output_token_id: &str,
 ) -> Option<TokenMetadata> {
-    let token = find_token_by_defuse_asset_id_and_address(defuse_id, address_candidates)
-        .or_else(|| find_token_by_defuse_asset_id(defuse_id))?;
+    let token = match find_token_by_defuse_asset_id_and_address(defuse_id, address_candidates)
+        .or_else(|| find_token_by_defuse_asset_id(defuse_id))
+    {
+        Some(token) => token,
+        None => return retired_token_metadata(defuse_id, output_token_id),
+    };
     let deployment_chain_name = {
         let mut matched: Option<String> = None;
         for deployment in &token.deployments {
@@ -932,7 +960,7 @@ pub async fn get_token_metadata(
 /// NearBlocks FT search response
 #[derive(Deserialize, Debug)]
 struct NearBlocksSearchResponse {
-    tokens: Vec<NearBlocksToken>,
+    data: Vec<NearBlocksToken>,
 }
 
 /// Search for FT token contract addresses by symbol using NearBlocks API
@@ -1012,8 +1040,10 @@ pub async fn search_token_by_symbol(
     state
         .cache
         .cached(CacheTier::LongTerm, cache_key, async move {
-            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v1/fts/")?;
-            url.query_pairs_mut().append_pair("search", symbol);
+            let mut url = api_url_or_500(NEARBLOCKS_API_BASE, "v3/fts/")?;
+            url.query_pairs_mut()
+                .append_pair("search", symbol)
+                .append_pair("limit", "100");
 
             let response = state
                 .http_client
@@ -1042,7 +1072,7 @@ pub async fn search_token_by_symbol(
             })?;
 
             // Sort tokens: exact match first, then by market cap
-            let mut tokens = search_response.tokens;
+            let mut tokens = search_response.data;
             let symbol_upper = symbol.to_uppercase();
 
             // Filter to only exact symbol matches (case-insensitive)
