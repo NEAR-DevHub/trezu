@@ -23,6 +23,7 @@
 //! consume a batch-payment credit.
 
 use axum::{Json, extract::State, http::StatusCode};
+use futures::{StreamExt, TryStreamExt};
 use near_api::AccountId;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -35,7 +36,18 @@ use crate::handlers::treasury::confidential_setup::derive_bulk_subaccount_id;
 use crate::utils::url::api_url_or_500;
 use crate::{AppState, auth::AuthUser};
 
-const MAX_RECIPIENTS_PER_BULK_PAYMENT: usize = 25;
+/// Must not exceed `MAX_HASHES_PER_ACTIVATION` in
+/// `contracts/confidential-bulk-payment`: the per-DAO subaccount refuses to
+/// load a proposal with more recipient hashes, and deployed subaccounts are
+/// pinned to their code hash, so this can't be raised without a contract
+/// upgrade path. Keep in sync with the FE
+/// `MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT`.
+const MAX_RECIPIENTS_PER_BULK_PAYMENT: usize = 200;
+
+/// Max concurrent 1Click quote+generate-intent calls per prepare request.
+/// Matches the old 25-recipient cap, the most this endpoint ever fired in
+/// parallel, so larger lists don't hit 1Click with a bigger burst.
+const QUOTE_CONCURRENCY: usize = 25;
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -445,34 +457,41 @@ pub async fn bulk_payment_prepare(
     };
 
     // ── Generate all legs in memory before touching the DB ──────────────
-    // Recipient legs are independent → run quote+generate in parallel.
-    // First failure short-circuits via try_join_all; nothing is persisted.
+    // Recipient legs are independent → run quote+generate concurrently,
+    // bounded by QUOTE_CONCURRENCY. `buffered` keeps request order so the
+    // hashes and quotes line up with `payments`. First failure
+    // short-circuits; nothing is persisted.
+    // Bodies are built up front so each future owns its data: futures that
+    // borrow `request.payments` through `buffered` fail axum's `Send`
+    // check (higher-ranked lifetime on the closure).
     let recipient_signer_id = sub_id_str.clone();
-    let recipient_futures = request.payments.iter().map(|payment| {
-        let state = state.clone();
-        let dao_id = request.dao_id.clone();
-        let origin = request.origin_asset.clone();
-        let dest = destination_asset.to_string();
-        let deadline = deadline.clone();
-        let sub_token = sub_token.clone();
-        let signer = recipient_signer_id.clone();
-        let to_near_com = request.to_near_com;
-        async move {
-            let body = build_recipient_quote_body(
+    let recipient_futures = request
+        .payments
+        .iter()
+        .map(|payment| {
+            build_recipient_quote_body(
                 &state,
-                &dao_id,
+                &request.dao_id,
                 payment,
-                &origin,
-                &dest,
-                to_near_com,
+                &request.origin_asset,
+                destination_asset,
+                request.to_near_com,
                 &deadline,
                 slippage,
-            );
-            quote_and_generate(&state, &sub_token, &body, &signer).await
-        }
-    });
-    let recipient_results: Vec<(String, Value, Value)> =
-        futures::future::try_join_all(recipient_futures).await?;
+            )
+        })
+        .collect::<Vec<_>>()
+        .into_iter()
+        .map(|body| {
+            let state = state.clone();
+            let sub_token = sub_token.clone();
+            let signer = recipient_signer_id.clone();
+            async move { quote_and_generate(&state, &sub_token, &body, &signer).await }
+        });
+    let recipient_results: Vec<(String, Value, Value)> = futures::stream::iter(recipient_futures)
+        .buffered(QUOTE_CONCURRENCY)
+        .try_collect()
+        .await?;
 
     // +1 for the header leg appended below.
     let mut batch = LegBatch::with_capacity(recipient_results.len() + 1);
@@ -636,4 +655,55 @@ pub async fn bulk_payment_prepare(
         recipient_quotes,
         header_quote,
     }))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MAX_RECIPIENTS_PER_BULK_PAYMENT;
+    use crate::{
+        routes::create_routes,
+        utils::test_utils::{
+            DAO_ID, USER_ACCOUNT_ID, issue_auth_cookie, seed_policy_member, send, test_state,
+        },
+    };
+    use axum::http::StatusCode;
+    use serde_json::json;
+    use sqlx::PgPool;
+
+    #[sqlx::test]
+    async fn test_prepare_rejects_more_than_max_recipients(pool: PgPool) {
+        let state = test_state(pool.clone());
+        let app = create_routes(state.clone());
+        seed_policy_member(&pool, DAO_ID, USER_ACCOUNT_ID).await;
+        let cookie = issue_auth_cookie(&pool, &state, USER_ACCOUNT_ID).await;
+
+        let payments: Vec<_> = (0..=MAX_RECIPIENTS_PER_BULK_PAYMENT)
+            .map(|i| json!({ "recipient": format!("r{i}.near"), "amount": "1" }))
+            .collect();
+        let (status, body) = send(
+            app,
+            "POST",
+            "/api/confidential-intents/bulk-payment/prepare".to_string(),
+            &cookie,
+            Some(json!({
+                "daoId": DAO_ID,
+                "originAsset": "nep141:wrap.near",
+                "toNearCom": true,
+                "decimals": 24,
+                "payments": payments,
+            })),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST, "over the cap: {body}");
+        assert_eq!(
+            body, "Maximum number of recipients per bulk payment is 200",
+            "error names the confidential cap"
+        );
+        let persisted: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM confidential_bulk_payments")
+            .fetch_one(&pool)
+            .await
+            .expect("count bulk payments");
+        assert_eq!(persisted, 0, "nothing persisted when over the cap");
+    }
 }

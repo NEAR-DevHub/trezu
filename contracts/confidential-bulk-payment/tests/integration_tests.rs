@@ -16,7 +16,7 @@ use std::sync::OnceLock;
 use base64::Engine;
 use confidential_bulk_payment::{
     ADD_PUBKEY_GAS, BOOTSTRAP_CALLBACK_GAS, BYTES_PER_ACTIVATION, BYTES_PER_HASH,
-    FETCH_PROPOSAL_GAS,
+    FETCH_PROPOSAL_GAS, MAX_HASHES_PER_ACTIVATION,
 };
 use near_api::{
     AccountId, NearGas, NearToken, Tokens,
@@ -595,24 +595,58 @@ async fn test_malformed_hashes_are_skipped() -> testresult::TestResult {
 
 #[tokio::test]
 async fn test_100_hash_multi_ping_completes() -> testresult::TestResult {
+    assert_multi_ping_signs_all(100).await
+}
+
+/// The app caps confidential bulk payments at `MAX_HASHES_PER_ACTIVATION`
+/// recipients (nt-be `bulk_payment_prepare.rs`, nt-fe `bulk-payment-api.ts`).
+/// Prove a full-size activation loads and signs every hash.
+#[tokio::test]
+async fn test_max_hash_activation_signs_all() -> testresult::TestResult {
+    assert_multi_ping_signs_all(MAX_HASHES_PER_ACTIVATION as u64).await
+}
+
+/// One hash over the cap must not load: `on_get_proposal` aborts and no
+/// activation is stored.
+#[tokio::test]
+async fn test_activate_rejects_too_many_hashes() -> testresult::TestResult {
     let ctx = setup().await?;
     bootstrap(&ctx).await?;
 
-    // 100 distinct valid hex hashes — too many for a single activate's
-    // forwarded auto-ping budget, so the test must drive ping() in a loop
-    // until the activation reaches Done.
-    const N: u64 = 100;
-    let csv: String = (0..N)
+    let csv = hash_csv(MAX_HASHES_PER_ACTIVATION as u64 + 1);
+    let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
+    activate(&ctx, proposal_id).await?;
+    tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
+    let activation = read_activation(&ctx, proposal_id).await;
+    assert!(
+        activation.is_null(),
+        "activation over MAX_HASHES_PER_ACTIVATION must not be stored, got: {activation}"
+    );
+    Ok(())
+}
+
+fn hash_csv(n: u64) -> String {
+    (0..n)
         .map(|i| format!("{:0>64x}", i + 1))
         .collect::<Vec<_>>()
-        .join(",");
-    let proposal_id = add_and_approve_proposal(&ctx, &csv).await?;
+        .join(",")
+}
+
+/// Load `n` distinct valid hashes — more than a single activate's forwarded
+/// auto-ping budget — then drive ping() until the activation is Done and
+/// assert every hash is Signed.
+async fn assert_multi_ping_signs_all(n: u64) -> testresult::TestResult {
+    let ctx = setup().await?;
+    bootstrap(&ctx).await?;
+
+    let proposal_id = add_and_approve_proposal(&ctx, &hash_csv(n)).await?;
 
     activate(&ctx, proposal_id).await?;
     tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
-    // Drive ping in a loop. With ~22 dispatches per 300 TGas, ~5 pings should
-    // finish; cap at 15 for slack against gas-budget jitter.
+    // ~22 dispatches per 300 TGas ping; allow 3x slack for gas-budget jitter.
+    let max_iterations = (n / 22 + 1) * 3;
     let mut iterations = 0;
     loop {
         let activation = read_activation(&ctx, proposal_id).await;
@@ -625,8 +659,8 @@ async fn test_100_hash_multi_ping_completes() -> testresult::TestResult {
             break;
         }
         assert!(
-            iterations < 15,
-            "activation did not reach Done after 15 pings; last status: {status}"
+            iterations < max_iterations,
+            "activation did not reach Done after {max_iterations} pings; last status: {status}"
         );
 
         let dispatched = ping(&ctx, proposal_id).await?;
@@ -636,7 +670,7 @@ async fn test_100_hash_multi_ping_completes() -> testresult::TestResult {
 
     let activation = read_activation(&ctx, proposal_id).await;
     let hashes = activation["hashes"].as_array().unwrap();
-    assert_eq!(hashes.len(), N as usize);
+    assert_eq!(hashes.len(), n as usize);
     for (i, h) in hashes.iter().enumerate() {
         assert!(
             h["status"].get("Signed").is_some(),
