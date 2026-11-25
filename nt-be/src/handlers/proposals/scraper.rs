@@ -631,7 +631,13 @@ pub struct BulkPayment {
 #[serde(rename_all = "PascalCase")]
 pub enum BatchPaymentStatus {
     Pending,
-    Paid { block_height: u64 },
+    Paid {
+        block_height: u64,
+    },
+    /// Payment sent, its result is not resolved yet.
+    Processing,
+    /// The payment failed or was refunded: nothing was delivered.
+    Failed,
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug)]

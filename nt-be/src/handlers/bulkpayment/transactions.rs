@@ -39,8 +39,12 @@ pub struct ListStatus {
     pub list_id: String,
     pub status: String,
     pub total_payments: u32,
+    /// Payments that were delivered (`Paid`).
     pub processed_payments: u32,
+    /// Payments that are not settled yet (`Pending` or `Processing`).
     pub pending_payments: u32,
+    /// Payments that failed or were refunded (`Failed`); nothing was delivered.
+    pub failed_payments: u32,
 }
 
 #[derive(Debug, Serialize)]
@@ -131,6 +135,11 @@ impl ContractPaymentStatus {
         matches!(self, ContractPaymentStatus::Paid { .. })
     }
 
+    /// The payment failed or was refunded: nothing was delivered.
+    fn is_failed(&self) -> bool {
+        matches!(self, ContractPaymentStatus::Pending(s) if s == "Failed")
+    }
+
     fn block_height(&self) -> Option<u64> {
         match self {
             ContractPaymentStatus::Paid { Paid: status } => Some(status.block_height),
@@ -169,7 +178,12 @@ pub async fn get_list_status(
         Ok(list) => {
             let total = list.payments.len() as u32;
             let processed = list.payments.iter().filter(|p| p.status.is_paid()).count() as u32;
-            let pending = total - processed;
+            let failed = list
+                .payments
+                .iter()
+                .filter(|p| p.status.is_failed())
+                .count() as u32;
+            let pending = total - processed - failed;
 
             Ok(Json(ListStatusResponse {
                 success: true,
@@ -179,6 +193,7 @@ pub async fn get_list_status(
                     total_payments: total,
                     processed_payments: processed,
                     pending_payments: pending,
+                    failed_payments: failed,
                 }),
                 error: None,
             }))

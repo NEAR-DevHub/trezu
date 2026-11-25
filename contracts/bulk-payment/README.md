@@ -50,6 +50,17 @@ View payment list details.
 #### `payout_batch(list_id: ListId) -> u64`
 Process approved payments in batches. Returns remaining pending count.
 
+A row is not marked `Paid` when its payment is sent (native NEAR, NEP-141
+`ft_transfer` or `intents.near` `ft_withdraw`). It becomes `Processing`, and one
+`on_payments_resolved` callback per `payout_batch` call marks each row `Paid`
+(promise succeeded; for `intents.near`, the full amount was withdrawn) or
+`Failed` (promise failed or the withdrawal was refunded).
+
+#### `retry_failed_payments(list_id: ListId) -> u64`
+Sets every `Failed` row of an approved list back to `Pending` so `payout_batch`
+sends it again. Returns the number of rows reset. The list must be re-queued for
+the backend worker afterwards.
+
 #### `get_payment_transactions(list_id: ListId) -> Vec<PaymentTransaction>`
 Get completed payment transactions with block heights.
 

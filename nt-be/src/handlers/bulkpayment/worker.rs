@@ -28,17 +28,42 @@ enum PaymentItemStatus {
 }
 
 impl PaymentItemStatus {
-    fn is_pending(&self) -> bool {
+    fn is(&self, name: &str) -> bool {
         match self {
-            PaymentItemStatus::Simple(s) => s == "Pending",
-            PaymentItemStatus::Object(v) => v.get("Pending").is_some(),
+            PaymentItemStatus::Simple(s) => s == name,
+            PaymentItemStatus::Object(v) => v.get(name).is_some(),
         }
+    }
+
+    fn is_pending(&self) -> bool {
+        self.is("Pending")
+    }
+
+    /// Payment sent, its result is not yet resolved by the contract callback.
+    fn is_processing(&self) -> bool {
+        self.is("Processing")
+    }
+
+    /// `intents.near` reported the withdrawal did not go through.
+    fn is_failed(&self) -> bool {
+        self.is("Failed")
     }
 }
 
 impl PaymentListView {
     fn has_pending_payments(&self) -> bool {
         self.payments.iter().any(|p| p.status.is_pending())
+    }
+
+    fn has_processing_payments(&self) -> bool {
+        self.payments.iter().any(|p| p.status.is_processing())
+    }
+
+    fn failed_payments_count(&self) -> usize {
+        self.payments
+            .iter()
+            .filter(|p| p.status.is_failed())
+            .count()
     }
 }
 
@@ -180,8 +205,32 @@ pub async fn query_and_process_pending_lists(
                     continue;
                 }
                 if !list.has_pending_payments() {
+                    if list.has_processing_payments() {
+                        // Payments are resolved by a callback on
+                        // the contract; keep the list queued until they settle.
+                        tracing::debug!(
+                            "List {} has payments awaiting resolution, keeping in queue",
+                            list_id
+                        );
+                        continue;
+                    }
+                    let failed = list.failed_payments_count();
+                    if failed > 0 {
+                        // These payments failed or were refunded: nothing was delivered.
+                        // They stay `Failed` on-chain until an operator runs
+                        // `retry_failed_payments` and re-queues the list (see
+                        // docs/RUNBOOKS.md). Not retried automatically: a permanent
+                        // cause (bad address, unregistered receiver) would loop.
+                        // Separate from `BulkPayoutFailed` (the call itself failing)
+                        // so the paging rule for that one is not tripped by refunds.
+                        crate::error_event!(
+                            crate::error_event::ErrorCode::BulkPayoutRowsFailed,
+                            list_id,
+                            error = %format!("{failed} payment(s) failed and were not delivered")
+                        );
+                    }
                     tracing::info!(
-                        "List {} has no pending payments (all paid), removing from queue",
+                        "List {} has no pending payments, removing from queue",
                         list_id
                     );
                     complete_pending_list(&state.db_pool, list_id).await;

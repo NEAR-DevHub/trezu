@@ -904,7 +904,15 @@ export async function updateProfile(
     return response.data;
 }
 
-export type PaymentStatus = "Pending" | { Paid: { block_height: number } };
+/**
+ * `Processing`: the payment was sent and its result is not resolved yet.
+ * `Failed`: it failed or was refunded, nothing was delivered.
+ */
+export type PaymentStatus =
+    | "Pending"
+    | "Processing"
+    | "Failed"
+    | { Paid: { block_height: number } };
 
 export interface BatchPayment {
     recipient: string;
@@ -1165,8 +1173,12 @@ export interface BulkPaymentListStatus {
     listId: string;
     status: string;
     totalPayments: number;
+    /** Delivered (`Paid`). */
     processedPayments: number;
+    /** Not settled yet (`Pending` or `Processing`). */
     pendingPayments: number;
+    /** Failed or refunded (`Failed`); nothing was delivered. */
+    failedPayments: number;
 }
 
 export interface BulkPaymentListStatusResponse {
