@@ -2655,6 +2655,15 @@
             "title": "您的加入请求正在等待审批",
             "description": "您现在可以查看此金库。成员批准后，您将可以根据角色创建请求、投票或管理资金。"
         },
+        "onboardAgent": {
+            "title": "接入你的智能体",
+            "description": "为你的智能体完成 Trezu 设置。",
+            "close": "关闭",
+            "copyPrompt": "复制智能体提示词",
+            "copying": "正在准备提示词…",
+            "copied": "提示词已复制，请粘贴到你的智能体中。",
+            "inviteFailed": "无法为你的智能体创建邀请，请重试。"
+        },
         "infoBox": {
             "title": "更好地利用 Trezu",
             "close": "关闭",

@@ -2672,6 +2672,15 @@
             "title": "Ihre Beitrittsanfrage ist ausstehend",
             "description": "Sie können diese Treasury jetzt ansehen. Sobald ein Mitglied Sie genehmigt, können Sie je nach Rolle Anfragen erstellen, abstimmen oder Mittel verwalten."
         },
+        "onboardAgent": {
+            "title": "Agent einrichten",
+            "description": "Richte deinen Agenten für Trezu ein.",
+            "close": "Schließen",
+            "copyPrompt": "Prompt für Agenten kopieren",
+            "copying": "Prompt wird vorbereitet…",
+            "copied": "Prompt kopiert. Füge ihn in deinen Agenten ein.",
+            "inviteFailed": "Die Einladung für deinen Agenten konnte nicht erstellt werden. Bitte versuche es erneut."
+        },
         "infoBox": {
             "title": "Mehr aus Trezu herausholen",
             "close": "Schließen",

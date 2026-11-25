@@ -2672,6 +2672,15 @@
             "title": "Your request to join is pending",
             "description": "You can view this treasury now. When a member approves you, you'll be able to create requests, vote, or manage funds based on your role."
         },
+        "onboardAgent": {
+            "title": "Onboard your agent",
+            "description": "Get your agent set up with Trezu.",
+            "close": "Close",
+            "copyPrompt": "Copy prompt for agent",
+            "copying": "Preparing prompt…",
+            "copied": "Prompt copied. Paste it into your agent.",
+            "inviteFailed": "Couldn't create the invite for your agent. Please try again."
+        },
         "infoBox": {
             "title": "Get more from Trezu",
             "close": "Close",

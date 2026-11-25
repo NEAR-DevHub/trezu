@@ -2672,6 +2672,15 @@
             "title": "Sua solicitação para entrar está pendente",
             "description": "Você já pode visualizar esta tesouraria. Quando um membro aprovar você, poderá criar solicitações, votar ou gerenciar fundos conforme sua função."
         },
+        "onboardAgent": {
+            "title": "Integre seu agente",
+            "description": "Configure seu agente no Trezu.",
+            "close": "Fechar",
+            "copyPrompt": "Copiar prompt para o agente",
+            "copying": "Preparando prompt…",
+            "copied": "Prompt copiado. Cole-o no seu agente.",
+            "inviteFailed": "Não foi possível criar o convite para seu agente. Tente novamente."
+        },
         "infoBox": {
             "title": "Aproveite mais a Trezu",
             "close": "Fechar",

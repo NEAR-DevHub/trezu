@@ -36,6 +36,7 @@ export const LOCAL_STORAGE_KEYS = {
     WELCOME_DISMISSED: "welcome-dismissed",
     DASHBOARD_TOUR_COMPLETED: "dashboard-tour-completed",
     INFO_BOX_TOUR_DISMISSED: "info-box-tour-dismissed",
+    ONBOARD_AGENT_DISMISSED: "onboard-agent-dismissed",
 } as const;
 
 // Selector IDs

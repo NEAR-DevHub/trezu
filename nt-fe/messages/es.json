@@ -2672,6 +2672,15 @@
             "title": "Tu solicitud para unirte está pendiente",
             "description": "Ya puedes ver esta tesorería. Cuando un miembro te apruebe, podrás crear solicitudes, votar o gestionar fondos según tu rol."
         },
+        "onboardAgent": {
+            "title": "Incorpora a tu agente",
+            "description": "Configura tu agente en Trezu.",
+            "close": "Cerrar",
+            "copyPrompt": "Copiar prompt para el agente",
+            "copying": "Preparando prompt…",
+            "copied": "Prompt copiado. Pégalo en tu agente.",
+            "inviteFailed": "No se pudo crear la invitación para tu agente. Inténtalo de nuevo."
+        },
         "infoBox": {
             "title": "Saca más partido a Trezu",
             "close": "Cerrar",
