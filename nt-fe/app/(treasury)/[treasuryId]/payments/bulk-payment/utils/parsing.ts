@@ -347,6 +347,7 @@ export function parsePaymentData(
     expectedTokenSymbol?: string,
     /** When `near.com`, store recipients with a nearcom: display prefix. */
     destinationNetworkId?: string,
+    maxRecipients: number = MAX_RECIPIENTS_PER_BULK_PAYMENT,
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -546,8 +547,8 @@ export function parsePaymentData(
     }
 
     // Check if exceeds maximum recipients limit
-    if (payments.length > MAX_RECIPIENTS_PER_BULK_PAYMENT) {
-        const excess = payments.length - MAX_RECIPIENTS_PER_BULK_PAYMENT;
+    if (payments.length > maxRecipients) {
+        const excess = payments.length - maxRecipients;
         return {
             payments: [],
             errors: [
@@ -555,7 +556,7 @@ export function parsePaymentData(
                     row: 0,
                     message: labels.exceedsRecipientLimit(
                         payments.length,
-                        MAX_RECIPIENTS_PER_BULK_PAYMENT,
+                        maxRecipients,
                         excess,
                     ),
                 },
@@ -576,6 +577,7 @@ function parseAndValidateData(
     blockchain: string = NEAR_NETWORK_ID,
     expectedTokenSymbol?: string,
     destinationNetworkId?: string,
+    maxRecipients?: number,
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -625,6 +627,7 @@ function parseAndValidateData(
             blockchain,
             expectedTokenSymbol,
             destinationNetworkId,
+            maxRecipients,
         );
     } catch (error) {
         const errorMsg =
@@ -655,6 +658,8 @@ export function parseAndValidateCsv(
     selectedToken?: { symbol?: string; network?: string; residency?: string },
     destinationNetwork?: string,
     destinationNetworkId?: string,
+    /** Defaults to the public bulk-payment cap. */
+    maxRecipients?: number,
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -671,6 +676,7 @@ export function parseAndValidateCsv(
         blockchain,
         tokenSymbol,
         destinationNetworkId,
+        maxRecipients,
     );
 }
 
@@ -683,6 +689,8 @@ export function parseAndValidatePasteData(
     selectedToken?: { symbol?: string; network?: string; residency?: string },
     destinationNetwork?: string,
     destinationNetworkId?: string,
+    /** Defaults to the public bulk-payment cap. */
+    maxRecipients?: number,
 ): {
     payments: BulkPaymentData[];
     errors: Array<{ row: number; message: string }>;
@@ -701,6 +709,7 @@ export function parseAndValidatePasteData(
         blockchain,
         tokenSymbol,
         destinationNetworkId,
+        maxRecipients,
     );
 }
 

@@ -30,7 +30,10 @@ import {
 import { useSubscription } from "@/hooks/use-subscription";
 import { isTrialPlan } from "@/lib/subscription-api";
 import { BulkPaymentCreditsDisplay } from "./bulk-payment-credits-display";
-import { MAX_RECIPIENTS_PER_BULK_PAYMENT } from "@/lib/bulk-payment-api";
+import {
+    MAX_RECIPIENTS_PER_BULK_PAYMENT,
+    MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT,
+} from "@/lib/bulk-payment-api";
 import type { BulkPaymentFormValues, BulkPaymentData } from "../schemas";
 import {
     Tabs,
@@ -88,6 +91,9 @@ export function UploadDataStep({
     const t = useTranslations("bulkPayment.upload");
     const tCreate = useTranslations("createRequestButton");
     const parsingLabels = useBulkParsingLabels();
+    const maxRecipients = isConfidential
+        ? MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT
+        : MAX_RECIPIENTS_PER_BULK_PAYMENT;
     const form = useFormContext<BulkPaymentFormValues>();
     const { data: subscription, isLoading: isLoadingSubscription } =
         useSubscription(treasuryId);
@@ -248,6 +254,7 @@ export function UploadDataStep({
                     selectedToken,
                     destinationNetwork,
                     destinationNetworkId,
+                    maxRecipients,
                 );
             } else {
                 result = parseAndValidatePasteData(
@@ -256,6 +263,7 @@ export function UploadDataStep({
                     selectedToken,
                     destinationNetwork,
                     destinationNetworkId,
+                    maxRecipients,
                 );
             }
 
@@ -878,7 +886,7 @@ export function UploadDataStep({
                             <div>
                                 <p className="text-sm">
                                     {t("maxTransactions", {
-                                        max: MAX_RECIPIENTS_PER_BULK_PAYMENT,
+                                        max: maxRecipients,
                                     })}
                                 </p>
                             </div>

@@ -10,8 +10,13 @@ export const BULK_PAYMENT_CONTRACT_ID =
 const BACKEND_API_BASE =
     process.env.NEXT_PUBLIC_BACKEND_API_BASE || "http://localhost:3001";
 
-// Maximum number of recipients per bulk payment import
+// Maximum number of recipients per (public) bulk payment import
 export const MAX_RECIPIENTS_PER_BULK_PAYMENT = 25;
+
+// Maximum number of recipients per confidential bulk payment. Bounded by
+// MAX_HASHES_PER_ACTIVATION in contracts/confidential-bulk-payment; keep in
+// sync with nt-be bulk_payment_prepare.rs.
+export const MAX_RECIPIENTS_PER_CONFIDENTIAL_BULK_PAYMENT = 200;
 
 /**
  * Generate a deterministic list_id (SHA-256 hash of canonical JSON)
