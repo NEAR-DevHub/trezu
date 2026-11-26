@@ -47,6 +47,7 @@
         "generateReceipt": "PDF領収書を生成",
         "generatedOn": "{date}に生成",
         "receiptTitle": "領収書番号 {proposalId} ・支払日 <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "領収書番号 {proposalId} ・受取日 <datePart>{date}</datePart>",
         "createYourTreasury": "自分のトレジャリーを運営する",
         "createYourTreasuryDescription": "保証金不要、設定手数料不要。数秒でトレジャリーを作成できます。",
         "sender": "送信者",

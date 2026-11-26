@@ -47,6 +47,7 @@
         "generateReceipt": "Générer un reçu PDF",
         "generatedOn": "Généré le {date}",
         "receiptTitle": "Reçu n° {proposalId} · Payé le <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Reçu n° {proposalId} · Reçu le <datePart>{date}</datePart>",
         "createYourTreasury": "Gérez votre propre trésorerie",
         "createYourTreasuryDescription": "Aucun dépôt, aucun frais de configuration. Créez une trésorerie en quelques secondes.",
         "sender": "Expéditeur",

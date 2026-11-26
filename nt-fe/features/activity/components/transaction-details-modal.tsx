@@ -38,6 +38,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hasReceiveReceipt,
     hidesIntentsExplorerLink,
     useGetFromAccount,
 } from "../utils/history-utils";
@@ -574,13 +575,7 @@ function NotesBlock({ notes }: { notes?: string | null }) {
     );
 }
 
-function ViewPdfReceiptButton({
-    treasuryId,
-    proposalId,
-}: {
-    treasuryId: string;
-    proposalId: number;
-}) {
+function ViewPdfReceiptButton({ href }: { href: string }) {
     const t = useTranslations("activity");
 
     return (
@@ -589,11 +584,7 @@ function ViewPdfReceiptButton({
             variant="secondary"
             className="h-9 w-full rounded-[8px] font-medium"
         >
-            <Link
-                href={`/${treasuryId}/requests/${proposalId}/receipt`}
-                target="_blank"
-                rel="noopener noreferrer"
-            >
+            <Link href={href} target="_blank" rel="noopener noreferrer">
                 <FileText className="size-4" />
                 {t("pdfReceipt")}
             </Link>
@@ -671,13 +662,18 @@ export function TransactionDetailsModal({
                     <ModalSection>
                         {showSwapReceipt ? (
                             <ViewPdfReceiptButton
-                                treasuryId={treasuryId}
-                                proposalId={activity.proposalId}
+                                href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
                             />
                         ) : null}
                         <ViewLinkedRequestButton
                             treasuryId={treasuryId}
                             proposalId={activity.proposalId}
+                        />
+                    </ModalSection>
+                ) : hasReceiveReceipt(activity) ? (
+                    <ModalSection>
+                        <ViewPdfReceiptButton
+                            href={`/${treasuryId}/activity/${activity.id}/receipt`}
                         />
                     </ModalSection>
                 ) : null}

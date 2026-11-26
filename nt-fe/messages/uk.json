@@ -47,6 +47,7 @@
         "generateReceipt": "Згенерувати PDF-квитанцію",
         "generatedOn": "Створено {date}",
         "receiptTitle": "Квитанція № {proposalId} · Сплачено <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Квитанція № {proposalId} · Отримано <datePart>{date}</datePart>",
         "createYourTreasury": "Керуйте власною скарбницею",
         "createYourTreasuryDescription": "Без депозиту та без комісій за налаштування. Створіть скарбницю за секунди.",
         "sender": "Відправник",

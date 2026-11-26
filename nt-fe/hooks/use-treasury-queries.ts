@@ -25,6 +25,7 @@ import {
     SearchTokensParams,
     getRecentActivity,
     getRecentActivityRecipients,
+    getRecentActivityRow,
     getRecentActivitySenders,
     getConfidentialHistoryRefreshStatus,
     getExportHistory,
@@ -368,6 +369,17 @@ export function useRecentActivity(
         staleTime: 1000 * 5, // 5 seconds (activity changes frequently)
         retry: 3,
         retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30_000),
+    });
+}
+
+export function useRecentActivityRow(
+    accountId: string | null | undefined,
+    id: number,
+) {
+    return useQuery({
+        queryKey: ["recentActivity", accountId, "row", id],
+        queryFn: () => (accountId ? getRecentActivityRow(accountId, id) : null),
+        enabled: !!accountId && Number.isSafeInteger(id),
     });
 }
 

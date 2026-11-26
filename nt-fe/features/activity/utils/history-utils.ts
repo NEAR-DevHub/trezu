@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { decimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 
 /**
@@ -126,6 +127,26 @@ export function hidesIntentsExplorerLink(
         isConfidential &&
         !!activity.quoteDepositAddress &&
         (!!activity.swap || !!activity.fullyConfidential)
+    );
+}
+
+/** Settled incoming ledger rows; pending/failed ones carry a `:status` suffix. */
+const RECEIVE_ACTION_KINDS = new Set(["PublicDeposit", "ConfidentialDeposit"]);
+
+/**
+ * A settled payment into the treasury that no request of this treasury made,
+ * so only a receipt of its own can document it. Tracker rows (negative ids)
+ * are still in flight.
+ */
+export function hasReceiveReceipt(
+    activity: ActivityAccount & { id: number; proposalId?: number | null },
+): boolean {
+    return (
+        (decimalOrNull(activity.amount)?.gt(0) ?? false) &&
+        activity.id > 0 &&
+        activity.proposalId == null &&
+        !activity.swap &&
+        RECEIVE_ACTION_KINDS.has(activity.actionKind ?? "")
     );
 }
 

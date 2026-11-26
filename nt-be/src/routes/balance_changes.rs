@@ -45,6 +45,7 @@ pub struct BalanceChangesQuery {
 
     // Search filtering
     pub tx_hash: Option<String>, // Partial match against transaction hashes
+    pub id: Option<i64>,         // The single ledger row with this id
     #[serde(default, deserialize_with = "comma_separated")]
     pub from_accounts: Option<Vec<String>>, // "From" account(s) filter
     #[serde(default, deserialize_with = "comma_separated")]

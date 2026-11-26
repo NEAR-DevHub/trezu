@@ -44,6 +44,7 @@ import {
     getFromAccountId,
     getToAccount,
     getToAccountId,
+    hasReceiveReceipt,
     hidesIntentsExplorerLink,
     useGetActivityLabel,
     useGetFromAccount,
@@ -68,6 +69,64 @@ function NotesCell({ notes }: { notes?: string | null }) {
                 </span>
             </span>
         </Tooltip>
+    );
+}
+
+function PdfReceiptLink({ href }: { href: string }) {
+    const t = useTranslations("activity");
+
+    return (
+        <Link
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
+        >
+            <FileText className="size-4 shrink-0 text-muted-foreground" />
+            {t("pdfReceipt")}
+        </Link>
+    );
+}
+
+/**
+ * The explorer link, or a PDF receipt when the explorer has nothing to show:
+ * it 404s on confidential transfers, and a confidential receive has no hash.
+ */
+function TransactionCell({ activity }: { activity: RecentActivity }) {
+    const { treasuryId, isConfidential } = useTreasury();
+    const hidesExplorer = hidesIntentsExplorerLink(activity, isConfidential);
+    if (hidesExplorer && activity.proposalId != null && treasuryId) {
+        return (
+            <PdfReceiptLink
+                href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
+            />
+        );
+    }
+    const hasExplorerTarget =
+        activity.transactionHashes.length > 0 ||
+        activity.receiptIds.length > 0 ||
+        !!activity.quoteDepositAddress;
+    if (
+        (hidesExplorer || !hasExplorerTarget) &&
+        treasuryId &&
+        hasReceiveReceipt(activity)
+    ) {
+        return (
+            <PdfReceiptLink
+                href={`/${treasuryId}/activity/${activity.id}/receipt`}
+            />
+        );
+    }
+    if (hidesExplorer) return null;
+    return (
+        <TransactionHashCell
+            transactionHashes={activity.transactionHashes}
+            receiptIds={activity.receiptIds}
+            chainName={activity.tokenMetadata?.chainName}
+            depositAddress={activity.quoteDepositAddress}
+            isConfidential={isConfidential}
+            isExchange={!!activity.swap}
+        />
     );
 }
 
@@ -525,39 +584,7 @@ export function ActivityTable({
                                         <NotesCell notes={activity.notes} />
                                     </TableCell>
                                     <TableCell className="text-right pr-2">
-                                        {hidesIntentsExplorerLink(
-                                            activity,
-                                            isConfidential,
-                                        ) ? (
-                                            activity.proposalId != null &&
-                                            treasuryId ? (
-                                                <Link
-                                                    href={`/${treasuryId}/requests/${activity.proposalId}/receipt`}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground"
-                                                >
-                                                    <FileText className="size-4 shrink-0 text-muted-foreground" />
-                                                    {t("pdfReceipt")}
-                                                </Link>
-                                            ) : null
-                                        ) : (
-                                            <TransactionHashCell
-                                                transactionHashes={
-                                                    activity.transactionHashes
-                                                }
-                                                receiptIds={activity.receiptIds}
-                                                chainName={
-                                                    activity.tokenMetadata
-                                                        ?.chainName
-                                                }
-                                                depositAddress={
-                                                    activity.quoteDepositAddress
-                                                }
-                                                isConfidential={isConfidential}
-                                                isExchange={!!activity.swap}
-                                            />
-                                        )}
+                                        <TransactionCell activity={activity} />
                                     </TableCell>
                                     <TableCell className="w-10 px-0 pr-4 text-right">
                                         <Button

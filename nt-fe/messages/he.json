@@ -47,6 +47,7 @@
         "generateReceipt": "צור קבלה ב-PDF",
         "generatedOn": "נוצר בתאריך {date}",
         "receiptTitle": "קבלה מס׳ {proposalId} · שולם בתאריך <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "קבלה מס׳ {proposalId} · התקבל בתאריך <datePart>{date}</datePart>",
         "createYourTreasury": "נהלו את האוצר שלכם בעצמכם",
         "createYourTreasuryDescription": "ללא פיקדון וללא דמי הקמה. צרו אוצר בתוך שניות.",
         "sender": "שולח",

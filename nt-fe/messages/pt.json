@@ -47,6 +47,7 @@
         "generateReceipt": "Gerar recibo em PDF",
         "generatedOn": "Gerado em {date}",
         "receiptTitle": "Recibo nº {proposalId} · Pago em <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Recibo nº {proposalId} · Recebido em <datePart>{date}</datePart>",
         "createYourTreasury": "Gerencie sua própria tesouraria",
         "createYourTreasuryDescription": "Sem depósito, sem taxas de configuração. Crie uma tesouraria em segundos.",
         "sender": "Remetente",

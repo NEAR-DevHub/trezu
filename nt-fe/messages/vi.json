@@ -47,6 +47,7 @@
         "generateReceipt": "Tạo biên lai PDF",
         "generatedOn": "Được tạo vào {date}",
         "receiptTitle": "Biên lai số {proposalId} · Đã thanh toán vào <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Biên lai số {proposalId} · Đã nhận vào <datePart>{date}</datePart>",
         "createYourTreasury": "Vận hành kho bạc của riêng bạn",
         "createYourTreasuryDescription": "Không cần tiền đặt cọc, không phí thiết lập. Tạo kho bạc trong vài giây.",
         "sender": "Người gửi",

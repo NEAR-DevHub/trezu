@@ -165,6 +165,51 @@ async fn recent_activity_filter_options_come_from_the_gold_ledger(pool: PgPool) 
 }
 
 #[sqlx::test(migrations = "./migrations")]
+async fn receipt_row_lookup_reaches_past_the_plan_window(pool: PgPool) {
+    sqlx::query(
+        "INSERT INTO monitored_accounts (account_id, enabled, is_confidential_account, plan_type)
+         VALUES ($1, true, false, 'free')",
+    )
+    .bind(DAO)
+    .execute(&pool)
+    .await
+    .expect("seed monitored account");
+    let id: i64 = sqlx::query_scalar(
+        r#"
+        INSERT INTO gold_treasury_ledger_events (
+            gold_event_key, dao_id, source_kind, history_visible,
+            transaction_type, status, event_time, block_height, source_order,
+            token_in, amount_in, token_in_user_balance_after,
+            counterparty, transaction_hash
+        )
+        VALUES ('old-deposit', $1, 'public_silver_leg', TRUE,
+                'deposit', 'success', $2, 100, 0,
+                'near', 5, 5, 'alice.near', 'hash-old-deposit')
+        RETURNING id
+        "#,
+    )
+    .bind(DAO)
+    .bind(Utc::now() - Duration::days(200))
+    .fetch_one(&pool)
+    .await
+    .expect("seed old deposit");
+    let app = build_app(&pool).await;
+
+    let browsing = get_json(&app, &format!("/api/recent-activity?accountId={DAO}")).await;
+    assert_eq!(
+        browsing["total"], 0,
+        "older than the Free plan window: {browsing}"
+    );
+
+    let lookup = get_json(
+        &app,
+        &format!("/api/recent-activity?accountId={DAO}&id={id}&limit=1"),
+    )
+    .await;
+    assert_eq!(lookup["data"][0]["id"], id, "receipt lookup: {lookup}");
+}
+
+#[sqlx::test(migrations = "./migrations")]
 async fn csv_export_serves_gold_rows(pool: PgPool) {
     seed_gold_activity(&pool).await;
     let app = build_app(&pool).await;

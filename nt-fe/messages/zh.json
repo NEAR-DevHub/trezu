@@ -47,6 +47,7 @@
         "generateReceipt": "生成 PDF 收据",
         "generatedOn": "于{date}生成",
         "receiptTitle": "收据编号 {proposalId} · 支付日期 <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "收据编号 {proposalId} · 收款日期 <datePart>{date}</datePart>",
         "createYourTreasury": "运营你自己的金库",
         "createYourTreasuryDescription": "无需押金，无需设置费。几秒钟内创建金库。",
         "sender": "发送方",

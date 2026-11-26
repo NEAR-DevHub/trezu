@@ -381,6 +381,10 @@ fn build_filtered_legs_query(
         builder.push(" AND proposal_execution_transaction_hash ILIKE ");
         builder.push_bind(format!("%{}%", tx_hash));
     }
+    if let Some(id) = params.id {
+        builder.push(" AND id = ");
+        builder.push_bind(id);
+    }
 
     if let Some(tokens) = params.token_ids.as_ref().filter(|t| !t.is_empty()) {
         builder.push(" AND ");
@@ -903,6 +907,7 @@ mod tests {
             min_amount: None,
             max_amount: None,
             tx_hash: None,
+            id: None,
             from_accounts: None,
             from_accounts_not: None,
             to_accounts,
@@ -1223,6 +1228,33 @@ mod tests {
         let mut unrelated = test_params(&dao_id, None, None);
         unrelated.token_ids = Some(vec!["nep141:other.near".to_string()]);
         assert_eq!(count_balance_change_legs(&pool, &unrelated).await?, 0);
+
+        Ok(())
+    }
+
+    #[sqlx::test]
+    async fn id_filter_returns_only_the_matching_row(pool: PgPool) -> sqlx::Result<()> {
+        let dao_id = format!("conf-list-{}.sputnik-dao.near", Uuid::new_v4());
+        let state = test_state(pool.clone()).await;
+        seed_sent_confidential_change(&pool, &dao_id, "bob.near").await?;
+        seed_exchange_confidential_change(&pool, &dao_id).await?;
+
+        let all = fetch_balance_change_legs(&state, &test_params(&dao_id, None, None))
+            .await
+            .expect("unfiltered legs should load");
+        assert!(all.len() > 1, "seeds should produce several legs");
+
+        let mut by_id = test_params(&dao_id, None, None);
+        by_id.id = Some(all[0].id);
+        let legs = fetch_balance_change_legs(&state, &by_id)
+            .await
+            .expect("id filter should load");
+        assert_eq!(legs.len(), 1);
+        assert_eq!(legs[0].id, all[0].id);
+        assert_eq!(count_balance_change_legs(&pool, &by_id).await?, 1);
+
+        by_id.id = Some(-1);
+        assert_eq!(count_balance_change_legs(&pool, &by_id).await?, 0);
 
         Ok(())
     }

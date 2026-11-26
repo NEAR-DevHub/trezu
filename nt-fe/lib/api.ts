@@ -418,6 +418,20 @@ export async function getRecentActivity(
     return response.data;
 }
 
+/** One activity row, or null when the treasury has no row with that id. */
+export async function getRecentActivityRow(
+    accountId: string,
+    id: number,
+): Promise<RecentActivity | null> {
+    const response = await axios.get<RecentActivityResponse>(
+        `${BACKEND_API_BASE}/recent-activity`,
+        { params: { accountId, id, limit: 1 }, withCredentials: true },
+    );
+    // Guard: a backend without the `id` filter would answer with its newest
+    // row, which must not be rendered as this receipt.
+    return response.data.data.find((row) => row.id === id) ?? null;
+}
+
 export interface ConfidentialHistoryRefreshStatus {
     accountId: string;
     lastUpdatedAt: string | null;
