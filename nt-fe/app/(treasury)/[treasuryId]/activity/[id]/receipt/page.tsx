@@ -110,7 +110,7 @@ export default function ReceiveReceiptPage({
     }
 
     if (!activity || !isValidReceipt) {
-        redirect(`/${treasuryId}`);
+        redirect(`/${treasuryId}/dashboard/activity`);
     }
 
     const symbol = token?.symbol ?? activity.tokenMetadata?.symbol;

@@ -55,16 +55,19 @@ describe("hasReceiveReceipt", () => {
         expect(receive({ actionKind: "ConfidentialDeposit" })).toBe(true);
     });
 
-    it("leaves out sends, requests, swaps, rewards and unsettled rows", () => {
+    it("leaves out sends, requests, swaps, other kinds and unsettled rows", () => {
         expect(receive({ amount: "-1" })).toBe(false);
         expect(receive({ amount: "not a number" })).toBe(false);
         expect(receive({ proposalId: 4 })).toBe(false);
         expect(receive({ swap: { swapRole: "fulfillment" } })).toBe(false);
-        expect(receive({ actionKind: "StakingReward" })).toBe(false);
-        expect(
-            receive({ actionKind: "FunctionCall", methodName: "act_proposal" }),
-        ).toBe(false);
+        expect(receive({ actionKind: "PublicSent" })).toBe(false);
+        expect(receive({ actionKind: "PublicExchange:success" })).toBe(false);
+        expect(receive({ actionKind: "FunctionCall" })).toBe(false);
+        expect(receive({ actionKind: null })).toBe(false);
         expect(receive({ actionKind: "PublicDeposit:pending" })).toBe(false);
+        expect(receive({ actionKind: "ConfidentialDeposit:failed" })).toBe(
+            false,
+        );
         expect(receive({ id: -7 })).toBe(false);
     });
 });

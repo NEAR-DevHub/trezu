@@ -427,7 +427,8 @@ export async function getRecentActivityRow(
         `${BACKEND_API_BASE}/recent-activity`,
         { params: { accountId, id, limit: 1 }, withCredentials: true },
     );
-    // A backend without the `id` filter answers with the newest row instead.
+    // Guard: a backend without the `id` filter would answer with its newest
+    // row, which must not be rendered as this receipt.
     return response.data.data.find((row) => row.id === id) ?? null;
 }
 

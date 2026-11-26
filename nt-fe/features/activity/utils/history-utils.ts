@@ -130,13 +130,8 @@ export function hidesIntentsExplorerLink(
     );
 }
 
-function isProposalMethodCall(activity: ActivityAccount): boolean {
-    return (
-        activity.actionKind === "FunctionCall" &&
-        !!activity.methodName &&
-        PROPOSAL_METHODS.includes(activity.methodName)
-    );
-}
+/** Settled incoming ledger rows; pending/failed ones carry a `:status` suffix. */
+const RECEIVE_ACTION_KINDS = new Set(["PublicDeposit", "ConfidentialDeposit"]);
 
 /**
  * A settled payment into the treasury that no request of this treasury made,
@@ -151,9 +146,7 @@ export function hasReceiveReceipt(
         activity.id > 0 &&
         activity.proposalId == null &&
         !activity.swap &&
-        activity.actionKind !== "StakingReward" &&
-        !isProposalMethodCall(activity) &&
-        getActivityStatus(activity) === null
+        RECEIVE_ACTION_KINDS.has(activity.actionKind ?? "")
     );
 }
 
@@ -193,7 +186,11 @@ export function getActivityLabel(
     }
     if (activity.actionKind === "StakingReward") return labels.stakingRewards;
 
-    if (isProposalMethodCall(activity)) {
+    if (
+        activity.actionKind === "FunctionCall" &&
+        activity.methodName &&
+        PROPOSAL_METHODS.includes(activity.methodName)
+    ) {
         return labels.proposalAction;
     }
 
@@ -239,7 +236,11 @@ export function getActivitySubLabel(
 
     if (activity.actionKind === "StakingReward") return "";
 
-    if (isProposalMethodCall(activity)) {
+    if (
+        activity.actionKind === "FunctionCall" &&
+        activity.methodName &&
+        PROPOSAL_METHODS.includes(activity.methodName)
+    ) {
         return "";
     }
 
