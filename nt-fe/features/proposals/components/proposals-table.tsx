@@ -60,7 +60,7 @@ import {
 } from "@/lib/config-utils";
 import type { Proposal } from "@/lib/proposals-api";
 import { cn } from "@/lib/utils";
-import { useNear } from "@/stores/near-store";
+import { useIsVoteInFlight, useNear } from "@/stores/near-store";
 import { useResponsiveSidebar } from "@/stores/sidebar-store";
 import type { Policy } from "@/types/policy";
 import { useProposalKindLabel } from "../hooks/use-proposal-kind-label";
@@ -485,6 +485,10 @@ export function ProposalsTable({
 
     // Notify parent when selection changes
     const selectedRows = table.getFilteredSelectedRowModel().rows;
+    const selectionVoteInFlight = useIsVoteInFlight(
+        treasuryId,
+        selectedRows.map((row) => row.original.id),
+    );
     useEffect(() => {
         const selectedCount = selectedRows.length;
         onSelectionChange?.(selectedCount);
@@ -583,7 +587,9 @@ export function ProposalsTable({
                             <Button
                                 variant="secondary"
                                 onClick={() => handleBulkVote("Reject")}
-                                disabled={rejectSlot.blocked}
+                                disabled={
+                                    selectionVoteInFlight || rejectSlot.blocked
+                                }
                                 tooltipContent={rejectSlot.blockedTooltip}
                             >
                                 <X className="h-4 w-4" />
@@ -600,6 +606,7 @@ export function ProposalsTable({
                                 }
                                 onClick={() => handleBulkVote("Approve")}
                                 disabled={
+                                    selectionVoteInFlight ||
                                     allSelectedHaveInsufficientBalance ||
                                     approveSlot.blocked
                                 }

@@ -497,6 +497,7 @@ export async function getProposals(
 export async function getProposal(
     daoId: string,
     proposalId: string,
+    timeoutMs?: number,
 ): Promise<Proposal | null> {
     if (!daoId || !proposalId) {
         return null;
@@ -506,6 +507,7 @@ export async function getProposal(
         const url = `${BACKEND_API_BASE}/proposal/${daoId}/${proposalId}`;
         const response = await axios.get<Proposal>(url, {
             withCredentials: true,
+            timeout: timeoutMs,
         });
         return normalizeProposalKind(response.data);
     } catch (error) {
