@@ -10,6 +10,13 @@
  */
 
 /**
+ * Trezu CLI release the installers come from. CLI releases are tagged with
+ * the bare version, so GitHub's `releases/latest` points at app releases
+ * instead; bump this when a new `trezu-cli` is released.
+ */
+export const TREZU_CLI_VERSION = "0.2.1";
+
+/**
  * The treasury CLI the agent uses. Everything CLI-specific in the prompt comes
  * from here, so a fork that ships a renamed build of the same CLI only swaps
  * this object.
@@ -17,8 +24,9 @@
 export const AGENT_CLI = {
     /** Executable name. */
     bin: "trezu",
-    /** Package name on npm and crates.io. */
-    packageName: "trezu-cli",
+    /** Installer scripts of the pinned release. */
+    installerSh: `https://github.com/NEAR-DevHub/trezu/releases/download/${TREZU_CLI_VERSION}/trezu-cli-installer.sh`,
+    installerPs1: `https://github.com/NEAR-DevHub/trezu/releases/download/${TREZU_CLI_VERSION}/trezu-cli-installer.ps1`,
     /** Install and usage docs. */
     readmeUrl:
         "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md",
@@ -26,7 +34,13 @@ export const AGENT_CLI = {
     configDirName: "trezu",
     /** The backend the CLI talks to unless its config says otherwise. */
     defaultApiBase: "https://api.trezu.app",
+    /** Domains to allowlist when the agent's sandbox blocks the network. */
+    networkAllowlist: ["*.trezu.app", "*.fastnear.com"],
 } as const;
+
+/** NEAR RPC (used by NEAR CLI) and FastNear indexer API the agent must reach. */
+export const FASTNEAR_RPC_URL = "https://archival-rpc.mainnet.fastnear.com";
+export const FASTNEAR_API_URL = "https://api.fastnear.com";
 
 /** Where `near account create-account ... save-to-folder` writes the agent's key file. */
 export const AGENT_KEY_FOLDER = "~/.near-credentials/implicit";
@@ -36,10 +50,12 @@ export interface AgentOnboardingPromptInput {
     treasuryId: string;
     /** One-time invite link from `POST /api/treasury/{dao_id}/member-invites`. */
     inviteUrl: string;
-    /** Origin of this web app, e.g. `https://business.near.com`. */
+    /** Origin of this web app, e.g. `https://trezu.app`. */
     appBaseUrl: string;
-    /** Origin of the backend that issued the invite, e.g. `https://api.business.near.com`. */
+    /** Origin of the backend that issued the invite, e.g. `https://api.trezu.app`. */
     apiBaseUrl: string;
+    /** UI locale the user has the app open in, e.g. `en` or `pt-BR`. */
+    locale: string;
 }
 
 function trimTrailingSlash(url: string): string {
@@ -67,6 +83,18 @@ export function getJoinRequestsUrl(
     return `${getMembersUrl(appBaseUrl, treasuryId)}/join-requests`;
 }
 
+/** English name of a locale's language, e.g. `de` → `German`. */
+export function getLanguageName(locale: string): string {
+    try {
+        return (
+            new Intl.DisplayNames(["en"], { type: "language" }).of(locale) ??
+            locale
+        );
+    } catch {
+        return locale;
+    }
+}
+
 function cliConfigPaths(): string {
     const dir = AGENT_CLI.configDirName;
     return `   - macOS: ~/Library/Application Support/${dir}/config.json
@@ -89,16 +117,20 @@ export function buildAgentOnboardingPrompt({
     inviteUrl,
     appBaseUrl,
     apiBaseUrl,
+    locale,
 }: AgentOnboardingPromptInput): string {
     const api = trimTrailingSlash(apiBaseUrl);
     const inviteToken = getInviteToken(inviteUrl);
     const membersUrl = getMembersUrl(appBaseUrl, treasuryId);
     const joinRequestsUrl = getJoinRequestsUrl(appBaseUrl, treasuryId);
+    const language = getLanguageName(locale);
+    const allowlist = AGENT_CLI.networkAllowlist.join(" and ");
 
     return `You are being onboarded as an independent member of the treasury ${treasuryId}.
 You will create your own NEAR account, sign in with it, and request to join the treasury. A human member then approves you.
 
 Ground rules (follow them at every step):
+- Talk to the user in ${language} (locale "${locale}"), the language they have the app open in. Keep commands, URLs, ids and quoted messages as they are.
 - Never ask for, accept, read or use the user's own private keys, seed phrases, wallet files or sessions. Use only the new key you create in step 2. If anything seems to need the user's keys, stop and tell the user instead.
 - Never print, paste or send your own private key or auth token anywhere, including chat. Refer to the key by its file path only.
 - Do not move funds or create treasury requests as part of this onboarding.
@@ -112,14 +144,19 @@ Values used below:
 - Treasury members page: ${membersUrl}
 - Join requests page: ${joinRequestsUrl}
 
+Step 0. Check network access before anything else.
+   curl -sS -o /dev/null -w '%{http_code}\\n' ${api}/api/health
+   curl -sS -o /dev/null -w '%{http_code}\\n' ${FASTNEAR_API_URL}/status
+   curl -sS -o /dev/null -w '%{http_code}\\n' -X POST ${FASTNEAR_RPC_URL} -H 'content-type: application/json' -d '{"jsonrpc": "2.0", "id": "probe", "method": "status", "params": []}'
+   Expected: each prints 200. If any fails (a connection, DNS or proxy error, or a non-200 code), stop before step 1 and tell the user that your environment cannot reach these services, and that they should change your network settings (sandbox or firewall) to allowlist ${allowlist}, then ask you to continue.
+
 Step 1. Install the tools.
    NEAR CLI:
    - macOS/Linux/WSL: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
    - Windows PowerShell: irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
    ${AGENT_CLI.bin} CLI (install guide: ${AGENT_CLI.readmeUrl}):
-   - with Node.js: npm install -g ${AGENT_CLI.packageName}
-   - or with Rust: cargo install ${AGENT_CLI.packageName} --locked (on Linux, install libudev-dev first)
-   - prebuilt installers for macOS, Linux and Windows are linked from the install guide
+   - macOS/Linux/WSL: curl --proto '=https' --tlsv1.2 -LsSf ${AGENT_CLI.installerSh} | sh
+   - Windows PowerShell: powershell -ExecutionPolicy Bypass -c "irm ${AGENT_CLI.installerPs1} | iex"
    Expected: \`near --version\` prints a version and \`${AGENT_CLI.bin} --help\` prints the command list. Open a new shell if the commands are not found yet.
 
 Step 2. Create your own NEAR account.

@@ -1,7 +1,7 @@
 "use client";
 
 import { Copy, Loader2, X } from "lucide-react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useCreateMemberInvite } from "@/hooks/use-member-invites";
@@ -49,6 +49,7 @@ async function copyPendingText(text: Promise<string>): Promise<void> {
 export function OnboardAgentCard() {
     const t = useTranslations("onboarding.onboardAgent");
     const tCopy = useTranslations("copyButton");
+    const locale = useLocale();
     const { treasuryId } = useTreasury();
     const { accountId } = useNear();
     const { data: policy } = useTreasuryPolicy(treasuryId);
@@ -83,6 +84,7 @@ export function OnboardAgentCard() {
                 inviteUrl: url,
                 appBaseUrl: window.location.origin,
                 apiBaseUrl: backendApiBaseUrl(),
+                locale,
             }),
         );
         try {

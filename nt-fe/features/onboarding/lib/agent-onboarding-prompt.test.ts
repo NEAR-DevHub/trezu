@@ -4,6 +4,7 @@ import {
     AGENT_KEY_FOLDER,
     buildAgentOnboardingPrompt,
     getInviteToken,
+    getLanguageName,
 } from "./agent-onboarding-prompt";
 
 const DEFAULT_API = AGENT_CLI.defaultApiBase;
@@ -21,6 +22,7 @@ function build(
         inviteUrl: INVITE_URL,
         appBaseUrl: APP,
         apiBaseUrl: DEFAULT_API,
+        locale: "en",
         ...overrides,
     });
 }
@@ -67,8 +69,14 @@ describe("buildAgentOnboardingPrompt", () => {
             `trezu auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json`,
         );
         expect(prompt).toContain("near-cli-rs-installer.sh | sh");
-        expect(prompt).toContain("npm install -g trezu-cli");
-        expect(prompt).toContain("cargo install trezu-cli --locked");
+        expect(prompt).toContain(
+            "releases/download/0.2.1/trezu-cli-installer.sh | sh",
+        );
+        expect(prompt).toContain(
+            "releases/download/0.2.1/trezu-cli-installer.ps1 | iex",
+        );
+        expect(prompt).not.toContain("npm install");
+        expect(prompt).not.toContain("cargo install");
         expect(prompt).toContain(
             "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md",
         );
@@ -107,6 +115,46 @@ describe("buildAgentOnboardingPrompt", () => {
             "~/Library/Application Support/trezu/config.json",
         );
         expect(prompt).not.toContain(`${api}//api`);
+    });
+});
+
+describe("network check", () => {
+    it("probes the backend and FastNear before step 1 and names the allowlist", () => {
+        const prompt = build();
+        const step0 = prompt.indexOf("Step 0.");
+        const step1 = prompt.indexOf("Step 1.");
+
+        expect(step0).toBeGreaterThan(-1);
+        expect(step0).toBeLessThan(step1);
+        const check = prompt.slice(step0, step1);
+        expect(check).toContain(`${DEFAULT_API}/api/health`);
+        expect(check).toContain("https://api.fastnear.com/status");
+        expect(check).toContain(
+            "-X POST https://archival-rpc.mainnet.fastnear.com",
+        );
+        expect(check).toContain("allowlist *.trezu.app and *.fastnear.com");
+    });
+
+    it("probes the backend that issued the invite", () => {
+        expect(build({ apiBaseUrl: "http://localhost:8888" })).toContain(
+            "curl -sS -o /dev/null -w '%{http_code}\\n' http://localhost:8888/api/health",
+        );
+    });
+});
+
+describe("reply language", () => {
+    it("asks the agent to talk in the app's language", () => {
+        expect(build({ locale: "de" })).toContain(
+            'Talk to the user in German (locale "de")',
+        );
+        expect(build({ locale: "pt" })).toContain(
+            "Talk to the user in Portuguese",
+        );
+        expect(build()).toContain('Talk to the user in English (locale "en")');
+    });
+
+    it("falls back to the locale code for unknown locales", () => {
+        expect(getLanguageName("not a locale")).toBe("not a locale");
     });
 });
 
