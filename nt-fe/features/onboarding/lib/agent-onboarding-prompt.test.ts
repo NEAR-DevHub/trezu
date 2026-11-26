@@ -1,14 +1,16 @@
 import { describe, expect, it } from "bun:test";
 import {
+    AGENT_CLI,
     AGENT_KEY_FOLDER,
     buildAgentOnboardingPrompt,
     getInviteToken,
-    NEAR_BUSINESS_CLI_DEFAULT_API_BASE,
 } from "./agent-onboarding-prompt";
+
+const DEFAULT_API = AGENT_CLI.defaultApiBase;
 
 const TREASURY_ID = "acme.sputnik-dao.near";
 const TOKEN = "3f2b8c1e-7a4d-4e9b-9c0a-1d2e3f4a5b6c";
-const APP = "https://business.near.com";
+const APP = "https://trezu.app";
 const INVITE_URL = `${APP}/join/${TOKEN}`;
 
 function build(
@@ -18,7 +20,7 @@ function build(
         treasuryId: TREASURY_ID,
         inviteUrl: INVITE_URL,
         appBaseUrl: APP,
-        apiBaseUrl: NEAR_BUSINESS_CLI_DEFAULT_API_BASE,
+        apiBaseUrl: DEFAULT_API,
         ...overrides,
     });
 }
@@ -45,10 +47,10 @@ describe("buildAgentOnboardingPrompt", () => {
         const prompt = build();
 
         expect(prompt).toContain(
-            `curl -sS ${NEAR_BUSINESS_CLI_DEFAULT_API_BASE}/api/member-invites/${TOKEN}\n`,
+            `curl -sS ${DEFAULT_API}/api/member-invites/${TOKEN}\n`,
         );
         expect(prompt).toContain(
-            `curl -sS -X POST ${NEAR_BUSINESS_CLI_DEFAULT_API_BASE}/api/member-invites/${TOKEN}/join`,
+            `curl -sS -X POST ${DEFAULT_API}/api/member-invites/${TOKEN}/join`,
         );
     });
 
@@ -59,13 +61,19 @@ describe("buildAgentOnboardingPrompt", () => {
             `near account create-account fund-later use-auto-generation save-to-folder ${AGENT_KEY_FOLDER}\n`,
         );
         expect(prompt).toContain(
-            `curl -sS -X POST https://api.business.near.com/api/user/create -H 'content-type: application/json' -d '{"accountId": "<account-id>"}'`,
+            `curl -sS -X POST ${DEFAULT_API}/api/user/create -H 'content-type: application/json' -d '{"accountId": "<account-id>"}'`,
         );
         expect(prompt).toContain(
-            `near-business auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json`,
+            `trezu auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json`,
         );
-        expect(prompt).toContain("near-business-cli-installer.sh | sh");
         expect(prompt).toContain("near-cli-rs-installer.sh | sh");
+        expect(prompt).toContain("npm install -g trezu-cli");
+        expect(prompt).toContain("cargo install trezu-cli --locked");
+        expect(prompt).toContain(
+            "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md",
+        );
+        expect(prompt).toContain("`trezu treasury list`");
+        expect(prompt).not.toContain("near-business");
     });
 
     it("forbids handling the user's keys", () => {
@@ -77,23 +85,26 @@ describe("buildAgentOnboardingPrompt", () => {
     it("needs no CLI config change on the default backend", () => {
         const prompt = build();
 
-        expect(prompt).toContain("already uses https://api.business.near.com");
+        expect(prompt).toContain("already uses https://api.trezu.app");
         expect(prompt).not.toContain('"api_base"');
     });
 
     it("points the CLI at a non-default backend and uses it everywhere", () => {
-        const api = "https://api.trezu.app";
+        const api = "https://staging-api.trezu.app";
         const prompt = build({
             apiBaseUrl: `${api}/`,
-            appBaseUrl: "https://trezu.app/",
-            inviteUrl: `https://trezu.app/join/${TOKEN}`,
+            appBaseUrl: "https://staging.trezu.app/",
+            inviteUrl: `https://staging.trezu.app/join/${TOKEN}`,
         });
 
         expect(prompt).toContain(`{"api_base": "${api}", "auth_token": null`);
         expect(prompt).toContain(`curl -sS -X POST ${api}/api/user/create`);
         expect(prompt).toContain(`${api}/api/member-invites/${TOKEN}/join`);
         expect(prompt).toContain(
-            `Open https://trezu.app/${TREASURY_ID}/members/join-requests`,
+            `Open https://staging.trezu.app/${TREASURY_ID}/members/join-requests`,
+        );
+        expect(prompt).toContain(
+            "~/Library/Application Support/trezu/config.json",
         );
         expect(prompt).not.toContain(`${api}//api`);
     });

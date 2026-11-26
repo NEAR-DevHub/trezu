@@ -1,17 +1,32 @@
 /**
  * Builds the copy-pastable prompt behind the dashboard's "Onboard your agent"
  * card. The prompt walks an AI agent through becoming an independent member of
- * a treasury with its own NEAR account, using near-business-cli
- * (https://github.com/NEAR-DevHub/near-business-cli) and NEAR CLI.
+ * a treasury with its own NEAR account, using the Trezu CLI (`nt-cli/` in this
+ * repository) and NEAR CLI.
  *
  * Kept pure (no window, env or i18n access) so the exact text the agent
  * receives is covered by unit tests. The prompt is always English: it is read
  * by an agent, not shown in the UI.
  */
 
-/** The backend the near-business CLI talks to unless its config says otherwise. */
-export const NEAR_BUSINESS_CLI_DEFAULT_API_BASE =
-    "https://api.business.near.com";
+/**
+ * The treasury CLI the agent uses. Everything CLI-specific in the prompt comes
+ * from here, so a fork that ships a renamed build of the same CLI only swaps
+ * this object.
+ */
+export const AGENT_CLI = {
+    /** Executable name. */
+    bin: "trezu",
+    /** Package name on npm and crates.io. */
+    packageName: "trezu-cli",
+    /** Install and usage docs. */
+    readmeUrl:
+        "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md",
+    /** Folder under the OS config dir that holds `config.json`. */
+    configDirName: "trezu",
+    /** The backend the CLI talks to unless its config says otherwise. */
+    defaultApiBase: "https://api.trezu.app",
+} as const;
 
 /** Where `near account create-account ... save-to-folder` writes the agent's key file. */
 export const AGENT_KEY_FOLDER = "~/.near-credentials/implicit";
@@ -52,14 +67,19 @@ export function getJoinRequestsUrl(
     return `${getMembersUrl(appBaseUrl, treasuryId)}/join-requests`;
 }
 
+function cliConfigPaths(): string {
+    const dir = AGENT_CLI.configDirName;
+    return `   - macOS: ~/Library/Application Support/${dir}/config.json
+   - Linux: \${XDG_CONFIG_HOME:-~/.config}/${dir}/config.json
+   - Windows: %APPDATA%\\${dir}\\config.json`;
+}
+
 function cliApiBaseStep(apiBaseUrl: string): string {
-    if (apiBaseUrl === NEAR_BUSINESS_CLI_DEFAULT_API_BASE) {
-        return `The near-business CLI already uses ${apiBaseUrl} by default. Nothing to configure.`;
+    if (apiBaseUrl === AGENT_CLI.defaultApiBase) {
+        return `The ${AGENT_CLI.bin} CLI already uses ${apiBaseUrl} by default. Nothing to configure.`;
     }
-    return `This treasury lives on ${apiBaseUrl}, but the near-business CLI defaults to ${NEAR_BUSINESS_CLI_DEFAULT_API_BASE}. Point the CLI at ${apiBaseUrl} by writing its config file:
-   - macOS: ~/Library/Application Support/near-business/config.json
-   - Linux: \${XDG_CONFIG_HOME:-~/.config}/near-business/config.json
-   - Windows: %APPDATA%\\near-business\\config.json
+    return `This treasury lives on ${apiBaseUrl}, but the ${AGENT_CLI.bin} CLI defaults to ${AGENT_CLI.defaultApiBase}. Point the CLI at ${apiBaseUrl} by writing its config file:
+${cliConfigPaths()}
    Contents (create the folder if needed; if the file already exists, change only "api_base" and set "auth_token" and "account_id" to null):
    {"api_base": "${apiBaseUrl}", "auth_token": null, "account_id": null}`;
 }
@@ -96,11 +116,11 @@ Step 1. Install the tools.
    NEAR CLI:
    - macOS/Linux/WSL: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
    - Windows PowerShell: irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
-   near-business-cli (https://github.com/near-devhub/near-business-cli):
-   - macOS/Linux: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/NEAR-DevHub/near-business-cli/releases/latest/download/near-business-cli-installer.sh | sh
-   - Windows PowerShell: powershell -ExecutionPolicy Bypass -c "irm https://github.com/NEAR-DevHub/near-business-cli/releases/latest/download/near-business-cli-installer.ps1 | iex"
-   - or, with Node.js: npm install -g near-business-cli
-   Expected: \`near --version\` and \`near-business --version\` both print a version. Open a new shell if the commands are not found yet.
+   ${AGENT_CLI.bin} CLI (install guide: ${AGENT_CLI.readmeUrl}):
+   - with Node.js: npm install -g ${AGENT_CLI.packageName}
+   - or with Rust: cargo install ${AGENT_CLI.packageName} --locked (on Linux, install libudev-dev first)
+   - prebuilt installers for macOS, Linux and Windows are linked from the install guide
+   Expected: \`near --version\` prints a version and \`${AGENT_CLI.bin} --help\` prints the command list. Open a new shell if the commands are not found yet.
 
 Step 2. Create your own NEAR account.
    Run exactly:
@@ -111,17 +131,18 @@ Step 3. Initialize the account on chain through the treasury backend (no auth ne
    curl -sS -X POST ${api}/api/user/create -H 'content-type: application/json' -d '{"accountId": "<account-id>"}'
    Expected: HTTP 200 with {"accountId": "<account-id>", "created": true}. HTTP 409 "Account <account-id> already exists" also means the account is ready.
 
-Step 4. Point the near-business CLI at the right backend.
+Step 4. Point the ${AGENT_CLI.bin} CLI at the right backend.
    ${cliApiBaseStep(api)}
 
 Step 5. Sign in with the new account.
-   near-business auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json
+   ${AGENT_CLI.bin} auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json
    Expected: "Logged in as <account-id>". The CLI stores your session token in its config file (the "auth_token" field) and accepts the terms of service for your own account. If login fails right after step 3, wait 10 seconds and retry once.
 
 Step 6. Accept the treasury invite as <account-id>.
    a) Check the invite: curl -sS ${api}/api/member-invites/${inviteToken}
       Expected: JSON with "daoId": "${treasuryId}" and "status": "valid". If the status is "used" or "expired", stop and ask the user to copy a fresh prompt from the dashboard.
-   b) Join. Read "auth_token" from the near-business config file (without printing it) and send it as a cookie:
+   b) Join. Read "auth_token" from the ${AGENT_CLI.bin} config file (without printing it) and send it as a cookie. The file is at:
+${cliConfigPaths().replace(/^ {3}/gm, "      ")}
       curl -sS -X POST ${api}/api/member-invites/${inviteToken}/join -H 'content-type: application/json' -H "Cookie: auth_token=$AUTH_TOKEN" -d '{"displayName": "<a short name for yourself, e.g. your agent name>"}'
       Expected: HTTP 200 with {"daoId": "${treasuryId}", "requestId": "<uuid>"}. HTTP 409 "A pending join request already exists" means you already joined; continue. HTTP 401 means the login from step 5 did not stick; redo step 5.
 
@@ -129,5 +150,5 @@ Step 7. Report back to the user. Tell them:
    - your account id (<account-id>) and the key file path (never its contents),
    - the join request id from step 6,
    - this instruction: "Open ${joinRequestsUrl} (Members > Join requests on ${membersUrl}), pick a role for <account-id> and confirm. That creates a members request that the treasury's approvers must approve before I can act."
-   Expected outcome once approved: \`near-business treasury list\` shows ${treasuryId}. Offer to run it when the user says the request was approved.`;
+   Expected outcome once approved: \`${AGENT_CLI.bin} treasury list\` shows ${treasuryId}. Offer to run it when the user says the request was approved.`;
 }
