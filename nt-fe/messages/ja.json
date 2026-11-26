@@ -2447,7 +2447,9 @@
         "viewRequest": "リクエストを表示",
         "proposalRemoved": "提案が削除されました",
         "voteSubmitted": "投票を送信しました",
-        "votesSubmitted": "投票を送信しました"
+        "votesSubmitted": "投票を送信しました",
+        "confirmingTransaction": "トランザクションを確認しています…",
+        "confirmingTransactionBody": "現在ネットワークが遅くなっています。作業を続けていただけます。確認でき次第、ここを更新します。"
     },
     "tokenInput": {
         "max": "MAX",

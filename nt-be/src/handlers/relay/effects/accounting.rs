@@ -1,35 +1,24 @@
-//! Usage accounting for a relay: reserve/refund a gas credit, track `paid_near`, and
-//! record platform metrics.
+//! The gas credit of a relay.
 //!
-//! The gas credit is reserved **atomically before any sponsor spend** (see
+//! The credit is reserved **atomically before any sponsor spend** (see
 //! [`reserve_gas_credit`]) so that concurrent relays for the same treasury cannot all
-//! pass a stale credit check and double-spend a single credit. `paid_near` and metrics
-//! are recorded in the background — non-critical, and a failure there never affects the
-//! relay response.
-
-use std::sync::Arc;
+//! pass a stale credit check and double-spend a single credit. The relay worker
+//! returns it, and records `paid_near` and the metrics, on the transaction that ends
+//! the operation.
 
 use axum::http::StatusCode;
-use bigdecimal::BigDecimal;
 use near_api::AccountId;
 
-use super::background;
 use crate::{
-    AppState,
     config::plans::PlanType,
-    handlers::relay::{
-        parse::{RelayError, error_response},
-        sponsor::policy::SpentNear,
-    },
-    services::platform_metrics::{self, PlatformMetric},
+    handlers::relay::parse::{RelayError, error_response},
 };
 
 /// Outcome of reserving a gas-covered credit for a relay.
 #[derive(Debug, Clone, Copy)]
 pub enum CreditReservation {
-    /// A finite gas credit was atomically decremented. Refund it (see
-    /// [`spawn_refund_gas_credit`]) if the relay is abandoned before it moved any
-    /// sponsor NEAR on-chain.
+    /// A finite gas credit was atomically decremented; it is returned when the
+    /// operation does not succeed.
     Consumed,
     /// Enterprise / unlimited plan — no credit was decremented, nothing to refund.
     Unlimited,
@@ -49,8 +38,8 @@ pub enum CreditReservation {
 /// This closes the check-then-spend race: previously the credit was read during
 /// authorization and decremented only in a later background task, so concurrent
 /// requests could all observe the same balance.
-pub async fn reserve_gas_credit(
-    pool: &sqlx::PgPool,
+pub async fn reserve_gas_credit<'e>(
+    executor: impl sqlx::PgExecutor<'e>,
     treasury_id: &AccountId,
     plan_type: PlanType,
 ) -> Result<CreditReservation, RelayError> {
@@ -82,7 +71,7 @@ pub async fn reserve_gas_credit(
         "#,
     )
     .bind(treasury_id.as_str())
-    .fetch_one(pool)
+    .fetch_one(executor)
     .await
     .map_err(|e| {
         error_response(
@@ -106,124 +95,6 @@ pub async fn reserve_gas_credit(
             format!("Treasury {treasury_id} is not tracked for gas sponsorship"),
         )),
     }
-}
-
-/// Give a reserved credit back when the relay is abandoned before it caused an on-chain
-/// sponsor transfer. No-op for unlimited reservations. Best-effort and backgrounded.
-///
-/// NOTE: this preserves the prior "a failed relay consumes no credit" behavior. A later
-/// hardening (charge any attempt that already moved sponsor NEAR) will replace this
-/// refund on the fail path with keeping the credit charged.
-pub fn spawn_refund_gas_credit(
-    state: &Arc<AppState>,
-    treasury_id: &AccountId,
-    reservation: CreditReservation,
-) {
-    if !matches!(reservation, CreditReservation::Consumed) {
-        return;
-    }
-    let state = state.clone();
-    let treasury_id = treasury_id.clone();
-    background::spawn("refund gas credit", async move {
-        let result = sqlx::query(
-            r#"
-            UPDATE monitored_accounts
-            SET gas_covered_transactions = gas_covered_transactions + 1,
-                updated_at = NOW()
-            WHERE account_id = $1
-            "#,
-        )
-        .bind(treasury_id.as_str())
-        .execute(&state.db_pool)
-        .await;
-
-        match result {
-            Ok(_) => tracing::info!("Refunded gas credit for treasury {}", treasury_id),
-            Err(e) => crate::error_event!(
-                crate::error_event::ErrorCode::RelayCreditRefundFailed,
-                treasury_id = %treasury_id,
-                error = %e
-            ),
-        }
-    });
-}
-
-/// Add NEAR the sponsor fronted for this relay (storage top-up, proposal bond,
-/// registrations) to `paid_near`, in the background. Credits are handled separately by
-/// [`reserve_gas_credit`] / [`spawn_refund_gas_credit`], so this never touches the
-/// credit counter. A zero total is skipped.
-pub fn spawn_record_spend(
-    state: &Arc<AppState>,
-    treasury_id: &AccountId,
-    sponsored_spend: SpentNear,
-) {
-    let total_spend = sponsored_spend.total();
-    if total_spend.as_yoctonear() == 0 {
-        return;
-    }
-    let state = state.clone();
-    let treasury_id = treasury_id.clone();
-    background::spawn("record relay spend", async move {
-        tracing::debug!(
-            "relay spend for {}: proposal_storage={} deposits={} registrations={} total={}",
-            treasury_id,
-            sponsored_spend.proposal_storage,
-            sponsored_spend.deposits,
-            sponsored_spend.registrations,
-            total_spend
-        );
-
-        let near_spent_yocto: BigDecimal = total_spend.as_yoctonear().into();
-        let result = sqlx::query(
-            r#"
-            UPDATE monitored_accounts
-            SET paid_near = paid_near + $2,
-                updated_at = NOW()
-            WHERE account_id = $1
-            "#,
-        )
-        .bind(treasury_id.as_str())
-        .bind(near_spent_yocto)
-        .execute(&state.db_pool)
-        .await;
-
-        if let Err(e) = result {
-            crate::error_event!(
-                crate::error_event::ErrorCode::RelaySpendRecordFailed,
-                treasury_id = %treasury_id,
-                error = %e
-            );
-        }
-    });
-}
-
-/// Record usage metrics for a successful relay in the background.
-///
-/// `gas_covered_transactions` fires for every relay; the proposal-type metric only
-/// fires when `proposalType` was provided.
-pub fn record_metrics(
-    state: &Arc<AppState>,
-    treasury_id: &AccountId,
-    proposal_type: Option<&str>,
-    address_book_payment: bool,
-) {
-    let mut metrics = vec![PlatformMetric::GasCoveredTransactions];
-    match proposal_type {
-        Some("swap") => metrics.push(PlatformMetric::SwapProposals),
-        Some("payment") => metrics.push(PlatformMetric::PaymentProposals),
-        Some("vote") => metrics.push(PlatformMetric::VotesCasted),
-        Some(_) => metrics.push(PlatformMetric::OtherProposalsSubmitted),
-        None => {}
-    }
-    if address_book_payment && proposal_type == Some("payment") {
-        metrics.push(PlatformMetric::AddressBookPaymentProposals);
-    }
-
-    let state = state.clone();
-    let treasury_id = treasury_id.to_string();
-    background::spawn("record metrics", async move {
-        platform_metrics::record_events(&state.db_pool, &treasury_id, &metrics).await;
-    });
 }
 
 #[cfg(test)]
@@ -284,34 +155,6 @@ mod tests {
             reserve_gas_credit(&pool, &account, PlanType::Plus)
                 .await
                 .is_err()
-        );
-    }
-
-    /// A reserved credit is given back on the abandon path, restoring the balance.
-    #[sqlx::test]
-    async fn refund_restores_a_reserved_credit(pool: sqlx::PgPool) {
-        let account: AccountId = "refund.sputnik-dao.near".parse().unwrap();
-        seed(&pool, account.as_str(), "plus", 1).await;
-
-        let reservation = reserve_gas_credit(&pool, &account, PlanType::Plus)
-            .await
-            .expect("reserve");
-        assert!(matches!(reservation, CreditReservation::Consumed));
-        assert_eq!(credits(&pool, account.as_str()).await, 0);
-
-        // Refund runs in the background; execute the same UPDATE inline to assert the
-        // effect deterministically without racing the spawned task.
-        sqlx::query(
-            "UPDATE monitored_accounts SET gas_covered_transactions = gas_covered_transactions + 1 WHERE account_id = $1",
-        )
-        .bind(account.as_str())
-        .execute(&pool)
-        .await
-        .unwrap();
-        assert_eq!(
-            credits(&pool, account.as_str()).await,
-            1,
-            "refund restores the credit"
         );
     }
 

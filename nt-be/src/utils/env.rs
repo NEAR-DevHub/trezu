@@ -26,6 +26,9 @@ pub struct EnvVars {
     pub ref_sdk_base_url: String,
     pub signer_key: SecretKey,
     pub signer_id: AccountId,
+    /// `SPONSOR_LANE_KEYS`: extra full-access keys of the sponsor account; each
+    /// one is a relay lane next to `SIGNER_KEY`.
+    pub sponsor_lane_keys: Vec<SecretKey>,
     pub bulk_payment_signer: SecretKey,
     pub disable_balance_monitoring: bool,
     /// How many times the confidential bulk processor resets `SignFailed`
@@ -149,6 +152,13 @@ impl Default for EnvVars {
                 .expect("SIGNER_ID is not set")
                 .parse()
                 .unwrap(),
+            sponsor_lane_keys: std::env::var("SPONSOR_LANE_KEYS")
+                .unwrap_or_default()
+                .split(',')
+                .map(str::trim)
+                .filter(|key| !key.is_empty())
+                .map(|key| key.parse().expect("Invalid SPONSOR_LANE_KEYS entry"))
+                .collect(),
             disable_balance_monitoring: std::env::var("DISABLE_BALANCE_MONITORING")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()

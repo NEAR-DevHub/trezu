@@ -270,13 +270,14 @@ async fn quote_and_generate(
         })?
         .clone();
 
-    let payload_hash = crate::handlers::relay::confidential::compute_nep413_hash(&payload)
-        .ok_or_else(|| {
-            (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "Failed to compute NEP-413 payload hash".to_string(),
-            )
-        })?;
+    let payload_hash =
+        crate::handlers::intents::confidential::submitter::compute_nep413_hash(&payload)
+            .ok_or_else(|| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "Failed to compute NEP-413 payload hash".to_string(),
+                )
+            })?;
 
     Ok((payload_hash, quote_response, payload))
 }

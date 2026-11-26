@@ -17,10 +17,7 @@ use chrono::{DateTime, TimeZone, Utc};
 use near_api::{AccountId, Contract, NearToken, types::tokens::STORAGE_COST_PER_BYTE};
 use serde_json::Value;
 
-use super::{
-    Sponsor,
-    retry::{RetryPolicy, retry},
-};
+use super::retry::{RetryPolicy, retry};
 use crate::{
     AppState,
     handlers::relay::parse::{RelayError, error_response},
@@ -71,25 +68,6 @@ pub fn proposal_storage_cost(storage_bytes: u128) -> NearToken {
     STORAGE_COST_PER_BYTE.saturating_mul(bounded)
 }
 
-/// NEAR the relayer fronts for a relay, broken down for `paid_near` accounting.
-#[derive(Debug, Clone, Copy)]
-pub struct SpentNear {
-    /// Top-up to the DAO contract for `add_proposal` storage growth.
-    pub proposal_storage: NearToken,
-    /// Attached proposal bond on the relayed `add_proposal`.
-    pub deposits: NearToken,
-    /// Sponsor-paid NEP-141 `storage_deposit` registrations for approving votes.
-    pub registrations: NearToken,
-}
-
-impl SpentNear {
-    pub fn total(&self) -> NearToken {
-        self.proposal_storage
-            .saturating_add(self.deposits)
-            .saturating_add(self.registrations)
-    }
-}
-
 /// Enforce the attached-deposit sponsorship limit for the treasury's tier.
 ///
 /// `Legacy` may attach up to the DAO `proposal_bond` (plus the proposal-storage
@@ -131,29 +109,6 @@ pub async fn enforce_deposit_limit(
         }
     }
     Ok(())
-}
-
-/// Top up the DAO contract's balance to cover the storage this relay adds (a new
-/// proposal, or the vote entries of `act_proposal`), before the relayed call
-/// executes.
-///
-/// `proposal_storage_cost` is already derived server-side and clamped to the cap by
-/// [`proposal_storage_cost`], so there is no client value to validate here.
-#[tracing::instrument(level = "info", skip_all, fields(treasury_id = %treasury_id))]
-pub async fn top_up_proposal_storage(
-    state: &Arc<AppState>,
-    treasury_id: &AccountId,
-    proposal_storage_cost: NearToken,
-) -> Result<(), RelayError> {
-    Sponsor::from_state(state)
-        .transfer_once(treasury_id, proposal_storage_cost)
-        .await
-        .map_err(|e| {
-            error_response(
-                StatusCode::INTERNAL_SERVER_ERROR,
-                format!("Failed to send proposal-storage top-up transaction: {}", e),
-            )
-        })
 }
 
 /// Read the treasury's `proposal_bond` from its on-chain policy (retried).
@@ -216,15 +171,5 @@ mod tests {
             SponsorshipTier::for_treasury(at(2026, 4, 1)),
             SponsorshipTier::Standard
         );
-    }
-
-    #[test]
-    fn spent_near_totals_provenance() {
-        let spent = SpentNear {
-            proposal_storage: NearToken::from_yoctonear(5),
-            deposits: NearToken::from_yoctonear(3),
-            registrations: NearToken::from_yoctonear(2),
-        };
-        assert_eq!(spent.total(), NearToken::from_yoctonear(10));
     }
 }

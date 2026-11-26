@@ -501,3 +501,145 @@ test.describe("Error states — sponsored transaction failures", () => {
         });
     }
 });
+
+/**
+ * The durable relay answers `202` when the result is not known within the
+ * request. No stream event is delivered here (the relay is mocked), so these
+ * prove the page finds the outcome by reading the status endpoint itself.
+ */
+test.describe("Pending relay — the result arrives by status read", () => {
+    const SUBMISSION_ID = "5f0c2a9e-0000-4000-8000-00000000e2e0";
+    const pending = {
+        submissionId: SUBMISSION_ID,
+        treasuryId: TREASURY_ID,
+        state: "pending",
+    };
+    const confirming = en.nearStore.confirmingTransaction;
+
+    async function submitPayment(
+        page: Page,
+        paymentsPage: {
+            goto: (
+                id: string,
+                o: { token: string; network: string },
+            ) => Promise<void>;
+            amountInput: () => ReturnType<Page["locator"]>;
+            recipientInput: () => ReturnType<Page["locator"]>;
+            reviewButton: () => ReturnType<Page["locator"]>;
+            reviewHeading: () => ReturnType<Page["locator"]>;
+        },
+    ) {
+        await paymentsPage.goto(TREASURY_ID, {
+            token: "NEAR",
+            network: "near",
+        });
+        await paymentsPage.amountInput().fill("1");
+        await paymentsPage.recipientInput().fill(RECIPIENT);
+        await expect(paymentsPage.reviewButton()).toBeEnabled({
+            timeout: 15_000,
+        });
+        await paymentsPage.reviewButton().click();
+        await expect(paymentsPage.reviewHeading()).toBeVisible();
+        await page
+            .getByRole("button", { name: en.payments.confirmSubmit })
+            .click();
+    }
+
+    const pendingIds = (page: Page) =>
+        page.evaluate(
+            (key) => JSON.parse(localStorage.getItem(key) ?? "[]") as string[],
+            `relay:pending:${TREASURY_ID}`,
+        );
+
+    test("pending, then succeeded on a later read", async ({
+        page,
+        paymentsPage,
+    }) => {
+        await setupMocks(page, { kind: "body", status: 202, body: pending });
+        let reads = 0;
+        await page.route("**/relay/submissions/*", (route) => {
+            reads += 1;
+            return json(
+                route,
+                reads < 2
+                    ? pending
+                    : {
+                          ...pending,
+                          state: "succeeded",
+                          txHash: TX_HASH,
+                          proposalIds: [7],
+                      },
+            );
+        });
+        await submitPayment(page, paymentsPage);
+
+        const waiting = page
+            .locator("[data-sonner-toast]")
+            .filter({ hasText: confirming });
+        await expect(waiting).toBeVisible({ timeout: 20_000 });
+        expect(await pendingIds(page)).toEqual([SUBMISSION_ID]);
+
+        await expect(waiting).toHaveCount(0, { timeout: 10_000 });
+        expect(reads).toBeGreaterThanOrEqual(2);
+        expect(await pendingIds(page)).toEqual([]);
+        await expect(
+            page
+                .locator("[data-sonner-toast]")
+                .filter({ hasText: codes.TX_STATUS_UNKNOWN.title }),
+        ).toHaveCount(0);
+    });
+
+    test("pending, then refused by the worker", async ({
+        page,
+        paymentsPage,
+    }) => {
+        await setupMocks(page, { kind: "body", status: 202, body: pending });
+        await page.route("**/relay/submissions/*", (route) =>
+            json(route, {
+                ...pending,
+                state: "failed",
+                error: {
+                    code: "NOT_AUTHORIZED",
+                    funds_state: "not_sent",
+                    retryable: false,
+                    details: {},
+                },
+            }),
+        );
+        await submitPayment(page, paymentsPage);
+
+        const toast = page
+            .locator("[data-sonner-toast]")
+            .filter({ hasText: codes.NOT_AUTHORIZED.title });
+        await expect(toast).toBeVisible({ timeout: 20_000 });
+        await expect(
+            page.locator("[data-sonner-toast]").filter({ hasText: confirming }),
+        ).toHaveCount(0);
+        expect(await pendingIds(page)).toEqual([]);
+    });
+
+    test("a refused status read keeps waiting and keeps the id", async ({
+        page,
+        paymentsPage,
+    }) => {
+        await setupMocks(page, { kind: "body", status: 202, body: pending });
+        let reads = 0;
+        await page.route("**/relay/submissions/*", (route) => {
+            reads += 1;
+            return json(route, { error: "Authentication required" }, 401);
+        });
+        await submitPayment(page, paymentsPage);
+
+        const waiting = page
+            .locator("[data-sonner-toast]")
+            .filter({ hasText: confirming });
+        await expect(waiting).toBeVisible({ timeout: 20_000 });
+        await expect.poll(() => reads, { timeout: 10_000 }).toBeGreaterThan(0);
+        const afterFirst = reads;
+        // Several poll intervals later nothing more was asked.
+        await page.waitForTimeout(6_000);
+        expect(reads).toBe(afterFirst);
+        await expect(waiting).toBeVisible();
+        expect(await pendingIds(page)).toEqual([SUBMISSION_ID]);
+    });
+});
