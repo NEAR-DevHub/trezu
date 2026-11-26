@@ -1,6 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import type { SwapQuoteResponse } from "@/lib/proposals-api";
-import { buildReceiptAmountModel } from "./receipt-models";
+import {
+    buildReceiptAmountModel,
+    buildReceiveAmountModel,
+} from "./receipt-models";
 
 const invalidToken = {
     amountDecimal: "invalid",
@@ -214,5 +217,31 @@ describe("buildReceiptAmountModel", () => {
 
         expect(result.sourceAmountUsd).toBe("$200.00");
         expect(result.destinationAmountUsd).toBe("$201.00");
+    });
+});
+
+describe("buildReceiveAmountModel", () => {
+    it("prices the receive at its historical unit price", () => {
+        expect(
+            buildReceiveAmountModel({
+                amount: "12.5",
+                unitPriceUsd: 2.5,
+                symbol: "NEAR",
+            }),
+        ).toEqual({
+            amountDisplay: "12.5",
+            usdDisplay: "$31.25",
+            rateLabel: "1 NEAR = $2.50000",
+        });
+    });
+
+    it("degrades malformed values without throwing", () => {
+        expect(
+            buildReceiveAmountModel({
+                amount: "invalid",
+                unitPriceUsd: Number.NaN,
+                symbol: "BAD",
+            }),
+        ).toEqual({ amountDisplay: "—", usdDisplay: null, rateLabel: null });
     });
 });

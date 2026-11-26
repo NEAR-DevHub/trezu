@@ -188,7 +188,11 @@ export function buildReceiptAmountModel({
     ) {
         rateLabel = `1 ${sourceToken.symbol} (${formatUnitPrice(sourceUnitPriceUsd, { locale }).display}) ≈ ${formatRate(destinationPerSourceRate, { locale }).display} ${destinationToken.symbol}`;
     } else if (sourceUnitPriceUsd && sourceToken.symbol) {
-        rateLabel = `1 ${sourceToken.symbol} = ${formatUnitPrice(sourceUnitPriceUsd, { locale }).display}`;
+        rateLabel = formatUsdRateLabel(
+            sourceToken.symbol,
+            sourceUnitPriceUsd,
+            locale,
+        );
     }
 
     return {
@@ -198,6 +202,11 @@ export function buildReceiptAmountModel({
         destinationAmountUsd,
         rateLabel,
     };
+}
+
+/** A token's USD price as a receipt rate: `1 USDC = $1.00`. */
+function formatUsdRateLabel(symbol: string, unitPriceUsd: Big, locale: string) {
+    return `1 ${symbol} = ${formatUnitPrice(unitPriceUsd, { locale }).display}`;
 }
 
 export function buildTokenReceiptInfo({
@@ -229,5 +238,39 @@ export function buildTokenReceiptInfo({
         ),
         amount,
         usd: toAsyncValue(usdValue, usdLoading),
+    };
+}
+
+/** A receive, priced at its token's historical price when it landed. */
+export function buildReceiveAmountModel({
+    amount,
+    unitPriceUsd,
+    symbol,
+    locale = "en-US",
+}: {
+    amount: string;
+    unitPriceUsd?: number | null;
+    symbol?: string;
+    locale?: string;
+}) {
+    const amountValue = decimalOrNull(amount);
+    const price = decimalOrNull(unitPriceUsd);
+    const unitPrice = price?.gt(0) ? price : null;
+
+    return {
+        amountDisplay: formatTokenQuantity(amountValue, {
+            locale,
+            profile: "standard",
+            unitPriceUsd: unitPrice,
+        }).display,
+        usdDisplay:
+            unitPrice && amountValue
+                ? formatFiatValue(amountValue.mul(unitPrice), { locale })
+                      .display
+                : null,
+        rateLabel:
+            unitPrice && symbol
+                ? formatUsdRateLabel(symbol, unitPrice, locale)
+                : null,
     };
 }

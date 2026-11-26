@@ -244,6 +244,10 @@ fn bind_public_filters<'a>(
         builder.push_bind(format!("%{}%", tx_hash));
         builder.push(")");
     }
+    if let Some(id) = params.id {
+        builder.push(" AND id = ");
+        builder.push_bind(id);
+    }
 
     if let Some(tokens) = params
         .token_ids

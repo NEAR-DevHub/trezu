@@ -21,7 +21,7 @@ export function TreasuryLayoutClient({
     const pathname = usePathname();
     // Receipt + pay share links are public/standalone (no treasury sidebar).
     const isStandaloneView =
-        /\/requests\/[^/]+\/receipt$/.test(pathname ?? "") ||
+        /\/(requests|activity)\/[^/]+\/receipt$/.test(pathname ?? "") ||
         /\/pay\/(public|confidential)\/?$/.test(pathname ?? "");
 
     if (isLoading) {

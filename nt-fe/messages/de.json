@@ -47,6 +47,7 @@
         "generateReceipt": "PDF-Beleg erstellen",
         "generatedOn": "Erstellt am {date}",
         "receiptTitle": "Beleg Nr. {proposalId} · Bezahlt am <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Beleg Nr. {proposalId} · Erhalten am <datePart>{date}</datePart>",
         "createYourTreasury": "Verwalte deine eigene Treasury",
         "createYourTreasuryDescription": "Keine Einzahlung, keine Einrichtungsgebühren. Erstelle eine Treasury in Sekunden.",
         "sender": "Absender",

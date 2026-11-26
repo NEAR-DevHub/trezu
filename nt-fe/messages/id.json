@@ -47,6 +47,7 @@
         "generateReceipt": "Buat Resi PDF",
         "generatedOn": "Dibuat pada {date}",
         "receiptTitle": "Tanda terima No. {proposalId} · Dibayar pada <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Tanda terima No. {proposalId} · Diterima pada <datePart>{date}</datePart>",
         "createYourTreasury": "Kelola treasury Anda sendiri",
         "createYourTreasuryDescription": "Tanpa deposit, tanpa biaya penyiapan. Buat treasury dalam hitungan detik.",
         "sender": "Pengirim",

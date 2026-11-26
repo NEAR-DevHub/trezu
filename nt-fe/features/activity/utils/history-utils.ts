@@ -1,6 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { decimalOrNull } from "@/lib/amount-format";
 import Big from "@/lib/big";
 
 /**
@@ -129,6 +130,33 @@ export function hidesIntentsExplorerLink(
     );
 }
 
+function isProposalMethodCall(activity: ActivityAccount): boolean {
+    return (
+        activity.actionKind === "FunctionCall" &&
+        !!activity.methodName &&
+        PROPOSAL_METHODS.includes(activity.methodName)
+    );
+}
+
+/**
+ * A settled payment into the treasury that no request of this treasury made,
+ * so only a receipt of its own can document it. Tracker rows (negative ids)
+ * are still in flight.
+ */
+export function hasReceiveReceipt(
+    activity: ActivityAccount & { id: number; proposalId?: number | null },
+): boolean {
+    return (
+        (decimalOrNull(activity.amount)?.gt(0) ?? false) &&
+        activity.id > 0 &&
+        activity.proposalId == null &&
+        !activity.swap &&
+        activity.actionKind !== "StakingReward" &&
+        !isProposalMethodCall(activity) &&
+        getActivityStatus(activity) === null
+    );
+}
+
 /**
  * Get the display label for an activity based on its action kind.
  *
@@ -165,11 +193,7 @@ export function getActivityLabel(
     }
     if (activity.actionKind === "StakingReward") return labels.stakingRewards;
 
-    if (
-        activity.actionKind === "FunctionCall" &&
-        activity.methodName &&
-        PROPOSAL_METHODS.includes(activity.methodName)
-    ) {
+    if (isProposalMethodCall(activity)) {
         return labels.proposalAction;
     }
 
@@ -215,11 +239,7 @@ export function getActivitySubLabel(
 
     if (activity.actionKind === "StakingReward") return "";
 
-    if (
-        activity.actionKind === "FunctionCall" &&
-        activity.methodName &&
-        PROPOSAL_METHODS.includes(activity.methodName)
-    ) {
+    if (isProposalMethodCall(activity)) {
         return "";
     }
 

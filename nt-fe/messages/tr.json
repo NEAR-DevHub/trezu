@@ -47,6 +47,7 @@
         "generateReceipt": "PDF makbuzu oluştur",
         "generatedOn": "Oluşturulma tarihi: {date}",
         "receiptTitle": "Makbuz No. {proposalId} · Ödeme tarihi <datePart>{date}</datePart>",
+        "receiveReceiptTitle": "Makbuz No. {proposalId} · Alınma tarihi <datePart>{date}</datePart>",
         "createYourTreasury": "Kendi hazineni yönet",
         "createYourTreasuryDescription": "Depozito yok, kurulum ücreti yok. Saniyeler içinde bir hazine oluştur.",
         "sender": "Gönderen",

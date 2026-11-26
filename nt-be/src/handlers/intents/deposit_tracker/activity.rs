@@ -44,6 +44,7 @@ pub struct InProcessActivityFilter<'a> {
     pub token_ids: Option<&'a [String]>,
     pub exclude_token_ids: Option<&'a [String]>,
     pub tx_hash: Option<&'a str>,
+    pub id: Option<i64>,
     pub has_account_filters: bool,
     pub start_time: Option<DateTime<Utc>>,
     pub end_time: Option<DateTime<Utc>>,
@@ -62,6 +63,7 @@ impl<'a> InProcessActivityFilter<'a> {
             token_ids: params.token_ids.as_deref(),
             exclude_token_ids: params.exclude_token_ids.as_deref(),
             tx_hash: params.tx_hash.as_deref().filter(|s| !s.is_empty()),
+            id: params.id,
             has_account_filters: [
                 &params.from_accounts,
                 &params.from_accounts_not,
@@ -82,7 +84,11 @@ impl<'a> InProcessActivityFilter<'a> {
     }
 
     fn applies(&self) -> bool {
-        if self.offset != 0 || self.tx_hash.is_some() || self.has_account_filters {
+        if self.offset != 0
+            || self.tx_hash.is_some()
+            || self.id.is_some()
+            || self.has_account_filters
+        {
             return false;
         }
         match self.transaction_types {
@@ -449,6 +455,7 @@ mod tests {
             token_ids: None,
             exclude_token_ids: None,
             tx_hash: None,
+            id: None,
             has_account_filters: false,
             start_time: parse_time(Some(&"2026-09-01T00:00:00Z".to_string())),
             end_time: parse_time(Some(&"2026-09-30T23:59:59Z".to_string())),
@@ -552,6 +559,7 @@ mod tests {
             token_ids: None,
             exclude_token_ids: None,
             tx_hash: None,
+            id: None,
             has_account_filters: false,
             start_time: None,
             end_time: None,
@@ -578,6 +586,13 @@ mod tests {
         assert!(
             !InProcessActivityFilter {
                 tx_hash: Some("abc"),
+                ..base
+            }
+            .applies()
+        );
+        assert!(
+            !InProcessActivityFilter {
+                id: Some(42),
                 ..base
             }
             .applies()

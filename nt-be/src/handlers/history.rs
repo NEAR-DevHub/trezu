@@ -292,6 +292,7 @@ fn build_export_query(
         min_amount: None,
         max_amount: None,
         tx_hash: None,
+        id: None,
         from_accounts: None,
         from_accounts_not: None,
         to_accounts: None,
@@ -1140,6 +1141,7 @@ pub struct RecentActivityQuery {
     pub token_symbol: Option<String>,
     pub token_symbol_not: Option<String>,
     pub tx_hash: Option<String>,
+    pub id: Option<i64>,
     #[serde(rename = "from", default, deserialize_with = "comma_separated")]
     pub from_account: Option<Vec<String>>,
     #[serde(rename = "fromNot", default, deserialize_with = "comma_separated")]
@@ -1296,13 +1298,15 @@ pub async fn get_recent_activity(
 
     // Calculate date cutoff for plan limits
     // Subtract 1 day to include the boundary (more lenient)
+    // A row lookup (receipts) is not history browsing, so the plan window
+    // does not apply.
     let history_months = plan_config.limits.history_lookup_months;
-    let date_cutoff = Some(
+    let date_cutoff = params.id.is_none().then(|| {
         Utc::now()
             .checked_sub_months(Months::new(history_months as u32))
             .unwrap_or(Utc::now())
-            - chrono::Duration::days(1),
-    );
+            - chrono::Duration::days(1)
+    });
 
     // Parse user-provided date range filters
     let start_date = params.start_date.as_deref();
@@ -1384,6 +1388,7 @@ pub async fn get_recent_activity(
         min_amount: None,
         max_amount: None,
         tx_hash: params.tx_hash.clone(),
+        id: params.id,
         from_accounts: params.from_account.clone(),
         from_accounts_not: params.from_account_not.clone(),
         to_accounts: params.to_account.clone(),
@@ -1431,6 +1436,7 @@ pub async fn get_recent_activity(
         min_amount: None,
         max_amount: None,
         tx_hash: params.tx_hash.clone(),
+        id: params.id,
         from_accounts: params.from_account.clone(),
         from_accounts_not: params.from_account_not.clone(),
         to_accounts: params.to_account.clone(),
