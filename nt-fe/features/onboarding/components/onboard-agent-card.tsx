@@ -3,6 +3,7 @@
 import { Copy, Loader2, X } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { useCopyAgentPrompt } from "../hooks/use-copy-agent-prompt";
 import { LOCAL_STORAGE_KEYS } from "../steps/dashboard";
 import { ClaudeLogo, CursorLogo, OpenAILogo } from "./agent-logos";
@@ -27,6 +28,7 @@ export function OnboardAgentCard() {
     const handleClose = () => {
         localStorage.setItem(ONBOARD_AGENT_CLOSED_KEY, "true");
         setIsClosed(true);
+        toast.info(t("hiddenTitle"), { description: t("hiddenDescription") });
     };
 
     if (isClosed || !canCopy) {

@@ -2680,6 +2680,8 @@
             "copying": "מכין הנחיה…",
             "copiedTitle": "ההנחיה הועתקה",
             "copiedDescription": "הדביקו אותה בסוכן שלכם.",
+            "hiddenTitle": "הכרטיס הוסתר",
+            "hiddenDescription": "אפשר להעתיק את ההנחיה בכל עת מתפריט החשבון.",
             "inviteFailed": "לא ניתן היה ליצור הזמנה לסוכן. נסו שוב."
         },
         "infoBox": {

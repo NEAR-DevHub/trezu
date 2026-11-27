@@ -2680,6 +2680,8 @@
             "copying": "Prompt wird vorbereitet…",
             "copiedTitle": "Prompt kopiert",
             "copiedDescription": "Füge ihn in deinen Agenten ein.",
+            "hiddenTitle": "Karte ausgeblendet",
+            "hiddenDescription": "Du kannst den Prompt jederzeit über dein Kontomenü kopieren.",
             "inviteFailed": "Die Einladung für deinen Agenten konnte nicht erstellt werden. Bitte versuche es erneut."
         },
         "infoBox": {

@@ -2680,6 +2680,8 @@
             "copying": "프롬프트 준비 중…",
             "copiedTitle": "프롬프트가 복사되었습니다",
             "copiedDescription": "에이전트에 붙여 넣으세요.",
+            "hiddenTitle": "카드를 숨겼습니다",
+            "hiddenDescription": "계정 메뉴에서 언제든지 프롬프트를 복사할 수 있습니다.",
             "inviteFailed": "에이전트 초대를 만들지 못했습니다. 다시 시도해 주세요."
         },
         "infoBox": {

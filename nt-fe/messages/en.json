@@ -2680,6 +2680,8 @@
             "copying": "Preparing prompt…",
             "copiedTitle": "Prompt copied",
             "copiedDescription": "Paste it into your agent.",
+            "hiddenTitle": "Card hidden",
+            "hiddenDescription": "Copy the prompt any time from your account menu.",
             "inviteFailed": "Couldn't create the invite for your agent. Please try again."
         },
         "infoBox": {

@@ -2680,6 +2680,8 @@
             "copying": "Preparando prompt…",
             "copiedTitle": "Prompt copiado",
             "copiedDescription": "Pégalo en tu agente.",
+            "hiddenTitle": "Tarjeta ocultada",
+            "hiddenDescription": "Copia el prompt cuando quieras desde el menú de tu cuenta.",
             "inviteFailed": "No se pudo crear la invitación para tu agente. Inténtalo de nuevo."
         },
         "infoBox": {

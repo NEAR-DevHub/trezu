@@ -2663,6 +2663,8 @@
             "copying": "正在准备提示词…",
             "copiedTitle": "提示词已复制",
             "copiedDescription": "请粘贴到你的智能体中。",
+            "hiddenTitle": "卡片已隐藏",
+            "hiddenDescription": "你可以随时从账户菜单复制提示词。",
             "inviteFailed": "无法为你的智能体创建邀请，请重试。"
         },
         "infoBox": {

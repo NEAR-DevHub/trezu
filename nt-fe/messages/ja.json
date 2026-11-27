@@ -2680,6 +2680,8 @@
             "copying": "プロンプトを準備中…",
             "copiedTitle": "プロンプトをコピーしました",
             "copiedDescription": "エージェントに貼り付けてください。",
+            "hiddenTitle": "カードを非表示にしました",
+            "hiddenDescription": "プロンプトはアカウントメニューからいつでもコピーできます。",
             "inviteFailed": "エージェント用の招待を作成できませんでした。もう一度お試しください。"
         },
         "infoBox": {

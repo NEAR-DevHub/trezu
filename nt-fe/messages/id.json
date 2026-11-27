@@ -2680,6 +2680,8 @@
             "copying": "Menyiapkan prompt…",
             "copiedTitle": "Prompt disalin",
             "copiedDescription": "Tempelkan ke agen Anda.",
+            "hiddenTitle": "Kartu disembunyikan",
+            "hiddenDescription": "Salin prompt kapan saja dari menu akun Anda.",
             "inviteFailed": "Gagal membuat undangan untuk agen Anda. Silakan coba lagi."
         },
         "infoBox": {

@@ -2680,6 +2680,8 @@
             "copying": "İstem hazırlanıyor…",
             "copiedTitle": "İstem kopyalandı",
             "copiedDescription": "Ajanınıza yapıştırın.",
+            "hiddenTitle": "Kart gizlendi",
+            "hiddenDescription": "İstemi istediğiniz zaman hesap menünüzden kopyalayabilirsiniz.",
             "inviteFailed": "Ajanınız için davet oluşturulamadı. Lütfen tekrar deneyin."
         },
         "infoBox": {

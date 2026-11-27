@@ -2680,6 +2680,8 @@
             "copying": "Preparando prompt…",
             "copiedTitle": "Prompt copiado",
             "copiedDescription": "Cole-o no seu agente.",
+            "hiddenTitle": "Cartão ocultado",
+            "hiddenDescription": "Copie o prompt a qualquer momento no menu da sua conta.",
             "inviteFailed": "Não foi possível criar o convite para seu agente. Tente novamente."
         },
         "infoBox": {
