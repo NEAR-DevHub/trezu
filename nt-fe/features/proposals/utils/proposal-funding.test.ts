@@ -247,3 +247,102 @@ describe("lockup transfer funding", () => {
         expect(isFundingInsufficient(funding!)).toBe(true);
     });
 });
+
+function lockupStakeProposal(
+    method: "deposit_and_stake" | "stake",
+    amount: string,
+): Proposal {
+    return {
+        id: 3,
+        proposer: "alice.near",
+        description: "",
+        kind: {
+            FunctionCall: {
+                receiver_id: LOCKUP_ID,
+                actions: [
+                    {
+                        method_name: method,
+                        args: btoa(JSON.stringify({ amount })),
+                        deposit: "0",
+                        gas: "150000000000000",
+                    },
+                ],
+            },
+        },
+        status: "InProgress",
+        vote_counts: {},
+        votes: {},
+        submission_time: "1",
+        last_actions_log: null,
+    };
+}
+
+describe("lockup staking funding", () => {
+    // lilpeas.sputnik-dao.near: 5550 NEAR on the lockup, 5489.56 unvested.
+    const lockupTotal = "5550000000000000000000000000";
+    const unvested = "5489562061107163000000000000";
+
+    it("lets unvested NEAR be staked via deposit_and_stake", () => {
+        const funding = getProposalFundingAvailability(
+            lockupStakeProposal(
+                "deposit_and_stake",
+                "4000000000000000000000000000",
+            ),
+            [lockupAsset(lockupTotal, unvested)],
+        );
+
+        // 5550 NEAR minus the contract's 3.5 NEAR storage reserve.
+        expect(funding!.available.toFixed()).toBe(
+            "5546500000000000000000000000",
+        );
+        expect(isFundingInsufficient(funding!)).toBe(false);
+    });
+
+    it("rejects deposit_and_stake above the lockup account balance", () => {
+        const funding = getProposalFundingAvailability(
+            lockupStakeProposal(
+                "deposit_and_stake",
+                "5547000000000000000000000000",
+            ),
+            [lockupAsset(lockupTotal, unvested)],
+        );
+
+        expect(isFundingInsufficient(funding!)).toBe(true);
+    });
+
+    it("does not count NEAR already in the staking pool", () => {
+        const funding = getProposalFundingAvailability(
+            lockupStakeProposal(
+                "deposit_and_stake",
+                "2000000000000000000000000000",
+            ),
+            [
+                lockupAsset(lockupTotal, unvested, {
+                    staked: "3000000000000000000000000000",
+                    unstaked: "1000000000000000000000000000",
+                }),
+            ],
+        );
+
+        expect(funding!.available.toFixed()).toBe(
+            "1546500000000000000000000000",
+        );
+        expect(isFundingInsufficient(funding!)).toBe(true);
+    });
+
+    it("funds lockup stake from the pool's unstaked balance", () => {
+        const funding = getProposalFundingAvailability(
+            lockupStakeProposal("stake", "1000000000000000000000000000"),
+            [
+                lockupAsset(lockupTotal, unvested, {
+                    unstaked: "1000000000000000000000000000",
+                }),
+            ],
+        );
+
+        expect(funding!.available.toFixed()).toBe(
+            "1000000000000000000000000000",
+        );
+        expect(isFundingInsufficient(funding!)).toBe(false);
+    });
+});
