@@ -53,12 +53,18 @@ pub fn build_relay_callback(
             if let Some(pid) = pid {
                 tracing::info!(
                     "View proposal: {}",
-                    format!("https://trezu.app/{}/requests/{}", treasury_id, pid).cyan()
+                    format!(
+                        "{}/{}/requests/{}",
+                        crate::config::APP_BASE_URL,
+                        treasury_id,
+                        pid
+                    )
+                    .cyan()
                 );
             } else {
                 tracing::info!(
                     "View treasury: {}",
-                    format!("https://trezu.app/{}/requests", treasury_id).cyan()
+                    format!("{}/{}/requests", crate::config::APP_BASE_URL, treasury_id).cyan()
                 );
             }
         } else {

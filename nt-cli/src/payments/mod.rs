@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::api::ApiClient;
 use crate::config::{TreasuryContext, TrezuContext};
+use crate::recipient::{Blockchain, Destination, validate_recipient};
 use crate::types::{SimplifiedToken, TokenResidency};
 use colored::Colorize;
 use strum::{EnumDiscriminants, EnumIter, EnumMessage};
@@ -13,11 +14,23 @@ const NETWORK_NEAR_DIRECT: &str = "near";
 /// balance. Funds stay inside intents.near.
 const NETWORK_NEAR_COM: &str = "near.com";
 
-/// v1.signer `sign` gas, mirrors nt-fe `V1_SIGNER_GAS` (15 TGas).
+/// Destination picked at the interactive network prompt, so the recipient
+/// prompt that follows can check the address against it. interactive_clap
+/// gives input functions no access to earlier fields; the authoritative
+/// check runs in `PaymentSendContext` either way.
+static PICKED_DESTINATION: std::sync::Mutex<Option<Destination>> = std::sync::Mutex::new(None);
+
+fn remember_destination(destination: Destination) {
+    if let Ok(mut picked) = PICKED_DESTINATION.lock() {
+        *picked = Some(destination);
+    }
+}
+
+/// v1.signer `sign` gas, mirrors the web app's `V1_SIGNER_GAS` (15 TGas).
 const V1_SIGNER_GAS: &str = "15000000000000";
-/// ft_transfer / mt_transfer gas, mirrors nt-fe `FT_TRANSFER_GAS` (150 TGas).
+/// ft_transfer / mt_transfer gas, mirrors the web app's `FT_TRANSFER_GAS` (150 TGas).
 const FT_TRANSFER_GAS: &str = "150000000000000";
-/// near_deposit gas, mirrors nt-fe `STORAGE_DEPOSIT_GAS` (10 TGas).
+/// near_deposit gas, mirrors the web app's `STORAGE_DEPOSIT_GAS` (10 TGas).
 const NEAR_DEPOSIT_GAS: &str = "10000000000000";
 
 #[derive(Debug, Clone, interactive_clap::InteractiveClap)]
@@ -185,9 +198,10 @@ pub struct PaymentDetails {
     /// Amount the recipient should receive (e.g. 0.5, 100)
     amount: String,
     #[interactive_clap(skip_default_input_arg)]
-    /// Destination network: "near" (direct transfer), "near.com" (NEAR Intents), or a bridge asset id (e.g. nep141:eth.omft.near)
+    /// Destination network: "near" (NEAR account; direct transfer, or a 1Click withdrawal for NEAR Intents balances), "near.com" (NEAR Intents), or a bridge asset id (e.g. nep141:eth.omft.near)
     destination_network: String,
-    /// Recipient address on the destination network
+    #[interactive_clap(skip_default_input_arg)]
+    /// Recipient address on the destination network; for near.com, a NEAR account with the `nearcom:` prefix (e.g. nearcom:alice.near)
     receiver: String,
     #[interactive_clap(skip_default_input_arg)]
     /// Description/memo for the payment
@@ -221,14 +235,17 @@ impl PaymentDetails {
 
         let mut ids: Vec<String> = Vec::new();
         let mut labels: Vec<String> = Vec::new();
+        let mut destinations: Vec<Destination> = Vec::new();
 
         if is_near_chain_token {
             ids.push(NETWORK_NEAR_DIRECT.to_string());
             labels.push("NEAR (direct transfer on the NEAR chain)".to_string());
+            destinations.push(Destination::Chain(Some(Blockchain::Near)));
         }
         if is_intents_token || !context.is_confidential {
             ids.push(NETWORK_NEAR_COM.to_string());
             labels.push("near.com (recipient's NEAR Intents balance)".to_string());
+            destinations.push(Destination::NearCom);
         }
 
         // Cross-chain destinations come from the 1Click bridge catalog: the
@@ -249,17 +266,17 @@ impl PaymentDetails {
                             origin_asset,
                             asset.networks.len()
                         );
-                        for network in &asset.networks {
-                            if normalize_near_asset_id(&network.id)
-                                == normalize_near_asset_id(&origin_asset)
-                            {
-                                continue;
-                            }
-                            ids.push(network.id.clone());
-                            labels.push(format!(
-                                "{} — {} ({})",
-                                network.name, network.symbol, network.id
-                            ));
+                        for (id, label) in
+                            bridge_destination_options(asset, &origin_asset, is_near_chain_token)
+                        {
+                            let chain = asset
+                                .networks
+                                .iter()
+                                .find(|n| n.id == id)
+                                .and_then(|n| Blockchain::from_network(&n.name));
+                            ids.push(id);
+                            labels.push(label);
+                            destinations.push(Destination::Chain(chain));
                         }
                     } else {
                         tracing::info!(
@@ -285,13 +302,41 @@ impl PaymentDetails {
             ));
         }
         if ids.len() == 1 {
+            remember_destination(destinations[0]);
             return Ok(Some(ids.remove(0)));
         }
 
         let selection =
             inquire::Select::new("Select destination network:", labels.clone()).prompt()?;
         let index = labels.iter().position(|l| l == &selection).unwrap();
+        remember_destination(destinations[index]);
         Ok(Some(ids.swap_remove(index)))
+    }
+
+    fn input_receiver(_context: &PaymentTokenContext) -> color_eyre::eyre::Result<Option<String>> {
+        let destination = PICKED_DESTINATION.lock().ok().and_then(|picked| *picked);
+        let mut prompt = inquire::Text::new("Recipient address:");
+        if destination == Some(Destination::NearCom) {
+            prompt = prompt.with_help_message(
+                "near.com recipients need the 'nearcom:' prefix, e.g. nearcom:alice.near",
+            );
+        }
+        let receiver = prompt
+            .with_validator(move |input: &str| {
+                let result = match destination {
+                    Some(destination) => validate_recipient(input, destination).map(|_| ()),
+                    None if input.trim().is_empty() => {
+                        Err("Recipient address is required".to_string())
+                    }
+                    None => Ok(()),
+                };
+                Ok(match result {
+                    Ok(()) => inquire::validator::Validation::Valid,
+                    Err(msg) => inquire::validator::Validation::Invalid(msg.into()),
+                })
+            })
+            .prompt()?;
+        Ok(Some(receiver.trim().to_string()))
     }
 
     fn input_description(
@@ -334,7 +379,18 @@ impl PaymentSendContext {
             .parse()
             .unwrap_or(0);
 
-        let destination_network = scope.destination_network.trim();
+        // Intents tokens can't use the direct Transfer kind; "near" means the
+        // 1Click withdrawal to the NEAR chain (the token's own asset id).
+        let intents_near_withdrawal = if matches!(token.residency, TokenResidency::Intents)
+            && scope.destination_network.trim() == NETWORK_NEAR_DIRECT
+        {
+            Some(resolve_origin_asset(token)?)
+        } else {
+            None
+        };
+        let destination_network = intents_near_withdrawal
+            .as_deref()
+            .unwrap_or_else(|| scope.destination_network.trim());
         let is_direct = destination_network == NETWORK_NEAR_DIRECT;
         let is_near_com = destination_network.is_empty() || destination_network == NETWORK_NEAR_COM;
 
@@ -366,6 +422,9 @@ impl PaymentSendContext {
                     token.symbol
                 ));
             }
+            let receiver =
+                validate_recipient(&scope.receiver, Destination::Chain(Some(Blockchain::Near)))
+                    .map_err(|e| color_eyre::eyre::eyre!(e))?;
             let raw_amount = normalize_amount(&scope.amount, &token.symbol, token.decimals)?;
             let token_id = resolve_token_id(token)?;
             tracing::info!(
@@ -379,7 +438,7 @@ impl PaymentSendContext {
             let kind = serde_json::json!({
                 "Transfer": {
                     "token_id": token_id,
-                    "receiver_id": scope.receiver,
+                    "receiver_id": receiver,
                     "amount": raw_amount,
                     "msg": serde_json::Value::Null,
                 }
@@ -391,7 +450,7 @@ impl PaymentSendContext {
         } else {
             // 1Click intents route (near.com or cross-chain).
             let origin_asset = resolve_origin_asset(token)?;
-            let (destination_asset, recipient_type, amount_decimals) = if is_near_com {
+            let (destination_asset, recipient_type, amount_decimals, destination) = if is_near_com {
                 (
                     origin_asset.clone(),
                     if is_confidential {
@@ -400,6 +459,7 @@ impl PaymentSendContext {
                         "INTENTS"
                     },
                     token.decimals,
+                    Destination::NearCom,
                 )
             } else {
                 // Cross-chain: the destination network id doubles as the
@@ -416,8 +476,15 @@ impl PaymentSendContext {
                             origin_asset
                         )
                     })?;
-                (network.id.clone(), "DESTINATION_CHAIN", network.decimals)
+                (
+                    network.id.clone(),
+                    "DESTINATION_CHAIN",
+                    network.decimals,
+                    Destination::Chain(Blockchain::from_network(&network.name)),
+                )
             };
+            let receiver = validate_recipient(&scope.receiver, destination)
+                .map_err(|e| color_eyre::eyre::eyre!(e))?;
 
             let deposit_type = if is_confidential {
                 "CONFIDENTIAL_INTENTS"
@@ -452,7 +519,7 @@ impl PaymentSendContext {
                 &destination_asset,
                 recipient_type,
                 &raw_amount,
-                &scope.receiver,
+                &receiver,
             )?;
 
             if is_confidential {
@@ -462,7 +529,7 @@ impl PaymentSendContext {
                     token,
                     &origin_asset,
                     &quote,
-                    &scope.receiver,
+                    &receiver,
                     destination_network,
                     &scope.description,
                 )?
@@ -724,7 +791,7 @@ fn resolve_token<'a>(
 }
 
 /// Map a treasury token to its 1Click intents origin asset id, mirrors
-/// nt-fe `classifyPaymentToken().intentsOriginAsset`. Native NEAR is keyed
+/// the web app's `classifyPaymentToken().intentsOriginAsset`. Native NEAR is keyed
 /// off residency (wrapped NEAR FT rows also carry the "NEAR" symbol).
 fn resolve_origin_asset(token: &SimplifiedToken) -> color_eyre::eyre::Result<String> {
     if matches!(token.residency, TokenResidency::Near) {
@@ -745,7 +812,7 @@ fn resolve_origin_asset(token: &SimplifiedToken) -> color_eyre::eyre::Result<Str
 }
 
 /// Strip the multi-token standard prefix (`nep141:` / `nep245:`) for id
-/// matching, extends nt-fe `normalizeNearAssetId` to nep245 ids.
+/// matching, extends the web app's `normalizeNearAssetId` to nep245 ids.
 fn normalize_near_asset_id(value: &str) -> String {
     let normalized = value.trim().to_lowercase();
     normalized
@@ -753,6 +820,38 @@ fn normalize_near_asset_id(value: &str) -> String {
         .or_else(|| normalized.strip_prefix("nep245:"))
         .map(|s| s.to_string())
         .unwrap_or(normalized)
+}
+
+/// Destination options from a bridge catalog entry, as (network id, label).
+///
+/// The entry for the token's own asset is the NEAR chain itself. It is left
+/// out when the direct-transfer option already covers it (NEAR-chain tokens),
+/// and kept for NEAR Intents tokens (every confidential balance), which reach
+/// a NEAR account only through a 1Click withdrawal.
+fn bridge_destination_options(
+    asset: &crate::types::BridgeAsset,
+    origin_asset: &str,
+    has_direct_near_option: bool,
+) -> Vec<(String, String)> {
+    let origin = normalize_near_asset_id(origin_asset);
+    asset
+        .networks
+        .iter()
+        .filter_map(|network| {
+            if normalize_near_asset_id(&network.id) != origin {
+                let label = format!("{} — {} ({})", network.name, network.symbol, network.id);
+                return Some((network.id.clone(), label));
+            }
+            if has_direct_near_option {
+                return None;
+            }
+            let label = format!(
+                "NEAR — {} to a NEAR account ({})",
+                network.symbol, network.id
+            );
+            Some((network.id.clone(), label))
+        })
+        .collect()
 }
 
 fn find_bridge_asset<'a>(
@@ -833,7 +932,7 @@ fn resolve_token_id(token: &SimplifiedToken) -> color_eyre::eyre::Result<String>
         .to_string())
 }
 
-/// Replicates nt-fe `encodeToMarkdown`: "* Key Name: value" pairs joined with
+/// Replicates the web app's `encodeToMarkdown`: "* Key Name: value" pairs joined with
 /// " <br>", empty values skipped. Keys are passed already human-readable.
 fn encode_to_markdown(pairs: &[(&str, &str)]) -> String {
     pairs
@@ -844,7 +943,7 @@ fn encode_to_markdown(pairs: &[(&str, &str)]) -> String {
         .join(" <br>")
 }
 
-/// Mirrors nt-fe `parseKeyToReadableFormat` for the snake/camel keys we use.
+/// Mirrors the web app's `parseKeyToReadableFormat` for the snake/camel keys we use.
 fn readable_key(key: &str) -> String {
     let mut result = String::new();
     let mut capitalize = true;
@@ -967,15 +1066,8 @@ fn build_confidential_proposal(
         .and_then(|v| v.as_str())
         .ok_or_else(|| color_eyre::eyre::eyre!("No payloadHash in generate-intent response"))?;
 
-    let signer_args = serde_json::json!({
-        "request": {
-            "path": treasury_id,
-            "payload_v2": {
-                "Eddsa": payload_hash,
-            },
-            "domain_id": 1,
-        }
-    });
+    let domain_id = mpc_domain_id(&intent_response);
+    let signer_args = v1_signer_sign_args(treasury_id, payload_hash, domain_id);
 
     let args_base64 = base64::Engine::encode(
         &base64::engine::general_purpose::STANDARD,
@@ -1007,15 +1099,47 @@ fn build_confidential_proposal(
     tracing::info!(
         target: "near_teach_me",
         parent: &tracing::Span::none(),
-        "Proposal asks v1.signer to MPC-sign NEP-413 payload hash {} for path '{}' (domain 1 = \
-         Ed25519). The backend stored the matching intent and will submit it to 1Click once it \
+        "Proposal asks v1.signer to MPC-sign NEP-413 payload hash {} for path '{}' (EdDSA domain \
+         {}, the treasury's registered MPC key). The backend stored the matching intent and will submit it to 1Click once it \
          sees this signature in an approved vote relayed with proposalType=\"vote\".",
         payload_hash,
-        treasury_id
+        treasury_id,
+        domain_id
     );
     tracing::info!("  Intent generated, payload hash: {}", payload_hash);
 
     Ok((description, kind))
+}
+
+/// EdDSA domain on `v1.signer` for treasuries created before the MPC key
+/// rotation. Mirrors the web app's `MPC_EDDSA_DOMAIN_LEGACY`.
+const MPC_EDDSA_DOMAIN_LEGACY: u64 = 1;
+
+/// The `v1.signer` domain the treasury's MPC key was registered with.
+///
+/// The backend returns it as `mpcDomainId` in the generate-intent response:
+/// 1 for treasuries created before the MPC key rotation, 5 for newer ones.
+/// Signing with the wrong domain yields a signature intents.near rejects, so
+/// this mirrors the web app and falls back to the legacy domain only when the
+/// field is absent (an older backend).
+fn mpc_domain_id(intent_response: &serde_json::Value) -> u64 {
+    intent_response
+        .get("mpcDomainId")
+        .and_then(serde_json::Value::as_u64)
+        .unwrap_or(MPC_EDDSA_DOMAIN_LEGACY)
+}
+
+/// Arguments for `v1.signer` `sign` over a NEP-413 payload hash.
+fn v1_signer_sign_args(treasury_id: &str, payload_hash: &str, domain_id: u64) -> serde_json::Value {
+    serde_json::json!({
+        "request": {
+            "path": treasury_id,
+            "payload_v2": {
+                "Eddsa": payload_hash,
+            },
+            "domain_id": domain_id,
+        }
+    })
 }
 
 /// Public intents route: the proposal moves `amountIn` from the treasury to
@@ -1131,7 +1255,7 @@ fn build_public_intents_proposal(
 }
 
 /// 1Click fee shown in the proposal description: amountIn - amountOut using the
-/// formatted (human) values, mirrors nt-fe `computeQuoteNetworkFee`.
+/// formatted (human) values, mirrors the web app's `computeQuoteNetworkFee`.
 fn compute_network_fee(quote: &serde_json::Value) -> Option<String> {
     let amount_in: f64 = quote
         .pointer("/quote/amountInFormatted")
@@ -1161,6 +1285,60 @@ fn json_to_base64(value: &serde_json::Value) -> color_eyre::eyre::Result<String>
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn near_bridge_asset() -> crate::types::BridgeAsset {
+        let network = |id: &str, name: &str, decimals| crate::types::BridgeNetwork {
+            id: id.to_string(),
+            name: name.to_string(),
+            symbol: "NEAR".to_string(),
+            decimals,
+            min_deposit_amount: None,
+            min_withdrawal_amount: None,
+        };
+        crate::types::BridgeAsset {
+            id: "near".to_string(),
+            name: "NEAR Protocol".to_string(),
+            networks: vec![
+                network("nep141:wrap.near", "near", 24),
+                network(
+                    "nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t",
+                    "bnb smart chain",
+                    18,
+                ),
+            ],
+        }
+    }
+
+    #[test]
+    fn intents_near_can_be_sent_to_the_near_chain() {
+        // Confidential NEAR lives on Intents: the NEAR chain must stay a destination.
+        let ids: Vec<String> =
+            bridge_destination_options(&near_bridge_asset(), "nep141:wrap.near", false)
+                .into_iter()
+                .map(|(id, _)| id)
+                .collect();
+        assert_eq!(
+            ids,
+            [
+                "nep141:wrap.near",
+                "nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t"
+            ]
+        );
+    }
+
+    #[test]
+    fn near_chain_token_skips_the_duplicate_near_destination() {
+        // NEAR-chain tokens already get the direct-transfer option.
+        let ids: Vec<String> =
+            bridge_destination_options(&near_bridge_asset(), "nep141:wrap.near", true)
+                .into_iter()
+                .map(|(id, _)| id)
+                .collect();
+        assert_eq!(
+            ids,
+            ["nep245:v2_1.omni.hot.tg:56_SZzgw3HSudhZcTwPWUTi2RJB19t"]
+        );
+    }
 
     fn token(
         symbol: &str,
@@ -1340,5 +1518,34 @@ mod tests {
         assert!(normalize_amount("0", "USDT", 6).is_err());
         // more fractional digits than the token supports
         assert!(normalize_amount("0.0000001", "USDT", 6).is_err());
+    }
+
+    #[test]
+    fn mpc_domain_id_follows_backend() {
+        let current = serde_json::json!({ "payloadHash": "h", "mpcDomainId": 5 });
+        let legacy = serde_json::json!({ "payloadHash": "h", "mpcDomainId": 1 });
+        assert_eq!(mpc_domain_id(&current), 5);
+        assert_eq!(mpc_domain_id(&legacy), 1);
+    }
+
+    #[test]
+    fn mpc_domain_id_defaults_to_legacy_when_missing() {
+        let response = serde_json::json!({ "payloadHash": "h" });
+        assert_eq!(mpc_domain_id(&response), MPC_EDDSA_DOMAIN_LEGACY);
+    }
+
+    #[test]
+    fn v1_signer_sign_args_carry_domain() {
+        let args = v1_signer_sign_args("t.sputnik-dao.near", "abc", 5);
+        assert_eq!(
+            args,
+            serde_json::json!({
+                "request": {
+                    "path": "t.sputnik-dao.near",
+                    "payload_v2": { "Eddsa": "abc" },
+                    "domain_id": 5,
+                }
+            })
+        );
     }
 }

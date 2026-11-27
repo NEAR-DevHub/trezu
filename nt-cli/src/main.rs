@@ -11,6 +11,7 @@ mod auth;
 mod config;
 mod members;
 mod payments;
+mod recipient;
 mod relay;
 mod requests;
 mod treasury;
