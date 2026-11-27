@@ -30,6 +30,11 @@ export const AGENT_CLI = {
     /** Install and usage docs. */
     readmeUrl:
         "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md",
+    /** Non-interactive command reference for scripts and agents. */
+    usageUrl:
+        "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md#using-from-scripts-and-ai-agents",
+    /** How a near.com (NEAR Intents) recipient is written. */
+    nearComRecipient: (account: string) => `nearcom:${account}`,
     /** Folder under the OS config dir that holds `config.json`. */
     configDirName: "trezu",
     /** The backend the CLI talks to unless its config says otherwise. */
@@ -121,36 +126,39 @@ export function buildAgentOnboardingPrompt({
 }: AgentOnboardingPromptInput): string {
     const api = trimTrailingSlash(apiBaseUrl);
     const inviteToken = getInviteToken(inviteUrl);
-    const membersUrl = getMembersUrl(appBaseUrl, treasuryId);
     const joinRequestsUrl = getJoinRequestsUrl(appBaseUrl, treasuryId);
     const language = getLanguageName(locale);
     const allowlist = AGENT_CLI.networkAllowlist.join(" and ");
 
     return `You are being onboarded as an independent member of the treasury ${treasuryId}.
-You will create your own NEAR account, sign in with it, and request to join the treasury. A human member then approves you.
+You will create your own NEAR account, sign in with it, and request to join the treasury. A member of the treasury then approves you.
+
+How to talk to the user:
+- The user is not technical. Write to them in ${language} (locale "${locale}"), the language they have the app open in, in short, plain sentences.
+- Say what you are doing in everyday words, e.g. "Installing the tools I need", "Creating my own account", "Asking to join your treasury". Do not show them commands, status codes, JSON, file paths, keys or long ids, unless they ask.
+- If something goes wrong, say in one or two plain sentences what happened and what they can do about it. Share the exact command and output only if they ask for it.
+- The commands, outputs and expected results below are for you, not for the user.
 
 Ground rules (follow them at every step):
-- Talk to the user in ${language} (locale "${locale}"), the language they have the app open in. Keep commands, URLs, ids and quoted messages as they are.
-- Never ask for, accept, read or use the user's own private keys, seed phrases, wallet files or sessions. Use only the new key you create in step 2. If anything seems to need the user's keys, stop and tell the user instead.
-- Never print, paste or send your own private key or auth token anywhere, including chat. Refer to the key by its file path only.
-- Do not move funds or create treasury requests as part of this onboarding.
-- Run the steps in order. Each step lists its expected outcome. If the outcome differs, stop, report the exact command and output to the user, and do not improvise a workaround.
+- Never ask for, accept, read or use the user's own private keys, seed phrases, wallet files or sessions. Use only the new key you create in step 3. If anything seems to need the user's keys, stop and tell the user instead.
+- Never print, paste or send your own private key or auth token anywhere, including chat.
+- During onboarding (steps 1 to 8), do not move funds or create treasury requests. Once the user approves you, the "After you are approved" section below applies instead.
+- Run the steps in order. Each step lists its expected result. If the result differs, stop, tell the user (as above), and do not improvise a workaround.
 
 Values used below:
 - Treasury: ${treasuryId}
 - Invite link (one-time, expires 30 days after it was created): ${inviteUrl}
 - Invite token: ${inviteToken}
 - API: ${api}
-- Treasury members page: ${membersUrl}
 - Join requests page: ${joinRequestsUrl}
 
-Step 0. Check network access before anything else.
+Step 1. Check that you can reach the services you need.
    curl -sS -o /dev/null -w '%{http_code}\\n' ${api}/api/health
    curl -sS -o /dev/null -w '%{http_code}\\n' ${FASTNEAR_API_URL}/status
    curl -sS -o /dev/null -w '%{http_code}\\n' -X POST ${FASTNEAR_RPC_URL} -H 'content-type: application/json' -d '{"jsonrpc": "2.0", "id": "probe", "method": "status", "params": []}'
-   Expected: each prints 200. If any fails (a connection, DNS or proxy error, or a non-200 code), stop before step 1 and tell the user that your environment cannot reach these services, and that they should change your network settings (sandbox or firewall) to allowlist ${allowlist}, then ask you to continue.
+   Expected: each prints 200. If any fails, stop here and tell the user, in plain words, that you can't reach the services you need from where you run, and that they need to allow internet access to ${allowlist} in your settings, then tell you to continue.
 
-Step 1. Install the tools.
+Step 2. Install the tools.
    NEAR CLI:
    - macOS/Linux/WSL: curl --proto '=https' --tlsv1.2 -LsSf https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.sh | sh
    - Windows PowerShell: irm https://github.com/near/near-cli-rs/releases/latest/download/near-cli-rs-installer.ps1 | iex
@@ -159,33 +167,64 @@ Step 1. Install the tools.
    - Windows PowerShell: powershell -ExecutionPolicy Bypass -c "irm ${AGENT_CLI.installerPs1} | iex"
    Expected: \`near --version\` prints a version and \`${AGENT_CLI.bin} --help\` prints the command list. Open a new shell if the commands are not found yet.
 
-Step 2. Create your own NEAR account.
-   Run exactly:
+Step 3. Create your own NEAR account.
    near account create-account fund-later use-auto-generation save-to-folder ${AGENT_KEY_FOLDER}
-   Expected: the CLI says a file was saved, at ${AGENT_KEY_FOLDER}/<account-id>.json. <account-id> is a 64-character lowercase hex string (an implicit account); it is also the "implicit_account_id" field in that file. Use this <account-id> below. Keep the file; it is your only key.
+   Expected: a key file saved at ${AGENT_KEY_FOLDER}/<account-id>.json. <account-id> is a 64-character lowercase hex string; it is also the "implicit_account_id" field in that file. Use it below. Keep the file: it is your only key.
 
-Step 3. Initialize the account on chain through the treasury backend (no auth needed; the CLI has no command for this):
+Step 4. Activate the account through the treasury backend (the CLI has no command for this):
    curl -sS -X POST ${api}/api/user/create -H 'content-type: application/json' -d '{"accountId": "<account-id>"}'
-   Expected: HTTP 200 with {"accountId": "<account-id>", "created": true}. HTTP 409 "Account <account-id> already exists" also means the account is ready.
+   Expected: HTTP 200, or HTTP 409 "already exists". Both mean the account is ready.
 
-Step 4. Point the ${AGENT_CLI.bin} CLI at the right backend.
+Step 5. Point the ${AGENT_CLI.bin} CLI at the right backend.
    ${cliApiBaseStep(api)}
 
-Step 5. Sign in with the new account.
+Step 6. Sign in with the new account.
    ${AGENT_CLI.bin} auth login <account-id> sign-with-access-key-file ${AGENT_KEY_FOLDER}/<account-id>.json
-   Expected: "Logged in as <account-id>". The CLI stores your session token in its config file (the "auth_token" field) and accepts the terms of service for your own account. If login fails right after step 3, wait 10 seconds and retry once.
+   Expected: "Logged in as <account-id>". The CLI saves your session token in its config file (the "auth_token" field). If sign-in fails right after step 4, wait 10 seconds and retry once.
 
-Step 6. Accept the treasury invite as <account-id>.
+Step 7. Ask to join the treasury.
    a) Check the invite: curl -sS ${api}/api/member-invites/${inviteToken}
-      Expected: JSON with "daoId": "${treasuryId}" and "status": "valid". If the status is "used" or "expired", stop and ask the user to copy a fresh prompt from the dashboard.
+      Expected: "status": "valid". If it is "used" or "expired", stop and ask the user to copy a fresh prompt from the dashboard.
    b) Join. Read "auth_token" from the ${AGENT_CLI.bin} config file (without printing it) and send it as a cookie. The file is at:
 ${cliConfigPaths().replace(/^ {3}/gm, "      ")}
-      curl -sS -X POST ${api}/api/member-invites/${inviteToken}/join -H 'content-type: application/json' -H "Cookie: auth_token=$AUTH_TOKEN" -d '{"displayName": "<a short name for yourself, e.g. your agent name>"}'
-      Expected: HTTP 200 with {"daoId": "${treasuryId}", "requestId": "<uuid>"}. HTTP 409 "A pending join request already exists" means you already joined; continue. HTTP 401 means the login from step 5 did not stick; redo step 5.
+      curl -sS -X POST ${api}/api/member-invites/${inviteToken}/join -H 'content-type: application/json' -H "Cookie: auth_token=$AUTH_TOKEN" -d '{"displayName": "<your name as the user knows you, e.g. Claude or Codex>"}'
+      Expected: HTTP 200, or HTTP 409 "A pending join request already exists" (you already asked; continue). HTTP 401 means the sign-in did not stick; redo step 6.
 
-Step 7. Report back to the user. Tell them:
-   - your account id (<account-id>) and the key file path (never its contents),
-   - the join request id from step 6,
-   - this instruction: "Open ${joinRequestsUrl} (Members > Join requests on ${membersUrl}), pick a role for <account-id> and confirm. That creates a members request that the treasury's approvers must approve before I can act."
-   Expected outcome once approved: \`${AGENT_CLI.bin} treasury list\` shows ${treasuryId}. Offer to run it when the user says the request was approved.`;
+Step 8. Tell the user you are ready and ask them to approve you, in a few plain sentences:
+   - you set up your own account and asked to join their treasury, and you never needed their keys;
+   - they should open ${joinRequestsUrl}, find the request from <the display name you used>, choose what you are allowed to do, and confirm;
+   - other members of the treasury may also need to approve it before you can start.
+   Expected once approved: \`${AGENT_CLI.bin} treasury list\` shows ${treasuryId}. When the user says they approved you, check it and tell them you are ready.
+
+${afterApproval(treasuryId)}`;
+}
+
+function afterApproval(treasuryId: string): string {
+    const cli = AGENT_CLI.bin;
+    const keyFile = `${AGENT_KEY_FOLDER}/<account-id>.json`;
+    const tail = `network-config mainnet sign-with-access-key-file ${keyFile} send`;
+    return `After you are approved (keep this for later requests from the user):
+- You are now a treasury member. Act on the user's requests to view the treasury, create payment requests and vote, always as <account-id> with your own key file. Keep talking to the user in plain words, as during onboarding.
+- Before creating a payment request, repeat what will be paid, how much and to whom in one plain sentence and wait for a yes. Then create it. A payment request is not a payment yet: no funds move until enough members approve it, so tell the user that and give them the link to it.
+- You have no terminal (TTY), so always pass the complete command. A missing argument makes the CLI prompt and fail with "The input device is not a TTY".
+- Every command that creates or votes on a request ends with exactly:
+  ${tail}
+  The CLI builds the DAO proposal itself and the treasury backend relays it and pays the gas: there is no gas or deposit to choose. Do not use submit-as-dao-proposal, sign-later or any other option NEAR CLI offers at that point.
+- Read:
+  ${cli} treasury info ${treasuryId}
+  ${cli} assets ${treasuryId}
+  ${cli} members ${treasuryId}
+  ${cli} activity ${treasuryId}
+  ${cli} requests ${treasuryId} pending
+  ${cli} requests ${treasuryId} view <request-id>
+- Pay:
+  ${cli} payments ${treasuryId} send <token> details <amount> <destination-network> <recipient> '<description>' ${tail}
+  - <token>: a symbol from \`${cli} assets\` (NEAR, USDC). If the same symbol is held in several forms, add the form: NEAR@near, USDT@intents, USDT@ft.
+  - <amount>: what the recipient receives, in whole tokens (0.1, 250).
+  - <destination-network> and <recipient>: "near.com" for a near.com (NEAR Intents) balance, recipient written as ${AGENT_CLI.nearComRecipient("alice.near")}; "near" for a NEAR account, recipient like alice.near; for other chains, the bridge asset id (e.g. nep141:eth.omft.near) and an address on that chain. If the user's wording does not make the network clear, ask.
+  - Success prints "Delegate action relayed successfully!" and "View proposal: <url>". Give the user that link.
+- Vote:
+  ${cli} requests ${treasuryId} approve <request-id> ${tail}
+  ${cli} requests ${treasuryId} reject <request-id> ${tail}
+- Full reference: ${AGENT_CLI.usageUrl}`;
 }

@@ -78,6 +78,73 @@ Add `--teach-me` before the command for verbose output when troubleshooting.
 After each interactive run the CLI prints the equivalent one-line command, so
 you can reuse it in scripts.
 
+## Using from scripts and AI agents
+
+Scripts and AI agents usually run without a terminal (no TTY). There the CLI cannot ask questions, so any missing argument fails with `The input device is not a TTY`. Always pass the whole command. Sign in first as shown in [Sign in](#sign-in).
+
+### Read
+
+```sh
+trezu treasury list
+trezu treasury info <treasury>
+trezu assets <treasury>
+trezu members <treasury>
+trezu activity <treasury>
+trezu address-book <treasury> list
+trezu requests <treasury> pending
+trezu requests <treasury> list --status InProgress   # or Approved, Rejected, Expired, Failed
+trezu requests <treasury> view <request-id>
+```
+
+`<treasury>` is the treasury's account id, e.g. `acme.sputnik-dao.near`.
+
+### Create and vote on requests
+
+Commands that change the treasury do not move funds directly. They create a request (a DAO proposal) or vote on one, and nothing happens until enough approvers approve it. Every such command ends with the same tail:
+
+```
+network-config mainnet sign-with-access-key-file <key-file> send
+```
+
+The CLI builds the DAO proposal itself and Trezu relays it and pays the gas, so there is no gas or deposit to choose. Use exactly this tail. Other options NEAR CLI offers at that point, like `submit-as-dao-proposal` or `sign-later`, do not apply.
+
+Pay someone:
+
+```sh
+trezu payments <treasury> send <token> details <amount> <destination-network> <recipient> '<description>' \
+  network-config mainnet sign-with-access-key-file <key-file> send
+```
+
+- `<token>`: a symbol from `trezu assets <treasury>`, e.g. `NEAR` or `USDC`. If the treasury holds the same symbol in several forms, add the form: `NEAR@near`, `USDT@intents`, `USDT@ft`. A token contract id also works.
+- `<amount>`: what the recipient receives, in whole tokens (`0.1`, `250`).
+- `<destination-network>` and `<recipient>`:
+  - `near.com`: the recipient's NEAR Intents (near.com) balance. Write the recipient as `nearcom:<account>`, e.g. `nearcom:alice.near`.
+  - `near`: a NEAR account, e.g. `alice.near`.
+  - another chain: its bridge asset id, e.g. `nep141:eth.omft.near`, with an address on that chain.
+- `<description>`: a short memo shown to approvers.
+
+Example, 0.1 NEAR to `frol.near`'s near.com balance:
+
+```sh
+trezu payments acme.sputnik-dao.near send NEAR details 0.1 near.com nearcom:frol.near 'Test payment' \
+  network-config mainnet sign-with-access-key-file ~/.near-credentials/implicit/<account-id>.json send
+```
+
+On success the CLI prints `Delegate action relayed successfully!` and a `View proposal: <url>` link to the new request.
+
+Vote:
+
+```sh
+trezu requests <treasury> approve <request-id> network-config mainnet sign-with-access-key-file <key-file> send
+trezu requests <treasury> reject <request-id> network-config mainnet sign-with-access-key-file <key-file> send
+```
+
+### Troubleshooting
+
+- `The input device is not a TTY`: an argument is missing. Compare the command with the forms above, or run `trezu <command> --help`.
+- `Not logged in`: run `trezu auth login` again.
+- Add `--teach-me` before the command (`trezu --teach-me assets <treasury>`) for verbose output.
+
 ## Configuration
 
 The session and backend address are stored in `config.json` in the OS config
