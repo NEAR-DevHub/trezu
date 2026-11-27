@@ -1,5 +1,5 @@
 import Big from "@/lib/big";
-import { availableBalance } from "@/lib/balance";
+import { availableBalance, type LockupBalance } from "@/lib/balance";
 import type { TreasuryAsset } from "@/lib/api";
 import { NEAR_NETWORK_ID } from "@/constants/network-ids";
 import type { Proposal } from "@/lib/proposals-api";
@@ -88,6 +88,23 @@ function liquidBalance(balance: TreasuryAsset["balance"]): Big {
     return liquid.gt(0) ? liquid : Big(0);
 }
 
+/** `MIN_BALANCE_FOR_STORAGE` of the near-lockup contract (3.5 NEAR). */
+const LOCKUP_MIN_BALANCE_FOR_STORAGE = Big("3500000000000000000000000");
+
+/**
+ * NEAR the lockup contract lets the owner move into its staking pool:
+ * the lockup account's own balance minus `MIN_BALANCE_FOR_STORAGE`
+ * (`deposit_and_stake` / `deposit_to_staking_pool` assert exactly this).
+ * Vesting does not apply: unvested NEAR can be staked, only not transferred.
+ */
+function lockupStakeableBalance(lockup: LockupBalance): Big {
+    const onAccount = lockup.total
+        .sub(lockup.staked)
+        .sub(lockup.unstakedBalance);
+    const stakeable = onAccount.sub(LOCKUP_MIN_BALANCE_FOR_STORAGE);
+    return stakeable.gt(0) ? stakeable : Big(0);
+}
+
 function stakingMeta(token: TreasuryAsset | undefined): {
     symbol?: string;
     network?: string;
@@ -102,7 +119,8 @@ function stakingMeta(token: TreasuryAsset | undefined): {
 
 /**
  * Resolve how much balance is available for a staking proposal action.
- * - stake/deposit: liquid NEAR (wallet or lockup available)
+ * - stake/deposit: liquid NEAR in the wallet; for a lockup, everything on
+ *   the lockup account (vested or not), or the pool's unstaked NEAR for `stake`
  * - unstake: staked balance in the target pool / lockup
  * - withdraw: ready-to-withdraw (unstaked + canWithdraw) balance
  */
@@ -135,7 +153,12 @@ export function getStakingFundingAvailability(
         if (isStake) {
             return {
                 required,
-                available: availableBalance(vested.balance),
+                // Lockup `stake` re-stakes NEAR already unstaked in the pool;
+                // `deposit_and_stake` moves NEAR from the lockup account.
+                available:
+                    data.action === "stake"
+                        ? lockup.unstakedBalance
+                        : lockupStakeableBalance(lockup),
                 kind: "liquid",
                 tokenId: data.tokenId,
                 tokenSymbol: vested.symbol,
