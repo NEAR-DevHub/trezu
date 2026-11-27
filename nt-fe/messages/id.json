@@ -2672,6 +2672,18 @@
             "title": "Permintaan bergabung Anda sedang menunggu",
             "description": "Anda sudah dapat melihat treasury ini. Setelah anggota menyetujui Anda, Anda dapat membuat permintaan, memberikan suara, atau mengelola dana sesuai peran Anda."
         },
+        "onboardAgent": {
+            "title": "Daftarkan agen Anda",
+            "description": "Siapkan agen Anda di Trezu.",
+            "close": "Tutup",
+            "copyPrompt": "Salin prompt untuk agen",
+            "copying": "Menyiapkan prompt…",
+            "copiedTitle": "Prompt disalin",
+            "copiedDescription": "Tempelkan ke agen Anda.",
+            "hiddenTitle": "Kartu disembunyikan",
+            "hiddenDescription": "Salin prompt kapan saja dari menu akun Anda.",
+            "inviteFailed": "Gagal membuat undangan untuk agen Anda. Silakan coba lagi."
+        },
         "infoBox": {
             "title": "Dapatkan lebih banyak dari Trezu",
             "close": "Tutup",

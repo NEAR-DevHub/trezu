@@ -2655,6 +2655,18 @@
             "title": "Yêu cầu tham gia của bạn đang chờ duyệt",
             "description": "Bạn có thể xem ngân quỹ này ngay bây giờ. Khi một thành viên phê duyệt bạn, bạn sẽ có thể tạo yêu cầu, bỏ phiếu hoặc quản lý quỹ theo vai trò của mình."
         },
+        "onboardAgent": {
+            "title": "Thêm tác tử của bạn",
+            "description": "Thiết lập tác tử của bạn với Trezu.",
+            "close": "Đóng",
+            "copyPrompt": "Sao chép lời nhắc cho tác tử",
+            "copying": "Đang chuẩn bị lời nhắc…",
+            "copiedTitle": "Đã sao chép lời nhắc",
+            "copiedDescription": "Hãy dán vào tác tử của bạn.",
+            "hiddenTitle": "Đã ẩn thẻ",
+            "hiddenDescription": "Bạn có thể sao chép lời nhắc bất cứ lúc nào từ menu tài khoản.",
+            "inviteFailed": "Không thể tạo lời mời cho tác tử của bạn. Vui lòng thử lại."
+        },
         "infoBox": {
             "title": "Tận dụng Trezu nhiều hơn",
             "close": "Đóng",

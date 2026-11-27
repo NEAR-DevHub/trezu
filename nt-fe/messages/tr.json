@@ -2672,6 +2672,18 @@
             "title": "Katılma isteğiniz bekliyor",
             "description": "Bu hazineyi şimdi görüntüleyebilirsiniz. Bir üye sizi onayladığında, rolünüze göre istek oluşturabilir, oy verebilir veya fonları yönetebilirsiniz."
         },
+        "onboardAgent": {
+            "title": "Ajanınızı ekleyin",
+            "description": "Ajanınızı Trezu için hazırlayın.",
+            "close": "Kapat",
+            "copyPrompt": "Ajan için istemi kopyala",
+            "copying": "İstem hazırlanıyor…",
+            "copiedTitle": "İstem kopyalandı",
+            "copiedDescription": "Ajanınıza yapıştırın.",
+            "hiddenTitle": "Kart gizlendi",
+            "hiddenDescription": "İstemi istediğiniz zaman hesap menünüzden kopyalayabilirsiniz.",
+            "inviteFailed": "Ajanınız için davet oluşturulamadı. Lütfen tekrar deneyin."
+        },
         "infoBox": {
             "title": "Trezu'dan daha fazlasını alın",
             "close": "Kapat",

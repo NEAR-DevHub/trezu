@@ -240,6 +240,39 @@ pub async fn get_my_member_join_status(
 #[serde(rename_all = "camelCase")]
 pub struct JoinViaInviteRequest {
     pub display_name: Option<String>,
+    /// One of [`AGENT_AVATAR_PRESETS`]; sets the joiner's avatar to that
+    /// built-in image so AI agents don't show up with the person placeholder.
+    pub avatar_preset: Option<String>,
+}
+
+/// Built-in avatars an AI agent can pick when it joins through an invite.
+/// Each is served by the frontend at `/avatars/agents/<preset>.svg`; keep in
+/// sync with `nt-fe/public/avatars/agents` and the agent onboarding prompt.
+pub const AGENT_AVATAR_PRESETS: &[&str] =
+    &["agent", "chatgpt", "claude", "cursor", "gemini", "near-ai"];
+
+/// Resolve an `avatarPreset` to the frontend URL stored in
+/// `user_profiles.avatar_url`. Missing or blank → `None` (avatar untouched);
+/// anything outside [`AGENT_AVATAR_PRESETS`] → 400.
+fn agent_avatar_url(
+    frontend_base_url: &str,
+    preset: Option<&str>,
+) -> Result<Option<String>, (StatusCode, String)> {
+    let Some(preset) = preset.map(str::trim).filter(|p| !p.is_empty()) else {
+        return Ok(None);
+    };
+    if !AGENT_AVATAR_PRESETS.contains(&preset) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            format!(
+                "avatarPreset must be one of: {}",
+                AGENT_AVATAR_PRESETS.join(", ")
+            ),
+        ));
+    }
+    let url = api_url(frontend_base_url, &format!("avatars/agents/{preset}.svg"))
+        .map_err(|e| internal_error("Invalid FRONTEND_BASE_URL", e))?;
+    Ok(Some(url.to_string()))
 }
 
 #[derive(Debug, Serialize)]
@@ -249,28 +282,34 @@ pub struct JoinViaInviteResponse {
     pub request_id: Uuid,
 }
 
-async fn upsert_display_name(
+/// Save the name and avatar the joiner chose. Fields left out keep whatever
+/// the profile already has.
+async fn upsert_join_profile(
     pool: &sqlx::PgPool,
     account_id: &str,
     display_name: Option<String>,
+    avatar_url: Option<String>,
 ) -> Result<(), (StatusCode, String)> {
-    let Some(name) = display_name
+    let display_name = display_name
         .map(|n| n.trim().to_string())
-        .filter(|n| !n.is_empty())
-    else {
+        .filter(|n| !n.is_empty());
+    if display_name.is_none() && avatar_url.is_none() {
         return Ok(());
-    };
+    }
 
-    sqlx::query!(
+    sqlx::query(
         r#"
-        INSERT INTO user_profiles (account_id, display_name)
-        VALUES ($1, $2)
+        INSERT INTO user_profiles (account_id, display_name, avatar_url)
+        VALUES ($1, $2, $3)
         ON CONFLICT (account_id) DO UPDATE
-        SET display_name = EXCLUDED.display_name, updated_at = NOW()
+        SET display_name = COALESCE(EXCLUDED.display_name, user_profiles.display_name),
+            avatar_url = COALESCE(EXCLUDED.avatar_url, user_profiles.avatar_url),
+            updated_at = NOW()
         "#,
-        account_id,
-        name
     )
+    .bind(account_id)
+    .bind(display_name)
+    .bind(avatar_url)
     .execute(pool)
     .await
     .map_err(|e| internal_error("Failed to upsert user profile", e))?;
@@ -286,11 +325,17 @@ pub async fn join_via_invite(
     Path(token): Path<Uuid>,
     Json(body): Json<JoinViaInviteRequest>,
 ) -> Result<Json<JoinViaInviteResponse>, (StatusCode, String)> {
+    let avatar_url = agent_avatar_url(
+        &state.env_vars.frontend_base_url,
+        body.avatar_preset.as_deref(),
+    )?;
+
     // Profile upsert is idempotent and independent of invite consumption.
-    upsert_display_name(
+    upsert_join_profile(
         &state.db_pool,
         auth_user.account_id.as_str(),
         body.display_name,
+        avatar_url,
     )
     .await?;
 
@@ -578,4 +623,166 @@ pub async fn approve_member_join_requests(
     Ok(Json(ApproveMemberJoinRequestsResponse {
         approved_count: updated.rows_affected(),
     }))
+}
+
+#[cfg(test)]
+mod avatar_preset_tests {
+    use super::*;
+
+    const BASE: &str = "https://trezu.app";
+
+    #[test]
+    fn agent_avatar_url_resolves_every_preset_to_a_frontend_svg() {
+        for preset in AGENT_AVATAR_PRESETS {
+            assert_eq!(
+                agent_avatar_url(BASE, Some(preset)).unwrap(),
+                Some(format!("{BASE}/avatars/agents/{preset}.svg"))
+            );
+        }
+        assert_eq!(
+            agent_avatar_url("https://trezu.app/", Some(" claude ")).unwrap(),
+            Some("https://trezu.app/avatars/agents/claude.svg".to_string())
+        );
+    }
+
+    #[test]
+    fn agent_avatar_url_leaves_avatar_alone_without_a_preset() {
+        assert_eq!(agent_avatar_url(BASE, None).unwrap(), None);
+        assert_eq!(agent_avatar_url(BASE, Some("  ")).unwrap(), None);
+    }
+
+    #[test]
+    fn agent_avatar_url_rejects_anything_outside_the_list() {
+        for bad in [
+            "Claude",
+            "openai",
+            "https://evil.example/a.svg",
+            "../favicon",
+            "claude.svg",
+            "data:image/svg+xml,<svg/>",
+        ] {
+            let (status, message) = agent_avatar_url(BASE, Some(bad)).unwrap_err();
+            assert_eq!(status, StatusCode::BAD_REQUEST, "{bad}");
+            assert!(message.contains("avatarPreset must be one of"), "{message}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod avatar_preset_integration_tests {
+    use crate::{
+        routes::create_routes,
+        utils::test_utils::{issue_auth_cookie, response_text, test_state},
+    };
+    use axum::{
+        body::Body,
+        http::{Request, StatusCode},
+    };
+    use sqlx::PgPool;
+    use tower::ServiceExt;
+    use uuid::Uuid;
+
+    const DAO_ID: &str = "agents.sputnik-dao.near";
+    const AGENT: &str = "my-agent.near";
+
+    async fn seed_invite(pool: &PgPool) -> Uuid {
+        sqlx::query(
+            "INSERT INTO monitored_accounts (account_id) VALUES ($1) ON CONFLICT (account_id) DO NOTHING",
+        )
+        .bind(DAO_ID)
+        .execute(pool)
+        .await
+        .expect("seed monitored account");
+        let admin_id: Uuid =
+            sqlx::query_scalar("INSERT INTO users (account_id) VALUES ('admin.near') RETURNING id")
+                .fetch_one(pool)
+                .await
+                .expect("seed inviting admin");
+        sqlx::query_scalar(
+            "INSERT INTO member_invite_links (dao_id, created_by) VALUES ($1, $2) RETURNING token",
+        )
+        .bind(DAO_ID)
+        .bind(admin_id)
+        .fetch_one(pool)
+        .await
+        .expect("seed invite link")
+    }
+
+    async fn agent_cookie(pool: &PgPool) -> String {
+        issue_auth_cookie(pool, &test_state(pool.clone()), AGENT).await
+    }
+
+    async fn join(pool: &PgPool, cookie: &str, token: Uuid, body: &str) -> (StatusCode, String) {
+        let response = create_routes(test_state(pool.clone()))
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(format!("/api/member-invites/{token}/join"))
+                    .header("content-type", "application/json")
+                    .header("cookie", cookie)
+                    .body(Body::from(body.to_string()))
+                    .expect("build join request"),
+            )
+            .await
+            .expect("join request completes");
+        let status = response.status();
+        (status, response_text(response).await)
+    }
+
+    async fn stored_profile(pool: &PgPool) -> Option<(Option<String>, Option<String>)> {
+        sqlx::query_as("SELECT display_name, avatar_url FROM user_profiles WHERE account_id = $1")
+            .bind(AGENT)
+            .fetch_optional(pool)
+            .await
+            .expect("read profile")
+    }
+
+    #[sqlx::test]
+    async fn join_with_avatar_preset_stores_the_preset_avatar(pool: PgPool) {
+        let token = seed_invite(&pool).await;
+        let cookie = agent_cookie(&pool).await;
+        let (status, body) = join(
+            &pool,
+            &cookie,
+            token,
+            r#"{"displayName": "Claude", "avatarPreset": "claude"}"#,
+        )
+        .await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+
+        let (name, avatar) = stored_profile(&pool).await.expect("profile row");
+        assert_eq!(name.as_deref(), Some("Claude"));
+        let avatar = avatar.expect("avatar set");
+        assert!(
+            avatar.ends_with("/avatars/agents/claude.svg"),
+            "unexpected avatar {avatar}"
+        );
+    }
+
+    #[sqlx::test]
+    async fn join_with_unknown_avatar_preset_is_rejected_before_anything_changes(pool: PgPool) {
+        let token = seed_invite(&pool).await;
+        let cookie = agent_cookie(&pool).await;
+        let (status, body) = join(
+            &pool,
+            &cookie,
+            token,
+            r#"{"displayName": "Claude", "avatarPreset": "https://evil.example/a.svg"}"#,
+        )
+        .await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{body}");
+        assert!(body.contains("avatarPreset must be one of"), "{body}");
+        assert!(stored_profile(&pool).await.is_none(), "no profile written");
+
+        // The invite is still usable after the rejected attempt.
+        let (status, body) = join(&pool, &cookie, token, r#"{"avatarPreset": "agent"}"#).await;
+        assert_eq!(status, StatusCode::OK, "{body}");
+        let (name, avatar) = stored_profile(&pool).await.expect("profile row");
+        assert_eq!(name, None);
+        assert!(
+            avatar
+                .expect("avatar set")
+                .ends_with("/avatars/agents/agent.svg")
+        );
+    }
 }

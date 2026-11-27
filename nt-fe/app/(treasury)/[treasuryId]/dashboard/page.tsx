@@ -11,6 +11,7 @@ import { PublicBalanceBanner } from "@/features/confidential/components/public-b
 import { OnboardingProgress } from "@/features/onboarding";
 import { CreateBanner } from "@/features/onboarding/components/create-banner";
 import { InfoBox } from "@/features/onboarding/components/info-box";
+import { OnboardAgentCard } from "@/features/onboarding/components/onboard-agent-card";
 import { PendingJoinBanner } from "@/features/onboarding/components/pending-join-banner";
 import {
     CongratsTooltip,
@@ -73,6 +74,7 @@ export default function AppPage() {
                         <RecentActivity />
                     </div>
                     <div className="flex flex-col gap-5 w-full lg:w-2/5">
+                        <OnboardAgentCard />
                         <InfoBox />
                         <PendingRequests />
                     </div>
