@@ -5,6 +5,11 @@ use std::io::Write;
 use std::path::PathBuf;
 use tempfile::NamedTempFile;
 
+/// Trezu web app, used for links to treasuries and requests.
+pub const APP_BASE_URL: &str = "https://trezu.app";
+/// Trezu backend API.
+pub const API_BASE_URL: &str = "https://api.trezu.app";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrezuConfig {
     pub api_base: String,
@@ -17,7 +22,7 @@ pub struct TrezuConfig {
 impl Default for TrezuConfig {
     fn default() -> Self {
         Self {
-            api_base: "https://api.trezu.app".to_string(),
+            api_base: API_BASE_URL.to_string(),
             auth_token: None,
             account_id: None,
             selected_treasury: None,
