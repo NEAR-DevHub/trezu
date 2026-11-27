@@ -168,7 +168,9 @@ To use another backend (for example staging or a local `nt-be`), set
 The dashboard's **Onboard your agent** card copies a prompt that walks an
 agent (Codex, Claude Code, Cursor, ...) through creating its own NEAR account,
 signing in with `trezu`, and requesting to join your treasury through a
-one-time invite link. You then approve it under **Members > Join requests**.
+one-time invite link. It picks an avatar for the product it runs in (Claude,
+ChatGPT, Gemini, Cursor, NEAR AI, or a generic agent). You then approve it
+under **Members > Join requests**.
 The agent never needs your keys.
 
 ## Development

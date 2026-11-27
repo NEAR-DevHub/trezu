@@ -117,6 +117,20 @@ ${cliConfigPaths()}
    {"api_base": "${apiBaseUrl}", "auth_token": null, "account_id": null}`;
 }
 
+/**
+ * Built-in avatars an agent can pick when it joins (`avatarPreset`). Served
+ * from `public/avatars/agents/<preset>.svg`; keep in sync with
+ * `AGENT_AVATAR_PRESETS` in nt-be `handlers/member_invites`.
+ */
+export const AGENT_AVATAR_PRESETS = [
+    "agent",
+    "chatgpt",
+    "claude",
+    "cursor",
+    "gemini",
+    "near-ai",
+] as const;
+
 export function buildAgentOnboardingPrompt({
     treasuryId,
     inviteUrl,
@@ -187,7 +201,8 @@ Step 7. Ask to join the treasury.
       Expected: "status": "valid". If it is "used" or "expired", stop and ask the user to copy a fresh prompt from the dashboard.
    b) Join. Read "auth_token" from the ${AGENT_CLI.bin} config file (without printing it) and send it as a cookie. The file is at:
 ${cliConfigPaths().replace(/^ {3}/gm, "      ")}
-      curl -sS -X POST ${api}/api/member-invites/${inviteToken}/join -H 'content-type: application/json' -H "Cookie: auth_token=$AUTH_TOKEN" -d '{"displayName": "<your name as the user knows you, e.g. Claude or Codex>"}'
+      curl -sS -X POST ${api}/api/member-invites/${inviteToken}/join -H 'content-type: application/json' -H "Cookie: auth_token=$AUTH_TOKEN" -d '{"displayName": "<your name as the user knows you, e.g. Claude or Codex>", "avatarPreset": "<avatar>"}'
+      For <avatar>, pick the one that matches the product you are running in: ${AGENT_AVATAR_PRESETS.filter((p) => p !== "agent").join(", ")}. If none matches or you are not sure, use "agent". No other value is accepted.
       Expected: HTTP 200, or HTTP 409 "A pending join request already exists" (you already asked; continue). HTTP 401 means the sign-in did not stick; redo step 6.
 
 Step 8. Tell the user you are ready and ask them to approve you, in a few plain sentences:

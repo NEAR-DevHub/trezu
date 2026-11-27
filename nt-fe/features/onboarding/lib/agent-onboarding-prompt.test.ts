@@ -1,5 +1,8 @@
 import { describe, expect, it } from "bun:test";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import {
+    AGENT_AVATAR_PRESETS,
     AGENT_CLI,
     AGENT_KEY_FOLDER,
     buildAgentOnboardingPrompt,
@@ -220,6 +223,37 @@ describe("after approval", () => {
         expect(after).toContain(
             "https://github.com/NEAR-DevHub/trezu/blob/main/nt-cli/README.md#using-from-scripts-and-ai-agents",
         );
+    });
+});
+
+describe("avatar preset", () => {
+    it("sends an avatarPreset with the join request", () => {
+        expect(build()).toContain(
+            `-d '{"displayName": "<your name as the user knows you, e.g. Claude or Codex>", "avatarPreset": "<avatar>"}'`,
+        );
+    });
+
+    it("lists every platform preset and falls back to agent", () => {
+        const prompt = build();
+        const line = prompt.split("\n").find((l) => l.includes("For <avatar>"));
+        expect(line).toBeDefined();
+        for (const preset of AGENT_AVATAR_PRESETS.filter(
+            (p) => p !== "agent",
+        )) {
+            expect(line).toContain(preset);
+        }
+        expect(line).toContain('use "agent"');
+    });
+
+    it("has an image for every preset", () => {
+        for (const preset of AGENT_AVATAR_PRESETS) {
+            const file = join(
+                import.meta.dir,
+                "../../../public/avatars/agents",
+                `${preset}.svg`,
+            );
+            expect(existsSync(file)).toBe(true);
+        }
     });
 });
 
