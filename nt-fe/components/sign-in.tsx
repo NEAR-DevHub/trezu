@@ -1,6 +1,7 @@
 "use client";
 
 import {
+    Bot,
     ChevronDown,
     FileText,
     Loader2,
@@ -24,6 +25,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover";
 import { PRIVACY_POLICY_URL, TERMS_OF_SERVICE_URL } from "@/constants/config";
+import { useCopyAgentPrompt } from "@/features/onboarding/hooks/use-copy-agent-prompt";
 import { useNear } from "@/stores/near-store";
 import { CopyButton } from "./copy-button";
 import { User } from "./user";
@@ -32,6 +34,8 @@ export function SignIn() {
     const t = useTranslations("signIn");
     const tCommon = useTranslations("common");
     const tAddress = useTranslations("address");
+    const tAgent = useTranslations("onboarding.onboardAgent");
+    const agentPrompt = useCopyAgentPrompt();
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -174,6 +178,21 @@ export function SignIn() {
                         <UserRound className="h-4 w-4" />
                         {t("myAccount")}
                     </Link>
+                )}
+                {agentPrompt.canCopy && (
+                    <button
+                        type="button"
+                        className="flex items-center rounded-6 gap-2 px-3 py-2 text-sm w-full transition-colors hover:bg-general-unofficial-ghost-hover cursor-pointer"
+                        onClick={() => {
+                            // Start the copy inside the click so Safari
+                            // allows the clipboard write.
+                            void agentPrompt.copy();
+                            setIsOpen(false);
+                        }}
+                    >
+                        <Bot className="h-4 w-4" />
+                        {tAgent("title")}
+                    </button>
                 )}
                 <Link
                     href={TERMS_OF_SERVICE_URL}

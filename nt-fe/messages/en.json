@@ -2678,7 +2678,8 @@
             "close": "Close",
             "copyPrompt": "Copy prompt for agent",
             "copying": "Preparing prompt…",
-            "copied": "Prompt copied. Paste it into your agent.",
+            "copiedTitle": "Prompt copied",
+            "copiedDescription": "Paste it into your agent.",
             "inviteFailed": "Couldn't create the invite for your agent. Please try again."
         },
         "infoBox": {

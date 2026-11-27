@@ -2678,7 +2678,8 @@
             "close": "Schließen",
             "copyPrompt": "Prompt für Agenten kopieren",
             "copying": "Prompt wird vorbereitet…",
-            "copied": "Prompt kopiert. Füge ihn in deinen Agenten ein.",
+            "copiedTitle": "Prompt kopiert",
+            "copiedDescription": "Füge ihn in deinen Agenten ein.",
             "inviteFailed": "Die Einladung für deinen Agenten konnte nicht erstellt werden. Bitte versuche es erneut."
         },
         "infoBox": {

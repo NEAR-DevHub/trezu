@@ -2678,7 +2678,8 @@
             "close": "Tutup",
             "copyPrompt": "Salin prompt untuk agen",
             "copying": "Menyiapkan prompt…",
-            "copied": "Prompt disalin. Tempelkan ke agen Anda.",
+            "copiedTitle": "Prompt disalin",
+            "copiedDescription": "Tempelkan ke agen Anda.",
             "inviteFailed": "Gagal membuat undangan untuk agen Anda. Silakan coba lagi."
         },
         "infoBox": {

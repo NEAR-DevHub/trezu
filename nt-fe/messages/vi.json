@@ -2661,7 +2661,8 @@
             "close": "Đóng",
             "copyPrompt": "Sao chép lời nhắc cho tác tử",
             "copying": "Đang chuẩn bị lời nhắc…",
-            "copied": "Đã sao chép lời nhắc. Hãy dán vào tác tử của bạn.",
+            "copiedTitle": "Đã sao chép lời nhắc",
+            "copiedDescription": "Hãy dán vào tác tử của bạn.",
             "inviteFailed": "Không thể tạo lời mời cho tác tử của bạn. Vui lòng thử lại."
         },
         "infoBox": {

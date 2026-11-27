@@ -2678,7 +2678,8 @@
             "close": "Kapat",
             "copyPrompt": "Ajan için istemi kopyala",
             "copying": "İstem hazırlanıyor…",
-            "copied": "İstem kopyalandı. Ajanınıza yapıştırın.",
+            "copiedTitle": "İstem kopyalandı",
+            "copiedDescription": "Ajanınıza yapıştırın.",
             "inviteFailed": "Ajanınız için davet oluşturulamadı. Lütfen tekrar deneyin."
         },
         "infoBox": {

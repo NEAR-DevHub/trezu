@@ -2678,7 +2678,8 @@
             "close": "Fechar",
             "copyPrompt": "Copiar prompt para o agente",
             "copying": "Preparando prompt…",
-            "copied": "Prompt copiado. Cole-o no seu agente.",
+            "copiedTitle": "Prompt copiado",
+            "copiedDescription": "Cole-o no seu agente.",
             "inviteFailed": "Não foi possível criar o convite para seu agente. Tente novamente."
         },
         "infoBox": {

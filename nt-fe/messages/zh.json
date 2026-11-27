@@ -2661,7 +2661,8 @@
             "close": "关闭",
             "copyPrompt": "复制智能体提示词",
             "copying": "正在准备提示词…",
-            "copied": "提示词已复制，请粘贴到你的智能体中。",
+            "copiedTitle": "提示词已复制",
+            "copiedDescription": "请粘贴到你的智能体中。",
             "inviteFailed": "无法为你的智能体创建邀请，请重试。"
         },
         "infoBox": {

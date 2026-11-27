@@ -2678,7 +2678,8 @@
             "close": "닫기",
             "copyPrompt": "에이전트용 프롬프트 복사",
             "copying": "프롬프트 준비 중…",
-            "copied": "프롬프트가 복사되었습니다. 에이전트에 붙여 넣으세요.",
+            "copiedTitle": "프롬프트가 복사되었습니다",
+            "copiedDescription": "에이전트에 붙여 넣으세요.",
             "inviteFailed": "에이전트 초대를 만들지 못했습니다. 다시 시도해 주세요."
         },
         "infoBox": {
