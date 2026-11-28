@@ -217,15 +217,64 @@ pub fn is_block_unavailable(message: &str) -> bool {
 /// Panics a contract raises for a lookup that found nothing. Any other panic
 /// is a contract or state bug and must stay reportable.
 fn is_missing_resource_panic(panic_msg: &str) -> bool {
-    panic_msg.contains("ERR_NO_PROPOSAL") || panic_msg.contains("ERR_NO_BOUNTY")
+    panic_msg.contains("ERR_NO_PROPOSAL")
+        || panic_msg.contains("ERR_NO_BOUNTY")
+        // bulkpayment.near `view_list` / `get_payment_transactions` on an unknown list.
+        || panic_msg.contains("Payment list not found")
 }
 
+/// The panic message out of a Debug-formatted `GuestPanic`. The message is a
+/// quoted string, so inner quotes and backslashes arrive escaped, and an outer
+/// Debug pass may have escaped the whole thing again.
 fn guest_panic_message(message: &str) -> Option<String> {
     let (_, rest) = message.split_once("GuestPanic")?;
     let (_, rest) = rest.split_once("panic_msg:")?;
-    let rest = rest.trim_start().trim_start_matches(['\\', '"']);
-    let end = rest.find(['\\', '"']).unwrap_or(rest.len());
-    Some(rest[..end].trim().to_string())
+    let mut rest = rest.trim_start().to_string();
+    for _ in 0..MAX_DEBUG_ESCAPE_LAYERS {
+        if !rest.starts_with('\\') {
+            break;
+        }
+        rest = unescape_debug(&rest);
+    }
+    let Some(quoted) = rest.strip_prefix('"') else {
+        return Some(rest.trim_end_matches([' ', '}', ')']).to_string());
+    };
+
+    let mut end = quoted.len();
+    let mut escaped = false;
+    for (index, c) in quoted.char_indices() {
+        match c {
+            _ if escaped => escaped = false,
+            '\\' => escaped = true,
+            '"' => {
+                end = index;
+                break;
+            }
+            _ => {}
+        }
+    }
+    Some(unescape_debug(&quoted[..end]).trim().to_string())
+}
+
+const MAX_DEBUG_ESCAPE_LAYERS: usize = 3;
+
+fn unescape_debug(escaped: &str) -> String {
+    let mut unescaped = String::with_capacity(escaped.len());
+    let mut chars = escaped.chars();
+    while let Some(c) = chars.next() {
+        if c != '\\' {
+            unescaped.push(c);
+            continue;
+        }
+        match chars.next() {
+            Some('n') => unescaped.push('\n'),
+            Some('t') => unescaped.push('\t'),
+            Some('r') => unescaped.push('\r'),
+            Some(other) => unescaped.push(other),
+            None => unescaped.push('\\'),
+        }
+    }
+    unescaped
 }
 
 #[cfg(test)]
@@ -354,6 +403,28 @@ mod tests {
             (StatusCode::BAD_GATEWAY, "Contract call failed".to_string())
         );
         assert!(!error.is_client_error());
+    }
+
+    #[test]
+    fn unknown_bulk_payment_list_is_404() {
+        let error = ContractReadError::from(wasm_error(FunctionCallError::HostError(
+            HostError::GuestPanic {
+                panic_msg: "panicked at src/lib.rs:607:14:\nPayment list not found".to_string(),
+            },
+        )));
+        assert!(matches!(error, ContractReadError::ResourceNotFound(_)));
+        assert_eq!(error.status_and_message().0, StatusCode::NOT_FOUND);
+        assert!(error.is_client_error());
+
+        let untyped = ContractReadError::from_message(
+            "wasm execution failed with error: HostError(GuestPanic { panic_msg: \"panicked at \
+             src/lib.rs:607:14:\\nPayment list not found\" })"
+                .to_string(),
+        );
+        assert!(
+            matches!(untyped, ContractReadError::ResourceNotFound(_)),
+            "{untyped:?}"
+        );
     }
 
     #[test]
