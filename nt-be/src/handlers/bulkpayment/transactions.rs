@@ -139,12 +139,31 @@ impl ContractPaymentStatus {
     }
 }
 
+/// A bulk-payment list id is the hex SHA-256 of the list, the same rule
+/// `bulkpayment.near` enforces in `validate_list_id`. Anything else cannot
+/// exist on-chain, so reject it before spending an RPC call.
+fn is_valid_list_id(list_id: &str) -> bool {
+    list_id.len() == 64 && list_id.chars().all(|c| c.is_ascii_hexdigit())
+}
+
+const INVALID_LIST_ID: &str = "Invalid list_id: expected a 64-character hex hash";
+
 /// Get the status of a payment list
 #[tracing::instrument(level = "info", skip_all, fields(list_id = %list_id))]
 pub async fn get_list_status(
     State(state): State<Arc<AppState>>,
     Path(list_id): Path<String>,
 ) -> Result<Json<ListStatusResponse>, (StatusCode, Json<ListStatusResponse>)> {
+    if !is_valid_list_id(&list_id) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(ListStatusResponse {
+                success: false,
+                list: None,
+                error: Some(INVALID_LIST_ID.to_string()),
+            }),
+        ));
+    }
     let cache_key = CacheKey::new("bulk-payment-status").with(&list_id).build();
 
     let result = state
@@ -200,6 +219,16 @@ pub async fn get_transactions(
     State(state): State<Arc<AppState>>,
     Path(list_id): Path<String>,
 ) -> Result<Json<TransactionsResponse>, (StatusCode, Json<TransactionsResponse>)> {
+    if !is_valid_list_id(&list_id) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(TransactionsResponse {
+                success: false,
+                transactions: None,
+                error: Some(INVALID_LIST_ID.to_string()),
+            }),
+        ));
+    }
     let cache_key = CacheKey::new("bulk-payment-transactions")
         .with(&list_id)
         .build();
@@ -245,6 +274,17 @@ pub async fn get_transaction_hash(
     State(state): State<Arc<AppState>>,
     Path((list_id, recipient)): Path<(String, String)>,
 ) -> Result<Json<TransactionHashResponse>, (StatusCode, Json<TransactionHashResponse>)> {
+    if !is_valid_list_id(&list_id) {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(TransactionHashResponse {
+                success: false,
+                transaction_hash: None,
+                block_height: None,
+                error: Some(INVALID_LIST_ID.to_string()),
+            }),
+        ));
+    }
     // First get the list to find the block height
     let list_cache_key = CacheKey::new("bulk-payment-list").with(&list_id).build();
 
@@ -426,6 +466,28 @@ async fn lookup_transaction_hash(
 }
 
 #[cfg(test)]
+mod list_id_tests {
+    use super::is_valid_list_id;
+
+    #[test]
+    fn accepts_sha256_hex() {
+        assert!(is_valid_list_id(
+            "d4feb004373547a3e07fb3a54e1ca2b54afbbad789d8e311440f829c51d8b989"
+        ));
+        assert!(is_valid_list_id(&"A".repeat(64)));
+    }
+
+    #[test]
+    fn rejects_non_hash_ids() {
+        assert!(!is_valid_list_id("defuse-labs.sputnik-dao.near"));
+        assert!(!is_valid_list_id(""));
+        assert!(!is_valid_list_id(&"a".repeat(63)));
+        assert!(!is_valid_list_id(&"a".repeat(65)));
+        assert!(!is_valid_list_id(&format!("{}g", "a".repeat(63))));
+    }
+}
+
+#[cfg(test)]
 mod tests {
     use crate::utils::test_utils::init_test_state;
     use axum::extract::{Path, State};
@@ -475,6 +537,36 @@ mod tests {
             result.transaction_hash.as_deref(),
             Some("6GA6TzTPaGSkbbowgVuL3SH7KKaYcz79ZWetdCLjBgMc"),
         );
+    }
+
+    /// A well-formed id with no list on-chain makes `bulkpayment.near` panic
+    /// with "Payment list not found"; that is the caller's 404, not a 502.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_list_status_unknown_list_is_404() {
+        let state = init_test_state().await;
+
+        let (status, body) = super::get_list_status(State(Arc::new(state)), Path("0".repeat(64)))
+            .await
+            .expect_err("unknown list must fail");
+
+        assert_eq!(status, axum::http::StatusCode::NOT_FOUND);
+        assert!(!body.success);
+    }
+
+    /// A DAO id (Sentry BUSINESS-NEAR-COM-BACKEND-2) is rejected before any RPC call.
+    #[tokio::test(flavor = "multi_thread")]
+    async fn test_get_list_status_rejects_non_hash_id() {
+        let state = init_test_state().await;
+
+        let (status, body) = super::get_list_status(
+            State(Arc::new(state)),
+            Path("defuse-labs.sputnik-dao.near".to_string()),
+        )
+        .await
+        .expect_err("non-hash id must fail");
+
+        assert_eq!(status, axum::http::StatusCode::BAD_REQUEST);
+        assert_eq!(body.error.as_deref(), Some(super::INVALID_LIST_ID));
     }
 
     #[tokio::test(flavor = "multi_thread")]
